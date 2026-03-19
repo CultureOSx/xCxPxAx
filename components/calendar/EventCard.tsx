@@ -1,0 +1,134 @@
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useColors } from '@/hooks/useColors';
+import { CardTokens, CultureTokens, TextStyles } from '@/constants/theme';
+import { formatEventDateTime } from '@/lib/dateUtils';
+import type { EventData } from '@/shared/schema';
+
+interface Props {
+  event: EventData;
+}
+
+export default function EventCard({ event }: Props) {
+  const colors = useColors();
+
+  const dateLabel = formatEventDateTime(event.date, event.time);
+
+  return (
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      {event.imageUrl ? (
+        <Image source={{ uri: event.imageUrl }} style={styles.image} contentFit="cover" />
+      ) : (
+        <View style={[styles.imagePlaceholder, { backgroundColor: colors.primaryGlow }]}>
+          <Ionicons name="calendar" size={28} color={colors.primary} />
+        </View>
+      )}
+
+      <View style={styles.info}>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          {event.title}
+        </Text>
+
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+          <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+            {dateLabel}
+          </Text>
+        </View>
+
+        {event.venue ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+            <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+              {event.venue}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.badgeRow}>
+          {event.isFeatured && (
+            <View style={[styles.badge, { backgroundColor: CultureTokens.gold + '22' }]}>
+              <Ionicons name="star" size={10} color={CultureTokens.gold} />
+              <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>Featured</Text>
+            </View>
+          )}
+          {event.isFree && (
+            <View style={[styles.badge, { backgroundColor: CultureTokens.teal + '22' }]}>
+              <Text style={[styles.badgeText, { color: CultureTokens.teal }]}>Free</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    borderRadius: CardTokens.radius,
+    marginBottom: 12,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.06)' } as any,
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+      },
+    }),
+  },
+  image: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  imagePlaceholder: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 3,
+  },
+  title: {
+    ...TextStyles.label,
+    marginBottom: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  meta: {
+    ...TextStyles.caption,
+    flex: 1,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 4,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+});

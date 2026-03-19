@@ -1,0 +1,366 @@
+import { useColors } from '@/hooks/useColors';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, usePathname } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { useAuth } from '@/lib/auth';
+import { useRole } from '@/hooks/useRole';
+import { Button } from '@/components/ui/Button';
+import { CultureTokens, LayoutRules, Spacing } from '@/constants/theme';
+import { BackButton } from '@/components/ui/BackButton';
+import { TextStyles } from '@/constants/typography';
+
+
+interface SettingItem {
+  icon: string;
+  label: string;
+  sub?: string;
+  color: string;
+  route?: string;
+  action?: () => void;
+  rightText?: string;
+}
+interface SettingSection { title: string; items: SettingItem[] }
+
+export default function AccountSettingsScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
+  const insets  = useSafeAreaInsets();
+  const webTop  = 0;
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
+  const { user, isAuthenticated, logout } = useAuth();
+  const { isOrganizer, isAdmin, hasMinRole } = useRole();
+  const canTargetCampaigns = hasMinRole('cityAdmin');
+
+  const tier      = user?.subscriptionTier ?? 'free';
+  const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+  const tierStr   = tier as string;
+  const tierColor = tierStr === 'plus' ? CultureTokens.indigo : tierStr === 'premium' || tierStr === 'vip' || tierStr === 'elite' ? CultureTokens.gold : tierStr === 'pro' ? CultureTokens.teal : tierStr === 'sydney-local' ? CultureTokens.success : 'rgba(255,255,255,0.6)';
+
+  const pathname = usePathname();
+  const navigate = (route: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (route === '/(onboarding)/login' || route === '/(onboarding)/signup') {
+      router.push({ pathname: route, params: { redirectTo: pathname } } as any);
+      return;
+    }
+    try {
+      router.push({ pathname: route } as any);
+    } catch (error) {
+      console.warn('[settings] navigation failed:', route, error);
+      router.replace('/(tabs)');
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out', style: 'destructive',
+        onPress: async () => {
+          try {
+            if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            await logout('/(onboarding)');
+          } catch (error) {
+            console.warn('[settings] sign out failed:', error);
+            Alert.alert('Sign out failed', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const AUTH_SECTIONS: SettingSection[] = [
+    {
+      title: 'Account',
+      items: [
+        { icon: 'person-outline',        label: 'Edit Profile',         sub: 'Name, bio, photo, social links',   color: CultureTokens.indigo,   route: '/profile/edit' },
+        { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.saffron, route: '/settings/privacy' },
+        { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,    route: '/settings/notifications' },
+        { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: CultureTokens.teal,   route: '/settings/location' },
+        { icon: 'business-outline',      label: 'Local Council',        sub: 'Choose your council area',         color: CultureTokens.gold,      route: '/council/select' },
+      ],
+    },
+    {
+      title: 'Membership & Payments',
+      items: [
+        { icon: 'star-outline',    label: 'My Membership',       sub: `${tierLabel} Plan · Tap to upgrade`, color: CultureTokens.gold,    route: '/membership/upgrade' },
+        { icon: 'wallet-outline',  label: 'Wallet & Balance',    sub: 'Top up, view cashback',              color: CultureTokens.teal, route: '/payment/wallet' },
+        { icon: 'card-outline',    label: 'Payment Methods',     sub: 'Cards, bank accounts',               color: CultureTokens.indigo, route: '/payment/methods' },
+        { icon: 'receipt-outline', label: 'Transaction History', sub: 'Purchases and payments',             color: colors.textSecondary, route: '/payment/transactions' },
+      ],
+    },
+    {
+      title: 'My Content',
+      items: [
+        { icon: 'ticket-outline',   label: 'My Tickets',       sub: 'Upcoming and past events',     color: CultureTokens.saffron, route: '/tickets' },
+        { icon: 'bookmark-outline', label: 'Saved Items',      sub: 'Events, perks, businesses',    color: CultureTokens.coral,    route: '/saved' },
+        { icon: 'people-outline',   label: 'My Communities',   sub: "Groups you've joined",         color: CultureTokens.teal,   route: '/(tabs)/community' },
+      ],
+    },
+    ...(isOrganizer ? [{
+      title: 'Organizer Tools',
+      items: [
+        { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',   color: CultureTokens.indigo,   route: '/dashboard/organizer' },
+        { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',    color: CultureTokens.saffron, route: '/scanner' },
+        { icon: 'add-circle-outline', label: 'Submit Content',      sub: 'Events, businesses, listings',     color: CultureTokens.coral,    route: '/submit' },
+        ...(canTargetCampaigns ? [{ icon: 'megaphone-outline', label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: CultureTokens.gold, route: '/admin/notifications' }] : []),
+        ...(canTargetCampaigns ? [{ icon: 'document-text-outline', label: 'Campaign Audit Logs', sub: 'Review admin send history', color: CultureTokens.warning, route: '/admin/audit-logs' }] : []),
+      ] as SettingItem[],
+    }] : []),
+    ...(isAdmin ? [{
+      title: 'Admin Tools',
+      items: [
+        { icon: 'business-outline', label: 'Council Management', sub: 'Council overview, claims, and operations', color: CultureTokens.indigo, route: '/admin/council-management' },
+        { icon: 'shield-checkmark-outline', label: 'Council Claims', sub: 'Approve or reject council ownership claims', color: CultureTokens.warning, route: '/admin/council-claims' },
+        { icon: 'people-outline', label: 'Admin Panel', sub: 'Manage users and roles', color: CultureTokens.error, route: '/admin/users' },
+      ] as SettingItem[],
+    }] : []),
+    {
+      title: 'Help & Support',
+      items: [
+        { icon: 'help-circle-outline', label: 'Help Center',        sub: 'FAQs, guides, tutorials',       color: CultureTokens.gold,    route: '/help' },
+        { icon: 'mail-outline',        label: 'Contact Us',         sub: 'support@culturepass.app',         color: CultureTokens.teal, action: () => Linking.openURL('mailto:support@culturepass.app?subject=CulturePass%20Support') },
+        { icon: 'flag-outline',        label: 'Report a Problem',   sub: 'Something not working?',        color: CultureTokens.warning, action: () => Linking.openURL('mailto:bugs@culturepass.app?subject=Bug%20Report') },
+        { icon: 'star-half-outline',   label: 'Rate CulturePass',   sub: 'Share your feedback',           color: CultureTokens.coral,  action: () => Linking.openURL(Platform.OS === 'android' ? 'market://details?id=au.culturepass.app' : 'https://apps.apple.com/app/culturepass/id6742686059') },
+      ],
+    },
+    {
+      title: 'Legal',
+      items: [
+        { icon: 'shield-checkmark-outline', label: 'Privacy Policy',       color: CultureTokens.gold,      route: '/legal/privacy' },
+        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.saffron, route: '/legal/terms' },
+        { icon: 'finger-print-outline',     label: 'Cookie Policy',        color: CultureTokens.coral,    route: '/legal/cookies' },
+        { icon: 'people-circle-outline',    label: 'Community Guidelines', color: CultureTokens.teal,   route: '/legal/guidelines' },
+      ],
+    },
+    {
+      title: 'About',
+      items: [
+        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,      route: '/settings/about' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
+      ],
+    },
+  ];
+
+  const GUEST_SECTIONS: SettingSection[] = [
+    {
+      title: 'Help & Support',
+      items: [
+        { icon: 'help-circle-outline', label: 'Help Center',  sub: 'FAQs, guides, tutorials', color: CultureTokens.gold,    route: '/help' },
+        { icon: 'mail-outline',        label: 'Contact Us',   sub: 'support@culturepass.app',  color: CultureTokens.teal, action: () => Linking.openURL('mailto:support@culturepass.app?subject=CulturePass%20Support') },
+      ],
+    },
+    {
+      title: 'Legal',
+      items: [
+        { icon: 'shield-checkmark-outline', label: 'Privacy Policy',       color: CultureTokens.gold,      route: '/legal/privacy' },
+        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.saffron, route: '/legal/terms' },
+        { icon: 'finger-print-outline',     label: 'Cookie Policy',        color: CultureTokens.coral,    route: '/legal/cookies' },
+        { icon: 'people-circle-outline',    label: 'Community Guidelines', color: CultureTokens.teal,   route: '/legal/guidelines' },
+      ],
+    },
+    {
+      title: 'About',
+      items: [
+        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,       route: '/settings/about' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
+      ],
+    },
+  ];
+
+  const sections = isAuthenticated ? AUTH_SECTIONS : GUEST_SECTIONS;
+
+  return (
+    <View style={[s.container, { paddingTop: insets.top + webTop }]}>
+      {/* Header */}
+      <View style={s.header}>
+        <BackButton fallback="/(tabs)" style={[s.backBtn, { backgroundColor: colors.surface + '80' }]} />
+        <Text style={[TextStyles.headline, { flex: 1, textAlign: 'center' }]}>Settings</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: LayoutRules.sectionSpacing + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 8 }}
+      >
+        {/* Profile card or guest CTA */}
+        {isAuthenticated && user ? (
+          <Pressable 
+          style={({pressed}) => [s.profileCard, isDesktopWeb && s.webSection, pressed && { opacity: 0.9 }]}
+          onPress={() => navigate('/profile/edit')}
+        >
+            <View style={s.profileRow}>
+              <View style={s.avatarWrap}>
+                {user.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={s.avatar} contentFit="cover" />
+                ) : (
+                  <View style={s.avatarFallback}>
+                    <Text style={s.avatarLetter}>{(user.displayName ?? user.username ?? 'C')[0].toUpperCase()}</Text>
+                  </View>
+                )}
+                <View style={[s.tierDot, { backgroundColor: tierColor, borderColor: colors.background }]} />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={s.profileName} numberOfLines={1}>{user.displayName ?? user.username ?? 'User'}</Text>
+                <Text style={s.profileEmail} numberOfLines={1}>{user.email ?? ''}</Text>
+                <View style={[s.tierBadge, { backgroundColor: tierColor + '15', borderColor: tierColor + '30' }]}>
+                  <Ionicons name="star" size={10} color={tierColor} />
+                  <Text style={[s.tierText, { color: tierColor }]}>{tierLabel}</Text>
+                </View>
+              </View>
+              <View style={[s.editBtn, { backgroundColor: colors.surface + '80' }]}>
+                <Ionicons name="create-outline" size={16} color={colors.textSecondary} />
+                <Text style={s.editBtnText}>Edit</Text>
+              </View>
+            </View>
+            {(user.city || user.country) && (
+              <View style={s.locationRow}>
+                <Ionicons name="location" size={13} color={CultureTokens.indigo} />
+                <Text style={s.locationText}>{[user.city, user.country].filter(Boolean).join(', ')}</Text>
+              </View>
+            )}
+          </Pressable>
+        ) : (
+          <View style={[s.guestCard, isDesktopWeb && s.webSection]}> 
+            <Ionicons name="person-circle" size={80} color={CultureTokens.indigo + '30'} style={{ marginBottom: 12 }} />
+            <Text style={s.guestTitle}>Welcome to CulturePass</Text>
+            <Text style={s.guestSub}>
+              Sign in to access your profile, tickets, wallet, and exclusive cultural events.
+            </Text>
+            <Button 
+              variant="primary" 
+              fullWidth
+              onPress={() => navigate('/(onboarding)/login')}
+              leftIcon="log-in-outline"
+            >
+              Sign In
+            </Button>
+            <Pressable 
+              style={({pressed}) => [s.guestSignUpBtn, pressed && { opacity: 0.8 }]} 
+              onPress={() => navigate('/(onboarding)/signup')}
+            >
+              <Text style={s.guestSignUpText}>
+                Don&apos;t have an account?{' '}
+                <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_700Bold' }}>Create one free</Text>
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Sections */}
+        {sections.map((section) => (
+          <View key={section.title} style={[s.section, isDesktopWeb && s.webSection]}>
+            <View style={s.sectionTitleRow}>
+              <View style={s.sectionDot} />
+              <Text style={s.sectionTitle}>{section.title}</Text>
+            </View>
+            <View style={s.sectionCard}>
+              {section.items.map((item, ii) => (
+                <View key={item.label}>
+                  <Pressable
+                    style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: colors.surface }]}
+                    onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); if (item.route) navigate(item.route); else item.action?.(); }}
+                  >
+                    <View style={[s.settingIcon, { backgroundColor: item.color + '15' }]}>
+                      <Ionicons name={item.icon as never} size={20} color={item.color} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.settingLabel}>{item.label}</Text>
+                      {item.sub ? <Text style={s.settingSub}>{item.sub}</Text> : null}
+                    </View>
+                    {item.rightText ? (
+                      <Text style={s.settingRightText}>{item.rightText}</Text>
+                    ) : (item.route ?? item.action) ? (
+                      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                    ) : null}
+                  </Pressable>
+                  {ii < section.items.length - 1 && <View style={s.divider} />}
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        {/* Sign out */}
+        {isAuthenticated && (
+          <View style={[s.section, isDesktopWeb && s.webSection, { marginBottom: 20 }]}> 
+            <Button 
+              variant="ghost" 
+              fullWidth
+              onPress={handleSignOut}
+              leftIcon="log-out-outline"
+              labelStyle={{ color: CultureTokens.coral }}
+            >
+              Sign Out
+            </Button>
+          </View>
+        )}
+
+        <Text style={s.footer}>
+          CulturePass AU · v1.0.0{'\n'}
+          Available in Australia
+        </Text>
+      </ScrollView>
+    </View>
+  );
+}
+
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
+
+  profileCard:  { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 20, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  profileRow:   { flexDirection: 'row', alignItems: 'center', gap: LayoutRules.iconTextGap },
+  avatarWrap:   { position: 'relative' },
+  avatar:       { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: colors.borderLight },
+  avatarFallback:{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.borderLight },
+  avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text },
+  tierDot:      { position: 'absolute', bottom: 1, right: 1, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  profileName:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  profileEmail: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
+  tierBadge:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: LayoutRules.borderRadius, borderWidth: 1 },
+  tierText:     { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  editBtn:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingHorizontal: 12, height: 36, borderWidth: 1, borderColor: colors.borderLight },
+  editBtnText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  locationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
+
+  guestCard:    { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 24, padding: 24, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: colors.borderLight },
+  guestTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center', color: colors.text },
+  guestSub:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, marginBottom: 24, color: colors.textSecondary },
+  guestSignInBtn:{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center', paddingVertical: 13, borderRadius: 14, width: '100%', marginBottom: 12, backgroundColor: CultureTokens.indigo },
+  guestSignInText:{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: colors.text },
+  guestSignUpBtn:{ paddingVertical: Spacing.xs },
+  guestSignUpText:{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
+
+  section:      { paddingHorizontal: 20, marginBottom: 24 },
+  sectionTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 12, marginLeft: 4 },
+  sectionDot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: CultureTokens.indigo },
+  sectionTitle: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
+  sectionCard:  { 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    overflow: 'hidden', 
+    backgroundColor: colors.surface, 
+    borderColor: colors.borderLight,
+    elevation: 3,
+    ...Platform.select({ web: { boxShadow: '0px 4px 10px rgba(0,0,0,0.1)' }, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 } }),
+  },
+  settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 14 },
+  settingIcon:  { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingSub:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1, color: colors.textSecondary, opacity: 0.8 },
+  settingRightText:{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
+  divider:      { height: 1, marginLeft: 78, backgroundColor: colors.backgroundSecondary, opacity: 0.5 },
+
+  signOutBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderColor: CultureTokens.coral + '20' },
+  signOutText:  { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+  footer:       { textAlign: 'center', fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 20, marginBottom: 60, lineHeight: 20, color: colors.textTertiary, opacity: 0.5 },
+  webSection:   { maxWidth: 800, width: '100%', alignSelf: 'center' },
+});

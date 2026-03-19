@@ -1,0 +1,117 @@
+import type { MembershipTier, UserRole, SocialLinks } from './common';
+
+export interface Membership {
+  id: string;
+  userId: string;
+  tier: MembershipTier;
+  validUntil?: string;
+  isActive?: boolean;
+  benefits?: string[];
+}
+
+export interface Wallet {
+  id: string;
+  userId: string;
+  balance: number;
+  currency: string;
+  points: number;
+}
+
+/**
+ * Structured cultural identity — set during onboarding, used for
+ * personalised discovery, community matching, and event recommendations.
+ */
+export interface CulturalIdentity {
+  /** ISO 3166-1 alpha-3 derived nationality key, e.g. "indian" */
+  nationalityId?: string;
+  /** One or more culture IDs from constants/cultures.ts, e.g. ["malayali"] */
+  cultureIds?: string[];
+  /** ISO 639-3 language IDs from constants/languages.ts, e.g. ["mal", "eng"] */
+  languageIds?: string[];
+  /** Cross-national diaspora group IDs, e.g. ["south_asian_diaspora"] */
+  diasporaGroupIds?: string[];
+}
+
+export interface User {
+  id: string;
+  username: string;
+  displayName?: string;
+  email?: string;
+  avatarUrl?: string;
+  city?: string;
+  state?: string;
+  postcode?: number;
+  country?: string;
+  bio?: string;
+  interests?: string[];
+  location?: string;
+  socialLinks?: SocialLinks;
+  isVerified?: boolean;
+  isSydneyVerified?: boolean;
+  culturePassId?: string;
+  /** @deprecated use culturalIdentity.nationalityId + cultureIds instead */
+  ethnicityText?: string;
+  /** @deprecated use culturalIdentity.languageIds instead */
+  languages?: string[];
+  /** Structured cultural identity — the Cultural Identity Layer */
+  culturalIdentity?: CulturalIdentity;
+  communities?: string[];
+  interestCategoryIds?: string[];
+  followersCount?: number;
+  followingCount?: number;
+  likesCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+  website?: string;
+  phone?: string;
+  membership?: Membership;
+  role?: UserRole;
+}
+
+export interface RecommendationProfile {
+  userId: string;
+  culturalTagWeights: Record<string, number>;
+  eventTypeWeights: Record<string, number>;
+  updatedAt: string;
+}
+
+export type RewardsTier = 'standard' | 'silver' | 'gold' | 'diamond';
+
+export interface RewardsAccount {
+  userId: string;
+  points: number;
+  tier: RewardsTier;
+  lifetimePoints: number;
+  updatedAt: string;
+}
+
+export interface PrivacySettings {
+  /** Whether the user's profile is visible to others */
+  profileVisible?: boolean;
+  /** Alias used by some screens */
+  profileVisibility?: boolean;
+  activityVisible?: boolean;
+  /** Alias used by some screens */
+  activityStatus?: boolean;
+  locationVisible?: boolean;
+  /** Alias used by some screens */
+  showLocation?: boolean;
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  marketingEmails?: boolean;
+  showInDirectory?: boolean;
+  /** Whether data is shared with partners */
+  dataSharing?: boolean;
+  [key: string]: boolean | undefined;
+}
+
+export interface MembershipSummary {
+  tier: string;
+  tierLabel: string;
+  status: 'active' | 'inactive';
+  expiresAt: string | null;
+  cashbackRate: number;
+  cashbackMultiplier: number;
+  earlyAccessHours: number;
+  eventsAttended: number;
+}

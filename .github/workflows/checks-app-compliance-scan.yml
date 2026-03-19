@@ -1,0 +1,27 @@
+name: Checks App Compliance Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  compliance-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Checks App Compliance Scan
+        uses: google-checks/checks-app-scan-github-action@v1.0.3
+        with:
+          account_id: ${{ secrets.CHECKS_ACCOUNT_ID }}
+          app_id: ${{ secrets.CHECKS_APP_ID }}
+          service_account_base64: ${{ secrets.CHECKS_SERVICE_ACCOUNT_BASE64 }}
+          # For Android builds (Expo EAS default output)
+          # binary_path: "./android/app/build/outputs/apk/release/app-release.apk"
+          # For iOS builds (Expo EAS default output)
+          # binary_path: "./ios/build/App.ipa"
+          # Uncomment the correct line above for your build, or set the path to your artifact if different.
+          # binary_path: "./android/app/build/outputs/apk/release/app-release.apk"
