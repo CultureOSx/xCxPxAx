@@ -16,3 +16,4 @@ export * from './schema/activity';
 export * from './schema/movie';
 export * from './schema/admin';
 export * from './schema/council';
+export * from './schema/update';

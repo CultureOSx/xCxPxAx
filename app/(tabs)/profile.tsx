@@ -327,8 +327,8 @@ export default function ProfileScreen() {
 
       {/* Name */}
       <Text style={[TextStyles.title2, { color: '#FFFFFF', letterSpacing: 1.5, textAlign: 'center', paddingHorizontal: 24 }]}>{displayName.toUpperCase()}</Text>
-      {displayUser?.username && (
-        <Text style={[TextStyles.body, { color: 'rgba(255,255,255,0.6)', marginTop: 2, marginBottom: 16 }]}>@{displayUser.username}</Text>
+      {(displayUser?.handle ?? displayUser?.username) && (
+        <Text style={[TextStyles.body, { color: 'rgba(255,255,255,0.6)', marginTop: 2, marginBottom: 16 }]}>+{displayUser?.handle ?? displayUser?.username}</Text>
       )}
 
       {/* Points — big number like reference */}
@@ -383,7 +383,7 @@ export default function ProfileScreen() {
           { icon: 'link-outline',     label: 'Profile link', value: profileLink, shareable: !!userId },
           { icon: 'mail-outline',     label: 'Email',    value: displayUser?.email ?? '—',                                           verified: !!displayUser?.email },
           { icon: 'location-outline', label: 'Location', value: location ?? '—',                                                     verified: !!location },
-          { icon: 'person-outline',   label: 'Username', value: displayUser?.username ? `@${displayUser.username}` : '—' },
+          { icon: 'person-outline',   label: 'Handle', value: displayUser ? `+${displayUser.handle ?? displayUser.username}` : '—' },
           { icon: 'call-outline',     label: 'Phone',    value: displayUser?.phone ?? '—' },
           { icon: 'globe-outline',    label: 'Website',  value: website ?? '—' },
           { icon: 'create-outline',   label: 'Bio',      value: displayUser?.bio ?? '—' },
@@ -412,8 +412,8 @@ export default function ProfileScreen() {
               )}
               <View style={s.contactNameBlock}>
                 <Text style={[TextStyles.headline, { color: colors.text }]} numberOfLines={1}>{displayName}</Text>
-                {displayUser?.username && (
-                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>@{displayUser.username}</Text>
+                {(displayUser?.handle ?? displayUser?.username) && (
+                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>+{displayUser?.handle ?? displayUser?.username}</Text>
                 )}
               </View>
               <Button

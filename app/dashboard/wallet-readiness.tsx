@@ -1,16 +1,32 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useAuth } from '@/lib/auth';
+import { useRole } from '@/hooks/useRole';
+import { routeWithRedirect } from '@/lib/routes';
 
 function WalletReadinessContent() {
+  const { isAuthenticated } = useAuth();
+  const { isAdmin } = useRole();
   const colors = useColors();
   const styles = getStyles(colors);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(routeWithRedirect('/(onboarding)/login', '/dashboard/wallet-readiness') as never);
+      return;
+    }
+    if (isAuthenticated && !isAdmin) {
+      router.replace('/(tabs)' as never);
+    }
+  }, [isAuthenticated, isAdmin]);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-wallet-business-card-readiness'],

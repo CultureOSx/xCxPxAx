@@ -197,6 +197,8 @@ function AdminDashboardContent() {
             <ToolRow index={1} icon="shield-checkmark-outline" label="Role Assignment" sub="Promote organisers, sponsors, city admins"   accent='#A78BFA'               onPress={() => router.push('/admin/users')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow index={2} icon="id-card-outline"     label="Identity Verification" sub="Approve Sydney-verified user accounts"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/users')} />
+            <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
+            <ToolRow index={3} icon="at-outline"          label="Handle Approvals"    sub="Approve or reject pending +handles"          accent={CultureTokens.saffron} onPress={() => router.push('/admin/handles')} />
           </View>
         </View>
 
@@ -219,6 +221,8 @@ function AdminDashboardContent() {
             <ToolRow icon="megaphone-outline"   label="Push Notifications"   sub="Send targeted campaigns to user segments"        accent={CultureTokens.saffron} onPress={() => router.push('/admin/notifications')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow icon="mail-outline"        label="Email Campaigns"      sub="Manage transactional & marketing email"          accent={CultureTokens.teal}    onPress={() => router.push('/admin/notifications')} />
+            <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
+            <ToolRow icon="newspaper-outline"   label="Release Notes"        sub="Publish changelog posts and announcements"       accent={CultureTokens.indigo}  onPress={() => router.push('/admin/updates')} />
           </View>
         </View>
 

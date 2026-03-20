@@ -294,7 +294,7 @@ function UserRow({
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[ur.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-            <Text style={[ur.sub, { color: colors.textTertiary }]} numberOfLines={1}>@{user.username}</Text>
+            <Text style={[ur.sub, { color: colors.textTertiary }]} numberOfLines={1}>+{(user as any).handle ?? user.username}</Text>
           </View>
         </View>
         {/* Email */}

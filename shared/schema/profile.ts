@@ -4,6 +4,10 @@ export interface Profile {
   id: string;
   name: string;
   slug?: string;
+  /** CulturePass handle for this entity — displayed as +handle */
+  handle?: string;
+  /** Whether this handle has been approved by admin (default: 'pending' on creation) */
+  handleStatus?: 'pending' | 'approved' | 'rejected';
   title?: string;
   type?: EntityType;
   entityType: 'community' | 'business' | 'venue' | 'artist' | 'organizer' | 'restaurant' | 'brand';

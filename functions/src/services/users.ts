@@ -32,6 +32,11 @@ export interface FirestoreUser {
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   
+  /** CulturePass handle — canonical identifier shown as +handle */
+  handle?: string;
+  /** Admin approval gate for handle visibility in public listings */
+  handleStatus?: 'pending' | 'approved' | 'rejected';
+
   // Modern Data Architecture / Analytics Fields
   lastActiveAt?: string;
   authProvider?: string;
@@ -75,6 +80,13 @@ export const usersService = {
     
     const updated = await ref.get();
     return { id: updated.id, ...updated.data() } as FirestoreUser;
+  },
+
+  async getByHandle(handle: string): Promise<FirestoreUser | null> {
+    const snap = await usersCol().where('handle', '==', handle.toLowerCase()).limit(1).get();
+    if (snap.empty) return null;
+    const doc = snap.docs[0];
+    return { id: doc.id, ...doc.data() } as FirestoreUser;
   },
 
   async upsert(id: string, data: Partial<FirestoreUser>): Promise<FirestoreUser> {

@@ -5,16 +5,23 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 
 export default function PaymentSuccessScreen() {
+  const { isAuthenticated } = useAuth();
   const colors = useColors();
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { ticketId } = useLocalSearchParams<{ ticketId: string }>();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/success') as never);
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>

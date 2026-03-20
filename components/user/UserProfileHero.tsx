@@ -75,7 +75,9 @@ export default function UserProfileHero({
         )}
 
         <Text style={styles.heroName}>{displayName}</Text>
-        {user.username && <Text style={styles.heroHandle}>@{user.username}</Text>}
+        {(user.handle ?? user.username) && (
+          <Text style={styles.heroHandle}>+{user.handle ?? user.username}</Text>
+        )}
 
         <View style={styles.heroPills}>
           <View style={[styles.heroPill, styles.heroPillAccent]}>

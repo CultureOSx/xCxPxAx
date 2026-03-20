@@ -146,7 +146,7 @@ export default function PublicProfileScreen() {
             )}
 
             <Text style={styles.heroName}>{displayName}</Text>
-            <Text style={styles.heroHandle}>@{user.username}</Text>
+            <Text style={styles.heroHandle}>+{(user as any).handle ?? user.username}</Text>
 
             <View style={styles.heroPills}>
               {user.role === 'admin' && (
@@ -302,7 +302,7 @@ export default function PublicProfileScreen() {
 
               <View style={styles.cpidFooter}>
                 <Text style={styles.cpidFooterText}>{displayName}</Text>
-                <Text style={styles.cpidFooterText}>@{user.username}</Text>
+                <Text style={styles.cpidFooterText}>+{(user as any).handle ?? user.username}</Text>
               </View>
             </LinearGradient>
 

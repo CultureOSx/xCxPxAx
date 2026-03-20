@@ -138,8 +138,9 @@ export default function AccountSettingsScreen() {
     {
       title: 'About',
       items: [
-        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,      route: '/settings/about' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
+        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,     route: '/settings/about' },
+        { icon: 'newspaper-outline',          label: "What's New",         color: CultureTokens.teal,       route: '/updates/index' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',        color: colors.textSecondary, rightText: '1.1.0 (1)' },
       ],
     },
   ];
@@ -164,8 +165,9 @@ export default function AccountSettingsScreen() {
     {
       title: 'About',
       items: [
-        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,       route: '/settings/about' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
+        { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,     route: '/settings/about' },
+        { icon: 'newspaper-outline',          label: "What's New",         color: CultureTokens.teal,       route: '/updates/index' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',        color: colors.textSecondary, rightText: '1.1.0 (1)' },
       ],
     },
   ];

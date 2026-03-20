@@ -270,7 +270,7 @@ export default function QRScreen() {
                     {/* Name block */}
                     <View style={s.nameBlock}>
                       <Text style={s.nameText} numberOfLines={2}>{name}</Text>
-                      <Text style={s.handleText}>@{username}</Text>
+                      <Text style={s.handleText}>+{username}</Text>
                       {location ? (
                         <View style={s.locationRow}>
                           <Ionicons name="location" size={11} color={YELLOW + 'CC'} />

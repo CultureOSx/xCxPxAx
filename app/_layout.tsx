@@ -270,6 +270,13 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/dashboard" />
       <Stack.Screen name="admin/notifications" />
       <Stack.Screen name="admin/audit-logs" />
+      <Stack.Screen name="admin/handles" />
+      <Stack.Screen name="admin/updates" />
+
+      <Stack.Screen name="updates/index" />
+      <Stack.Screen name="updates/[id]" />
+
+      <Stack.Screen name="[handle]" />
     </Stack>
   );
 }
@@ -291,6 +298,8 @@ function GlobalBackButtonOverlay() {
     first === "events" ||
     first === "settings" ||
     first === "community" ||
+    first === "updates" ||
+    (first === "admin" && (second === "handles" || second === "updates")) ||
     (first === "profile" && second === "edit");
   const hideBackButton =
     !first

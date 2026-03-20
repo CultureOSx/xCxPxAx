@@ -47,10 +47,24 @@ import type {
   CouncilListResponse,
   CouncilClaim,
   CouncilClaimLetter,
-  AdminAuditLog
+  AdminAuditLog,
+  AppUpdate,
+  UpdateCategory,
 } from '@/shared/schema';
 
-export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog } from '@/shared/schema';
+export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog, AppUpdate, UpdateCategory } from '@/shared/schema';
+
+// ---------------------------------------------------------------------------
+// Pending handle item — returned by admin handle approval endpoint
+// ---------------------------------------------------------------------------
+export interface PendingHandleItem {
+  id: string;
+  type: 'user' | 'profile';
+  handle?: string;
+  name: string;
+  entityType?: string;
+  createdAt: string;
+}
 
 // ---------------------------------------------------------------------------
 // Structured error — always carry HTTP status for conditional handling
@@ -404,6 +418,9 @@ const users = {
   get: (id: string) =>
     request<User>('GET', `api/users/${id}`),
 
+  getByHandle: (handle: string) =>
+    request<User>('GET', `api/users/handle/${encodeURIComponent(handle)}`),
+
   update: (id: string, data: Partial<User>) =>
     request<User>('PUT', `api/users/${id}`, data),
 };
@@ -486,6 +503,47 @@ const admin = {
       'GET',
       'api/admin/wallet/business-card/readiness',
     ),
+  pendingHandles: (params?: { limit?: number }) => {
+    const qs = params?.limit != null ? `?limit=${params.limit}` : '';
+    return request<{ handles: PendingHandleItem[]; count: number }>('GET', `api/admin/handles/pending${qs}`);
+  },
+  approveHandle: (type: 'user' | 'profile', id: string) =>
+    request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/approve`, {}),
+  rejectHandle: (type: 'user' | 'profile', id: string, reason?: string) =>
+    request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/reject`, { reason }),
+  /** List all updates (including drafts) — admin only */
+  listUpdates: (params?: { category?: UpdateCategory; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set('category', params.category);
+    if (params?.limit != null) qs.set('limit', String(params.limit));
+    if (params?.offset != null) qs.set('offset', String(params.offset));
+    const q = qs.toString();
+    return request<{ updates: AppUpdate[]; total: number }>('GET', `api/admin/updates${q ? `?${q}` : ''}`);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Updates (public release notes / microblog)
+// ---------------------------------------------------------------------------
+const updates = {
+  list: (params?: { category?: UpdateCategory; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set('category', params.category);
+    if (params?.limit != null) qs.set('limit', String(params.limit));
+    if (params?.offset != null) qs.set('offset', String(params.offset));
+    const q = qs.toString();
+    return request<{ updates: AppUpdate[]; total: number }>('GET', `api/updates${q ? `?${q}` : ''}`);
+  },
+  get: (id: string) =>
+    request<AppUpdate>('GET', `api/updates/${id}`),
+  create: (payload: Omit<AppUpdate, 'id' | 'authorId' | 'createdAt' | 'updatedAt'>) =>
+    request<AppUpdate>('POST', 'api/updates', payload),
+  update: (id: string, payload: Partial<AppUpdate>) =>
+    request<AppUpdate>('PUT', `api/updates/${id}`, payload),
+  remove: (id: string) =>
+    request<{ ok: boolean }>('DELETE', `api/updates/${id}`),
+  publish: (id: string) =>
+    request<AppUpdate>('POST', `api/updates/${id}/publish`, {}),
 };
 
 // ---------------------------------------------------------------------------
@@ -872,6 +930,7 @@ export const api = {
   rsvps,
   likes,
   interests,
+  updates,
   /** Raw request — use when a specific endpoint isn't covered above */
   raw: request,
   /** Base URL — useful for constructing non-JSON endpoints (e.g. image URLs) */

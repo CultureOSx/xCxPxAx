@@ -9,13 +9,15 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Ticket, User } from '@/shared/schema';
 import { Colors } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 
 type TicketPrintLayout = 'full' | 'badge';
 
@@ -97,8 +99,15 @@ function PrintableFull({ ticket, attendeeName }: { ticket: Ticket; attendeeName:
 }
 
 export default function TicketPrintScreen() {
+  const { isAuthenticated } = useAuth();
   const params = useLocalSearchParams<{ id?: string; layout?: string; autoPrint?: string }>();
   const ticketId = String(params.id ?? '');
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(routeWithRedirect('/(onboarding)/login', `/tickets/print/${ticketId}`) as never);
+    }
+  }, [isAuthenticated, ticketId]);
   const [layout, setLayout] = useState<TicketPrintLayout>(params.layout === 'badge' ? 'badge' : 'full');
 
   const { data: ticket, isLoading } = useQuery<Ticket>({

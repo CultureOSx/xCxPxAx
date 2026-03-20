@@ -6,9 +6,18 @@ import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 
 export default function PaymentCancelScreen() {
+  const { isAuthenticated } = useAuth();
   const colors = useColors();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/cancel') as never);
+    }
+  }, [isAuthenticated]);
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   useLocalSearchParams<{ ticketId: string }>();

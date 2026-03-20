@@ -32,9 +32,15 @@ export interface CulturalIdentity {
   diasporaGroupIds?: string[];
 }
 
+export type HandleStatus = 'pending' | 'approved' | 'rejected';
+
 export interface User {
   id: string;
   username: string;
+  /** CulturePass handle — the canonical identifier displayed as +handle */
+  handle?: string;
+  /** Whether this handle has been approved by an admin (default: 'pending' on registration) */
+  handleStatus?: HandleStatus;
   displayName?: string;
   email?: string;
   avatarUrl?: string;

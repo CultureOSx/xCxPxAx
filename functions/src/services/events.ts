@@ -40,11 +40,25 @@ export interface FirestoreEvent {
   isFeatured?: boolean;
   isFree?: boolean;
   externalTicketUrl?: string | null;
+  // Entry type & end datetime (event creation wizard)
+  entryType?: 'ticketed' | 'free_open';
+  endDate?: string | null;
+  endTime?: string | null;
+  heroImageUrl?: string | null;
+
+  // Core team (artists, sponsors, host)
+  hostInfo?: { name?: string; email?: string; phone?: string } | null;
   hostName?: string | null;
   hostEmail?: string | null;
   hostPhone?: string | null;
   sponsors?: string | null;
+  artists?: { name: string; role?: string; bio?: string; imageUrl?: string }[];
+  eventSponsors?: { name: string; tier: 'title' | 'gold' | 'silver' | 'bronze' | 'partner'; logoUrl?: string; websiteUrl?: string; website?: string; profileId?: string }[];
   tiers?: { name: string; priceCents: number; available: number }[];
+
+  // Location service (council LGA)
+  lgaCode?: string | null;
+  councilId?: string | null;
   cpid?: string;
   status: 'draft' | 'published' | 'deleted';
   

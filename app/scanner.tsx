@@ -644,7 +644,7 @@ export default function ScannerScreen() {
                 </View>
 
                 <Text style={s.cpName}>{cpContact.name || 'CulturePass User'}</Text>
-                {cpContact.username && <Text style={s.cpUsername}>@{cpContact.username}</Text>}
+                {cpContact.username && <Text style={s.cpUsername}>+{cpContact.username}</Text>}
 
                 <View style={s.cpChipRow}>
                   <View style={[s.cpIdChip, { backgroundColor: CultureTokens.indigo + '20' }]}>

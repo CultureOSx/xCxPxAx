@@ -19,6 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient, getQueryFn } from '@/lib/query-client';
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ticket } from '@shared/schema';
 import { CardTokens, CultureTokens } from '@/constants/theme';
@@ -57,11 +59,18 @@ async function getCachedTicketQr(ticketId: string): Promise<string | null> {
 }
 
 export default function TicketDetailScreen() {
+  const { isAuthenticated } = useAuth();
   const colors = useColors();
   const s = getStyles(colors);
   const { isDesktop, hPad } = useLayout();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(routeWithRedirect('/(onboarding)/login', `/tickets/${id}`) as never);
+    }
+  }, [isAuthenticated, id]);
   
   // The WebTopBar handles top spacing on desktop, so only pad on mobile
   const topInset = isDesktop ? 0 : (isWeb ? 0 : insets.top);

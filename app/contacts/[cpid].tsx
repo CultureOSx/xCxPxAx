@@ -337,7 +337,7 @@ export default function ContactDetailScreen() {
 
           <Text style={styles.name}>{contact.name || 'CulturePass User'}</Text>
           {contact.username && (
-            <Text style={styles.username}>@{contact.username}</Text>
+            <Text style={styles.username}>+{contact.username}</Text>
           )}
           {contact.org && (
             <Text style={styles.orgName}>{contact.org}</Text>
