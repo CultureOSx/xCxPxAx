@@ -182,3 +182,4 @@ This lets the same codebase run cleanly across local dev, Replit, Firebase, and 
 ## License
 
 Private — all rights reserved.
+# CulturePassApp

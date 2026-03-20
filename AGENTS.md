@@ -1,22 +1,32 @@
-# SKILL.md — Recreate CulturePass from Scratch
+# AGENTS.md — CulturePass Engineer Reference
 
-> A complete blueprint for rebuilding CulturePassAU: architecture decisions, tech choices,
-> data models, API design, and implementation order. Written for an AI agent or senior engineer.
+> A complete blueprint for CulturePassAU: architecture decisions, tech choices,
+> data models, API design, and implementation order. Written for AI agents and senior engineers.
+>
+> **Last updated**: 2026-03-20
+> For the current architectural state, also read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
 ## What This App Is
 
-CulturePass is a cross-platform lifestyle/community platform for cultural diaspora communities
-in Australia. It has five core features:
+CulturePass is a **B2B2C cultural lifestyle marketplace** for diaspora communities (AU, NZ, UAE, UK, CA).
 
-1. **Discover** — Browse and search cultural events by city, category, and date
-2. **Calendar** — Personal event calendar with city-filtered upcoming events
+Core screens (5 tabs):
+1. **Discover** — Hero carousel + community/event rails, indigenous spotlight, "Events in Your Area" (LGA-filtered)
+2. **Calendar** — Month view, event dots, civic reminders
 3. **Community** — Join and browse diaspora community groups
 4. **Perks** — Exclusive discounts/rewards for cultural businesses
 5. **Profile** — User account, membership tier, wallet, tickets, QR identity card
 
-It runs on iOS, Android, and Web from a single React Native codebase.
+Additional screens:
+- **All Events** (`/events`) — Full event list with single-line filter bar (category + date + price)
+- **Explore** (`/(tabs)/explore`) — Category pills + 2-column event grid
+- **Directory** (`/(tabs)/directory`) — All / Events / Indigenous / Businesses / Venues / Organisations / Councils / Government / Charities
+
+**Council/LGA**: Location attribute only (proximity events, directory cards). Not a governance feature.
+
+Runs on iOS, Android, and Web from a single React Native codebase.
 
 ---
 
@@ -24,26 +34,32 @@ It runs on iOS, Android, and Web from a single React Native codebase.
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| UI Framework | React Native (via Expo) | 0.81 |
+| UI Framework | React Native (via Expo) | 0.83 |
 | Expo SDK | Expo | 55 |
-| Router | Expo Router | 6 |
-| Auth | Firebase Auth | 11.x (JS SDK v9) |
-| Database | Cloud Firestore | 11.x (JS SDK v9) |
+| Router | Expo Router | 5 |
+| Animations | React Native Reanimated | 4.x |
+| Auth | Firebase Auth | 11.x (JS SDK v9 modular) |
+| Database | Cloud Firestore | 11.x |
 | Storage | Firebase Storage | 11.x |
 | Backend | Firebase Cloud Functions (Node 22) | — |
 | Backend Framework | Express | 4.x |
-| API Client | Custom typed wrapper around `fetch` | — |
+| API Client | Custom typed wrapper around `fetch` (`lib/api.ts`) | — |
 | Server State | TanStack React Query | 5.x |
-| Animations | React Native Reanimated | 3.x |
 | Payments | Stripe | stripe-js + stripe node |
 | Typography | Poppins (Google Fonts via expo-font) | — |
 | Icons | Ionicons + SF Symbols (expo-symbols) | — |
 | Blur | expo-blur (BlurView) | — |
 | Haptics | expo-haptics | — |
 | Location | expo-location | — |
-| Image | expo-image | — |
+| Image | expo-image (always — never react-native Image) | — |
 | QR | expo-camera (CameraView) | — |
+| Image picker | expo-image-picker | — |
 | Secure storage | expo-secure-store | — |
+
+### Critical Reanimated 4 Notes
+- `SlideInRight` / `SlideOutLeft` are **undefined at runtime on web** — use `FadeInDown` instead
+- All entering animations: `FadeInDown.duration(220).springify().damping(18).delay(n)`
+- Never use `.exiting()` on web — omit or guard with `Platform.OS !== 'web'`
 
 ---
 
@@ -51,26 +67,28 @@ It runs on iOS, Android, and Web from a single React Native codebase.
 
 ```
 app/                      Expo Router file-based screens
-  _layout.tsx             Root layout: fonts, providers, auth guard
+  _layout.tsx             Root layout: fonts, providers, auth guard, GlobalBackButtonOverlay
   (onboarding)/
-    _layout.tsx           Redirect completed-onboarding users to Discovery
-    login.tsx             Email sign-in
+    login.tsx             Email + social sign-in
     signup.tsx            Account creation
-    location.tsx          City/state selection (step 1 of 3)
-    communities.tsx       Community interest selection (step 2)
-    interests.tsx         Cultural interest tags (step 3)
+    location.tsx          City/country selection
+    communities.tsx       Community interest selection
+    interests.tsx         Cultural interest tags
   (tabs)/
-    _layout.tsx           Custom floating tab bar (BlurView iOS)
-    index.tsx             Discover screen (events + communities)
-    calendar.tsx          Calendar with event dots
-    communities.tsx       Community browser
-    perks.tsx             Perks/rewards browser
+    _layout.tsx           5-tab layout (Discover/Calendar/Community/Perks/Profile) + BlurView iOS
+    index.tsx             Discover (hero carousel, indigenous, community rail, events in area)
+    calendar.tsx          Calendar with event dots + civic reminders
+    community.tsx         Community browser
+    perks.tsx             Perks + council grants banner
     profile.tsx           User profile, wallet, membership
+    directory.tsx         Directory (All/Events/Indigenous/Business/Venue/Org/Council/Gov/Charity)
+    explore.tsx           Explore (category pills + 2-column event grid)
+  events.tsx              All Events page (single-line filter bar)
   event/[id].tsx          Event detail + ticket purchase
+  event/create.tsx        9-step event creation wizard
   community/[id].tsx      Community detail page
-  allevents.tsx           Full event list with filters
-  search/index.tsx        Search events + communities
-  scanner.tsx             QR ticket scanner (organizer tool)
+  search/index.tsx        Full-text search
+  scanner.tsx             QR ticket scanner (organizer)
   tickets/
     index.tsx             User's ticket list
     [id].tsx              Individual ticket + QR code
@@ -78,18 +96,20 @@ app/                      Expo Router file-based screens
     edit.tsx              Edit profile form
     qr.tsx                CulturePass ID card (QR)
   payment/
-    wallet.tsx            Wallet balance + top-up
-    methods.tsx           Payment methods management
-    transactions.tsx      Transaction history
-  membership/
-    upgrade.tsx           CulturePass+ upgrade screen
-  saved/index.tsx         Saved events
-  settings/index.tsx      App settings
-  legal/
-    terms.tsx             Terms of Service
-    privacy.tsx           Privacy Policy
-    cookies.tsx           Cookie Policy
-    guidelines.tsx        Community Guidelines
+    wallet.tsx, methods.tsx, transactions.tsx, success.tsx, cancel.tsx
+  membership/upgrade.tsx  CulturePass+ upgrade
+  saved/index.tsx         Saved items
+  settings/index.tsx      Settings (account, membership, content, organizer tools, admin tools)
+  admin/
+    dashboard.tsx         Full admin panel
+    users.tsx             User management
+    audit-logs.tsx        Platform audit trail
+    notifications.tsx     Push notification campaigns
+  dashboard/
+    organizer.tsx         Event + ticket management
+    venue.tsx             Venue analytics
+    sponsor.tsx           Sponsor reach analytics
+  legal/                  terms, privacy, cookies, guidelines
 
 components/
   ui/
@@ -413,22 +433,41 @@ Full design token documentation with contrast ratios, usage examples, and implem
 ```typescript
 {
   id: string;
-  entityType: 'community' | 'business' | 'venue' | 'artist';
+  entityType: 'community' | 'business' | 'venue' | 'artist' | 'organisation';
   name: string;
   description: string;
   imageUrl?: string;
   city: string;
   country: string;
   ownerId: string;
-  verified: boolean;
+  isVerified: boolean;
   rating?: number;
-  memberCount?: number;
+  followersCount?: number;
   tags?: string[];
   website?: string;
+  lgaCode?: string;       // council LGA for location services
   contactEmail?: string;
   createdAt: string;
   updatedAt: string;
 }
+```
+
+### `councils/{councilId}`
+```typescript
+{
+  id: string;
+  name: string;
+  suburb: string;
+  state: string;
+  lgaCode: string;
+  country: string;
+  websiteUrl?: string;
+  phone?: string;
+  addressLine1?: string;
+  description?: string;
+  verificationStatus: 'verified' | 'unverified';
+}
+// ~1000 AU LGAs seeded from functions/src/data/AllCouncilsList.csv
 ```
 
 ### `locations/{countryCode}`
@@ -797,11 +836,21 @@ SEED_SECRET=any-random-string
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| Google/Apple Sign-In (native) | High | Buttons exist, auth flow not wired. Requires native build setup. |
-| Push Notifications (FCM) | High | `expo-notifications` + FCM token registration needed |
-| Offline mutation queue | Medium | AsyncStorage queue → sync on reconnect |
-| Geolocation filtering | Medium | geoHash stored in events, not queried. Requires Firestore geo queries. |
-| Analytics | Medium | PostHog or Firebase Analytics |
-| Error monitoring | Medium | Sentry integration |
-| Payment methods UI | Low | In-memory only. Needs Stripe PaymentMethod API integration. |
-| Admin dashboard | Low | Web-only admin panel for organizers |
+| Geolocation geoHash queries | High | geoHash stored on events, not yet queried. Needs Firestore geo queries. |
+| Council LGA auto-detect | High | Derive `lgaCode` from GPS coordinates during onboarding |
+| Algolia full-text search | Medium | Index events + profiles with cultural tag facets |
+| Playwright E2E tests | Medium | Web-focused critical path coverage (checkout, event creation) |
+| Sentry performance traces | Medium | API latency + screen render time telemetry |
+| Firebase DataConnect | Low | GraphQL schema in `dataconnect/` — exploratory migration |
+| Firestore composite indexes | High | `[city, date, status]` and `[lgaCode, date]` for event queries |
+
+## Architecture Decisions (2026-03)
+
+| Decision | Rationale |
+|----------|-----------|
+| Council as LGA location attribute (not governance tab) | CulturePass is a marketplace; council branding felt like a government portal |
+| Single-line filter bar on All Events page | Replaces 3-row labeled section, saves 60px vertical space |
+| Pixel-width columns in Explore grid (not %) | Percentage widths fail with flexbox `gap` on React Native — compute explicit widths via `useLayout().width` |
+| `FadeInDown` replacing `SlideInRight` on web | `SlideInRight` is undefined at runtime in Reanimated 4 web builds |
+| `TextInput` for multiline description (not `<Input>`) | `Input` component has fixed 48px height + overflow:hidden — cannot be used for textarea |
+| Inline `stepError` state replacing `Alert.alert` | `Alert.alert` is unreliable as validation gate on web |

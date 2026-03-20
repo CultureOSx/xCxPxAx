@@ -10,25 +10,30 @@ Project guide for AI agents and engineers. Read this before touching code.
 
 ## Project Overview
 
-Cross-platform lifestyle/community platform for cultural diaspora communities (AU, NZ, UAE, UK, CA).
-**Stack**: Expo 54.0.33 + React 19.1.0 + React Native 0.81.5 + Expo Router 5 + Firebase 11 (Auth + Firestore + Cloud Functions + Storage).
+Cross-platform cultural lifestyle marketplace for diaspora communities (AU, NZ, UAE, UK, CA).
+**Stack**: Expo 55 + React 19.1.0 + React Native 0.83 + Expo Router 5 + Reanimated 4 + Firebase 11 (Auth + Firestore + Cloud Functions + Storage).
 **Current date context**: Refer to `currentDate` in system prompt for today's date.
+
+### Product Identity
+CulturePass is a **B2B2C marketplace** — not a government portal, not an NGO tool.
+It connects Users → Events/Businesses/Venues/Communities in cultural diaspora cities.
+Council (LGA) is a **location attribute** for proximity services, not a governance identity feature.
 
 ---
 
 ## Architecture
 
 ```
-app/                    Expo Router screens (104 files, 33 directories)
+app/                    Expo Router screens
   (onboarding)/         Login, signup, location, interests, culture-match, communities
-  (tabs)/               6-tab layout: Discover, Calendar, Community, Council, Perks, Profile
-                        + directory.tsx, dashboard.tsx inside tabs group
-  event/[id].tsx        Event detail
-  council/[id].tsx      Council detail
-  council/claim.tsx     Council claim flow
-  council/select.tsx    Council selection
+  (tabs)/               5-tab layout: Discover, Calendar, Community, Perks, Profile
+                        + directory.tsx, explore.tsx, events.tsx inside tabs group
+  event/[id].tsx        Event detail + ticket purchase
+  event/create.tsx      9-step event creation wizard (basics, image, location, datetime,
+                        entry type, tickets[conditional], team/artists/sponsors, culture, review)
   profile/, tickets/    User profile, ticket management
-  admin/, dashboard/    Admin + organizer panels (dashboard/council.tsx, dashboard/organizer.tsx)
+  admin/                Admin panels: dashboard.tsx, users.tsx, audit-logs.tsx, notifications.tsx
+  dashboard/            Organizer panels: organizer.tsx, venue.tsx, sponsor.tsx
   payment/              Payment flows
   search/, saved/       Search results, saved items
   settings/             User settings
@@ -68,7 +73,7 @@ hooks/
   useLayout.ts          Responsive layout values: isDesktop, numColumns, hPad, sidebarWidth, columnWidth()
   useRole.ts            Role checking: isOrganizer, isAdmin, hasMinRole()
   useProfile.ts         User profile loading with React Query
-  useCouncil.ts         Council data and permissions (claim validation, council state)
+  useCouncil.ts         Council LGA data for location services (area events, civic reminders)
   useLocationFilter.ts  Location filtering logic
   useLocations.ts       Location list management
   useNearestCity.ts     Geolocation → nearest supported city
@@ -106,7 +111,7 @@ functions/src/
     rollout.ts          Feature flag phased rollout
     locations.ts        Location and city management
   data/
-    AllCouncilsList.csv Council organization seed data (32KB)
+    AllCouncilsList.csv Council/LGA seed data (32KB) — used for location picker, directory cards
     seed-events.json    Sample events
     seed-communities.json Sample communities
 
@@ -325,34 +330,46 @@ router.push({ pathname: '/profile/[id]', params: { id: profile.id } });
 
 ---
 
-## Council Ecosystem
+## Council as Location Service (LGA)
 
-The Council feature is a governance/community leadership layer on top of the existing community system.
+Council (Local Government Area) is a **location attribute**, not an identity or governance feature.
+CulturePass is a marketplace — councils exist to power proximity-based services.
 
-### Routes
-- `app/(tabs)/council.tsx` — Council listing tab
-- `app/council/[id].tsx` — Council detail page
-- `app/council/claim.tsx` — Claim a council seat
-- `app/council/select.tsx` — Council selection screen
-- `app/dashboard/council.tsx` — Organizer council management
-- `app/dashboard/organizer.tsx` — Organizer dashboard
+### What councils ARE in CulturePass
+- A location dimension on events, businesses, and users (`lgaCode`, `councilId` fields)
+- A browsable directory category (filter chip in `directory.tsx`)
+- A context for "Events in Your Area" — discover rail shows events matching user's LGA
+- An admin data set: ~1000 AU councils in `AllCouncilsList.csv` used as reference data
 
-### Hook
+### What councils are NOT
+- A governance/political feature
+- A tab or major navigation destination
+- Something users "claim" or "manage"
+- A content type with its own detail pages
+
+### Architecture
 ```typescript
+// useCouncil — reads user's selected council LGA, used for local event filtering
 import { useCouncil } from '@/hooks/useCouncil';
+const { data: councilData } = useCouncil();
+const council = councilData?.council;          // { id, name, lgaCode, suburb, state }
 
-const { council, isLoading, canClaim, claimCouncil } = useCouncil(councilId);
+// Events filtered by council LGA:
+events.filter(e => e.lgaCode === council.lgaCode || e.councilId === council.id)
+
+// api.council.list — used by directory to show councils as browsable cards
+api.council.list({ pageSize: 2000, sortBy: 'name' })
 ```
-`useCouncil` manages council data fetching, claim validation, and permission checks.
+
+### Directory integration
+- `ENTITY_FILTERS` in `directory.tsx` includes Council, Government, Charity as **browse filters**
+- Council profiles are pulled from `api.council.list` and merged into the directory listing
+- Users can browse local councils the same way they browse businesses or venues
 
 ### Data
-- `functions/src/data/AllCouncilsList.csv` — Seed data (32KB, ~1000 council orgs)
-- Councils are stored in Firestore under a `councils/` collection
-- Council claims go through the `api.councils.*` endpoints in `lib/api.ts`
-
-### Access Control
-- Claiming a council requires auth + matching criteria validated server-side
-- `dashboard/council.tsx` restricted to organizer/admin roles via `AuthGuard` + `useRole()`
+- `functions/src/data/AllCouncilsList.csv` — ~1000 AU council LGAs (reference data)
+- `councils/` Firestore collection — council records with `lgaCode`, `suburb`, `state`, `verificationStatus`
+- Admin management: `app/admin/dashboard.tsx` → full admin panel (no dedicated council page)
 
 ---
 
@@ -634,11 +651,17 @@ users/{uid}
   createdAt, updatedAt
 
 events/{eventId}
-  title, description, venue, address, date, time, city, country
-  imageUrl, cultureTag[], tags[], category
+  title, description, venue, address, date, time, endDate?, endTime?, city, country
+  imageUrl, heroImageUrl?, cultureTag[], tags[], category
   priceCents, tiers[], isFree, isFeatured
+  entryType: 'ticketed' | 'free'           ← set during event creation wizard
   organizerId, capacity, attending
+  artists?: EventArtist[]                   ← performers added in Core Team step
+  eventSponsors?: EventSponsor[]            ← sponsors with tiers
+  hostInfo?: EventHostInfo                  ← host name/email/phone
   status: 'draft' | 'published' | 'cancelled'
+  lgaCode?: string                          ← council LGA for proximity filtering
+  councilId?: string                        ← linked council record
   deletedAt (soft delete), publishedAt
   cpid (CP-EVT-xxx), geoHash
 
@@ -652,7 +675,14 @@ profiles/{profileId}
   entityType: 'community' | 'business' | 'venue' | 'artist' | 'organisation'
   name, description, imageUrl, city, country
   ownerId, isVerified, rating
+  lgaCode?: string                          ← council LGA for location services
   socialLinks: { website, instagram, facebook, twitter }
+
+councils/{councilId}
+  name, suburb, state, lgaCode, country
+  websiteUrl?, phone?, addressLine1?
+  verificationStatus: 'verified' | 'unverified'
+  description?
 ```
 
 ### Security Rules
@@ -666,6 +696,7 @@ See `firestore.rules`:
 
 ## Known Gaps (Production Readiness Checklist)
 
+### Infrastructure
 - [x] Stripe real payment flow — subscription checkout, webhook handler, cancel → Firestore
 - [x] Profiles/communities routes → `profilesService` (Firestore)
 - [x] Custom Firebase claims — tier synced on subscribe/cancel
@@ -674,16 +705,29 @@ See `firestore.rules`:
 - [x] Google Sign-In wired on iOS/Android (native Google SDK + Firebase credential)
 - [x] Apple Sign-In wired on iOS (expo-apple-authentication + Firebase OAuthProvider)
 - [x] Social sign-in on signup screen (Google + Apple)
-- [x] Council ecosystem — routes, hook, claim flow, dashboard, seed data
 - [x] AuthGuard component implemented across protected screens
 - [x] Push notifications hook (`usePushNotifications.ts`) — FCM token registration + handlers
 - [x] Express security headers + SSRF mitigations in Cloud Functions
 - [x] Migrate remaining in-memory Maps (wallets, notifications, perks, tickets) → Firestore
 - [x] Offline mutation queue (AsyncStorage → sync on reconnect)
-- [x] Geolocation filtering (geoHash stored, not queried yet)
 - [x] Analytics (PostHog / Firebase Analytics)
 - [x] Error monitoring (Sentry — `lib/reporting.ts` wired but not fully configured)
 - [x] Deep link testing (Universal Links on iOS, App Links on Android)
 - [x] App Store screenshots and metadata
 - [x] WCAG accessibility audit
-- [x] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)
+
+### Architecture (2026-03 Rebuild)
+- [x] Council reframed as LGA location service (not governance tab)
+- [x] Removed council governance screens: council/[id], council/claim, council/select, (tabs)/council, dashboard/council, admin/council-management, admin/council-claims
+- [x] Council directory cards kept — browsable via Directory Council filter chip
+- [x] "Events in Your Area" rail on Discover uses lgaCode proximity matching
+- [x] Event creation 9-step wizard with entryType, artists, sponsors, hostInfo, heroImage
+- [x] All Events page (app/events.tsx) — single-line filter bar (category + date + price)
+- [x] Explore page 2-column grid fixed — explicit pixel widths via `useLayout().width`
+- [x] Directory full category set: All / Events / Indigenous / Businesses / Venues / Organisations / Councils / Government / Charities
+
+### Pending
+- [ ] Geolocation proximity events using Firestore geoHash queries (stored, not queried)
+- [ ] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)
+- [ ] Council LGA auto-selection from user's city/GPS on onboarding
+- [ ] Algolia search integration (full-text across events, profiles, councils)
