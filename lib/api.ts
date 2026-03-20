@@ -178,6 +178,13 @@ const events = {
 
   publish: (id: string) =>
     request<{ success: boolean }>('POST', `api/events/${id}/publish`),
+
+  nearby: (params: { lat: number; lng: number; radius?: number; pageSize?: number }) => {
+    const qs = new URLSearchParams({ lat: String(params.lat), lng: String(params.lng) });
+    if (params.radius != null) qs.set('radius', String(params.radius));
+    if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
+    return request<{ events: EventData[]; total: number; radiusKm: number }>('GET', `api/events/nearby?${qs}`);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -511,6 +518,24 @@ const admin = {
     request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/approve`, {}),
   rejectHandle: (type: 'user' | 'profile', id: string, reason?: string) =>
     request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/reject`, { reason }),
+
+  // ── Data Import ──────────────────────────────────────────────────────────
+  importJson: (payload: {
+    events: Record<string, unknown>[];
+    source?: 'manual' | 'json-api';
+    city?: string;
+    country?: string;
+  }) => request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string }>('POST', 'api/admin/import/json', payload),
+
+  importUrl: (payload: { url: string; city?: string; country?: string }) =>
+    request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string }>('POST', 'api/admin/import/url', payload),
+
+  importClear: (source: 'manual' | 'url-scrape' | 'cityofsydney' | 'json-api' | 'all' = 'all') =>
+    request<{ ok: boolean; deleted: number; source: string }>('DELETE', 'api/admin/import/clear', { source, confirm: true }),
+
+  importSources: () =>
+    request<{ sources: { source: string; count: number; latest: string }[]; total: number }>('GET', 'api/admin/import/sources'),
+
   /** List all updates (including drafts) — admin only */
   listUpdates: (params?: { category?: UpdateCategory; limit?: number; offset?: number }) => {
     const qs = new URLSearchParams();
@@ -621,11 +646,13 @@ const interests = {
 // Profiles (artist / business / venue / community directory)
 // ---------------------------------------------------------------------------
 const profiles = {
-  list: async (params?: { entityType?: string; city?: string; country?: string }) => {
+  list: async (params?: { entityType?: string; city?: string; country?: string; search?: string; pageSize?: number }) => {
     const qs = new URLSearchParams();
     if (params?.entityType) qs.set('entityType', params.entityType);
     if (params?.city) qs.set('city', params.city);
     if (params?.country) qs.set('country', params.country);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.pageSize != null) qs.set('pageSize', String(params.pageSize));
     const q = qs.toString();
     const res = await request<{ profiles: Profile[] }>('GET', `api/profiles${q ? `?${q}` : ''}`);
     return res.profiles ?? [];
@@ -890,6 +917,42 @@ const locations = {
 };
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Feed (server-ranked)
+// ---------------------------------------------------------------------------
+export type FeedItem = {
+  id: string;
+  kind: 'event' | 'announcement' | 'welcome' | 'milestone';
+  score: number;
+  matchReasons: string[];
+  event?: EventData;
+  communityId?: string;
+  communityName?: string;
+  communityImageUrl?: string | null;
+  body?: string;
+  imageUrl?: string | null;
+  members?: number;
+  createdAt: string;
+};
+
+const feed = {
+  list: (params: { city?: string; country?: string; page?: number; pageSize?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.city) qs.set('city', params.city);
+    if (params.country) qs.set('country', params.country);
+    if (params.page != null) qs.set('page', String(params.page));
+    if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
+    return request<{
+      items: FeedItem[];
+      total: number;
+      page: number;
+      pageSize: number;
+      hasNextPage: boolean;
+    }>('GET', `api/feed${qs.toString() ? `?${qs}` : ''}`);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // CulturePass ID lookup
 // ---------------------------------------------------------------------------
 const cpid = {
@@ -931,6 +994,7 @@ export const api = {
   likes,
   interests,
   updates,
+  feed,
   /** Raw request — use when a specific endpoint isn't covered above */
   raw: request,
   /** Base URL — useful for constructing non-JSON endpoints (e.g. image URLs) */

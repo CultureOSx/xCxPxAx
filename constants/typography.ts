@@ -92,6 +92,7 @@ export const TextStyles = {
     fontSize:   FontSize.display,
     lineHeight: LineHeight.display,
     letterSpacing: LetterSpacing.tight,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   hero: {
     fontFamily: FontFamily.bold,
@@ -99,6 +100,7 @@ export const TextStyles = {
     fontSize:   FontSize.hero,
     lineHeight: LineHeight.hero,
     letterSpacing: LetterSpacing.tight,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // Screen headings
@@ -108,6 +110,7 @@ export const TextStyles = {
     fontSize:   FontSize.title,
     lineHeight: LineHeight.title,
     letterSpacing: LetterSpacing.tight,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   title2: {
     fontFamily: FontFamily.bold,
@@ -115,12 +118,14 @@ export const TextStyles = {
     fontSize:   FontSize.title2,
     lineHeight: LineHeight.title2,
     letterSpacing: LetterSpacing.tight,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   title3: {
     fontFamily: FontFamily.semibold,
     fontWeight: weight('600'),
     fontSize:   FontSize.title3,
     lineHeight: LineHeight.title3,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // UI text
@@ -129,24 +134,28 @@ export const TextStyles = {
     fontWeight: weight('600'),
     fontSize:   FontSize.body,
     lineHeight: LineHeight.body,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   body: {
     fontFamily: FontFamily.regular,
     fontWeight: weight('400'),
     fontSize:   FontSize.body,
     lineHeight: LineHeight.body,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   bodyMedium: {
     fontFamily: FontFamily.medium,
     fontWeight: weight('500'),
     fontSize:   FontSize.body,
     lineHeight: LineHeight.body,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   callout: {
     fontFamily: FontFamily.regular,
     fontWeight: weight('400'),
     fontSize:   FontSize.callout,
     lineHeight: LineHeight.callout,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // Card / component text
@@ -155,24 +164,28 @@ export const TextStyles = {
     fontWeight: weight('600'),
     fontSize:   FontSize.body2,
     lineHeight: LineHeight.body2,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   cardBody: {
     fontFamily: FontFamily.regular,
     fontWeight: weight('400'),
     fontSize:   FontSize.body2,
     lineHeight: LineHeight.body2,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   label: {
     fontFamily: FontFamily.medium,
     fontWeight: weight('500'),
     fontSize:   FontSize.body2,
     lineHeight: LineHeight.body2,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   labelSemibold: {
     fontFamily: FontFamily.semibold,
     fontWeight: weight('600'),
     fontSize:   FontSize.body2,
     lineHeight: LineHeight.body2,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // Metadata / secondary
@@ -181,18 +194,21 @@ export const TextStyles = {
     fontWeight: weight('500'),
     fontSize:   FontSize.chip,
     lineHeight: LineHeight.chip,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   caption: {
     fontFamily: FontFamily.regular,
     fontWeight: weight('400'),
     fontSize:   FontSize.caption,
     lineHeight: LineHeight.caption,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   captionSemibold: {
     fontFamily: FontFamily.semibold,
     fontWeight: weight('600'),
     fontSize:   FontSize.caption,
     lineHeight: LineHeight.caption,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // Badges / pills / micro
@@ -202,6 +218,7 @@ export const TextStyles = {
     fontSize:   FontSize.micro,
     lineHeight: LineHeight.micro,
     letterSpacing: LetterSpacing.wide,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   badgeCaps: {
     fontFamily: FontFamily.semibold,
@@ -210,6 +227,7 @@ export const TextStyles = {
     lineHeight: LineHeight.micro,
     letterSpacing: LetterSpacing.cap,
     textTransform: 'uppercase' as const,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
   // Navigation
@@ -218,6 +236,7 @@ export const TextStyles = {
     fontWeight: weight('600'),
     fontSize:   FontSize.tab,
     lineHeight: LineHeight.tab,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 
 } as const;

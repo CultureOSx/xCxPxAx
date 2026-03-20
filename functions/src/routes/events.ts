@@ -17,6 +17,7 @@ import {
   type FirestoreEvent,
 } from '../services/firestore';
 import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation } from './utils';
+import { algoliaEventsIndex } from '../services/algolia';
 
 // ---------------------------------------------------------------------------
 // Shared types (inlined to avoid circular import with app.ts)
@@ -245,6 +246,37 @@ export function createEventsRouter() {
     }
   });
 
+  // ── GET /api/events/nearby ─────────────────────────────────────────────────
+  // Required: lat, lng. Optional: radius (km, default 10), pageSize (default 20)
+  router.get('/events/nearby', async (req: Request, res: Response) => {
+    const lat = parseFloat(qstr(req.query.lat));
+    const lng = parseFloat(qstr(req.query.lng));
+    const radius = parseFloat(qstr(req.query.radius) || '10');
+    const pageSize = Math.min(50, Math.max(1, parseInt(qstr(req.query.pageSize) || '20', 10) || 20));
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({ error: 'lat and lng query params are required' });
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'lat/lng out of range' });
+    }
+
+    try {
+      const result = await eventsService.list(
+        { centerLat: lat, centerLng: lng, radiusInKm: radius },
+        { page: 1, pageSize },
+      );
+      return res.json({
+        events: result.items,
+        total: result.total,
+        radiusKm: radius,
+      });
+    } catch (err) {
+      console.error('[GET /api/events/nearby]:', err);
+      return res.status(500).json({ error: 'Failed to fetch nearby events' });
+    }
+  });
+
   // ── GET /api/events/:id ────────────────────────────────────────────────────
   router.get('/events/:id', async (req: Request, res: Response) => {
     try {
@@ -335,6 +367,8 @@ export function createEventsRouter() {
         if (b.endDate && b.endDate < b.date) {
           return res.status(400).json({ error: 'endDate cannot be before start date' });
         }
+        // Index in Algolia (fire-and-forget — don't block response)
+        algoliaEventsIndex.indexEvent(event).catch(() => {});
         return res.status(201).json(event);
       } catch (err) {
         console.error('[POST /api/events]:', err);
@@ -406,6 +440,7 @@ export function createEventsRouter() {
         ...(b.category  != null && { category:  String(b.category) }),
         ...(b.eventType != null && { eventType: String(b.eventType) }),
       });
+      if (updated) algoliaEventsIndex.indexEvent(updated).catch(() => {});
       return res.json(updated);
     } catch (err) {
       console.error('[PUT /api/events/:id]:', err);
@@ -422,6 +457,7 @@ export function createEventsRouter() {
         return res.status(403).json({ error: 'Forbidden: you do not own this event' });
       }
       await eventsService.softDelete(qparam(req.params.id));
+      algoliaEventsIndex.deleteEvent(qparam(req.params.id)).catch(() => {});
       return res.json({ success: true });
     } catch (err) {
       console.error('[DELETE /api/events/:id]:', err);
@@ -442,6 +478,7 @@ export function createEventsRouter() {
           return res.status(403).json({ error: 'Forbidden: you do not own this event' });
         }
         const published = await eventsService.publish(qparam(req.params.id));
+        if (published) algoliaEventsIndex.indexEvent(published).catch(() => {});
         return res.json(published);
       } catch (err) {
         console.error('[POST /api/events/:id/publish]:', err);

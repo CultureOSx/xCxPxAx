@@ -22,6 +22,7 @@ import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
 import { CultureTokens } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
+import { EVENT_CATEGORIES } from '@/constants/eventCategories';
 
 const isWeb = Platform.OS === 'web';
 
@@ -29,37 +30,88 @@ const isWeb = Platform.OS === 'web';
 
 const PAGE_SIZE = 20;
 
-type DateFilter = 'all' | 'today' | 'this_weekend' | 'past';
+type DateFilter =
+  | 'all'
+  | 'today'
+  | 'this_weekend'
+  | 'this_week'
+  | 'next_week'
+  | 'next_30_days'
+  | 'past';
+
 type PriceFilter = 'all' | 'free' | 'paid';
 
-const PRICE_OPTIONS: { id: PriceFilter; label: string; icon: string }[] = [
-  { id: 'all',  label: 'Any Price', icon: 'ticket-outline' },
-  { id: 'free', label: 'Free',      icon: 'gift-outline' },
-  { id: 'paid', label: 'Paid',      icon: 'cash-outline' },
-];
-
 const DATE_OPTIONS: { id: DateFilter; label: string; icon: string }[] = [
-  { id: 'all',          label: 'Upcoming',    icon: 'calendar-outline'  },
-  { id: 'today',        label: 'Today',       icon: 'today-outline'     },
-  { id: 'this_weekend', label: 'Weekend',     icon: 'sunny-outline'     },
-  { id: 'past',         label: 'Past',        icon: 'time-outline'      },
+  { id: 'all',          label: 'Upcoming',     icon: 'calendar-outline'  },
+  { id: 'today',        label: 'Today',        icon: 'today-outline'     },
+  { id: 'this_weekend', label: 'This Weekend', icon: 'sunny-outline'     },
+  { id: 'this_week',    label: 'This Week',    icon: 'calendar-number-outline' },
+  { id: 'next_week',    label: 'Next Week',    icon: 'arrow-forward-outline'   },
+  { id: 'next_30_days', label: 'Next 30 Days', icon: 'calendar-clear-outline'  },
+  { id: 'past',         label: 'Past',         icon: 'time-outline'      },
 ];
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
+// ─── Date range helpers ───────────────────────────────────────────────────────
 
-function getWeekendRange(now: Date) {
-  const sat = new Date(now);
-  sat.setHours(0, 0, 0, 0);
-  sat.setDate(now.getDate() + ((6 - now.getDay() + 7) % 7));
-  const sun = new Date(sat);
-  sun.setDate(sat.getDate() + 1);
-  return {
-    start: sat.toLocaleDateString('en-CA'),
-    end: sun.toLocaleDateString('en-CA'),
-  };
+function toYMD(d: Date): string {
+  return d.toLocaleDateString('en-CA'); // returns YYYY-MM-DD
 }
 
-// ─── Single-row filter bar ─────────────────────────────────────────────────────
+function getDateRange(filter: DateFilter): { dateFrom?: string; dateTo?: string } {
+  const now = new Date();
+  const today = toYMD(now);
+
+  if (filter === 'today') return { dateFrom: today, dateTo: today };
+
+  if (filter === 'this_weekend') {
+    // Sat–Sun of the current week
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const sat = new Date(now);
+    sat.setHours(0, 0, 0, 0);
+    sat.setDate(now.getDate() + ((6 - day + 7) % 7));
+    const sun = new Date(sat);
+    sun.setDate(sat.getDate() + 1);
+    return { dateFrom: toYMD(sat), dateTo: toYMD(sun) };
+  }
+
+  if (filter === 'this_week') {
+    // Mon–Sun of the current calendar week
+    const day = now.getDay();
+    const mon = new Date(now);
+    mon.setHours(0, 0, 0, 0);
+    mon.setDate(now.getDate() - ((day + 6) % 7));
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    return { dateFrom: toYMD(mon), dateTo: toYMD(sun) };
+  }
+
+  if (filter === 'next_week') {
+    const day = now.getDay();
+    const nextMon = new Date(now);
+    nextMon.setHours(0, 0, 0, 0);
+    nextMon.setDate(now.getDate() + (8 - ((day + 6) % 7)));
+    const nextSun = new Date(nextMon);
+    nextSun.setDate(nextMon.getDate() + 6);
+    return { dateFrom: toYMD(nextMon), dateTo: toYMD(nextSun) };
+  }
+
+  if (filter === 'next_30_days') {
+    const end = new Date(now);
+    end.setDate(now.getDate() + 30);
+    return { dateFrom: today, dateTo: toYMD(end) };
+  }
+
+  if (filter === 'past') {
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    return { dateTo: toYMD(yesterday) };
+  }
+
+  // 'all' / upcoming — from today onwards, no upper bound
+  return { dateFrom: today };
+}
+
+// ─── Filter Chip ──────────────────────────────────────────────────────────────
 
 function FilterChip({
   label, active, onPress, icon,
@@ -71,8 +123,12 @@ function FilterChip({
   const bg = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(bg.value, [0, 1],
-      active ? [CultureTokens.indigo, CultureTokens.indigo + 'dd'] : [colors.surface, colors.surfaceElevated]),
+    backgroundColor: interpolateColor(
+      bg.value, [0, 1],
+      active
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        : [colors.surface, colors.surfaceElevated],
+    ),
   }));
   return (
     <Pressable
@@ -90,9 +146,10 @@ function FilterChip({
     </Pressable>
   );
 }
+
 const fc = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 });
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
@@ -109,16 +166,19 @@ export default function AllEventsScreen() {
   const { state } = useOnboarding();
   const { isDesktop, hPad } = useLayout();
 
-  // Force minimum 2 columns on mobile, 3 on desktop
-  const numCols   = isDesktop ? 3 : 2;
-  const colGap    = isDesktop ? 20 : 12;
+  const numCols = isDesktop ? 3 : 2;
+  const colGap  = isDesktop ? 20 : 12;
 
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Filter state
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [dateFilter, setDateFilter]             = useState<DateFilter>('all');
   const [priceFilter, setPriceFilter]           = useState<PriceFilter>('all');
+
   const today = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
+
   const queryKey = useMemo(() => [
-    '/api/events/paginated', state.country, state.city, selectedCategory, dateFilter, priceFilter, today
+    '/api/events/paginated', state.country, state.city,
+    selectedCategory, dateFilter, priceFilter, today,
   ], [state.country, state.city, selectedCategory, dateFilter, priceFilter, today]);
 
   const {
@@ -127,57 +187,26 @@ export default function AllEventsScreen() {
   } = useInfiniteQuery<PaginatedEventsResponse>({
     queryKey,
     queryFn: ({ pageParam }) => {
-      let dateFrom: string | undefined = new Date().toLocaleDateString('en-CA');
-      let dateTo: string | undefined;
-
-      if (dateFilter === 'today') {
-        dateTo = dateFrom;
-      } else if (dateFilter === 'this_weekend') {
-        const weekend = getWeekendRange(new Date());
-        dateFrom = weekend.start;
-        dateTo = weekend.end;
-      } else if (dateFilter === 'past') {
-        dateTo = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
-        dateFrom = undefined; // No lower bound for past
-      } else if (dateFilter === 'all') {
-        // Default is already 'today' as starting point for upcoming
-      }
-
+      const { dateFrom, dateTo } = getDateRange(dateFilter);
       return api.events.list({
-        country:  state.country  || undefined,
-        city:     state.city     || undefined,
+        country:  state.country || undefined,
+        city:     state.city    || undefined,
         category: selectedCategory !== 'All' ? selectedCategory : undefined,
         isFree:   priceFilter === 'free' ? true : priceFilter === 'paid' ? false : undefined,
         page:     (pageParam as number) ?? 1,
         pageSize: PAGE_SIZE,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-      })
+        dateFrom,
+        dateTo,
+      });
     },
     initialPageParam: 1,
     getNextPageParam: last => last.hasNextPage ? last.page + 1 : undefined,
   });
 
   const allEvents: EventData[] = useMemo(
-    () => {
-      if (!data?.pages) return [];
-      return data.pages.flatMap(p => Array.isArray(p?.events) ? p.events : []) ?? [];
-    },
+    () => data?.pages.flatMap(p => Array.isArray(p?.events) ? p.events : []) ?? [],
     [data],
   );
-
-  const visibleEvents = allEvents;
-
-
-  const categories = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const e of allEvents) {
-      if (!e.category) continue;
-      const key = e.category.trim().toLowerCase();
-      if (!seen.has(key)) seen.set(key, e.category.trim());
-    }
-    return ['All', ...Array.from(seen.values())];
-  }, [allEvents]);
 
   const filtersActive = selectedCategory !== 'All' || dateFilter !== 'all' || priceFilter !== 'all';
 
@@ -198,28 +227,37 @@ export default function AllEventsScreen() {
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
     : state.country || 'your region';
 
+  const clearFilters = useCallback(() => {
+    setSelectedCategory('All');
+    setDateFilter('all');
+    setPriceFilter('all');
+  }, []);
+
   return (
     <ErrorBoundary>
       <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
 
         {/* ── Header ── */}
-        <Animated.View entering={FadeInUp.duration(320).springify()} style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}>
-          <BackButton fallback="/(tabs)" style={[s.backBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]} />
-
+        <Animated.View
+          entering={FadeInUp.duration(320).springify()}
+          style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
+        >
+          <BackButton
+            fallback="/(tabs)"
+            style={[s.backBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+          />
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: colors.text }]}>Events</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="location" size={10} color={CultureTokens.indigo} />
               <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
                 {locationLabel}
-                {!isLoading && visibleEvents.length > 0
-                  ? ` · ${visibleEvents.length.toLocaleString()} matches`
+                {!isLoading && allEvents.length > 0
+                  ? ` · ${allEvents.length.toLocaleString()} shown`
                   : ''}
               </Text>
             </View>
           </View>
-
-          {/* Refresh button */}
           <Pressable
             onPress={() => refetch()}
             style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
@@ -229,34 +267,77 @@ export default function AllEventsScreen() {
             {isRefetching
               ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
               : <Ionicons name="refresh" size={18} color={colors.text} />}
-              {!isWeb && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
+            {!isWeb && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
           </Pressable>
         </Animated.View>
 
         {/* ── Centred content shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
 
-          {/* ── Filter bar — single scrollable line ── */}
-          <View style={[s.filterBar, { borderBottomColor: colors.divider }]}>
+          {/* ── Filter rows ── */}
+          <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
+
+            {/* Row 1: Free + Categories */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+              accessibilityRole="tablist"
+              accessibilityLabel="Category filters"
             >
-              {/* Category chips */}
-              {categories.map(cat => (
-                <FilterChip
-                  key={cat}
-                  label={cat}
-                  active={selectedCategory === cat}
-                  onPress={() => setSelectedCategory(cat)}
-                  icon={cat === 'All' ? 'apps' : undefined}
-                />
-              ))}
+              {/* "All" chip */}
+              <FilterChip
+                label="All"
+                active={selectedCategory === 'All' && priceFilter === 'all'}
+                onPress={() => { setSelectedCategory('All'); setPriceFilter('all'); }}
+                icon="apps"
+              />
+
+              {/* Free Events — special chip that sets isFree filter */}
+              <FilterChip
+                label="Free Events"
+                active={priceFilter === 'free'}
+                onPress={() => setPriceFilter(priceFilter === 'free' ? 'all' : 'free')}
+                icon="gift-outline"
+              />
 
               <FilterDivider colors={colors} />
 
-              {/* Date chips */}
+              {/* Category chips — static canonical list */}
+              {EVENT_CATEGORIES.map(cat => (
+                <FilterChip
+                  key={cat.id}
+                  label={cat.id}
+                  active={selectedCategory === cat.id}
+                  onPress={() => setSelectedCategory(selectedCategory === cat.id ? 'All' : cat.id)}
+                  icon={cat.icon}
+                />
+              ))}
+
+              {filtersActive && (
+                <>
+                  <FilterDivider colors={colors} />
+                  <Pressable
+                    onPress={clearFilters}
+                    style={[s.clearBtn, { borderColor: colors.borderLight }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear all filters"
+                  >
+                    <Ionicons name="close" size={12} color={colors.textTertiary} />
+                    <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                  </Pressable>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Row 2: Date filters */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[s.filterRow, s.filterRowDate, { paddingHorizontal: hPad }]}
+              accessibilityRole="tablist"
+              accessibilityLabel="Date filters"
+            >
               {DATE_OPTIONS.map(opt => (
                 <FilterChip
                   key={opt.id}
@@ -266,35 +347,6 @@ export default function AllEventsScreen() {
                   icon={opt.icon}
                 />
               ))}
-
-              <FilterDivider colors={colors} />
-
-              {/* Price chips */}
-              {PRICE_OPTIONS.map(opt => (
-                <FilterChip
-                  key={opt.id}
-                  label={opt.label}
-                  active={priceFilter === opt.id}
-                  onPress={() => setPriceFilter(opt.id)}
-                  icon={opt.icon}
-                />
-              ))}
-
-              {/* Clear all — only when filters active */}
-              {filtersActive ? (
-                <>
-                  <FilterDivider colors={colors} />
-                  <Pressable
-                    onPress={() => { setSelectedCategory('All'); setDateFilter('all'); setPriceFilter('all'); }}
-                    style={[s.clearBtn, { borderColor: colors.borderLight }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear all filters"
-                  >
-                    <Ionicons name="close" size={12} color={colors.textTertiary} />
-                    <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
-                  </Pressable>
-                </>
-              ) : null}
             </ScrollView>
           </View>
 
@@ -313,7 +365,7 @@ export default function AllEventsScreen() {
           ) : (
             <FlatList
               key={`events-${numCols}`}
-              data={visibleEvents}
+              data={allEvents}
               renderItem={renderItem}
               keyExtractor={item => item.id}
               numColumns={numCols}
@@ -335,7 +387,7 @@ export default function AllEventsScreen() {
                   <View style={s.listFooter}>
                     <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                     <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
-                      {visibleEvents.length} event{visibleEvents.length !== 1 ? 's' : ''} shown
+                      {allEvents.length} event{allEvents.length !== 1 ? 's' : ''} shown
                     </Text>
                     <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                   </View>
@@ -350,24 +402,23 @@ export default function AllEventsScreen() {
                   <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
                   <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
                     {filtersActive
-                      ? 'Try adjusting your category or date filters.'
+                      ? 'Try adjusting your filters or expanding the date range.'
                       : `No events yet in ${locationLabel}.`}
                   </Text>
-                  {filtersActive ? (
+                  {filtersActive && (
                     <Pressable
                       style={[s.resetBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
-                      onPress={() => { setSelectedCategory('All'); setDateFilter('all'); }}
+                      onPress={clearFilters}
                       accessibilityRole="button"
                     >
                       <Ionicons name="refresh-outline" size={14} color={CultureTokens.indigo} />
                       <Text style={[s.resetBtnText, { color: CultureTokens.indigo }]}>Reset filters</Text>
                     </Pressable>
-                  ) : null}
+                  )}
                 </View>
               }
             />
           )}
-
         </View>
       </View>
     </ErrorBoundary>
@@ -377,44 +428,33 @@ export default function AllEventsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  container:      { flex: 1 },
+  container:     { flex: 1 },
 
-  // Header
-  header:         {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  headerSub:      { fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  header:        { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  backBtn:       { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
+  iconBtn:       { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
+  headerTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
+  headerSub:     { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 
-  // Shell
-  shell:          { flex: 1 },
-  shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
+  shell:         { flex: 1 },
+  shellDesktop:  { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
 
-  // Filter bar
-  filterBar:      { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
-  filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  // Filter block — two rows
+  filterBlock:   { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
+  filterRow:     { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  filterRowDate: { paddingBottom: 4 },
+  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 
-  // Grid
-  list:           { paddingTop: 20, gap: 20 },
+  list:          { paddingTop: 20, gap: 20 },
+  listFooter:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
+  listFooterText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
+  endLine:       { flex: 1, height: 1, opacity: 0.5 },
 
-  // Footer
-  listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
-  listFooterText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1 },
-  endLine:        { flex: 1, height: 1, opacity: 0.5 },
-
-  // Empty
-  emptyState:     { alignItems: 'center', paddingVertical: 100, paddingHorizontal: 40, gap: 14 },
-  emptyIcon:      { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8, backgroundColor: 'rgba(44,42,114,0.05)' },
-  emptyTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  emptyDesc:      { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
-  resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
-  resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  emptyState:    { alignItems: 'center', paddingVertical: 100, paddingHorizontal: 40, gap: 14 },
+  emptyIcon:     { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8 },
+  emptyTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
+  emptyDesc:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  resetBtn:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
+  resetBtnText:  { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
 });

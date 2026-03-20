@@ -5,29 +5,6 @@ import { requireAuth } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
 import { parseBody } from './utils';
 import { z } from 'zod';
-import seedCommunitiesRaw from '../data/seed-communities.json';
-
-type SeedProfile = {
-  name: string;
-  entityType: string;
-  category?: string;
-  city?: string;
-  country?: string;
-  description?: string;
-  members?: number;
-  verified?: boolean;
-  ownerId?: string;
-  rating?: number;
-  cpid?: string;
-};
-
-const seedProfiles = (seedCommunitiesRaw as SeedProfile[]).map((c, i) => ({
-  ...c,
-  id: c.cpid ?? `seed-${i}`,
-  isVerified: c.verified,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-}));
 
 export const profilesRouter = Router();
 
@@ -46,10 +23,7 @@ const createProfileSchema = z.object({
 
 /** GET /api/communities — list communities */
 profilesRouter.get('/communities', async (req, res) => {
-  if (!isFirestoreConfigured) {
-    const communities = seedProfiles.filter(p => p.entityType === 'community');
-    return res.json({ communities });
-  }
+  if (!isFirestoreConfigured) return res.json({ communities: [] });
   try {
     const communities = await profilesService.list({ entityType: 'community' });
     return res.json({ communities });
@@ -61,12 +35,7 @@ profilesRouter.get('/communities', async (req, res) => {
 /** GET /api/communities/nearby — list nearby communities */
 profilesRouter.get('/communities/nearby', async (req, res) => {
   const city = String(req.query.city ?? '').trim();
-  if (!isFirestoreConfigured) {
-    const communities = seedProfiles.filter(
-      p => p.entityType === 'community' && (!city || p.city?.toLowerCase() === city.toLowerCase())
-    );
-    return res.json({ communities });
-  }
+  if (!isFirestoreConfigured) return res.json({ communities: [] });
   try {
     const communities = await profilesService.list({ entityType: 'community', city });
     return res.json({ communities });
@@ -78,11 +47,7 @@ profilesRouter.get('/communities/nearby', async (req, res) => {
 /** GET /api/communities/:id — community detail */
 profilesRouter.get('/communities/:id', async (req, res) => {
   const id = String(req.params.id ?? '');
-  if (!isFirestoreConfigured) {
-    const community = seedProfiles.find(p => p.id === id && p.entityType === 'community');
-    if (!community) return res.status(404).json({ error: 'Community not found' });
-    return res.json(community);
-  }
+  if (!isFirestoreConfigured) return res.status(404).json({ error: 'Community not found' });
   try {
     const community = await profilesService.getById(id);
     if (!community || community.entityType !== 'community') return res.status(404).json({ error: 'Community not found' });
@@ -111,7 +76,7 @@ profilesRouter.get('/communities/:id/recommended-events', async (req, res) => {
 
 /** GET /api/profiles — list all profiles */
 profilesRouter.get('/profiles', async (req, res) => {
-  if (!isFirestoreConfigured) return res.json({ profiles: seedProfiles });
+  if (!isFirestoreConfigured) return res.json({ profiles: [] });
   try {
     const profiles = await profilesService.list({});
     return res.json({ profiles });
@@ -123,11 +88,7 @@ profilesRouter.get('/profiles', async (req, res) => {
 /** GET /api/profiles/:id — profile detail */
 profilesRouter.get('/profiles/:id', async (req, res) => {
   const id = String(req.params.id ?? '');
-  if (!isFirestoreConfigured) {
-    const profile = seedProfiles.find(p => p.id === id);
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
-    return res.json(profile);
-  }
+  if (!isFirestoreConfigured) return res.status(404).json({ error: 'Profile not found' });
   try {
     const profile = await profilesService.getById(id);
     if (!profile) return res.status(404).json({ error: 'Profile not found' });

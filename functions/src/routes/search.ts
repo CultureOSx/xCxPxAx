@@ -1,26 +1,37 @@
 import { Router, Request, Response } from 'express';
 import { searchService } from '../services/firestore';
-import { isFirestoreConfigured } from '../admin';
-import seedCommunitiesRaw from '../data/seed-communities.json';
-import seedEventsRaw from '../data/seed-events.json';
+import { searchClient } from '../services/algolia';
 
 export const searchRouter = Router();
+
+const EVENTS_INDEX = 'culturepass_events';
 
 /** GET /api/search — general search across events and profiles */
 searchRouter.get('/search', async (req: Request, res: Response) => {
   const query = String(req.query.q ?? '').trim().toLowerCase();
   const city = String(req.query.city ?? '').trim().toLowerCase();
+  const pageSize = Math.min(50, Math.max(1, parseInt(String(req.query.pageSize ?? '20'), 10) || 20));
 
   if (!query) return res.json({ events: [], profiles: [] });
 
-  if (!isFirestoreConfigured) {
-    const profiles = (seedCommunitiesRaw as { name: string; description?: string; cpid?: string }[])
-      .filter(p => p.name.toLowerCase().includes(query) || p.description?.toLowerCase().includes(query))
-      .map((p, i) => ({ ...p, id: p.cpid ?? `seed-${i}` }));
-    const events = (seedEventsRaw as { title: string; description?: string }[])
-      .filter(e => e.title.toLowerCase().includes(query) || e.description?.toLowerCase().includes(query))
-      .map((e, i) => ({ ...e, id: `seed-evt-${i}` }));
-    return res.json({ events, profiles });
+  // Use Algolia for fast full-text search when credentials are available
+  if (searchClient) {
+    try {
+      const filters = city ? `city:${city}` : undefined;
+      const algoliaResult = await (searchClient as any).search({
+        requests: [{
+          indexName: EVENTS_INDEX,
+          query,
+          hitsPerPage: pageSize,
+          ...(filters ? { filters } : {}),
+        }],
+      });
+      const hits = algoliaResult?.results?.[0]?.hits ?? [];
+      return res.json({ events: hits, profiles: [] });
+    } catch (err) {
+      console.error('[GET /api/search] Algolia error, falling back to Firestore:', err);
+      // Fall through to Firestore fallback
+    }
   }
 
   try {

@@ -32,7 +32,7 @@ updatesRouter.get('/updates', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 updatesRouter.get('/updates/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params['id'] as string;
     let update = await updatesService.getById(id);
     if (!update) update = await updatesService.getBySlug(id);
     if (!update || update.status !== 'published') {
@@ -87,7 +87,7 @@ updatesRouter.post('/updates', requireRole('admin', 'platformAdmin'), async (req
 // ---------------------------------------------------------------------------
 updatesRouter.put('/updates/:id', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params['id'] as string;
     const updated = await updatesService.update(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Update not found' });
     return res.json(updated);
@@ -102,7 +102,7 @@ updatesRouter.put('/updates/:id', requireRole('admin', 'platformAdmin'), async (
 // ---------------------------------------------------------------------------
 updatesRouter.post('/updates/:id/publish', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params['id'] as string;
     const updated = await updatesService.publish(id);
     if (!updated) return res.status(404).json({ error: 'Update not found' });
     return res.json(updated);
@@ -117,7 +117,7 @@ updatesRouter.post('/updates/:id/publish', requireRole('admin', 'platformAdmin')
 // ---------------------------------------------------------------------------
 updatesRouter.delete('/updates/:id', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params['id'] as string;
     const existing = await updatesService.getById(id);
     if (!existing) return res.status(404).json({ error: 'Update not found' });
     await updatesService.delete(id);

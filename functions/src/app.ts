@@ -22,6 +22,8 @@ import { socialRouter } from './routes/social';
 import { discoveryRouter } from './routes/discovery';
 import { perksRouter } from './routes/perks';
 import { updatesRouter } from './routes/updates';
+import { feedRouter } from './routes/feed';
+import { importRouter } from './routes/import';
 
 
 
@@ -94,6 +96,8 @@ app.use('/api', socialRouter);
 app.use('/api', discoveryRouter);
 app.use('/api', perksRouter);
 app.use('/api', updatesRouter);
+app.use('/api', feedRouter);
+app.use('/api', importRouter);
 
 app.use('/api', createEventsRouter());
 
