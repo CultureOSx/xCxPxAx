@@ -241,7 +241,7 @@ export default function PerksTabScreen() {
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                   borderStyle: 'dashed' 
                 }]}
-                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/council'); }}
+                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/events'); }}
               > 
                 <View style={[s.upgradeBannerIcon, { backgroundColor: CultureTokens.teal + '15' }]}> 
                   <Ionicons name="library" size={20} color={CultureTokens.teal} />

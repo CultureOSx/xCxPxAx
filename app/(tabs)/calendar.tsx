@@ -466,8 +466,8 @@ export default function CalendarScreen() {
             <View style={styles.eventsSection}>
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>Civic Reminders</Text>
-                <Pressable onPress={() => router.push('/(tabs)/council')}>
-                  <Text style={styles.seeAll}>Council</Text>
+                <Pressable onPress={() => router.push('/events')}>
+                  <Text style={styles.seeAll}>All Events</Text>
                 </Pressable>
               </View>
               {civicReminders.map((reminder) => (
@@ -517,11 +517,7 @@ function EventRow({ event, colors, styles, isAuthenticated, isWeb }: { event: Ev
   
   const handlePress = () => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isCouncilEvent && isAuthenticated) {
-      router.push('/(tabs)/council');
-    } else {
-      router.push({ pathname: '/event/[id]', params: { id: event.id } });
-    }
+    router.push({ pathname: '/event/[id]', params: { id: event.id } });
   };
   
   const isFree = (event.priceCents ?? 0) === 0;

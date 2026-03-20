@@ -15,6 +15,34 @@ export type AgeSuitability = 'all' | 'family' | '18+' | '21+';
 
 export type PriceTier = 'free' | 'budget' | 'mid' | 'premium';
 
+/** Whether the event requires tickets or is free/open entry */
+export type EntryType = 'ticketed' | 'free_open';
+
+export interface EventArtist {
+  profileId?: string;
+  name: string;
+  role?: string;
+  imageUrl?: string;
+}
+
+export type SponsorTier = 'title' | 'gold' | 'silver' | 'bronze';
+
+export interface EventSponsor {
+  profileId?: string;
+  name: string;
+  tier: SponsorTier;
+  logoUrl?: string;
+  websiteUrl?: string;
+}
+
+export interface EventHostInfo {
+  profileId?: string;
+  name: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  websiteUrl?: string;
+}
+
 export interface EventData {
     lgaCode?: string;
     councilId?: string;
@@ -59,6 +87,18 @@ export interface EventData {
   distanceKm?: number;
   createdAt?: string;
   updatedAt?: string;
+  // Enhanced event creation fields
+  entryType?: EntryType;
+  endDate?: string;
+  endTime?: string;
+  heroImageUrl?: string;
+  artists?: EventArtist[];
+  eventSponsors?: EventSponsor[];
+  hostInfo?: EventHostInfo | null;
+  hostName?: string;
+  hostEmail?: string;
+  hostPhone?: string;
+  sponsors?: string | null;
 }
 
 export interface DiscoveryResult {

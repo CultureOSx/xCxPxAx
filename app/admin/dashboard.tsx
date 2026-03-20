@@ -196,7 +196,7 @@ function AdminDashboardContent() {
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow index={1} icon="shield-checkmark-outline" label="Role Assignment" sub="Promote organisers, sponsors, city admins"   accent='#A78BFA'               onPress={() => router.push('/admin/users')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
-            <ToolRow index={2} icon="id-card-outline"     label="Identity Verification" sub="Approve Sydney-verified & council claims"   accent={CultureTokens.teal}    onPress={() => router.push('/admin/council-claims')} />
+            <ToolRow index={2} icon="id-card-outline"     label="Identity Verification" sub="Approve Sydney-verified user accounts"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/users')} />
           </View>
         </View>
 
@@ -207,8 +207,6 @@ function AdminDashboardContent() {
             <ToolRow icon="flag-outline"        label="Flagged Content"      sub="Review reports from users"                        accent={CultureTokens.coral}   onPress={() => router.push('/admin/audit-logs')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow icon="calendar-number-outline" label="Event Approvals"  sub="Review pending events before they go live"       accent={CultureTokens.saffron} onPress={() => router.push('/admin/audit-logs')} />
-            <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
-            <ToolRow icon="business-outline"    label="Council Management"   sub="Verify & manage all councils"                    accent={CultureTokens.indigo}  onPress={() => router.push('/admin/council-management')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow icon="list-outline"        label="Audit Logs"           sub="Full activity trail across the platform"         accent={colors.textSecondary}  onPress={() => router.push('/admin/audit-logs')} />
           </View>
@@ -276,8 +274,6 @@ function AdminDashboardContent() {
             <ToolRow icon="storefront-outline"  label="Venue Dashboard"      sub="Venue analytics & event hosting"                 accent={CultureTokens.teal}    onPress={() => router.push('/dashboard/venue')} />
             <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
             <ToolRow icon="ribbon-outline"      label="Sponsor Dashboard"    sub="Sponsored events & reach analytics"              accent={CultureTokens.gold}    onPress={() => router.push('/dashboard/sponsor')} />
-            <View style={[sc.divider, { backgroundColor: colors.borderLight }]} />
-            <ToolRow icon="shield-checkmark-outline" label="Council Ops"     sub="Council claim & governance management"          accent={CultureTokens.coral}   onPress={() => router.push('/dashboard/council')} />
           </View>
         </View>
 

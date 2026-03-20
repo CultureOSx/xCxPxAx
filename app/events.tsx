@@ -59,179 +59,45 @@ function getWeekendRange(now: Date) {
   };
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Single-row filter bar ─────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: string }) {
-  const colors = useColors();
-  return (
-    <Text style={[sl.text, { color: colors.textTertiary }]}>{children}</Text>
-  );
-}
-const sl = StyleSheet.create({
-  text: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 },
-});
-
-// ─── Animated chip ────────────────────────────────────────────────────────────
-function AnimatedChip({
+function FilterChip({
   label, active, onPress, icon,
 }: {
   label: string; active: boolean; onPress: () => void; icon?: string;
 }) {
   const colors = useColors();
   const scale = useSharedValue(1);
-  const pressed = useSharedValue(0);
+  const bg = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(pressed.value, [0, 1],
-      active ? [CultureTokens.indigo, CultureTokens.indigo + 'cc'] : [colors.surface, colors.surfaceElevated]),
+    backgroundColor: interpolateColor(bg.value, [0, 1],
+      active ? [CultureTokens.indigo, CultureTokens.indigo + 'dd'] : [colors.surface, colors.surfaceElevated]),
   }));
   return (
     <Pressable
-      onPressIn={() => { scale.value = withSpring(0.93); pressed.value = withTiming(1, { duration: 120 }); }}
-      onPressOut={() => { scale.value = withSpring(1); pressed.value = withTiming(0, { duration: 120 }); }}
-      onPress={() => {
-        if (Platform.OS !== 'web') Haptics.selectionAsync();
-        onPress();
-      }}
+      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
+      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
+      onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
       accessibilityRole="button"
-      accessibilityLabel={`Filter by ${label}`}
+      accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <Animated.View style={[cc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as never} size={14} color={active ? '#FFFFFF' : colors.textSecondary} /> : null}
-        <Text style={[cc.text, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{label}</Text>
+      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
+        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );
 }
-
-// Category chips — horizontal scroll
-function CategoryChips({
-  categories, selected, onSelect,
-}: {
-  categories: string[]; selected: string; onSelect: (c: string) => void;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 10, paddingRight: 20 }}
-    >
-      {categories.map(cat => (
-        <AnimatedChip
-          key={cat}
-          label={cat}
-          active={selected === cat}
-          onPress={() => onSelect(cat)}
-          icon={cat === 'All' ? 'apps' : undefined}
-        />
-      ))}
-    </ScrollView>
-  );
-}
-const cc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+const fc = StyleSheet.create({
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
   text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 });
 
-// Date segmented control — fixed 3 options, no scroll needed
-function DateSegment({
-  selected, onSelect,
-}: {
-  selected: DateFilter; onSelect: (d: DateFilter) => void;
-}) {
-  const colors = useColors();
-  return (
-    <View style={[ds.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      {DATE_OPTIONS.map((opt, i) => {
-        const active = selected === opt.id;
-        return (
-          <Pressable
-            key={opt.id}
-            style={[
-              ds.seg,
-              active && { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' },
-              active && Platform.OS !== 'web' && { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync();
-              onSelect(opt.id);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={opt.label}
-          >
-            <Ionicons
-              name={(active ? opt.icon.replace('-outline', '') : opt.icon) as never}
-              size={14}
-              color={active ? CultureTokens.indigo : colors.textTertiary}
-            />
-            <Text style={[ds.text, { color: active ? CultureTokens.indigo : colors.textSecondary }]}>
-              {opt.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
 }
-function PriceSegment({
-  selected, onSelect,
-}: {
-  selected: PriceFilter; onSelect: (p: PriceFilter) => void;
-}) {
-  const colors = useColors();
-  return (
-    <View style={[ds.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      {PRICE_OPTIONS.map((opt) => {
-        const active = selected === opt.id;
-        return (
-          <Pressable
-            key={opt.id}
-            style={[
-              ds.seg,
-              active && { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' },
-              active && Platform.OS !== 'web' && { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync();
-              onSelect(opt.id);
-            }}
-          >
-            <Ionicons name={active ? opt.icon.replace('-outline', '') as never : opt.icon as never} size={14} color={active ? CultureTokens.indigo : colors.textTertiary} />
-            <Text style={[ds.text, { color: active ? CultureTokens.indigo : colors.textSecondary }]}>{opt.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-const ds = StyleSheet.create({
-  wrap:     { flexDirection: 'row', borderRadius: 12, borderWidth: 1, padding: 3 },
-  seg:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 9 },
-  segFirst: {},
-  segLast:  {},
-  text:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-});
-
-// Active filter summary pill
-function ActiveFilterBadge({ count: _count, label, onClear }: { count: number; label: string; onClear: () => void }) {
-  return (
-    <Pressable
-      style={[af.wrap, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
-      onPress={onClear}
-      accessibilityRole="button"
-      accessibilityLabel={`Clear filter: ${label}`}
-    >
-      <Text style={[af.label, { color: CultureTokens.indigo }]}>{label}</Text>
-      <Ionicons name="close-circle" size={14} color={CultureTokens.indigo} />
-    </Pressable>
-  );
-}
-const af = StyleSheet.create({
-  wrap:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
-  label: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-});
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -370,65 +236,66 @@ export default function AllEventsScreen() {
         {/* ── Centred content shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
 
-          {/* ── Filter panel ── */}
-          <View style={[s.filterPanel, { paddingHorizontal: hPad, borderBottomColor: colors.divider }]}>
+          {/* ── Filter bar — single scrollable line ── */}
+          <View style={[s.filterBar, { borderBottomColor: colors.divider }]}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+            >
+              {/* Category chips */}
+              {categories.map(cat => (
+                <FilterChip
+                  key={cat}
+                  label={cat}
+                  active={selectedCategory === cat}
+                  onPress={() => setSelectedCategory(cat)}
+                  icon={cat === 'All' ? 'apps' : undefined}
+                />
+              ))}
 
-            {/* Category row */}
-            <View style={s.filterSection}>
-              <SectionLabel>Category</SectionLabel>
-              <CategoryChips
-                categories={categories}
-                selected={selectedCategory}
-                onSelect={setSelectedCategory}
-              />
-            </View>
+              <FilterDivider colors={colors} />
 
-            {/* Date row */}
-            <View style={s.filterSection}>
-              <SectionLabel>Date</SectionLabel>
-              <DateSegment selected={dateFilter} onSelect={setDateFilter} />
-            </View>
+              {/* Date chips */}
+              {DATE_OPTIONS.map(opt => (
+                <FilterChip
+                  key={opt.id}
+                  label={opt.label}
+                  active={dateFilter === opt.id}
+                  onPress={() => setDateFilter(opt.id)}
+                  icon={opt.icon}
+                />
+              ))}
 
-            {/* Price row */}
-            <View style={s.filterSection}>
-              <SectionLabel>Price</SectionLabel>
-              <PriceSegment selected={priceFilter} onSelect={setPriceFilter} />
-            </View>
+              <FilterDivider colors={colors} />
 
-            {/* Active filter summary */}
-            {filtersActive ? (
-              <View style={s.activeRow}>
-                {selectedCategory !== 'All' ? (
-                  <ActiveFilterBadge
-                    count={0}
-                    label={selectedCategory}
-                    onClear={() => setSelectedCategory('All')}
-                  />
-                ) : null}
-                {dateFilter !== 'all' ? (
-                  <ActiveFilterBadge
-                    count={0}
-                    label={DATE_OPTIONS.find(d => d.id === dateFilter)!.label}
-                    onClear={() => setDateFilter('all')}
-                  />
-                ) : null}
-                {priceFilter !== 'all' ? (
-                  <ActiveFilterBadge
-                    count={0}
-                    label={PRICE_OPTIONS.find(p => p.id === priceFilter)!.label}
-                    onClear={() => setPriceFilter('all')}
-                  />
-                ) : null}
-                <Pressable
-                  onPress={() => { setSelectedCategory('All'); setDateFilter('all'); setPriceFilter('all'); }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear all filters"
-                >
-                  <Text style={[s.clearAll, { color: colors.textTertiary }]}>Clear all</Text>
-                </Pressable>
-              </View>
-            ) : null}
+              {/* Price chips */}
+              {PRICE_OPTIONS.map(opt => (
+                <FilterChip
+                  key={opt.id}
+                  label={opt.label}
+                  active={priceFilter === opt.id}
+                  onPress={() => setPriceFilter(opt.id)}
+                  icon={opt.icon}
+                />
+              ))}
 
+              {/* Clear all — only when filters active */}
+              {filtersActive ? (
+                <>
+                  <FilterDivider colors={colors} />
+                  <Pressable
+                    onPress={() => { setSelectedCategory('All'); setDateFilter('all'); setPriceFilter('all'); }}
+                    style={[s.clearBtn, { borderColor: colors.borderLight }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear all filters"
+                  >
+                    <Ionicons name="close" size={12} color={colors.textTertiary} />
+                    <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </ScrollView>
           </View>
 
           {/* ── Event grid ── */}
@@ -529,11 +396,11 @@ const s = StyleSheet.create({
   shell:          { flex: 1 },
   shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
 
-  // Filter panel
-  filterPanel:    { paddingTop: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, gap: 18 },
-  filterSection:  { gap: 4 },
-  activeRow:      { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 4 },
-  clearAll:       { fontSize: 13, fontFamily: 'Poppins_600SemiBold', paddingVertical: 5, textDecorationLine: 'underline' },
+  // Filter bar
+  filterBar:      { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
+  filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
   // Grid
   list:           { paddingTop: 20, gap: 20 },

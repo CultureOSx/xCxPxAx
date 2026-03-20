@@ -20,3 +20,15 @@ export async function uploadPostImage(uri: string, userId: string): Promise<stri
   const path = `posts/${userId}/${filename}`;
   return uploadFile(uri, path);
 }
+
+export async function uploadEventHeroImage(uri: string, eventId: string): Promise<string> {
+  const filename = `hero-${Date.now()}.jpg`;
+  const path = `events/${eventId}/${filename}`;
+  return uploadFile(uri, path);
+}
+
+export async function uploadEventImageTemp(uri: string, userId: string): Promise<string> {
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const path = `events/temp/${userId}/${filename}`;
+  return uploadFile(uri, path);
+}

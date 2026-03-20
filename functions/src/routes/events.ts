@@ -130,6 +130,31 @@ const createEventSchema = z.object({
   hostEmail:   z.string().email().optional().or(z.literal('')).or(z.null()),
   hostPhone:   z.string().max(30).optional().or(z.null()),
   sponsors:    z.string().max(500).optional().or(z.null()),
+  // Enhanced creation fields
+  entryType:   z.enum(['ticketed', 'free_open']).optional(),
+  endDate:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
+  endTime:     z.string().max(20).optional(),
+  heroImageUrl: z.string().url().optional().or(z.literal('')),
+  artists: z.array(z.object({
+    profileId: z.string().optional(),
+    name:      z.string().min(1).max(200),
+    role:      z.string().max(50).optional(),
+    imageUrl:  z.string().url().optional().or(z.literal('')),
+  })).max(20).optional(),
+  eventSponsors: z.array(z.object({
+    profileId:  z.string().optional(),
+    name:       z.string().min(1).max(200),
+    tier:       z.enum(['title', 'gold', 'silver', 'bronze']),
+    logoUrl:    z.string().url().optional().or(z.literal('')),
+    websiteUrl: z.string().url().optional().or(z.literal('')),
+  })).max(20).optional(),
+  hostInfo: z.object({
+    profileId:    z.string().optional(),
+    name:         z.string().min(1).max(200),
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    contactPhone: z.string().max(30).optional(),
+    websiteUrl:   z.string().url().optional().or(z.literal('')),
+  }).nullable().optional(),
 });
 
 const updateEventSchema = createEventSchema.partial();
@@ -295,9 +320,21 @@ export function createEventsRouter() {
           hostEmail: b.hostEmail ? String(b.hostEmail) : null,
           hostPhone: b.hostPhone ? String(b.hostPhone) : null,
           sponsors:  b.sponsors  ? String(b.sponsors)  : null,
+          // Enhanced fields
+          entryType:    b.entryType ?? (b.isFree ? 'free_open' : 'ticketed'),
+          endDate:      b.endDate  ? String(b.endDate)  : undefined,
+          endTime:      b.endTime  ? String(b.endTime)  : undefined,
+          heroImageUrl: b.heroImageUrl ? String(b.heroImageUrl) : undefined,
+          artists:       Array.isArray(b.artists)       ? b.artists       : undefined,
+          eventSponsors: Array.isArray(b.eventSponsors) ? b.eventSponsors : undefined,
+          hostInfo:      b.hostInfo ?? null,
           cpid: generateSecureId('CP-E-'),
           status: 'draft',
         });
+        // Validate end date
+        if (b.endDate && b.endDate < b.date) {
+          return res.status(400).json({ error: 'endDate cannot be before start date' });
+        }
         return res.status(201).json(event);
       } catch (err) {
         console.error('[POST /api/events]:', err);

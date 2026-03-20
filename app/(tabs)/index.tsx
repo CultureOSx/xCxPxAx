@@ -65,7 +65,7 @@ const superAppSections = [
   { id: 'activities', label: 'Activities', icon: 'compass', color: CultureTokens.success, route: '/activities' },
   { id: 'shopping', label: 'Shopping', icon: 'bag-handle', color: CategoryColors.shopping, route: '/shopping' },
   { id: 'search', label: 'Search', icon: 'search', color: CultureTokens.indigo, route: '/search/index' },
-  { id: 'events', label: 'Discover', icon: 'compass', color: CultureTokens.indigo, route: '/(tabs)/explore' },
+  { id: 'events', label: 'All Events', icon: 'calendar', color: CultureTokens.saffron, route: '/events' },
   { id: 'directory', label: 'Directory', icon: 'storefront', color: CultureTokens.teal, route: '/(tabs)/directory' },
 ] as const;
 
@@ -134,8 +134,6 @@ export default function DiscoverScreen() {
   const { width, isDesktop, isTablet } = useLayout();
   const { state } = useOnboarding();
   const { isAuthenticated, userId: authUserId, user: authUser } = useAuth();
-  const { data: councilData } = useCouncil();
-  const council = councilData?.council;
 
 
   // Weather API helper (Open-Meteo, no API key needed)
@@ -265,11 +263,10 @@ export default function DiscoverScreen() {
   });
   const indigenousBusinesses = Array.isArray(indigenousBusinessesData) ? indigenousBusinessesData : [];
 
-  // 2. Computed Values (Optimized)
-  const activeAlerts = (councilData?.alerts ?? []).filter((alert: { status: string }) => alert.status === 'active');
-  const isCouncilVerified = council?.verificationStatus === 'verified';
-  const lgaCode = council?.lgaCode;
+  const { data: councilData } = useCouncil();
+  const council = councilData?.council;
 
+  // 2. Computed Values
   const councilEvents = useMemo(() => {
     if (!council || !Array.isArray(allEvents) || !allEvents.length) return [];
     return allEvents.filter((e) =>
@@ -277,6 +274,13 @@ export default function DiscoverScreen() {
       (e.councilId && council.id && e.councilId === council.id)
     );
   }, [council, allEvents]);
+
+  const councilRailData = useMemo<(EventData | string)[]>(
+    () => eventsLoading
+      ? Array.from({ length: 4 }, (_, i) => `sk-cou-${i}`)
+      : councilEvents.slice(0, 10),
+    [eventsLoading, councilEvents],
+  );
 
   const timeGreeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -409,12 +413,6 @@ export default function DiscoverScreen() {
       ? Array.from({ length: 4 }, (_, i) => `sk-com-${i}`)
       : cultureCards,
     [communitiesLoading, cultureCards],
-  );
-  const councilRailData = useMemo<(EventData | string)[]>(
-    () => eventsLoading
-      ? Array.from({ length: 4 }, (_, i) => `sk-cou-${i}`)
-      : (councilEvents || []).slice(0, 10),
-    [eventsLoading, councilEvents],
   );
   const browseCategoryRailData = useMemo(() => browseCategories, []);
   const activityRailData = useMemo<(ActivityData | string)[]>(
@@ -853,19 +851,6 @@ export default function DiscoverScreen() {
             </View>
           )}
 
-          {/* Civic / Council Alerts */}
-          {council && (
-            <Card padding={18} radius={18} style={[styles.civicCard, isDesktop && { marginHorizontal: 0 }]}>
-              <View style={styles.civicCardHeader}>
-                <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
-                <Text style={styles.civicCardTitle}>{council.name}</Text>
-              </View>
-              <Text style={styles.civicCardSub}>
-                {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
-                {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
-              </Text>
-            </Card>
-          )}
 
           {/* Empty Fallback */}
           {!discoverLoading && featuredEvents.length === 0 && popularEvents.length === 0 && (Array.isArray(allActivities) ? allActivities.length === 0 : true) && (Array.isArray(allCommunities) ? allCommunities.length === 0 : true) && (
@@ -995,11 +980,16 @@ export default function DiscoverScreen() {
             </View>
           )}
 
-          {/* Council Integration */}
+
+          {/* Local Council Area Events */}
           {(eventsLoading || councilEvents.length > 0) && !eventsError && (
             <View style={{ marginBottom: 32 }}>
               <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
-                <SectionHeader title="Council Events" subtitle={council?.name ? `Events from ${council.name}` : 'Local events'} onSeeAll={() => router.push('/(tabs)/council')} />
+                <SectionHeader
+                  title="Events in Your Area"
+                  subtitle={council?.name ? `Happening in ${council.name}` : 'Events near your local council area'}
+                  onSeeAll={() => router.push('/events')}
+                />
               </View>
               <FlatList
                 horizontal
@@ -1295,10 +1285,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   indigenousMeta: { ...TextStyles.callout, color: colors.textSecondary, marginBottom: 8 },
   indigenousDesc: { ...TextStyles.bodyMedium, color: colors.textTertiary, lineHeight: 18 },
 
-  civicCard: { marginHorizontal: 20, marginBottom: 32, padding: 20, borderRadius: 20, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
-  civicCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  civicCardTitle: { ...TextStyles.cardTitle, color: colors.text },
-  civicCardSub: { ...TextStyles.caption, color: colors.textSecondary },
 
   emptyStateCard: { marginHorizontal: 20, padding: 40, borderRadius: 24, alignItems: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight },
   emptyStateIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },

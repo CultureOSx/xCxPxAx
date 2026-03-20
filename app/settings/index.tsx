@@ -81,7 +81,6 @@ export default function AccountSettingsScreen() {
         { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.saffron, route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,    route: '/settings/notifications' },
         { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: CultureTokens.teal,   route: '/settings/location' },
-        { icon: 'business-outline',      label: 'Local Council',        sub: 'Choose your council area',         color: CultureTokens.gold,      route: '/council/select' },
       ],
     },
     {
@@ -114,9 +113,8 @@ export default function AccountSettingsScreen() {
     ...(isAdmin ? [{
       title: 'Admin Tools',
       items: [
-        { icon: 'business-outline', label: 'Council Management', sub: 'Council overview, claims, and operations', color: CultureTokens.indigo, route: '/admin/council-management' },
-        { icon: 'shield-checkmark-outline', label: 'Council Claims', sub: 'Approve or reject council ownership claims', color: CultureTokens.warning, route: '/admin/council-claims' },
         { icon: 'people-outline', label: 'Admin Panel', sub: 'Manage users and roles', color: CultureTokens.error, route: '/admin/users' },
+        { icon: 'bar-chart-outline', label: 'Admin Dashboard', sub: 'Platform overview and operations', color: CultureTokens.indigo, route: '/admin/dashboard' },
       ] as SettingItem[],
     }] : []),
     {

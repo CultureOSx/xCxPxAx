@@ -209,8 +209,6 @@ function RootLayoutNav() {
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="event/create" />
       <Stack.Screen name="community/[id]" />
-      <Stack.Screen name="council/select" />
-      <Stack.Screen name="council/claim" />
       <Stack.Screen name="business/[id]" />
       <Stack.Screen name="artist/[id]" />
       <Stack.Screen name="venue/[id]" />
@@ -270,10 +268,8 @@ function RootLayoutNav() {
 
       <Stack.Screen name="admin/users" />
       <Stack.Screen name="admin/dashboard" />
-      <Stack.Screen name="admin/council-management" />
       <Stack.Screen name="admin/notifications" />
       <Stack.Screen name="admin/audit-logs" />
-      <Stack.Screen name="admin/council-claims" />
     </Stack>
   );
 }

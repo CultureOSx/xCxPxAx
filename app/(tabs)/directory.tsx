@@ -6,9 +6,10 @@ import {
   ScrollView,
   Platform,
   TextInput,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,7 @@ import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
-import type { Profile } from '@shared/schema';
+import type { Profile, EventData } from '@/shared/schema';
 import { api, type CouncilData } from '@/lib/api';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
 import { Card } from '@/components/ui/Card';
@@ -27,29 +28,32 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { isIndigenousProfile } from '@/lib/indigenous';
+import { formatEventDateTimeBadge, formatPrice } from '@/lib/dateUtils';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const isWeb = Platform.OS === 'web';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<string, string> = {
-  business: 'storefront',
-  venue: 'location',
-  council: 'shield-checkmark',
-  government: 'flag',
+  business:     'storefront',
+  venue:        'location',
   organisation: 'business',
-  charity: 'heart',
+  council:      'shield-checkmark',
+  government:   'flag',
+  charity:      'heart',
 };
 
 const ENTITY_FILTERS = [
-  { label: 'All', icon: 'grid', color: CultureTokens.indigo, display: 'All' },
-  { label: 'indigenous', icon: 'leaf', color: CultureTokens.gold, display: '🪃 Indigenous' },
-  { label: 'business', icon: 'storefront', color: EntityTypeColors.business, display: 'Businesses' },
-  { label: 'venue', icon: 'location', color: EntityTypeColors.venue, display: 'Venues' },
-  { label: 'organisation', icon: 'business', color: EntityTypeColors.organisation, display: 'Organisations' },
-  { label: 'council', icon: 'shield-checkmark', color: EntityTypeColors.council, display: 'Councils' },
-  { label: 'government', icon: 'flag', color: EntityTypeColors.government, display: 'Government' },
-  { label: 'charity', icon: 'heart', color: EntityTypeColors.charity, display: 'Charities' },
+  { label: 'All',          icon: 'grid',             color: CultureTokens.indigo,          display: 'All' },
+  { label: 'event',        icon: 'calendar',          color: CultureTokens.saffron,          display: 'Events' },
+  { label: 'indigenous',   icon: 'leaf',              color: CultureTokens.gold,             display: '🪃 Indigenous' },
+  { label: 'business',     icon: 'storefront',        color: EntityTypeColors.business,      display: 'Businesses' },
+  { label: 'venue',        icon: 'location',          color: EntityTypeColors.venue,         display: 'Venues' },
+  { label: 'organisation', icon: 'business',          color: EntityTypeColors.organisation,  display: 'Organisations' },
+  { label: 'council',      icon: 'shield-checkmark',  color: EntityTypeColors.council,       display: 'Councils' },
+  { label: 'government',   icon: 'flag',              color: EntityTypeColors.government,    display: 'Government' },
+  { label: 'charity',      icon: 'heart',             color: EntityTypeColors.charity,       display: 'Charities' },
 ] as const;
 
 function getOptionalString(record: Record<string, unknown>, key: string): string | null {
@@ -73,6 +77,115 @@ function getDirectoryListingType(profile: Profile): string {
   const category = (profile.category ?? '').toLowerCase();
   if (category === 'council') return 'council';
   return profile.entityType;
+}
+
+// ─── Skeleton Card ────────────────────────────────────────────────────────────
+
+function SkeletonBlock({ width, height, radius = 8, colors }: { width: number | `${number}%`; height: number; radius?: number; colors: ReturnType<typeof useColors> }) {
+  return <View style={{ width, height, borderRadius: radius, backgroundColor: colors.borderLight, marginBottom: 4 }} />;
+}
+
+function DirectoryCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return (
+    <View style={[{ backgroundColor: colors.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: colors.borderLight }]}>
+      <SkeletonBlock width="100%" height={160} radius={0} colors={colors} />
+      <View style={{ padding: 16, gap: 8 }}>
+        <SkeletonBlock width="70%" height={16} colors={colors} />
+        <SkeletonBlock width="50%" height={12} colors={colors} />
+        <SkeletonBlock width="40%" height={12} colors={colors} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Event Card for Directory ──────────────────────────────────────────────────
+
+function DirectoryEventCard({ event, isSaved, onSave, colors }: {
+  event: EventData;
+  isSaved: boolean;
+  onSave: (id: string) => void;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const heartScale = useSharedValue(1);
+  const animatedHeart = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
+
+  const handleSave = () => {
+    heartScale.value = withSpring(1.4, { damping: 8 });
+    setTimeout(() => { heartScale.value = withSpring(1, { damping: 10 }); }, 200);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onSave(event.id);
+  };
+
+  const dateLabel = formatEventDateTimeBadge(event.date, event.time, event.country);
+  const priceLabel = event.isFree ? 'Free' : event.priceCents ? formatPrice(event.priceCents, event.country) : null;
+
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+      style={({ pressed }) => [
+        { backgroundColor: colors.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: colors.borderLight, ...shadows.medium },
+        pressed && { opacity: 0.93 },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`View event: ${event.title}`}
+    >
+      {/* Hero image */}
+      <View style={{ position: 'relative' }}>
+        {event.heroImageUrl || event.imageUrl ? (
+          <Image
+            source={{ uri: event.heroImageUrl ?? event.imageUrl }}
+            style={{ width: '100%', height: 180 }}
+            contentFit="cover"
+            accessibilityLabel={`${event.title} hero image`}
+          />
+        ) : (
+          <View style={{ width: '100%', height: 180, backgroundColor: (event.imageColor ?? CultureTokens.saffron) + '30', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="calendar" size={48} color={event.imageColor ?? CultureTokens.saffron} />
+          </View>
+        )}
+        {/* Date badge */}
+        <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
+          <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' }}>{dateLabel}</Text>
+        </View>
+        {/* Price badge */}
+        {priceLabel ? (
+          <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: CultureTokens.saffron, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' }}>{priceLabel}</Text>
+          </View>
+        ) : null}
+        {/* Save button */}
+        <Pressable
+          onPress={handleSave}
+          style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={isSaved ? 'Unsave event' : 'Save event'}
+          hitSlop={10}
+        >
+          <Animated.View style={animatedHeart}>
+            <Ionicons name={isSaved ? 'heart' : 'heart-outline'} size={20} color={isSaved ? CultureTokens.coral : '#fff'} />
+          </Animated.View>
+        </Pressable>
+      </View>
+
+      {/* Info */}
+      <View style={{ padding: 14, gap: 6 }}>
+        <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text }} numberOfLines={2}>{event.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {event.category ? (
+            <View style={{ backgroundColor: CultureTokens.saffron + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron }}>{event.category}</Text>
+            </View>
+          ) : null}
+          {event.city ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="location-outline" size={13} color={colors.textSecondary} />
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary }}>{event.city}</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </Pressable>
+  );
 }
 
 // ─── DirectoryCard ────────────────────────────────────────────────────────────
@@ -203,11 +316,12 @@ export default function DirectoryScreen() {
   const colors = useColors();
   const styles = getStyles(colors);
   const { width, isDesktop, isTablet } = useLayout();
-  
+  const { state: onboardingState } = useOnboarding();
+
   const isDesktopWeb = isWeb && isDesktop;
   const topInset = isWeb ? (isDesktopWeb ? 32 : 16) : insets.top;
   const shellMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
-  
+
   const shellStyle = isWeb || isTablet
     ? { maxWidth: shellMaxWidth, width: '100%' as const, alignSelf: 'center' as const }
     : undefined;
@@ -216,11 +330,23 @@ export default function DirectoryScreen() {
   const [selectedType, setSelectedType] = useState('All');
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
 
   const { data: allProfilesRaw, isLoading } = useQuery<Profile[] | { profiles?: Profile[] }>({
     queryKey: ['/api/profiles'],
     queryFn: () => api.profiles.list(),
   });
+
+  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+    queryKey: ['/api/events', 'directory', onboardingState.city, onboardingState.country],
+    queryFn: () => api.events.list({ city: onboardingState.city ?? undefined, country: onboardingState.country ?? undefined, pageSize: 50 }),
+    staleTime: 60_000,
+  });
+
+  const allEvents = useMemo<EventData[]>(
+    () => (eventsData && 'events' in eventsData ? eventsData.events : []),
+    [eventsData],
+  );
 
   const allProfiles = useMemo<Profile[]>(
     () => (Array.isArray(allProfilesRaw)
@@ -234,7 +360,7 @@ export default function DirectoryScreen() {
     queryFn: () => api.council.list({ pageSize: 2000, sortBy: 'name', sortDir: 'asc' }),
   });
 
-  // Keep directory council entries in sync with council source of truth.
+  // Merge council source-of-truth entries into directory profiles.
   const nonCommunityProfiles = useMemo(() => {
     const base = allProfiles.filter(
       p => p.entityType !== 'community' && (p.category ?? '').toLowerCase() !== 'council'
@@ -259,20 +385,42 @@ export default function DirectoryScreen() {
     return [...base, ...councils];
   }, [allProfiles, councilListData?.councils]);
 
-  const filtered = useMemo(() => {
-    let results = nonCommunityProfiles;
+  type DirectoryItem =
+    | { _type: 'profile'; data: Profile }
+    | { _type: 'event'; data: EventData };
+
+  const allItems = useMemo<DirectoryItem[]>(() => {
+    const profileItems: DirectoryItem[] = nonCommunityProfiles.map((p) => ({ _type: 'profile', data: p }));
+    const eventItems: DirectoryItem[] = allEvents.map((e) => ({ _type: 'event', data: e }));
+    return [...eventItems, ...profileItems];
+  }, [nonCommunityProfiles, allEvents]);
+
+  const filtered = useMemo<DirectoryItem[]>(() => {
+    let results = allItems;
 
     if (selectedType !== 'All') {
-      if (selectedType === 'indigenous') {
-        results = results.filter((p) => isIndigenousProfile(p));
+      if (selectedType === 'event') {
+        results = results.filter((item) => item._type === 'event');
+      } else if (selectedType === 'indigenous') {
+        results = results.filter((item) => item._type === 'profile' && isIndigenousProfile(item.data));
       } else {
-        results = results.filter((p) => getDirectoryListingType(p) === selectedType);
+        results = results.filter((item) => item._type === 'profile' && getDirectoryListingType(item.data) === selectedType);
       }
     }
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      results = results.filter(p => {
+      results = results.filter((item) => {
+        if (item._type === 'event') {
+          const e = item.data;
+          return (
+            e.title.toLowerCase().includes(q) ||
+            (e.description ?? '').toLowerCase().includes(q) ||
+            (e.city ?? '').toLowerCase().includes(q) ||
+            (e.category ?? '').toLowerCase().includes(q)
+          );
+        }
+        const p = item.data;
         const tags = getTags(p);
         return (
           p.name.toLowerCase().includes(q) ||
@@ -284,23 +432,31 @@ export default function DirectoryScreen() {
     }
 
     return results;
-  }, [selectedType, search, nonCommunityProfiles]);
+  }, [selectedType, search, allItems]);
 
   const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: nonCommunityProfiles.length };
+    const counts: Record<string, number> = { All: allItems.length, event: allEvents.length };
     counts.indigenous = nonCommunityProfiles.filter((p) => isIndigenousProfile(p)).length;
     for (const p of nonCommunityProfiles) {
       const listingType = getDirectoryListingType(p);
       counts[listingType] = (counts[listingType] ?? 0) + 1;
     }
     return counts;
-  }, [nonCommunityProfiles]);
+  }, [allItems, allEvents, nonCommunityProfiles]);
+
+  const handleSaveEvent = useCallback((id: string) => {
+    setSavedEventIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  }, []);
 
   const directoryStats = useMemo(
     () => [
       { id: 'listings', label: 'Listings', value: typeCounts.All ?? 0, icon: 'grid-outline', color: CultureTokens.indigo },
-      { id: 'councils', label: 'Councils', value: typeCounts.council ?? 0, icon: 'shield-checkmark-outline', color: CultureTokens.teal },
-      { id: 'verified', label: 'Verified', value: nonCommunityProfiles.filter((p) => p.isVerified).length, icon: 'checkmark-circle-outline', color: CultureTokens.saffron },
+      { id: 'events', label: 'Events', value: typeCounts.event ?? 0, icon: 'calendar-outline', color: CultureTokens.saffron },
+      { id: 'verified', label: 'Verified', value: nonCommunityProfiles.filter((p) => p.isVerified).length, icon: 'checkmark-circle-outline', color: CultureTokens.teal },
     ],
     [typeCounts, nonCommunityProfiles]
   );
@@ -444,65 +600,76 @@ export default function DirectoryScreen() {
         </View>
 
         {/* Content */}
-        {isLoading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={CultureTokens.indigo} />
-          </View>
-        ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.list, { paddingBottom: isWeb ? 40 : 100 }]}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} colors={[CultureTokens.indigo]} />}
-          >
-            <View style={shellStyle}>
-              <Text style={styles.resultCount}>
-                {filtered.length} {filtered.length === 1 ? 'listing' : 'listings'} found
-              </Text>
-              <Text style={styles.resultContextText}>{resultContext}</Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.list, { paddingBottom: isWeb ? 40 : 100 }]}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} colors={[CultureTokens.indigo]} />}
+        >
+          <View style={shellStyle}>
+            {(isLoading || eventsLoading) ? (
+              <View style={useWebTwoColumnResults ? styles.resultsGridWeb : undefined}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Animated.View
+                    key={i}
+                    entering={FadeInDown.delay(i * 60).springify().damping(18)}
+                    style={useWebTwoColumnResults ? styles.resultsGridItemWeb : undefined}
+                  >
+                    <DirectoryCardSkeleton colors={colors} />
+                  </Animated.View>
+                ))}
+              </View>
+            ) : (
+              <>
+                <Text style={styles.resultCount}>
+                  {filtered.length} {filtered.length === 1 ? 'result' : 'results'} found
+                </Text>
+                <Text style={styles.resultContextText}>{resultContext}</Text>
 
-              {useWebTwoColumnResults ? (
-                <View style={styles.resultsGridWeb}>
-                  {filtered.map((profile) => (
-                    <View key={profile.id} style={styles.resultsGridItemWeb}>
-                      <DirectoryCard profile={profile} colors={colors} styles={styles} />
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                filtered.map((profile) => (
-                  <DirectoryCard key={profile.id} profile={profile} colors={colors} styles={styles} />
-                ))
-              )}
-
-              {filtered.length === 0 && (
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIconBox}>
-                    <Ionicons name="storefront-outline" size={48} color={colors.textTertiary} />
+                {useWebTwoColumnResults ? (
+                  <View style={styles.resultsGridWeb}>
+                    {filtered.map((item, i) => (
+                      <Animated.View key={item._type === 'event' ? item.data.id : item.data.id} entering={FadeInDown.delay(i * 40).springify().damping(18)} style={styles.resultsGridItemWeb}>
+                        {item._type === 'event' ? (
+                          <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
+                        ) : (
+                          <DirectoryCard profile={item.data} colors={colors} styles={styles} />
+                        )}
+                      </Animated.View>
+                    ))}
                   </View>
-                  <Text style={styles.emptyTitle}>No results found</Text>
-                  <Text style={styles.emptySubtext}>
-                    Try a different filter or search term
-                  </Text>
-                  {hasActiveFilters && (
-                    <View style={{ marginTop: 8 }}>
-                      <Button
-                        variant="secondary"
-                        size="md"
-                        onPress={() => {
-                          setSelectedType('All');
-                          setSearch('');
-                        }}
-                      >
-                        Reset Filters
-                      </Button>
+                ) : (
+                  filtered.map((item, i) => (
+                    <Animated.View key={item._type === 'event' ? item.data.id : item.data.id} entering={FadeInDown.delay(i * 40).springify().damping(18)}>
+                      {item._type === 'event' ? (
+                        <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
+                      ) : (
+                        <DirectoryCard profile={item.data} colors={colors} styles={styles} />
+                      )}
+                    </Animated.View>
+                  ))
+                )}
+
+                {filtered.length === 0 && (
+                  <View style={styles.emptyState}>
+                    <View style={styles.emptyIconBox}>
+                      <Ionicons name="storefront-outline" size={48} color={colors.textTertiary} />
                     </View>
-                  )}
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        )}
+                    <Text style={styles.emptyTitle}>No results found</Text>
+                    <Text style={styles.emptySubtext}>Try a different filter or search term</Text>
+                    {hasActiveFilters && (
+                      <View style={{ marginTop: 8 }}>
+                        <Button variant="secondary" size="md" onPress={() => { setSelectedType('All'); setSearch(''); }}>
+                          Reset Filters
+                        </Button>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </ScrollView>
       </View>
     </ErrorBoundary>
   );

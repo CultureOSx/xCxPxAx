@@ -146,7 +146,7 @@ export default function ExploreScreen() {
   const insets   = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
-  const { isDesktop, hPad } = useLayout();
+  const { isDesktop, hPad, width } = useLayout();
   const { state } = useOnboarding();
 
   const [query,    setQuery]    = useState('');
@@ -185,6 +185,7 @@ export default function ExploreScreen() {
   const featured  = useMemo(() => events.filter(e => e.isFeatured).slice(0, 6), [events]);
   const gridCols  = isDesktop ? 4 : 2;
   const colGap    = 12;
+  const colWidth  = Math.floor((width - hPad * 2 - colGap * (gridCols - 1)) / gridCols);
 
   const handleCatPress = useCallback((id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -340,16 +341,8 @@ export default function ExploreScreen() {
               </View>
             ) : (
               <View style={[s.grid, { gap: colGap }]}>
-                {filtered.map((ev, i) => (
-                  <View
-                    key={ev.id}
-                    style={{
-                      width: `${(100 / gridCols)}%` as `${number}%`,
-                      paddingLeft: i % gridCols !== 0 ? colGap / 2 : 0,
-                      paddingRight: i % gridCols !== gridCols - 1 ? colGap / 2 : 0,
-                      marginBottom: colGap,
-                    }}
-                  >
+                {filtered.map((ev) => (
+                  <View key={ev.id} style={{ width: colWidth }}>
                     <ExploreEventCard event={ev} wide />
                   </View>
                 ))}
