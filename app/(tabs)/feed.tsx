@@ -24,7 +24,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocationPicker } from '@/components/LocationPicker';
 import { Button } from '@/components/ui/Button';
 import * as ImagePicker from 'expo-image-picker';
-import { timeAgo, formatEventDateTime } from '@/lib/dateUtils';
+import { timeAgo } from '@/lib/dateUtils';
 import { uploadPostImage } from '@/lib/storage';
 
 import {
@@ -40,7 +40,6 @@ import {
   type PostCollection,
 } from '@/lib/feedService';
 import type { EventData, Community } from '@/shared/schema';
-import type { FeedItem } from '@/lib/api';
 
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1329,11 +1328,9 @@ export default function CultureFeedScreen() {
   }, [authUser, communities]);
 
 
-  // Server returns pre-ranked items; merge local optimistic posts at the top
-  const serverItems = feedData?.items ?? [];
-
   const posts = useMemo<FeedPost[]>(() => {
     // Convert server FeedItems to the local FeedPost shape
+    const serverItems = feedData?.items ?? [];
     const serverPosts: FeedPost[] = serverItems.map((item): FeedPost => {
       const comm: Community = {
         id:       item.communityId ?? '',
@@ -1356,7 +1353,7 @@ export default function CultureFeedScreen() {
 
     // Prepend optimistic local posts (new posts the user just created)
     return [...localPosts, ...serverPosts];
-  }, [serverItems, localPosts]);
+  }, [feedData, localPosts]);
 
   // Filter by active tab
   const filteredPosts = useMemo(() => {

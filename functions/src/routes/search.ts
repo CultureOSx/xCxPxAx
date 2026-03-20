@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { searchService } from '../services/firestore';
+import { isFirestoreConfigured } from '../admin';
 import { searchClient } from '../services/algolia';
 
 export const searchRouter = Router();
@@ -13,6 +14,7 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
   const pageSize = Math.min(50, Math.max(1, parseInt(String(req.query.pageSize ?? '20'), 10) || 20));
 
   if (!query) return res.json({ events: [], profiles: [] });
+  if (!isFirestoreConfigured && !searchClient) return res.json({ events: [], profiles: [] });
 
   // Use Algolia for fast full-text search when credentials are available
   if (searchClient) {

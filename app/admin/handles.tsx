@@ -1,9 +1,8 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator , Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { api } from '@/lib/api';
 import type { PendingHandleItem } from '@/lib/api';
@@ -13,7 +12,6 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { queryClient } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { goBackOrReplace } from '@/lib/navigation';
 
 const isWeb = Platform.OS === 'web';
 

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator , Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,6 @@ import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
 
 const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; icon: string }> = {
   release:      { label: 'Release',      color: CultureTokens.indigo,  icon: 'rocket-outline' },
