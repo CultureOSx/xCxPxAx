@@ -1,34 +1,31 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  Platform,
-  ScrollView,
+  View, Text, FlatList, Pressable, StyleSheet,
+  TextInput, Alert, ActivityIndicator, Modal,
+  Platform, ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import type { UserRole } from '@/shared/schema';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import * as Haptics from 'expo-haptics';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+const isWeb = Platform.OS === 'web';
 
-interface AdminUser {
+// ─── Types ───────────────────────────────────────────────────────────────────
+type AdminUser = {
   id: string;
   username?: string;
   displayName?: string;
@@ -37,169 +34,183 @@ interface AdminUser {
   avatarUrl?: string;
   city?: string;
   country?: string;
-  subscriptionTier?: string;
+  handle?: string;
+  handleStatus?: string;
+  isSydneyVerified?: boolean;
+  membershipTier?: string;
   createdAt?: string;
-}
+  lastActiveAt?: string;
+};
 
-interface AdminUsersResponse {
-  users: AdminUser[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// ─── Role definitions ────────────────────────────────────────────────────────
-
-const ROLE_META: Record<UserRole, { label: string; description: string; color: string; rank: number }> = {
-  user:          { label: 'User',           description: 'Standard member',              color: '#8E8E93',              rank: 0 },
-  organizer:     { label: 'Organizer',      description: 'Creates & manages events',     color: CultureTokens.indigo,   rank: 1 },
-  business:      { label: 'Business',       description: 'Business listing owner',       color: CultureTokens.saffron,  rank: 1 },
-  sponsor:       { label: 'Sponsor',        description: 'Community sponsor',            color: CultureTokens.gold,     rank: 1 },
-  cityAdmin:     { label: 'City Admin',     description: 'Manages a city region',        color: CultureTokens.teal,     rank: 2 },
-  moderator:     { label: 'Moderator',      description: 'Reviews content & reports',    color: '#5AC8FA',              rank: 3 },
-  admin:         { label: 'Admin',          description: 'Full platform access',         color: '#5856D6',              rank: 4 },
-  platformAdmin: { label: 'Platform Admin', description: 'Super administrator',          color: CultureTokens.coral,    rank: 5 },
+// ─── Role meta ───────────────────────────────────────────────────────────────
+const ROLE_META: Record<UserRole, { label: string; description: string; color: string; icon: string }> = {
+  user:          { label: 'User',           description: 'Standard member',              color: '#8E8E93',              icon: 'person-outline' },
+  organizer:     { label: 'Organizer',      description: 'Creates & manages events',     color: CultureTokens.indigo,   icon: 'calendar-outline' },
+  business:      { label: 'Business',       description: 'Business listing owner',       color: CultureTokens.saffron,  icon: 'briefcase-outline' },
+  sponsor:       { label: 'Sponsor',        description: 'Community sponsor',            color: CultureTokens.gold,     icon: 'ribbon-outline' },
+  cityAdmin:     { label: 'City Admin',     description: 'Manages a city region',        color: CultureTokens.teal,     icon: 'location-outline' },
+  moderator:     { label: 'Moderator',      description: 'Reviews content & reports',    color: '#5AC8FA',              icon: 'shield-outline' },
+  admin:         { label: 'Admin',          description: 'Full platform access',         color: '#5856D6',              icon: 'key-outline' },
+  platformAdmin: { label: 'Platform Admin', description: 'Super administrator',          color: CultureTokens.coral,    icon: 'star-outline' },
 };
 
 const ROLE_KEYS = Object.keys(ROLE_META) as UserRole[];
 
-function canEditUserRole(actorRole: UserRole, actorId: string | undefined, target: AdminUser): boolean {
-  const current = target.role ?? 'user';
+function canEdit(actorRole: UserRole, actorId: string | undefined, target: AdminUser): boolean {
+  const current = (target.role ?? 'user') as UserRole;
   if (!actorId || actorId === target.id) return false;
   if (actorRole === 'platformAdmin') return current !== 'admin' && current !== 'platformAdmin';
-  if (actorRole === 'admin') return current !== 'platformAdmin';
+  if (actorRole === 'admin')         return current !== 'platformAdmin';
   return false;
 }
 
-function getAssignableRoles(actorRole: UserRole, actorId: string | undefined, target: AdminUser): UserRole[] {
-  if (!canEditUserRole(actorRole, actorId, target)) return [];
+function assignableRolesFor(actorRole: UserRole, actorId: string | undefined, target: AdminUser): UserRole[] {
+  if (!canEdit(actorRole, actorId, target)) return [];
   if (actorRole === 'platformAdmin') return ROLE_KEYS.filter(k => k !== 'admin' && k !== 'platformAdmin');
   if (actorRole === 'admin')         return ROLE_KEYS.filter(k => k !== 'platformAdmin');
   return [];
 }
 
-// ─── Role badge ──────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function initials(user: AdminUser): string {
+  return (user.displayName ?? user.username ?? '?')
+    .split(' ').map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase();
+}
 
-function RoleBadge({ role }: { role?: UserRole }) {
+function avatarColor(user: AdminUser): string {
+  const role = user.role ?? 'user';
+  return ROLE_META[role]?.color ?? '#8E8E93';
+}
+
+function fmtDate(iso?: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function fmtRelative(iso?: string): string {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const d = Math.floor(diff / 86400000);
+  if (d === 0) return 'Today';
+  if (d === 1) return 'Yesterday';
+  if (d < 7)  return `${d}d ago`;
+  if (d < 30) return `${Math.floor(d / 7)}w ago`;
+  if (d < 365) return `${Math.floor(d / 30)}mo ago`;
+  return `${Math.floor(d / 365)}y ago`;
+}
+
+// ─── Role Badge ───────────────────────────────────────────────────────────────
+function RoleBadge({ role, size = 'sm' }: { role?: UserRole; size?: 'sm' | 'md' }) {
   const meta = ROLE_META[role ?? 'user'];
   return (
-    <View style={[rb.wrap, { borderColor: meta.color + '66', backgroundColor: meta.color + '14' }]}>
-      <Text style={[rb.text, { color: meta.color }]}>{meta.label}</Text>
+    <View style={[rb.wrap, { borderColor: meta.color + '55', backgroundColor: meta.color + '14' },
+      size === 'md' && rb.wrapMd]}>
+      <Text style={[rb.text, { color: meta.color }, size === 'md' && rb.textMd]}>{meta.label}</Text>
     </View>
   );
 }
 const rb = StyleSheet.create({
-  wrap: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  text: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  text:   { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.3 },
+  textMd: { fontSize: 12 },
 });
 
-// ─── Stat card ───────────────────────────────────────────────────────────────
-
-function StatCard({ value, label, color, icon }: { value: string | number; label: string; color: string; icon: string }) {
-  const colors = useColors();
+// ─── Membership Tier Badge ────────────────────────────────────────────────────
+function TierBadge({ tier }: { tier?: string }) {
+  if (!tier || tier === 'free') return null;
+  const color = tier === 'elite' || tier === 'vip' ? CultureTokens.gold : CultureTokens.teal;
   return (
-    <View style={[sc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      <View style={[sc.icon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon as never} size={16} color={color} />
-      </View>
-      <Text style={[sc.value, { color: colors.text }]}>{value}</Text>
-      <Text style={[sc.label, { color: colors.textSecondary }]}>{label}</Text>
+    <View style={[tb.wrap, { borderColor: color + '50', backgroundColor: color + '14' }]}>
+      <Ionicons name="diamond-outline" size={9} color={color} />
+      <Text style={[tb.text, { color }]}>{tier.toUpperCase()}</Text>
     </View>
   );
 }
-const sc = StyleSheet.create({
-  card:  { flex: 1, borderRadius: 14, borderWidth: 1, padding: 14, gap: 6, alignItems: 'center' },
-  icon:  { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  value: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  label: { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 },
+const tb = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, borderWidth: 1 },
+  text: { fontSize: 9, fontFamily: 'Poppins_700Bold', letterSpacing: 0.4 },
 });
 
-// ─── Role assignment modal ───────────────────────────────────────────────────
-
-interface RoleModalProps {
-  user: AdminUser | null;
-  assignableRoles: UserRole[];
-  onSelect: (role: UserRole) => void;
-  onClose: () => void;
-  isPending: boolean;
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function UserAvatar({ user, size = 44 }: { user: AdminUser; size?: number }) {
+  const borderRadius = size / 2;
+  const color = avatarColor(user);
+  if (user.avatarUrl) {
+    return <Image source={{ uri: user.avatarUrl }} style={{ width: size, height: size, borderRadius }} contentFit="cover" />;
+  }
+  return (
+    <View style={{ width: size, height: size, borderRadius, backgroundColor: color + '20', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: size * 0.35, fontFamily: 'Poppins_700Bold', color }}>{initials(user)}</Text>
+    </View>
+  );
 }
 
-function RoleModal({ user, assignableRoles, onSelect, onClose, isPending }: RoleModalProps) {
+// ─── Role Assignment Sheet ────────────────────────────────────────────────────
+function RoleSheet({ user, assignable, onSelect, onClose, isPending }: {
+  user: AdminUser | null;
+  assignable: UserRole[];
+  onSelect: (r: UserRole) => void;
+  onClose: () => void;
+  isPending: boolean;
+}) {
   const colors = useColors();
   if (!user) return null;
-  const currentRole = user.role ?? 'user';
+  const current = (user.role ?? 'user') as UserRole;
 
   return (
-    <Modal
-      transparent
-      animationType={Platform.OS === 'web' ? 'fade' : 'slide'}
-      visible={!!user}
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <View style={[rm.backdrop, { backgroundColor: 'transparent' }]}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} onPress={onClose} />
-        <View
-          style={[rm.sheet, { backgroundColor: colors.surface }]}
-        >
-          {/* Handle (mobile) */}
-          <View style={[rm.handle, { backgroundColor: colors.border }]} />
+    <Modal transparent animationType={isWeb ? 'fade' : 'slide'} visible statusBarTranslucent onRequestClose={onClose}>
+      <View style={ms.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={[ms.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[ms.handle, { backgroundColor: colors.border }]} />
 
-          {/* User identity */}
-          <View style={[rm.userRow, { borderBottomColor: colors.divider }]}>
-            <View style={[rm.avatarWrap, { backgroundColor: colors.surfaceElevated }]}>
-              {user.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={rm.avatar} contentFit="cover" />
-              ) : (
-                <Text style={[rm.initials, { color: colors.primary }]}>
-                  {(user.displayName ?? user.username ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                </Text>
-              )}
-            </View>
+          {/* User header */}
+          <View style={[ms.userRow, { borderBottomColor: colors.divider }]}>
+            <UserAvatar user={user} size={48} />
             <View style={{ flex: 1 }}>
-              <Text style={[rm.userName, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[ms.userName, { color: colors.text }]} numberOfLines={1}>
                 {user.displayName ?? user.username ?? 'Unknown'}
               </Text>
-              <Text style={[rm.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
-                {user.email ?? `@${user.username}`}
+              <Text style={[ms.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
+                {user.email ?? (user.handle ? `+${user.handle}` : '—')}
               </Text>
             </View>
-            <RoleBadge role={currentRole as UserRole} />
+            <RoleBadge role={current} size="md" />
           </View>
 
-          {/* Section label */}
-          <Text style={[rm.sectionLabel, { color: colors.textTertiary }]}>Assign Role</Text>
+          <Text style={[ms.sectionLabel, { color: colors.textTertiary }]}>Assign New Role</Text>
 
-          {/* Role options */}
-          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-            {assignableRoles.map(roleKey => {
-              const meta = ROLE_META[roleKey];
-              const isCurrent = roleKey === currentRole;
+          <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+            {assignable.map(key => {
+              const meta = ROLE_META[key];
+              const isCurrent = key === current;
               return (
                 <Pressable
-                  key={roleKey}
+                  key={key}
                   style={({ pressed }) => [
-                    rm.roleRow,
-                    { borderBottomColor: colors.divider },
+                    ms.roleRow, { borderBottomColor: colors.divider },
                     isCurrent && { backgroundColor: meta.color + '10' },
                     pressed && !isCurrent && { backgroundColor: colors.surfaceElevated },
                   ]}
-                  onPress={() => !isCurrent && !isPending && onSelect(roleKey)}
+                  onPress={() => !isCurrent && !isPending && onSelect(key)}
                   disabled={isCurrent || isPending}
                   accessibilityRole="button"
                   accessibilityLabel={`Assign ${meta.label}`}
                 >
-                  <View style={[rm.roleIconWrap, { backgroundColor: meta.color + '18' }]}>
-                    <Ionicons name={roleIconFor(roleKey)} size={16} color={meta.color} />
+                  <View style={[ms.roleIcon, { backgroundColor: meta.color + '18' }]}>
+                    <Ionicons name={meta.icon as never} size={17} color={meta.color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[rm.roleLabel, { color: colors.text }]}>{meta.label}</Text>
-                    <Text style={[rm.roleDesc, { color: colors.textSecondary }]}>{meta.description}</Text>
+                    <Text style={[ms.roleLabel, { color: colors.text }]}>{meta.label}</Text>
+                    <Text style={[ms.roleDesc,  { color: colors.textSecondary }]}>{meta.description}</Text>
                   </View>
                   {isCurrent ? (
-                    <View style={[rm.currentBadge, { backgroundColor: meta.color + '20', borderColor: meta.color + '44' }]}>
-                      <Text style={[rm.currentBadgeText, { color: meta.color }]}>Current</Text>
+                    <View style={[ms.currentBadge, { backgroundColor: meta.color + '18', borderColor: meta.color + '44' }]}>
+                      <Text style={[ms.currentText, { color: meta.color }]}>Current</Text>
                     </View>
+                  ) : isPending ? (
+                    <ActivityIndicator size="small" color={meta.color} />
                   ) : (
                     <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                   )}
@@ -208,12 +219,11 @@ function RoleModal({ user, assignableRoles, onSelect, onClose, isPending }: Role
             })}
           </ScrollView>
 
-          {/* Cancel */}
           <Pressable
-            style={({ pressed }) => [rm.cancelBtn, { borderTopColor: colors.divider }, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [ms.cancelBtn, { borderTopColor: colors.divider, opacity: pressed ? 0.6 : 1 }]}
             onPress={onClose}
           >
-            <Text style={[rm.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
+            <Text style={[ms.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
           </Pressable>
         </View>
       </View>
@@ -221,193 +231,245 @@ function RoleModal({ user, assignableRoles, onSelect, onClose, isPending }: Role
   );
 }
 
-function roleIconFor(role: UserRole): keyof typeof import('@expo/vector-icons/build/Ionicons').default.glyphMap {
-  const map: Record<UserRole, string> = {
-    user: 'person-outline', organizer: 'calendar-outline', business: 'briefcase-outline',
-    sponsor: 'ribbon-outline', cityAdmin: 'location-outline', moderator: 'shield-outline',
-    admin: 'key-outline', platformAdmin: 'star-outline',
-  };
-  return map[role] as never;
-}
-
-const rm = StyleSheet.create({
-  backdrop:       { flex: 1, justifyContent: 'flex-end', alignItems: Platform.OS === 'web' ? 'center' : 'stretch' },
-  sheet:          {
-    borderRadius: Platform.OS === 'web' ? 20 : 0,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingTop: 8, paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-    width: Platform.OS === 'web' ? 480 : '100%',
-    maxWidth: '100%',
-    ...(Platform.OS === 'web' ? { marginBottom: 40, alignSelf: 'center' as const } : {}),
+const ms = StyleSheet.create({
+  backdrop:     { flex: 1, justifyContent: 'flex-end', alignItems: isWeb ? 'center' : 'stretch' },
+  sheet:        {
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    ...(isWeb ? { borderRadius: 20, width: 480, marginBottom: 40 } : {}),
+    paddingTop: 8, paddingBottom: isWeb ? 24 : Platform.OS === 'ios' ? 36 : 20,
   },
-  handle:         { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
-  userRow:        { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 8 },
-  avatarWrap:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  avatar:         { width: 44, height: 44 },
-  initials:       { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  userName:       { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  userEmail:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  sectionLabel:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, paddingHorizontal: 20, marginBottom: 4, marginTop: 8 },
-  roleRow:        { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
-  roleIconWrap:   { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  roleLabel:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  roleDesc:       { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  currentBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  currentBadgeText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  cancelBtn:      { marginTop: 8, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  cancelText:     { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  userRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
+  userName:     { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  userEmail:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
+  roleRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
+  roleIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  roleLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  roleDesc:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  currentText:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  cancelBtn:    { marginTop: 6, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
+  cancelText:   { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
 });
 
-// ─── User row (mobile card / desktop table row) ──────────────────────────────
-
-function UserRow({
-  user, onPress, disabled, isDesktop,
-}: {
-  user: AdminUser; onPress: () => void; disabled: boolean; isDesktop: boolean;
+// ─── User Card (mobile) ───────────────────────────────────────────────────────
+function UserCard({ user, onEditRole, onToggleVerify, canEditRole, canVerify, index }: {
+  user: AdminUser;
+  onEditRole: () => void;
+  onToggleVerify: () => void;
+  canEditRole: boolean;
+  canVerify: boolean;
+  index: number;
 }) {
   const colors = useColors();
-  const name     = user.displayName ?? user.username ?? 'Unknown';
-  const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  const joined   = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  const name = user.displayName ?? user.username ?? 'Unknown';
 
-  if (isDesktop) {
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          ur.tableRow,
-          { borderBottomColor: colors.divider },
-          pressed && !disabled && { backgroundColor: colors.primaryGlow },
-          disabled && { opacity: 0.55 },
-        ]}
-        onPress={disabled ? undefined : onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`Edit role for ${name}`}
-      >
-        {/* Avatar + name */}
-        <View style={[ur.tdAvatar]}>
-          <View style={[ur.avatarWrap, { backgroundColor: colors.surfaceElevated }]}>
-            {user.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={ur.avatar} contentFit="cover" />
-            ) : (
-              <Text style={[ur.initials, { color: colors.primary }]}>{initials}</Text>
-            )}
-          </View>
+  return (
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 240)).springify().damping(20)}>
+      <View style={[uc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+        {/* Top row: avatar + info + role */}
+        <View style={uc.topRow}>
+          <UserAvatar user={user} size={46} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[ur.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-            <Text style={[ur.sub, { color: colors.textTertiary }]} numberOfLines={1}>+{(user as any).handle ?? user.username}</Text>
+            <View style={uc.nameRow}>
+              <Text style={[uc.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+              {user.isSydneyVerified ? (
+                <Ionicons name="checkmark-circle" size={14} color={CultureTokens.teal} />
+              ) : null}
+            </View>
+            <Text style={[uc.email, { color: colors.textSecondary }]} numberOfLines={1}>
+              {user.email ?? (user.handle ? `+${user.handle}` : '—')}
+            </Text>
+            {(user.city || user.country) ? (
+              <Text style={[uc.meta, { color: colors.textTertiary }]} numberOfLines={1}>
+                {[user.city, user.country].filter(Boolean).join(', ')}
+              </Text>
+            ) : null}
+          </View>
+          <View style={uc.badges}>
+            <RoleBadge role={user.role} />
+            <TierBadge tier={user.membershipTier} />
           </View>
         </View>
-        {/* Email */}
-        <View style={ur.tdEmail}>
-          <Text style={[ur.sub, { color: colors.textSecondary }]} numberOfLines={1}>{user.email ?? '—'}</Text>
-        </View>
-        {/* Role */}
-        <View style={ur.tdRole}>
-          <RoleBadge role={user.role} />
-        </View>
-        {/* Location */}
-        <View style={ur.tdLocation}>
-          <Text style={[ur.sub, { color: colors.textSecondary }]} numberOfLines={1}>
-            {[user.city, user.country].filter(Boolean).join(', ') || '—'}
-          </Text>
-        </View>
-        {/* Joined */}
-        <View style={ur.tdJoined}>
-          <Text style={[ur.sub, { color: colors.textTertiary }]}>{joined}</Text>
-        </View>
-        {/* Action */}
-        <View style={ur.tdAction}>
-          {disabled ? (
-            <Ionicons name="lock-closed-outline" size={15} color={colors.textTertiary} />
-          ) : (
-            <View style={[ur.editBtn, { backgroundColor: colors.primaryGlow, borderColor: colors.primary + '44' }]}>
-              <Ionicons name="create-outline" size={14} color={colors.primary} />
-              <Text style={[ur.editBtnText, { color: colors.primary }]}>Edit</Text>
-            </View>
-          )}
-        </View>
-      </Pressable>
-    );
-  }
 
-  // Mobile card
+        {/* Bottom row: joined date + actions */}
+        <View style={[uc.bottomRow, { borderTopColor: colors.borderLight }]}>
+          <View style={uc.metaRow}>
+            <Ionicons name="time-outline" size={11} color={colors.textTertiary} />
+            <Text style={[uc.metaText, { color: colors.textTertiary }]}>
+              Joined {fmtDate(user.createdAt)}
+            </Text>
+            {user.lastActiveAt ? (
+              <>
+                <Text style={[uc.metaDot, { color: colors.textTertiary }]}>·</Text>
+                <Text style={[uc.metaText, { color: colors.textTertiary }]}>
+                  Active {fmtRelative(user.lastActiveAt)}
+                </Text>
+              </>
+            ) : null}
+          </View>
+          <View style={uc.actions}>
+            {canVerify ? (
+              <Pressable
+                style={[uc.actionBtn, {
+                  backgroundColor: user.isSydneyVerified ? CultureTokens.teal + '18' : colors.backgroundSecondary,
+                  borderColor: user.isSydneyVerified ? CultureTokens.teal + '44' : colors.borderLight,
+                }]}
+                onPress={onToggleVerify}
+                accessibilityRole="button"
+                accessibilityLabel={user.isSydneyVerified ? 'Revoke verification' : 'Verify Sydney'}
+              >
+                <Ionicons
+                  name={user.isSydneyVerified ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                  size={13}
+                  color={user.isSydneyVerified ? CultureTokens.teal : colors.textSecondary}
+                />
+                <Text style={[uc.actionText, { color: user.isSydneyVerified ? CultureTokens.teal : colors.textSecondary }]}>
+                  {user.isSydneyVerified ? 'Verified' : 'Verify'}
+                </Text>
+              </Pressable>
+            ) : null}
+            {canEditRole ? (
+              <Pressable
+                style={[uc.actionBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
+                onPress={onEditRole}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit role for ${name}`}
+              >
+                <Ionicons name="shield-outline" size={13} color={CultureTokens.indigo} />
+                <Text style={[uc.actionText, { color: CultureTokens.indigo }]}>Role</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+const uc = StyleSheet.create({
+  card:      { borderRadius: 16, borderWidth: 1, padding: 14, gap: 12 },
+  topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  nameRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flexShrink: 1 },
+  email:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  meta:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  badges:    { alignItems: 'flex-end', gap: 5 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  metaRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  metaText:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
+  metaDot:   { fontSize: 11 },
+  actions:   { flexDirection: 'row', gap: 8 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
+  actionText:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+});
+
+// ─── Desktop Table Row ────────────────────────────────────────────────────────
+function TableRow({ user, onEditRole, onToggleVerify, canEditRole, canVerify }: {
+  user: AdminUser; onEditRole: () => void; onToggleVerify: () => void;
+  canEditRole: boolean; canVerify: boolean;
+}) {
+  const colors = useColors();
+  const name = user.displayName ?? user.username ?? 'Unknown';
   return (
     <Pressable
-      style={({ pressed }) => [
-        ur.card,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        pressed && !disabled && { backgroundColor: colors.primaryGlow, borderColor: colors.primary + '44' },
-        disabled && { opacity: 0.55 },
-      ]}
-      onPress={disabled ? undefined : onPress}
+      style={({ pressed }) => [tr.row, { borderBottomColor: colors.divider },
+        pressed && canEditRole && { backgroundColor: colors.primaryGlow }]}
+      onPress={canEditRole ? onEditRole : undefined}
       accessibilityRole="button"
     >
-      <View style={[ur.avatarWrap, { backgroundColor: colors.surfaceElevated }]}>
-        {user.avatarUrl ? (
-          <Image source={{ uri: user.avatarUrl }} style={ur.avatar} contentFit="cover" />
-        ) : (
-          <Text style={[ur.initials, { color: colors.primary }]}>{initials}</Text>
-        )}
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[ur.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-        <Text style={[ur.sub, { color: colors.textSecondary }]} numberOfLines={1}>{user.email ?? `@${user.username}`}</Text>
-        {user.city ? (
-          <Text style={[ur.sub, { color: colors.textTertiary, marginTop: 1 }]} numberOfLines={1}>
-            <Ionicons name="location-outline" size={11} color={colors.textTertiary} /> {user.city}{user.country ? `, ${user.country}` : ''}
+      {/* User */}
+      <View style={tr.tdUser}>
+        <UserAvatar user={user} size={36} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={[tr.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+            {user.isSydneyVerified ? <Ionicons name="checkmark-circle" size={12} color={CultureTokens.teal} /> : null}
+          </View>
+          <Text style={[tr.sub, { color: colors.textTertiary }]} numberOfLines={1}>
+            {user.handle ? `+${user.handle}` : `@${user.username ?? '—'}`}
           </Text>
+        </View>
+      </View>
+      {/* Email */}
+      <View style={tr.tdEmail}>
+        <Text style={[tr.sub, { color: colors.textSecondary }]} numberOfLines={1}>{user.email ?? '—'}</Text>
+      </View>
+      {/* Role + Tier */}
+      <View style={[tr.tdRole, { gap: 4 }]}>
+        <RoleBadge role={user.role} />
+        <TierBadge tier={user.membershipTier} />
+      </View>
+      {/* Location */}
+      <View style={tr.tdLoc}>
+        <Text style={[tr.sub, { color: colors.textSecondary }]} numberOfLines={1}>
+          {[user.city, user.country].filter(Boolean).join(', ') || '—'}
+        </Text>
+      </View>
+      {/* Joined */}
+      <View style={tr.tdJoined}>
+        <Text style={[tr.sub, { color: colors.textTertiary }]}>{fmtDate(user.createdAt)}</Text>
+        {user.lastActiveAt ? (
+          <Text style={[tr.subXs, { color: colors.textTertiary }]}>{fmtRelative(user.lastActiveAt)}</Text>
         ) : null}
       </View>
-      <View style={{ alignItems: 'flex-end', gap: 6 }}>
-        <RoleBadge role={user.role} />
-        {disabled ? (
-          <Ionicons name="lock-closed-outline" size={14} color={colors.textTertiary} />
+      {/* Actions */}
+      <View style={tr.tdAction}>
+        {canVerify ? (
+          <Pressable
+            onPress={e => { e.stopPropagation?.(); onToggleVerify(); }}
+            style={[tr.iconBtn, { backgroundColor: user.isSydneyVerified ? CultureTokens.teal + '18' : 'transparent', borderColor: user.isSydneyVerified ? CultureTokens.teal + '44' : 'transparent' }]}
+            accessibilityRole="button" accessibilityLabel="Toggle verification"
+          >
+            <Ionicons name={user.isSydneyVerified ? 'checkmark-circle' : 'checkmark-circle-outline'} size={16} color={user.isSydneyVerified ? CultureTokens.teal : colors.textTertiary} />
+          </Pressable>
+        ) : null}
+        {canEditRole ? (
+          <View style={[tr.editBtn, { backgroundColor: colors.primaryGlow, borderColor: colors.primary + '44' }]}>
+            <Ionicons name="create-outline" size={13} color={colors.primary} />
+            <Text style={[tr.editText, { color: colors.primary }]}>Edit</Text>
+          </View>
         ) : (
-          <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+          <Ionicons name="lock-closed-outline" size={14} color={colors.textTertiary} />
         )}
       </View>
     </Pressable>
   );
 }
 
-const ur = StyleSheet.create({
-  card:       { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1 },
-  avatarWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 },
-  avatar:     { width: 44, height: 44 },
-  initials:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  name:       { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  sub:        { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-
-  // Desktop table row
-  tableRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  tdAvatar:   { flex: 2, flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0 },
-  tdEmail:    { flex: 2, paddingRight: 12, minWidth: 0 },
-  tdRole:     { flex: 1, minWidth: 80 },
-  tdLocation: { flex: 1.5, paddingRight: 8, minWidth: 0 },
-  tdJoined:   { flex: 1, minWidth: 80 },
-  tdAction:   { width: 70, alignItems: 'flex-end' },
-  editBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  editBtnText:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+const tr = StyleSheet.create({
+  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  tdUser:   { flex: 2, flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0 },
+  tdEmail:  { flex: 2, paddingRight: 10, minWidth: 0 },
+  tdRole:   { flex: 1.2, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', minWidth: 0 },
+  tdLoc:    { flex: 1.2, paddingRight: 8, minWidth: 0 },
+  tdJoined: { flex: 1, minWidth: 80 },
+  tdAction: { width: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+  name:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  subXs:    { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  iconBtn:  { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  editBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
+  editText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
 });
 
-// ─── Table header ────────────────────────────────────────────────────────────
-
+// ─── Table Header ─────────────────────────────────────────────────────────────
 function TableHeader() {
   const colors = useColors();
   return (
     <View style={[th.row, { backgroundColor: colors.surfaceElevated, borderBottomColor: colors.divider }]}>
-      {([
+      {[
         { label: 'User',     flex: 2 },
         { label: 'Email',    flex: 2 },
-        { label: 'Role',     flex: 1 },
-        { label: 'Location', flex: 1.5 },
+        { label: 'Role',     flex: 1.2 },
+        { label: 'Location', flex: 1.2 },
         { label: 'Joined',   flex: 1 },
-        { label: '',         width: 70 },
-      ] as { label: string; flex?: number; width?: number }[]).map((col, i) => (
-        <Text
-          key={i}
-          style={[th.cell, { color: colors.textTertiary, flex: col.flex, width: col.width }]}
-        >
+        { label: '',         width: 90 },
+      ].map((col, i) => (
+        <Text key={i} style={[th.cell, { color: colors.textTertiary,
+          ...(col.flex ? { flex: col.flex } : { width: col.width })
+        }]}>
           {col.label}
         </Text>
       ))}
@@ -416,309 +478,377 @@ function TableHeader() {
 }
 const th = StyleSheet.create({
   row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  cell: { fontSize: 11, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  cell: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.9 },
 });
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
+// ─── Stat Chip ────────────────────────────────────────────────────────────────
+function StatChip({ value, label, color, icon }: { value: number | string; label: string; color: string; icon: string }) {
+  const colors = useColors();
+  return (
+    <View style={[sp.chip, { backgroundColor: colors.surface, borderColor: color + '30' }]}>
+      <View style={[sp.icon, { backgroundColor: color + '18' }]}>
+        <Ionicons name={icon as never} size={14} color={color} />
+      </View>
+      <View>
+        <Text style={[sp.val, { color: colors.text }]}>{value}</Text>
+        <Text style={[sp.lbl, { color: colors.textTertiary }]}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+const sp = StyleSheet.create({
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
+  icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+});
 
-const ALL_FILTER = '__all__';
+// ─── Main Screen ─────────────────────────────────────────────────────────────
+const ALL = '__all__';
 
-export default function AdminUsersScreen() {
+function AdminUsersContent() {
   const insets   = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
   const { isDesktop, hPad } = useLayout();
-  const { user: authUser } = useAuth();
+  const { user: authUser }  = useAuth();
   const { role, isAdmin, isLoading: roleLoading } = useRole();
 
-  const [search,      setSearch]      = useState('');
-  const [roleFilter,  setRoleFilter]  = useState<UserRole | typeof ALL_FILTER>(ALL_FILTER);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [page] = useState(0);
+  const [search,     setSearch]     = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | typeof ALL>(ALL);
+  const [page,       setPage]       = useState(0);
+  const [selected,   setSelected]   = useState<AdminUser | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) router.replace('/(tabs)');
   }, [isAdmin, roleLoading]);
 
-  const { data, isLoading, refetch, isFetching } = useQuery<AdminUsersResponse>({
-    queryKey: ['/api/admin/users', page],
-    queryFn: async () => {
-      const res = await apiRequest('GET', `/api/admin/users?limit=50&page=${page}`);
-      return res.json();
-    },
-    enabled: isAdmin,
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['admin-users', page],
+    queryFn:  () => api.admin.listUsers({ limit: 100, page }),
+    enabled:  isAdmin,
+    staleTime: 30_000,
   });
 
-  const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
-      const res = await apiRequest('PUT', `/api/admin/users/${userId}/role`, { role: newRole });
-      return res.json();
-    },
+  const roleMutation = useMutation({
+    mutationFn: ({ userId, newRole }: { userId: string; newRole: UserRole }) =>
+      api.admin.setUserRole(userId, newRole),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      setSelectedUser(null);
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      setSelected(null);
     },
-    onError: () => Alert.alert('Error', 'Failed to assign role. Please try again.'),
+    onError: () => Alert.alert('Error', 'Failed to update role. Please try again.'),
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: ({ userId, verified }: { userId: string; verified: boolean }) =>
+      api.admin.setUserVerified(userId, verified),
+    onSuccess: () => {
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => Alert.alert('Error', 'Failed to update verification.'),
   });
 
   const handleRoleSelect = useCallback((newRole: UserRole) => {
-    if (!selectedUser) return;
-    const current = selectedUser.role ?? 'user';
+    if (!selected) return;
+    const cur = ROLE_META[(selected.role ?? 'user') as UserRole].label;
+    const next = ROLE_META[newRole].label;
     Alert.alert(
       'Confirm Role Change',
-      `Change ${selectedUser.displayName ?? selectedUser.username}'s role from "${ROLE_META[current].label}" to "${ROLE_META[newRole].label}"?`,
+      `Change ${selected.displayName ?? selected.username ?? 'this user'} from "${cur}" → "${next}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: () => assignRoleMutation.mutate({ userId: selectedUser.id, newRole }) },
+        { text: 'Confirm', onPress: () => roleMutation.mutate({ userId: selected.id, newRole }) },
       ],
     );
-  }, [selectedUser, assignRoleMutation]);
+  }, [selected, roleMutation]);
 
-  const users = useMemo(() => data?.users ?? [], [data?.users]);
+  const handleToggleVerify = useCallback((user: AdminUser) => {
+    const next = !user.isSydneyVerified;
+    Alert.alert(
+      next ? 'Verify User' : 'Revoke Verification',
+      `${next ? 'Grant' : 'Remove'} Sydney Verified status for ${user.displayName ?? user.username}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: next ? 'Verify' : 'Revoke', onPress: () => verifyMutation.mutate({ userId: user.id, verified: next }) },
+      ],
+    );
+  }, [verifyMutation]);
 
-  // Stats
-  const adminCount     = users.filter(u => u.role === 'admin' || u.role === 'platformAdmin').length;
-  const organizerCount = users.filter(u => ['organizer', 'business', 'sponsor'].includes(u.role ?? '')).length;
-  const staffCount     = users.filter(u => ['cityAdmin', 'moderator'].includes(u.role ?? '')).length;
+  const users = useMemo(() => data?.users ?? [], [data]);
 
-  // Filter + search
   const filteredUsers = useMemo(() => {
     let list = users;
-    if (roleFilter !== ALL_FILTER) list = list.filter(u => (u.role ?? 'user') === roleFilter);
-    const q = search.toLowerCase().trim();
+    if (roleFilter !== ALL) list = list.filter(u => (u.role ?? 'user') === roleFilter);
+    const q = search.trim().toLowerCase();
     if (q) list = list.filter(u =>
       (u.displayName ?? '').toLowerCase().includes(q) ||
-      (u.username ?? '').toLowerCase().includes(q) ||
-      (u.email ?? '').toLowerCase().includes(q),
+      (u.username    ?? '').toLowerCase().includes(q) ||
+      (u.email       ?? '').toLowerCase().includes(q) ||
+      (u.handle      ?? '').toLowerCase().includes(q),
     );
     return list;
   }, [users, roleFilter, search]);
 
-  const assignableRoles = selectedUser
-    ? getAssignableRoles(role, authUser?.id, selectedUser)
-    : [];
+  // Stats
+  const adminsCount    = users.filter(u => u.role === 'admin' || u.role === 'platformAdmin').length;
+  const orgCount       = users.filter(u => ['organizer', 'business', 'sponsor'].includes(u.role ?? '')).length;
+  const verifiedCount  = users.filter(u => u.isSydneyVerified).length;
+  const staffCount     = users.filter(u => ['cityAdmin', 'moderator'].includes(u.role ?? '')).length;
 
-  if (roleLoading || (!isAdmin && !roleLoading)) {
-    return <View style={[s.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /></View>;
+  // Role filter tabs — only show roles present in data
+  const presentRoles = Array.from(new Set(users.map(u => u.role ?? 'user'))) as UserRole[];
+  const filterTabs   = [ALL as typeof ALL, ...ROLE_KEYS.filter(k => presentRoles.includes(k))];
+
+  const assignable   = selected ? assignableRolesFor(role, authUser?.id, selected) : [];
+  const canAdmin     = role === 'admin' || role === 'platformAdmin';
+
+  if (roleLoading) {
+    return <View style={[s.fill, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}><ActivityIndicator color={colors.primary} /></View>;
   }
 
-  // Role filter tabs — only show roles present in the loaded data + "All"
-  const presentRoles = Array.from(new Set(users.map(u => u.role ?? 'user')));
-  const filterTabs: (UserRole | typeof ALL_FILTER)[] = [ALL_FILTER, ...ROLE_KEYS.filter(k => presentRoles.includes(k))];
-
   return (
-    <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
+    <View style={[s.fill, { backgroundColor: colors.background }]}>
 
-      {/* Header */}
-      <View style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider }]}>
-        <Pressable
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-          style={[s.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-          accessibilityRole="button" accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.headerTitle, { color: colors.text }]}>User Management</Text>
-          <Text style={[s.headerSub, { color: colors.textSecondary }]}>
-            {data?.total ?? 0} total users{isFetching ? ' · Refreshing…' : ''}
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => refetch()}
-          style={[s.iconBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-          accessibilityRole="button" accessibilityLabel="Refresh"
-        >
-          <Ionicons name="refresh" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/admin/notifications' as never)}
-          style={[s.iconBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-          accessibilityRole="button" accessibilityLabel="Campaign manager"
-        >
-          <Ionicons name="megaphone-outline" size={18} color={colors.text} />
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/admin/audit-logs' as never)}
-          style={[s.iconBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-          accessibilityRole="button" accessibilityLabel="Audit logs"
-        >
-          <Ionicons name="document-text-outline" size={18} color={colors.text} />
-        </Pressable>
-      </View>
-
-      {/* Body */}
-      <View style={[s.body, isDesktop && s.bodyDesktop]}>
-
-        {/* Centred content column */}
-        <View style={[s.col, isDesktop && s.colDesktop]}>
-
-          {/* Stats row */}
-          {!isLoading && data ? (
-            <View style={s.statsRow}>
-              <StatCard value={data.total}      label="Total"      color={colors.primary}    icon="people-outline" />
-              <StatCard value={adminCount}       label="Admins"     color={CultureTokens.coral}   icon="key-outline"    />
-              <StatCard value={organizerCount}   label="Organizers" color={CultureTokens.indigo}  icon="calendar-outline" />
-              <StatCard value={staffCount}       label="Staff"      color={CultureTokens.teal}    icon="shield-outline" />
-            </View>
-          ) : null}
-
-          {/* Search */}
-          <View style={[s.searchWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-            <Ionicons name="search" size={17} color={colors.textTertiary} />
-            <TextInput
-              style={[s.searchInput, { color: colors.text }]}
-              placeholder="Search by name or email…"
-              placeholderTextColor={colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              autoCorrect={false}
-              autoCapitalize="none"
-              accessibilityLabel="Search users"
-            />
-            {search.length > 0 ? (
-              <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={17} color={colors.textTertiary} />
-              </Pressable>
-            ) : null}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <LinearGradient
+        colors={gradients.midnight as unknown as [string, string]}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={{ paddingTop: topInset }}
+      >
+        <Animated.View entering={FadeInUp.duration(300)} style={[s.header, { paddingHorizontal: hPad }]}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
+            style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+            accessibilityRole="button" accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={s.headerTitle}>User Management</Text>
+            <Text style={s.headerSub}>
+              {isLoading ? 'Loading…' : `${data?.total ?? 0} users${isFetching ? ' · Refreshing…' : ''}`}
+            </Text>
           </View>
+          <Pressable onPress={() => refetch()} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Refresh">
+            <Ionicons name="refresh" size={18} color="rgba(255,255,255,0.9)" />
+          </Pressable>
+          <Pressable onPress={() => router.push('/admin/notifications' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+            <Ionicons name="megaphone-outline" size={18} color="rgba(255,255,255,0.9)" />
+          </Pressable>
+          <Pressable onPress={() => router.push('/admin/audit-logs' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Audit logs">
+            <Ionicons name="document-text-outline" size={18} color="rgba(255,255,255,0.9)" />
+          </Pressable>
+        </Animated.View>
+      </LinearGradient>
 
-          {/* Role filter tabs */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterTabs}>
-            {filterTabs.map(tab => {
-              const active = roleFilter === tab;
-              const meta   = tab === ALL_FILTER ? null : ROLE_META[tab];
-              const count  = tab === ALL_FILTER ? users.length : users.filter(u => (u.role ?? 'user') === tab).length;
-              return (
-                <Pressable
-                  key={tab}
-                  style={[
-                    s.filterTab,
-                    {
-                      backgroundColor: active ? (meta?.color ?? colors.primary) : colors.surfaceElevated,
-                      borderColor: active ? (meta?.color ?? colors.primary) : colors.borderLight,
-                    },
-                  ]}
-                  onPress={() => setRoleFilter(tab)}
-                  accessibilityRole="button"
-                  accessibilityLabel={tab === ALL_FILTER ? 'All roles' : `Filter by ${ROLE_META[tab].label}`}
-                >
-                  <Text style={[s.filterTabText, { color: active ? '#FFFFFF' : colors.textSecondary }]}>
-                    {tab === ALL_FILTER ? 'All' : ROLE_META[tab].label}
-                  </Text>
-                  <View style={[s.filterTabCount, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : colors.border }]}>
-                    <Text style={[s.filterTabCountText, { color: active ? '#FFFFFF' : colors.textTertiary }]}>{count}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+      {/* ── Content ─────────────────────────────────────────────────────────── */}
+      <View style={[s.body, isDesktop && s.bodyDesktop]}>
+        <FlatList
+          data={filteredUsers}
+          keyExtractor={item => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[s.listContent, { paddingHorizontal: isDesktop ? 0 : hPad }]}
+          ListHeaderComponent={
+            <View style={s.listHeader}>
 
-          {/* User list */}
-          {isLoading ? (
-            <View style={[s.center, { paddingTop: 60 }]}>
-              <ActivityIndicator color={colors.primary} size="large" />
-              <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading users…</Text>
+              {/* Stats chips */}
+              {!isLoading && data ? (
+                <Animated.View entering={FadeInDown.delay(40).springify()} style={s.statsRow}>
+                  <StatChip value={data.total}   label="Total"     color={colors.primary}       icon="people-outline" />
+                  <StatChip value={orgCount}      label="Creators"  color={CultureTokens.indigo} icon="calendar-outline" />
+                  <StatChip value={staffCount}    label="Staff"     color={CultureTokens.teal}   icon="shield-outline" />
+                  <StatChip value={adminsCount}   label="Admins"    color={CultureTokens.coral}  icon="key-outline" />
+                  <StatChip value={verifiedCount} label="Verified"  color={CultureTokens.teal}   icon="checkmark-circle-outline" />
+                </Animated.View>
+              ) : null}
+
+              {/* Search */}
+              <Animated.View entering={FadeInDown.delay(80)} style={[s.searchWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <Ionicons name="search" size={17} color={colors.textTertiary} />
+                <TextInput
+                  style={[s.searchInput, { color: colors.text }]}
+                  placeholder="Search name, email, handle…"
+                  placeholderTextColor={colors.textTertiary}
+                  value={search}
+                  onChangeText={setSearch}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  accessibilityLabel="Search users"
+                />
+                {search.length > 0 ? (
+                  <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Clear search">
+                    <Ionicons name="close-circle" size={17} color={colors.textTertiary} />
+                  </Pressable>
+                ) : null}
+              </Animated.View>
+
+              {/* Role filter chips */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+                {filterTabs.map(tab => {
+                  const active = roleFilter === tab;
+                  const meta   = tab === ALL ? null : ROLE_META[tab];
+                  const count  = tab === ALL
+                    ? users.length
+                    : users.filter(u => (u.role ?? 'user') === tab).length;
+                  const color  = meta?.color ?? colors.primary;
+                  return (
+                    <Pressable
+                      key={tab}
+                      style={[s.chip, {
+                        backgroundColor: active ? color : colors.surface,
+                        borderColor: active ? color : colors.borderLight,
+                      }]}
+                      onPress={() => setRoleFilter(tab)}
+                      accessibilityRole="button"
+                    >
+                      {meta ? <Ionicons name={meta.icon as never} size={12} color={active ? '#fff' : color} /> : null}
+                      <Text style={[s.chipText, { color: active ? '#fff' : colors.textSecondary }]}>
+                        {tab === ALL ? 'All' : meta!.label}
+                      </Text>
+                      <View style={[s.chipCount, { backgroundColor: active ? 'rgba(255,255,255,0.22)' : colors.backgroundSecondary }]}>
+                        <Text style={[s.chipCountText, { color: active ? '#fff' : colors.textTertiary }]}>{count}</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              {/* Desktop table header */}
+              {isDesktop ? (
+                <View style={[s.tableWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <TableHeader />
+                </View>
+              ) : null}
             </View>
-          ) : (
-            <View style={[s.listWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              {isDesktop ? <TableHeader /> : null}
-              <FlatList
-                data={filteredUsers}
-                keyExtractor={item => item.id}
-                scrollEnabled={false}
-                renderItem={({ item, index }) => (
-                  <Animated.View entering={FadeInDown.delay(Math.min(index * 35, 280)).springify()}>
-                  <UserRow
-                    user={item}
-                    isDesktop={isDesktop}
-                    onPress={() => setSelectedUser(item)}
-                    disabled={!canEditUserRole(role, authUser?.id, item)}
-                  />
-                  </Animated.View>
-                )}
-                ItemSeparatorComponent={isDesktop ? undefined : () => (
-                  <View style={[s.sep, { backgroundColor: colors.divider }]} />
-                )}
-                ListEmptyComponent={
-                  <View style={s.empty}>
-                    <Ionicons name="people-outline" size={40} color={colors.textTertiary} />
-                    <Text style={[s.emptyTitle, { color: colors.text }]}>No users found</Text>
-                    <Text style={[s.emptySub, { color: colors.textSecondary }]}>
-                      {search ? 'Try a different search term.' : 'No users match the selected filter.'}
-                    </Text>
-                  </View>
-                }
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={isDesktop ? undefined : { padding: 12, gap: 8 }}
+          }
+          renderItem={({ item, index }) =>
+            isDesktop ? (
+              <View style={[s.tableWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <TableRow
+                  user={item}
+                  onEditRole={() => setSelected(item)}
+                  onToggleVerify={() => handleToggleVerify(item)}
+                  canEditRole={canEdit(role, authUser?.id, item)}
+                  canVerify={canAdmin}
+                />
+              </View>
+            ) : (
+              <UserCard
+                user={item}
+                index={index}
+                onEditRole={() => setSelected(item)}
+                onToggleVerify={() => handleToggleVerify(item)}
+                canEditRole={canEdit(role, authUser?.id, item)}
+                canVerify={canAdmin}
               />
+            )
+          }
+          ItemSeparatorComponent={() =>
+            isDesktop ? null : <View style={{ height: 8 }} />
+          }
+          ListEmptyComponent={
+            isLoading ? (
+              <View style={s.emptyWrap}>
+                <ActivityIndicator color={colors.primary} size="large" />
+                <Text style={[s.emptyText, { color: colors.textSecondary }]}>Loading users…</Text>
+              </View>
+            ) : (
+              <View style={s.emptyWrap}>
+                <Ionicons name="people-outline" size={44} color={colors.textTertiary} />
+                <Text style={[s.emptyTitle, { color: colors.text }]}>No users found</Text>
+                <Text style={[s.emptyText, { color: colors.textSecondary }]}>
+                  {search ? 'Try a different search term.' : 'No users match the selected filter.'}
+                </Text>
+              </View>
+            )
+          }
+          ListFooterComponent={
+            <View style={s.footer}>
+              <Text style={[s.footerText, { color: colors.textTertiary }]}>
+                Showing {filteredUsers.length} of {data?.total ?? 0} users
+              </Text>
+              {(data?.total ?? 0) > (page + 1) * 100 ? (
+                <Pressable
+                  style={[s.loadMore, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+                  onPress={() => setPage(p => p + 1)}
+                  accessibilityRole="button"
+                >
+                  <Text style={[s.loadMoreText, { color: colors.primary }]}>Load more</Text>
+                </Pressable>
+              ) : null}
             </View>
-          )}
-
-          <Text style={[s.pagingNote, { color: colors.textTertiary }]}>
-            Showing {filteredUsers.length} of {data?.total ?? 0} users
-          </Text>
-
-        </View>
+          }
+        />
       </View>
 
-      {/* Role assignment modal */}
-      <RoleModal
-        user={selectedUser}
-        assignableRoles={assignableRoles}
+      {/* Role sheet */}
+      <RoleSheet
+        user={selected}
+        assignable={assignable}
         onSelect={handleRoleSelect}
-        onClose={() => setSelectedUser(null)}
-        isPending={assignRoleMutation.isPending}
+        onClose={() => setSelected(null)}
+        isPending={roleMutation.isPending}
       />
-
     </View>
   );
 }
 
+export default function AdminUsersScreen() {
+  return (
+    <ErrorBoundary>
+      <AdminUsersContent />
+    </ErrorBoundary>
+  );
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
-const CONTENT_MAX = 1200;
-
 const s = StyleSheet.create({
-  container:      { flex: 1 },
-  center:         { alignItems: 'center', justifyContent: 'center', gap: 12 },
+  fill:         { flex: 1 },
 
-  header:         {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backBtn:        { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  iconBtn:        { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerSub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  // Header
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.2 },
+  headerSub:    { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  headerBtn:    { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
 
-  body:           { flex: 1 },
-  bodyDesktop:    {},
-  col:            { flex: 1, padding: 16, gap: 14 },
-  colDesktop:     { maxWidth: CONTENT_MAX, width: '100%', alignSelf: 'center' as const },
+  // Body
+  body:         { flex: 1 },
+  bodyDesktop:  {},
 
-  statsRow:       { flexDirection: 'row', gap: 10 },
+  // List
+  listContent:  { paddingTop: 16, paddingBottom: 40, gap: 0 },
+  listHeader:   { gap: 12, marginBottom: 12 },
 
-  searchWrap:     {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 12, borderWidth: 1,
-  },
-  searchInput:    { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, padding: 0 },
+  // Stats
+  statsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
-  filterTabs:     { gap: 8, paddingVertical: 2 },
-  filterTab:      { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  filterTabText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  filterTabCount: { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
-  filterTabCountText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
+  // Search
+  searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
+  searchInput:  { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, padding: 0 },
 
-  listWrap:       { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  sep:            { height: StyleSheet.hairlineWidth, marginHorizontal: 12 },
+  // Role chips
+  chips:        { gap: 8, paddingVertical: 2 },
+  chip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  chipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  chipCount:    { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
+  chipCountText:{ fontSize: 10, fontFamily: 'Poppins_700Bold' },
 
-  pagingNote:     { fontSize: 12, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingBottom: 8 },
+  // Desktop table
+  tableWrap:    { borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, overflow: 'hidden' },
 
-  empty:          { alignItems: 'center', gap: 8, paddingVertical: 60, paddingHorizontal: 20 },
-  emptyTitle:     { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  emptySub:       { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
-  loadingText:    { fontFamily: 'Poppins_400Regular', fontSize: 14 },
+  // Empty / loading
+  emptyWrap:    { alignItems: 'center', gap: 10, paddingVertical: 60 },
+  emptyTitle:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  emptyText:    { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
+
+  // Footer
+  footer:       { alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 20 },
+  footerText:   { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  loadMore:     { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  loadMoreText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 });

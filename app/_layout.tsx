@@ -272,6 +272,11 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/audit-logs" />
       <Stack.Screen name="admin/handles" />
       <Stack.Screen name="admin/updates" />
+      <Stack.Screen name="admin/import" />
+      <Stack.Screen name="admin/moderation" />
+      <Stack.Screen name="admin/finance" />
+      <Stack.Screen name="admin/platform" />
+      <Stack.Screen name="admin/data-compliance" />
 
       <Stack.Screen name="updates/index" />
       <Stack.Screen name="updates/[id]" />

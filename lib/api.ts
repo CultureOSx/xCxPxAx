@@ -15,6 +15,7 @@ import { apiRequest, getApiUrl } from './query-client';
 import type {
   EventData,
   User,
+  UserRole,
   Ticket,
   PaginatedEventsResponse,
   Profile,
@@ -478,6 +479,77 @@ const notifications = {
 };
 
 const admin = {
+  stats: () =>
+    request<{
+      totalUsers: number;
+      totalEvents: number;
+      totalTicketsSold: number;
+      activeCouncils: number;
+      pendingHandlesCount: number;
+      newUsersThisWeek: number;
+      activeOrganizers: number;
+      pendingModerationCount: number;
+    }>('GET', 'api/admin/stats'),
+
+  listUsers: (params?: { limit?: number; page?: number; search?: string; role?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit  != null) qs.set('limit',  String(params.limit));
+    if (params?.page   != null) qs.set('page',   String(params.page));
+    if (params?.search)         qs.set('search', params.search);
+    if (params?.role)           qs.set('role',   params.role);
+    const q = qs.toString();
+    return request<{
+      users: Array<{
+        id: string; username?: string; displayName?: string; email?: string;
+        role?: UserRole; avatarUrl?: string; city?: string; country?: string;
+        handle?: string; handleStatus?: string; isSydneyVerified?: boolean;
+        membershipTier?: string; createdAt?: string; lastActiveAt?: string;
+      }>;
+      total: number; page: number; limit: number;
+    }>('GET', `api/admin/users${q ? `?${q}` : ''}`);
+  },
+
+  setUserRole: (userId: string, role: UserRole) =>
+    request<{ ok: boolean }>('PUT', `api/admin/users/${userId}/role`, { role }),
+
+  setUserVerified: (userId: string, verified: boolean) =>
+    request<{ ok: boolean }>('PUT', `api/admin/users/${userId}/verify`, { verified }),
+
+  listReports: (params?: { status?: 'pending' | 'resolved' | 'dismissed' | 'all'; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.limit != null) qs.set('limit', String(params.limit));
+    const q = qs.toString();
+    return request<{
+      reports: Array<{
+        id: string; targetType: string; targetId: string; reason: string;
+        details?: string; reporterUserId: string; status: string; createdAt: string;
+      }>;
+      total: number;
+    }>('GET', `api/admin/reports${q ? `?${q}` : ''}`);
+  },
+
+  resolveReport: (id: string, status: 'resolved' | 'dismissed') =>
+    request<{ ok: boolean }>('PATCH', `api/admin/reports/${id}/status`, { status }),
+
+  pendingEvents: (limit = 50) =>
+    request<{
+      events: Array<{
+        id: string; title?: string; category?: string; city?: string; country?: string;
+        date?: string; imageUrl?: string; organizerId?: string; createdAt?: string;
+        isFree?: boolean; priceCents?: number;
+      }>;
+      total: number;
+    }>('GET', `api/admin/events/pending?limit=${limit}`),
+
+  financeSummary: () =>
+    request<{
+      activeSubscriptions: number;
+      paidTickets: number;
+      sampleRevenueCents: number;
+      sampleSize: number;
+    }>('GET', 'api/admin/finance/summary'),
+
   auditLogs: (params?: { limit?: number; action?: string; actorId?: string; from?: string; to?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit != null) qs.set('limit', String(params.limit));
