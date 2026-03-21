@@ -186,6 +186,18 @@ const events = {
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
     return request<{ events: EventData[]; total: number; radiusKm: number }>('GET', `api/events/nearby?${qs}`);
   },
+
+  /** RSVP to a free/open event */
+  rsvp: (eventId: string, status: 'going' | 'maybe' | 'not_going') =>
+    request<{ status: string }>('POST', `api/events/${eventId}/rsvp`, { status }),
+
+  /** Get the authenticated user's RSVP status for an event */
+  myRsvp: (eventId: string) =>
+    request<{ status: 'going' | 'maybe' | 'not_going' | null }>('GET', `api/events/${eventId}/rsvp/me`),
+
+  /** Track a click on an external ticket link (no auth required) */
+  trackTicketClick: (eventId: string) =>
+    request<{ ok: boolean }>('POST', `api/events/${eventId}/ticket-click`),
 };
 
 // ---------------------------------------------------------------------------

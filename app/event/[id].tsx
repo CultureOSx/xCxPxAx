@@ -177,6 +177,52 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   });
   const isPlus = membership?.tier === "plus";
 
+  const isFreeOrOpen = event.isFree || event.entryType === 'free_open';
+
+  // ── RSVP ──────────────────────────────────────────────────────────────────
+  const { data: myRsvpData } = useQuery({
+    queryKey: [`/api/events/${event.id}/rsvp/me`],
+    queryFn: () => api.events.myRsvp(event.id),
+    enabled: !!userId,
+  });
+  const myRsvp = myRsvpData?.status ?? null;
+
+  const rsvpMutation = useMutation({
+    mutationFn: (status: 'going' | 'maybe' | 'not_going') => api.events.rsvp(event.id, status),
+    onSuccess: () => {
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rsvp/me`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
+    },
+    onError: () => Alert.alert('Error', 'Could not save your RSVP. Please try again.'),
+  });
+
+  const handleRsvp = useCallback((status: 'going' | 'maybe' | 'not_going') => {
+    if (!userId) {
+      Alert.alert('Login required', 'Please sign in to RSVP.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+      ]);
+      return;
+    }
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    rsvpMutation.mutate(status);
+  }, [userId, rsvpMutation, pathname]);
+
+  // ── External Ticket Click Tracking ────────────────────────────────────────
+  const handleExternalTicketPress = useCallback(async () => {
+    const url = event.externalTicketUrl ?? event.externalUrl;
+    if (!url) return;
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // fire-and-forget tracking
+    api.events.trackTicketClick(event.id).catch(() => {});
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Error', 'Could not open the ticket page.');
+    }
+  }, [event.id, event.externalTicketUrl, event.externalUrl]);
+
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   const purchaseMutation = useMutation({
@@ -375,42 +421,105 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     setCalendarSheetVisible(false);
   }, [calendarParams]);
 
-  const BottomBarInner = ({ event, colors, setCalendarSheetVisible, openTicketModal }: any) => (
-    <>
-      <View style={s.bottomPriceSection}>
-        <Text style={s.bottomPriceLabel}>From</Text>
-        <Text style={s.bottomPriceValue}>{event.priceLabel || 'Free'}</Text>
-      </View>
-      <View style={s.bottomBtnGroup}>
-        <Button 
-          variant="outline" 
-          size="md" 
-          leftIcon="calendar-number-outline"
-          onPress={() => setCalendarSheetVisible(true)}
-        >
-          Calendar
-        </Button>
-        {event.externalTicketUrl ? (
-          <Button 
-            variant="outline" 
-            size="md" 
-            leftIcon="open-outline"
-            onPress={() => Linking.openURL(event.externalTicketUrl!)}
+  const RSVP_OPTIONS = [
+    { status: 'going' as const,     icon: 'checkmark-circle' as const, label: 'Going',    color: CultureTokens.teal },
+    { status: 'maybe' as const,     icon: 'help-circle' as const,      label: 'Maybe',    color: CultureTokens.saffron },
+    { status: 'not_going' as const, icon: 'close-circle' as const,     label: "Can't Go", color: colors.textTertiary },
+  ] as const;
+
+  const BottomBarInner = ({ event: ev, colors: c, setCalendarSheetVisible: setCalSheet, openTicketModal: openModal }: any) => {
+    if (isFreeOrOpen) {
+      // RSVP mode for free/open events
+      return (
+        <>
+          <View style={s.bottomPriceSection}>
+            <Text style={s.bottomPriceLabel}>Free Entry</Text>
+            <Text style={[s.bottomPriceValue, { color: CultureTokens.teal }]}>
+              {(ev.rsvpGoing ?? 0) > 0 ? `${ev.rsvpGoing} going` : 'RSVP'}
+            </Text>
+          </View>
+          <View style={s.bottomBtnGroup}>
+            <Button
+              variant="outline"
+              size="md"
+              leftIcon="calendar-number-outline"
+              onPress={() => setCalSheet(true)}
+              accessibilityLabel="Add to calendar"
+            >
+              Calendar
+            </Button>
+            {RSVP_OPTIONS.map(opt => {
+              const isActive = myRsvp === opt.status;
+              return (
+                <Button
+                  key={opt.status}
+                  variant={isActive ? 'gradient' : 'outline'}
+                  size="md"
+                  leftIcon={opt.icon}
+                  iconColor={isActive ? '#fff' : opt.color}
+                  loading={rsvpMutation.isPending}
+                  onPress={() => handleRsvp(opt.status)}
+                  accessibilityLabel={`RSVP ${opt.label}`}
+                  accessibilityRole="button"
+                >
+                  {opt.label}
+                </Button>
+              );
+            })}
+          </View>
+        </>
+      );
+    }
+
+    // Ticketed event mode
+    const hasExternal = !!(ev.externalTicketUrl || ev.externalUrl);
+    return (
+      <>
+        <View style={s.bottomPriceSection}>
+          <Text style={s.bottomPriceLabel}>From</Text>
+          <Text style={s.bottomPriceValue}>{ev.priceLabel || 'Ticketed'}</Text>
+          {(ev.ticketClickCount ?? 0) > 0 && (
+            <Text style={[s.bottomPriceLabel, { fontSize: 10 }]}>
+              {ev.ticketClickCount} interested
+            </Text>
+          )}
+        </View>
+        <View style={s.bottomBtnGroup}>
+          <Button
+            variant="outline"
+            size="md"
+            leftIcon="calendar-number-outline"
+            onPress={() => setCalSheet(true)}
+            accessibilityLabel="Add to calendar"
           >
-            Organiser
+            Calendar
           </Button>
-        ) : null}
-        <Button 
-          variant="gradient" 
-          size="md" 
-          leftIcon="ticket"
-          onPress={() => openTicketModal()}
-        >
-          Get Tickets
-        </Button>
-      </View>
-    </>
-  );
+          {hasExternal ? (
+            <Button
+              variant="gradient"
+              size="md"
+              leftIcon="ticket-outline"
+              onPress={handleExternalTicketPress}
+              accessibilityLabel="Buy tickets on organiser website"
+              accessibilityRole="link"
+            >
+              Buy Tickets
+            </Button>
+          ) : (
+            <Button
+              variant="gradient"
+              size="md"
+              leftIcon="ticket"
+              onPress={() => openModal()}
+              accessibilityLabel="Get tickets"
+            >
+              Get Tickets
+            </Button>
+          )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <View style={s.container}>

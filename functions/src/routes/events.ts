@@ -500,6 +500,80 @@ export function createEventsRouter() {
     }
   });
 
+  // ── POST /api/events/:id/ticket-click ──────────────────────────────────────
+  // No auth required — tracking only, fire-and-forget
+  router.post('/events/:id/ticket-click', async (req: Request, res: Response) => {
+    const eventId = qparam(req.params.id);
+    try {
+      const { db } = await import('../admin');
+      await db.collection('events').doc(eventId).update({
+        ticketClickCount: (await import('firebase-admin/firestore')).FieldValue.increment(1),
+      });
+      return res.json({ ok: true });
+    } catch {
+      // best-effort — don't fail the client
+      return res.json({ ok: false });
+    }
+  });
+
+  // ── GET /api/events/:id/rsvp/me ────────────────────────────────────────────
+  router.get('/events/:id/rsvp/me', requireAuth, async (req: Request, res: Response) => {
+    const eventId = qparam(req.params.id);
+    const userId = req.user!.id;
+    try {
+      const { db } = await import('../admin');
+      const snap = await db.collection('rsvps').doc(`${eventId}_${userId}`).get();
+      if (!snap.exists) return res.json({ status: null });
+      return res.json({ status: (snap.data() as any).status ?? null });
+    } catch (err) {
+      console.error('[GET /api/events/:id/rsvp/me]:', err);
+      return res.status(500).json({ error: 'Failed to get RSVP' });
+    }
+  });
+
+  // ── POST /api/events/:id/rsvp ──────────────────────────────────────────────
+  router.post('/events/:id/rsvp', requireAuth, async (req: Request, res: Response) => {
+    const eventId = qparam(req.params.id);
+    const userId = req.user!.id;
+    const status = req.body?.status as string | undefined;
+
+    if (!['going', 'maybe', 'not_going'].includes(status ?? '')) {
+      return res.status(400).json({ error: 'status must be going | maybe | not_going' });
+    }
+
+    try {
+      const { db } = await import('../admin');
+      const { FieldValue } = await import('firebase-admin/firestore');
+      const rsvpRef  = db.collection('rsvps').doc(`${eventId}_${userId}`);
+      const eventRef = db.collection('events').doc(eventId);
+
+      const prevSnap = await rsvpRef.get();
+      const prevStatus = prevSnap.exists ? (prevSnap.data() as any).status as string : null;
+
+      const now = nowIso();
+      await rsvpRef.set({ eventId, userId, status, updatedAt: now, createdAt: prevSnap.exists ? (prevSnap.data() as any).createdAt : now });
+
+      // Atomic counter updates — decrement old, increment new
+      const counterUpdate: Record<string, unknown> = {};
+      const counterKey: Record<string, string> = { going: 'rsvpGoing', maybe: 'rsvpMaybe', not_going: 'rsvpNotGoing' };
+
+      if (prevStatus && prevStatus !== status) {
+        counterUpdate[counterKey[prevStatus]] = FieldValue.increment(-1);
+      }
+      if (!prevStatus || prevStatus !== status) {
+        counterUpdate[counterKey[status!]] = FieldValue.increment(1);
+      }
+      if (Object.keys(counterUpdate).length > 0) {
+        await eventRef.update(counterUpdate);
+      }
+
+      return res.json({ status });
+    } catch (err) {
+      console.error('[POST /api/events/:id/rsvp]:', err);
+      return res.status(500).json({ error: 'Failed to save RSVP' });
+    }
+  });
+
   // ── POST /api/events/:id/feedback ──────────────────────────────────────────
   router.post('/events/:id/feedback', requireAuth, async (req: Request, res: Response) => {
     const eventId = qparam(req.params.id);

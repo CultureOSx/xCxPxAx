@@ -83,6 +83,13 @@ export interface EventData {
   priceTier?: PriceTier;
   organizerReputationScore?: number;
   externalTicketUrl?: string | null;
+  externalUrl?: string | null;
+  ticketClickCount?: number;
+  rsvpGoing?: number;
+  rsvpMaybe?: number;
+  rsvpNotGoing?: number;
+  /** The user's own RSVP status — populated on GET /events/:id when authenticated */
+  myRsvp?: 'going' | 'maybe' | 'not_going' | null;
   deletedAt?: string | null;
   distanceKm?: number;
   createdAt?: string;

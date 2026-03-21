@@ -14,7 +14,6 @@
 
 import * as cheerio from 'cheerio';
 import { db, isFirestoreConfigured } from '../admin';
-import { eventsService } from './events';
 import * as geofireCommon from 'geofire-common';
 
 // ---------------------------------------------------------------------------
@@ -42,7 +41,9 @@ export type NormalizedEvent = {
   state?: string;
   country?: string;
   imageUrl?: string;
-  externalUrl?: string;
+  externalUrl?: string;       // event detail page URL
+  externalTicketUrl?: string; // direct ticket purchase / RSVP link
+  entryType?: 'ticketed' | 'free_open';
   externalId?: string;
   category?: string;
   tags?: string[];
@@ -203,6 +204,15 @@ async function fetchCityOfSydney(url: string): Promise<RawImportEvent[]> {
         return data.data.map((node: any): RawImportEvent => {
           const attrs = node.attributes ?? {};
           const dateRange = attrs.field_date_range ?? {};
+          const eventPageUrl = attrs.path?.alias ? `${base}${attrs.path.alias}` : undefined;
+          // Try common Drupal field names for ticket/booking links
+          const ticketUrl =
+            attrs.field_ticket_link?.uri ??
+            attrs.field_ticketing_link?.uri ??
+            attrs.field_buy_tickets?.uri ??
+            attrs.field_booking_link?.uri ??
+            attrs.field_registration_link?.uri ??
+            (attrs.field_is_free ? null : eventPageUrl);    // if paid, event page is ticket page
           return {
             _source: 'cityofsydney',
             externalId: node.id ?? attrs.drupal_internal__nid,
@@ -212,7 +222,8 @@ async function fetchCityOfSydney(url: string): Promise<RawImportEvent[]> {
             endDate: dateRange.end_value,
             venue: attrs.field_location ?? '',
             address: attrs.field_street_address ?? '',
-            externalUrl: attrs.path?.alias ? `${base}${attrs.path.alias}` : undefined,
+            externalUrl: eventPageUrl,
+            externalTicketUrl: ticketUrl ?? undefined,
             isFree: attrs.field_is_free ?? false,
             categories: (node.relationships?.field_event_categories?.data ?? []).map((c: any) => c.meta?.label ?? ''),
           };
@@ -301,9 +312,25 @@ function scrapeGenericHtml(html: string, baseUrl: string): RawImportEvent[] {
       const href = linkEl.attr('href') ?? '';
       const externalUrl = href.startsWith('http') ? href : href ? `${new URL(baseUrl).origin}${href}` : undefined;
 
+      // Detect dedicated ticket/booking link — higher priority than generic event page link
+      const TICKET_TEXT_RE = /\b(ticket|buy|book|register|rsvp|get\s+tickets?|purchase)\b/i;
+      let externalTicketUrl: string | undefined;
+      $el.find('a[href]').each((_, a) => {
+        const aHref = $(a).attr('href') ?? '';
+        const aText = $(a).text().trim();
+        if (TICKET_TEXT_RE.test(aText) || TICKET_TEXT_RE.test(aHref)) {
+          const resolved = aHref.startsWith('http') ? aHref : aHref ? `${new URL(baseUrl).origin}${aHref}` : undefined;
+          if (resolved) { externalTicketUrl = resolved; return false; } // break
+        }
+      });
+
       const imageUrl = $el.find('img').first().attr('src') ?? $el.find('[style*="background-image"]').first().attr('data-src');
 
-      events.push({ title, description, rawDate: dateText, externalUrl, imageUrl });
+      // Detect free events by looking for "free" keyword in title, description, or price elements
+      const priceText = $el.find('[class*="price"], [class*="cost"], [class*="ticket"]').first().text().trim().toLowerCase();
+      const isFree = /\bfree\b/.test(priceText) || /\bfree\s+entry\b|\bfree\s+event\b/i.test(title + ' ' + description);
+
+      events.push({ title, description, rawDate: dateText, externalUrl, externalTicketUrl, imageUrl, isFree });
     });
 
     if (events.length > 0) break; // stop at first matching selector
@@ -350,9 +377,11 @@ export function normalizeRawEvent(raw: RawImportEvent, importSource: ImportSourc
       country: (location?.address?.addressCountry) ?? defaultCountry,
       imageUrl: (raw.image as any)?.url ?? (raw.image as string) ?? undefined,
       externalUrl: (raw.url ?? raw['@id']) as string | undefined,
+      externalTicketUrl: (offers as any)?.url ?? undefined,
       externalId: (raw['@id'] ?? raw.identifier) as string | undefined,
       category: mapCategory((raw.eventAttendanceMode ?? raw['@type']) as string),
       isFree: isFree || priceCents === 0,
+      entryType: (isFree || priceCents === 0) ? 'free_open' : 'ticketed',
       priceCents: isFree ? 0 : priceCents,
       priceLabel: isFree ? 'Free' : offers?.priceCurrency ? `${offers.priceCurrency}${priceNum}` : undefined,
       importSource,
@@ -383,10 +412,12 @@ export function normalizeRawEvent(raw: RawImportEvent, importSource: ImportSourc
       state: 'NSW',
       country: 'Australia',
       externalUrl: raw.externalUrl as string | undefined,
+      externalTicketUrl: raw.externalTicketUrl as string | undefined,
       externalId: raw.externalId as string | undefined,
       category,
       tags: cats.map(c => c.toLowerCase()),
       isFree: Boolean(raw.isFree),
+      entryType: Boolean(raw.isFree) ? 'free_open' : 'ticketed',
       importSource: 'cityofsydney',
       organizerId: 'import',
     };
@@ -419,7 +450,13 @@ export function normalizeRawEvent(raw: RawImportEvent, importSource: ImportSourc
     state: String(raw.state ?? raw.region ?? '').trim() || undefined,
     country: String(raw.country ?? defaultCountry).trim(),
     imageUrl: (raw.imageUrl ?? raw.image ?? raw.image_url ?? raw.thumbnail) as string | undefined,
-    externalUrl: (raw.url ?? raw.link ?? raw.externalUrl) as string | undefined,
+    externalUrl: (raw.url ?? raw.link ?? raw.externalUrl ?? raw.event_url) as string | undefined,
+    externalTicketUrl: (
+      raw.ticketUrl ?? raw.ticket_url ?? raw.ticketLink ?? raw.ticket_link ??
+      raw.bookingUrl ?? raw.booking_url ?? raw.registrationUrl ?? raw.registration_url ??
+      raw.externalTicketUrl
+    ) as string | undefined,
+    entryType: (Boolean(isFreeRaw) || priceCents === 0) ? 'free_open' : (priceCents != null ? 'ticketed' : undefined),
     externalId: String(raw.id ?? raw.externalId ?? raw.external_id ?? '').trim() || undefined,
     category,
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : undefined,
@@ -496,9 +533,11 @@ export async function importEvents(
           city:         event.city ?? 'Sydney',
           state:        event.state ?? null,
           country:      event.country ?? 'Australia',
-          imageUrl:     event.imageUrl ?? null,
-          externalUrl:  event.externalUrl ?? null,
-          externalId:   event.externalId ?? null,
+          imageUrl:          event.imageUrl ?? null,
+          externalUrl:       event.externalUrl ?? null,
+          externalTicketUrl: event.externalTicketUrl ?? null,
+          entryType:         event.entryType ?? (event.isFree ? 'free_open' : 'ticketed'),
+          externalId:        event.externalId ?? null,
           category:     event.category ?? null,
           tags:         event.tags ?? [],
           cultureTag:   event.cultureTag ?? [],
@@ -522,12 +561,15 @@ export async function importEvents(
           const ref = db.collection('events').doc();
           batch.set(ref, {
             ...docData,
-            id:        ref.id,
-            cpid:      `CP-E-IMP-${ref.id.slice(0, 8).toUpperCase()}`,
-            createdAt: now,
+            id:              ref.id,
+            cpid:            `CP-E-IMP-${ref.id.slice(0, 8).toUpperCase()}`,
+            createdAt:       now,
+            ticketClickCount: 0,
+            rsvpGoing:       0,
+            rsvpMaybe:       0,
+            rsvpNotGoing:    0,
           });
-          if (!event.externalId) result.imported++;
-          else result.imported++;
+          result.imported++;
         }
       } catch (err) {
         result.errors.push(`Failed to import "${event.title}": ${String(err)}`);
