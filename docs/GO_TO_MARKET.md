@@ -7,7 +7,7 @@
 
 ## 1. What Is CulturePass?
 
-CulturePass is a **B2B2C cultural lifestyle marketplace** for diaspora communities in AU, NZ, UAE, UK, and CA.
+CulturePass is a **B2B2C culturaal lifestyle marketplace** for diaspora communities in AU, NZ, UAE, UK, and CA.
 
 It solves a real gap: diaspora communities are vibrant and active, but their events, businesses, and gathering spaces are scattered across social media, WhatsApp groups, and niche websites. CulturePass unifies them in one beautifully designed, cross-platform experience.
 
