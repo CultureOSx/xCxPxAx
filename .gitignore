@@ -19,6 +19,11 @@ web/out/
 ios/
 android/
 *.orig.*
+
+# EAS local build artifacts
+*.aab
+*.apk
+*.ipa
 *.jks
 *.p8
 *.p12
