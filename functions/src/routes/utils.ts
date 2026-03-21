@@ -4,6 +4,8 @@
  */
 
 import { randomBytes } from 'node:crypto';
+import * as Sentry from '@sentry/node';
+import { type Request, type Response, type NextFunction } from 'express';
 import { getPostcodeData, getPostcodesByPlace } from '../shared/australian-postcodes';
 import { walletsService, notificationsService } from '../services/firestore';
 import { isFirestoreConfigured } from '../admin';
@@ -346,7 +348,9 @@ export async function awardRewardsPoints(
         },
       });
     } catch (err) {
+      // Non-fatal: reward points awarded but notification failed
       console.error('[rewards] notification create failed:', err);
+      Sentry.captureException(err, { extra: { route: 'rewards/notification', userId } });
     }
     return points;
   }
@@ -366,9 +370,20 @@ export function parseBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
   return parsed.data;
 }
 
-/** 
+/**
+ * Logs an error to Cloud Logging (console.error) AND captures it in Sentry.
+ * Use this in every route catch block instead of bare console.error.
+ */
+export function captureRouteError(err: unknown, route: string): void {
+  console.error(`[${route}]:`, err);
+  Sentry.captureException(err, { extra: { route } });
+}
+
+/**
  * Wraps an async route handler to catch errors and pass them to next().
  * Eliminates need for manual try/catch in every route.
  */
-export const wrap = (fn: (req: any, res: any, next: any) => Promise<any>) => 
-  (req: any, res: any, next: any) => fn(req, res, next).catch(next);
+export const wrap = (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) =>
+  (req: Request, res: Response, next: NextFunction): void => {
+    fn(req, res, next).catch(next);
+  };

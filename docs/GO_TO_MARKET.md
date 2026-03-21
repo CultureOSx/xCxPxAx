@@ -138,36 +138,94 @@ These are launch blockers. Nothing ships without these.
 
 ## 4. Go-To-Market Strategy
 
+The GTM follows a four-phase flywheel: build supply (organisers + events) before demand (users), launch publicly once content density is proven, activate revenue once engagement is established, then replicate the playbook in new markets.
+
+---
+
 ### Phase 1 — Seed Communities (Months 1–2)
+**Objective**: Build supply-side density before the public launch. No cold-start problem at go-live.
 
-- **Target**: 5–10 established diaspora community organisations in Sydney and Melbourne
-- **Approach**: White-glove onboarding for their first events and communities
-- **Goal**: 50 published events, 500 registered users, proof of engagement
-- **Channels**: WhatsApp community leaders, cultural associations, multicultural councils
+**Target**: 5–10 established diaspora community organisations in Sydney and Melbourne — South Asian, East African, Southeast Asian, Pacific Islander, Chinese Australian.
 
-### Phase 2 — Launch Campaign (Month 3)
+**Tactics**:
+- Direct outreach to founder's personal network first, then warm intros to cultural association presidents
+- White-glove onboarding: set up their community profile, publish their first 3 events, configure ticket tiers — founder does it with them
+- Attend 2–3 cultural events as a participant, not a vendor — build trust before pitching
+- WhatsApp seeding: reach out to group admins directly with a demo video, not a pitch deck
+- Partner with multicultural councils (City of Sydney Multicultural team, City of Melbourne) for introductions to registered cultural organisations
 
-- **App Store launch** — iOS + Android simultaneously
-- **PR push** — multicultural media (SBS, Mosaik, cultural community newspapers)
-- **Influencer seeding** — diaspora content creators on TikTok and Instagram
-- **Event listings drive** — partner with 3–5 cultural festivals for exclusive ticketing
-- **Goal**: 5,000 registered users, 10 organiser accounts, 200 events published
+**Success Metrics**:
+- 10 active organiser accounts
+- 50 published events
+- 500 registered users (organic — no paid acquisition yet)
+- NPS ≥ 40 from seed organisers (measure by direct conversation)
+- At least 1 paid ticket transaction completed end-to-end in production
+
+---
+
+### Phase 2 — Public Launch (Month 3)
+**Objective**: Create a coordinated awareness moment. iOS + Android + web live simultaneously.
+
+**Tactics**:
+- **App Store launch** — iOS App Store + Google Play on the same day; web already live at culturepass.com.au
+- **PR push** — pitch to: SBS, NITV, Mosaik, Junkee, The Guardian Australia (multicultural beat), Indian Link, Greek Herald, and community-specific media in each diaspora
+- **Influencer seeding** — identify 10–15 diaspora content creators (TikTok + Instagram, 5K–100K followers, culture/food/events niche); offer free CulturePass+ for 3 months in exchange for authentic coverage of events they'd attend anyway
+- **Festival partnerships** — exclusive ticketing for 3–5 cultural festivals (target: Sydney Lunar Festival, Diwali events, Pacific Community events); position CulturePass as the official ticketing partner
+- **Launch event** — cultural showcase in Sydney CBD; invite community leaders, media, and 50 seed users; record content for social
+- **App Store Optimisation** — keywords: "cultural events Sydney", "diaspora events Australia", "multicultural events", "Indian events Melbourne"
+- **Referral loop** — every ticket purchase generates a shareable event card; built-in social sharing on confirmation screen
+
+**Success Metrics**:
+- 5,000 registered users within 30 days of launch
+- 10 active organiser accounts publishing events independently
+- 200 published events
+- 4.0+ App Store rating (≥ 50 reviews)
+- Day-7 retention ≥ 25%
+
+---
 
 ### Phase 3 — Monetisation (Month 4–6)
+**Objective**: Convert engaged users into paying customers. Prove unit economics before expanding.
 
-- Activate CulturePass+ subscriptions — email campaigns to active users
-- Launch promoted event listings for organisers
-- Onboard first 20 business directory premium listings
-- Introduce ticket booking fees (2–3% per transaction)
-- **Goal**: $5K–$10K MRR, 1,000 CulturePass+ subscribers
+**Revenue stream activation sequence** (order matters — don't activate all at once):
+
+1. **Ticket booking fee (Month 4)** — introduce 2.5% fee on all paid ticket transactions via Stripe. Lowest friction; users are already transacting. Organiser impact is minimal per ticket.
+2. **CulturePass+ subscriptions (Month 4)** — email campaign to users who have attended ≥ 2 events. Offer 14-day free trial; no credit card required. Highlight: priority ticket access, exclusive perks, community digest.
+3. **Organiser Pro tier (Month 5)** — tiered organiser plans:
+   - Free: up to 3 events/month, basic analytics
+   - Pro ($29/month): unlimited events, promoted listings, detailed analytics, custom event branding
+   - Enterprise ($99/month): dedicated account manager, bulk ticket codes, white-label options
+4. **Business directory premium listings (Month 6)** — onboard first 20 businesses at $49–$99/month. Target businesses already advertising in cultural media (Indian restaurants, migration agents, cultural clothing stores).
+
+**Revenue Targets**:
+- $5K–$10K MRR by end of Month 6
+- 500–1,000 CulturePass+ subscribers
+- 20 Pro or Enterprise organiser accounts
+- 20 premium business directory listings
+- Take rate on GMV: target 5–8% blended (booking fees + subscription revenue / total GMV)
+
+---
 
 ### Phase 4 — Regional Expansion (Month 6–12)
+**Objective**: Replicate the AU flywheel in 4 new markets. Each market gets a 6-week seed phase before public launch.
 
-- Launch NZ (Auckland, Wellington)
-- Launch UAE (Dubai) — large South Asian and Arab diaspora
-- Launch UK (London)
-- Partner with multicultural councils and civic organisations in each market
-- **Goal**: 50K registered users across 5 markets
+**Market sequence** (sequenced by diaspora density + founder network access):
+
+| Market | Entry Month | Anchor Communities | Notes |
+|--------|-------------|-------------------|-------|
+| Auckland + Wellington, NZ | Month 7 | Māori, Pacific Islander, Indian | Closest cultural overlap to AU; same timezone |
+| Dubai, UAE | Month 8 | South Asian (Indian, Sri Lankan, Pakistani), Arab | Largest South Asian hub globally; high disposable income; events-heavy culture |
+| London, UK | Month 9 | Caribbean, South Asian, East African | Largest single English-speaking diaspora market; strong cultural event scene |
+| Toronto, CA | Month 11 | South Asian, Chinese, Caribbean | Strong multicultural civic infrastructure; high app adoption |
+
+**Entry playbook per market**:
+1. Identify 3 anchor community organisations before soft launch (via LinkedIn outreach + diaspora media research)
+2. Localise culture tags and event categories for the market (e.g., UAE: Arabic, South Asian, Filipino, Western expat)
+3. Onboard 1 local community manager (contractor) — trusted community member, not a hired sales rep
+4. Soft launch with seed organisers only; 4-week closed beta before public App Store listing in that region
+5. PR in local diaspora media (e.g., Desi Blitz for UK, Salam Toronto for CA, Khaleej Times community section for UAE)
+
+**Goal**: 50,000 registered users across all 5 markets by end of Year 1
 
 ---
 

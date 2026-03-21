@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { captureRouteError } from './utils';
 import type * as FirebaseFirestore from 'firebase-admin/firestore';
 import { db } from '../admin';
 import { requireRole } from '../middleware/auth';
@@ -49,7 +50,7 @@ adminRouter.get('/admin/stats', requireRole('admin', 'moderator', 'platformAdmin
       pendingModerationCount: reportsCount.data().count,
     });
   } catch (err) {
-    console.error('[GET /admin/stats]:', err);
+    captureRouteError(err, 'GET /admin/stats');
     return res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -82,7 +83,7 @@ adminRouter.get('/admin/handles/pending', requireRole('admin', 'moderator', 'pla
 
     return res.json({ handles, count: handles.length });
   } catch (err) {
-    console.error('[GET /admin/handles/pending]:', err);
+    captureRouteError(err, 'GET /admin/handles/pending');
     return res.status(500).json({ error: 'Failed to fetch pending handles' });
   }
 });
@@ -106,7 +107,7 @@ adminRouter.post('/admin/handles/:type/:id/approve', requireRole('admin', 'moder
 
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[POST /admin/handles/:type/:id/approve]:', err);
+    captureRouteError(err, 'POST /admin/handles/:type/:id/approve');
     return res.status(500).json({ error: 'Failed to approve handle' });
   }
 });
@@ -132,7 +133,7 @@ adminRouter.post('/admin/handles/:type/:id/reject', requireRole('admin', 'modera
     if (process.env.NODE_ENV !== 'production') console.log(`[handle rejected] ${type}/${id} — reason: ${reason}`);
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[POST /admin/handles/:type/:id/reject]:', err);
+    captureRouteError(err, 'POST /admin/handles/:type/:id/reject');
     return res.status(500).json({ error: 'Failed to reject handle' });
   }
 });
@@ -184,7 +185,7 @@ adminRouter.get('/admin/users', requireRole('admin', 'moderator', 'platformAdmin
     const paged = users.slice(page * limit, (page + 1) * limit);
     return res.json({ users: paged, total, page, limit });
   } catch (err) {
-    console.error('[GET /admin/users]:', err);
+    captureRouteError(err, 'GET /admin/users');
     return res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -208,7 +209,7 @@ adminRouter.put('/admin/users/:id/role', requireRole('admin', 'platformAdmin'), 
     await usersService.update(id, { role: role as UserRole });
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[PUT /admin/users/:id/role]:', err);
+    captureRouteError(err, 'PUT /admin/users/:id/role');
     return res.status(500).json({ error: 'Failed to update role' });
   }
 });
@@ -223,7 +224,7 @@ adminRouter.put('/admin/users/:id/verify', requireRole('admin', 'platformAdmin')
     await usersService.update(id, { isSydneyVerified: verified });
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[PUT /admin/users/:id/verify]:', err);
+    captureRouteError(err, 'PUT /admin/users/:id/verify');
     return res.status(500).json({ error: 'Failed to update verification' });
   }
 });
@@ -241,7 +242,7 @@ adminRouter.get('/admin/reports', requireRole('admin', 'moderator', 'platformAdm
     const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     return res.json({ reports, total: reports.length });
   } catch (err) {
-    console.error('[GET /admin/reports]:', err);
+    captureRouteError(err, 'GET /admin/reports');
     return res.status(500).json({ error: 'Failed to fetch reports' });
   }
 });
@@ -254,7 +255,7 @@ adminRouter.patch('/admin/reports/:id/status', requireRole('admin', 'moderator',
     await db.collection('reports').doc(id).update({ status, resolvedAt: new Date().toISOString(), resolvedBy: req.user!.id });
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[PATCH /admin/reports/:id/status]:', err);
+    captureRouteError(err, 'PATCH /admin/reports/:id/status');
     return res.status(500).json({ error: 'Failed to update report' });
   }
 });
@@ -284,7 +285,7 @@ adminRouter.get('/admin/events/pending', requireRole('admin', 'moderator', 'plat
     });
     return res.json({ events, total: events.length });
   } catch (err) {
-    console.error('[GET /admin/events/pending]:', err);
+    captureRouteError(err, 'GET /admin/events/pending');
     return res.status(500).json({ error: 'Failed to fetch pending events' });
   }
 });
@@ -310,7 +311,7 @@ adminRouter.get('/admin/finance/summary', requireRole('admin', 'platformAdmin'),
       sampleSize: ticketSample.size,
     });
   } catch (err) {
-    console.error('[GET /admin/finance/summary]:', err);
+    captureRouteError(err, 'GET /admin/finance/summary');
     return res.status(500).json({ error: 'Failed to fetch finance summary' });
   }
 });

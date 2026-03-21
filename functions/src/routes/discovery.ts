@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { db, isFirestoreConfigured } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import { searchService } from '../services/firestore';
@@ -12,7 +14,7 @@ discoveryRouter.get('/discover/trending', async (req: Request, res: Response) =>
     const trending = await searchService.getTrending(10);
     return res.json(trending);
   } catch (err) {
-    console.error('[GET /api/discover/trending]:', err);
+    captureRouteError(err, 'GET /api/discover/trending');
     return res.status(500).json({ error: 'Failed to fetch trending' });
   }
 });
@@ -30,7 +32,7 @@ discoveryRouter.get('/discover', requireAuth, async (req: Request, res: Response
       suggestedCommunities: []
     });
   } catch (err) {
-    console.error('[GET /api/discover]:', err);
+    captureRouteError(err, 'GET /api/discover');
     return res.status(500).json({ error: 'Failed to fetch discovery feed' });
   }
 });
@@ -63,7 +65,7 @@ discoveryRouter.get('/discover/:userId', async (req: Request, res: Response) => 
       suggestedCommunities: []
     });
   } catch (err) {
-    console.error('[GET /api/discover/:userId]:', err);
+    captureRouteError(err, 'GET /api/discover/:userId');
     return res.status(500).json({ error: 'Failed to fetch discovery feed' });
   }
 });

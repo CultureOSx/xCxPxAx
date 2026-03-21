@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireAuth, requireRole } from '../middleware/auth';
 import { moviesService } from '../services/movies';
 import { wrap } from './utils';
 
@@ -18,27 +19,26 @@ moviesRouter.get('/movies', wrap(async (req, res) => {
 
 // Public: Get movie by ID
 moviesRouter.get('/movies/:id', wrap(async (req, res) => {
-  const item = await moviesService.getById(req.params.id);
+  const item = await moviesService.getById(String(req.params.id));
   if (!item) return res.status(404).json({ error: 'Movie not found' });
   res.json(item);
 }));
 
-// Private: Create movie
-moviesRouter.post('/movies', wrap(async (req, res) => {
-  // TODO: Add requireRole('admin' | 'organizer')
+// Private: Create movie (organizer or admin only)
+moviesRouter.post('/movies', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
   const item = await moviesService.create(req.body);
   res.status(201).json(item);
 }));
 
-// Private: Update movie
-moviesRouter.put('/movies/:id', wrap(async (req, res) => {
-  const item = await moviesService.update(req.params.id, req.body);
+// Private: Update movie (organizer or admin only)
+moviesRouter.put('/movies/:id', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
+  const item = await moviesService.update(String(req.params.id), req.body);
   if (!item) return res.status(404).json({ error: 'Movie not found' });
   res.json(item);
 }));
 
-// Private: Delete movie
-moviesRouter.delete('/movies/:id', wrap(async (req, res) => {
-  await moviesService.delete(req.params.id);
+// Private: Delete movie (admin only)
+moviesRouter.delete('/movies/:id', requireAuth, requireRole('admin', 'platformAdmin'), wrap(async (req, res) => {
+  await moviesService.delete(String(req.params.id));
   res.json({ success: true });
 }));

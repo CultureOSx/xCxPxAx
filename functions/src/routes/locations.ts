@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { locationsService } from '../services/locations';
 import { authenticate, requireRole } from '../middleware/auth';
 import { isFirestoreConfigured } from '../admin';
@@ -25,7 +27,7 @@ locationsRouter.get('/locations', async (_req: Request, res: Response) => {
     }
     return res.status(404).json({ error: 'Location data not found' });
   } catch (err) {
-    console.error('[GET /api/locations]:', err);
+    captureRouteError(err, 'GET /api/locations');
     return res.status(500).json({ error: 'Failed to load locations' });
   }
 });
@@ -38,7 +40,7 @@ locationsRouter.post('/locations/:countryCode/seed', [authenticate, requireRole(
     await locationsService.forceSeed();
     return res.json({ ok: true, countryCode });
   } catch (err) {
-    console.error('[POST /api/locations/:cc/seed]:', err);
+    captureRouteError(err, 'POST /api/locations/:cc/seed');
     return res.status(500).json({ error: 'Force seed failed' });
   }
 });

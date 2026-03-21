@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../admin';
 import { requireAuth } from '../middleware/auth';
-import { nowIso } from './utils';
+import { nowIso,
+  captureRouteError,
+} from './utils';
 
 export const councilRouter = Router();
 

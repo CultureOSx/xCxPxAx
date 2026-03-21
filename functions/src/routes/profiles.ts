@@ -3,7 +3,9 @@ import { db, isFirestoreConfigured } from '../admin';
 import { profilesService } from '../services/firestore';
 import { requireAuth } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
-import { parseBody } from './utils';
+import { parseBody,
+  captureRouteError,
+} from './utils';
 import { z } from 'zod';
 
 export const profilesRouter = Router();

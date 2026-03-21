@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { requireRole } from '../middleware/auth';
 import { updatesService } from '../services/updates';
 
@@ -22,7 +24,7 @@ updatesRouter.get('/updates', async (req: Request, res: Response) => {
 
     return res.json({ updates: result.items, total: result.total });
   } catch (err) {
-    console.error('[GET /updates]:', err);
+    captureRouteError(err, 'GET /updates');
     return res.status(500).json({ error: 'Failed to fetch updates' });
   }
 });
@@ -40,7 +42,7 @@ updatesRouter.get('/updates/:id', async (req: Request, res: Response) => {
     }
     return res.json(update);
   } catch (err) {
-    console.error('[GET /updates/:id]:', err);
+    captureRouteError(err, 'GET /updates/:id');
     return res.status(500).json({ error: 'Failed to fetch update' });
   }
 });
@@ -77,7 +79,7 @@ updatesRouter.post('/updates', requireRole('admin', 'platformAdmin'), async (req
 
     return res.status(201).json(update);
   } catch (err) {
-    console.error('[POST /updates]:', err);
+    captureRouteError(err, 'POST /updates');
     return res.status(500).json({ error: 'Failed to create update' });
   }
 });
@@ -92,7 +94,7 @@ updatesRouter.put('/updates/:id', requireRole('admin', 'platformAdmin'), async (
     if (!updated) return res.status(404).json({ error: 'Update not found' });
     return res.json(updated);
   } catch (err) {
-    console.error('[PUT /updates/:id]:', err);
+    captureRouteError(err, 'PUT /updates/:id');
     return res.status(500).json({ error: 'Failed to update post' });
   }
 });
@@ -107,7 +109,7 @@ updatesRouter.post('/updates/:id/publish', requireRole('admin', 'platformAdmin')
     if (!updated) return res.status(404).json({ error: 'Update not found' });
     return res.json(updated);
   } catch (err) {
-    console.error('[POST /updates/:id/publish]:', err);
+    captureRouteError(err, 'POST /updates/:id/publish');
     return res.status(500).json({ error: 'Failed to publish update' });
   }
 });
@@ -123,7 +125,7 @@ updatesRouter.delete('/updates/:id', requireRole('admin', 'platformAdmin'), asyn
     await updatesService.delete(id);
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[DELETE /updates/:id]:', err);
+    captureRouteError(err, 'DELETE /updates/:id');
     return res.status(500).json({ error: 'Failed to delete update' });
   }
 });
@@ -140,7 +142,7 @@ updatesRouter.get('/admin/updates', requireRole('admin', 'platformAdmin'), async
     const result = await updatesService.list({ category: category as any, limit, offset });
     return res.json({ updates: result.items, total: result.total });
   } catch (err) {
-    console.error('[GET /admin/updates]:', err);
+    captureRouteError(err, 'GET /admin/updates');
     return res.status(500).json({ error: 'Failed to fetch updates' });
   }
 });

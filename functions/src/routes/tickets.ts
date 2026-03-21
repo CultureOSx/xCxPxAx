@@ -11,7 +11,9 @@ import {
   type FirestoreEvent,
 } from '../services/firestore';
 import { db, isFirestoreConfigured } from '../admin';
-import { nowIso, qparam, generateSecureId, awardRewardsPoints } from './utils';
+import { nowIso, qparam, generateSecureId, awardRewardsPoints,
+  captureRouteError,
+} from './utils';
 
 export const ticketsRouter = Router();
 
@@ -26,7 +28,7 @@ ticketsRouter.get('/tickets/:userId', requireAuth, async (req: Request, res: Res
     const userTickets = await ticketsService.listForUser(qparam(req.params.userId));
     return res.json(userTickets);
   } catch (err) {
-    console.error('[GET /api/tickets/:userId]:', err);
+    captureRouteError(err, 'GET /api/tickets/:userId');
     return res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
@@ -43,7 +45,7 @@ ticketsRouter.get('/tickets/:userId/count', requireAuth, async (req: Request, re
     const count = userTickets.filter((t) => t.status === 'confirmed').length;
     return res.json({ count });
   } catch (err) {
-    console.error('[GET /api/tickets/:userId/count]:', err);
+    captureRouteError(err, 'GET /api/tickets/:userId/count');
     return res.status(500).json({ error: 'Failed to count tickets' });
   }
 });
@@ -60,7 +62,7 @@ ticketsRouter.get('/ticket/:id', requireAuth, async (req: Request, res: Response
     }
     return res.json(ticket);
   } catch (err) {
-    console.error('[GET /api/ticket/:id]:', err);
+    captureRouteError(err, 'GET /api/ticket/:id');
     return res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 });
@@ -81,7 +83,7 @@ ticketsRouter.put('/tickets/:id/cancel', requireAuth, async (req: Request, res: 
     const updated = await ticketsService.updateStatus(qparam(req.params.id), 'cancelled', req.user!.id);
     return res.json(updated);
   } catch (err) {
-    console.error('[PUT /api/tickets/:id/cancel]:', err);
+    captureRouteError(err, 'PUT /api/tickets/:id/cancel');
     return res.status(500).json({ error: 'Failed to cancel ticket' });
   }
 });
@@ -114,7 +116,7 @@ ticketsRouter.post(
       });
       return res.json({ valid: true, message: 'Ticket scanned successfully', ticket: updated });
     } catch (err) {
-      console.error('[POST /api/tickets/scan]:', err);
+      captureRouteError(err, 'POST /api/tickets/scan');
       return res.status(500).json({ valid: false, error: 'Scan failed' });
     }
   }
@@ -132,7 +134,7 @@ ticketsRouter.get('/tickets/:id/history', requireAuth, async (req: Request, res:
     }
     return res.json({ history: ticket.history });
   } catch (err) {
-    console.error('[GET /api/tickets/:id/history]:', err);
+    captureRouteError(err, 'GET /api/tickets/:id/history');
     return res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
@@ -245,7 +247,7 @@ ticketsRouter.post('/tickets', requireAuth, async (req: Request, res: Response) 
 
     return res.status(201).json(ticket);
   } catch (err) {
-    console.error('[POST /api/tickets]:', err);
+    captureRouteError(err, 'POST /api/tickets');
     if (err instanceof Error) {
       if (err.message === 'EVENT_NOT_FOUND') return res.status(404).json({ error: 'Event not found' });
       if (err.message === 'NOT_ENOUGH_CAPACITY') return res.status(400).json({ error: 'Not enough tickets available for this quantity' });

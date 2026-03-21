@@ -11,7 +11,9 @@
  *   Social Proof (5%)        · Freshness Decay (8%)
  */
 
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { eventsService, profilesService, usersService } from '../services/firestore';
 import { isFirestoreConfigured } from '../admin';
 import type { FirestoreEvent } from '../services/firestore';
@@ -246,7 +248,7 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       hasNextPage: offset + pageSize < total,
     });
   } catch (err) {
-    console.error('[GET /api/feed]:', err);
+    captureRouteError(err, 'GET /api/feed');
     return res.status(500).json({ error: 'Failed to fetch feed' });
   }
 });

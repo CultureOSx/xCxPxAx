@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── App: typecheck + lint + web export ──────────────────────────────────────
+  app:
+    name: App — typecheck / lint / web export
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Expo web export
+        run: npx expo export --platform web
+        env:
+          # Bake public env vars for the build — values from repo secrets
+          EXPO_PUBLIC_FIREBASE_API_KEY:             ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN:         ${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID:          ${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET:      ${{ secrets.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID:              ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_API_URL:                      ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_SENTRY_DSN:                   ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
+          EXPO_PUBLIC_SENTRY_WEB_DSN:               ${{ secrets.EXPO_PUBLIC_SENTRY_WEB_DSN }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:         ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_MAPS_KEY:              ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_KEY }}
+
+  # ─── Cloud Functions: typecheck ──────────────────────────────────────────────
+  functions:
+    name: Cloud Functions — typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: TypeScript typecheck (functions)
+        run: npx tsc --noEmit
+        working-directory: functions

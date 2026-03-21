@@ -8,7 +8,9 @@
 import { Router, type Request, type Response } from 'express';
 import { db, authAdmin } from '../admin';
 import { requireAuth } from '../middleware/auth';
-import { nowIso, generateSecureId } from './utils';
+import { nowIso, generateSecureId,
+  captureRouteError,
+} from './utils';
 
 export const authRouter = Router();
 
@@ -32,12 +34,11 @@ const authMeHandler = async (req: Request, res: Response) => {
       country: req.user!.country,
     });
   } catch (err) {
-    console.error('[auth/me]:', err);
+    captureRouteError(err, 'auth/me');
     return res.status(500).json({ error: 'Failed to fetch user profile' });
   }
 };
 
-authRouter.get('/auth/me', requireAuth, authMeHandler);
 authRouter.get('/auth/me', requireAuth, authMeHandler);
 
 // ---------------------------------------------------------------------------
@@ -88,10 +89,9 @@ const authRegisterHandler = async (req: Request, res: Response) => {
     }
     return res.json({ id: uid, ...snap.data() });
   } catch (err) {
-    console.error('[auth/register]:', err);
+    captureRouteError(err, 'auth/register');
     return res.status(500).json({ error: 'Profile creation failed' });
   }
 };
 
-authRouter.post('/auth/register', requireAuth, authRegisterHandler);
 authRouter.post('/auth/register', requireAuth, authRegisterHandler);

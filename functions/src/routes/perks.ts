@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { db, isFirestoreConfigured } from '../admin';
 import { requireAuth } from '../middleware/auth';
-import { parseBody, nowIso } from './utils';
+import { parseBody, nowIso,
+  captureRouteError,
+} from './utils';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 

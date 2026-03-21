@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { db } from '../admin';
+import { captureRouteError } from './utils';
 
 export function createIndigenousRouter() {
   const router = express.Router();
@@ -12,7 +13,7 @@ export function createIndigenousRouter() {
       const snap = await query.get();
       return res.json(snap.docs.map((d) => d.data()));
     } catch (err) {
-      console.error('[GET /api/indigenous/traditional-lands]:', err);
+      captureRouteError(err, 'GET /api/indigenous/traditional-lands');
       return res.status(500).json({ error: 'Failed to fetch traditional lands' });
     }
   });
@@ -25,7 +26,7 @@ export function createIndigenousRouter() {
       const snap = await db.collection('indigenousSpotlights').orderBy('createdAt', 'desc').limit(limit).get();
       return res.json(snap.docs.map((d) => d.data()));
     } catch (err) {
-      console.error('[GET /api/indigenous/spotlights]:', err);
+      captureRouteError(err, 'GET /api/indigenous/spotlights');
       return res.status(500).json({ error: 'Failed to fetch spotlights' });
     }
   });
@@ -53,7 +54,7 @@ export function createIndigenousRouter() {
         : records;
       return res.json(filtered.slice(0, limit));
     } catch (err) {
-      console.error('[GET /api/indigenous/organisations]:', err);
+      captureRouteError(err, 'GET /api/indigenous/organisations');
       return res.status(500).json({ error: 'Failed to fetch indigenous organisations' });
     }
   });
@@ -71,7 +72,7 @@ export function createIndigenousRouter() {
       const snap = await queryRef.limit(limit).get();
       return res.json(snap.docs.map((doc) => doc.data()));
     } catch (err) {
-      console.error('[GET /api/indigenous/festivals]:', err);
+      captureRouteError(err, 'GET /api/indigenous/festivals');
       return res.status(500).json({ error: 'Failed to fetch indigenous festivals' });
     }
   });
@@ -99,7 +100,7 @@ export function createIndigenousRouter() {
         : records;
       return res.json(filtered.slice(0, limit));
     } catch (err) {
-      console.error('[GET /api/indigenous/businesses]:', err);
+      captureRouteError(err, 'GET /api/indigenous/businesses');
       return res.status(500).json({ error: 'Failed to fetch indigenous businesses' });
     }
   });

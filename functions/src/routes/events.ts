@@ -16,7 +16,9 @@ import {
   eventFeedbackService,
   type FirestoreEvent,
 } from '../services/firestore';
-import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation } from './utils';
+import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation,
+  captureRouteError,
+} from './utils';
 import { algoliaEventsIndex } from '../services/algolia';
 
 // ---------------------------------------------------------------------------
@@ -229,7 +231,7 @@ export function createEventsRouter() {
         hasNextPage: result.hasNextPage,
       });
     } catch (err) {
-      console.error('[GET /api/events]:', err);
+      captureRouteError(err, 'GET /api/events');
       return res.status(500).json({ error: 'Failed to fetch events' });
     }
   });
@@ -241,7 +243,7 @@ export function createEventsRouter() {
       const cross = result.items.filter((e) => (e.cultureTag?.length ?? 0) >= 2);
       return res.json(cross);
     } catch (err) {
-      console.error('[GET /api/events/cross-community]:', err);
+      captureRouteError(err, 'GET /api/events/cross-community');
       return res.status(500).json({ error: 'Failed to fetch events' });
     }
   });
@@ -272,7 +274,7 @@ export function createEventsRouter() {
         radiusKm: radius,
       });
     } catch (err) {
-      console.error('[GET /api/events/nearby]:', err);
+      captureRouteError(err, 'GET /api/events/nearby');
       return res.status(500).json({ error: 'Failed to fetch nearby events' });
     }
   });
@@ -286,7 +288,7 @@ export function createEventsRouter() {
       }
       return res.json(event);
     } catch (err) {
-      console.error('[GET /api/events/:id]:', err);
+      captureRouteError(err, 'GET /api/events/:id');
       return res.status(500).json({ error: 'Failed to fetch event' });
     }
   });
@@ -371,7 +373,7 @@ export function createEventsRouter() {
         algoliaEventsIndex.indexEvent(event).catch(() => {});
         return res.status(201).json(event);
       } catch (err) {
-        console.error('[POST /api/events]:', err);
+        captureRouteError(err, 'POST /api/events');
         return res.status(500).json({ error: 'Failed to create event' });
       }
     },
@@ -443,7 +445,7 @@ export function createEventsRouter() {
       if (updated) algoliaEventsIndex.indexEvent(updated).catch(() => {});
       return res.json(updated);
     } catch (err) {
-      console.error('[PUT /api/events/:id]:', err);
+      captureRouteError(err, 'PUT /api/events/:id');
       return res.status(500).json({ error: 'Failed to update event' });
     }
   });
@@ -460,7 +462,7 @@ export function createEventsRouter() {
       algoliaEventsIndex.deleteEvent(qparam(req.params.id)).catch(() => {});
       return res.json({ success: true });
     } catch (err) {
-      console.error('[DELETE /api/events/:id]:', err);
+      captureRouteError(err, 'DELETE /api/events/:id');
       return res.status(500).json({ error: 'Failed to delete event' });
     }
   });
@@ -481,7 +483,7 @@ export function createEventsRouter() {
         if (published) algoliaEventsIndex.indexEvent(published).catch(() => {});
         return res.json(published);
       } catch (err) {
-        console.error('[POST /api/events/:id/publish]:', err);
+        captureRouteError(err, 'POST /api/events/:id/publish');
         return res.status(500).json({ error: 'Failed to publish event' });
       }
     },
@@ -495,7 +497,7 @@ export function createEventsRouter() {
       const avg = feedback.length > 0 ? feedback.reduce((s, f) => s + f.rating, 0) / feedback.length : null;
       return res.json({ feedback, averageRating: avg ? Math.round(avg * 10) / 10 : null, count: feedback.length });
     } catch (err) {
-      console.error('[GET /api/events/:id/feedback]:', err);
+      captureRouteError(err, 'GET /api/events/:id/feedback');
       return res.status(500).json({ error: 'Failed to fetch feedback' });
     }
   });
@@ -526,7 +528,7 @@ export function createEventsRouter() {
       if (!snap.exists) return res.json({ status: null });
       return res.json({ status: (snap.data() as any).status ?? null });
     } catch (err) {
-      console.error('[GET /api/events/:id/rsvp/me]:', err);
+      captureRouteError(err, 'GET /api/events/:id/rsvp/me');
       return res.status(500).json({ error: 'Failed to get RSVP' });
     }
   });
@@ -569,7 +571,7 @@ export function createEventsRouter() {
 
       return res.json({ status });
     } catch (err) {
-      console.error('[POST /api/events/:id/rsvp]:', err);
+      captureRouteError(err, 'POST /api/events/:id/rsvp');
       return res.status(500).json({ error: 'Failed to save RSVP' });
     }
   });
@@ -597,7 +599,7 @@ export function createEventsRouter() {
       });
       return res.json(feedback);
     } catch (err) {
-      console.error('[POST /api/events/:id/feedback]:', err);
+      captureRouteError(err, 'POST /api/events/:id/feedback');
       return res.status(500).json({ error: 'Failed to submit feedback' });
     }
   });

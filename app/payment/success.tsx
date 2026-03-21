@@ -1,12 +1,15 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Share, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
+import { Button } from '@/components/ui/Button';
 
 export default function PaymentSuccessScreen() {
   const { isAuthenticated } = useAuth();
@@ -20,45 +23,97 @@ export default function PaymentSuccessScreen() {
       router.replace(routeWithRedirect('/(onboarding)/login', '/payment/success') as never);
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   }, [isAuthenticated]);
 
+  const { data: ticket } = useQuery({
+    queryKey: ['/api/ticket', ticketId],
+    queryFn: () => api.tickets.get(ticketId!),
+    enabled: !!ticketId && isAuthenticated,
+    staleTime: 60_000,
+  });
+
+  const handleShare = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const eventTitle = (ticket as any)?.eventTitle ?? 'an event';
+    const eventDate  = (ticket as any)?.eventDate  ?? '';
+    const message = eventDate
+      ? `I just got tickets to ${eventTitle} on ${eventDate} via CulturePass! 🎉`
+      : `I just got tickets to ${eventTitle} via CulturePass! 🎉`;
+    await Share.share({ message, url: 'https://culturepass.app' });
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          paddingTop: (Platform.OS === 'web' ? 0 : insets.top) + 24,
+          paddingBottom: insets.bottom + 24,
+        },
+      ]}
+    >
       <View style={[styles.iconCircle, { backgroundColor: colors.success + '20' }]}>
         <Ionicons name="checkmark-circle" size={80} color={colors.success} />
       </View>
 
       <View style={styles.textBlock}>
-        <Text style={[styles.title, { color: colors.text }]}>Payment Successful</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>
-          Your ticket is confirmed. Check your email for a receipt.
-        </Text>
+        <Text style={[styles.title, { color: colors.text }]}>{"You're going! 🎉"}</Text>
+        {ticket ? (
+          <>
+            <Text style={[styles.eventTitle, { color: colors.text }]}>
+              {(ticket as any).eventTitle ?? 'Event'}
+            </Text>
+            {(ticket as any).eventDate ? (
+              <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>
+                {(ticket as any).eventDate}
+                {(ticket as any).eventTime ? ` · ${(ticket as any).eventTime}` : ''}
+              </Text>
+            ) : null}
+            {(ticket as any).eventVenue ? (
+              <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>
+                {(ticket as any).eventVenue}
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Your ticket is confirmed. Check your email for a receipt.
+          </Text>
+        )}
       </View>
 
       <View style={styles.actions}>
         {ticketId ? (
-          <Pressable
-            style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.replace(`/tickets/${ticketId}`);
-            }}
+          <Button
+            variant="primary"
+            onPress={() => router.replace(`/tickets/${ticketId}`)}
+            accessibilityLabel="View your ticket"
           >
-            <Ionicons name="ticket-outline" size={20} color={colors.textInverse} />
-            <Text style={[styles.primaryBtnText, { color: colors.textInverse }]}>View Ticket</Text>
-          </Pressable>
+            View Ticket
+          </Button>
         ) : null}
 
-        <Pressable
-          style={[styles.secondaryBtn, { borderColor: colors.border }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.replace('/(tabs)');
-          }}
+        <Button
+          variant="secondary"
+          onPress={handleShare}
+          accessibilityLabel="Share this event with friends"
         >
-          <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Back to Home</Text>
-        </Pressable>
+          Share with Friends
+        </Button>
+
+        <Button
+          variant="ghost"
+          onPress={() => router.replace('/(tabs)')}
+          accessibilityLabel="Go back to home"
+        >
+          Back to Home
+        </Button>
       </View>
     </View>
   );
@@ -81,11 +136,22 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   textBlock: {
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
   },
   title: {
     fontSize: 26,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
+  },
+  eventMeta: {
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
   },
   subtitle: {
@@ -97,28 +163,5 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   actions: {
     width: '100%',
     gap: 12,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    height: 52,
-    borderRadius: 14,
-  },
-  primaryBtnText: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  secondaryBtn: {
-    height: 52,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryBtnText: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
   },
 });

@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { db, authAdmin } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
-import { parseBody, nowIso } from './utils';
+import { parseBody, nowIso,
+  captureRouteError,
+} from './utils';
 import { getRolloutConfig, isFeatureEnabledForUser } from '../services/rollout';
 
 export const miscRouter = Router();
@@ -108,7 +110,7 @@ miscRouter.delete('/account/:userId', requireAuth, async (req: Request, res: Res
     
     return res.json({ ok: true, userId });
   } catch (err) {
-    console.error('[DELETE /api/account/:userId]:', err);
+    captureRouteError(err, 'DELETE /api/account/:userId');
     return res.status(500).json({ error: 'Failed to delete account' });
   }
 });

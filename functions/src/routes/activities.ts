@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { activitiesService } from '../services/firestore';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
-import { parseBody } from './utils';
+import { parseBody,
+  captureRouteError,
+} from './utils';
 
 export const activitiesRouter = Router();
 

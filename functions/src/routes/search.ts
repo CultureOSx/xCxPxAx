@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { searchService } from '../services/firestore';
 import { isFirestoreConfigured } from '../admin';
 import { searchClient } from '../services/algolia';
@@ -40,7 +42,7 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
     const result = await searchService.globalSearch(query, city);
     return res.json(result);
   } catch (err) {
-    console.error('[GET /api/search]:', err);
+    captureRouteError(err, 'GET /api/search');
     return res.status(500).json({ error: 'Search failed' });
   }
 });

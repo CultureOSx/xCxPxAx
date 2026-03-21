@@ -1,3 +1,14 @@
+import * as Sentry from '@sentry/node';
+
+// ─── Sentry — must be initialised before any other imports ───────────────────
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || '',
+  environment: process.env.FUNCTIONS_EMULATOR === 'true' ? 'development' : 'production',
+  release: process.env.K_REVISION,          // Cloud Run revision tag
+  tracesSampleRate: 0.1,                    // 10 % of requests in prod
+  integrations: [Sentry.captureConsoleIntegration({ levels: ['error', 'warn'] })],
+});
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -24,6 +35,7 @@ import { perksRouter } from './routes/perks';
 import { updatesRouter } from './routes/updates';
 import { feedRouter } from './routes/feed';
 import { importRouter } from './routes/import';
+import { membershipRouter } from './routes/membership';
 
 
 
@@ -78,7 +90,7 @@ app.use(rateLimit({ windowMs: 60000, max: 200, message: 'Too many requests, plea
 app.use(authenticate);
 
 // --- Health Check ---
-app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // --- Routes ---
 app.use('/api', authRouter);
@@ -98,6 +110,7 @@ app.use('/api', perksRouter);
 app.use('/api', updatesRouter);
 app.use('/api', feedRouter);
 app.use('/api', importRouter);
+app.use('/api', membershipRouter);
 
 app.use('/api', createEventsRouter());
 
@@ -106,10 +119,18 @@ app.use(createStripeRouter());
 app.use('/api', createIndigenousRouter());
 
 // Default 404
-app.use((req, res) => res.status(404).json({ error: 'Not Found', path: req.path }));
+app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));
 
-// Error Handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+// Sentry error handler — must come before the custom error handler
+Sentry.setupExpressErrorHandler(app);
+
+// Error Handler — captures to Sentry, never exposes internal details in production
+app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status ?? 500;
   console.error('[App Error]:', err);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  Sentry.captureException(err);
+  const safe = status < 500;  // 4xx errors are safe to surface to clients
+  res.status(status).json({
+    error: safe ? err.message : 'Internal Server Error',
+  });
 });

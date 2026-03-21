@@ -2,7 +2,9 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { db, isFirestoreConfigured, authAdmin } from '../admin';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { parseBody, nowIso } from './utils';
+import { parseBody, nowIso,
+  captureRouteError,
+} from './utils';
 import { randomUUID } from 'node:crypto';
 
 export const socialRouter = Router();

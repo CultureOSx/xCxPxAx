@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { db, isFirestoreConfigured } from '../admin';
 import { usersService } from '../services/firestore';
 import { requireAuth } from '../middleware/auth';
-import { sanitizeUserResponse, parseBody } from './utils';
+import { sanitizeUserResponse, parseBody,
+  captureRouteError,
+} from './utils';
 
 import { moderationCheck } from '../middleware/moderation';
 
@@ -50,7 +52,7 @@ usersRouter.get('/users/me', requireAuth, async (req: Request, res: Response) =>
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.json(user);
   } catch (err) {
-    console.error('[GET /api/users/me]:', err);
+    captureRouteError(err, 'GET /api/users/me');
     return res.status(500).json({ error: 'Failed to fetch current user' });
   }
 });
@@ -81,7 +83,7 @@ usersRouter.put('/users/:id', requireAuth, moderationCheck, async (req: Request,
     const fresh = await usersService.getById(userId);
     return res.json(fresh);
   } catch (err: any) {
-    console.error('[PUT /api/users/:id]:', err);
+    captureRouteError(err, 'PUT /api/users/:id');
     return res.status(500).json({ error: err.message || 'Failed to update user' });
   }
 });

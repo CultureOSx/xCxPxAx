@@ -49,19 +49,6 @@ Sentry.init({
   debug: false,
 });
 
-import * as Sentry from "@sentry/react";
-
-Sentry.init({
-  dsn: "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
-  // Setting this option to true will send default PII data to Sentry.
-  // For example, automatic IP address collection on events
-  sendDefaultPii: true
-});
-
-const container = document.getElementById("app");
-const root = createRoot(container);
-root.render(<App />);
-
 global.Buffer = Buffer;
 
 // Suppress upstream React Native Web deprecation warning from @react-navigation/bottom-tabs

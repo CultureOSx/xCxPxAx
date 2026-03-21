@@ -8,7 +8,9 @@
  *   - Listing import sources (GET /admin/import/sources)
  */
 
-import { Router, Request, Response } from 'express';
+
+import { Router, type Request, type Response } from 'express';
+import { captureRouteError } from './utils';
 import { z } from 'zod';
 import { requireAuth, requireRole } from '../middleware/auth';
 import {
@@ -53,7 +55,7 @@ importRouter.post('/admin/import/json', authGuard, async (req: Request, res: Res
       source: result.source,
     });
   } catch (err) {
-    console.error('[POST /admin/import/json]:', err);
+    captureRouteError(err, 'POST /admin/import/json');
     return res.status(500).json({ error: 'Import failed', detail: String(err) });
   }
 });
@@ -110,7 +112,7 @@ importRouter.post('/admin/import/url', authGuard, async (req: Request, res: Resp
       source: result.source,
     });
   } catch (err) {
-    console.error('[POST /admin/import/url]:', err);
+    captureRouteError(err, 'POST /admin/import/url');
     return res.status(500).json({ error: 'URL import failed', detail: String(err) });
   }
 });
@@ -136,7 +138,7 @@ importRouter.delete('/admin/import/clear', authGuard, async (req: Request, res: 
     const result = await clearImportedEvents(source === 'all' ? undefined : source as ImportSource);
     return res.json({ ok: true, deleted: result.deleted, source });
   } catch (err) {
-    console.error('[DELETE /admin/import/clear]:', err);
+    captureRouteError(err, 'DELETE /admin/import/clear');
     return res.status(500).json({ error: 'Clear failed', detail: String(err) });
   }
 });
@@ -170,7 +172,7 @@ importRouter.get('/admin/import/sources', authGuard, async (_req: Request, res: 
       total: snap.size,
     });
   } catch (err) {
-    console.error('[GET /admin/import/sources]:', err);
+    captureRouteError(err, 'GET /admin/import/sources');
     return res.status(500).json({ error: 'Failed to fetch import sources' });
   }
 });
