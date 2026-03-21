@@ -246,9 +246,6 @@ function AuditLogsContent() {
     return Number.isFinite(n) && n >= 1 ? Math.min(n, 500) : 100;
   }, [limitText]);
 
-  // Map category tab → action filter(s)
-  const actionFilter = tab === ALL ? undefined : undefined; // server doesn't support category filter yet — filter client-side
-
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['admin-audit-logs', limit, fromDate, toDate, isCityAdmin, user?.id],
     queryFn:  () => api.admin.auditLogs({

@@ -5,6 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
 import React, { useCallback, useEffect, useRef } from "react";
@@ -38,10 +39,28 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 
 
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
-  tracesSampleRate: 1.0,
+  dsn: Platform.OS === 'web'
+    ? (process.env.EXPO_PUBLIC_SENTRY_WEB_DSN || '')
+    : (process.env.EXPO_PUBLIC_SENTRY_DSN || ''),
+  environment: __DEV__ ? 'development' : 'production',
+  release: Constants.expoConfig?.version,
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  sendDefaultPii: true,
   debug: false,
 });
+
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
+  // Setting this option to true will send default PII data to Sentry.
+  // For example, automatic IP address collection on events
+  sendDefaultPii: true
+});
+
+const container = document.getElementById("app");
+const root = createRoot(container);
+root.render(<App />);
 
 global.Buffer = Buffer;
 
@@ -112,12 +131,15 @@ function DataSync() {
           country: user.country,
           subscriptionTier: user.subscriptionTier,
         });
+        // Error monitoring — tag all future events with this user
+        Sentry.setUser({ id: user.id, email: user.email, username: user.username });
       }
       // After logout: user transitions from defined to null
       else if (!user && prevUserIdRef.current !== null) {
         prevUserIdRef.current = null;
         resetUser();
         resetOnboarding();
+        Sentry.setUser(null);
       }
     }
     syncOnboarding();

@@ -53,6 +53,7 @@ import { Card } from '@/components/ui/Card';
 import SectionHeader from '@/components/Discover/SectionHeader';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { useCouncil } from '@/hooks/useCouncil';
+import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { useLayout } from '@/hooks/useLayout';
 import { routeWithRedirect } from '@/lib/routes';
 
@@ -266,6 +267,13 @@ export default function DiscoverScreen() {
   const { data: councilData } = useCouncil();
   const council = councilData?.council;
 
+  // GPS proximity — trigger once on mount, auto-silently (no blocking UI)
+  const { events: gpsEvents, isLoading: gpsLoading, trigger: triggerGps } = useNearbyEvents({ radiusKm: 15, pageSize: 20 });
+  useEffect(() => {
+    triggerGps();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 2. Computed Values
   const councilEvents = useMemo(() => {
     if (!council || !Array.isArray(allEvents) || !allEvents.length) return [];
@@ -275,11 +283,24 @@ export default function DiscoverScreen() {
     );
   }, [council, allEvents]);
 
+  // Prefer live GPS results; fall back to LGA matching
+  const nearbyEvents = useMemo(() => {
+    if (gpsEvents.length > 0) return gpsEvents.slice(0, 10);
+    return councilEvents.slice(0, 10);
+  }, [gpsEvents, councilEvents]);
+
+  const nearbyLoading = gpsLoading || eventsLoading;
+  const nearbySubtitle = gpsEvents.length > 0
+    ? 'Events within 15 km of you'
+    : council?.name
+      ? `Happening in ${council.name}`
+      : 'Events near your local area';
+
   const councilRailData = useMemo<(EventData | string)[]>(
-    () => eventsLoading
+    () => nearbyLoading
       ? Array.from({ length: 4 }, (_, i) => `sk-cou-${i}`)
-      : councilEvents.slice(0, 10),
-    [eventsLoading, councilEvents],
+      : nearbyEvents,
+    [nearbyLoading, nearbyEvents],
   );
 
   const timeGreeting = useMemo(() => {
@@ -982,12 +1003,12 @@ export default function DiscoverScreen() {
 
 
           {/* Local Council Area Events */}
-          {(eventsLoading || councilEvents.length > 0) && !eventsError && (
+          {(nearbyLoading || nearbyEvents.length > 0) && !eventsError && (
             <View style={{ marginBottom: 32 }}>
               <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
                 <SectionHeader
                   title="Events in Your Area"
-                  subtitle={council?.name ? `Happening in ${council.name}` : 'Events near your local council area'}
+                  subtitle={nearbySubtitle}
                   onSeeAll={() => router.push('/events')}
                 />
               </View>

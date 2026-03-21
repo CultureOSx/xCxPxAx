@@ -17,7 +17,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { queryClient } from '@/lib/query-client';
 import { goBackOrReplace } from '@/lib/navigation';
 
-const isWeb = Platform.OS === 'web';
 const SUPER_ADMIN_EMAIL = 'jiobaba369@gmail.com';
 
 interface PlatformStats {

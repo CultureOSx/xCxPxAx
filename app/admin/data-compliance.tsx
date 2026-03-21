@@ -5,14 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import * as Haptics from 'expo-haptics';
 
 const isWeb = Platform.OS === 'web';
 

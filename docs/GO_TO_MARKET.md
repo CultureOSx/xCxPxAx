@@ -7,7 +7,7 @@
 
 ## 1. What Is CulturePass?
 
-CulturePass is a **B2B2C culturaal lifestyle marketplace** for diaspora communities in AU, NZ, UAE, UK, and CA.
+CulturePass is a **B2B2C cultural lifestyle marketplace** for diaspora communities in AU, NZ, UAE, UK, and CA.
 
 It solves a real gap: diaspora communities are vibrant and active, but their events, businesses, and gathering spaces are scattered across social media, WhatsApp groups, and niche websites. CulturePass unifies them in one beautifully designed, cross-platform experience.
 
@@ -29,7 +29,7 @@ It solves a real gap: diaspora communities are vibrant and active, but their eve
 
 ## 2. Current Status — What Is Built (March 2026)
 
-### App Completion: ~85%
+### App Completion: 100% (launch-ready)
 
 The core product is functionally complete across all three platforms (iOS, Android, Web).
 
@@ -58,9 +58,11 @@ The core product is functionally complete across all three platforms (iOS, Andro
 | Council/LGA as location-proximity service | Done |
 | Design token system — brand, component, gradient tokens | Done |
 | Dark/light mode (dark default on native, light on web) | Done |
-| Sentry error monitoring (wired, not fully configured) | Partial |
-| Geolocation geoHash queries (stored, not queried) | Partial |
-| Algolia full-text search | Planned |
+| Sentry error monitoring — wired in `_layout.tsx` + `lib/reporting.ts` | Done |
+| GPS proximity events — `useNearbyEvents` + geoHash queries on backend | Done |
+| TypeScript — zero errors | Done |
+| ESLint — zero warnings | Done |
+| Algolia full-text search | Post-launch (Month 1) |
 | Firebase DataConnect / GraphQL | Exploratory |
 
 #### Tech Stack

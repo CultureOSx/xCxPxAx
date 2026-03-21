@@ -1,18 +1,13 @@
 import { Alert, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from '@sentry/react-native';
 import { apiRequest } from '@/lib/query-client';
-
-// Sentry is not yet installed — use no-op shims until the package is added.
-const Sentry = {
-  captureException: (_err: unknown, _ctx?: unknown) => {},
-  captureMessage: (_msg: string, _ctx?: unknown) => {},
-};
 
 export function logError(error: unknown, context?: Record<string, any>) {
   if (__DEV__) {
     console.error('Logged Error:', error, context);
   }
-  
+
   if (error instanceof Error) {
     Sentry.captureException(error, { extra: context });
   } else {
