@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
 import { CultureTokens } from '@/constants/theme';
+import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
 type CampaignNotificationType = Extract<NotificationType, 'recommendation' | 'system' | 'event' | 'perk' | 'community'>;
@@ -37,7 +38,8 @@ interface CampaignFormState {
   communitiesAny: string;
   languagesAny: string;
   categoryIdsAny: string;
-  ethnicityContains: string;
+  /** Selected nationality IDs — drives ethnicityContains on API call */
+  nationalityIds: string[];
   limit: string;
 }
 
@@ -169,7 +171,7 @@ export default function AdminNotificationsScreen() {
     title: '', message: '', type: 'recommendation',
     city: '', country: 'Australia',
     interestsAny: '', communitiesAny: '', languagesAny: '',
-    categoryIdsAny: '', ethnicityContains: '', limit: '200',
+    categoryIdsAny: '', nationalityIds: [], limit: '200',
   });
   const [result, setResult]   = useState<TargetedResult | null>(null);
   const [approval, setApproval] = useState<{ token: string; expiresAt: string } | null>(null);
@@ -185,7 +187,7 @@ export default function AdminNotificationsScreen() {
   useEffect(() => { setApproval(null); }, [
     form.title, form.message, form.type, form.city, form.country,
     form.interestsAny, form.communitiesAny, form.languagesAny,
-    form.categoryIdsAny, form.ethnicityContains, form.limit,
+    form.categoryIdsAny, form.nationalityIds, form.limit,
   ]);
 
   // Countdown timer
@@ -215,16 +217,22 @@ export default function AdminNotificationsScreen() {
   const categoryHint = useMemo(() => interestCategories.map(c => c.id).join(', '), []);
 
   const runCampaign = useMutation({
-    mutationFn: async ({ dryRun, idempotencyKey, approvalToken }: { dryRun: boolean; idempotencyKey?: string; approvalToken?: string }) =>
-      api.notifications.targeted({
+    mutationFn: async ({ dryRun, idempotencyKey, approvalToken }: { dryRun: boolean; idempotencyKey?: string; approvalToken?: string }) => {
+      // Derive ethnicityContains from selected nationality labels
+      const selectedLabels = ALL_NATIONALITIES
+        .filter(n => form.nationalityIds.includes(n.id))
+        .map(n => n.label)
+        .join(', ');
+      return api.notifications.targeted({
         title: form.title.trim(), message: form.message.trim(), type: form.type,
         idempotencyKey, approvalToken,
         city: form.city.trim() || undefined, country: form.country.trim() || undefined,
         interestsAny: parseCsv(form.interestsAny), communitiesAny: parseCsv(form.communitiesAny),
         languagesAny: parseCsv(form.languagesAny), categoryIdsAny: parseCsv(form.categoryIdsAny),
-        ethnicityContains: form.ethnicityContains.trim() || undefined,
+        ethnicityContains: selectedLabels || undefined,
         dryRun, limit: Number.isFinite(Number(form.limit)) ? Number(form.limit) : 200,
-      }),
+      });
+    },
     onSuccess: data => {
       setResult(data);
       if (data.dryRun && data.approvalToken && data.approvalExpiresAt)
@@ -268,7 +276,8 @@ export default function AdminNotificationsScreen() {
 
   // Active audience filter count (for badge)
   const filterCount = [form.city, form.country, form.interestsAny, form.communitiesAny,
-    form.languagesAny, form.categoryIdsAny, form.ethnicityContains].filter(v => v.trim()).length;
+    form.languagesAny, form.categoryIdsAny].filter(v => v.trim()).length
+    + form.nationalityIds.length;
 
   return (
     <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
@@ -438,11 +447,54 @@ export default function AdminNotificationsScreen() {
                   hint={`Available: ${categoryHint}`}
                   leftIcon="list-outline"
                 />
-                <Input label="Ethnicity contains" placeholder="South Asian"
-                  value={form.ethnicityContains}
-                  onChangeText={v => setForm(p => ({ ...p, ethnicityContains: v }))}
-                  leftIcon="person-outline"
-                />
+
+                {/* Nationality / Cultural Identity selector */}
+                <View>
+                  <Text style={[s.typeLabel, { color: colors.textSecondary, marginBottom: 8 }]}>
+                    Target by Nationality
+                  </Text>
+                  <View style={s.typeGrid}>
+                    {ALL_NATIONALITIES.slice(0, 20).map(nat => {
+                      const active = form.nationalityIds.includes(nat.id);
+                      return (
+                        <Pressable
+                          key={nat.id}
+                          onPress={() => setForm(p => ({
+                            ...p,
+                            nationalityIds: active
+                              ? p.nationalityIds.filter(id => id !== nat.id)
+                              : [...p.nationalityIds, nat.id],
+                          }))}
+                          style={[
+                            s.typeChip,
+                            {
+                              backgroundColor: active ? CultureTokens.indigo : colors.surfaceElevated,
+                              borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                            },
+                          ]}
+                          accessibilityRole="checkbox"
+                          accessibilityLabel={nat.label}
+                          accessibilityState={{ checked: active }}
+                        >
+                          <Text style={{ fontSize: 14 }}>{nat.emoji}</Text>
+                          <Text style={[s.typeChipText, { color: active ? '#FFFFFF' : colors.textSecondary }]}>
+                            {nat.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {form.nationalityIds.length > 0 && (
+                    <Pressable
+                      onPress={() => setForm(p => ({ ...p, nationalityIds: [] }))}
+                      style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                    >
+                      <Text style={{ fontSize: 11, color: colors.textTertiary, fontFamily: 'Poppins_500Medium' }}>
+                        Clear selection
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
 
                 <View style={[s.row2, isDesktop && s.row2Desktop]}>
                   <View style={{ flex: 1 }}>
