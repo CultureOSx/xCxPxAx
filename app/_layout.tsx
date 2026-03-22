@@ -4,7 +4,6 @@ import { Buffer } from "buffer";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
@@ -37,17 +36,6 @@ import { BackButton } from "@/components/ui/BackButton";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 // Web font loader for Expo web is automatically handled by @expo-google-fonts
 
-
-Sentry.init({
-  dsn: Platform.OS === 'web'
-    ? (process.env.EXPO_PUBLIC_SENTRY_WEB_DSN || '')
-    : (process.env.EXPO_PUBLIC_SENTRY_DSN || ''),
-  environment: __DEV__ ? 'development' : 'production',
-  release: Constants.expoConfig?.version,
-  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
-  sendDefaultPii: true,
-  debug: false,
-});
 
 global.Buffer = Buffer;
 
@@ -118,15 +106,12 @@ function DataSync() {
           country: user.country,
           subscriptionTier: user.subscriptionTier,
         });
-        // Error monitoring — tag all future events with this user
-        Sentry.setUser({ id: user.id, email: user.email, username: user.username });
       }
       // After logout: user transitions from defined to null
       else if (!user && prevUserIdRef.current !== null) {
         prevUserIdRef.current = null;
         resetUser();
         resetOnboarding();
-        Sentry.setUser(null);
       }
     }
     syncOnboarding();
@@ -496,4 +481,4 @@ const webStyles = StyleSheet.create({
   },
 });
 
-export default Sentry.wrap(RootLayoutContent);
+export default RootLayoutContent;

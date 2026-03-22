@@ -33,7 +33,6 @@
         ]
       },
       "config": {
-        "usesNonExemptEncryption": false,
         "googleMapsApiKey": "$(EXPO_PUBLIC_GOOGLE_MAPS_KEY)"
       },
       "associatedDomains": [
@@ -135,7 +134,6 @@
           "googleMaps": true
         }
       ],
-      "@sentry/react-native",
       [
         "expo-build-properties",
         {

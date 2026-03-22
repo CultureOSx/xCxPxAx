@@ -1,17 +1,11 @@
 import { Alert, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as Sentry from '@sentry/react-native';
 import { apiRequest } from '@/lib/query-client';
+
 
 export function logError(error: unknown, context?: Record<string, any>) {
   if (__DEV__) {
     console.error('Logged Error:', error, context);
-  }
-
-  if (error instanceof Error) {
-    Sentry.captureException(error, { extra: context });
-  } else {
-    Sentry.captureMessage(String(error), { extra: context, level: 'error' });
   }
 }
 
@@ -173,14 +167,11 @@ export function confirmAndReport(options: {
             const result = await submitSydneyReport(targetType, targetId, reason, details);
             
             let message = 'Thank you! Report submitted.';
-            let type: 'success' | 'info' = 'success';
-            
+
             if (result.status === 'duplicate') {
               message = 'This has already been reported.';
-              type = 'info';
             } else if (result.status === 'escalated') {
               message = 'Flagged for priority review.';
-              type = 'info';
             }
             
             Alert.alert('Report Status', message);

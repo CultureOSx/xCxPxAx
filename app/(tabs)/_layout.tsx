@@ -15,7 +15,6 @@ const TAB_CONFIG = [
 const HIDDEN_ROUTES = [
   'explore',
   'directory',
-  'council',
   'dashboard',
   // add more hidden / deep-link only screens here
 ] as const;
