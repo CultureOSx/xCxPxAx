@@ -17,18 +17,12 @@ const REQUIRED_FIREBASE_KEYS: RequiredFirebaseEnvKey[] = [
   'EXPO_PUBLIC_FIREBASE_APP_ID',
 ];
 
-// Public Firebase web config fallback for production web exports.
-// Expo's static export has intermittently dropped EXPO_PUBLIC_* inlining in this repo,
-// which causes a white-screen crash before the app can boot.
-const FALLBACK_ENV = {
-  EXPO_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDOEt9XQhXJFqhIXv-kurFsRcbyUkLRiHE',
-  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: 'culturepass-b5f96.firebaseapp.com',
-  EXPO_PUBLIC_FIREBASE_PROJECT_ID: 'culturepass-b5f96',
-  EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: 'culturepass-b5f96.firebasestorage.app',
-  EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '59873729209',
-  EXPO_PUBLIC_FIREBASE_APP_ID: '1:59873729209:web:73c8714462e33975de5968',
-  EXPO_PUBLIC_API_URL: 'http://localhost:5001/culturepass-b5f96/us-central1/api/',
-} as const;
+// No hardcoded fallback values — all config must come from EXPO_PUBLIC_* env vars
+// baked in at build time via eas.json build.*.env or a local .env file.
+// If a key is missing, getFirebaseWebConfig() logs a warning and Firebase will
+// fail gracefully on first use (auth won't work — which is the correct behaviour
+// for a misconfigured build, rather than silently using stale credentials).
+const FALLBACK_ENV: Record<string, never> = {};
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/+$/, '') + '/';

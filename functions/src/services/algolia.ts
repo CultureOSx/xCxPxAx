@@ -1,27 +1,24 @@
 import { algoliasearch, type SearchClient } from 'algoliasearch';
-import * as Sentry from '@sentry/node';
 import { FirestoreEvent } from './firestore';
 
 const APP_ID = process.env.ALGOLIA_APP_ID || '';
 const ADMIN_KEY = process.env.ALGOLIA_ADMIN_KEY || '';
 
-// Singleton search client initialized lazily or returning null if credentials missing
+// Singleton — null when credentials are absent (graceful degradation to Firestore)
 export const searchClient: SearchClient | null = (APP_ID && ADMIN_KEY)
   ? algoliasearch(APP_ID, ADMIN_KEY)
   : null;
 
-const EVENTS_INDEX = 'culturepass_events';
+export const EVENTS_INDEX = 'culturepass_events';
+export const PROFILES_INDEX = 'culturepass_profiles';
+
+// ─── Events ──────────────────────────────────────────────────────────────────
 
 export const algoliaEventsIndex = {
-  /**
-   * Transforms a bulky Firestore document into a lean, fast, flat shape optimized for search.
-   * Removes heavy/unnecessary arrays or long strings not needed for matching.
-   */
   async indexEvent(eventData: FirestoreEvent) {
     if (!searchClient) return null;
 
     try {
-      // Flatten geo-points for Algolia's out-of-the-box location sorting
       const _geoloc = (eventData.latitude != null && eventData.longitude != null)
         ? { lat: eventData.latitude, lng: eventData.longitude }
         : undefined;
@@ -30,39 +27,39 @@ export const algoliaEventsIndex = {
         objectID: eventData.id,
         title: eventData.title,
         description: eventData.description,
-        category: eventData.category,
+
+        // Facet fields — must be declared as attributesForFaceting in Algolia dashboard
+        category: eventData.category ?? '',
         cultureTag: eventData.cultureTag ?? [],
-        
-        // Flattened location for exact-match faceted search (Parramatta, Harris Park, etc.)
         city: eventData.city,
+        country: eventData.country,
         council: eventData.council ?? '',
         suburb: eventData.suburb ?? '',
-        country: eventData.country,
+        isFree: eventData.isFree ?? false,
+        entryType: eventData.isFree ? 'free' : 'ticketed',
+
+        // Geo
         _geoloc,
 
+        // Display fields
         date: eventData.date,
         time: eventData.time,
-        communityId: eventData.communityId,
-        organizerId: eventData.organizerId,
-        isFree: eventData.isFree,
+        venue: eventData.venue ?? '',
+        imageUrl: eventData.imageUrl ?? '',
+        communityId: eventData.communityId ?? '',
+        organizerId: eventData.organizerId ?? '',
         attending: eventData.attending ?? 0,
-        imageUrl: eventData.imageUrl,
-        
-        // Helps Algolia rank highly-viewed/shared events first naturally
+
+        // Ranking signal — higher score surfaces better results
         score: (eventData.viewCount ?? 0) + ((eventData.attending ?? 0) * 5),
-        
-        // Metadata
-        createdAt: new Date().getTime(),
+
+        // Idempotency marker — checked by backfill to skip already-indexed docs
+        algoliaIndexedAt: Date.now(),
       };
 
-      // V5 Algoliasearch API signature
-      return await searchClient.saveObject({
-        indexName: EVENTS_INDEX,
-        body: record,
-      });
+      return await searchClient.saveObject({ indexName: EVENTS_INDEX, body: record });
     } catch (err) {
-      console.error('[Algolia indexEvent Error]', err);
-      Sentry.captureException(err, { extra: { eventId: eventData.id } });
+      console.error('[Algolia] indexEvent error:', err);
       return null;
     }
   },
@@ -71,14 +68,63 @@ export const algoliaEventsIndex = {
     if (!searchClient) return null;
 
     try {
-      return await searchClient.deleteObject({
-        indexName: EVENTS_INDEX,
-        objectID: eventId,
-      });
+      return await searchClient.deleteObject({ indexName: EVENTS_INDEX, objectID: eventId });
     } catch (err) {
-      console.error('[Algolia deleteEvent Error]', err);
-      Sentry.captureException(err, { extra: { eventId } });
+      console.error('[Algolia] deleteEvent error:', err);
       return null;
     }
-  }
+  },
+};
+
+// ─── Profiles ─────────────────────────────────────────────────────────────────
+
+interface AlgoliaProfile {
+  id: string;
+  name: string;
+  entityType: string;
+  city?: string;
+  country?: string;
+  isVerified?: boolean;
+  imageUrl?: string;
+  description?: string;
+  cultureTags?: string[];
+  lgaCode?: string;
+}
+
+export const algoliaProfilesIndex = {
+  async indexProfile(profile: AlgoliaProfile) {
+    if (!searchClient) return null;
+
+    try {
+      const record: Record<string, unknown> = {
+        objectID: profile.id,
+        name: profile.name,
+        entityType: profile.entityType,
+        city: profile.city ?? '',
+        country: profile.country ?? '',
+        isVerified: profile.isVerified ?? false,
+        imageUrl: profile.imageUrl ?? '',
+        description: profile.description ?? '',
+        cultureTags: profile.cultureTags ?? [],
+        lgaCode: profile.lgaCode ?? '',
+        algoliaIndexedAt: Date.now(),
+      };
+
+      return await searchClient.saveObject({ indexName: PROFILES_INDEX, body: record });
+    } catch (err) {
+      console.error('[Algolia] indexProfile error:', err);
+      return null;
+    }
+  },
+
+  async deleteProfile(profileId: string) {
+    if (!searchClient) return null;
+
+    try {
+      return await searchClient.deleteObject({ indexName: PROFILES_INDEX, objectID: profileId });
+    } catch (err) {
+      console.error('[Algolia] deleteProfile error:', err);
+      return null;
+    }
+  },
 };

@@ -1,14 +1,3 @@
-import * as Sentry from '@sentry/node';
-
-// ─── Sentry — must be initialised before any other imports ───────────────────
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || '',
-  environment: process.env.FUNCTIONS_EMULATOR === 'true' ? 'development' : 'production',
-  release: process.env.K_REVISION,          // Cloud Run revision tag
-  tracesSampleRate: 0.1,                    // 10 % of requests in prod
-  integrations: [Sentry.captureConsoleIntegration({ levels: ['error', 'warn'] })],
-});
-
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -121,14 +110,10 @@ app.use('/api', createIndigenousRouter());
 // Default 404
 app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));
 
-// Sentry error handler — must come before the custom error handler
-Sentry.setupExpressErrorHandler(app);
-
-// Error Handler — captures to Sentry, never exposes internal details in production
+// Error handler — never exposes internal details in production
 app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status ?? 500;
   console.error('[App Error]:', err);
-  Sentry.captureException(err);
   const safe = status < 500;  // 4xx errors are safe to surface to clients
   res.status(status).json({
     error: safe ? err.message : 'Internal Server Error',

@@ -1,5 +1,4 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
-import * as Sentry from '@sentry/node';
 import { db } from './admin';
 import { algoliaEventsIndex } from './services/algolia';
 import type { FirestoreEvent } from './services/firestore';
@@ -71,6 +70,5 @@ export const onEventWritten = onDocumentWritten('events/{eventId}', async (event
 
   } catch (err) {
     console.error('[onEventWritten] trigger error:', err);
-    Sentry.captureException(err, { extra: { eventId } });
   }
 });

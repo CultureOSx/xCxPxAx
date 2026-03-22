@@ -13,6 +13,7 @@ Project guide for AI agents and engineers. Read this before touching code.
 Cross-platform cultural lifestyle marketplace for diaspora communities (AU, NZ, UAE, UK, CA).
 **Stack**: Expo 55 + React 19.1.0 + React Native 0.83 + Expo Router 5 + Reanimated 4 + Firebase 11 (Auth + Firestore + Cloud Functions + Storage).
 **Current date context**: Refer to `currentDate` in system prompt for today's date.
+**App Store launch target**: 15 April 2026 — Sydney + Melbourne public launch.
 
 ### Product Identity
 CulturePass is a **B2B2C marketplace** — not a government portal, not an NGO tool.
@@ -77,16 +78,19 @@ hooks/
   useLocationFilter.ts  Location filtering logic
   useLocations.ts       Location list management
   useNearestCity.ts     Geolocation → nearest supported city
+  useNearbyEvents.ts    GPS-based proximity event discovery (calls /api/events/nearby)
+  useAlgolia.ts         Algolia search hook — useAlgoliaSearch({ indexName, query, city, council })
   usePushNotifications.ts  FCM token registration + notification handlers
 
 lib/
-  api.ts                Typed API client — ONLY way to call the backend (885 lines, 150+ endpoints)
+  api.ts                Typed API client — ONLY way to call the backend (150+ endpoints)
   auth.tsx              Firebase Auth provider + useAuth() hook
   firebase.ts           Firebase SDK init (platform-aware: AsyncStorage on native, localStorage on web)
   query-client.ts       TanStack React Query setup + apiRequest()
-  config.ts             App configuration
+  config.ts             App configuration — reads EXPO_PUBLIC_* env vars; no hardcoded fallbacks
   feature-flags.ts      Feature flag rollout system
-  reporting.ts          Error reporting (Sentry integration)
+  reporting.ts          Content moderation report system (submitReport, confirmAndReport, quickReport)
+                        ← NOT Sentry. Sentry has been removed from this project entirely.
   navigation.ts         Navigation utilities
   image-manipulator.ts  Platform-specific image processing (.native.ts / .web.ts variants)
 
@@ -100,16 +104,34 @@ shared/schema/          Domain schemas: event, user, ticket, profile, notificati
                         wallet, social, media, moderation, common, entities
 
 functions/src/
-  app.ts                150+ Express API routes (6500+ lines)
+  app.ts                Express app — routes split across 19 route files (app.ts itself is ~112 lines)
   admin.ts              Firebase Admin SDK singleton
-  middleware/auth.ts    Firebase ID token verification + role guards
-  middleware/moderation.ts  Content moderation (bad words, suspicious links)
+  index.ts              Cloud Functions entry point (exports `api` HTTP function + `onEventWritten` trigger)
+  triggers.ts           Firestore trigger: onEventWritten → syncs to feed collection + Algolia index
+  middleware/
+    auth.ts             Firebase ID token verification + role guards (requireAuth, requireRole, etc.)
+    moderation.ts       Content moderation (bad words, suspicious links, XSS, SQL injection)
+  routes/               19 route files — one per domain
+    admin.ts            Admin routes incl. POST /admin/algolia-backfill
+    events.ts           Event CRUD + GET /api/events/nearby (geoHash proximity)
+    search.ts           GET /api/search — Algolia first, Firestore fallback
+    feed.ts             GET /api/feed — multi-signal server-side ranking
+    auth.ts, tickets.ts, users.ts, profiles.ts, council.ts, perks.ts,
+    membership.ts, social.ts, stripe.ts, discovery.ts, indigenous.ts,
+    locations.ts, activities.ts, movies.ts, updates.ts, misc.ts, import.ts
   services/
-    firestore.ts        Typed Firestore data service (usersService, eventsService…)
-    search.ts           Weighted full-text + trigram search
+    algolia.ts          Algolia index service:
+                          algoliaEventsIndex.indexEvent() / .deleteEvent()
+                          algoliaProfilesIndex.indexProfile() / .deleteProfile()
+                          exports: searchClient, EVENTS_INDEX, PROFILES_INDEX
+    firestore.ts        Typed Firestore data service (usersService, eventsService, etc.)
+    search.ts           Weighted full-text + trigram Firestore search (fallback when Algolia absent)
     cache.ts            In-memory TTL cache (60s default)
     rollout.ts          Feature flag phased rollout
     locations.ts        Location and city management
+  jobs/
+    algoliaBackfill.ts  One-time backfill: indexes all published events + profiles into Algolia.
+                        Checks algoliaIndexedAt to skip already-indexed docs. Exposed via admin route.
   data/
     AllCouncilsList.csv Council/LGA seed data (32KB) — used for location picker, directory cards
     seed-events.json    Sample events
@@ -162,7 +184,7 @@ Use: `const topInset = Platform.OS === 'web' ? 0 : insets.top;`
 - Hardcode hex colors, spacing numbers, or font sizes in components — use `useColors()`, `Spacing`, `TextStyles`, `CardTokens`, etc.
 - Write `<Pressable><Text>button</Text></Pressable>` — always use `<Button>` from `components/ui`.
 - Import from individual `constants/*.ts` files in screens — always import from `constants/theme` (the master re-export).
-- Add duplicate routes to `functions/src/app.ts` — check the file first for existing patterns before adding a new route.
+- Add duplicate routes to Cloud Functions route files — check the relevant route file first before adding.
 - Hardcode `topInset = Platform.OS === 'web' ? 67 : insets.top` — this was the old top-bar value. Web top inset is `0`.
 - Use raw `fetch()` for API calls — always use `api.*` from `lib/api.ts`.
 - Directly import Firebase SDK in screens — use the typed helpers in `lib/api.ts` and `lib/auth.tsx`.
@@ -170,6 +192,8 @@ Use: `const topInset = Platform.OS === 'web' ? 0 : insets.top;`
 - Use `console.log` in production code — use `if (__DEV__)` guards.
 - Commit API keys, Stripe keys, or `.env` files — use `EXPO_PUBLIC_*` vars baked in at build time.
 - Use `AsyncStorage` directly for auth tokens — `lib/query-client.ts` `setAccessToken()` handles this.
+- Import or reference `@sentry/node` or `@sentry/react-native` — **Sentry has been removed from this project**. Use `console.error` + `captureRouteError()` from `functions/src/routes/utils.ts` in Cloud Functions.
+- Use `lib/reporting.ts` for error monitoring — it is a **user content report system** (spam, fake events, harassment), not an error logger.
 
 ### ALWAYS Do
 - Use `api.*` from `lib/api.ts` for all backend calls.
@@ -186,6 +210,68 @@ Use: `const topInset = Platform.OS === 'web' ? 0 : insets.top;`
 - Check `isOrganizer` / `isAdmin` from `useRole()` before rendering sensitive UI.
 - Add `accessibilityLabel` and `accessibilityRole` to all interactive elements.
 - Run `npm run typecheck` and `npm run lint` before committing.
+- In Cloud Functions route catch blocks, use `captureRouteError(err, 'ROUTE_NAME')` from `./utils`.
+
+---
+
+## Algolia Search
+
+Algolia is the primary search engine. Firestore search is the fallback when Algolia credentials are absent.
+
+### Indices
+| Index | Contents | Facets |
+|-------|----------|--------|
+| `culturepass_events` | All published events | `city`, `country`, `category`, `cultureTag[]`, `entryType` (free/ticketed) |
+| `culturepass_profiles` | All published profiles | `city`, `country`, `entityType`, `isVerified` |
+
+### Client-side (React Native / Web)
+```typescript
+import { useAlgoliaSearch } from '@/hooks/useAlgolia';
+
+const { results, loading, isConfigured } = useAlgoliaSearch({
+  indexName: 'culturepass_events',
+  query,
+  city,          // facet filter
+  council,       // facet filter
+  hitsPerPage: 20,
+});
+// isConfigured = false when EXPO_PUBLIC_ALGOLIA_APP_ID is empty → use /api/search fallback
+```
+
+### Server-side (Cloud Functions)
+```typescript
+import { algoliaEventsIndex, algoliaProfilesIndex } from '../services/algolia';
+
+// Index on publish/update:
+await algoliaEventsIndex.indexEvent({ ...eventData, id: eventId });
+
+// Remove on soft-delete:
+await algoliaEventsIndex.deleteEvent(eventId);
+
+// Index a profile:
+await algoliaProfilesIndex.indexProfile({ id, name, entityType, city, ... });
+```
+
+### Backfill
+Run once after setting `ALGOLIA_APP_ID` + `ALGOLIA_ADMIN_KEY` in Cloud Functions config:
+```bash
+curl -X POST https://us-central1-culturepass-b5f96.cloudfunctions.net/api/admin/algolia-backfill \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"force": false}'
+# force: true → re-indexes everything, ignoring algoliaIndexedAt timestamp
+```
+
+### Env vars required
+```bash
+# Client (safe to bundle — search-only key)
+EXPO_PUBLIC_ALGOLIA_APP_ID=
+EXPO_PUBLIC_ALGOLIA_SEARCH_KEY=
+
+# Cloud Functions only — never in EXPO_PUBLIC_*
+ALGOLIA_APP_ID=
+ALGOLIA_ADMIN_KEY=
+```
 
 ---
 
@@ -412,6 +498,17 @@ try {
 }
 ```
 
+### Cloud Functions — Route Error Logging
+```typescript
+// In every route catch block — do NOT use bare console.error
+import { captureRouteError } from './utils';
+
+} catch (err) {
+  captureRouteError(err, 'GET /api/events/:id');
+  return res.status(500).json({ error: 'Failed to fetch event' });
+}
+```
+
 ### Cache Invalidation
 ```typescript
 import { queryClient } from '@/lib/query-client';
@@ -509,15 +606,17 @@ user.isSydneyVerified, user.interests, user.communities
 
 ## Security Guidelines
 
-- **Never** put `STRIPE_SECRET_KEY` or other server secrets in `EXPO_PUBLIC_*` vars — they're bundled
+- **Never** put `STRIPE_SECRET_KEY`, `ALGOLIA_ADMIN_KEY`, or other server secrets in `EXPO_PUBLIC_*` vars — they're bundled into the client
+- **No hardcoded credentials** in `lib/config.ts` — all config via `EXPO_PUBLIC_*` env vars. Missing keys log a warning and Firebase fails gracefully on first use (correct behaviour — don't add fallbacks)
 - **Input validation**: use `zod` for all user-controlled input before sending to API
 - **XSS**: avoid `dangerouslySetInnerHTML` — use React Native `Text` which is XSS-safe
 - **Deep links**: validate `redirectTo` params — only allow internal routes (`/` prefix, no `://`)
 - **Image uploads**: validate MIME type + size on both client and server (Sharp processes server-side)
-- **Rate limiting**: API has 90 req/min global, 12 req/min for targeted notifications
+- **Rate limiting**: API has 200 req/min global rate limit (`express-rate-limit` in `functions/src/app.ts`)
 - **Firestore rules**: `firestore.rules` enforces ownership — never bypass via Admin SDK on client
 - **Token storage**: Firebase ID tokens only stored in memory + `AsyncStorage` — not `SecureStore` (short-lived, auto-refresh)
 - **Role checks**: always use server-side role guards (`requireRole()` middleware) — client UI checks are for UX only
+- **No Sentry**: error monitoring via `console.error` + Cloud Logging. `captureRouteError()` in Cloud Functions, `if (__DEV__) console.error()` in client code
 
 ---
 
@@ -553,8 +652,12 @@ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 EXPO_PUBLIC_FIREBASE_APP_ID=
 
-# API base URL
-EXPO_PUBLIC_API_URL=https://us-central1-YOUR_PROJECT.cloudfunctions.net/api/
+# API base URL — MUST be set in eas.json build.production.env for production builds
+EXPO_PUBLIC_API_URL=https://us-central1-culturepass-b5f96.cloudfunctions.net/api/
+
+# Algolia (client — search-only key, safe to bundle)
+EXPO_PUBLIC_ALGOLIA_APP_ID=
+EXPO_PUBLIC_ALGOLIA_SEARCH_KEY=
 
 # Social Auth
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=     # Google Sign-In web client ID (for native OAuth)
@@ -565,9 +668,14 @@ STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_MONTHLY_ID=price_...
 STRIPE_PRICE_YEARLY_ID=price_...
+
+# Algolia (Cloud Functions ONLY — admin key, never in Expo bundle)
+ALGOLIA_APP_ID=
+ALGOLIA_ADMIN_KEY=
 ```
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` under `build.*.env` for EAS builds.
+`EXPO_PUBLIC_API_URL` is already set in `eas.json` `build.production.env`.
 
 ---
 
@@ -594,7 +702,7 @@ npm run typecheck
 npm run lint
 ```
 
-Set `EXPO_PUBLIC_API_URL=http://localhost:5001/YOUR_PROJECT/us-central1/api/` when using the emulator.
+Set `EXPO_PUBLIC_API_URL=http://localhost:5001/culturepass-b5f96/us-central1/api/` when using the emulator.
 
 ### Supplementary Server (Image Processing)
 ```bash
@@ -648,6 +756,7 @@ users/{uid}
   membership: { tier, expiresAt }
   stripeCustomerId, stripeSubscriptionId
   isSydneyVerified, interests[], culturePassId
+  lgaCode?: string                          ← council LGA (written server-side on onboarding)
   createdAt, updatedAt
 
 events/{eventId}
@@ -663,7 +772,8 @@ events/{eventId}
   lgaCode?: string                          ← council LGA for proximity filtering
   councilId?: string                        ← linked council record
   deletedAt (soft delete), publishedAt
-  cpid (CP-EVT-xxx), geoHash
+  cpid (CP-EVT-xxx), geoHash, latitude, longitude
+  algoliaIndexedAt?: number                 ← set by backfill/trigger; used to skip re-index
 
 tickets/{ticketId}
   eventId, userId, status, paymentStatus
@@ -677,6 +787,7 @@ profiles/{profileId}
   ownerId, isVerified, rating
   lgaCode?: string                          ← council LGA for location services
   socialLinks: { website, instagram, facebook, twitter }
+  algoliaIndexedAt?: number                 ← set by backfill; used to skip re-index
 
 councils/{councilId}
   name, suburb, state, lgaCode, country
@@ -696,7 +807,7 @@ See `firestore.rules`:
 
 ## Known Gaps (Production Readiness Checklist)
 
-### Infrastructure
+### Infrastructure ✅ Complete
 - [x] Stripe real payment flow — subscription checkout, webhook handler, cancel → Firestore
 - [x] Profiles/communities routes → `profilesService` (Firestore)
 - [x] Custom Firebase claims — tier synced on subscribe/cancel
@@ -711,12 +822,18 @@ See `firestore.rules`:
 - [x] Migrate remaining in-memory Maps (wallets, notifications, perks, tickets) → Firestore
 - [x] Offline mutation queue (AsyncStorage → sync on reconnect)
 - [x] Analytics (PostHog / Firebase Analytics)
-- [x] Error monitoring (Sentry — `lib/reporting.ts` wired but not fully configured)
 - [x] Deep link testing (Universal Links on iOS, App Links on Android)
 - [x] App Store screenshots and metadata
 - [x] WCAG accessibility audit
+- [x] Hardcoded Firebase credentials removed from `lib/config.ts`
+- [x] `EXPO_PUBLIC_API_URL` added to `eas.json` production profile
+- [x] Sentry removed — package uninstalled, all imports/calls cleaned from app.ts, utils.ts, algolia.ts, triggers.ts
+- [x] Algolia service wired: events index + profiles index, Firestore trigger syncs on publish/update/delete
+- [x] Algolia backfill job (`functions/src/jobs/algoliaBackfill.ts`) + admin route `POST /admin/algolia-backfill`
+- [x] Search route upgraded: full facet support (city, country, category, cultureTag, entryType)
+- [x] GeoHash proximity endpoint `GET /api/events/nearby` — wired and tested
 
-### Architecture (2026-03 Rebuild)
+### Architecture (2026-03 Rebuild) ✅ Complete
 - [x] Council reframed as LGA location service (not governance tab)
 - [x] Removed council governance screens: council/[id], council/claim, council/select, (tabs)/council, dashboard/council, admin/council-management, admin/council-claims
 - [x] Council directory cards kept — browsable via Directory Council filter chip
@@ -725,9 +842,22 @@ See `firestore.rules`:
 - [x] All Events page (app/events.tsx) — single-line filter bar (category + date + price)
 - [x] Explore page 2-column grid fixed — explicit pixel widths via `useLayout().width`
 - [x] Directory full category set: All / Events / Indigenous / Businesses / Venues / Organisations / Councils / Government / Charities
+- [x] Server-side feed ranking (`GET /api/feed`) — 7-signal weighted algorithm
 
-### Pending
-- [ ] Geolocation proximity events using Firestore geoHash queries (stored, not queried)
+### Pending — Pre-Launch (April 15 target)
+- [ ] **Algolia env vars**: set `EXPO_PUBLIC_ALGOLIA_APP_ID` + `EXPO_PUBLIC_ALGOLIA_SEARCH_KEY` in `.env` and `eas.json`; set `ALGOLIA_APP_ID` + `ALGOLIA_ADMIN_KEY` in Cloud Functions config; run backfill
+- [ ] **GeoHash backfill**: events missing `latitude`/`longitude`/`geoHash` need geocoding script
+- [ ] Council LGA auto-selection from user's city/GPS on onboarding (`/api/councils/nearest` + onboarding UI)
+
+### Pending — Post-Launch Sprint (April–June 2026)
+- [ ] Organiser event analytics dashboard (`dashboard/event-analytics/[eventId]`)
+- [ ] Promotional codes (`promoCodes/` collection, checkout validation)
+- [ ] Organiser attendee messaging (FCM multicast + email queue)
+- [ ] Community posts + announcements (`communities/{id}/posts/` subcollection, feature-flagged)
+- [ ] Rewards points redemption UI (balance chip on Perks tab, checkout toggle)
+- [ ] Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
+- [ ] Push notification deep links + per-category opt-out settings
+- [ ] Organiser public profile pages (`profile/organizer/[id].tsx`)
+- [ ] NZ + UAE city grouping on onboarding (cities grouped by country with flags)
+- [ ] Wallet top-up + Apple/Google Pay (Stripe PaymentIntent, `.pkpass` generation)
 - [ ] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)
-- [ ] Council LGA auto-selection from user's city/GPS on onboarding
-- [ ] Algolia search integration (full-text across events, profiles, councils)

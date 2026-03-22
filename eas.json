@@ -16,11 +16,6 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_SENTRY_DSN": "https://559dedc355a891ff3c341baae296775f@o4511083804426240.ingest.us.sentry.io/4511083812814848",
-        "EXPO_PUBLIC_SENTRY_WEB_DSN": "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRYCLI_SKIP_DOWNLOAD": "1",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
     },
@@ -31,11 +26,6 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_SENTRY_DSN": "https://559dedc355a891ff3c341baae296775f@o4511083804426240.ingest.us.sentry.io/4511083812814848",
-        "EXPO_PUBLIC_SENTRY_WEB_DSN": "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRYCLI_SKIP_DOWNLOAD": "1",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
     },
@@ -45,11 +35,6 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_SENTRY_DSN": "https://559dedc355a891ff3c341baae296775f@o4511083804426240.ingest.us.sentry.io/4511083812814848",
-        "EXPO_PUBLIC_SENTRY_WEB_DSN": "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRYCLI_SKIP_DOWNLOAD": "1",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
     },
@@ -62,11 +47,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_SENTRY_DSN": "https://559dedc355a891ff3c341baae296775f@o4511083804426240.ingest.us.sentry.io/4511083812814848",
-        "EXPO_PUBLIC_SENTRY_WEB_DSN": "https://f082379f01767b084635ad267e40a652@o4511083804426240.ingest.us.sentry.io/4511083865899008",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRYCLI_SKIP_DOWNLOAD": "1",
+        "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-b5f96.cloudfunctions.net/api/",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
     }

@@ -21,7 +21,6 @@
   },
   "main": "lib/functions/src/index.js",
   "dependencies": {
-    "@sentry/node": "^10.45.0",
     "@tootallnate/once": "3.0.1",
     "algoliasearch": "^5.49.2",
     "cheerio": "^1.2.0",
