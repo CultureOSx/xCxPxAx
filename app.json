@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
       "appleTeamId": "26WGXSNG58",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
         "NSLocationWhenInUseUsageDescription": "CulturePass uses your location to show events and communities near you.",
@@ -52,7 +52,7 @@
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 10,
+      "versionCode": 11,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

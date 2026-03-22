@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';

@@ -3,8 +3,7 @@ import {
   View, 
   ScrollView, 
   RefreshControl, 
-  StyleSheet, 
-  Platform 
+  StyleSheet
 } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -20,8 +19,6 @@ import { CommunityRail } from '@/components/Discover/CommunityRail';
 import { ActivityRail } from '@/components/Discover/ActivityRail';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
-
-const isWeb = Platform.OS === 'web';
 
 export default function DiscoverScreen() {
   const colors = useColors();

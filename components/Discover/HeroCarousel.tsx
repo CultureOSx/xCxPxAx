@@ -82,7 +82,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         </View>
       </Pressable>
     </View>
-  ), [events.length, heroCardWidth, isDesktop, colors.surface]);
+  ), [events.length, heroCardWidth, isDesktop, styles]);
 
   if (events.length === 0) return null;
 

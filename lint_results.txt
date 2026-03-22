@@ -1,0 +1,38 @@
+
+> culturepass-app@1.1.0 lint
+> npx expo lint
+
+env: load .env.local .env
+env: export EXPO_PUBLIC_ALGOLIA_APP_ID EXPO_PUBLIC_ALGOLIA_SEARCH_KEY EXPO_PUBLIC_API_URL EXPO_PUBLIC_FIREBASE_API_KEY EXPO_PUBLIC_FIREBASE_APP_ID EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN EXPO_PUBLIC_FIREBASE_EMULATOR_HOST EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID EXPO_PUBLIC_FIREBASE_PROJECT_ID EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET EXPO_PUBLIC_USE_FIREBASE_EMULATORS
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/app/(tabs)/index.tsx
+  24:7  warning  'isWeb' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/app/_layout.tsx
+  7:8  warning  'Constants' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/Discover/CityRail.tsx
+  4:10  warning  'router' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/Discover/DiscoverHeader.tsx
+  1:17  warning  'useState' is defined but never used   @typescript-eslint/no-unused-vars
+  1:27  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+  6:10  warning  'BlurView' is defined but never used   @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/Discover/HeroCarousel.tsx
+  85:6  warning  React Hook useCallback has missing dependencies: 'styles.heroCard', 'styles.heroCardBadge', 'styles.heroCardBadgeText', 'styles.heroCardContent', 'styles.heroCardDateBox', 'styles.heroCardDateText', 'styles.heroCardDesktop', 'styles.heroCardLocation', 'styles.heroCardLocationRow', 'styles.heroCardMetaTop', 'styles.heroCardPrice', 'styles.heroCardPriceText', and 'styles.heroCardTitle'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/Discover/SpotlightCard.tsx
+  71:6  warning  React Hook React.useEffect has missing dependencies: 'opacity' and 'scale'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/browse/BrowseCard.tsx
+  2:44  warning  'Pressable' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/browse/BrowseHeader.tsx
+  6:10  warning  'TextStyles' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/wedoboring/Documents/CultureOS/CulturePassApp/components/browse/PromotedRail.tsx
+  2:57  warning  'Platform' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 11 problems (0 errors, 11 warnings)
+

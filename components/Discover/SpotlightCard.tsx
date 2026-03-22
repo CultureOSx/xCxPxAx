@@ -68,7 +68,7 @@ function AmbientGlow({ color }: { color: string }) {
       -1,
       false,
     );
-  }, []);
+  }, [opacity, scale]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

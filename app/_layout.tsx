@@ -4,7 +4,6 @@ import { Buffer } from "buffer";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import Constants from 'expo-constants';
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
 import React, { useCallback, useEffect, useRef } from "react";
