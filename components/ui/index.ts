@@ -25,3 +25,6 @@ export { Avatar } from './Avatar';
 export type { AvatarProps, AvatarSize, AvatarBadge } from './Avatar';
 
 export { BackButton } from './BackButton';
+
+export { DatePickerInput } from './DatePickerInput';
+export type { ISODateString } from './DatePickerInput';

@@ -38,8 +38,19 @@ export interface Profile {
   category?: string;
   subCategory?: string;
   tags?: string[];
+  /** Legacy free-text culture tags */
   cultureTags?: string[];
+  /** Legacy free-text language list */
   languages?: string[];
+  // ── Cultural Identity Layer ───────────────────────────────────────────────
+  /** Typed nationality FK, e.g. 'indian' */
+  nationalityId?: string;
+  /** Typed culture FKs, e.g. ['malayali'] */
+  cultureIds?: string[];
+  /** ISO 639-3 language FKs, e.g. ['mal', 'eng'] */
+  languageIds?: string[];
+  /** Cross-national diaspora group FKs */
+  diasporaGroupIds?: string[];
   website?: string;
   contactEmail?: string;
   phone?: string;
@@ -208,8 +219,17 @@ export interface Community extends Omit<Profile, 'type'> {
   iconEmoji?: string;
   isIndigenous?: boolean;
   countryOfOrigin?: string;
-  /** Cultural tags, e.g. ['Malayali', 'South Indian'] */
+  /** Cultural tags, e.g. ['Malayali', 'South Indian'] — legacy free-text */
   cultures?: string[];
+  // ── Cultural Identity Layer ───────────────────────────────────────────────
+  /** Typed nationality FK, e.g. 'indian' — from constants/cultures.ts NATIONALITIES */
+  nationalityId?: string;
+  /** Typed culture FKs, e.g. ['malayali', 'tamil'] — from constants/cultures.ts CULTURES */
+  cultureIds?: string[];
+  /** ISO 639-3 language FKs, e.g. ['mal', 'eng'] — from constants/languages.ts */
+  languageIds?: string[];
+  /** Cross-national diaspora group FKs, e.g. ['south_asian_diaspora'] */
+  diasporaGroupIds?: string[];
   /** Link hub — up to 10 entries (Linktree-style) */
   links?: CommunityLink[];
   /** Authenticated user's role in this community (populated per-request) */

@@ -30,6 +30,8 @@ import { Input } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { NATIONALITIES } from '@/constants/cultures';
 
 const isWeb = Platform.OS === 'web';
 
@@ -145,6 +147,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(profile.id);
   const meta = TYPE_META[profile.entityType] ?? { color: CultureTokens.indigo, icon: 'people' as const };
+  const cultureTags = (profile as any).cultureIds ?? (profile as any).cultures ?? [];
 
   return (
     <Card
@@ -185,6 +188,15 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
               </>
             )}
           </View>
+          {cultureTags.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+              {(cultureTags as string[]).slice(0, 3).map((tag) => (
+                <View key={tag} style={[styles.cultureChip, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' }]}>
+                  <Text style={[TextStyles.badge, { color: CultureTokens.indigo, fontSize: 9 }]}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
         <View style={styles.lcRight}>
           <Button
@@ -213,17 +225,19 @@ export default function CommunitiesScreen() {
   const insets  = useSafeAreaInsets();
   const { width, isDesktop, isTablet } = useLayout();
   useRole();
+  const { state: onboardingState } = useOnboarding();
 
   const topInset = isWeb ? 0 : insets.top;
   const contentMaxWidth = isDesktop ? 1200 : isTablet ? 800 : width;
   const useThreeColumnResults = isWeb && isDesktop;
 
-  const [search,        setSearch]        = useState('');
-  const [selectedType,  setSelectedType]  = useState('all');
-  const [sortBy,        setSortBy]        = useState<CommunitySort>('alphabetical');
-  const [prefsHydrated, setPrefsHydrated] = useState(false);
+  const [search,         setSearch]         = useState('');
+  const [selectedType,   setSelectedType]   = useState('all');
+  const [selectedCulture,setSelectedCulture]= useState<string | null>(null);
+  const [sortBy,         setSortBy]         = useState<CommunitySort>('alphabetical');
+  const [prefsHydrated,  setPrefsHydrated]  = useState(false);
 
-  const { data: allProfiles, isLoading } = useQuery<Profile[]>({ 
+  const { data: allProfiles, isLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
     queryFn: () => api.profiles.list()
   });
@@ -234,18 +248,65 @@ export default function CommunitiesScreen() {
     scrollY.value = event.contentOffset.y;
   });
 
+  // Build cultural filter chips: user's nationality first, then top ones found in data
+  const cultureFilterChips = useMemo(() => {
+    const chips: { id: string; label: string; emoji: string }[] = [
+      { id: 'all', label: 'All Cultures', emoji: '🌍' },
+    ];
+    const userNationalityId = onboardingState.nationalityId;
+    if (userNationalityId) {
+      const nat = NATIONALITIES[userNationalityId];
+      if (nat) chips.push({ id: nat.id, label: nat.label, emoji: nat.emoji });
+    }
+    // Add other nationalities that appear in the loaded community data
+    const seen = new Set(chips.map((c) => c.id));
+    const profiles = Array.isArray(allProfiles) ? allProfiles : [];
+    profiles.forEach((p: any) => {
+      if (p.nationalityId && !seen.has(p.nationalityId)) {
+        const nat = NATIONALITIES[p.nationalityId];
+        if (nat) {
+          chips.push({ id: nat.id, label: nat.label, emoji: nat.emoji });
+          seen.add(nat.id);
+        }
+      }
+    });
+    return chips.slice(0, 8);
+  }, [allProfiles, onboardingState.nationalityId]);
+
+  // Communities that match the user's cultural identity (for the "Your Culture" section)
+  const yourCultureCommunities = useMemo(() => {
+    const { nationalityId, cultureIds } = onboardingState;
+    if (!nationalityId && (!cultureIds || cultureIds.length === 0)) return [];
+    const profiles = Array.isArray(allProfiles) ? allProfiles : [];
+    return profiles.filter((p: any) => {
+      if (nationalityId && p.nationalityId === nationalityId) return true;
+      if (cultureIds?.length && Array.isArray(p.cultureIds)) {
+        return cultureIds.some((id: string) => p.cultureIds.includes(id));
+      }
+      return false;
+    }).slice(0, 6);
+  }, [allProfiles, onboardingState]);
+
   const filteredProfiles = useMemo(() => {
     let profiles = Array.isArray(allProfiles) ? allProfiles : [];
     if (selectedType !== 'all') profiles = profiles.filter((p) => p.entityType === selectedType);
+    if (selectedCulture && selectedCulture !== 'all') {
+      profiles = profiles.filter((p: any) =>
+        p.nationalityId === selectedCulture ||
+        (Array.isArray(p.cultureIds) && p.cultureIds.includes(selectedCulture))
+      );
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       profiles = profiles.filter((p) => {
         const tags = Array.isArray(p.tags) ? (p.tags as string[]) : [];
+        const cultureIds = Array.isArray((p as any).cultureIds) ? ((p as any).cultureIds as string[]) : [];
         return (
           p.name.toLowerCase().includes(q) ||
           (p.description ?? '').toLowerCase().includes(q) ||
           (p.city ?? '').toLowerCase().includes(q) ||
-          tags.some((t) => t.toLowerCase().includes(q))
+          tags.some((t) => t.toLowerCase().includes(q)) ||
+          cultureIds.some((id) => id.toLowerCase().includes(q))
         );
       });
     }
@@ -256,7 +317,7 @@ export default function CommunitiesScreen() {
     }
     sorted.sort((a, b) => a.name.localeCompare(b.name));
     return sorted;
-  }, [allProfiles, search, selectedType, sortBy]);
+  }, [allProfiles, search, selectedType, selectedCulture, sortBy]);
 
   const featuredProfiles = useMemo(() => (
     (Array.isArray(allProfiles) ? allProfiles : [])
@@ -283,6 +344,11 @@ export default function CommunitiesScreen() {
   const handleSelectType = useCallback((id: string) => {
     if (!isWeb) Haptics.selectionAsync();
     setSelectedType(id);
+  }, []);
+
+  const handleSelectCulture = useCallback((id: string) => {
+    if (!isWeb) Haptics.selectionAsync();
+    setSelectedCulture(id === 'all' ? null : id);
   }, []);
 
   const prefsStorageKey = useMemo(() => `@communities_prefs:${userId ?? 'guest'}`, [userId]);
@@ -370,7 +436,7 @@ export default function CommunitiesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.community} />}
         >
           {/* Category Filters */}
-          <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 12 }}>
+          <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 8 }}>
             <FilterChipRow
               items={CATEGORIES}
               selectedId={selectedType}
@@ -378,6 +444,34 @@ export default function CommunitiesScreen() {
               size="small"
             />
           </View>
+
+          {/* Culture Identity Filters */}
+          {cultureFilterChips.length > 1 && (
+            <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+                {cultureFilterChips.map((chip) => {
+                  const active = selectedCulture === chip.id || (chip.id === 'all' && !selectedCulture);
+                  return (
+                    <Pressable
+                      key={chip.id}
+                      onPress={() => handleSelectCulture(chip.id)}
+                      style={[
+                        styles.cultureFilterChip,
+                        active
+                          ? { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo }
+                          : { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 14 }}>{chip.emoji}</Text>
+                      <Text style={[TextStyles.captionSemibold, { color: active ? '#fff' : colors.textSecondary }]}>
+                        {chip.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Search Input */}
           <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
@@ -390,7 +484,7 @@ export default function CommunitiesScreen() {
           </View>
 
           {/* Featured Section */}
-          {search.trim().length === 0 && selectedType === 'all' && featuredProfiles.length > 0 && (
+          {search.trim().length === 0 && selectedType === 'all' && !selectedCulture && featuredProfiles.length > 0 && (
             <View style={{ marginBottom: 24 }}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Featured</Text>
@@ -398,6 +492,24 @@ export default function CommunitiesScreen() {
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
                 {featuredProfiles.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Your Culture Section */}
+          {search.trim().length === 0 && !selectedCulture && yourCultureCommunities.length > 0 && (
+            <View style={{ marginBottom: 24 }}>
+              <View style={styles.sectionHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>Your Culture</Text>
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>Communities matching your identity</Text>
+                </View>
+                <Pressable onPress={() => setSelectedCulture(onboardingState.nationalityId ?? null)}>
+                  <Text style={[TextStyles.captionSemibold, { color: CultureTokens.indigo }]}>See all</Text>
+                </Pressable>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
+                {yourCultureCommunities.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
               </ScrollView>
             </View>
           )}
@@ -501,4 +613,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   lcLocationText: { ...TextStyles.caption, color: colors.textTertiary },
   lcRight: { marginLeft: 12 },
   lcJoinBtn: { minWidth: 70 },
+  cultureChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
+  cultureFilterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
 });

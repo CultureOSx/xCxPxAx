@@ -56,6 +56,7 @@ import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { useLayout } from '@/hooks/useLayout';
 import { routeWithRedirect } from '@/lib/routes';
+import { NATIONALITIES } from '@/constants/cultures';
 
 const isWeb = Platform.OS === 'web';
 
@@ -359,6 +360,19 @@ export default function DiscoverScreen() {
       : popularEvents,
     [discoverLoading, eventsLoading, popularEvents],
   );
+
+  // Cultural identity events — filtered by user's nationalityId/cultureIds
+  const forYouEvents = useMemo(() => {
+    const { nationalityId, cultureIds } = state;
+    if (!nationalityId && (!cultureIds || cultureIds.length === 0)) return [];
+    const safeEvents = Array.isArray(allEvents) ? allEvents : [];
+    return safeEvents.filter((e) => {
+      const tags: string[] = Array.isArray(e.cultureTag) ? (e.cultureTag as string[]) : [];
+      if (nationalityId && tags.some((t) => t.toLowerCase().includes(nationalityId.toLowerCase()))) return true;
+      if (cultureIds?.length) return cultureIds.some((id: string) => tags.some((t) => t.toLowerCase().includes(id.toLowerCase())));
+      return false;
+    }).slice(0, 10);
+  }, [allEvents, state]);
 
   const featuredEvents = useMemo(() => {
     const safeEvents = Array.isArray(allEvents) ? allEvents : [];
@@ -959,6 +973,39 @@ export default function DiscoverScreen() {
                   })}
                 />
               )}
+            </View>
+          )}
+
+          {/* For You — Cultural Identity Events */}
+          {forYouEvents.length > 0 && (
+            <View style={{ marginBottom: 32 }}>
+              <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
+                <SectionHeader
+                  title={`For You${state.nationalityId && NATIONALITIES[state.nationalityId] ? ` · ${NATIONALITIES[state.nationalityId].emoji} ${NATIONALITIES[state.nationalityId].label}` : ''}`}
+                  subtitle="Events matching your cultural identity"
+                  onSeeAll={() => router.push('/events')}
+                />
+              </View>
+              <FlatList
+                horizontal
+                data={forYouEvents}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item, index }) => <EventCard event={item} index={index} />}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+                decelerationRate="fast"
+                snapToInterval={POPULAR_RAIL_SNAP_INTERVAL}
+                snapToAlignment="start"
+                initialNumToRender={4}
+                maxToRenderPerBatch={4}
+                windowSize={5}
+                removeClippedSubviews
+                getItemLayout={(_, index) => ({
+                  length: POPULAR_RAIL_SNAP_INTERVAL,
+                  offset: POPULAR_RAIL_SNAP_INTERVAL * index,
+                  index,
+                })}
+              />
             </View>
           )}
 

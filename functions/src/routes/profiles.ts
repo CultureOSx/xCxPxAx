@@ -21,15 +21,38 @@ const createProfileSchema = z.object({
   imageUrl: z.string().optional(),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
+  // Cultural Identity Layer
+  nationalityId: z.string().optional(),
+  cultureIds: z.array(z.string()).optional(),
+  languageIds: z.array(z.string()).optional(),
+  diasporaGroupIds: z.array(z.string()).optional(),
+  cultureTags: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
+  countryOfOrigin: z.string().optional(),
+  isIndigenous: z.boolean().optional(),
 });
 
 /** GET /api/communities — list communities */
 profilesRouter.get('/communities', async (req, res) => {
   if (!isFirestoreConfigured) return res.json({ communities: [] });
   try {
-    const communities = await profilesService.list({ entityType: 'community' });
+    const nationalityId = req.query.nationalityId ? String(req.query.nationalityId) : undefined;
+    const cultureId     = req.query.cultureId     ? String(req.query.cultureId)     : undefined;
+    let communities = await profilesService.list({ entityType: 'community' });
+    if (nationalityId) {
+      communities = communities.filter((c: any) =>
+        c.nationalityId === nationalityId ||
+        (Array.isArray(c.diasporaGroupIds) && c.diasporaGroupIds.includes(nationalityId))
+      );
+    }
+    if (cultureId) {
+      communities = communities.filter((c: any) =>
+        Array.isArray(c.cultureIds) && c.cultureIds.includes(cultureId)
+      );
+    }
     return res.json({ communities });
   } catch (err) {
+    captureRouteError(err, 'GET /api/communities');
     return res.status(500).json({ error: 'Failed to fetch communities' });
   }
 });

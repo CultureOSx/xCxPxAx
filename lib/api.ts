@@ -758,10 +758,12 @@ const profiles = {
 // Communities
 // ---------------------------------------------------------------------------
 const communities = {
-  list: async (params?: { city?: string; country?: string }) => {
+  list: async (params?: { city?: string; country?: string; nationalityId?: string; cultureId?: string }) => {
     const qs = new URLSearchParams();
     if (params?.city) qs.set('city', params.city);
     if (params?.country) qs.set('country', params.country);
+    if (params?.nationalityId) qs.set('nationalityId', params.nationalityId);
+    if (params?.cultureId) qs.set('cultureId', params.cultureId);
     const q = qs.toString();
     const res = await request<any>('GET', `api/communities${q ? `?${q}` : ''}`);
     if (Array.isArray(res)) return res as Community[];

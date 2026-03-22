@@ -25,6 +25,7 @@ import {
 } from '@/shared/schema';
 import { TextStyles } from '@/constants/typography';
 import { Input } from '@/components/ui/Input';
+import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import { uploadEventImageTemp } from '@/lib/storage';
 import { formatDateForCountry, getCurrencyForCountry } from '@/lib/dateUtils';
 import { useAuth } from '@/lib/auth';
@@ -756,23 +757,19 @@ export default function CreateEventScreen() {
             {/* ── Date & Time ─────────────────────────────────────────────── */}
             {step === 'datetime' && (
               <View style={s.fields}>
-                <Input
-                  label="Start Date * (YYYY-MM-DD)"
+                <DatePickerInput
+                  label="Start Date *"
                   value={form.date}
-                  onChangeText={(v) => setField('date', v)}
-                  placeholder="2026-09-12"
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={10}
+                  onChangeDate={(v) => setField('date', v)}
+                  placeholder="Select start date"
                   accessibilityLabel="Event start date"
                   containerStyle={{ marginBottom: 20 }}
                 />
-                <Input
+                <DatePickerInput
                   label="End Date (optional)"
                   value={form.endDate}
-                  onChangeText={(v) => setField('endDate', v)}
-                  placeholder="2026-09-14"
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={10}
+                  onChangeDate={(v) => setField('endDate', v)}
+                  placeholder="Select end date"
                   accessibilityLabel="Event end date"
                   containerStyle={{ marginBottom: 20 }}
                 />
@@ -813,7 +810,7 @@ export default function CreateEventScreen() {
                 <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20', marginTop: 8 }]}>
                   <Ionicons name="information-circle-outline" size={18} color={CultureTokens.saffron} />
                   <Text style={[s.infoText, { color: colors.textSecondary }]}>
-                    Use YYYY-MM-DD format (e.g. 2026-09-12). Time in 24h (e.g. 18:30).
+                    Time in 24h format (e.g. 18:30).
                   </Text>
                 </View>
               </View>
