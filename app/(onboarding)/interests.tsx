@@ -188,7 +188,7 @@ export default function InterestsScreen() {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(redirectTo ?? '/(tabs)');
     } catch (error) {
-      console.warn('[onboarding] failed to complete onboarding:', error);
+      if (__DEV__) console.warn('[onboarding] failed to complete onboarding:', error);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Could not finish onboarding', 'Please try again.');
     } finally {

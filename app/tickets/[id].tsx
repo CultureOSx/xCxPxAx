@@ -341,7 +341,7 @@ export default function TicketDetailScreen() {
                       </Text>
                       {(ticket.qrCode || cachedQr) && isActive ? (
                         <View style={s.qrImageContainer}>
-                           <Image source={{ uri: ticket.qrCode ?? cachedQr ?? '' }} style={s.qrImage} resizeMode="contain" />
+                           <Image source={{ uri: ticket.qrCode ?? cachedQr ?? '' }} style={s.qrImage} contentFit="contain" />
                         </View>
                       ) : isScanned ? (
                         <View style={s.scannedOverlay}>

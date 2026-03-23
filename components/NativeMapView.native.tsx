@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
@@ -118,7 +119,7 @@ export default function NativeMapViewComponent({
                 accessibilityHint="Tap for event details, long press to open venue in maps"
               >
                 {event.imageUrl ? (
-                  <Image source={{ uri: event.imageUrl }} style={styles.eventImage} resizeMode="cover" />
+                  <Image source={{ uri: event.imageUrl }} style={styles.eventImage} contentFit="cover" />
                 ) : (
                   <View style={[styles.eventImage, { backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
                     <Ionicons name="calendar" size={24} color={Colors.primary} />

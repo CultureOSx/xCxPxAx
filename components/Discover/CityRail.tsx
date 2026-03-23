@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Pressable, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';

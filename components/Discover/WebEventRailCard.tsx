@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Image, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
@@ -24,8 +25,10 @@ function WebEventRailCard({ event }: WebEventRailCardProps) {
         Platform.OS === 'web' && { cursor: 'pointer' as any },
       ]}
       onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+      accessibilityRole="button"
+      accessibilityLabel={`${event.title}${event.date ? `, ${event.date}` : ''}${event.venue ? `, ${event.venue}` : ''}`}
     >
-      <Image source={{ uri: event.imageUrl }} style={styles.webRailImage} resizeMode="cover" />
+      <Image source={{ uri: event.imageUrl }} style={styles.webRailImage} contentFit="cover" />
       <LinearGradient
         colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.88)']}
         locations={[0.3, 0.6, 1]}
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#1C1F2B',
+    backgroundColor: '#0B0B14',
     borderWidth: 1,
   },
   webRailImage: {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Image, Platform, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { useColors } from '@/hooks/useColors';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,7 +57,7 @@ function WebHeroCarousel({ events }: WebHeroCarouselProps) {
   const event = events[current];
   return (
     <View style={[styles.webHeroCarousel, { height: heroHeight, backgroundColor: colors.surface }]}>
-      <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
       <LinearGradient
         colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.88)']}
         locations={[0, 0.5, 1]}

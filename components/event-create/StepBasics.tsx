@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { Input } from '@/components/ui/Input';

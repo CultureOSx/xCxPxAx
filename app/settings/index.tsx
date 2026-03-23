@@ -50,7 +50,7 @@ export default function AccountSettingsScreen() {
     try {
       router.push({ pathname: route } as any);
     } catch (error) {
-      console.warn('[settings] navigation failed:', route, error);
+      if (__DEV__) console.warn('[settings] navigation failed:', route, error);
       router.replace('/(tabs)');
     }
   };
@@ -65,7 +65,7 @@ export default function AccountSettingsScreen() {
             if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await logout('/(onboarding)');
           } catch (error) {
-            console.warn('[settings] sign out failed:', error);
+            if (__DEV__) console.warn('[settings] sign out failed:', error);
             Alert.alert('Sign out failed', 'Please try again.');
           }
         },
