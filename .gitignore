@@ -87,9 +87,30 @@ functions/.env.*
 node_modules/
 dist/
 
-# Backups
+# Backups and dev artifacts
 *_backup.*
+*.bak
 google-play-service-account.json
 *.swp
 firebase-debug.log
 node_modules 2/
+
+# Dev/temp files
+lint_results.txt
+pr_description.md
+profile_full.txt
+skills-lock.json
+store.config.json
+tmp.auth-ui.spec.ts
+get_sections.py
+read_file_full.py
+split_components.py
+test_review.js
+
+# Codecov CLI binary
+codecov
+codecov.SHA256SUM
+codecov.SHA256SUM.sig
+
+# everything-claude-code (third-party tooling — not part of the app)
+everything-claude-code/
