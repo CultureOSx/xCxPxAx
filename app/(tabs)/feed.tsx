@@ -1338,18 +1338,23 @@ export default function CultureFeedScreen() {
   const [localPosts,     setLocalPosts]     = useState<FeedPost[]>([]);
   const [activeFilter,   setActiveFilter]   = useState<FeedFilter>('for-you');
 
-  const { data: feedData, isLoading } = useQuery({
+  const { data: feedData, isLoading, isFetching } = useQuery({
     queryKey: ['/api/feed', state.city, state.country],
     queryFn: () => api.feed.list({ city: state.city, country: state.country, pageSize: 50 }),
     staleTime: 3 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 
-  // Clear optimistic local posts once the server feed refreshes so they don't
-  // duplicate the real posts that now appear in feedData.
+  // Clear optimistic local posts when the city/country changes (avoid showing
+  // posts from the previous city while new data loads with keepPreviousData).
   useEffect(() => {
-    if (feedData) setLocalPosts([]);
-  }, [feedData]);
+    setLocalPosts([]);
+  }, [state.city, state.country]);
+
+  // Also clear when fresh server data arrives (dedup: server now contains the post).
+  useEffect(() => {
+    if (feedData && !isFetching) setLocalPosts([]);
+  }, [feedData, isFetching]);
 
   // Keep a local communities list for the post composer community picker
   const { data: communities = [] } = useQuery<Community[]>({
@@ -1366,7 +1371,7 @@ export default function CultureFeedScreen() {
     if (!comm) return;
 
     const tempPost: FeedPost = {
-      id: `local-${Date.now()}`,
+      id: `local-${Math.random().toString(36).slice(2)}-${Date.now()}`,
       kind: 'announcement',
       community: comm,
       body,
@@ -1388,6 +1393,9 @@ export default function CultureFeedScreen() {
           body,
           imageUrl: finalImageUrl,
         });
+        // Invalidate so the server response replaces the optimistic local post,
+        // preventing the post from appearing twice in the feed.
+        await queryClient.invalidateQueries({ queryKey: ['/api/feed', state.city, state.country] });
       } catch (err) {
         if (__DEV__) console.error('[CultureFeed] Failed to create post:', err);
       }
@@ -1497,9 +1505,14 @@ export default function CultureFeedScreen() {
           </View>
         </LinearGradient>
 
+        {isFetching && !isLoading && (
+          <View style={{ height: 2, backgroundColor: CultureTokens.indigo + '40' }}>
+            <View style={{ height: 2, width: '60%', backgroundColor: CultureTokens.indigo }} />
+          </View>
+        )}
         {isLoading ? (
           <ScrollView contentContainerStyle={{ padding: hPad, paddingTop: 12 }} scrollEnabled={false}>
-            {[1, 2, 3].map((i) => <SkeletonCard key={i} colors={colors} />)}
+            {[1, 2, 3, 4, 5].map((i) => <SkeletonCard key={i} colors={colors} />)}
           </ScrollView>
         ) : (
           <FlatList
