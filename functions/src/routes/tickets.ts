@@ -160,7 +160,7 @@ ticketsRouter.get('/tickets/:id/wallet/apple', requireAuth, async (req: Request,
   if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  res.json({ url: `https://wallet.culturepass.au/apple/${ticket.id}`, provider: 'apple', ticketId: ticket.id });
+  return res.status(501).json({ error: 'Apple Wallet passes are not yet available', code: 'WALLET_NOT_IMPLEMENTED' });
 });
 
 ticketsRouter.get('/tickets/:id/wallet/google', requireAuth, async (req: Request, res: Response) => {
@@ -169,7 +169,7 @@ ticketsRouter.get('/tickets/:id/wallet/google', requireAuth, async (req: Request
   if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  res.json({ url: `https://wallet.culturepass.au/google/${ticket.id}`, provider: 'google', ticketId: ticket.id });
+  return res.status(501).json({ error: 'Google Wallet passes are not yet available', code: 'WALLET_NOT_IMPLEMENTED' });
 });
 
 // ---------------------------------------------------------------------------

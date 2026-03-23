@@ -172,11 +172,16 @@ export default function TicketDetailScreen() {
               ? `/api/tickets/${ticket.id}/wallet/apple`
               : `/api/tickets/${ticket.id}/wallet/google`;
             const res  = await apiRequest('GET', endpoint);
-            const data = await res.json() as { url?: string };
-            if (data.url) { await Linking.openURL(data.url); }
-            else { Alert.alert('Success', `Ticket added to ${walletName}!`); }
+            const data = await res.json() as { url?: string; code?: string };
+            if (data.url) {
+              await Linking.openURL(data.url);
+            } else if (data.code === 'WALLET_NOT_IMPLEMENTED') {
+              Alert.alert('Coming Soon', `${walletName} passes will be available in a future update.`);
+            } else {
+              Alert.alert('Success', `Ticket added to ${walletName}!`);
+            }
           } catch {
-            Alert.alert('Error', `Could not add to ${walletName}. Please try again.`);
+            Alert.alert('Coming Soon', `${walletName} passes will be available in a future update.`);
           }
         },
       },

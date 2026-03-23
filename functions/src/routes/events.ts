@@ -20,6 +20,7 @@ import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type
   captureRouteError,
 } from './utils';
 import { algoliaEventsIndex } from '../services/algolia';
+import { db } from '../admin';
 
 // ---------------------------------------------------------------------------
 // Shared types (inlined to avoid circular import with app.ts)
@@ -312,6 +313,33 @@ export function createEventsRouter() {
       }
       const loc = resolvedResult.location;
 
+      if (b.endDate && b.endDate < b.date) {
+        return res.status(400).json({ error: 'endDate cannot be before start date' });
+      }
+
+      // Resolve council LGA from location (best-effort, non-blocking)
+      let lgaCode: string | null = null;
+      let councilId: string | null = null;
+      try {
+        const q = db.collection('councils').where('state', '==', loc.state).limit(100);
+        const councilSnap = await q.get();
+        if (!councilSnap.empty) {
+          type CouncilDoc = { lgaCode?: string; suburb?: string; name?: string };
+          const lowerCity = loc.city.toLowerCase();
+          const match = councilSnap.docs.find((d) => {
+            const data = d.data() as CouncilDoc;
+            return (data.suburb ?? '').toLowerCase() === lowerCity ||
+                   (data.name ?? '').toLowerCase().includes(lowerCity);
+          });
+          if (match) {
+            lgaCode = (match.data() as CouncilDoc).lgaCode ?? null;
+            councilId = match.id;
+          }
+        }
+      } catch {
+        // Non-critical: event creation proceeds without LGA
+      }
+
       try {
         const event = await eventsService.create({
           title:       String(b.title),
@@ -363,12 +391,10 @@ export function createEventsRouter() {
           eventSponsors: Array.isArray(b.eventSponsors) ? b.eventSponsors : undefined,
           hostInfo:      b.hostInfo ?? null,
           cpid: generateSecureId('CP-E-'),
+          lgaCode,
+          councilId,
           status: 'draft',
         });
-        // Validate end date
-        if (b.endDate && b.endDate < b.date) {
-          return res.status(400).json({ error: 'endDate cannot be before start date' });
-        }
         // Index in Algolia (fire-and-forget — don't block response)
         algoliaEventsIndex.indexEvent(event).catch(() => {});
         return res.status(201).json(event);

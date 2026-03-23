@@ -277,18 +277,23 @@ export function createStripeRouter() {
         // ── Subscription events ──────────────────────────────────────────
         if (eventType === 'checkout.session.completed' && obj.mode === 'subscription' && userIdMeta) {
           const subscriptionId = String(obj.subscription ?? '');
-          const expiresAt = subscriptionId
-            ? await stripeClient!.subscriptions.retrieve(subscriptionId)
-                .then((sub) => new Date((sub as unknown as { current_period_end: number }).current_period_end * 1000).toISOString())
-                .catch(() => undefined)
-            : undefined;
+          let expiresAt: string | undefined;
+          let tier: 'free' | 'plus' | 'premium' = 'plus';
+          if (subscriptionId) {
+            const sub = await stripeClient!.subscriptions.retrieve(subscriptionId).catch(() => null);
+            if (sub) {
+              expiresAt = new Date((sub as unknown as { current_period_end: number }).current_period_end * 1000).toISOString();
+              const priceId = (sub as unknown as { items: { data: { price: { id: string } }[] } }).items?.data?.[0]?.price?.id;
+              if (priceId && priceId === process.env.STRIPE_PRICE_YEARLY_ID) tier = 'premium';
+            }
+          }
           await usersService.upsert(userIdMeta, {
             stripeSubscriptionId: subscriptionId || undefined,
-            membership: { tier: 'plus', isActive: true, expiresAt },
+            membership: { tier, isActive: true, expiresAt },
           });
           await authAdmin.setCustomUserClaims(userIdMeta, {
             ...(await authAdmin.getUser(userIdMeta)).customClaims,
-            tier: 'plus',
+            tier,
           });
 
         } else if (eventType === 'customer.subscription.updated') {

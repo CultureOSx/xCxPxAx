@@ -363,7 +363,7 @@ export async function awardRewardsPoints(
 export function parseBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? 'Invalid request body');
+    throw new Error(parsed.error.issues.map((i) => i.message).join(', '));
   }
   return parsed.data;
 }

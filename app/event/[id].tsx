@@ -329,14 +329,17 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     const [year, month, day] = event.date.split("-").map(Number);
     if (!year || !month || !day) return null;
     const eventDate = new Date(year, month - 1, day);
-    const timeParts = event.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (timeParts) {
-      let hours = parseInt(timeParts[1], 10);
-      const mins = parseInt(timeParts[2], 10);
-      const ampm = timeParts[3].toUpperCase();
+    const ampmParts = event.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    const h24Parts  = !ampmParts ? event.time.match(/^(\d{1,2}):(\d{2})$/) : null;
+    if (ampmParts) {
+      let hours = parseInt(ampmParts[1], 10);
+      const mins = parseInt(ampmParts[2], 10);
+      const ampm = ampmParts[3].toUpperCase();
       if (ampm === "PM" && hours !== 12) hours += 12;
       if (ampm === "AM" && hours === 12) hours = 0;
       eventDate.setHours(hours, mins, 0, 0);
+    } else if (h24Parts) {
+      eventDate.setHours(parseInt(h24Parts[1], 10), parseInt(h24Parts[2], 10), 0, 0);
     }
     const diff = eventDate.getTime() - now.getTime();
     if (diff <= 0) return { ended: true as const, days: 0, hours: 0, minutes: 0 };
