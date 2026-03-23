@@ -17,7 +17,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
       "appleTeamId": "26WGXSNG58",
-      "buildNumber": "11",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
         "NSLocationWhenInUseUsageDescription": "CulturePass uses your location to show events and communities near you.",
@@ -52,7 +51,6 @@
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 11,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -181,9 +179,7 @@
       }
     },
     "owner": "cultureos-org",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/75b9744f-257a-43c6-8245-6bb75fe2b7e8"
     }
