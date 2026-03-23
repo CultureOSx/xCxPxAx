@@ -1,7 +1,8 @@
 import {
   View, Text, Pressable, StyleSheet, Platform,
-  RefreshControl, ScrollView, ActivityIndicator
+  RefreshControl, ScrollView, ActivityIndicator, FlatList,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,8 +11,7 @@ import { useSaved } from '@/contexts/SavedContext';
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/query-client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useSharedValue,
@@ -36,14 +36,14 @@ import { NATIONALITIES } from '@/constants/cultures';
 const isWeb = Platform.OS === 'web';
 
 const TYPE_META: Record<string, { color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  community:    { color: EntityTypeColors.community, icon: 'people' },
+  community:    { color: EntityTypeColors.community,    icon: 'people' },
   organisation: { color: EntityTypeColors.organisation, icon: 'business' },
-  venue:        { color: EntityTypeColors.venue, icon: 'location' },
-  council:      { color: EntityTypeColors.council, icon: 'shield-checkmark' },
-  government:   { color: EntityTypeColors.government, icon: 'flag' },
-  artist:       { color: EntityTypeColors.artist, icon: 'musical-notes' },
-  business:     { color: EntityTypeColors.business, icon: 'storefront' },
-  charity:      { color: EntityTypeColors.charity, icon: 'heart' },
+  venue:        { color: EntityTypeColors.venue,        icon: 'location' },
+  council:      { color: EntityTypeColors.council,      icon: 'shield-checkmark' },
+  government:   { color: EntityTypeColors.government,   icon: 'flag' },
+  artist:       { color: EntityTypeColors.artist,       icon: 'musical-notes' },
+  business:     { color: EntityTypeColors.business,     icon: 'storefront' },
+  charity:      { color: EntityTypeColors.charity,      icon: 'heart' },
 };
 
 const CATEGORIES = [
@@ -65,10 +65,88 @@ function fmt(num: number): string {
   return num.toString();
 }
 
-function FeaturedCard({ profile, colors, styles }: { profile: Profile; colors: ReturnType<typeof useColors>; styles: any }) {
+// ---------------------------------------------------------------------------
+// Profile avatar — image with icon fallback
+// ---------------------------------------------------------------------------
+function ProfileAvatar({
+  imageUrl,
+  name,
+  color,
+  icon,
+  size = 48,
+  style,
+}: {
+  imageUrl?: string | null;
+  name: string;
+  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  size?: number;
+  style?: object;
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  if (imageUrl && !imgError) {
+    return (
+      <Image
+        source={{ uri: imageUrl }}
+        style={[{ width: size, height: size, borderRadius: size / 4 }, style]}
+        contentFit="cover"
+        onError={() => setImgError(true)}
+        transition={200}
+      />
+    );
+  }
+
+  // Fallback: colored icon box with first letter
+  const initials = name.trim().charAt(0).toUpperCase();
+  return (
+    <View
+      style={[{
+        width: size,
+        height: size,
+        borderRadius: size / 4,
+        backgroundColor: `${color}18`,
+        borderWidth: 1,
+        borderColor: `${color}30`,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }, style]}
+    >
+      {initials ? (
+        <Text style={{ fontSize: size * 0.4, fontWeight: '700', color }}>{initials}</Text>
+      ) : (
+        <Ionicons name={icon} size={size * 0.5} color={color} />
+      )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FeaturedCard — horizontal scroll card with image banner
+// ---------------------------------------------------------------------------
+const FeaturedCard = memo(function FeaturedCard({
+  profile,
+  colors,
+  styles,
+}: {
+  profile: Profile;
+  colors: ReturnType<typeof useColors>;
+  styles: ReturnType<typeof getStyles>;
+}) {
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(profile.id);
   const meta = TYPE_META[profile.entityType] ?? { color: CultureTokens.indigo, icon: 'people' as const };
+  const [joining, setJoining] = useState(false);
+
+  const handleJoin = useCallback(async () => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setJoining(true);
+    try {
+      await toggleJoinCommunity(profile.id);
+    } finally {
+      setJoining(false);
+    }
+  }, [profile.id, toggleJoinCommunity]);
 
   return (
     <Card
@@ -83,71 +161,105 @@ function FeaturedCard({ profile, colors, styles }: { profile: Profile; colors: R
       style={styles.fcCard}
       padding={0}
     >
-      <View style={styles.fcTapArea}>
-        <LinearGradient
-          colors={[`${meta.color}25`, 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+      {/* Image banner */}
+      {profile.imageUrl ? (
+        <Image
+          source={{ uri: profile.imageUrl }}
+          style={styles.fcBanner}
+          contentFit="cover"
+          transition={200}
         />
-        <View style={{ padding: 20 }}>
-          <View style={styles.fcTop}>
-            <View style={[styles.fcIconBox, { backgroundColor: colors.surface, borderColor: `${meta.color}30` }]}>
-              <Ionicons name={meta.icon} size={24} color={meta.color} />
-            </View>
-            {profile.isVerified && (
-              <View style={[styles.fcVerifiedBadge, { backgroundColor: CultureTokens.indigo }]}>
-                <Ionicons name="checkmark" size={12} color="#fff" />
-              </View>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 4 }]} numberOfLines={1}>{profile.name}</Text>
-            <View style={styles.fcMetaRow}>
-              <Text style={[TextStyles.labelSemibold, { color: meta.color, fontSize: 10, textTransform: 'uppercase' }]}>{profile.entityType}</Text>
-              {profile.city ? (
-                <>
-                  <View style={styles.fcDot} />
-                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>{profile.city}</Text>
-                </>
-              ) : null}
-            </View>
-            <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, lineHeight: 20 }]} numberOfLines={2}>
-              {profile.description || `Join the ${profile.name} ${profile.entityType} area.`}
+      ) : (
+        <LinearGradient
+          colors={[`${meta.color}40`, `${meta.color}10`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fcBanner}
+        >
+          <Ionicons name={meta.icon} size={36} color={`${meta.color}80`} style={{ alignSelf: 'center', marginTop: 16 }} />
+        </LinearGradient>
+      )}
+
+      {/* Verified badge overlay */}
+      {profile.isVerified && (
+        <View style={[styles.fcVerifiedBadge, { backgroundColor: CultureTokens.indigo }]}>
+          <Ionicons name="checkmark" size={10} color="#fff" />
+        </View>
+      )}
+
+      <View style={{ padding: 14 }}>
+        <Text style={[TextStyles.cardTitle, { color: colors.text, marginBottom: 2 }]} numberOfLines={1}>
+          {profile.name}
+        </Text>
+        <View style={styles.fcMetaRow}>
+          <Text style={[TextStyles.labelSemibold, { color: meta.color, fontSize: 10, textTransform: 'uppercase' }]}>
+            {profile.entityType}
+          </Text>
+          {profile.city ? (
+            <>
+              <View style={styles.fcDot} />
+              <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                {profile.city}
+              </Text>
+            </>
+          ) : null}
+        </View>
+        <Text
+          style={[TextStyles.caption, { color: colors.textSecondary, lineHeight: 18, marginBottom: 12 }]}
+          numberOfLines={2}
+        >
+          {profile.description || `Join the ${profile.name} ${profile.entityType}.`}
+        </Text>
+
+        <View style={styles.fcBottom}>
+          <View style={styles.fcMembers}>
+            <Ionicons name="people" size={13} color={colors.textTertiary} />
+            <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>
+              {fmt(profile.membersCount ?? 0)}
             </Text>
           </View>
-          <View style={styles.fcBottom}>
-            <View style={styles.fcMembers}>
-              <Ionicons name="people" size={14} color={colors.textTertiary} />
-              <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>{fmt(profile.membersCount ?? 0)} members</Text>
-            </View>
-          </View>
+          <Button
+            onPress={handleJoin}
+            variant={joined ? 'outline' : 'primary'}
+            size="sm"
+            disabled={joining}
+            style={[styles.fcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
+          >
+            {joining ? '...' : joined ? 'Joined' : 'Join'}
+          </Button>
         </View>
       </View>
-      
-      <Button
-        onPress={() => {
-          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          toggleJoinCommunity(profile.id);
-        }}
-        variant={joined ? 'outline' : 'primary'}
-        size="sm"
-        style={[
-          styles.fcJoinBtnFloating,
-          !joined && { backgroundColor: meta.color, borderColor: meta.color }
-        ]}
-      >
-        {joined ? 'Joined' : 'Join'}
-      </Button>
     </Card>
   );
-}
+});
 
-function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: ReturnType<typeof useColors>; styles: any }) {
+// ---------------------------------------------------------------------------
+// CommunityCard — list row with image avatar
+// ---------------------------------------------------------------------------
+const CommunityCard = memo(function CommunityCard({
+  profile,
+  colors,
+  styles,
+}: {
+  profile: Profile;
+  colors: ReturnType<typeof useColors>;
+  styles: ReturnType<typeof getStyles>;
+}) {
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(profile.id);
   const meta = TYPE_META[profile.entityType] ?? { color: CultureTokens.indigo, icon: 'people' as const };
   const cultureTags = (profile as any).cultureIds ?? (profile as any).cultures ?? [];
+  const [joining, setJoining] = useState(false);
+
+  const handleJoin = useCallback(async () => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setJoining(true);
+    try {
+      await toggleJoinCommunity(profile.id);
+    } finally {
+      setJoining(false);
+    }
+  }, [profile.id, toggleJoinCommunity]);
 
   return (
     <Card
@@ -164,12 +276,18 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
     >
       <View style={[styles.lcAccentStrip, { backgroundColor: meta.color }]} />
       <View style={styles.lcCardMain}>
-        <View style={[styles.lcIconBox, { backgroundColor: colors.background, borderColor: `${meta.color}20` }]}>
-          <Ionicons name={meta.icon} size={24} color={meta.color} />
-        </View>
+        <ProfileAvatar
+          imageUrl={profile.imageUrl}
+          name={profile.name}
+          color={meta.color}
+          icon={meta.icon}
+          size={48}
+        />
         <View style={styles.lcCenter}>
           <View style={styles.lcNameRow}>
-            <Text style={[TextStyles.cardTitle, { color: colors.text }]} numberOfLines={1}>{profile.name}</Text>
+            <Text style={[TextStyles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              {profile.name}
+            </Text>
             {profile.isVerified && (
               <View style={[styles.lcVerifiedBadge, { backgroundColor: CultureTokens.indigo }]}>
                 <Ionicons name="checkmark" size={10} color="#fff" />
@@ -177,21 +295,36 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
             )}
           </View>
           <View style={styles.lcMetaRow}>
-            <Text style={[TextStyles.labelSemibold, { color: meta.color, fontSize: 10, textTransform: 'uppercase' }]}>{profile.entityType}</Text>
+            <Text style={[TextStyles.labelSemibold, { color: meta.color, fontSize: 10, textTransform: 'uppercase' }]}>
+              {profile.entityType}
+            </Text>
             {profile.city && (
               <>
                 <View style={styles.lcDot} />
                 <View style={styles.lcLocationRow}>
                   <Ionicons name="location" size={12} color={colors.textTertiary} />
-                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]} numberOfLines={1}>{profile.city}</Text>
+                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]} numberOfLines={1}>
+                    {profile.city}
+                  </Text>
                 </View>
               </>
             )}
           </View>
+          {(profile.membersCount ?? 0) > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <Ionicons name="people" size={11} color={colors.textTertiary} />
+              <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>
+                {fmt(profile.membersCount ?? 0)} members
+              </Text>
+            </View>
+          )}
           {cultureTags.length > 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
               {(cultureTags as string[]).slice(0, 3).map((tag) => (
-                <View key={tag} style={[styles.cultureChip, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' }]}>
+                <View
+                  key={tag}
+                  style={[styles.cultureChip, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' }]}
+                >
                   <Text style={[TextStyles.badge, { color: CultureTokens.indigo, fontSize: 9 }]}>{tag}</Text>
                 </View>
               ))}
@@ -200,55 +333,63 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
         </View>
         <View style={styles.lcRight}>
           <Button
-            onPress={() => {
-              if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              toggleJoinCommunity(profile.id);
-            }}
+            onPress={handleJoin}
             variant={joined ? 'outline' : 'primary'}
             size="sm"
-            style={[
-              styles.lcJoinBtn,
-              !joined && { backgroundColor: meta.color, borderColor: meta.color }
-            ]}
+            disabled={joining}
+            style={[styles.lcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
           >
-            {joined ? 'Joined' : 'Join'}
+            {joining ? '...' : joined ? 'Joined' : 'Join'}
           </Button>
         </View>
       </View>
     </Card>
   );
-}
+});
 
+// ---------------------------------------------------------------------------
+// Main screen
+// ---------------------------------------------------------------------------
 export default function CommunitiesScreen() {
   const colors = useColors();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const insets  = useSafeAreaInsets();
   const { width, isDesktop, isTablet } = useLayout();
   useRole();
   const { state: onboardingState } = useOnboarding();
+  const { isAuthenticated, userId } = useAuth();
+  const { joinedCommunities } = useSaved();
 
   const topInset = isWeb ? 0 : insets.top;
   const contentMaxWidth = isDesktop ? 1200 : isTablet ? 800 : width;
   const useThreeColumnResults = isWeb && isDesktop;
 
-  const [search,         setSearch]         = useState('');
-  const [selectedType,   setSelectedType]   = useState('all');
-  const [selectedCulture,setSelectedCulture]= useState<string | null>(null);
-  const [sortBy,         setSortBy]         = useState<CommunitySort>('alphabetical');
-  const [prefsHydrated,  setPrefsHydrated]  = useState(false);
+  const [search,          setSearch]          = useState('');
+  const [selectedType,    setSelectedType]    = useState('all');
+  const [selectedCulture, setSelectedCulture] = useState<string | null>(null);
+  const [sortBy,          setSortBy]          = useState<CommunitySort>('alphabetical');
+  const [prefsHydrated,   setPrefsHydrated]   = useState(false);
 
-  const { data: allProfiles, isLoading } = useQuery<Profile[]>({
-    queryKey: ['/api/profiles'],
-    queryFn: () => api.profiles.list()
+  // Query key includes city/country so it refetches when location changes
+  const queryKey = useMemo(
+    () => ['/api/profiles', onboardingState.city, onboardingState.country],
+    [onboardingState.city, onboardingState.country],
+  );
+
+  const { data: allProfiles, isLoading, refetch } = useQuery<Profile[]>({
+    queryKey,
+    queryFn: () => api.profiles.list({
+      city:    onboardingState.city    ?? undefined,
+      country: onboardingState.country ?? undefined,
+    }),
   });
-  const { userId } = useAuth();
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
 
-  // Build cultural filter chips: user's nationality first, then top ones found in data
+  // Build cultural filter chips
   const cultureFilterChips = useMemo(() => {
     const chips: { id: string; label: string; emoji: string }[] = [
       { id: 'all', label: 'All Cultures', emoji: '🌍' },
@@ -258,7 +399,6 @@ export default function CommunitiesScreen() {
       const nat = NATIONALITIES[userNationalityId];
       if (nat) chips.push({ id: nat.id, label: nat.label, emoji: nat.emoji });
     }
-    // Add other nationalities that appear in the loaded community data
     const seen = new Set(chips.map((c) => c.id));
     const profiles = Array.isArray(allProfiles) ? allProfiles : [];
     profiles.forEach((p: any) => {
@@ -273,7 +413,7 @@ export default function CommunitiesScreen() {
     return chips.slice(0, 8);
   }, [allProfiles, onboardingState.nationalityId]);
 
-  // Communities that match the user's cultural identity (for the "Your Culture" section)
+  // Communities matching user's cultural identity
   const yourCultureCommunities = useMemo(() => {
     const { nationalityId, cultureIds } = onboardingState;
     if (!nationalityId && (!cultureIds || cultureIds.length === 0)) return [];
@@ -286,6 +426,13 @@ export default function CommunitiesScreen() {
       return false;
     }).slice(0, 6);
   }, [allProfiles, onboardingState]);
+
+  // Communities the user has joined (from API-synced SavedContext)
+  const yourJoinedProfiles = useMemo(() => {
+    if (!isAuthenticated || joinedCommunities.length === 0) return [];
+    const profiles = Array.isArray(allProfiles) ? allProfiles : [];
+    return profiles.filter((p) => joinedCommunities.includes(p.id));
+  }, [allProfiles, joinedCommunities, isAuthenticated]);
 
   const filteredProfiles = useMemo(() => {
     let profiles = Array.isArray(allProfiles) ? allProfiles : [];
@@ -300,13 +447,13 @@ export default function CommunitiesScreen() {
       const q = search.toLowerCase();
       profiles = profiles.filter((p) => {
         const tags = Array.isArray(p.tags) ? (p.tags as string[]) : [];
-        const cultureIds = Array.isArray((p as any).cultureIds) ? ((p as any).cultureIds as string[]) : [];
+        const cids = Array.isArray((p as any).cultureIds) ? ((p as any).cultureIds as string[]) : [];
         return (
           p.name.toLowerCase().includes(q) ||
           (p.description ?? '').toLowerCase().includes(q) ||
           (p.city ?? '').toLowerCase().includes(q) ||
           tags.some((t) => t.toLowerCase().includes(q)) ||
-          cultureIds.some((id) => id.toLowerCase().includes(q))
+          cids.some((id) => id.toLowerCase().includes(q))
         );
       });
     }
@@ -332,14 +479,15 @@ export default function CommunitiesScreen() {
   );
 
   const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-    setTimeout(() => {
-      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await refetch();
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, []);
+      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, [refetch]);
 
   const handleSelectType = useCallback((id: string) => {
     if (!isWeb) Haptics.selectionAsync();
@@ -355,19 +503,17 @@ export default function CommunitiesScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    const loadCommunityPreferences = async () => {
+    AsyncStorage.getItem(prefsStorageKey).then((raw) => {
+      if (!isMounted || !raw) return;
       try {
-        const raw = await AsyncStorage.getItem(prefsStorageKey);
-        if (!isMounted || !raw) return;
         const parsed = JSON.parse(raw);
         if (parsed.sortBy) setSortBy(parsed.sortBy);
         if (parsed.selectedType) setSelectedType(parsed.selectedType);
         if (parsed.search) setSearch(parsed.search);
-      } catch { /* ignore */ } finally {
-        if (isMounted) setPrefsHydrated(true);
-      }
-    };
-    loadCommunityPreferences();
+      } catch { /* ignore */ }
+    }).finally(() => {
+      if (isMounted) setPrefsHydrated(true);
+    });
     return () => { isMounted = false; };
   }, [prefsStorageKey]);
 
@@ -376,11 +522,13 @@ export default function CommunitiesScreen() {
     AsyncStorage.setItem(prefsStorageKey, JSON.stringify({ sortBy, selectedType, search }));
   }, [sortBy, selectedType, search, prefsHydrated, prefsStorageKey]);
 
+  const isFiltering = search.trim().length > 0 || selectedType !== 'all' || !!selectedCulture;
+
   if (isLoading) {
     return (
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         <LinearGradient
-          colors={['#2C2A72', '#3A86FF', '#2EC4B6']}
+          colors={gradients.culturepassBrand as [string, string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ paddingTop: topInset }}
@@ -404,7 +552,7 @@ export default function CommunitiesScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         {/* Brand gradient top bar */}
         <LinearGradient
           colors={gradients.culturepassBrand as [string, string, string]}
@@ -418,7 +566,9 @@ export default function CommunitiesScreen() {
             </View>
             <View style={{ flex: 1, justifyContent: 'center' }}>
               <Text style={styles.topBarTitle}>Communities</Text>
-              <Text style={styles.topBarSubtitle}>Connect with your culture</Text>
+              <Text style={styles.topBarSubtitle}>
+                {onboardingState.city ? `${onboardingState.city} · ` : ''}Connect with your culture
+              </Text>
             </View>
           </View>
         </LinearGradient>
@@ -433,7 +583,13 @@ export default function CommunitiesScreen() {
             width: '100%',
             alignSelf: 'center',
           }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.community} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={CultureTokens.community}
+            />
+          }
         >
           {/* Category Filters */}
           <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 8 }}>
@@ -448,13 +604,20 @@ export default function CommunitiesScreen() {
           {/* Culture Identity Filters */}
           {cultureFilterChips.length > 1 && (
             <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+              >
                 {cultureFilterChips.map((chip) => {
                   const active = selectedCulture === chip.id || (chip.id === 'all' && !selectedCulture);
                   return (
                     <Pressable
                       key={chip.id}
                       onPress={() => handleSelectCulture(chip.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={chip.label}
+                      accessibilityState={{ selected: active }}
                       style={[
                         styles.cultureFilterChip,
                         active
@@ -483,68 +646,140 @@ export default function CommunitiesScreen() {
             />
           </View>
 
+          {/* Your Communities (joined) */}
+          {!isFiltering && isAuthenticated && yourJoinedProfiles.length > 0 && (
+            <View style={{ marginBottom: 24 }}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Your Communities</Text>
+                <Text style={styles.sectionContext}>{yourJoinedProfiles.length} joined</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+              >
+                {yourJoinedProfiles.map((p) => (
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Featured Section */}
-          {search.trim().length === 0 && selectedType === 'all' && !selectedCulture && featuredProfiles.length > 0 && (
+          {!isFiltering && featuredProfiles.length > 0 && (
             <View style={{ marginBottom: 24 }}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Featured</Text>
                 <Text style={styles.sectionContext}>Verified</Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
-                {featuredProfiles.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+              >
+                {featuredProfiles.map((p) => (
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                ))}
               </ScrollView>
             </View>
           )}
 
           {/* Your Culture Section */}
-          {search.trim().length === 0 && !selectedCulture && yourCultureCommunities.length > 0 && (
+          {!isFiltering && yourCultureCommunities.length > 0 && (
             <View style={{ marginBottom: 24 }}>
               <View style={styles.sectionHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.sectionTitle}>Your Culture</Text>
-                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>Communities matching your identity</Text>
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                    Communities matching your identity
+                  </Text>
                 </View>
                 <Pressable onPress={() => setSelectedCulture(onboardingState.nationalityId ?? null)}>
                   <Text style={[TextStyles.captionSemibold, { color: CultureTokens.indigo }]}>See all</Text>
                 </Pressable>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
-                {yourCultureCommunities.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+              >
+                {yourCultureCommunities.map((p) => (
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                ))}
               </ScrollView>
             </View>
           )}
 
           {/* Results List */}
           <View style={{ paddingHorizontal: 16 }}>
-             <View style={styles.sectionHeaderNoPad}>
-               <Text style={styles.sectionTitle}>{activeCategoryLabel}</Text>
-               <View style={styles.sortGroup}>
-                 <Pressable onPress={() => setSortBy('alphabetical')} style={[styles.sortBtn, sortBy === 'alphabetical' && styles.sortBtnActive]}>
-                   <Text style={[styles.sortBtnText, sortBy === 'alphabetical' && styles.sortBtnTextActive]}>A-Z</Text>
-                 </Pressable>
-                 <Pressable onPress={() => setSortBy('members')} style={[styles.sortBtn, sortBy === 'members' && styles.sortBtnActive]}>
-                   <Text style={[styles.sortBtnText, sortBy === 'members' && styles.sortBtnTextActive]}>Members</Text>
-                 </Pressable>
-               </View>
-             </View>
+            <View style={styles.sectionHeaderNoPad}>
+              <View>
+                <Text style={styles.sectionTitle}>{activeCategoryLabel}</Text>
+                {filteredProfiles.length > 0 && (
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                    {filteredProfiles.length} {filteredProfiles.length === 1 ? 'result' : 'results'}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.sortGroup}>
+                <Pressable
+                  onPress={() => setSortBy('alphabetical')}
+                  style={[styles.sortBtn, sortBy === 'alphabetical' && styles.sortBtnActive]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sort alphabetically"
+                  accessibilityState={{ selected: sortBy === 'alphabetical' }}
+                >
+                  <Text style={[styles.sortBtnText, sortBy === 'alphabetical' && styles.sortBtnTextActive]}>A-Z</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSortBy('members')}
+                  style={[styles.sortBtn, sortBy === 'members' && styles.sortBtnActive]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sort by members"
+                  accessibilityState={{ selected: sortBy === 'members' }}
+                >
+                  <Text style={[styles.sortBtnText, sortBy === 'members' && styles.sortBtnTextActive]}>Members</Text>
+                </Pressable>
+              </View>
+            </View>
 
-            {filteredProfiles.length === 0 ? (
-              <View style={styles.emptyWrap}>
-                <View style={styles.emptyStateCard}>
-                   <Ionicons name="people-outline" size={48} color={colors.textTertiary} />
-                   <Text style={styles.emptyTitle}>No communities found</Text>
-                   <Text style={styles.emptySub}>Try adjusting your search or category filter.</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={useThreeColumnResults ? { flexDirection: 'row', flexWrap: 'wrap', gap: 16 } : undefined}>
-                {filteredProfiles.map((item) => (
-                  <View key={item.id} style={useThreeColumnResults ? { width: '31.5%' } : undefined}>
-                    <CommunityCard profile={item} colors={colors} styles={styles} />
+            <FlatList
+              data={filteredProfiles}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              key={useThreeColumnResults ? 'grid' : 'list'}
+              numColumns={useThreeColumnResults ? 3 : 1}
+              columnWrapperStyle={useThreeColumnResults ? { gap: 16 } : undefined}
+              renderItem={({ item }) => (
+                useThreeColumnResults
+                  ? <View style={{ flex: 1 }}><CommunityCard profile={item} colors={colors} styles={styles} /></View>
+                  : <CommunityCard profile={item} colors={colors} styles={styles} />
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyWrap}>
+                  <View style={styles.emptyStateCard}>
+                    <Ionicons name="people-outline" size={48} color={colors.textTertiary} />
+                    <Text style={styles.emptyTitle}>
+                      {search.trim() ? `No results for "${search}"` : 'No communities found'}
+                    </Text>
+                    <Text style={styles.emptySub}>
+                      {search.trim()
+                        ? 'Try a different search term or clear the filter.'
+                        : 'Try adjusting your category or culture filter.'}
+                    </Text>
+                    {(search.trim() || selectedType !== 'all' || selectedCulture) ? (
+                      <Button
+                        onPress={() => { setSearch(''); setSelectedType('all'); setSelectedCulture(null); }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Clear filters
+                      </Button>
+                    ) : null}
                   </View>
-                ))}
-              </View>
-            )}
+                </View>
+              }
+            />
           </View>
         </Animated.ScrollView>
       </View>
@@ -552,67 +787,136 @@ export default function CommunitiesScreen() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, minHeight: 64, gap: 14 },
-  topBarIconBlock: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    minHeight: 64,
+    gap: 14,
+  },
+  topBarIconBlock: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   topBarTitle: { ...TextStyles.title2, color: '#FFFFFF', lineHeight: 24, marginBottom: 2 },
   topBarSubtitle: { ...TextStyles.caption, color: 'rgba(255,255,255,0.85)' },
-  
-  heroBanner: { marginHorizontal: 16, marginTop: 4, marginBottom: 12, borderRadius: 20, padding: 16, overflow: 'hidden', shadowColor: CultureTokens.community, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
-  heroOrb: { position: 'absolute' },
-  heroContent: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
-  heroIconBoxMini: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  heroRibbon: { alignSelf: 'flex-start', backgroundColor: '#ffffff1a', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: '#ffffff26' },
-  heroTitle: { ...TextStyles.cardTitle, color: '#fff' },
-  heroStatsBadge: { backgroundColor: 'rgba(0,0,0,0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-  heroStatsText: { ...TextStyles.badge, color: '#fff' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  sectionHeaderNoPad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  sectionHeaderNoPad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
   sectionTitle: { ...TextStyles.title2, color: colors.text },
   sectionContext: { ...TextStyles.badge, color: colors.textTertiary, textTransform: 'uppercase' },
-  sortGroup: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 4, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+
+  sortGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 4,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
   sortBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   sortBtnActive: { backgroundColor: colors.surface },
   sortBtnText: { ...TextStyles.captionSemibold, color: colors.textTertiary },
   sortBtnTextActive: { color: CultureTokens.indigo },
+
   emptyWrap: { paddingVertical: 40 },
-  emptyStateCard: { padding: 48, borderRadius: 32, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary, alignItems: 'center', gap: 16 },
+  emptyStateCard: {
+    padding: 48,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    gap: 16,
+  },
   emptyTitle: { ...TextStyles.title3, color: colors.text },
   emptySub: { ...TextStyles.bodyMedium, textAlign: 'center', color: colors.textSecondary },
-  
-  fcCard: { width: 280, padding: 20, borderRadius: 28, borderWidth: 1, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.borderLight },
-  fcCardHover: { transform: [{ translateY: -4 }] },
-  fcTapArea: { flex: 1 },
-  fcTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  fcIconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  fcVerifiedBadge: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', position: 'absolute', top: -4, right: -4 },
-  fcName: { ...TextStyles.title3, color: colors.text, marginBottom: 4 },
-  fcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  fcTypeLabel: { ...TextStyles.badgeCaps },
+
+  // Featured card
+  fcCard: {
+    width: 240,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderColor: colors.borderLight,
+  },
+  fcBanner: { width: '100%', height: 100 },
+  fcVerifiedBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  fcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   fcDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.textTertiary },
-  fcCityText: { ...TextStyles.caption, color: colors.textSecondary },
-  fcDesc: { ...TextStyles.bodyMedium, color: colors.textSecondary, lineHeight: 20 },
-  fcBottom: { marginTop: 12 },
-  fcMembers: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fcMembersText: { ...TextStyles.caption, color: colors.textTertiary },
-  fcJoinBtnFloating: { position: 'absolute', right: 16, bottom: 16 },
-  
-  lcCard: { borderRadius: 20, marginBottom: 12, borderWidth: 1, backgroundColor: colors.surface, overflow: 'hidden' },
+  fcBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  fcMembers: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  fcJoinBtn: { minWidth: 64 },
+
+  // List card
+  lcCard: {
+    borderRadius: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+    borderColor: colors.borderLight,
+  },
   lcAccentStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-  lcCardMain: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  lcIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  lcCardMain: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingLeft: 20 },
   lcCenter: { flex: 1, marginLeft: 12 },
   lcNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lcName: { ...TextStyles.cardTitle, color: colors.text },
-  lcVerifiedBadge: { width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  lcVerifiedBadge: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   lcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lcTypeLabel: { ...TextStyles.badgeCaps, fontSize: 10 },
   lcDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.textTertiary },
   lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  lcLocationText: { ...TextStyles.caption, color: colors.textTertiary },
   lcRight: { marginLeft: 12 },
   lcJoinBtn: { minWidth: 70 },
+
   cultureChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
-  cultureFilterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  cultureFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
 });

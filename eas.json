@@ -15,6 +15,9 @@
       "ios": {
         "simulator": true
       },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }

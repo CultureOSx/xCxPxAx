@@ -777,6 +777,9 @@ const communities = {
 
   leave: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/communities/${id}/leave`),
+
+  joined: () =>
+    request<{ communityIds: string[] }>('GET', 'api/communities/joined'),
 };
 
 // ---------------------------------------------------------------------------
@@ -1017,7 +1020,19 @@ export type FeedItem = {
   communityImageUrl?: string | null;
   body?: string;
   imageUrl?: string | null;
+  authorId?: string;
+  likesCount?: number;
+  commentsCount?: number;
   members?: number;
+  createdAt: string;
+};
+
+export type FeedComment = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string | null;
+  body: string;
   createdAt: string;
 };
 
@@ -1036,6 +1051,24 @@ const feed = {
       hasNextPage: boolean;
     }>('GET', `api/feed${qs.toString() ? `?${qs}` : ''}`);
   },
+
+  createPost: (payload: { communityId: string; communityName: string; body: string; imageUrl?: string }) =>
+    request<{ id: string; createdAt: string }>('POST', 'api/feed/posts', payload),
+
+  deletePost: (postId: string) =>
+    request<{ success: boolean }>('DELETE', `api/feed/posts/${encodeURIComponent(postId)}`),
+
+  getComments: (postId: string) =>
+    request<{ comments: FeedComment[] }>('GET', `api/feed/posts/${encodeURIComponent(postId)}/comments`),
+
+  addComment: (postId: string, body: string) =>
+    request<FeedComment>('POST', `api/feed/posts/${encodeURIComponent(postId)}/comments`, { body }),
+
+  toggleLike: (postId: string) =>
+    request<{ liked: boolean; likesCount: number }>('POST', `api/feed/posts/${encodeURIComponent(postId)}/like`),
+
+  getLike: (postId: string) =>
+    request<{ liked: boolean; likesCount: number }>('GET', `api/feed/posts/${encodeURIComponent(postId)}/like`),
 };
 
 // ---------------------------------------------------------------------------

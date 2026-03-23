@@ -1,21 +1,20 @@
 /**
- * Feed route — GET /api/feed
- *
- * Server-side ranked feed. Fetches events + communities for the user's city,
- * applies the same multi-signal ranking algorithm that previously ran on the
- * client, and returns paginated FeedItem results.
+ * Feed route — GET /api/feed + community post CRUD
  *
  * Ranking signals:
  *   Cultural Relevance (30%) · Date Proximity (25%) · Location (15%)
  *   Interest Match (12%)     · Community Affinity (10%)
  *   Social Proof (5%)        · Freshness Decay (8%)
+ *
+ * All community post data is read/written from the `communityPosts` Firestore
+ * collection — no hardcoded placeholder content is generated.
  */
-
 
 import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
 import { eventsService, profilesService, usersService } from '../services/firestore';
-import { isFirestoreConfigured } from '../admin';
+import { isFirestoreConfigured, db } from '../admin';
+import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import type { FirestoreEvent } from '../services/firestore';
 
 export const feedRouter = Router();
@@ -24,19 +23,46 @@ export const feedRouter = Router();
 // Types
 // ---------------------------------------------------------------------------
 
+interface CommunityPost {
+  id: string;
+  communityId: string;
+  communityName: string;
+  communityImageUrl?: string | null;
+  authorId: string;
+  authorName: string;
+  body: string;
+  imageUrl?: string | null;
+  likesCount: number;
+  commentsCount: number;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+
+interface PostComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string | null;
+  body: string;
+  createdAt: string;
+}
+
 type FeedItem = {
   id: string;
-  kind: 'event' | 'announcement' | 'welcome' | 'milestone';
+  kind: 'event' | 'announcement';
   score: number;
   matchReasons: string[];
-  // kind-specific payloads (clients pick what they need)
+  // event payload
   event?: FirestoreEvent;
+  // shared community / post fields
   communityId?: string;
   communityName?: string;
   communityImageUrl?: string | null;
   body?: string;
   imageUrl?: string | null;
-  members?: number;
+  authorId?: string;
+  likesCount?: number;
+  commentsCount?: number;
   createdAt: string;
 };
 
@@ -116,12 +142,10 @@ function scoreItem(item: FeedItem, user: UserContext, todayMs: number): number {
   // 6. Social Proof (5%)
   if (item.kind === 'event' && item.event) {
     score += Math.min(1, (item.event.attending ?? 0) / 500) * 0.05;
-  } else if (item.kind === 'milestone') {
-    score += 0.05;
   }
 
   // 7. Freshness Decay (8%)
-  const ageHrs  = (Date.now() - new Date(item.createdAt).getTime()) / 3_600_000;
+  const ageHrs    = (Date.now() - new Date(item.createdAt).getTime()) / 3_600_000;
   const freshness = Math.exp(-ageHrs / 168); // half-life ~1 week
   score += freshness * 0.08;
 
@@ -129,17 +153,31 @@ function scoreItem(item: FeedItem, user: UserContext, todayMs: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Route
+// Helper: fetch real community posts from Firestore
 // ---------------------------------------------------------------------------
 
-/**
- * GET /api/feed
- *
- * Query params:
- *   city, country   — filter scope (required for relevant results)
- *   pageSize        — items per page (default 30, max 50)
- *   page            — 1-based page (default 1)
- */
+async function fetchCommunityPosts(limit = 40): Promise<CommunityPost[]> {
+  if (!isFirestoreConfigured) return [];
+  try {
+    // Fetch without a deletedAt filter to avoid requiring a composite index.
+    // Filter soft-deleted posts in memory.
+    const snap = await db.collection('communityPosts')
+      .orderBy('createdAt', 'desc')
+      .limit(limit * 2)
+      .get();
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as CommunityPost))
+      .filter(p => !p.deletedAt)
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/feed
+// ---------------------------------------------------------------------------
+
 feedRouter.get('/feed', async (req: Request, res: Response) => {
   const city     = String(req.query.city    ?? '').trim();
   const country  = String(req.query.country ?? '').trim();
@@ -147,19 +185,20 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
   const page     = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1);
 
   try {
-    // ── 1. Fetch events + communities in parallel ──────────────────────────
-    const [eventsResult, communitiesResult] = await Promise.all([
+    // 1. Fetch events, communities, and real community posts in parallel
+    const [eventsResult, communitiesResult, communityPosts] = await Promise.all([
       eventsService.list(
         { city: city || undefined, country: country || undefined, status: 'published' as any },
         { page: 1, pageSize: 60 },
       ),
       profilesService.list({ entityType: 'community', city: city || undefined }),
+      fetchCommunityPosts(40),
     ]);
 
     const events      = eventsResult.items;
     const communities = communitiesResult;
 
-    // ── 2. Resolve user context (personalised ranking when authenticated) ──
+    // 2. Resolve user context for personalised ranking
     let userCtx: UserContext = {
       city: city || 'Sydney',
       interests: [],
@@ -179,13 +218,17 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       }
     }
 
-    // ── 3. Build feed item list ────────────────────────────────────────────
-    const now    = Date.now();
+    // Build a community lookup map for resolving community info on posts
+    const communityMap = new Map(communities.map(c => [c.id, c]));
+
+    const now   = Date.now();
     const items: FeedItem[] = [];
 
-    // Event cards
+    // Event cards — each event is attributed to its own communityId if set
     events.forEach((event, i) => {
-      const comm = communities[i % Math.max(communities.length, 1)];
+      const comm = event.communityId
+        ? communityMap.get(event.communityId)
+        : communities[i % Math.max(communities.length, 1)];
       items.push({
         id: `ev-${event.id}`,
         kind: 'event',
@@ -199,56 +242,227 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       });
     });
 
-    // Community cards (announcements, welcome, milestones)
-    communities.forEach((comm, i) => {
-      if (i % 3 === 1) {
-        items.push({
-          id: `ann-${comm.id}-${i}`,
-          kind: 'announcement',
-          score: 0,
-          matchReasons: [],
-          communityId:       comm.id,
-          communityName:     comm.name,
-          communityImageUrl: comm.imageUrl ?? null,
-          body: `Join ${comm.name} — new events and updates coming soon!`,
-          createdAt: new Date(now - i * 7_200_000).toISOString(),
-        });
-      } else if (i % 5 === 0) {
-        const members = (comm as any).membersCount ?? 0;
-        items.push({
-          id: `ms-${comm.id}-${i}`,
-          kind: members > 100 ? 'milestone' : 'welcome',
-          score: 0,
-          matchReasons: [],
-          communityId:       comm.id,
-          communityName:     comm.name,
-          communityImageUrl: comm.imageUrl ?? null,
-          members,
-          createdAt: new Date(now - i * 10_800_000).toISOString(),
-        });
-      }
+    // Real community posts from Firestore
+    communityPosts.forEach(post => {
+      const comm = communityMap.get(post.communityId);
+      items.push({
+        id:                post.id,
+        kind:              'announcement',
+        score:             0,
+        matchReasons:      [],
+        communityId:       post.communityId,
+        communityName:     comm?.name ?? post.communityName,
+        communityImageUrl: comm?.imageUrl ?? post.communityImageUrl ?? null,
+        body:              post.body,
+        imageUrl:          post.imageUrl ?? null,
+        authorId:          post.authorId,
+        likesCount:        post.likesCount,
+        commentsCount:     post.commentsCount,
+        createdAt:         post.createdAt,
+      });
     });
 
-    // ── 4. Rank ────────────────────────────────────────────────────────────
+    // 3. Rank
     const todayMs = new Date().setHours(0, 0, 0, 0);
-    const ranked = items
+    const ranked  = items
       .map(item => ({ ...item, score: scoreItem(item, userCtx, todayMs) }))
       .sort((a, b) => b.score - a.score);
 
-    // ── 5. Paginate ────────────────────────────────────────────────────────
-    const total   = ranked.length;
-    const offset  = (page - 1) * pageSize;
+    // 4. Paginate
+    const total     = ranked.length;
+    const offset    = (page - 1) * pageSize;
     const paginated = ranked.slice(offset, offset + pageSize);
 
-    return res.json({
-      items: paginated,
-      total,
-      page,
-      pageSize,
-      hasNextPage: offset + pageSize < total,
-    });
+    return res.json({ items: paginated, total, page, pageSize, hasNextPage: offset + pageSize < total });
   } catch (err) {
     captureRouteError(err, 'GET /api/feed');
     return res.status(500).json({ error: 'Failed to fetch feed' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/feed/posts — create a community post
+// ---------------------------------------------------------------------------
+
+feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) => {
+  const { communityId, communityName, body, imageUrl } = req.body ?? {};
+
+  if (!communityId || typeof communityId !== 'string') {
+    return res.status(400).json({ error: 'communityId is required' });
+  }
+  if (!body || typeof body !== 'string' || body.trim().length === 0) {
+    return res.status(400).json({ error: 'body is required' });
+  }
+  if (body.trim().length > 500) {
+    return res.status(400).json({ error: 'body must be 500 characters or less' });
+  }
+
+  try {
+    const ref = db.collection('communityPosts').doc();
+    const now = new Date().toISOString();
+    const post: CommunityPost = {
+      id:                ref.id,
+      communityId:       String(communityId),
+      communityName:     communityName ? String(communityName) : '',
+      communityImageUrl: null,
+      authorId:          req.user!.id,
+      authorName:        req.user!.username || req.user!.email || 'User',
+      body:              body.trim(),
+      imageUrl:          imageUrl ? String(imageUrl) : null,
+      likesCount:        0,
+      commentsCount:     0,
+      createdAt:         now,
+      deletedAt:         null,
+    };
+    await ref.set(post);
+    return res.status(201).json(post);
+  } catch (err) {
+    captureRouteError(err, 'POST /api/feed/posts');
+    return res.status(500).json({ error: 'Failed to create post' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /api/feed/posts/:id — soft-delete own post
+// ---------------------------------------------------------------------------
+
+feedRouter.delete('/feed/posts/:id', requireAuth, async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  try {
+    const ref  = db.collection('communityPosts').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Post not found' });
+
+    const post = snap.data() as CommunityPost;
+    if (!isOwnerOrAdmin(req.user!, post.authorId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    await ref.update({ deletedAt: new Date().toISOString() });
+    return res.json({ success: true });
+  } catch (err) {
+    captureRouteError(err, 'DELETE /api/feed/posts/:id');
+    return res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/feed/posts/:id/comments
+// ---------------------------------------------------------------------------
+
+feedRouter.get('/feed/posts/:id/comments', async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  try {
+    const snap = await db.collection('communityPosts').doc(id)
+      .collection('comments')
+      .orderBy('createdAt', 'asc')
+      .limit(100)
+      .get();
+    const comments: PostComment[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostComment));
+    return res.json({ comments });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/feed/posts/:id/comments');
+    return res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/feed/posts/:id/comments
+// ---------------------------------------------------------------------------
+
+feedRouter.post('/feed/posts/:id/comments', requireAuth, async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const { body } = req.body ?? {};
+
+  if (!body || typeof body !== 'string' || body.trim().length === 0) {
+    return res.status(400).json({ error: 'body is required' });
+  }
+
+  try {
+    const postRef  = db.collection('communityPosts').doc(id);
+    const postSnap = await postRef.get();
+    if (!postSnap.exists || (postSnap.data() as CommunityPost).deletedAt) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const commentRef = postRef.collection('comments').doc();
+    const comment: PostComment = {
+      id:          commentRef.id,
+      authorId:    req.user!.id,
+      authorName:  req.user!.username || req.user!.email || 'User',
+      authorAvatar: null,
+      body:        body.trim(),
+      createdAt:   new Date().toISOString(),
+    };
+
+    const currentCount = (postSnap.data() as CommunityPost).commentsCount ?? 0;
+    await Promise.all([
+      commentRef.set(comment),
+      postRef.update({ commentsCount: currentCount + 1 }),
+    ]);
+
+    return res.status(201).json(comment);
+  } catch (err) {
+    captureRouteError(err, 'POST /api/feed/posts/:id/comments');
+    return res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/feed/posts/:id/like — toggle like
+// ---------------------------------------------------------------------------
+
+feedRouter.post('/feed/posts/:id/like', requireAuth, async (req: Request, res: Response) => {
+  const id       = String(req.params.id);
+  const userId   = req.user!.id;
+
+  try {
+    const postRef  = db.collection('communityPosts').doc(id);
+    const likeRef  = postRef.collection('likes').doc(userId);
+    const [postSnap, likeSnap] = await Promise.all([postRef.get(), likeRef.get()]);
+
+    if (!postSnap.exists || (postSnap.data() as CommunityPost).deletedAt) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const currentCount = (postSnap.data() as CommunityPost).likesCount ?? 0;
+
+    if (likeSnap.exists) {
+      await Promise.all([
+        likeRef.delete(),
+        postRef.update({ likesCount: Math.max(0, currentCount - 1) }),
+      ]);
+      return res.json({ liked: false, likesCount: Math.max(0, currentCount - 1) });
+    } else {
+      await Promise.all([
+        likeRef.set({ userId, createdAt: new Date().toISOString() }),
+        postRef.update({ likesCount: currentCount + 1 }),
+      ]);
+      return res.json({ liked: true, likesCount: currentCount + 1 });
+    }
+  } catch (err) {
+    captureRouteError(err, 'POST /api/feed/posts/:id/like');
+    return res.status(500).json({ error: 'Failed to toggle like' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/feed/posts/:id/like — get like status for current user
+// ---------------------------------------------------------------------------
+
+feedRouter.get('/feed/posts/:id/like', requireAuth, async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const userId  = req.user!.id;
+
+  try {
+    const [postSnap, likeSnap] = await Promise.all([
+      db.collection('communityPosts').doc(id).get(),
+      db.collection('communityPosts').doc(id).collection('likes').doc(userId).get(),
+    ]);
+    const likesCount = (postSnap.data() as CommunityPost)?.likesCount ?? 0;
+    return res.json({ liked: likeSnap.exists, likesCount });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/feed/posts/:id/like');
+    return res.status(500).json({ error: 'Failed to get like status' });
   }
 });

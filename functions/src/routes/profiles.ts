@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db, isFirestoreConfigured } from '../admin';
 import { profilesService } from '../services/firestore';
 import { requireAuth } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
 import { parseBody,
   captureRouteError,
+  nowIso,
 } from './utils';
 import { z } from 'zod';
 
@@ -188,5 +190,68 @@ profilesRouter.get('/businesses/:id', async (req, res) => {
     return res.json(business);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch business' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Community membership — join / leave / list joined
+// ---------------------------------------------------------------------------
+
+/** POST /api/communities/:id/join */
+profilesRouter.post('/communities/:id/join', requireAuth, async (req: Request, res: Response) => {
+  const communityId = String(req.params.id ?? '');
+  const userId      = req.user!.id;
+  try {
+    if (isFirestoreConfigured) {
+      const memberRef = db.collection('communityMembers').doc(`${userId}_${communityId}`);
+      const existing  = await memberRef.get();
+      if (!existing.exists) {
+        await memberRef.set({ userId, communityId, joinedAt: nowIso() });
+        await db.collection('profiles').doc(communityId)
+          .update({ membersCount: FieldValue.increment(1) })
+          .catch(() => {}); // non-fatal if profile doc doesn't exist yet
+      }
+    }
+    return res.json({ success: true, communityId });
+  } catch (err) {
+    captureRouteError(err, 'POST /api/communities/:id/join');
+    return res.status(500).json({ error: 'Failed to join community' });
+  }
+});
+
+/** DELETE /api/communities/:id/leave */
+profilesRouter.delete('/communities/:id/leave', requireAuth, async (req: Request, res: Response) => {
+  const communityId = String(req.params.id ?? '');
+  const userId      = req.user!.id;
+  try {
+    if (isFirestoreConfigured) {
+      const memberRef = db.collection('communityMembers').doc(`${userId}_${communityId}`);
+      const existing  = await memberRef.get();
+      if (existing.exists) {
+        await memberRef.delete();
+        await db.collection('profiles').doc(communityId)
+          .update({ membersCount: FieldValue.increment(-1) })
+          .catch(() => {});
+      }
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    captureRouteError(err, 'DELETE /api/communities/:id/leave');
+    return res.status(500).json({ error: 'Failed to leave community' });
+  }
+});
+
+/** GET /api/communities/joined — IDs of communities the current user has joined */
+profilesRouter.get('/communities/joined', requireAuth, async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  try {
+    if (!isFirestoreConfigured) return res.json({ communityIds: [] });
+    const snap = await db.collection('communityMembers')
+      .where('userId', '==', userId)
+      .get();
+    return res.json({ communityIds: snap.docs.map((d) => d.data().communityId as string) });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/communities/joined');
+    return res.status(500).json({ error: 'Failed to fetch joined communities' });
   }
 });

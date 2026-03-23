@@ -57,7 +57,7 @@ type FeedFilter = 'for-you' | 'events' | 'communities';
 
 type FeedPost = (
   | { id: string; kind: 'event';        event: EventData;    community: Community; createdAt: string }
-  | { id: string; kind: 'announcement'; community: Community; body: string; authorId?: string; createdAt: string; imageUrl?: string }
+  | { id: string; kind: 'announcement'; community: Community; body: string; authorId?: string; imageUrl?: string; likesCount?: number; commentsCount?: number; createdAt: string }
   | { id: string; kind: 'welcome';      community: Community; createdAt: string }
   | { id: string; kind: 'milestone';    community: Community; members: number; createdAt: string }
 ) & { score?: number; matchReason?: string[] };
@@ -668,11 +668,12 @@ function ReactionsBar({ post, colors }: {
   const pid  = postId(post);
   const pcol = postCollection(post.kind);
 
-  const seedCount = post.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 40 + 3;
+  const initialLikes    = post.kind === 'announcement' ? (post.likesCount    ?? 0) : 0;
+  const initialComments = post.kind === 'announcement' ? (post.commentsCount ?? 0) : 0;
 
   const [liked,        setLiked]        = useState(false);
-  const [likeCount,    setLikeCount]    = useState(seedCount);
-  const [commentCount, setCommentCount] = useState(0);
+  const [likeCount,    setLikeCount]    = useState(initialLikes);
+  const [commentCount, setCommentCount] = useState(initialComments);
   const [showComments, setShowComments] = useState(false);
   const [likeError,    setLikeError]    = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -689,7 +690,7 @@ function ReactionsBar({ post, colors }: {
   }, [pid, pcol]);
 
   useEffect(() => {
-    const unsub = subscribeCommentCount(pid, pcol, setCommentCount);
+    const unsub = subscribeCommentCount(pid, pcol, (n) => { if (n > 0) setCommentCount(n); });
     return unsub;
   }, [pid, pcol]);
 
@@ -1284,6 +1285,12 @@ export default function CultureFeedScreen() {
     staleTime: 3 * 60 * 1000,
   });
 
+  // Clear optimistic local posts once the server feed refreshes so they don't
+  // duplicate the real posts that now appear in feedData.
+  useEffect(() => {
+    if (feedData) setLocalPosts([]);
+  }, [feedData]);
+
   // Keep a local communities list for the post composer community picker
   const { data: communities = [] } = useQuery<Community[]>({
     queryKey: ['/api/communities', state.city, state.country, 'feed'],
@@ -1347,8 +1354,8 @@ export default function CultureFeedScreen() {
       if (item.kind === 'welcome') {
         return { id: item.id, kind: 'welcome', community: comm, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
       }
-      // announcement
-      return { id: item.id, kind: 'announcement', community: comm, body: item.body ?? '', imageUrl: item.imageUrl ?? undefined, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
+      // announcement (real community post)
+      return { id: item.id, kind: 'announcement', community: comm, body: item.body ?? '', imageUrl: item.imageUrl ?? undefined, authorId: item.authorId, likesCount: item.likesCount, commentsCount: item.commentsCount, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
     });
 
     // Prepend optimistic local posts (new posts the user just created)

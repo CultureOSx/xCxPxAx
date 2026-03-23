@@ -1,11 +1,13 @@
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 interface SavedContextValue {
   savedEvents: string[];
   joinedCommunities: string[];
   toggleSaveEvent: (id: string) => void;
-  toggleJoinCommunity: (id: string) => void;
+  toggleJoinCommunity: (id: string) => Promise<void>;
   isEventSaved: (id: string) => boolean;
   isCommunityJoined: (id: string) => boolean;
 }
@@ -18,7 +20,10 @@ const SavedContext = createContext<SavedContextValue | null>(null);
 export function SavedProvider({ children }: { children: ReactNode }) {
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [joinedCommunities, setJoinedCommunities] = useState<string[]>([]);
+  const { isAuthenticated, userId } = useAuth();
+  const didSyncFromApi = useRef(false);
 
+  // Load from AsyncStorage on mount
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem(SAVED_EVENTS_KEY),
@@ -29,6 +34,23 @@ export function SavedProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Sync joined communities from API when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !userId) {
+      didSyncFromApi.current = false;
+      return;
+    }
+    if (didSyncFromApi.current) return;
+    didSyncFromApi.current = true;
+
+    api.communities.joined()
+      .then(({ communityIds }) => {
+        setJoinedCommunities(communityIds);
+        AsyncStorage.setItem(JOINED_COMMUNITIES_KEY, JSON.stringify(communityIds));
+      })
+      .catch(() => { /* keep local state on error */ });
+  }, [isAuthenticated, userId]);
+
   const toggleSaveEvent = useCallback((id: string) => {
     setSavedEvents(prev => {
       const next = prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id];
@@ -37,13 +59,35 @@ export function SavedProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const toggleJoinCommunity = useCallback((id: string) => {
+  const toggleJoinCommunity = useCallback(async (id: string) => {
+    const isJoined = (prev: string[]) => prev.includes(id);
+
+    // Optimistic update
+    let wasJoined = false;
     setJoinedCommunities(prev => {
-      const next = prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id];
+      wasJoined = isJoined(prev);
+      const next = wasJoined ? prev.filter(c => c !== id) : [...prev, id];
       AsyncStorage.setItem(JOINED_COMMUNITIES_KEY, JSON.stringify(next));
       return next;
     });
-  }, []);
+
+    if (!isAuthenticated) return;
+
+    try {
+      if (wasJoined) {
+        await api.communities.leave(id);
+      } else {
+        await api.communities.join(id);
+      }
+    } catch {
+      // Revert on error
+      setJoinedCommunities(prev => {
+        const next = wasJoined ? [...prev, id] : prev.filter(c => c !== id);
+        AsyncStorage.setItem(JOINED_COMMUNITIES_KEY, JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [isAuthenticated]);
 
   const isEventSaved = useCallback((id: string) => savedEvents.includes(id), [savedEvents]);
   const isCommunityJoined = useCallback((id: string) => joinedCommunities.includes(id), [joinedCommunities]);
