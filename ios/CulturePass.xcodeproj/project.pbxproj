@@ -696,7 +696,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4A764F36A12E5DDB63C2145F /* Pods-CulturePass.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = $(inherited);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CulturePass/CulturePass.entitlements;
@@ -734,7 +733,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2B395D96C16CC34BDD51460E /* Pods-CulturePass.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = $(inherited);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CulturePass/CulturePass.entitlements;
