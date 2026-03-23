@@ -15,9 +15,8 @@ server_dist/
 web/.next/
 web/out/
 
-# Native
-ios/
-android/
+# Native generated artifacts (ios/ and android/ are bare-workflow native dirs — tracked)
+# Each directory has its own .gitignore that excludes Pods, build, .gradle, etc.
 *.orig.*
 
 # EAS local build artifacts
