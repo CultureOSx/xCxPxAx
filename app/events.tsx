@@ -10,7 +10,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -201,6 +201,7 @@ export default function AllEventsScreen() {
     },
     initialPageParam: 1,
     getNextPageParam: last => last.hasNextPage ? last.page + 1 : undefined,
+    placeholderData: keepPreviousData,
   });
 
   const allEvents: EventData[] = useMemo(

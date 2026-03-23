@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
@@ -31,9 +34,12 @@ export function CityRailComponent() {
         data={majorCities}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable 
-            onPress={() => {}} 
-            style={[styles.cityCard, { backgroundColor: colors.surface }]}
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push({ pathname: '/city/[name]' as any, params: { name: item.name, country: item.country } });
+            }}
+            style={({ pressed }) => [styles.cityCard, { backgroundColor: colors.surface }, pressed && { opacity: 0.85 }]}
           >
             <Image source={{ uri: item.image }} style={styles.cityCardImg} contentFit="cover" />
             <View style={styles.cityCardOverlay} />

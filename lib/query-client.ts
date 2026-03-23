@@ -56,17 +56,19 @@ export function getApiUrl(): string {
     }
 
     if (explicit) return normalizeBaseUrl(explicit);
+    if (__DEV__) console.warn('[api] EXPO_PUBLIC_API_URL not set — falling back to http://localhost:5050. Set it in .env to use the Firebase emulator or production API.');
     return normalizeBaseUrl('http://localhost:5050');
   }
 
   if (explicit) return normalizeBaseUrl(explicit);
-  
+
   const EMULATOR_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 
   if (Platform.OS !== 'web') {
     if (!__DEV__) {
       throw new Error('EXPO_PUBLIC_API_URL must be configured for production builds.');
     }
+    console.warn(`[api] EXPO_PUBLIC_API_URL not set — falling back to http://${EMULATOR_HOST}:5050. Set it in .env to use the Firebase emulator or production API.`);
     return normalizeBaseUrl(`http://${EMULATOR_HOST}:5050`);
   }
 

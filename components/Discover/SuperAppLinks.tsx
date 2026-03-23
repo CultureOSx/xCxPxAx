@@ -10,7 +10,7 @@ const superAppSections = [
   { id: 'restaurants', label: 'Dining', icon: 'restaurant', color: CultureTokens.saffron, route: '/restaurants' },
   { id: 'activities', label: 'Activities', icon: 'compass', color: CultureTokens.success, route: '/activities' },
   { id: 'shopping', label: 'Shopping', icon: 'bag-handle', color: CategoryColors.shopping, route: '/shopping' },
-  { id: 'search', label: 'Search', icon: 'search', color: CultureTokens.indigo, route: '/search/index' },
+  { id: 'search', label: 'Search', icon: 'search', color: CultureTokens.indigo, route: '/search' },
   { id: 'events', label: 'All Events', icon: 'calendar', color: CultureTokens.saffron, route: '/events' },
   { id: 'directory', label: 'Directory', icon: 'storefront', color: CultureTokens.teal, route: '/(tabs)/directory' },
 ] as const;

@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CultureTokens, EntityTypeColors, shadows, gradients } from '@/constants/theme';
 import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import type { Profile, EventData } from '@/shared/schema';
 import { api, type CouncilData } from '@/lib/api';
@@ -341,6 +341,7 @@ export default function DirectoryScreen() {
     queryKey: ['/api/events', 'directory', onboardingState.city, onboardingState.country],
     queryFn: () => api.events.list({ city: onboardingState.city ?? undefined, country: onboardingState.country ?? undefined, pageSize: 50 }),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 
   const allEvents = useMemo<EventData[]>(

@@ -138,7 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileData = await api.auth.me() as User;
           }
         } catch (error) {
-          devErrorLog('Critical profile fetch error. User may have limited access', error);
+          // "Failed to fetch" = network / CORS error (e.g. localhost hitting prod API without CORS origin).
+          // The user is still authenticated via Firebase; profile data will be sparse.
+          const isNetworkError = error instanceof TypeError && error.message === 'Failed to fetch';
+          if (isNetworkError && __DEV__) {
+            console.warn('[auth] Profile fetch failed (network/CORS) — app running without server profile. Deploy functions or use emulator.');
+          } else {
+            devErrorLog('Critical profile fetch error. User may have limited access', error);
+          }
         }
 
         const authUser: AuthUser = {

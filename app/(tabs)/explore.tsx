@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -163,6 +163,7 @@ export default function ExploreScreen() {
       return res.events ?? [];
     },
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
   const events = useMemo(
     () => (Array.isArray(eventsData) ? eventsData : []),

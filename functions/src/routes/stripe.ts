@@ -10,7 +10,7 @@ import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import Stripe from 'stripe';
 import { firestore } from 'firebase-admin';
-import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
+import { requireAuth, requireRevocationCheck, isOwnerOrAdmin } from '../middleware/auth';
 import {
   ticketsService,
   usersService,
@@ -123,7 +123,7 @@ export function createStripeRouter() {
   const router = Router();
 
   // ── POST /api/stripe/create-checkout-session ──────────────────────────────
-  router.post('/stripe/create-checkout-session', requireAuth, async (req: Request, res: Response) => {
+  router.post('/stripe/create-checkout-session', requireAuth, requireRevocationCheck, async (req: Request, res: Response) => {
     let payload: z.infer<typeof stripeCheckoutSchema>;
     try {
       payload = parseBody(stripeCheckoutSchema, req.body);
@@ -203,7 +203,7 @@ export function createStripeRouter() {
   });
 
   // ── POST /api/stripe/refund ────────────────────────────────────────────────
-  router.post('/stripe/refund', requireAuth, async (req: Request, res: Response) => {
+  router.post('/stripe/refund', requireAuth, requireRevocationCheck, async (req: Request, res: Response) => {
     let payload: z.infer<typeof stripeRefundSchema>;
     try {
       payload = parseBody(stripeRefundSchema, req.body);

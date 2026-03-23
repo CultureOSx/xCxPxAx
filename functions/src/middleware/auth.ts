@@ -121,8 +121,10 @@ export function isTokenFresh(user: RequestUser, maxAgeSeconds = 3600): boolean {
  * Global middleware applied to every request.
  * Attaches `req.user` from the Firebase Bearer token when present and valid.
  *
- * Checks token revocation (checkRevoked: true) — disabled/deleted accounts are
- * immediately rejected even if the token has not expired yet.
+ * Uses checkRevoked: false for performance — skips the extra Admin SDK Firestore
+ * round-trip on every request. Token signature + expiry are still fully verified.
+ * Use requireRevocationCheck() on sensitive mutation routes (payments, admin writes,
+ * account deletion) where catching a revoked token immediately matters.
  *
  * Never throws; use requireAuth / requireRole on individual routes.
  */
@@ -137,8 +139,9 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   req.accessToken = token;
 
   try {
-    // checkRevoked: true  — extra Admin SDK round-trip but catches disabled accounts immediately
-    const decoded = await authAdmin.verifyIdToken(token, /* checkRevoked */ true);
+    // checkRevoked: false — verifies signature + expiry without the extra Firestore
+    // round-trip. This saves ~100–200ms per request on every authenticated call.
+    const decoded = await authAdmin.verifyIdToken(token, false);
 
     req.user = {
       id: decoded.uid,
@@ -154,7 +157,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
       issuedAt: decoded.iat ?? 0,
     };
   } catch {
-    // Invalid, expired, or revoked token — leave req.user undefined.
+    // Invalid or expired token — leave req.user undefined.
     // Protected routes downstream will return 401.
   }
 
@@ -199,6 +202,35 @@ export function requireFresh(maxAgeSeconds = 3600) {
     }
     next();
   };
+}
+
+// ---------------------------------------------------------------------------
+// requireRevocationCheck  (sensitive mutations — opt-in revocation check)
+// ---------------------------------------------------------------------------
+
+/**
+ * Route-level guard that verifies the token is not revoked.
+ * Use only on routes where catching a disabled/deleted account immediately matters:
+ * - Stripe payment initiation
+ * - Admin writes
+ * - Account deletion
+ *
+ * Apply AFTER requireAuth so req.user is guaranteed to exist.
+ *
+ * Example:
+ *   router.post('/payment/intent', requireAuth, requireRevocationCheck, handler)
+ */
+export async function requireRevocationCheck(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.accessToken) {
+    res.status(401).json({ error: 'Authentication required.' });
+    return;
+  }
+  try {
+    await authAdmin.verifyIdToken(req.accessToken, true);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Session revoked. Please sign in again.' });
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -241,6 +241,7 @@ function RootLayoutNav() {
       <Stack.Screen name="search/index" />
       <Stack.Screen name="saved/index" />
       <Stack.Screen name="submit/index" />
+      <Stack.Screen name="city/[name]" />
       <Stack.Screen name="events" />
       <Stack.Screen name="map" />
       <Stack.Screen name="membership/upgrade" />

@@ -45,7 +45,7 @@ export function BrowseHeader({ title, tagline, accentColor, accentIcon }: Browse
           pressed && { backgroundColor: colors.backgroundSecondary }
         ]}
         hitSlop={12}
-        onPress={() => router.push('/search/index' as any)}
+        onPress={() => router.push('/search' as any)}
         accessibilityLabel="Search"
         accessibilityRole="button"
       >

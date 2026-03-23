@@ -7,7 +7,7 @@
 
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
+import { requireAuth, requireRevocationCheck, isOwnerOrAdmin } from '../middleware/auth';
 import { usersService } from '../services/firestore';
 import { db, stripeClient, authAdmin } from '../admin';
 import { buildMembershipResponse, qparam,
@@ -55,7 +55,7 @@ const subscribeSchema = z.object({
   billingPeriod: z.enum(['monthly', 'yearly']),
 });
 
-membershipRouter.post('/membership/subscribe', requireAuth, async (req: Request, res: Response) => {
+membershipRouter.post('/membership/subscribe', requireAuth, requireRevocationCheck, async (req: Request, res: Response) => {
   let parsed: z.infer<typeof subscribeSchema>;
   try {
     parsed = subscribeSchema.parse(req.body);

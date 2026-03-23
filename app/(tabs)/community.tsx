@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSaved } from '@/contexts/SavedContext';
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
@@ -382,6 +382,7 @@ export default function CommunitiesScreen() {
       city:    onboardingState.city    ?? undefined,
       country: onboardingState.country ?? undefined,
     }),
+    placeholderData: keepPreviousData,
   });
 
   const scrollY = useSharedValue(0);

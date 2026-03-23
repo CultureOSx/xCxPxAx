@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
@@ -1261,6 +1261,65 @@ function GuestBanner({ colors }: { colors: ReturnType<typeof useColors> }) {
 }
 
 
+// ─── Feed list header ─────────────────────────────────────────────────────────
+
+function FeedListHeader({
+  activeFilter,
+  setActiveFilter,
+  eventCount,
+  commCount,
+  colors,
+  communities,
+  authUser,
+  isAuthenticated,
+  hPad,
+  onCreatePost,
+}: {
+  activeFilter: FeedFilter;
+  setActiveFilter: (f: FeedFilter) => void;
+  eventCount: number;
+  commCount: number;
+  colors: ReturnType<typeof useColors>;
+  communities: Community[];
+  authUser: { displayName?: string | null; avatarUrl?: string | null } | null;
+  isAuthenticated: boolean;
+  hPad: number;
+  onCreatePost: () => void;
+}) {
+  return (
+    <View>
+      <FeedFilterTabs
+        active={activeFilter}
+        onChange={setActiveFilter}
+        eventCount={eventCount}
+        commCount={commCount}
+        colors={colors}
+      />
+      {communities.length > 0 && (
+        <View style={[lh.storiesWrap, { borderBottomColor: colors.borderLight }]}>
+          <StoriesBar communities={communities} authUser={authUser} colors={colors} isAuthenticated={isAuthenticated} onCreatePost={onCreatePost} />
+        </View>
+      )}
+      <View style={{ paddingHorizontal: hPad, marginTop: 10 }}>
+        <CreatePostStub authUser={authUser} colors={colors} isAuthenticated={isAuthenticated} onPress={onCreatePost} />
+      </View>
+      {!isAuthenticated && (
+        <View style={{ paddingHorizontal: hPad }}>
+          <GuestBanner colors={colors} />
+        </View>
+      )}
+      <View style={[lh.divider, { paddingHorizontal: hPad }]}>
+        <View style={[lh.divLine, { backgroundColor: colors.borderLight }]} />
+        <Text style={[lh.divText, { color: colors.textTertiary }]}>
+          {activeFilter === 'events' ? 'Upcoming Events' : activeFilter === 'communities' ? 'Community Updates' : 'For You'}
+        </Text>
+        <View style={[lh.divLine, { backgroundColor: colors.borderLight }]} />
+      </View>
+    </View>
+  );
+}
+
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function CultureFeedScreen() {
@@ -1283,6 +1342,7 @@ export default function CultureFeedScreen() {
     queryKey: ['/api/feed', state.city, state.country],
     queryFn: () => api.feed.list({ city: state.city, country: state.country, pageSize: 50 }),
     staleTime: 3 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   // Clear optimistic local posts once the server feed refreshes so they don't
@@ -1389,50 +1449,28 @@ export default function CultureFeedScreen() {
     : state.country || 'Australia';
 
   const renderPost = useCallback(
-    ({ item, index }: { item: FeedPost; index: number }) => <PostCard post={item} colorIdx={index} />,
+    ({ item, index }: { item: FeedPost; index: number }) => (
+      <ErrorBoundary>
+        <PostCard post={item} colorIdx={index} />
+      </ErrorBoundary>
+    ),
     [],
   );
 
-  const ListHeader = useMemo(() => (
-    <View>
-      {/* Filter tabs */}
-      <FeedFilterTabs
-        active={activeFilter}
-        onChange={setActiveFilter}
-        eventCount={eventCount}
-        commCount={commCount}
-        colors={colors}
-      />
-
-      {/* Stories */}
-      {communities.length > 0 && (
-        <View style={[lh.storiesWrap, { borderBottomColor: colors.borderLight }]}>
-          <StoriesBar communities={communities} authUser={authUser ?? null} colors={colors} isAuthenticated={isAuthenticated} onCreatePost={handleOpenCreatePost} />
-        </View>
-      )}
-
-      {/* Composer stub */}
-      <View style={{ paddingHorizontal: hPad, marginTop: 10 }}>
-        <CreatePostStub authUser={authUser ?? null} colors={colors} isAuthenticated={isAuthenticated} onPress={handleOpenCreatePost} />
-      </View>
-
-      {/* Guest banner */}
-      {!isAuthenticated && (
-        <View style={{ paddingHorizontal: hPad }}>
-          <GuestBanner colors={colors} />
-        </View>
-      )}
-
-      {/* Divider */}
-      <View style={[lh.divider, { paddingHorizontal: hPad }]}>
-        <View style={[lh.divLine, { backgroundColor: colors.borderLight }]} />
-        <Text style={[lh.divText, { color: colors.textTertiary }]}>
-          {activeFilter === 'events' ? 'Upcoming Events' : activeFilter === 'communities' ? 'Community Updates' : 'For You'}
-        </Text>
-        <View style={[lh.divLine, { backgroundColor: colors.borderLight }]} />
-      </View>
-    </View>
-  ), [communities, colors, authUser, isAuthenticated, hPad, handleOpenCreatePost, activeFilter, eventCount, commCount]);
+  const renderListHeader = useCallback(() => (
+    <FeedListHeader
+      activeFilter={activeFilter}
+      setActiveFilter={setActiveFilter}
+      eventCount={eventCount}
+      commCount={commCount}
+      colors={colors}
+      communities={communities}
+      authUser={authUser ?? null}
+      isAuthenticated={isAuthenticated}
+      hPad={hPad}
+      onCreatePost={handleOpenCreatePost}
+    />
+  ), [activeFilter, setActiveFilter, eventCount, commCount, colors, communities, authUser, isAuthenticated, hPad, handleOpenCreatePost]);
 
   return (
     <ErrorBoundary>
@@ -1468,7 +1506,7 @@ export default function CultureFeedScreen() {
             data={filteredPosts}
             keyExtractor={(item) => item.id}
             renderItem={renderPost}
-            ListHeaderComponent={ListHeader}
+            ListHeaderComponent={renderListHeader}
             contentContainerStyle={[
               s.list,
               { paddingHorizontal: hPad, paddingBottom: bottomInset + 88 },

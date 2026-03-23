@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useAuth } from '@/lib/auth';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
@@ -22,18 +23,24 @@ interface DiscoverHeaderProps {
   onRefresh?: () => void;
 }
 
-function DiscoverHeaderComponent({ 
-  currentTime, 
-  weatherSummary, 
-  city, 
-  country, 
+function DiscoverHeaderComponent({
+  currentTime,
+  weatherSummary,
+  city,
   isAuthenticated,
-  onRefresh,
 }: DiscoverHeaderProps) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { isDesktop } = useLayout();
+  const { user } = useAuth();
   const styles = useMemo(() => getStyles(colors), [colors]);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const firstName = user?.displayName?.split(' ')[0] ?? user?.username ?? null;
+    return firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+  }, [user?.displayName, user?.username]);
 
   const renderTopBar = () => (
     <View style={[styles.topBar, { paddingTop: insets.top + (isWeb ? 0 : 4) }]}>
@@ -54,9 +61,9 @@ function DiscoverHeaderComponent({
       <View style={styles.topBarSpacer} />
 
       <View style={styles.topBarActions}>
-        <Pressable 
-          style={styles.headerIconBtn} 
-          onPress={() => router.push('/search/index' as any)}
+        <Pressable
+          style={styles.headerIconBtn}
+          onPress={() => router.push('/search' as any)}
         >
           <Ionicons name="search" size={22} color="#FFFFFF" />
         </Pressable>
@@ -83,14 +90,14 @@ function DiscoverHeaderComponent({
                 <Text style={[styles.heroGreetingDesktop, { color: colors.textSecondary }]}>
                   {currentTime} · {weatherSummary}
                 </Text>
-                <Text style={[styles.heroTitleDesktop, { color: colors.text }]}>Discover Your Culture</Text>
+                <Text style={[styles.heroTitleDesktop, { color: colors.text }]}>{greeting}</Text>
                 <Text style={[styles.heroSubtitleDesktop, { color: colors.textSecondary }]}>
                   Explore festivals, communities, and events in {city}.
                 </Text>
             </View>
             <View style={styles.desktopActionsRight}>
                 <LocationPicker />
-                <Pressable style={styles.desktopHeaderIconBtn} onPress={() => router.push('/search/index' as any)}>
+                <Pressable style={styles.desktopHeaderIconBtn} onPress={() => router.push('/search' as any)}>
                   <Ionicons name="search" size={24} color={colors.text} />
                 </Pressable>
                 {isAuthenticated && (
@@ -103,8 +110,8 @@ function DiscoverHeaderComponent({
       ) : (
         <View style={styles.mobileHeroSection}>
           <View style={styles.heroGreetingRow}>
-              <View>
-                <Text style={[styles.heroGreetingMain, { color: colors.text }]}>Hello Culture</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
                 <Text style={[styles.heroGreetingMobile, { color: colors.textSecondary }]}>
                   {currentTime} · {weatherSummary}
                 </Text>
