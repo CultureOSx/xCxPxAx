@@ -41,7 +41,7 @@ import { CultureTokens, gradients } from '@/constants/theme';
 const TABS = [
   {
     name: 'index',
-    label: 'Discover',
+    label: 'Discovery',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
     accent: CultureTokens.indigo,
@@ -49,16 +49,9 @@ const TABS = [
   {
     name: 'feed',
     label: 'Feed',
-    icon: 'newspaper-outline' as const,
-    iconActive: 'newspaper' as const,
+    icon: 'home-outline' as const,
+    iconActive: 'home' as const,
     accent: CultureTokens.teal,
-  },
-  {
-    name: 'calendar',
-    label: 'Calendar',
-    icon: 'calendar-outline' as const,
-    iconActive: 'calendar' as const,
-    accent: CultureTokens.saffron,
   },
   {
     name: 'community',
@@ -68,11 +61,11 @@ const TABS = [
     accent: CultureTokens.coral,
   },
   {
-    name: 'perks',
-    label: 'Perks',
-    icon: 'gift-outline' as const,
-    iconActive: 'gift' as const,
-    accent: CultureTokens.gold,
+    name: 'calendar',
+    label: 'Calendar',
+    icon: 'calendar-outline' as const,
+    iconActive: 'calendar' as const,
+    accent: CultureTokens.saffron,
   },
   {
     name: 'profile',
@@ -125,10 +118,8 @@ interface TabItemProps {
   isDark: boolean;
 }
 
-function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDark }: TabItemProps) {
+function TabItem({ tab, isActive, onPress, isDark }: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const isProfile = tab.name === 'profile';
-  const showAvatar = isProfile && (!!avatarUrl || !!initials);
 
   const handlePress = () => {
     Animated.sequence([
@@ -165,42 +156,11 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDa
 
         {/* Icon area */}
         <View style={item.iconWrap}>
-          {showAvatar ? (
-            // Profile tab — user avatar with gradient ring when active
-            <View style={[item.avatarOuter, isActive && item.avatarOuterActive]}>
-              {isActive && (
-                <LinearGradient
-                  colors={gradients.culturepassBrand}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              )}
-              <View style={[item.avatarInner, { backgroundColor: isDark ? '#141428' : '#f5f5f5' }]}>
-                {avatarUrl ? (
-                  <Image source={{ uri: avatarUrl }} style={item.avatarImg} />
-                ) : (
-                  <LinearGradient
-                    colors={gradients.culturepassBrand}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                  >
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={item.avatarInitials}>{initials}</Text>
-                    </View>
-                  </LinearGradient>
-                )}
-              </View>
-            </View>
-          ) : (
-            <Ionicons
-              name={isActive ? tab.iconActive : tab.icon}
-              size={22}
-              color={isActive ? '#ffffff' : inactiveIconColor}
-            />
-          )}
-          <Badge count={badgeCount ?? 0} />
+          <Ionicons
+            name={isActive ? tab.iconActive : tab.icon}
+            size={22}
+            color={isActive ? '#ffffff' : inactiveIconColor}
+          />
         </View>
 
         {/* Label */}
@@ -362,17 +322,12 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isProfile = tab.name === 'profile';
-
           return (
             <TabItem
               key={route.key}
               tab={tab}
               isActive={isActive}
               isDark={isDark}
-              badgeCount={isProfile ? notifCount : 0}
-              avatarUrl={isProfile && isAuthenticated ? user?.avatarUrl : undefined}
-              initials={isProfile && isAuthenticated ? initials : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',
