@@ -64,7 +64,7 @@ export default function WelcomeScreen() {
           {Platform.OS === 'ios' || Platform.OS === 'web' ? (
             <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.cardBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, styles.cardBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+            <View style={[StyleSheet.absoluteFill, styles.cardBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
           )}
 
           <View style={[styles.cardContent, { padding: CardTokens.paddingLarge * 2 }]}>

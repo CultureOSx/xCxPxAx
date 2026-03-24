@@ -153,7 +153,7 @@ export default function LocationScreen() {
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
               <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
@@ -271,7 +271,7 @@ export default function LocationScreen() {
                             size={18}
                             color={isActive ? colors.textInverse : colors.textSecondary}
                           />
-                          <Text style={[styles.cityName, { color: isActive ? colors.textInverse : colors.text }]}>
+                          <Text style={[styles.cityName, { color: isActive ? colors.textInverse : colors.textInverse }]}>
                             {city}
                           </Text>
                           {isActive && (
