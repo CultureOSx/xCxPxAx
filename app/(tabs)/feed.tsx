@@ -61,6 +61,7 @@ type FeedPost = (
   | { id: string; kind: 'announcement'; community: Community; body: string; authorId?: string; imageUrl?: string; likesCount?: number; commentsCount?: number; createdAt: string }
   | { id: string; kind: 'welcome';      community: Community; createdAt: string }
   | { id: string; kind: 'milestone';    community: Community; members: number; createdAt: string }
+  | { id: string; kind: 'collection-highlight'; community: Community; tokenName: string; tokenImage: string; userName: string; createdAt: string }
 ) & { score?: number; matchReason?: string[] };
 
 
@@ -157,7 +158,7 @@ const pm = StyleSheet.create({
   input:       { minHeight: 120, paddingHorizontal: 18, paddingVertical: 12, fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
   imagePreviewWrap: { marginHorizontal: 18, marginBottom: 12, height: 160, borderRadius: 14, overflow: 'hidden', position: 'relative' },
   imagePreview: { width: '100%', height: '100%' },
-  removeImg:   { position: 'absolute', top: 8, right: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  removeImg:   { position: 'absolute', top: 8, right: 8, ...shadows.small },
   toolbar:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   toolbarBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: CultureTokens.indigo + '12', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   toolbarText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
@@ -905,6 +906,26 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
             </View>
           </Pressable>
         );
+
+      case 'collection-highlight':
+        return (
+          <Pressable onPress={handlePress} style={[pc.milestoneWrap, { borderColor: CultureTokens.gold + '50', backgroundColor: CultureTokens.gold + '08', padding: 18 }]}>
+            <LinearGradient colors={[CultureTokens.gold + '15', 'transparent']} style={pc.milestoneGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
+            <View style={[pc.trophyWrap, { backgroundColor: CultureTokens.gold + '20', width: 64, height: 64, borderRadius: 20 }]}>
+              <Ionicons name="ribbon" size={32} color={CultureTokens.gold} />
+            </View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={[pc.milestoneTitle, { color: colors.text, fontSize: 16 }]}>
+                {post.userName} earned the {post.tokenName} Explorer Token!
+              </Text>
+              <Text style={[pc.milestoneSub, { color: colors.textSecondary }]}>Shared to {post.community.name}</Text>
+              <View style={[pc.viewRow, { borderColor: CultureTokens.gold + '55', marginTop: 8 }]}>
+                <Text style={[pc.viewText, { color: CultureTokens.gold }]}>CONGRATULATE</Text>
+                <Ionicons name="sparkles" size={12} color={CultureTokens.gold} />
+              </View>
+            </View>
+          </Pressable>
+        );
     }
   };
 
@@ -1423,6 +1444,9 @@ export default function CultureFeedScreen() {
       if (item.kind === 'welcome') {
         return { id: item.id, kind: 'welcome', community: comm, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
       }
+      if ((item as any).kind === 'collection-highlight') {
+        return { id: item.id, kind: 'collection-highlight', community: comm, tokenName: (item as any).tokenName, tokenImage: (item as any).tokenImage, userName: (item as any).userName, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
+      }
       // announcement (real community post)
       return { id: item.id, kind: 'announcement', community: comm, body: item.body ?? '', imageUrl: item.imageUrl ?? undefined, authorId: item.authorId, likesCount: item.likesCount, commentsCount: item.commentsCount, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
     });
@@ -1433,8 +1457,8 @@ export default function CultureFeedScreen() {
 
   // Filter by active tab
   const filteredPosts = useMemo(() => {
-    if (activeFilter === 'events')      return posts.filter(p => p.kind === 'event');
-    if (activeFilter === 'communities') return posts.filter(p => p.kind !== 'event');
+    if (activeFilter === 'events')      return posts.filter(p => (p as any).kind === 'event');
+    if (activeFilter === 'communities') return posts.filter(p => (p as any).kind !== 'event');
     return posts;
   }, [posts, activeFilter]);
 

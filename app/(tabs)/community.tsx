@@ -48,7 +48,9 @@ import type { Profile } from '@/shared/schema';
 
 // ─── Constants & Types ────────────────────────────────────────────────────────
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const AnimatedFlashList = Platform.OS === 'web' 
+  ? Animated.FlatList 
+  : Animated.createAnimatedComponent(FlashList) as any;
 
 const CATEGORIES = [
   { id: 'All',        label: 'All',           icon: 'grid' },
@@ -57,6 +59,12 @@ const CATEGORIES = [
   { id: 'professional',label: 'Professional', icon: 'briefcase' },
   { id: 'festival',   label: 'Festivals',     icon: 'party-popper' },
   { id: 'diaspora',   label: 'Diaspora',      icon: 'globe' },
+];
+
+const LEADERBOARD_DATA = [
+  { id: 'india', name: 'Indian Diaspora', count: '124k', growth: '+12%', color: '#FF9933', emoji: '🇮🇳', rank: 1 },
+  { id: 'korea', name: 'Korean Wave', count: '98k', growth: '+24%', color: '#CD2E3A', emoji: '🇰🇷', rank: 2 },
+  { id: 'greece', name: 'Hellenic Hub', count: '85k', growth: '+8%', color: '#005BAE', emoji: '🇬🇷', rank: 3 },
 ];
 
 const CULTURE_COLORS: Record<string, string> = {
@@ -135,6 +143,54 @@ const graphStyles = StyleSheet.create({
   leafNode: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: 12, ...shadows.small },
   leafEmoji: { fontSize: 14 },
   leafLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+});
+
+function HeritageLeaderboard({ colors }: { colors: any }) {
+  return (
+    <View style={leaderStyles.container}>
+      <View style={leaderStyles.header}>
+        <Text style={[leaderStyles.title, { color: colors.text }]}>Heritage Leaderboard</Text>
+        <Ionicons name="stats-chart" size={18} color={CultureTokens.indigo} />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={leaderStyles.scroll}>
+        {LEADERBOARD_DATA.map((item, idx) => (
+          <Animated.View 
+            key={item.id} 
+            entering={FadeInDown.delay(idx * 200).springify()}
+            style={[leaderStyles.card, { backgroundColor: colors.surface }]}
+          >
+            <View style={[leaderStyles.rankBadge, { backgroundColor: item.color }]}>
+              <Text style={leaderStyles.rankText}>{item.rank}</Text>
+            </View>
+            <Text style={leaderStyles.emoji}>{item.emoji}</Text>
+            <View style={leaderStyles.info}>
+              <Text style={[leaderStyles.name, { color: colors.text }]}>{item.name}</Text>
+              <View style={leaderStyles.statRow}>
+                <Text style={[leaderStyles.count, { color: colors.textSecondary }]}>{item.count} active</Text>
+                <Text style={leaderStyles.growth}>{item.growth}</Text>
+              </View>
+            </View>
+          </Animated.View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+const leaderStyles = StyleSheet.create({
+  container: { marginTop: 32 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, marginBottom: 16 },
+  title: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
+  scroll: { paddingHorizontal: 20, gap: 16, paddingBottom: 8 },
+  card: { width: 200, padding: 16, borderRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 12, ...shadows.medium },
+  rankBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rankText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_800ExtraBold' },
+  emoji: { fontSize: 24 },
+  info: { flex: 1 },
+  name: { fontSize: 13, fontFamily: 'Poppins_700Bold' },
+  statRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  count: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+  growth: { fontSize: 10, fontFamily: 'Poppins_700Bold', color: CultureTokens.teal },
 });
 
 // ─── Community Preview Drawer ─────────────────────────────────────────────────
@@ -388,7 +444,7 @@ export default function CommunitiesScreen() {
 
       <View style={{ backgroundColor: colors.background }}>
         <View style={styles.searchSection}>
-          <View style={[styles.searchBar, { backgroundColor: colors.surface, shadowColor: colors.text }]}>
+          <View style={[styles.searchBar, { backgroundColor: colors.surface, ...shadows.medium }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -402,6 +458,9 @@ export default function CommunitiesScreen() {
 
         {/* CULTURAL IDENTITY GRAPH */}
         <CulturalIdentityGraph colors={colors} />
+
+        {/* GLOBAL HERITAGE LEADERBOARD */}
+        <HeritageLeaderboard colors={colors} />
 
         <View style={styles.railSection}>
           <Text style={[styles.railTitle, { color: colors.text }]}>Browse by Culture</Text>

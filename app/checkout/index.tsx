@@ -1,21 +1,22 @@
 // app/checkout/index.tsx
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Platform, 
-  Alert, 
-  Pressable, 
-  TextInput 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  Alert,
+  Pressable,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { TextStyles } from '@/constants/typography';
-import { CultureTokens, BorderTokens, shadows } from '@/constants/theme';
+import { CultureTokens, shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -34,12 +35,12 @@ export default function CheckoutPage() {
   const tierName = params.tierName as string;
   const quantity = parseInt((params.quantity as string) || '1', 10);
   const basePriceCents = parseInt((params.priceCents as string) || '0', 10);
-  
+
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const isDark = useIsDark();
   const { userId } = useAuth();
-  
+
   const [promoCode, setPromoCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,8 +51,8 @@ export default function CheckoutPage() {
     enabled: !!eventId,
   });
 
-  const totalPriceCents = discountApplied 
-    ? Math.max(0, (basePriceCents * quantity) - 500) 
+  const totalPriceCents = discountApplied
+    ? Math.max(0, (basePriceCents * quantity) - 500)
     : basePriceCents * quantity;
 
   const handleApplyPromo = () => {
@@ -97,17 +98,16 @@ export default function CheckoutPage() {
 
   return (
     <View style={styles.screen}>
-      {/* Background Overlay */}
       <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
       </Pressable>
 
-      <Animated.View 
+      <Animated.View
         entering={SlideInDown.springify().damping(20)}
         style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 }]}
       >
         <View style={styles.handle} />
-        
+
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Confirm Order</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
@@ -116,7 +116,6 @@ export default function CheckoutPage() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Progress Indicator */}
           <View style={styles.steps}>
             <View style={[styles.stepDot, { backgroundColor: CultureTokens.indigo }]} />
             <View style={styles.stepLine} />
@@ -126,8 +125,8 @@ export default function CheckoutPage() {
           </View>
 
           <View style={styles.eventInfo}>
-            <Image 
-              source={{ uri: event?.heroImageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' }} 
+            <Image
+              source={{ uri: event?.heroImageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' }}
               style={styles.eventThumb}
               contentFit="cover"
             />
@@ -175,10 +174,10 @@ export default function CheckoutPage() {
               <Text style={styles.discountTag}>-$5.00 Culture Loyalty Applied</Text>
             )}
 
-            <Button 
-              variant="gradient" 
-              size="lg" 
-              fullWidth 
+            <Button
+              variant="gradient"
+              size="lg"
+              fullWidth
               loading={loading}
               onPress={handleCheckout}
               style={styles.payBtn}
@@ -219,7 +218,7 @@ const styles = StyleSheet.create({
   value: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 16 },
   promoWrap: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  promoInput: { flex: 1, height: 52, borderRadius: 16, border坚Width: 1, borderWidth: 1, paddingHorizontal: 16, fontFamily: 'Poppins_500Medium' },
+  promoInput: { flex: 1, height: 52, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, fontFamily: 'Poppins_500Medium' },
   promoBtn: { borderRadius: 12 },
   footer: { marginTop: 32 },
   totalLabel: { fontSize: 28, fontFamily: 'Poppins_700Bold' },

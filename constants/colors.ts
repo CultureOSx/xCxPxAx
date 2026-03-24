@@ -33,6 +33,28 @@ export interface ShadowStyle {
   boxShadow?: string;
 }
 
+const createShadow = (
+  width: number,
+  height: number,
+  opacity: number,
+  radius: number,
+  elevation: number,
+  color: string = "#000"
+): any => {
+  if (Platform.OS === 'web') {
+    return {
+      boxShadow: `${width}px ${height}px ${radius}px rgba(0,0,0,${opacity})`,
+    };
+  }
+  return {
+    shadowColor: color,
+    shadowOffset: { width, height },
+    shadowOpacity: opacity,
+    shadowRadius: radius,
+    elevation: elevation,
+  };
+};
+
 /**
  * Cultural Brand Tokens
  * Use these for primary interactions and cultural markers.
@@ -288,49 +310,10 @@ export const dark: ColorTheme = {
 };
 
 export const shadows = {
-  small: Platform.select({
-    web: { boxShadow: '0px 1px 5px rgba(0,0,0,0.04)' },
-    default: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 3,
-      elevation: 1,
-    },
-  }) as ShadowStyle,
-
-  medium: Platform.select({
-    web: { boxShadow: '0px 2px 12px rgba(0,0,0,0.08)' },
-    default: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-  }) as ShadowStyle,
-
-  large: Platform.select({
-    web: { boxShadow: '0px 4px 24px rgba(0,0,0,0.12)' },
-    default: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
-      elevation: 6,
-    },
-  }) as ShadowStyle,
-
-  heavy: Platform.select({
-    web: { boxShadow: '0px 8px 36px rgba(0,0,0,0.16)' },
-    default: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.16,
-      shadowRadius: 24,
-      elevation: 10,
-    },
-  }) as ShadowStyle,
+  small: createShadow(0, 1, 0.04, 3, 1),
+  medium: createShadow(0, 2, 0.08, 8, 3),
+  large: createShadow(0, 4, 0.12, 16, 6),
+  heavy: createShadow(0, 8, 0.16, 24, 10),
 };
 
 /**

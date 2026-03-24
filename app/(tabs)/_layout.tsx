@@ -66,8 +66,16 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* 6. Quest Center — Perks & Gamification (Visible) */}
+      <Tabs.Screen
+        name="perks"
+        options={{
+          title: 'Quests',
+          tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
+        }}
+      />
+
       {/* Hidden Routes */}
-      <Tabs.Screen name="perks" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />
       <Tabs.Screen name="discover-classic" options={{ href: null }} />

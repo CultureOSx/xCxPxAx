@@ -7,7 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Platform,
-  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, {
@@ -16,6 +16,8 @@ import Animated, {
   interpolate,
   useAnimatedScrollHandler,
   FadeInDown,
+  FadeInRight,
+  SlideInRight,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,22 +37,102 @@ import { PerkCard } from '@/components/perks/PerkCard';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const { width } = Dimensions.get('window');
-
-// ─── Animated Wrapper ─────────────────────────────────────────────────────────
-
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const AnimatedFlashList = Platform.OS === 'web' 
+  ? Animated.FlatList 
+  : Animated.createAnimatedComponent(FlashList) as any;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const CULTURAL_QUESTS = [
+  { id: 'q1', title: 'Spice Routes', task: 'Visit 3 Indian Restaurants', progress: 1, total: 3, reward: 'Masala Explorer', color: '#FF9933', icon: 'restaurant', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400' },
+  { id: 'q2', title: 'Hallyu Wave', task: 'Attend 2 Korean Art Events', progress: 1, total: 2, reward: 'K-Star Token', color: '#CD2E3A', icon: 'sparkles', image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=400' },
+  { id: 'q3', title: 'Indigenous Echoes', task: 'Visit 1 Native Art Center', progress: 0, total: 1, reward: 'Ancient Roots Seed', color: CultureTokens.gold, icon: 'leaf', image: 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' },
+];
 
 const CATEGORIES = [
   { id: 'All',        label: 'All Perks',    icon: 'gift'       },
   { id: 'tickets',    label: 'Tickets',      icon: 'ticket'     },
-  { id: 'events',     label: 'Events',       icon: 'calendar'   },
   { id: 'dining',     label: 'Dining',       icon: 'restaurant' },
   { id: 'shopping',   label: 'Shopping',     icon: 'bag'        },
-  { id: 'indigenous', label: 'Indigenous',   icon: 'leaf'       },
 ];
+
+// ─── Sub-Components ───────────────────────────────────────────────────────────
+
+function QuestCard({ quest, colors }: { quest: any, colors: any }) {
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  const handleCheckIn = () => {
+    setCheckingIn(true);
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setTimeout(() => {
+      setCheckingIn(false);
+      setCompleted(true);
+    }, 1500);
+  };
+
+  const progressPct = (quest.progress / quest.total) * 100;
+
+  return (
+    <Animated.View entering={FadeInRight.springify()} style={[s.questCard, { backgroundColor: colors.surface }]}>
+      <Image source={{ uri: quest.image }} style={s.questImage} />
+      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
+      
+      <View style={s.questContent}>
+        <View style={s.questHeader}>
+          <View style={[s.questIconWrap, { backgroundColor: quest.color }]}>
+            <Ionicons name={quest.icon} size={20} color="#fff" />
+          </View>
+          <View>
+            <Text style={s.questTitle}>{quest.title}</Text>
+            <Text style={s.questTask}>{quest.task}</Text>
+          </View>
+        </View>
+
+        <View style={s.progressSection}>
+          <View style={s.progressInfo}>
+            <Text style={s.progressText}>{quest.progress}/{quest.total} Reached</Text>
+            <Text style={s.rewardText}>REWARD: {quest.reward}</Text>
+          </View>
+          <View style={[s.progressBar, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+            <View style={[s.progressFill, { width: `${progressPct}%`, backgroundColor: quest.color }]} />
+          </View>
+        </View>
+
+        <TouchableOpacity 
+          disabled={completed || checkingIn}
+          onPress={handleCheckIn}
+          style={[s.checkInBtn, { backgroundColor: completed ? CultureTokens.teal : '#fff' }]}
+        >
+          {checkingIn ? (
+            <Text style={[s.checkInText, { color: quest.color }]}>VERIFYING...</Text>
+          ) : completed ? (
+            <View style={s.completedRow}><Ionicons name="checkmark-circle" size={16} color="#fff" /><Text style={[s.checkInText, { color: '#fff' }]}>QUEST COMPLETE</Text></View>
+          ) : (
+            <Text style={[s.checkInText, { color: '#000' }]}>CHECK-IN AT VENUE</Text>
+          )}
+        </TouchableOpacity>
+
+        {completed && (
+          <Animated.View entering={SlideInRight.springify()} style={s.shareBox}>
+            <TouchableOpacity 
+              style={[s.shareBtn, { borderColor: CultureTokens.gold }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/(tabs)/feed');
+              }}
+            >
+              <Ionicons name="share-social" size={16} color={CultureTokens.gold} />
+              <Text style={s.shareText}>POST TO COMMUNITY FEED</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function PerksTabScreen() {
   const colors = useColors();
@@ -58,6 +140,7 @@ export default function PerksTabScreen() {
   const { isDesktop } = useLayout();
   const { userId } = useAuth();
 
+  const [viewMode, setViewMode] = useState<'perks' | 'quests'>('quests');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const scrollY = useSharedValue(0);
@@ -65,84 +148,37 @@ export default function PerksTabScreen() {
     onScroll: (event) => { scrollY.value = event.contentOffset.y; },
   });
 
-  const heroAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: interpolate(scrollY.value, [-100, 0, 250], [1.1, 1, 0.95], 'clamp') },
-    ],
-    opacity: interpolate(scrollY.value, [0, 200], [1, 0.5], 'clamp'),
-  }));
-
   const { data: perksPages, isLoading, refetch, isRefetching } = usePerks();
   const perks = perksPages?.pages.flatMap(p => p.perks) || [];
 
-  const { data: membership } = useQuery({
-    queryKey: ['/api/membership', userId],
-    queryFn: () => api.membership.get(userId!).catch(() => null),
-    enabled: !!userId,
-  });
-
-  const filteredPerks = useMemo(() => {
+  const filteredItems = useMemo(() => {
+    if (viewMode === 'quests') return CULTURAL_QUESTS;
     if (selectedCategory === 'All') return perks;
     return perks.filter(p => p.category === selectedCategory);
-  }, [perks, selectedCategory]);
-
-  const isPlusMember = !!membership?.tier && membership.tier !== 'free';
+  }, [viewMode, perks, selectedCategory]);
 
   const renderHeader = () => (
     <View>
-      <View style={styles.heroWrapper}>
-        <Animated.View style={[styles.heroContainer, heroAnimatedStyle]}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1511733336325-3069188a183d?q=80&w=1200&auto=format&fit=crop' }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.85)']}
-            style={styles.heroOverlay}
-          >
-            <Text style={styles.heroTitle}>Exclusive Perks</Text>
-            <Text style={styles.heroSubtitle}>Unlock the best of your city's culture</Text>
-          </LinearGradient>
-        </Animated.View>
-      </View>
-
-      <View style={{ backgroundColor: colors.background }}>
-        {!isPlusMember && (
-          <View style={styles.nudgeWrapper}>
-            <TouchableOpacity 
-              activeOpacity={0.9}
-              onPress={() => router.push('/membership/upgrade' as any)}
-              style={[styles.nudgeCard, { backgroundColor: colors.surface, shadowColor: colors.text }]}
-            >
-              <LinearGradient colors={['#6366F1', '#4F46E5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.nudgeIconBox}>
-                <Ionicons name="sparkles" size={20} color="#fff" />
-              </LinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.nudgeTitle, { color: colors.text }]}>CulturePass+</Text>
-                <Text style={[styles.nudgeSubtitle, { color: colors.textSecondary }]}>Upgrade to unlock rewards</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={[styles.chipsRow, isPlusMember && { marginTop: 12 }]}>
-          <FilterChipRow
-            items={CATEGORIES}
-            selectedId={selectedCategory}
-            onSelect={(id) => {
-              setSelectedCategory(id);
-              if (Platform.OS !== 'web') Haptics.selectionAsync();
-            }}
-          />
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Available for You</Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{filteredPerks.length} handpicked rewards</Text>
+      <View style={s.header}>
+        <Text style={[s.headerTitle, { color: colors.text }]}>{viewMode === 'quests' ? 'Active Quests' : 'Exclusive Perks'}</Text>
+        <View style={[s.toggleContainer, { backgroundColor: colors.surface }]}>
+          <TouchableOpacity onPress={() => setViewMode('quests')} style={[s.toggleBtn, viewMode === 'quests' && { backgroundColor: CultureTokens.indigo }]}><Text style={[s.toggleText, { color: viewMode === 'quests' ? '#fff' : colors.textSecondary }]}>Quests</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setViewMode('perks')} style={[s.toggleBtn, viewMode === 'perks' && { backgroundColor: CultureTokens.indigo }]}><Text style={[s.toggleText, { color: viewMode === 'perks' ? '#fff' : colors.textSecondary }]}>Perks</Text></TouchableOpacity>
         </View>
       </View>
+
+      {viewMode === 'perks' && (
+        <View style={s.chipsRow}>
+          <FilterChipRow items={CATEGORIES} selectedId={selectedCategory} onSelect={setSelectedCategory} />
+        </View>
+      )}
+
+      {viewMode === 'quests' && (
+        <View style={s.explorerBadge}>
+          <LinearGradient colors={[CultureTokens.gold, '#F4A100']} style={s.levelCircle}><Text style={s.levelText}>Lvl 4</Text></LinearGradient>
+          <View><Text style={[s.expTitle, { color: colors.text }]}>Cultural Explorer</Text><Text style={[s.expSub, { color: colors.textSecondary }]}>500 EXP to next Explorer Token</Text></View>
+        </View>
+      )}
     </View>
   );
 
@@ -150,22 +186,20 @@ export default function PerksTabScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ErrorBoundary>
         <AnimatedFlashList
-          data={filteredPerks}
-          numColumns={isDesktop ? 2 : 1}
+          data={filteredItems}
+          numColumns={1}
           keyExtractor={(item: any) => item.id}
           renderItem={({ item, index }: { item: any, index: number }) => (
-            <Animated.View
-              entering={FadeInDown.delay(index * 50).springify().damping(18)}
-              style={styles.perkWrapper}
-            >
-              <PerkCard perk={item} />
-            </Animated.View>
+            viewMode === 'quests' ? (
+              <QuestCard quest={item} colors={colors} />
+            ) : (
+              <View style={s.perkWrapper}><PerkCard perk={item} /></View>
+            )
           )}
           ListHeaderComponent={renderHeader}
           onScroll={scrollHandler}
-          scrollEventThrottle={16}
-          estimatedItemSize={200}
-          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 120 }]}
+          estimatedItemSize={250}
+          contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 120, paddingTop: insets.top + 10 } as any]}
           onRefresh={refetch}
           refreshing={isRefetching}
         />
@@ -174,21 +208,37 @@ export default function PerksTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  heroWrapper: { height: 280, overflow: 'hidden' },
-  heroContainer: { height: 280 },
-  heroOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', padding: 28, justifyContent: 'flex-end' },
-  heroTitle: { fontSize: 38, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -1 },
-  heroSubtitle: { fontSize: 18, fontFamily: 'Poppins_500Medium', color: '#fff', marginTop: 4, opacity: 0.9 },
-  nudgeWrapper: { marginTop: -32, paddingHorizontal: 20, zIndex: 10, paddingBottom: 8 },
-  nudgeCard: { flexDirection: 'row', alignItems: 'center', padding: 18, borderRadius: 24, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 8, gap: 16 },
-  nudgeIconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  nudgeTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  nudgeSubtitle: { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  chipsRow: { paddingTop: 8 },
-  sectionHeader: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
-  sectionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  sectionSubtitle: { fontSize: 14, fontFamily: 'Poppins_500Medium', marginTop: 2, opacity: 0.7 },
-  list: { paddingHorizontal: 16 },
-  perkWrapper: { paddingVertical: 8, paddingHorizontal: 4 },
+const s = StyleSheet.create({
+  list: { paddingHorizontal: 20 },
+  header: { marginBottom: 24, gap: 16 },
+  headerTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold' },
+  toggleContainer: { flexDirection: 'row', padding: 4, borderRadius: 16, alignSelf: 'flex-start' },
+  toggleBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
+  toggleText: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  explorerBadge: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24, backgroundColor: 'rgba(0,0,0,0.02)', padding: 16, borderRadius: 24 },
+  levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  levelText: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_800ExtraBold' },
+  expTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  expSub: { fontSize: 13, fontFamily: 'Poppins_500Medium', opacity: 0.7 },
+  questCard: { height: 280, borderRadius: 32, overflow: 'hidden', marginBottom: 20, ...shadows.medium },
+  questImage: { width: '100%', height: '100%' },
+  questContent: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 28 },
+  questHeader: { flexDirection: 'row', gap: 16, alignItems: 'center', marginBottom: 24 },
+  questIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  questTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  questTask: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.8)' },
+  progressSection: { marginBottom: 20 },
+  progressInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  progressText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_700Bold' },
+  rewardText: { color: CultureTokens.gold, fontSize: 10, fontFamily: 'Poppins_800ExtraBold' },
+  progressBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%' },
+  checkInBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  checkInText: { fontSize: 14, fontFamily: 'Poppins_800ExtraBold', letterSpacing: 0.5 },
+  completedRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  shareBox: { marginTop: 12 },
+  shareBtn: { height: 44, borderRadius: 12, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,215,0,0.05)' },
+  shareText: { color: CultureTokens.gold, fontSize: 12, fontFamily: 'Poppins_800ExtraBold' },
+  perkWrapper: { paddingVertical: 8 },
+  chipsRow: { marginBottom: 16 },
 });

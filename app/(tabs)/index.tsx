@@ -43,6 +43,10 @@ import { isIndigenousProfile } from '@/lib/indigenous';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import type { Profile } from '@/shared/schema';
 
+const AnimatedFlashList = Platform.OS === 'web' 
+  ? Animated.FlatList 
+  : Animated.createAnimatedComponent(FlashList) as any;
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FEATURED_ARTISTS = [
@@ -128,7 +132,7 @@ const bookingStyles = StyleSheet.create({
   dateRow: { flexDirection: 'row', gap: 10 },
   datePill: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
   dateText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  input: { padding: 16, borderRadius: 16, border坚Width: 1, borderWidth: 1 },
+  input: { padding: 16, borderRadius: 16, borderWidth: 1 },
   successTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
   nextBtn: { marginTop: 32, height: 56, borderRadius: 16 },
   nextBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins_700Bold' },
@@ -196,7 +200,7 @@ export default function DiscoveryScreen() {
                   }}
                 >
                   <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
-                  <Ionicons name={item.isLive ? "record" : "play"} size={20} color={item.isLive ? CultureTokens.coral : "#fff"} />
+                  <Ionicons name={item.isLive ? "radio" : "play"} size={20} color={item.isLive ? CultureTokens.coral : "#fff"} />
                 </TouchableOpacity>
                 {item.isLive && (
                   <View style={styles.liveNowTag}>
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 40, fontFamily: 'Poppins_700Bold', color: '#fff' },
   heroSubtitle: { fontSize: 18, fontFamily: 'Poppins_500Medium', color: '#fff', marginTop: 6 },
   searchWrapper: { marginTop: -32, paddingHorizontal: 20, zIndex: 10 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 99, paddingHorizontal: 20, paddingVertical: 16, elevation: 5 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 99, paddingHorizontal: 20, paddingVertical: 16, ...shadows.medium },
   searchInput: { flex: 1, marginLeft: 12, fontSize: 16 },
 
   heritageSection: { marginTop: 40 },
