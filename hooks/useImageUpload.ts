@@ -1,81 +1,119 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, storage } from '../lib/firebase'; // your config
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { doc, updateDoc, deleteField } from 'firebase/firestore';
+import { db, storage } from '../lib/firebase';
 
-interface UploadOptions {
-  maxWidth?: number;
-  maxHeight?: number;
-  quality?: number;           // 0.6–0.85 recommended
-  folder?: string;            // e.g. 'events', 'perks', 'profiles'
-  onProgress?: (progress: number) => void;
+export interface UploadResult {
+  downloadURL: string;
+  thumbhash?: string; // Automatically populated via Cloud Functions post-upload
 }
 
+/**
+ * 🚀 CulturePass Optimized Image Upload Hook
+ * - Implements Client-Side compression (Fast & Cost Save)
+ * - Firebase Storage upload stream parsing for progress UI
+ * - Automatic atomic CRUD matching exactly to Firestore docs
+ * - Cache-busting URL architecture via timestamps
+ */
 export const useImageUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const compressAndUpload = async (
+  /**
+   * Automatically compresses the selected image, uploads it securely into Firebase Storage,
+   * inside the specific {collection}/{docId} directory, and immediately writes the returned
+   * URL back to the Firestore document field.
+   */
+  const uploadImage = async (
     pickerResult: ImagePicker.ImagePickerResult,
-    options: UploadOptions = {}
-  ): Promise<{ downloadURL: string; thumbhash?: string }> => {
-    if (pickerResult.canceled || !pickerResult.assets?.[0]) throw new Error('No image selected');
+    collectionName: string,
+    docId: string,
+    fieldName: string = 'coverUrl',
+    skipDbUpdate: boolean = false
+  ): Promise<UploadResult> => {
+    if (pickerResult.canceled || !pickerResult.assets?.[0]) {
+      throw new Error('No image provided');
+    }
 
     setUploading(true);
     setProgress(0);
 
-    const asset = pickerResult.assets[0];
-    const { maxWidth = 1200, maxHeight = 1200, quality = 0.82, folder = 'uploads' } = options;
-
     try {
-      // Step 1: Client-side resize + compress (huge bandwidth & cost saver)
+      const asset = pickerResult.assets[0];
+
+      // 1. Client-Side Image Compression (Save Bandwidth & Storage)
       const manipulated = await ImageManipulator.manipulateAsync(
         asset.uri,
-        [{ resize: { width: maxWidth } }], // preserve aspect ratio
-        {
-          compress: quality,
-          format: ImageManipulator.SaveFormat.JPEG, // or WEBP if you enable it
-        }
+        [{ resize: { width: 1200 } }], // Ideal max width preserving AR
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // 80% JPEG compression
       );
 
-      // Step 2: Convert to Blob for Firebase
       const response = await fetch(manipulated.uri);
       const blob = await response.blob();
 
-      // Step 3: Upload with progress
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-      const storageRef = ref(storage, `${folder}/${fileName}`);
+      // 2. Upload to path hierarchy structure (e.g. users/123/1643...-abc.jpg)
+      // Including Date.now() guarantees cache-busting when replacing avatars via Expo Image
+      const timestamp = Date.now();
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
+      const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
 
-      const uploadTask = uploadBytes(storageRef, blob);
+      const uploadTask = uploadBytesResumable(storageRef, blob);
 
-      /* Listen to progress if we swap uploadBytes for uploadBytesResumable
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(Math.round(prog));
-          options.onProgress?.(prog);
-        }
-      );
-      */
-
-      await uploadTask;
+      // Listen to streaming upload progress
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setProgress(currentProgress);
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
 
       const downloadURL = await getDownloadURL(storageRef);
 
-      // Optional: Trigger server-side ThumbHash generation (via Cloud Function or Storage trigger)
-      // For now we return URL; ThumbHash will be added by server
-
-      setUploading(false);
-      setProgress(0);
+      if (!skipDbUpdate) {
+        // 3. Atomically update Firestore with new remote URL
+        const { setDoc } = await import('firebase/firestore');
+        const docRef = doc(db, collectionName, docId);
+        await setDoc(docRef, {
+          [fieldName]: downloadURL,
+          updatedAt: new Date(),
+        }, { merge: true });
+      }
 
       return { downloadURL };
-    } catch (error) {
+    } finally {
       setUploading(false);
-      throw error;
+      setProgress(0);
     }
   };
 
-  return { compressAndUpload, uploading, progress };
+  /**
+   * Destroys an existing remote file accurately and cleanly removes its pointer from Firestore.
+   */
+  const deleteImage = async (
+    collectionName: string,
+    docId: string,
+    oldUrl: string,
+    fieldName: string = 'coverUrl'
+  ) => {
+    if (!oldUrl) return;
+    try {
+      // Firebase standardly resolves full bucket urls to refs internally
+      const storageRef = ref(storage, oldUrl);
+      await deleteObject(storageRef);
+
+      const docRef = doc(db, collectionName, docId);
+      await updateDoc(docRef, { [fieldName]: deleteField(), updatedAt: new Date() });
+    } catch (e) {
+      console.warn('[CulturePass] Delete image failed. It might have been manually deleted or is missing.', e);
+    }
+  };
+
+  return { uploadImage, deleteImage, uploading, progress };
 };

@@ -10,12 +10,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, buildApiUrl, queryClient, getAccessToken } from '@/lib/query-client';
 import { api } from '@/lib/api';
+import { queryClient } from '@/lib/query-client';
 import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
-import { fetch } from 'expo/fetch';
 import { useAuth } from '@/lib/auth';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
@@ -174,49 +173,7 @@ export default function EditProfileScreen() {
     }
   }, [user]);
 
-  // ── Upload mutation ──────────────────────────────────────────────────────
-  const uploadMutation = useMutation({
-    mutationFn: async (uri: string): Promise<UploadedImage> => {
-      let uploadUri = uri;
-      try {
-        const jpegFormat = SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat
-          ? SaveFormat.JPEG : undefined;
-        const processed = await manipulateAsync(
-          uri,
-          [{ resize: { width: 1200 } }],
-          jpegFormat ? { compress: 0.90, format: jpegFormat } : { compress: 0.90 },
-        );
-        uploadUri = processed.uri;
-      } catch { /* use original */ }
 
-      const formData = new FormData();
-      const isDataUrl = uploadUri.startsWith('data:');
-
-      if (Platform.OS === 'web' || isDataUrl) {
-        // On web, expo-image-picker returns a blob: URL; fetch it then append.
-        const blobRes = await fetch(uploadUri);
-        const blob    = await blobRes.blob();
-        formData.append('image', blob as unknown as Blob, 'profile.jpg');
-      } else {
-        const mimeType = uploadUri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-        formData.append('image', { uri: uploadUri, name: 'profile.jpg', type: mimeType } as unknown as Blob);
-      }
-
-      const token = getAccessToken();
-      const uploadRes = await fetch(buildApiUrl('api/uploads/image'), {
-        method: 'POST',
-        body:   formData,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        credentials: typeof document !== 'undefined' ? 'omit' : undefined,
-      });
-
-      if (!uploadRes.ok) {
-        const err = await uploadRes.text();
-        throw new Error(`Upload failed (${uploadRes.status}): ${err}`);
-      }
-      return uploadRes.json() as Promise<UploadedImage>;
-    },
-  });
 
   // ── Save mutation ────────────────────────────────────────────────────────
   const updateMutation = useMutation({
@@ -235,7 +192,8 @@ export default function EditProfileScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
-  const isBusy = updateMutation.isPending || uploadMutation.isPending;
+  const { uploadImage, deleteImage, uploading } = useImageUpload();
+  const isBusy = updateMutation.isPending || uploading;
 
   // ── Photo picker ─────────────────────────────────────────────────────────
   const handleChoosePhoto = async () => {
@@ -252,9 +210,17 @@ export default function EditProfileScreen() {
       quality: 1,
       aspect: [1, 1],
     });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setAvatarUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]?.uri && userId) {
       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      try {
+        if (user?.avatarUrl) {
+          await deleteImage('users', userId, user.avatarUrl, 'avatarUrl');
+        }
+        const { downloadURL } = await uploadImage(result, 'users', userId, 'avatarUrl');
+        setAvatarUri(downloadURL);
+      } catch(err) {
+        Alert.alert('Upload Failed', String(err));
+      }
     }
   };
 
@@ -280,21 +246,7 @@ export default function EditProfileScreen() {
     }
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    let avatarUrl = user?.avatarUrl || null;
-    if (avatarUri && avatarUri !== user?.avatarUrl) {
-      try {
-        const uploaded = await uploadMutation.mutateAsync(avatarUri);
-        avatarUrl = uploaded.imageUrl;
-        await apiRequest('POST', '/api/media/attach', {
-          targetType: 'user', targetId: userId,
-          imageUrl: uploaded.imageUrl, thumbnailUrl: uploaded.thumbnailUrl,
-          width: uploaded.width, height: uploaded.height,
-        });
-      } catch (error) {
-        Alert.alert('Upload failed', String(error));
-        return;
-      }
-    }
+
 
     const city    = form.city.trim();
     const country = form.country.trim() || 'Australia';
@@ -314,7 +266,7 @@ export default function EditProfileScreen() {
       postcode: form.postcode.trim() ? Number(form.postcode.trim()) : null,
       country,
       location: city ? `${city}, ${country}` : null,
-      avatarUrl,
+      avatarUrl: avatarUri,
       website: form.website.trim() || null,
       socialLinks: {
         instagram: formatLink(form.instagram, 'instagram.com'),
@@ -420,7 +372,7 @@ export default function EditProfileScreen() {
 
               {/* Camera badge */}
               <View style={[s.cameraBadge, { backgroundColor: YELLOW, borderColor: BLUE }]}>
-                {uploadMutation.isPending
+                {uploading
                   ? <ActivityIndicator size="small" color={BLUE} />
                   : <Ionicons name="camera" size={14} color={BLUE} />
                 }

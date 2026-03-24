@@ -44,11 +44,15 @@ export interface PerkData {
   id: string;
   title: string;
   description?: string;
+  coverUrl?: string;
+  thumbhash?: string;
+  cultureTags?: string[];
+  categories?: string[];
+  priceTier?: 'free' | 'low' | 'medium' | 'high';
   perkType?: string;
   discountPercent?: number;
   partnerId?: string;
   partnerName?: string;
-  imageUrl?: string;
   status?: string;
   pointsCost?: number;
   usageLimit?: number;

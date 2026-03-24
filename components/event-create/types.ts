@@ -32,6 +32,7 @@ export interface FormData {
   hostInfo: HostDraft;
   cultureTagIds: string[];
   languageTagIds: string[];
+  accessibilityIds: string[];
 }
 
 export const defaultForm: FormData = {
@@ -57,6 +58,7 @@ export const defaultForm: FormData = {
   hostInfo: { name: '', contactEmail: '', contactPhone: '', websiteUrl: '' },
   cultureTagIds: [],
   languageTagIds: [],
+  accessibilityIds: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -127,4 +129,12 @@ export const SPONSOR_TIERS: { id: SponsorTier; label: string; color: string }[] 
   { id: 'gold',   label: 'Gold',          color: '#FF8C42' },
   { id: 'silver', label: 'Silver',        color: '#9CA3AF' },
   { id: 'bronze', label: 'Bronze',        color: '#B45309' },
+];
+
+export const ACCESSIBILITY_OPTIONS = [
+  { id: 'wheelchair', label: 'Wheelchair Accessible', icon: 'body' },
+  { id: 'hearing', label: 'Hearing Loop', icon: 'ear' },
+  { id: 'sign', label: 'Sign Language', icon: 'hand-left' },
+  { id: 'quiet', label: 'Quiet Zones', icon: 'volume-mute' },
+  { id: 'visual', label: 'Braille/Audio', icon: 'eye' },
 ];

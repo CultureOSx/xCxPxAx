@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, Linking } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ButtonTokens, CardTokens } from '@/constants/theme';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 import { Perk } from '@/components/perks/types';
 import { PERK_TYPE_INFO } from '@/components/perks/constants';
@@ -98,10 +100,24 @@ export default function PerkDetailScreen() {
     } catch {}
   };
 
-  const handleRedeem = () => {
+  const handleRedeem = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!canRedeem && perk.isMembershipRequired) {
       router.push({ pathname: '/membership/upgrade' } as any);
+      return;
+    }
+
+    if ((perk as any).priceTier && (perk as any).priceTier !== 'free') {
+      try {
+        const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+        const result = await createCheckoutSession({ perkId: perk.id });
+        const { url } = result.data as any;
+        if (url) {
+          Linking.openURL(url);
+        }
+      } catch (err: any) {
+        Alert.alert('Checkout Failed', err.message);
+      }
     } else {
       redeemMutation.mutate(perk.id);
     }

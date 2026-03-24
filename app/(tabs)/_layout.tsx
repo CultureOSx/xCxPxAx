@@ -5,10 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 const TAB_CONFIG = [
   { name: 'index',        title: 'Discover',  icon: 'compass-outline' },
-  { name: 'feed',       title: 'Feed',      icon: 'newspaper-outline' },
+  { name: 'feed',         title: 'Feed',      icon: 'newspaper-outline' },
   { name: 'calendar',     title: 'Calendar',  icon: 'calendar-outline' },
   { name: 'perks',        title: 'Perks',     icon: 'gift-outline' },
-  { name: 'profile',      title: 'Profile',   icon: 'person-outline' },
 ] as const;
 
 const HIDDEN_ROUTES = [
@@ -16,6 +15,7 @@ const HIDDEN_ROUTES = [
   'directory',
   'dashboard',
   'community',
+  'profile',
   // add more hidden / deep-link only screens here
 ] as const;
 

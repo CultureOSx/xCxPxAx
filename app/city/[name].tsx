@@ -29,6 +29,7 @@ import { TextStyles } from '@/constants/typography';
 import { CultureTokens, Spacing } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import FilterChips from '@/components/ui/FilterChips';
 import EventCard from '@/components/Discover/EventCard';
 
   const CITY_IMAGES: Record<string, string> = {
@@ -54,7 +55,7 @@ export default function CityScreen() {
   const cityCountry = Array.isArray(country) ? country[0] : country ?? 'Australia';
   const heroImage = CITY_IMAGES[cityName.toLowerCase()] ?? DEFAULT_CITY_IMAGE;
 
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   // Column layout (fixed to 2 for optimal discovery)
@@ -62,13 +63,13 @@ export default function CityScreen() {
   const colAnim = useSharedValue(2);
 
   const { data: eventsData, isLoading, refetch } = useQuery({
-    queryKey: ['/api/events', 'city', cityName, activeCategory],
+    queryKey: ['/api/events', 'city', cityName, selectedFilters],
     queryFn: () =>
       api.events.list({
         city: cityName,
         country: cityCountry,
         pageSize: 40,
-        category: activeCategory === 'all' ? undefined : activeCategory,
+        category: selectedFilters.length > 0 ? selectedFilters[0].toLowerCase() : undefined,
       }),
     staleTime: 120_000,
   });
@@ -168,39 +169,23 @@ export default function CityScreen() {
           </View>
 
           {/* ==================== CATEGORY FLIPPER ==================== */}
-          <View style={[styles.catBar, { backgroundColor: colors.background }]}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.catScroll}
-            >
-              {EXPLORE_CATEGORIES.map((cat) => {
-                const isActive = activeCategory === cat.id;
-                return (
-                  <Pressable
-                    key={cat.id}
-                    onPress={() => {
-                      haptic();
-                      setActiveCategory(cat.id);
-                    }}
-                    style={[styles.flipperChip, isActive && styles.flipperChipActive]}
-                  >
-                    <Ionicons
-                      name={cat.icon as any}
-                      size={16}
-                      color={isActive ? '#FFF' : colors.textTertiary}
-                    />
-                    <Text style={[styles.flipperChipText, { color: isActive ? '#FFF' : colors.textSecondary }]}>
-                      {cat.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+          <FilterChips
+            filters={['Music', 'Food', 'Arts', 'Nightlife', 'Indigenous']}
+            selectedFilters={selectedFilters}
+            onToggle={(f) => {
+              haptic();
+              setSelectedFilters((prev) =>
+                prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
+              );
+            }}
+            onClearAll={() => {
+              haptic();
+              setSelectedFilters([]);
+            }}
+          />
 
           {/* ==================== TRENDING NOW ==================== */}
-          {events.length > 5 && activeCategory === 'all' && (
+          {events.length > 5 && selectedFilters.length === 0 && (
             <View style={styles.section}>
               <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 12, textAlign: isDesktop ? 'left' : 'center' }]}>Trending Now</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
@@ -226,7 +211,7 @@ export default function CityScreen() {
                 <View style={styles.sectionHeader}>
                   <View style={!isDesktop && { alignItems: 'center' }}>
                     <Text style={[TextStyles.title3, { color: colors.text, textAlign: isDesktop ? 'left' : 'center' }]}>
-                      {activeCategory === 'all' ? 'Upcoming Events' : `${EXPLORE_CATEGORIES.find(c => c.id === activeCategory)?.label} Events`}
+                      {selectedFilters.length === 0 ? 'Upcoming Events' : `${selectedFilters.join(', ')} Events`}
                     </Text>
                     <Text style={[TextStyles.caption, { color: colors.textTertiary, textAlign: isDesktop ? 'left' : 'center' }]}>
                       {events.length} results in {cityName}
@@ -249,7 +234,7 @@ export default function CityScreen() {
                     <Pressable
                       style={styles.retryButton}
                       onPress={() => {
-                        setActiveCategory('all');
+                        setSelectedFilters([]);
                         refetch();
                       }}
                     >

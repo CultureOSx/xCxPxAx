@@ -22,6 +22,7 @@ import { CultureTokens, CardTokens, gradients, HeaderTokens } from '@/constants/
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocationPicker } from '@/components/LocationPicker';
+import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
 import { Button } from '@/components/ui/Button';
 import * as ImagePicker from 'expo-image-picker';
 import { timeAgo } from '@/lib/dateUtils';
@@ -1486,11 +1487,14 @@ export default function CultureFeedScreen() {
         <LinearGradient colors={gradients.culturepassBrand as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={{ height: topInset }} />
           <View style={[s.header, { paddingHorizontal: hPad, borderBottomWidth: 0 }]}>
-            <View>
-              <Text style={[s.title, { color: '#fff' }]}>Culture Feed</Text>
-              <View style={s.locationRow}>
-                <Text style={{ fontSize: 14 }}>{countryFlag}</Text>
-                <Text style={[s.subtitle, { color: 'rgba(255,255,255,0.8)' }]}>{locationLabel}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <HeaderAvatar />
+              <View>
+                <Text style={[s.title, { color: '#fff' }]}>Culture Feed</Text>
+                <View style={s.locationRow}>
+                  <Text style={{ fontSize: 14 }}>{countryFlag}</Text>
+                  <Text style={[s.subtitle, { color: 'rgba(255,255,255,0.8)' }]}>{locationLabel}</Text>
+                </View>
               </View>
             </View>
             <View style={s.headerRight}>

@@ -20,7 +20,7 @@ import { api, ApiError } from '@/lib/api';
 import { ALL_NATIONALITIES, getCulturesForNationality } from '@/constants/cultures';
 import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '@/shared/schema';
 import { TextStyles } from '@/constants/typography';
-import { uploadEventImageTemp } from '@/lib/storage';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
 import { useAuth } from '@/lib/auth';
 
@@ -126,10 +126,11 @@ export default function CreateEventScreen() {
     country: onboardingState.country || 'Australia',
     cultureTagIds: onboardingState.cultureIds?.slice(0, 3) ?? [],
     languageTagIds: onboardingState.languageIds?.slice(0, 2) ?? [],
+    accessibilityIds: [],
   });
 
   const [stepIndex, setStepIndex] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
+  const { uploadImage, deleteImage, uploading: imageUploading } = useImageUpload();
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [publishedEvent, setPublishedEvent] = useState<EventData | null>(null);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -198,6 +199,7 @@ export default function CreateEventScreen() {
           : undefined,
         cultureTag:  form.cultureTagIds,
         languageTags: form.languageTagIds,
+        accessibility: form.accessibilityIds,
         artists: form.artists.length > 0
           ? form.artists.map((a) => ({ name: a.name, role: a.role || undefined, profileId: a.profileId, imageUrl: a.imageUrl } as EventArtist))
           : undefined,
@@ -255,6 +257,13 @@ export default function CreateEventScreen() {
       : [...form.languageTagIds, id]);
   }, [form.languageTagIds, setField]);
 
+  const toggleAccessibilityTag = useCallback((id: string) => {
+    haptic();
+    setField('accessibilityIds', form.accessibilityIds.includes(id)
+      ? form.accessibilityIds.filter((l) => l !== id)
+      : [...form.accessibilityIds, id]);
+  }, [form.accessibilityIds, setField]);
+
   const pickImage = useCallback(async () => {
     haptic();
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -263,26 +272,27 @@ export default function CreateEventScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.85,
     });
     if (result.canceled || !result.assets[0]) return;
-    const uri = result.assets[0].uri;
-    setImageUploading(true);
+    
     setImageUploadError(null);
     try {
+      if (form.heroImageUrl) {
+        // Purge orphaned pre-creation images
+        await deleteImage('events', 'temp', form.heroImageUrl, 'heroImageUrl');
+      }
       const uploadId = userId ?? `anon-${Date.now()}`;
-      const url = await uploadEventImageTemp(uri, uploadId);
-      setField('heroImageUrl', url);
+      const { downloadURL } = await uploadImage(result, 'events', uploadId, 'heroImageUrl', true);
+      setField('heroImageUrl', downloadURL);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not upload image. Please try again.';
       setImageUploadError(message);
-    } finally {
-      setImageUploading(false);
     }
-  }, [userId, setField]);
+  }, [userId, setField, form.heroImageUrl, deleteImage, uploadImage]);
 
   const addArtist = useCallback(() => {
     if (!newArtist.name.trim()) return;
@@ -492,6 +502,7 @@ export default function CreateEventScreen() {
               <StepCulture
                 form={form} colors={colors} s={s}
                 toggleCultureTag={toggleCultureTag} toggleLanguageTag={toggleLanguageTag}
+                toggleAccessibilityTag={toggleAccessibilityTag}
                 haptic={haptic}
                 initialNationalityId={onboardingState.nationalityId}
               />

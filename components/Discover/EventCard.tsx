@@ -39,6 +39,9 @@ interface EventCardProps {
     priceLabel?: string;
     isFeatured?: boolean;
     distanceKm?: number;
+    cultureTags?: string[];
+    cultureTag?: string[];
+    accessibility?: string[];
   };
   highlight?: boolean;
   index?: number;
@@ -79,6 +82,22 @@ function CardContent({
       <Text style={[styles.titleText, highlight && styles.titleHighlight]} numberOfLines={2}>
         {event.title}
       </Text>
+
+      {((event.cultureTags?.length ?? 0) > 0 || (event.cultureTag?.length ?? 0) > 0 || (event.accessibility?.length ?? 0) > 0) && (
+        <View style={styles.richTagsRow}>
+          {Array.from(new Set([...(event.cultureTags || []), ...(event.cultureTag || [])])).slice(0, 2).map((tag, idx) => (
+            <View key={`culture-${idx}`} style={styles.richTagPill}>
+              <Text style={styles.richTagText}>{tag}</Text>
+            </View>
+          ))}
+          {(event.accessibility || []).slice(0, 1).map((tag, idx) => (
+            <View key={`acc-${idx}`} style={[styles.richTagPill, { borderColor: CultureTokens.coral + '60' }]}>
+              <Ionicons name="body-outline" size={10} color={CultureTokens.coral} style={{ marginRight: 2 }} />
+              <Text style={[styles.richTagText, { color: CultureTokens.coral }]}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.metaRowCentered}>
         <Ionicons name="location" size={12} color={`${colors.textInverse}CC`} />
@@ -261,6 +280,30 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 12,
     overflow: 'hidden',
+  },
+  richTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  richTagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  richTagText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 9,
+    color: '#FFF',
+    letterSpacing: 0.5,
   },
 });
 

@@ -63,6 +63,18 @@ export interface User {
   culturalIdentity?: CulturalIdentity;
   communities?: string[];
   interestCategoryIds?: string[];
+  preferences?: {
+    priceSensitivity?: 'free' | 'low' | 'medium' | 'high';
+    experienceTypes?: string[];
+    accessibilityNeeds?: string[];
+  };
+  behavioral?: {
+    likesCount?: number;
+    saveCount?: number;
+    attendanceRate?: number;
+    lastActiveAt?: string;
+    claimedPerks?: number;
+  };
   followersCount?: number;
   followingCount?: number;
   likesCount?: number;

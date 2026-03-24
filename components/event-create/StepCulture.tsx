@@ -5,7 +5,7 @@ import { CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { ALL_NATIONALITIES, getCulturesForNationality, CULTURES, type Nationality } from '@/constants/cultures';
 import { COMMON_LANGUAGES } from '@/constants/languages';
-import { FormData } from './types';
+import { FormData, ACCESSIBILITY_OPTIONS } from './types';
 import { Field } from './Field';
 import type { CreateStyles } from './styles';
 
@@ -15,11 +15,12 @@ interface Props {
   s: CreateStyles;
   toggleCultureTag: (id: string) => void;
   toggleLanguageTag: (id: string) => void;
+  toggleAccessibilityTag: (id: string) => void;
   haptic: () => void;
   initialNationalityId?: string | null;
 }
 
-export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageTag, haptic, initialNationalityId }: Props) {
+export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageTag, toggleAccessibilityTag, haptic, initialNationalityId }: Props) {
   const [cultureNationalityId, setCultureNationalityId] = useState<string | null>(initialNationalityId ?? null);
   const [nationalitySearch, setNationalitySearch] = useState('');
 
@@ -181,6 +182,41 @@ export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageT
                   s.tagLabel,
                   { color: isSelected ? CultureTokens.teal : isSuggested ? CultureTokens.indigo : colors.text },
                 ]}>{l.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Field>
+
+      {/* ── 4. Accessibility tags ─────────────────────────────────────────── */}
+      <Field label="4. Accessibility Needs" colors={colors}>
+        <Text style={[s.natHint, { color: colors.textSecondary, marginBottom: 8 }]}>
+          Help attendees find accessible events.
+        </Text>
+        <View style={s.tagGrid}>
+          {ACCESSIBILITY_OPTIONS.map((opt) => {
+            const isSelected = form.accessibilityIds.includes(opt.id);
+            return (
+              <Pressable
+                key={opt.id}
+                style={({ pressed }) => [
+                  s.tagChip,
+                  {
+                    borderColor: isSelected ? CultureTokens.coral : colors.border,
+                    backgroundColor: isSelected ? CultureTokens.coral + '22' : colors.background,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={() => toggleAccessibilityTag(opt.id)}
+                accessibilityRole="checkbox"
+                accessibilityLabel={opt.label}
+                accessibilityState={{ checked: isSelected }}
+              >
+                <Ionicons name={opt.icon as any} size={14} color={isSelected ? CultureTokens.coral : colors.text} style={{ marginRight: 4 }} />
+                <Text style={[
+                  s.tagLabel,
+                  { color: isSelected ? CultureTokens.coral : colors.text },
+                ]}>{opt.label}</Text>
               </Pressable>
             );
           })}

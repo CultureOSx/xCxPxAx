@@ -61,6 +61,7 @@ export interface EventData {
   organizerId?: string;
   imageColor?: string;
   imageUrl?: string;
+  thumbhash?: string;
   capacity?: number;
   attending?: number;
   isFeatured?: boolean;
@@ -77,11 +78,16 @@ export interface EventData {
   indigenousTags?: string[];
   languageTags?: string[];
   cultureTag?: string[];
+  cultureTags?: string[];
   geoHash?: string;
   eventType?: EventType;
   ageSuitability?: AgeSuitability;
   priceTier?: PriceTier;
   organizerReputationScore?: number;
+  culturalRelevanceScore?: number;
+  popularityScore?: number;
+  accessibility?: string[];
+  ticketsSold?: number;
   externalTicketUrl?: string | null;
   externalUrl?: string | null;
   ticketClickCount?: number;

@@ -23,29 +23,11 @@ import { routeWithRedirect } from '@/lib/routes';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
+import { PerkCard } from '@/components/perks/PerkCard';
+import { usePerks } from '@/hooks/queries/usePerks';
+import type { PerkData } from '@/shared/schema';
 
 const isWeb = Platform.OS === 'web';
-
-interface Perk {
-  id: string;
-  title: string;
-  description: string | null;
-  perkType: string;
-  discountPercent: number | null;
-  discountFixedCents: number | null;
-  providerType: string | null;
-  providerId: string | null;
-  providerName: string | null;
-  category: string | null;
-  isMembershipRequired: boolean | null;
-  requiredMembershipTier: string | null;
-  usageLimit: number | null;
-  usedCount: number | null;
-  perUserLimit: number | null;
-  status: string | null;
-  startDate: string | null;
-  endDate: string | null;
-}
 
 const PERK_TYPE_INFO: Record<string, { icon: keyof typeof Ionicons.glyphMap; colorKey: 'error' | 'success' | 'secondary' | 'info' | 'warning'; label: string }> = {
   discount_percent: { icon: 'pricetag',  colorKey: 'error',     label: '% Off' },
@@ -86,10 +68,8 @@ export default function PerksTabScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [redeemingPerkId, setRedeemingPerkId] = useState<string | null>(null);
 
-  const { data: perks = [], isLoading, refetch } = useQuery<Perk[]>({
-    queryKey: ['/api/perks'],
-    queryFn: () => api.perks.list() as Promise<Perk[]>,
-  });
+  const { data: perksPages, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePerks();
+  const perks = perksPages?.pages.flatMap(p => p.perks) || [];
 
   const { data: membership } = useQuery<{ tier: string } | null>({
     queryKey: ['/api/membership', userId],
@@ -128,7 +108,7 @@ export default function PerksTabScreen() {
     ? perks
     : perks.filter(p => p.category === selectedCategory);
 
-  const formatValue = (perk: Perk) => {
+  const formatValue = (perk: any) => {
     if (perk.perkType === 'discount_percent') return `${perk.discountPercent}% Off`;
     if (perk.perkType === 'discount_fixed')   return `$${((perk.discountFixedCents ?? 0) / 100).toFixed(0)} Off`;
     if (perk.perkType === 'free_ticket')      return 'Free';
@@ -139,14 +119,14 @@ export default function PerksTabScreen() {
     return 'Reward';
   };
 
-  const canRedeem = (perk: Perk) => {
+  const canRedeem = (perk: any) => {
     const memberTier = membership?.tier ?? 'free';
-    if (perk.isMembershipRequired && memberTier === 'free') return false;
-    if (perk.usageLimit && (perk.usedCount ?? 0) >= perk.usageLimit) return false;
+    if (perk.isPremiumOnly && memberTier === 'free') return false;
+    if (perk.quantityAvailable && (perk.quantityClaimed ?? 0) >= perk.quantityAvailable) return false;
     return true;
   };
 
-  const handleSharePerk = async (perk: Perk) => {
+  const handleSharePerk = async (perk: any) => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
@@ -296,28 +276,9 @@ export default function PerksTabScreen() {
               </View>
             ) : (
               <View style={[s.gridWrapper, isDesktop && s.gridDesktop]}>
-                {filteredPerks.map((perk) => (
+                {filteredPerks.map((perk: any) => (
                   <View key={perk.id} style={isDesktop ? s.gridCell : s.fullCell}>
-                    <PerkCard
-                      perk={perk}
-                      colors={colors}
-                      redeemable={canRedeem(perk)}
-                      formattedValue={formatValue(perk)}
-                      onShare={() => handleSharePerk(perk)}
-                      onRedeem={() => {
-                        if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        if (!canRedeem(perk) && perk.isMembershipRequired) {
-                          router.push({ pathname: '/membership/upgrade' } as any);
-                        } else if (!userId) {
-                          Alert.alert('Sign in required', 'Please sign in to redeem this perk.');
-                          router.push(routeWithRedirect('/(onboarding)/login', pathname) as any);
-                        } else {
-                          redeemMutation.mutate(perk.id);
-                        }
-                      }}
-                      isPending={redeemingPerkId === perk.id}
-                      resolveTypeColor={resolveTypeColor}
-                    />
+                    <PerkCard perk={perk} />
                   </View>
                 ))}
               </View>
@@ -330,123 +291,11 @@ export default function PerksTabScreen() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Perk Card Component
-// ---------------------------------------------------------------------------
-function PerkCard({
-  perk,
-  colors,
-  redeemable,
-  formattedValue,
-  onShare,
-  onRedeem,
-  isPending,
-  resolveTypeColor,
-}: {
-  perk: Perk;
-  colors: ReturnType<typeof useColors>;
-  redeemable: boolean;
-  formattedValue: string;
-  onShare: () => void;
-  onRedeem: () => void;
-  isPending: boolean;
-  resolveTypeColor: (key: string) => string;
-}) {
-  const typeInfo  = PERK_TYPE_INFO[perk.perkType] ?? PERK_TYPE_INFO.discount_percent;
-  const typeColor = resolveTypeColor(typeInfo.colorKey);
-  const usagePct  = perk.usageLimit ? Math.min(Math.round(((perk.usedCount ?? 0) / perk.usageLimit) * 100), 100) : 0;
-  const needsUpgrade = !redeemable && !!perk.isMembershipRequired;
-  const exhausted    = !redeemable && !perk.isMembershipRequired;
-  const s = getStyles(colors);
 
-  return (
-    <Card 
-      style={s.perkCard} 
-      padding={0}
-    >
-      <View style={[s.cardStrip, { backgroundColor: needsUpgrade ? CultureTokens.indigo : typeColor }]} />
-
-      <View style={s.cardContent}>
-        <View style={s.perkTopRow}>
-          <View style={[s.perkIconBox, { backgroundColor: typeColor + '10', borderColor: typeColor + '20', borderWidth: 1 }]}>
-            <Ionicons name={typeInfo.icon} size={24} color={typeColor} />
-          </View>
-          
-          <View style={s.perkInfo}>
-            <Text style={[TextStyles.headline, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
-            <View style={s.providerRow}>
-              <Ionicons name="business" size={14} color={colors.textTertiary} />
-              <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>{perk.providerName ?? 'CulturePass App'}</Text>
-            </View>
-          </View>
-
-          <View style={s.perkValueWrap}>
-            <View style={[s.perkValuePill, { backgroundColor: colors.surfaceElevated, borderColor: CultureTokens.saffron + '30' }]}>
-              <Text style={[TextStyles.labelSemibold, { color: CultureTokens.saffron }]}>{formattedValue}</Text>
-            </View>
-            <Pressable hitSlop={12} onPress={onShare} style={[s.shareBtn, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, borderWidth: 1 }]}>
-              <Ionicons name="share" size={16} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-        </View>
-
-        {perk.description && (
-          <Text style={[TextStyles.body, { color: colors.textSecondary, marginBottom: 20 }]} numberOfLines={3}>{perk.description}</Text>
-        )}
-
-        <View style={s.perkMetaRow}>
-          {perk.isMembershipRequired && (
-            <View style={[s.metaTag, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20' }]}>
-              <Ionicons name="star" size={12} color={CultureTokens.indigo} />
-              <Text style={[TextStyles.caption, { color: CultureTokens.indigo, fontWeight: '700' }]}>Plus</Text>
-            </View>
-          )}
-          {!!perk.usageLimit && (
-            <View style={[s.metaTag, { backgroundColor: CultureTokens.teal + '10', borderColor: CultureTokens.teal + '20' }]}>
-              <Text style={[TextStyles.caption, { color: CultureTokens.teal, fontWeight: '700' }]}>{perk.usageLimit - (perk.usedCount ?? 0)} left</Text>
-            </View>
-          )}
-          {perk.endDate && (
-            <View style={[s.metaTag, { backgroundColor: CultureTokens.coral + '10', borderColor: CultureTokens.coral + '20' }]}>
-              <Text style={[TextStyles.caption, { color: CultureTokens.coral, fontWeight: '700' }]}>
-                Ends {new Date(perk.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {!!perk.usageLimit && (
-          <View style={s.progressWrap}>
-            <View style={[s.progressBar, { backgroundColor: colors.backgroundSecondary }]}>
-              <View style={[s.progressFill, { width: `${usagePct}%`, backgroundColor: usagePct > 85 ? CultureTokens.coral : CultureTokens.teal }]} />
-            </View>
-            <Text style={[s.progressText, { color: colors.textTertiary }]}>{usagePct}% claimed</Text>
-          </View>
-        )}
-
-        <Button
-          onPress={onRedeem}
-          disabled={exhausted || isPending}
-          variant={needsUpgrade ? 'outline' : 'primary'}
-          size="md"
-          loading={isPending}
-          leftIcon={redeemable ? 'gift' : (needsUpgrade ? 'star' : 'lock-closed')}
-          style={[
-            exhausted && { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-            needsUpgrade && { borderColor: CultureTokens.indigo + '40' },
-            redeemable && { backgroundColor: typeColor }
-          ]}
-        >
-          {exhausted ? 'Fully Claimed' : needsUpgrade ? 'Upgrade to CulturePass+' : 'Claim Reward'}
-        </Button>
-      </View>
-    </Card>
-  );
-}
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
-  
+
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, height: isWeb ? 72 : 110, paddingBottom: 10, justifyContent: 'flex-end', overflow: 'hidden' },
   topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: colors.borderLight },
   

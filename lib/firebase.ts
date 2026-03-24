@@ -22,6 +22,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { Platform } from 'react-native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -81,6 +82,7 @@ export const auth = (() => {
 
 export const db = getFirestore(firebaseApp);
 export const storage = getStorage(firebaseApp);
+export const functions = getFunctions(firebaseApp, 'us-central1');
 
 let emulatorsConnected = false;
 
@@ -97,6 +99,10 @@ if (__DEV__ && shouldUseFirebaseEmulators() && !emulatorsConnected) {
 
   try {
     connectStorageEmulator(storage, host, 9199);
+  } catch {}
+
+  try {
+    connectFunctionsEmulator(functions, host, 5001);
   } catch {}
 
   emulatorsConnected = true;

@@ -94,6 +94,17 @@ function EventCardInner({ event, isLive }: EventCardProps) {
                   <Text style={[styles.categoryText, { color: CultureTokens.saffron }]}>{event.category}</Text>
                 </View>
               ) : null}
+              {Array.from(new Set([...(event.cultureTags || []), ...(event.cultureTag || [])])).slice(0, 1).map((tag, idx) => (
+                <View key={`culture-${idx}`} style={styles.richTagPill}>
+                  <Text style={styles.richTagText}>{tag}</Text>
+                </View>
+              ))}
+              {(event.accessibility || []).slice(0, 1).map((tag, idx) => (
+                <View key={`acc-${idx}`} style={[styles.richTagPill, { borderColor: CultureTokens.coral + '60' }]}>
+                  <Ionicons name="body-outline" size={10} color={CultureTokens.coral} style={{ marginRight: 2 }} />
+                  <Text style={[styles.richTagText, { color: CultureTokens.coral }]}>{tag}</Text>
+                </View>
+              ))}
               {priceDisplay ? (
                 <Text style={styles.price}>{priceDisplay}</Text>
               ) : null}
@@ -233,6 +244,21 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   categoryText: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 11,
+  },
+  richTagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(150,150,150,0.3)',
+  },
+  richTagText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 10,
+    color: '#888',
   },
   price: {
     fontFamily: 'Poppins_700Bold',
