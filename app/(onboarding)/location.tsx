@@ -271,7 +271,7 @@ export default function LocationScreen() {
                             size={18}
                             color={isActive ? colors.textInverse : colors.textSecondary}
                           />
-                          <Text style={[styles.cityName, { color: isActive ? colors.textInverse : colors.textInverse }]}>
+                          <Text style={[styles.cityName, { color: isActive ? colors.textInverse : colors.text }]}>
                             {city}
                           </Text>
                           {isActive && (
