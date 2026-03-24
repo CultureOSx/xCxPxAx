@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   Pressable,
+  Modal,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, {
@@ -18,6 +19,10 @@ import Animated, {
   interpolate,
   useAnimatedScrollHandler,
   FadeInDown,
+  FadeIn,
+  SlideInUp,
+  SlideInDown,
+  FadeInLeft,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +30,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { BlurView } from 'expo-blur';
 
 import { CultureTokens, EntityTypeColors, shadows } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
@@ -37,7 +43,7 @@ import { Button } from '@/components/ui/Button';
 
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { NATIONALITIES } from '@/constants/cultures';
+import { NATIONALITIES, DIASPORA_GROUPS } from '@/constants/cultures';
 import type { Profile } from '@/shared/schema';
 
 // ─── Constants & Types ────────────────────────────────────────────────────────
@@ -54,29 +60,215 @@ const CATEGORIES = [
 ];
 
 const CULTURE_COLORS: Record<string, string> = {
-  indian: '#FF9933', // Saffron
-  korean: '#CD2E3A', // Korean Red
-  chinese: '#EE1C25', // China Red
-  nigerian: '#008751', // Nigerian Green
-  mexican: '#006341', // Mexican Green
-  brazilian: '#009739', // Brazil Green
-  japanese: '#BC002D', // Japan Red
-  greek: '#005BAE', // Greek Blue
-  italian: '#008C45', // Italian Green
+  indian: '#FF9933', korean: '#CD2E3A', chinese: '#EE1C25',
+  nigerian: '#008751', mexican: '#006341', brazilian: '#009739',
+  japanese: '#BC002D', greek: '#005BAE', italian: '#008C45',
 };
 
-// ─── Components ───────────────────────────────────────────────────────────────
+// ─── Global Cultural Identity Graph (Diaspora Map) ────────────────────────────
 
-function CommunityGridCard({ item, colors, onPress }: { item: Profile, colors: any, onPress: () => void }) {
+function CulturalIdentityGraph({ colors }: { colors: any }) {
+  return (
+    <View style={graphStyles.container}>
+      <Text style={[graphStyles.title, { color: colors.text }]}>Global Cultural Hub</Text>
+      <Text style={[graphStyles.subtitle, { color: colors.textSecondary }]}>Mapping connections between diaspora communities</Text>
+      
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={graphStyles.scroll}>
+        {Object.values(DIASPORA_GROUPS).map((group, idx) => (
+          <Animated.View 
+            key={group.id} 
+            entering={FadeInLeft.delay(idx * 100).springify()}
+            style={graphStyles.nodeColumn}
+          >
+            <TouchableOpacity activeOpacity={0.8} style={[graphStyles.hubNode, { backgroundColor: colors.surface }]}>
+              <LinearGradient 
+                colors={[CultureTokens.indigo, CultureTokens.saffron]} 
+                style={graphStyles.nodeIconWrap}
+              >
+                <Text style={graphStyles.nodeEmoji}>{group.emoji}</Text>
+              </LinearGradient>
+              <Text style={[graphStyles.nodeLabel, { color: colors.text }]}>{group.label}</Text>
+              <View style={graphStyles.connectionDots}>
+                <View style={[graphStyles.dot, { backgroundColor: CultureTokens.indigo }]} />
+                <View style={[graphStyles.dot, { backgroundColor: CultureTokens.saffron }]} />
+                <View style={[graphStyles.dot, { backgroundColor: CultureTokens.teal }]} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={graphStyles.leafContainer}>
+              {group.nationalityIds.slice(0, 3).map((natId) => {
+                const nat = NATIONALITIES[natId];
+                if (!nat) return null;
+                return (
+                  <View key={natId} style={[graphStyles.leafNode, { backgroundColor: colors.surface }]}>
+                    <Text style={graphStyles.leafEmoji}>{nat.emoji}</Text>
+                    <Text style={[graphStyles.leafLabel, { color: colors.textSecondary }]}>{nat.label}</Text>
+                  </View>
+                );
+              })}
+              {group.nationalityIds.length > 3 && (
+                <View style={[graphStyles.leafNode, { backgroundColor: colors.surface }]}>
+                  <Text style={[graphStyles.leafLabel, { color: colors.textTertiary }]}>+{group.nationalityIds.length - 3} more</Text>
+                </View>
+              )}
+            </View>
+          </Animated.View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+const graphStyles = StyleSheet.create({
+  container: { marginTop: 32, paddingBottom: 16 },
+  title: { fontSize: 22, fontFamily: 'Poppins_700Bold', paddingHorizontal: 24 },
+  subtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular', paddingHorizontal: 24, marginTop: 4, opacity: 0.8 },
+  scroll: { paddingHorizontal: 16, paddingTop: 20, gap: 16 },
+  nodeColumn: { alignItems: 'center', gap: 12 },
+  hubNode: { width: 140, padding: 16, borderRadius: 28, alignItems: 'center', ...shadows.medium },
+  nodeIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  nodeEmoji: { fontSize: 24 },
+  nodeLabel: { fontSize: 13, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
+  connectionDots: { flexDirection: 'row', gap: 4, marginTop: 8 },
+  dot: { width: 4, height: 4, borderRadius: 2 },
+  leafContainer: { gap: 6, width: 140 },
+  leafNode: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: 12, ...shadows.small },
+  leafEmoji: { fontSize: 14 },
+  leafLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+});
+
+// ─── Community Preview Drawer ─────────────────────────────────────────────────
+
+function CommunityPreviewDrawer({ 
+  profile, 
+  onClose, 
+  colors 
+}: { 
+  profile: Profile | null; 
+  onClose: () => void; 
+  colors: any 
+}) {
+  const insets = useSafeAreaInsets();
+  if (!profile) return null;
+
+  const accentColor = CULTURE_COLORS[profile.nationalityId || ''] || CultureTokens.indigo;
+
+  return (
+    <Modal visible={!!profile} transparent animationType="none" onRequestClose={onClose}>
+      <View style={drawerStyles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        </Pressable>
+
+        <Animated.View 
+          entering={SlideInDown.springify().damping(22)}
+          style={[drawerStyles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 }]}
+        >
+          <View style={drawerStyles.handle} />
+          
+          <View style={drawerStyles.coverWrap}>
+            <Image
+              source={{ uri: profile.imageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=800' }}
+              style={drawerStyles.cover}
+              contentFit="cover"
+            />
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={StyleSheet.absoluteFill} />
+            <TouchableOpacity style={drawerStyles.closeBtn} onPress={onClose}>
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={drawerStyles.content}>
+            <View style={drawerStyles.header}>
+              <View style={drawerStyles.titleRow}>
+                <Text style={[drawerStyles.name, { color: colors.text }]}>{profile.name}</Text>
+                {profile.isVerified && <Ionicons name="checkmark-circle" size={20} color={CultureTokens.indigo} />}
+              </View>
+              <Text style={[drawerStyles.sub, { color: colors.textSecondary }]}>
+                {profile.category || 'Cultural Group'} • {profile.city || 'Australia'}
+              </Text>
+            </View>
+
+            <View style={drawerStyles.statsRow}>
+              <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
+                <Text style={[drawerStyles.statVal, { color: colors.text }]}>{profile.membersCount || 0}</Text>
+                <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Members</Text>
+              </View>
+              <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
+                <Text style={[drawerStyles.statVal, { color: colors.text }]}>12</Text>
+                <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Events</Text>
+              </View>
+              <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
+                <Text style={[drawerStyles.statVal, { color: colors.text }]}>94%</Text>
+                <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Active</Text>
+              </View>
+            </View>
+
+            <Text style={[drawerStyles.desc, { color: colors.textSecondary }]} numberOfLines={3}>
+              {profile.description || `${profile.name} is a vibrant community group based in ${profile.city || 'Australia'}. Join us to celebrate our traditions, share stories, and connect with fellow members.`}
+            </Text>
+
+            <View style={drawerStyles.actions}>
+              <Button 
+                style={[drawerStyles.joinBtn, { backgroundColor: accentColor }]}
+                onPress={() => {
+                  onClose();
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }}
+              >
+                <Text style={drawerStyles.btnText}>Join Community</Text>
+              </Button>
+              <TouchableOpacity 
+                style={[drawerStyles.profileBtn, { borderColor: colors.borderLight }]}
+                onPress={() => {
+                  onClose();
+                  router.push({ pathname: '/community/[id]', params: { id: profile.id } });
+                }}
+              >
+                <Text style={[drawerStyles.profileBtnText, { color: colors.text }]}>View Full Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+const drawerStyles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden', ...shadows.large },
+  handle: { width: 40, height: 4, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
+  coverWrap: { height: 180, position: 'relative' },
+  cover: { width: '100%', height: '100%' },
+  closeBtn: { position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 24 },
+  header: { marginBottom: 20 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  name: { fontSize: 24, fontFamily: 'Poppins_700Bold' },
+  sub: { fontSize: 13, fontFamily: 'Poppins_500Medium', marginTop: 2 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  statBox: { flex: 1, padding: 12, borderRadius: 16, alignItems: 'center' },
+  statVal: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  statLab: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  desc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 24 },
+  actions: { gap: 12 },
+  joinBtn: { height: 56, borderRadius: 16, justifyContent: 'center' },
+  btnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 16 },
+  profileBtn: { height: 56, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  profileBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 16 },
+});
+
+// ─── Sub-Components ───────────────────────────────────────────────────────────
+
+function CommunityGridCard({ item, colors, onPreview }: { item: Profile, colors: any, onPreview: (p: Profile) => void }) {
   const accentColor = CULTURE_COLORS[item.nationalityId || ''] || CultureTokens.indigo;
   
   return (
     <Animated.View entering={FadeInDown.springify().damping(20)} style={styles.cardWrapper}>
-      <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => onPreview(item)}>
         <Card padding={0} style={styles.communityCard}>
-          {/* Left Accent Bar */}
           <View style={[styles.cardAccent, { backgroundColor: accentColor }]} />
-          
           <View style={styles.cardContent}>
             <View style={styles.cardTop}>
               <View style={styles.avatarWrap}>
@@ -91,7 +283,6 @@ function CommunityGridCard({ item, colors, onPress }: { item: Profile, colors: a
                   </View>
                 )}
               </View>
-              
               <View style={styles.cardText}>
                 <Text numberOfLines={1} style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
                 <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
@@ -99,26 +290,24 @@ function CommunityGridCard({ item, colors, onPress }: { item: Profile, colors: a
                 </Text>
               </View>
             </View>
-
             <View style={styles.cardStats}>
               <View style={styles.statItem}>
                 <Ionicons name="people" size={14} color={colors.textTertiary} />
                 <Text style={[styles.statText, { color: colors.textTertiary }]}>{item.membersCount || 0} members</Text>
               </View>
-              {(item as any).recentActivity && (
+              {(item as any).isTrending && (
                 <View style={[styles.activityPulse, { backgroundColor: accentColor + '15' }]}>
                   <Text style={[styles.activityText, { color: accentColor }]}>🔥 Trending</Text>
                 </View>
               )}
             </View>
-
             <Button
-              onPress={onPress}
+              onPress={() => onPreview(item)}
               variant="outline"
               size="sm"
               style={styles.joinBtn}
             >
-              <Text style={{ color: colors.text, fontFamily: 'Poppins_600SemiBold', fontSize: 12 }}>Join Community</Text>
+              <Text style={{ color: colors.text, fontFamily: 'Poppins_600SemiBold', fontSize: 12 }}>Quick Preview</Text>
             </Button>
           </View>
         </Card>
@@ -132,11 +321,12 @@ function CommunityGridCard({ item, colors, onPress }: { item: Profile, colors: a
 export default function CommunitiesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { width, isDesktop, isTablet } = useLayout();
-  const { state: onboardingState } = onboardingStateContext(); // Custom hook might vary, using what's available
+  const { isDesktop, isTablet } = useLayout();
+  const { state: onboardingState } = useOnboarding();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedPreview, setSelectedPreview] = useState<Profile | null>(null);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -148,8 +338,7 @@ export default function CommunitiesScreen() {
     transform: [{ scale: interpolate(scrollY.value, [-100, 0, 300], [1.1, 1, 0.9], 'clamp') }],
   }));
 
-  // Queries
-  const { data: profilesRaw, isLoading } = useQuery({
+  const { data: profilesRaw } = useQuery({
     queryKey: ['/api/profiles', onboardingState?.city, selectedCategory],
     queryFn: () => api.profiles.list({ city: onboardingState?.city }),
   });
@@ -157,7 +346,10 @@ export default function CommunitiesScreen() {
   const communities = useMemo(() => {
     const raw = (profilesRaw as any) || [];
     const base = Array.isArray(raw) ? raw : (raw.profiles || []);
-    return base.filter((p: any) => p.entityType === 'community');
+    return base.filter((p: any) => p.entityType === 'community').map((p: any, i: number) => ({
+      ...p,
+      isTrending: i % 4 === 0, // Mocking trending
+    }));
   }, [profilesRaw]);
 
   const filteredCommunities = useMemo(() => {
@@ -171,7 +363,6 @@ export default function CommunitiesScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* 1. Cultural Hero Section */}
       <View style={styles.heroWrapper}>
         <Animated.View style={[styles.heroContainer, heroStyle]}>
           <Image
@@ -179,38 +370,23 @@ export default function CommunitiesScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']}
-            style={styles.heroOverlay}
-          >
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']} style={styles.heroOverlay}>
             <View style={styles.heroStats}>
-              <View style={styles.statPill}>
-                <Text style={styles.statValue}>12.5k</Text>
-                <Text style={styles.statLabel}>Communities</Text>
-              </View>
+              <View style={styles.statPill}><Text style={styles.statValue}>12.5k</Text><Text style={styles.statLabel}>Communities</Text></View>
               <View style={styles.statDivider} />
-              <View style={styles.statPill}>
-                <Text style={styles.statValue}>2.4M</Text>
-                <Text style={styles.statLabel}>Members</Text>
-              </View>
+              <View style={styles.statPill}><Text style={styles.statValue}>2.4M</Text><Text style={styles.statLabel}>Members</Text></View>
             </View>
             <Text style={styles.heroTitle}>Discover Communities Around Your Culture</Text>
             <Text style={styles.heroSubtitle}>Join diaspora networks and local groups celebrating traditions worldwide.</Text>
-            
             <View style={styles.heroActions}>
-              <Button size="lg" style={styles.heroPrimaryBtn}>
-                <Text style={styles.btnText}>Create Community</Text>
-              </Button>
-              <TouchableOpacity style={styles.heroSecondaryBtn}>
-                <Text style={styles.secondaryBtnText}>Explore by Culture</Text>
-              </TouchableOpacity>
+              <Button size="lg" style={styles.heroPrimaryBtn}><Text style={styles.btnTextHeader}>Create Community</Text></Button>
+              <TouchableOpacity style={styles.heroSecondaryBtn}><Text style={styles.secondaryBtnText}>Explore by Culture</Text></TouchableOpacity>
             </View>
           </LinearGradient>
         </Animated.View>
       </View>
 
       <View style={{ backgroundColor: colors.background }}>
-        {/* 2. Overlapping Search Bar */}
         <View style={styles.searchSection}>
           <View style={[styles.searchBar, { backgroundColor: colors.surface, shadowColor: colors.text }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
@@ -224,7 +400,9 @@ export default function CommunitiesScreen() {
           </View>
         </View>
 
-        {/* 3. Cultural Discovery Rail */}
+        {/* CULTURAL IDENTITY GRAPH */}
+        <CulturalIdentityGraph colors={colors} />
+
         <View style={styles.railSection}>
           <Text style={[styles.railTitle, { color: colors.text }]}>Browse by Culture</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railScroll}>
@@ -240,24 +418,13 @@ export default function CommunitiesScreen() {
           </ScrollView>
         </View>
 
-        {/* Filter Chips */}
         <View style={styles.chipsSection}>
-          <FilterChipRow
-            items={CATEGORIES as any}
-            selectedId={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
+          <FilterChipRow items={CATEGORIES as any} selectedId={selectedCategory} onSelect={setSelectedCategory} />
         </View>
 
-        {/* Sorting & Header */}
         <View style={styles.listHeader}>
-          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {filteredCommunities.length} Communities Found
-          </Text>
-          <TouchableOpacity style={styles.sortBtn}>
-            <Text style={[styles.sortText, { color: colors.textSecondary }]}>Most Active</Text>
-            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>{filteredCommunities.length} Communities Found</Text>
+          <TouchableOpacity style={styles.sortBtn}><Text style={[styles.sortText, { color: colors.textSecondary }]}>Most Active</Text><Ionicons name="chevron-down" size={14} color={colors.textSecondary} /></TouchableOpacity>
         </View>
       </View>
     </View>
@@ -274,7 +441,10 @@ export default function CommunitiesScreen() {
             <CommunityGridCard
               item={item}
               colors={colors}
-              onPress={() => router.push({ pathname: '/community/[id]', params: { id: item.id } })}
+              onPreview={(p) => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setSelectedPreview(p);
+              }}
             />
           )}
           ListHeaderComponent={renderHeader}
@@ -283,109 +453,56 @@ export default function CommunitiesScreen() {
           estimatedItemSize={180}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         />
+        
+        <CommunityPreviewDrawer
+          profile={selectedPreview}
+          onClose={() => setSelectedPreview(null)}
+          colors={colors}
+        />
       </ErrorBoundary>
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-function onboardingStateContext() {
-  const { state } = useOnboarding();
-  return state;
-}
-
 const styles = StyleSheet.create({
   heroWrapper: { height: 440, overflow: 'hidden' },
   heroContainer: { height: 440 },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    padding: 32,
-    justifyContent: 'flex-end',
-  },
-  heroStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 99,
-  },
+  heroOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', padding: 32, justifyContent: 'flex-end' },
+  heroStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99 },
   statPill: { alignItems: 'center' },
   statValue: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
   statLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium', color: '#fff', opacity: 0.8 },
-  statDivider: { width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.3)', mx: 12, marginHorizontal: 12 },
+  statDivider: { width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 12 },
   heroTitle: { fontSize: 36, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 42, letterSpacing: -1 },
   heroSubtitle: { fontSize: 16, fontFamily: 'Poppins_400Regular', color: '#fff', marginTop: 12, opacity: 0.9, lineHeight: 22 },
   heroActions: { flexDirection: 'row', gap: 12, marginTop: 28 },
   heroPrimaryBtn: { backgroundColor: CultureTokens.indigo, borderRadius: 16, paddingHorizontal: 24 },
-  btnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 15 },
+  btnTextHeader: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 15 },
   heroSecondaryBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, justifyContent: 'center' },
   secondaryBtnText: { color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
-
   searchSection: { marginTop: -32, paddingHorizontal: 20, zIndex: 10 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    ...shadows.large,
-  },
+  searchBar: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, ...shadows.large },
   searchInput: { flex: 1, marginLeft: 12, fontSize: 16, fontFamily: 'Poppins_400Regular' },
-
   railSection: { marginTop: 32 },
   railTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', paddingHorizontal: 24, marginBottom: 16 },
   railScroll: { paddingHorizontal: 20, gap: 12 },
-  cultureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    paddingRight: 24,
-    borderRadius: 18,
-    gap: 14,
-    ...shadows.small,
-  },
+  cultureCard: { flexDirection: 'row', alignItems: 'center', padding: 14, paddingRight: 24, borderRadius: 18, gap: 14, ...shadows.small },
   cultureEmoji: { fontSize: 28 },
   cultureName: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
   cultureCount: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-
   chipsSection: { marginTop: 24, paddingHorizontal: 4 },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginTop: 24, marginBottom: 12 },
   resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sortText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-
   cardWrapper: { padding: 12, paddingHorizontal: 20 },
-  communityCard: {
-    borderRadius: 24,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    ...shadows.medium,
-  },
+  communityCard: { borderRadius: 24, flexDirection: 'row', overflow: 'hidden', ...shadows.medium },
   cardAccent: { width: 6 },
   cardContent: { flex: 1, padding: 16 },
   cardTop: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   avatarWrap: { width: 48, height: 48, position: 'relative' },
   avatar: { width: 48, height: 48, borderRadius: 16 },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: CultureTokens.indigo,
-    borderWidth: 2,
-    borderColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  verifiedBadge: { position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, borderRadius: 8, backgroundColor: CultureTokens.indigo, borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   cardText: { flex: 1 },
   cardTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
   cardSub: { fontSize: 13, fontFamily: 'Poppins_400Regular' },

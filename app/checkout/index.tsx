@@ -1,18 +1,30 @@
-import { View, Text, StyleSheet, ScrollView, Platform, Alert, Pressable } from 'react-native';
+// app/checkout/index.tsx
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Platform, 
+  Alert, 
+  Pressable, 
+  TextInput 
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens, BorderTokens } from '@/constants/theme';
+import { CultureTokens, BorderTokens, shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 import { useAuth } from '@/lib/auth';
+import { BlurView } from 'expo-blur';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 const isWeb = Platform.OS === 'web';
 
@@ -39,7 +51,7 @@ export default function CheckoutPage() {
   });
 
   const totalPriceCents = discountApplied 
-    ? Math.max(0, (basePriceCents * quantity) - 500) // fake $5 off
+    ? Math.max(0, (basePriceCents * quantity) - 500) 
     : basePriceCents * quantity;
 
   const handleApplyPromo = () => {
@@ -47,9 +59,8 @@ export default function CheckoutPage() {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (promoCode.toLowerCase() === 'culture5') {
       setDiscountApplied(true);
-      Alert.alert('Promo Applied', '$5 discount applied to your order.');
     } else {
-      Alert.alert('Invalid Promo', 'This promo code does not exist or has expired.');
+      Alert.alert('Invalid', 'Promo code not found.');
     }
   };
 
@@ -58,198 +69,163 @@ export default function CheckoutPage() {
       Alert.alert('Login Required', 'You must be signed in to purchase tickets.');
       return;
     }
-    
     setLoading(true);
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       if (totalPriceCents === 0) {
-        // Free ticket directly
-        await api.tickets.purchase({
-          eventId,
-          tierId: tierName,
-          quantity,
-        });
-        Alert.alert('Success', 'Your ticket has been reserved!', [
-          { text: 'View Tickets', onPress: () => router.replace('/(tabs)') } // temp
-        ]);
+        await api.tickets.purchase({ eventId, tierId: tierName, quantity });
+        router.replace('/(tabs)');
         return;
       }
-      
-      // Real checkout logic with Stripe integration
       const session = await api.stripe.createCheckoutSession({
-        eventId,
-        eventTitle: event?.title,
-        eventDate: event?.date,
-        tierName,
-        quantity,
-        totalPriceCents,
-        currency: 'AUD',
+        eventId, eventTitle: event?.title, eventDate: event?.date,
+        tierName, quantity, totalPriceCents, currency: 'AUD',
       });
-
       if (session.checkoutUrl) {
-        if (isWeb) {
-          window.location.href = session.checkoutUrl;
-        } else {
-          // Native deep link redirect or open in webview (expo-web-browser)
-          router.replace(session.checkoutUrl as never);
-        }
-      } else {
-        Alert.alert('Checkout Flow Error', 'Backend did not return a valid Stripe session.');
+        if (isWeb) window.location.href = session.checkoutUrl;
+        else router.replace(session.checkoutUrl as never);
       }
     } catch (error) {
-      Alert.alert('Purchase Failed', error instanceof Error ? error.message : 'Unknown error');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
   };
 
-  const s = getStyles(colors);
-
-  if (eventLoading) {
-    return (
-      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: colors.text }}>Loading Checkout...</Text>
-      </View>
-    );
-  }
+  if (eventLoading) return null;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={[TextStyles.headline, { color: colors.text }]}>Checkout</Text>
-        <View style={{ width: 44 }} />
-      </View>
+    <View style={styles.screen}>
+      {/* Background Overlay */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+      </Pressable>
 
-      <ScrollView contentContainerStyle={s.content}>
-        <Text style={[TextStyles.title2, { color: colors.text, marginBottom: 16 }]}>Order Summary</Text>
+      <Animated.View 
+        entering={SlideInDown.springify().damping(20)}
+        style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 }]}
+      >
+        <View style={styles.handle} />
         
-        <Card glass={!isDark} padding={20} style={s.summaryCard}>
-          <Text style={[TextStyles.headline, { color: colors.text }]}>{event?.title || 'Unknown Event'}</Text>
-          <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, marginTop: 4 }]}>
-            {event?.date} • {event?.venue}
-          </Text>
-          <View style={s.divider} />
-          
-          <View style={s.row}>
-            <Text style={[TextStyles.body, { color: colors.textSecondary }]}>Ticket Type</Text>
-            <Text style={[TextStyles.headline, { color: colors.text }]}>{tierName}</Text>
-          </View>
-          <View style={[s.row, { marginTop: 8 }]}>
-            <Text style={[TextStyles.body, { color: colors.textSecondary }]}>Quantity</Text>
-            <Text style={[TextStyles.headline, { color: colors.text }]}>{quantity}</Text>
-          </View>
-          <View style={[s.row, { marginTop: 8 }]}>
-            <Text style={[TextStyles.body, { color: colors.textSecondary }]}>Price</Text>
-            <Text style={[TextStyles.headline, { color: colors.text }]}>
-              {basePriceCents === 0 ? 'Free' : `$${(basePriceCents / 100).toFixed(2)}`}
-            </Text>
-          </View>
-        </Card>
-
-        {basePriceCents > 0 && (
-          <View style={s.promoSection}>
-            <Text style={[TextStyles.headline, { color: colors.text, marginBottom: 8 }]}>Promo Code</Text>
-            {/* Promo input field mocked since we don't have TextInput imported rn to keep minimal */}
-            <View style={s.promoInputMock}>
-              <Text style={{ color: colors.textSecondary }}>Enter CULTURE5</Text>
-              <Button size="sm" variant="outline" onPress={handleApplyPromo}>Apply</Button>
-            </View>
-          </View>
-        )}
-
-        <View style={s.totalSection}>
-          <View style={s.row}>
-            <Text style={[TextStyles.title2, { color: colors.text }]}>Total</Text>
-            <Text style={[TextStyles.title2, { color: CultureTokens.saffron }]}>
-              {totalPriceCents === 0 ? 'Free' : `$${(totalPriceCents / 100).toFixed(2)}`}
-            </Text>
-          </View>
-          {discountApplied && (
-            <Text style={[TextStyles.captionSemibold, { color: CultureTokens.teal, textAlign: 'right', marginTop: 4 }]}>
-              -$5.00 discount applied
-            </Text>
-          )}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Confirm Order</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+            <Ionicons name="close" size={24} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
-        <Button 
-          variant="gradient" 
-          size="lg" 
-          fullWidth 
-          loading={loading}
-          onPress={handleCheckout}
-          style={{ marginTop: 24 }}
-        >
-          {totalPriceCents === 0 ? 'Confirm Free Order' : `Pay $${(totalPriceCents / 100).toFixed(2)}`}
-        </Button>
-      </ScrollView>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Progress Indicator */}
+          <View style={styles.steps}>
+            <View style={[styles.stepDot, { backgroundColor: CultureTokens.indigo }]} />
+            <View style={styles.stepLine} />
+            <View style={[styles.stepDot, { backgroundColor: CultureTokens.indigo }]} />
+            <View style={styles.stepLine} />
+            <View style={[styles.stepDot, { backgroundColor: colors.borderLight }]} />
+          </View>
+
+          <View style={styles.eventInfo}>
+            <Image 
+              source={{ uri: event?.heroImageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' }} 
+              style={styles.eventThumb}
+              contentFit="cover"
+            />
+            <View style={styles.eventText}>
+              <Text style={[styles.eventTitle, { color: colors.text }]}>{event?.title}</Text>
+              <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>{event?.date} • {event?.venue}</Text>
+            </View>
+          </View>
+
+          <Card glass={!isDark} padding={20} style={styles.summaryCard}>
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Ticket</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{tierName}</Text>
+            </View>
+            <View style={[styles.row, { marginTop: 12 }]}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Quantity</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{quantity}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Subtotal</Text>
+              <Text style={[styles.value, { color: colors.text }]}>${(basePriceCents * quantity / 100).toFixed(2)}</Text>
+            </View>
+          </Card>
+
+          <View style={styles.promoWrap}>
+            <TextInput
+              style={[styles.promoInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }]}
+              placeholder="Promo Code"
+              placeholderTextColor={colors.textTertiary}
+              value={promoCode}
+              onChangeText={setPromoCode}
+            />
+            <Button size="sm" variant="outline" onPress={handleApplyPromo} style={styles.promoBtn}>Apply</Button>
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.row}>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
+              <Text style={[styles.totalValue, { color: CultureTokens.saffron }]}>
+                {totalPriceCents === 0 ? 'Free' : `$${(totalPriceCents / 100).toFixed(2)}`}
+              </Text>
+            </View>
+            {discountApplied && (
+              <Text style={styles.discountTag}>-$5.00 Culture Loyalty Applied</Text>
+            )}
+
+            <Button 
+              variant="gradient" 
+              size="lg" 
+              fullWidth 
+              loading={loading}
+              onPress={handleCheckout}
+              style={styles.payBtn}
+            >
+              <Text style={styles.payBtnText}>
+                {totalPriceCents === 0 ? 'Complete Order' : 'Checkout & Pay'}
+              </Text>
+            </Button>
+            <Text style={[styles.secureText, { color: colors.textTertiary }]}>
+              <Ionicons name="lock-closed" size={10} /> Secure checkout powered by Stripe
+            </Text>
+          </View>
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  backBtn: {
-    width: 44, height: 44,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  content: {
-    padding: 20,
-  },
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.borderLight,
-    borderWidth: 1,
-    borderRadius: 20,
-    shadowColor: 'black',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderLight,
-    marginVertical: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  promoSection: {
-    marginTop: 32,
-  },
-  promoInputMock: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 16,
-    paddingLeft: 16,
-    paddingRight: 8,
-    paddingVertical: 8,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  totalSection: {
-    marginTop: 32,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderColor: colors.borderLight,
-  },
+const styles = StyleSheet.create({
+  screen: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 36, borderTopRightRadius: 36, height: '85%', overflow: 'hidden', ...shadows.large },
+  handle: { width: 44, height: 5, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 3, alignSelf: 'center', marginTop: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingBottom: 16 },
+  headerTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold' },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 24, paddingTop: 0 },
+  steps: { flexDirection: 'row', alignItems: 'center', marginBottom: 28, alignSelf: 'center' },
+  stepDot: { width: 8, height: 8, borderRadius: 4 },
+  stepLine: { width: 32, height: 2, backgroundColor: 'rgba(0,0,0,0.05)', marginHorizontal: 8 },
+  eventInfo: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  eventThumb: { width: 80, height: 80, borderRadius: 16 },
+  eventText: { flex: 1, justifyContent: 'center' },
+  eventTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  eventMeta: { fontSize: 13, fontFamily: 'Poppins_500Medium', marginTop: 4 },
+  summaryCard: { borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.02)' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  label: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  value: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 16 },
+  promoWrap: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  promoInput: { flex: 1, height: 52, borderRadius: 16, border坚Width: 1, borderWidth: 1, paddingHorizontal: 16, fontFamily: 'Poppins_500Medium' },
+  promoBtn: { borderRadius: 12 },
+  footer: { marginTop: 32 },
+  totalLabel: { fontSize: 28, fontFamily: 'Poppins_700Bold' },
+  totalValue: { fontSize: 28, fontFamily: 'Poppins_800ExtraBold' },
+  discountTag: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.teal, marginTop: 4 },
+  payBtn: { marginTop: 24, height: 60, borderRadius: 20 },
+  payBtnText: { color: '#fff', fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  secureText: { textAlign: 'center', marginTop: 16, fontSize: 11, fontFamily: 'Poppins_600SemiBold', opacity: 0.6 },
 });
