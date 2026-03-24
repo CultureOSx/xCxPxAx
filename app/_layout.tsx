@@ -7,6 +7,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
 import React, { useCallback, useEffect, useRef } from "react";
+import { Ionicons } from '@expo/vector-icons';
 import {
   Platform,
   View,
@@ -14,7 +15,7 @@ import {
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient, queryPersister } from "@/lib/query-client";
@@ -317,7 +318,6 @@ function WebShell({ children }: { children: React.ReactNode }) {
 //       └── DataSync    (syncs auth user → onboarding state)
 //       └── SavedProvider / ContactsProvider / ...
 // ---------------------------------------------------------------------------
-import { Ionicons } from '@expo/vector-icons';
 
 function RootLayoutContent() {
   const [fontsLoaded, fontError] = useFonts({

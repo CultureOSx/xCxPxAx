@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { EventData } from '@/shared/schema';
+import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
 
 // Helper function that resolves the parameters into the api call
 const fetchEvents = async (city: string, filters: string[], pageParam: number) => {
@@ -20,20 +20,14 @@ const fetchEvents = async (city: string, filters: string[], pageParam: number) =
  * Utilizes caching, infinite loading, and optimistic updates.
  */
 export const useEvents = (city: string, filters: string[] = []) => {
-  const queryFn = async ({ pageParam = 0 }) => {
-    return await fetchEvents(city, filters, pageParam);
-  };
-
-  return useInfiniteQuery({
+  return useInfiniteQuery<PaginatedEventsResponse>({
     queryKey: ['events', { city, filters }],
-    queryFn,
-    getNextPageParam: (lastPage: any, allPages: any) => {
-      // Assuming paginated events return a hasNextPage boolean and page number
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => fetchEvents(city, filters, pageParam as number),
+    getNextPageParam: (lastPage) => {
       if (lastPage.hasNextPage) return lastPage.page + 1;
       return undefined;
     },
-    // keepPreviousData is removed in Tanstack V5 in favor of placeholderData
-    // Check your tanstack version, but here placeholderData works similarly
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 };

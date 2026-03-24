@@ -4,6 +4,25 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { api } from './api';
 import { router } from 'expo-router';
+import type { Notification, Subscription } from 'expo-notifications';
+
+type NotificationsCompat = typeof Notifications & {
+  setNotificationChannelAsync: (
+    channelId: string,
+    channel: {
+      name: string;
+      importance: number;
+      vibrationPattern?: number[];
+      lightColor?: string;
+    }
+  ) => Promise<unknown>;
+  AndroidImportance: {
+    MAX: number;
+  };
+  addNotificationReceivedListener: (listener: (notification: Notification) => void) => Subscription;
+};
+
+const notificationsCompat = Notifications as NotificationsCompat;
 
 /**
  * Configure how the app handles notifications when it's in the foreground.
@@ -97,9 +116,9 @@ export async function registerForPushNotificationsAsync() {
   }
 
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
+    await notificationsCompat.setNotificationChannelAsync('default', {
       name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
+      importance: notificationsCompat.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
     });
@@ -112,14 +131,14 @@ export async function registerForPushNotificationsAsync() {
  * setupNotificationListeners
  */
 export function setupNotificationListeners(
-  notificationListener: { current: any },
-  responseListener: { current: any }
+  notificationListener: { current: Subscription | null },
+  responseListener: { current: Subscription | null }
 ) {
-  notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+  notificationListener.current = notificationsCompat.addNotificationReceivedListener((_notification: Notification) => {
     // console.log('Notification Received:', notification);
   });
 
-  responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+  responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
     const data = response.notification.request.content.data as NotificationData;
     handleNotificationResponse(data);
   });

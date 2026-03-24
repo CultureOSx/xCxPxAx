@@ -81,8 +81,7 @@ export default function CultureMatchScreen() {
           Which cultures do you connect with?
         </Text>
         <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, textAlign: 'center', marginTop: 12, paddingHorizontal: 20 }]}>
-          Select your heritage, languages spoken, or cultures you're passionate about. 
-          We'll personalise your feed to match.
+          {"Select your heritage, languages spoken, or cultures you're passionate about. We'll personalise your feed to match."}
         </Text>
       </View>
 

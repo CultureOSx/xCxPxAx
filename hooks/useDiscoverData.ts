@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { api, type ActivityData, type IndigenousOrganisation, type IndigenousFestival, type IndigenousBusiness } from '@/lib/api';
+import { buildFeaturedArtists, buildHeritagePlaylist } from '@/lib/discover-curation';
 import { queryClient } from '@/lib/query-client';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
-import type { EventData, Community } from '@/shared/schema';
+import type { EventData, Community, Profile } from '@/shared/schema';
 
 const isWeb = Platform.OS === 'web';
 
@@ -111,6 +112,17 @@ export function useDiscoverData() {
     queryKey: ['/api/activities', state.country, state.city],
     queryFn: () => api.activities.list({ country: state.country || undefined, city: state.city || undefined }),
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: artistProfiles = [] } = useQuery<Profile[]>({
+    queryKey: ['/api/profiles', 'artist', state.city, state.country],
+    queryFn: () => api.profiles.list({
+      entityType: 'artist',
+      city: state.city || undefined,
+      country: state.country || undefined,
+      pageSize: 8,
+    }),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: discoverFeed, isLoading: discoverLoading, refetch } = useQuery<DiscoverFeed>({
@@ -238,6 +250,16 @@ export function useDiscoverData() {
     return [...featured, ...allEvents.filter(e => !e.isFeatured)].slice(0, 5);
   }, [allEvents]);
 
+  const featuredArtists = useMemo(
+    () => buildFeaturedArtists(artistProfiles),
+    [artistProfiles],
+  );
+
+  const heritagePlaylist = useMemo(
+    () => buildHeritagePlaylist(state.cultureIds),
+    [state.cultureIds],
+  );
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
@@ -299,6 +321,8 @@ export function useDiscoverData() {
     communityRailData,
     nearbyRailData,
     activityRailData,
+    featuredArtists,
+    heritagePlaylist,
     discoverLoading,
     council,
     state,

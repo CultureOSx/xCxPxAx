@@ -91,7 +91,7 @@ export default function LocationPickerScreen() {
             Where are you located?
           </Text>
           <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, textAlign: 'center', marginTop: 12 }]}>
-            We'll use this to find cultural events, communities, and experiences nearby.
+            {"We'll use this to find cultural events, communities, and experiences nearby."}
           </Text>
         </View>
 

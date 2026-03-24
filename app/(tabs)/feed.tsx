@@ -18,7 +18,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, CardTokens, gradients, HeaderTokens } from '@/constants/theme';
+import { CultureTokens, CardTokens, gradients, HeaderTokens, shadows } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocationPicker } from '@/components/LocationPicker';

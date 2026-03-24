@@ -180,11 +180,11 @@ export default function ProfileDetailScreen() {
     return (
       <ErrorBoundary>
         <View style={[styles.container, { paddingTop: topInset, justifyContent: 'center', alignItems: 'center', padding: 40 }]}>
-           <View style={[styles.iconBtn, { width: 80, height: 80, borderRadius: 40, marginBottom: 20, backgroundColor: colors.backgroundSecondary }]}>
+           <View style={[styles.glassBtn, { width: 80, height: 80, borderRadius: 40, marginBottom: 20, backgroundColor: colors.backgroundSecondary }]}>
              <Ionicons name="lock-closed" size={32} color={colors.textTertiary} />
            </View>
            <Text style={[TextStyles.title3, { color: colors.text, textAlign: 'center' }]}>This profile is private</Text>
-           <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>Only followers can see this user's details.</Text>
+           <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>{"Only followers can see this user's details."}</Text>
            <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={[styles.backLinkBtn, { marginTop: 24 }]}>
               <Text style={styles.backLink}>Go Back</Text>
            </Pressable>
