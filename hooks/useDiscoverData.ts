@@ -1,16 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { api, type ActivityData, type IndigenousOrganisation, type IndigenousFestival, type IndigenousBusiness } from '@/lib/api';
-import { buildFeaturedArtists, buildHeritagePlaylist } from '@/lib/discover-curation';
 import { queryClient } from '@/lib/query-client';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
-import type { EventData, Community, Profile } from '@/shared/schema';
+import type { DiscoverCurationResponse, EventData, Community } from '@/shared/schema';
 
 const isWeb = Platform.OS === 'web';
 
@@ -114,13 +112,12 @@ export function useDiscoverData() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: artistProfiles = [] } = useQuery<Profile[]>({
-    queryKey: ['/api/profiles', 'artist', state.city, state.country],
-    queryFn: () => api.profiles.list({
-      entityType: 'artist',
+  const { data: discoverCuration } = useQuery<DiscoverCurationResponse>({
+    queryKey: ['/api/discover/curation', state.city, state.country, state.cultureIds ?? []],
+    queryFn: () => api.discover.curation({
       city: state.city || undefined,
       country: state.country || undefined,
-      pageSize: 8,
+      cultureIds: state.cultureIds,
     }),
     staleTime: 10 * 60 * 1000,
   });
@@ -251,13 +248,13 @@ export function useDiscoverData() {
   }, [allEvents]);
 
   const featuredArtists = useMemo(
-    () => buildFeaturedArtists(artistProfiles),
-    [artistProfiles],
+    () => discoverCuration?.featuredArtists ?? [],
+    [discoverCuration],
   );
 
   const heritagePlaylist = useMemo(
-    () => buildHeritagePlaylist(state.cultureIds),
-    [state.cultureIds],
+    () => discoverCuration?.heritagePlaylist ?? [],
+    [discoverCuration],
   );
 
   const handleRefresh = useCallback(async () => {
