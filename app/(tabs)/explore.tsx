@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  TextInput, Platform, ActivityIndicator,
+  TextInput, Platform, ActivityIndicator, Dimensions, FlatList
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -253,10 +253,8 @@ export default function ExploreScreen() {
           </View>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
-
-          {/* ── Sticky category pills ── */}
-          <View style={[s.catsWrap, { backgroundColor: colors.background }]}>
+          {/* ── Fixed category pills ── */}
+          <View style={[s.catsWrap, { backgroundColor: colors.background, paddingVertical: 10, paddingBottom: 6 }]}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -274,98 +272,100 @@ export default function ExploreScreen() {
             </ScrollView>
           </View>
 
-          {/* ── Featured section (only when query/category = all) ── */}
-          {activeId === 'all' && query === '' && featured.length > 0 && (
-            <View style={[s.section, { paddingHorizontal: hPad }]}>
-              <View style={s.sectionHeader}>
-                <View style={s.sectionDot} />
-                <Text style={[s.sectionTitle, { color: colors.text }]}>Featured</Text>
-                <View style={s.sectionFlex} />
-                <Pressable onPress={() => router.push('/events')}>
-                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
-                </Pressable>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
-              >
-                {featured.map(ev => (
-                  <ExploreEventCard key={ev.id} event={ev} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          {/* ── High-Performance Native FlatList Grid ── */}
+          <View style={{ flex: 1, paddingHorizontal: hPad }}>
+            <FlatList
+              data={filtered}
+              keyExtractor={item => item.id}
+              numColumns={gridCols}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 100 }}
+              ListHeaderComponent={
+                <>
+                  {/* ── Featured section (only when query/category = all) ── */}
+                  {activeId === 'all' && query === '' && featured.length > 0 && (
+                    <View style={s.section}>
+                      <View style={s.sectionHeader}>
+                        <View style={s.sectionDot} />
+                        <Text style={[s.sectionTitle, { color: colors.text }]}>Featured</Text>
+                        <View style={s.sectionFlex} />
+                        <Pressable onPress={() => router.push('/events')}>
+                          <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
+                        </Pressable>
+                      </View>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: 12 }}
+                      >
+                        {featured.map(ev => (
+                          <ExploreEventCard key={ev.id} event={ev} />
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
 
-          {/* ── Results grid ── */}
-          <View style={[s.section, { paddingHorizontal: hPad }]}>
-            {/* Header row */}
-            <View style={s.sectionHeader}>
-              <View style={s.sectionDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.sectionTitle, { color: colors.text }]}>
-                  {activeId === 'all' && query === '' ? 'Discover Sydney' :
-                   query ? `"${query}"` :
-                   CATEGORIES.find(c => c.id === activeId)?.label ?? 'Events'}
-                </Text>
-              </View>
+                  {/* ── Results Header ── */}
+                  <View style={[s.sectionHeader, { marginTop: activeId === 'all' && query === '' && featured.length > 0 ? 28 : 12 }]}>
+                    <View style={s.sectionDot} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.sectionTitle, { color: colors.text }]}>
+                        {activeId === 'all' && query === '' ? 'Discover Sydney' :
+                         query ? `"${query}"` :
+                         CATEGORIES.find(c => c.id === activeId)?.label ?? 'Events'}
+                      </Text>
+                    </View>
 
-              {!isDesktop && (
-                <View style={[s.colToggle, { backgroundColor: colors.backgroundSecondary }]}>
-                  <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(2); }} style={[s.toggleBtn, cols === 2 && s.toggleActive]}>
-                    <Ionicons name="grid" size={12} color={cols === 2 ? '#FFFFFF' : colors.textTertiary} />
-                  </Pressable>
-                  <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(3); }} style={[s.toggleBtn, cols === 3 && s.toggleActive]}>
-                    <Ionicons name="apps" size={12} color={cols === 3 ? '#FFFFFF' : colors.textTertiary} />
-                  </Pressable>
+                    {!isDesktop && (
+                      <View style={[s.colToggle, { backgroundColor: colors.backgroundSecondary }]}>
+                        <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(2); }} style={[s.toggleBtn, cols === 2 && s.toggleActive]}>
+                          <Ionicons name="grid" size={12} color={cols === 2 ? '#FFFFFF' : colors.textTertiary} />
+                        </Pressable>
+                        <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(3); }} style={[s.toggleBtn, cols === 3 && s.toggleActive]}>
+                          <Ionicons name="apps" size={12} color={cols === 3 ? '#FFFFFF' : colors.textTertiary} />
+                        </Pressable>
+                      </View>
+                    )}
+
+                    {!isLoading && (
+                      <Text style={[s.resultCount, { color: colors.textTertiary, marginLeft: 8 }]}>
+                        {filtered.length}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* ── Loading / Empty States ── */}
+                  {isLoading && (
+                    <View style={s.loadingWrap}>
+                      <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                      <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading events…</Text>
+                    </View>
+                  )}
+                  {!isLoading && filtered.length === 0 && (
+                    <View style={s.emptyWrap}>
+                      <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                        <Ionicons name="search-outline" size={28} color={colors.textTertiary} />
+                      </View>
+                      <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
+                      <Text style={[s.emptySub, { color: colors.textSecondary }]}>
+                        {query ? 'Try a different search' : 'Try a different category or location'}
+                      </Text>
+                      {(activeId !== 'all' || query !== '') && (
+                        <View style={{ marginTop: 12 }}>
+                          <Button variant="outline" pill onPress={() => { setActiveId('all'); setQuery(''); }}>Reset filters</Button>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </>
+              }
+              renderItem={({ item }) => (
+                <View style={{ padding: colGap / 2 }}>
+                  <ExploreEventCard event={item} wide />
                 </View>
               )}
-
-              {!isLoading && (
-                <Text style={[s.resultCount, { color: colors.textTertiary, marginLeft: 8 }]}>
-                  {filtered.length}
-                </Text>
-              )}
-            </View>
-
-            {isLoading ? (
-              <View style={s.loadingWrap}>
-                <ActivityIndicator size="small" color={CultureTokens.indigo} />
-                <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading events…</Text>
-              </View>
-            ) : filtered.length === 0 ? (
-              <View style={s.emptyWrap}>
-                <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-                  <Ionicons name="search-outline" size={28} color={colors.textTertiary} />
-                </View>
-                <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
-                <Text style={[s.emptySub, { color: colors.textSecondary }]}>
-                  {query ? 'Try a different search' : 'Try a different category or location'}
-                </Text>
-                {(activeId !== 'all' || query !== '') && (
-                  <View style={{ marginTop: 12 }}>
-                    <Button
-                      variant="outline"
-                      pill
-                      onPress={() => { setActiveId('all'); setQuery(''); }}
-                    >
-                      Reset filters
-                    </Button>
-                  </View>
-                )}
-              </View>
-            ) : (
-              <View style={[s.grid, { gap: colGap }]}>
-                {filtered.map((ev) => (
-                  <View key={ev.id} style={{ width: colWidth }}>
-                    <ExploreEventCard event={ev} wide />
-                  </View>
-                ))}
-              </View>
-            )}
+            />
           </View>
-
-        </ScrollView>
       </View>
     </ErrorBoundary>
   );
