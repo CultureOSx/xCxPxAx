@@ -1,9 +1,10 @@
 
 import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
-import { db, isFirestoreConfigured } from '../admin';
+import { isFirestoreConfigured } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import { searchService } from '../services/firestore';
+import { resolveDiscoverCuration } from '../services/discoverCuration';
 
 export const discoveryRouter = Router();
 
@@ -41,6 +42,26 @@ discoveryRouter.get('/discover', requireAuth, async (req: Request, res: Response
  *  - userId === 'guest' → public, no auth required
  *  - any other userId  → requires auth + must be owner or admin
  */
+discoveryRouter.get('/discover/curation', async (req: Request, res: Response) => {
+  try {
+    const cultureIds = String(req.query.cultureIds ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const response = await resolveDiscoverCuration({
+      city: req.query.city ? String(req.query.city) : undefined,
+      country: req.query.country ? String(req.query.country) : undefined,
+      cultureIds,
+    });
+
+    return res.json(response);
+  } catch (err) {
+    captureRouteError(err, 'GET /api/discover/curation');
+    return res.status(500).json({ error: 'Failed to fetch discover curation' });
+  }
+});
+
 discoveryRouter.get('/discover/:userId', async (req: Request, res: Response) => {
   const userId = String(req.params.userId ?? '');
 

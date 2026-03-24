@@ -28,11 +28,12 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/query-client";
 import * as ImagePicker from "expo-image-picker";
+import { captureEvent } from "@/lib/analytics";
 
 export default function ArtistDetailScreen() {
   const colors = useColors();
   const styles = getStyles(colors);
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, source, featuredArtistId } = useLocalSearchParams<{ id: string; source?: string; featuredArtistId?: string }>();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const topInset = Platform.OS === "web" ? 0 : insets.top;
@@ -42,6 +43,16 @@ export default function ArtistDetailScreen() {
     queryKey: ["/api/profiles", id],
     queryFn: () => api.profiles.get(id),
   });
+
+  React.useEffect(() => {
+    if (!profile) return;
+    captureEvent('artist_profile_viewed', {
+      artistId: profile.id,
+      artistName: profile.name,
+      source,
+      featuredArtistId,
+    });
+  }, [featuredArtistId, profile, source]);
 
   const goBack = useCallback(() => (
     navigation.canGoBack() ? router.back() : router.replace("/")

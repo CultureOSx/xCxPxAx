@@ -1,11 +1,10 @@
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, Platform, ActivityIndicator,
+  View, Text, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { useColors } from '@/hooks/useColors';
@@ -16,6 +15,9 @@ import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { queryClient } from '@/lib/query-client';
 import { goBackOrReplace } from '@/lib/navigation';
+import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { DashboardNav } from '@/components/dashboard/DashboardNav';
+import type { DashboardNavItem } from '@/components/dashboard/DashboardShell';
 
 const SUPER_ADMIN_EMAIL = 'jiobaba369@gmail.com';
 
@@ -203,11 +205,10 @@ function NavGrid({ children, gap }: { children: React.ReactNode; gap: number }) 
 // ─── Main Content ─────────────────────────────────────────────────────────────
 function AdminDashboardContent() {
   const colors   = useColors();
-  const { isDesktop, hPad, columnGap, columnWidth, numColumnsWide } = useLayout();
-  const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const { isDesktop, columnGap, columnWidth, numColumnsWide } = useLayout();
   const { user } = useAuth();
   const { isAdmin, role } = useRole();
+  const pathname = usePathname();
 
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL || role === 'platformAdmin';
 
@@ -237,52 +238,93 @@ function AdminDashboardContent() {
 
   if (!isAdmin) {
     return (
-      <View style={[s.fill, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
-        <Ionicons name="lock-closed" size={48} color={colors.textTertiary} />
-        <Text style={[s.emptyTitle, { color: colors.text, marginTop: 16 }]}>Admin Access Required</Text>
-        <Text style={[s.emptySub, { color: colors.textSecondary, marginTop: 6 }]}>You need admin privileges to view this area.</Text>
-      </View>
+      <DashboardShell
+        header={(
+          <LinearGradient
+            colors={gradients.midnight as unknown as [string, string]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={s.headerCard}
+          >
+            <View style={s.headerRow}>
+              <Pressable
+                onPress={() => goBackOrReplace('/(tabs)')}
+                style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Ionicons name="chevron-back" size={20} color="#fff" />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={s.headerTitle}>Admin Access Required</Text>
+                <Text style={s.headerSub}>Sign in with an admin account to continue</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        )}
+      >
+        <View style={[s.lockedCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+          <Ionicons name="lock-closed" size={36} color={colors.textTertiary} />
+          <Text style={[s.emptyTitle, { color: colors.text, marginTop: 12 }]}>Admin access required</Text>
+          <Text style={[s.emptySub, { color: colors.textSecondary, marginTop: 4 }]}>
+            You need admin privileges to view this area.
+          </Text>
+        </View>
+      </DashboardShell>
     );
   }
 
   const fmtNum = (n?: number) => n != null ? n.toLocaleString() : '—';
   const pending = handlesData?.count ?? 0;
+  const navItems: DashboardNavItem[] = [
+    { label: 'Overview', icon: 'speedometer-outline', href: '/admin/dashboard', active: pathname === '/admin/dashboard' },
+    { label: 'Users', icon: 'people-outline', href: '/admin/users', active: pathname?.startsWith('/admin/users') },
+    { label: 'Handles', icon: 'at-outline', href: '/admin/handles', badge: pending > 0 ? pending : undefined, active: pathname?.startsWith('/admin/handles') },
+    { label: 'Moderation', icon: 'flag-outline', href: '/admin/moderation', active: pathname?.startsWith('/admin/moderation') },
+    { label: 'Notifications', icon: 'megaphone-outline', href: '/admin/notifications', active: pathname?.startsWith('/admin/notifications') },
+    { label: 'Audit Logs', icon: 'list-outline', href: '/admin/audit-logs', active: pathname?.startsWith('/admin/audit-logs') },
+    { label: 'Finance', icon: 'card-outline', href: '/admin/finance', active: pathname?.startsWith('/admin/finance') },
+    { label: 'Platform', icon: 'construct-outline', href: '/admin/platform', active: pathname?.startsWith('/admin/platform') },
+    { label: 'Data & Compliance', icon: 'lock-closed-outline', href: '/admin/data-compliance', active: pathname?.startsWith('/admin/data-compliance') },
+    { label: 'Updates', icon: 'newspaper-outline', href: '/admin/updates', active: pathname?.startsWith('/admin/updates') },
+    { label: 'Discover', icon: 'sparkles-outline', href: '/admin/discover', active: pathname?.startsWith('/admin/discover') },
+  ];
+
+  const header = (
+    <LinearGradient
+      colors={isSuperAdmin
+        ? [CultureTokens.gold + 'cc', CultureTokens.indigo] as [string, string]
+        : gradients.midnight as unknown as [string, string]}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      style={s.headerCard}
+    >
+      <View style={s.headerRow}>
+        <Pressable
+          onPress={() => goBackOrReplace('/(tabs)')}
+          style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color="#fff" />
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>{isSuperAdmin ? 'Super Admin Hub' : 'Admin Dashboard'}</Text>
+          <Text style={s.headerSub}>{isSuperAdmin ? 'Full platform control' : `Signed in as ${role}`}</Text>
+        </View>
+        {isSuperAdmin ? (
+          <View style={s.superBadge}>
+            <Ionicons name="star" size={11} color={CultureTokens.gold} />
+            <Text style={[s.superBadgeText, { color: CultureTokens.gold }]}>Super</Text>
+          </View>
+        ) : null}
+      </View>
+    </LinearGradient>
+  );
 
   return (
-    <View style={[s.fill, { backgroundColor: colors.background }]}>
-      {/* ── Gradient Header ──────────────────────────────────────────────── */}
-      <LinearGradient
-        colors={isSuperAdmin
-          ? [CultureTokens.gold + 'cc', CultureTokens.indigo] as [string, string]
-          : gradients.midnight as unknown as [string, string]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingTop: topInset }}
-      >
-        <Animated.View entering={FadeInUp.duration(320)} style={[s.header, { paddingHorizontal: hPad }]}>
-          <Pressable
-            onPress={() => goBackOrReplace('/(tabs)')}
-            style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
-            accessibilityRole="button" accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle}>{isSuperAdmin ? 'Super Admin Hub' : 'Admin Dashboard'}</Text>
-            <Text style={s.headerSub}>{isSuperAdmin ? 'Full platform control' : `Signed in as ${role}`}</Text>
-          </View>
-          {isSuperAdmin ? (
-            <View style={s.superBadge}>
-              <Ionicons name="star" size={11} color={CultureTokens.gold} />
-              <Text style={[s.superBadgeText, { color: CultureTokens.gold }]}>Super</Text>
-            </View>
-          ) : null}
-        </Animated.View>
-      </LinearGradient>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, { paddingHorizontal: hPad, paddingBottom: insets.bottom + 48 }]}
-      >
+    <DashboardShell
+      header={<Animated.View entering={FadeInUp.duration(320)}>{header}</Animated.View>}
+      nav={<DashboardNav items={navItems} layout={isDesktop ? 'vertical' : 'horizontal'} />}
+    >
 
         {/* ── Quick Actions ────────────────────────────────────────────────── */}
         <View style={s.section}>
@@ -294,6 +336,9 @@ function AdminDashboardContent() {
             <QuickAction width={qaW} icon="at-outline"             label="Handles"           accent={pending > 0 ? CultureTokens.coral : CultureTokens.saffron} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
             <QuickAction width={qaW} icon="list-outline"           label="Audit Logs"        accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
             <QuickAction width={qaW} icon="newspaper-outline"      label="Release Notes"     accent={CultureTokens.gold}    onPress={() => router.push('/admin/updates')} />
+            {isSuperAdmin ? (
+              <QuickAction width={qaW} icon="sparkles-outline" label="Discover" accent={CultureTokens.coral} onPress={() => router.push('/admin/discover' as never)} />
+            ) : null}
           </NavGrid>
         </View>
 
@@ -417,13 +462,14 @@ function AdminDashboardContent() {
         {isSuperAdmin ? (
           <>
             <View style={s.section}>
-              <SectionLabel label="PLATFORM CONFIGURATION" count={5} />
+              <SectionLabel label="PLATFORM CONFIGURATION" count={6} />
               <NavGrid gap={columnGap}>
                 <NavCard index={0} width={cardW} icon="toggle-outline"    label="Feature Flags"    sub="Rollout % controls"       accent={CultureTokens.gold}    onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={1} width={cardW} icon="globe-outline"     label="City Management"  sub="Add supported cities"     accent={CultureTokens.teal}    onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={2} width={cardW} icon="key-outline"       label="API Keys"         sub="Stripe, Firebase, 3rd-party" accent="#A78BFA"            onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={3} width={cardW} icon="construct-outline" label="Platform Settings" sub="Config, rate limits"     accent={CultureTokens.coral}   onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={4} width={cardW} icon="server-outline"    label="Platform Health"  sub="API status & metrics"     accent={CultureTokens.saffron} onPress={() => router.push('/admin/platform' as never)} />
+                <NavCard index={5} width={cardW} icon="sparkles-outline"  label="Discover Curation" sub="Featured artists & playlist rails" accent={CultureTokens.indigo} onPress={() => router.push('/admin/discover' as never)} />
               </NavGrid>
             </View>
 
@@ -449,8 +495,7 @@ function AdminDashboardContent() {
           </NavGrid>
         </View>
 
-      </ScrollView>
-    </View>
+    </DashboardShell>
   );
 }
 
@@ -460,19 +505,16 @@ export default function AdminDashboard() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  fill:           { flex: 1 },
-
   // Header
-  header:         { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16 },
+  headerCard:     { borderRadius: 18, padding: 16, overflow: 'hidden' },
+  headerRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn:        { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.3 },
   headerSub:      { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.75)', marginTop: 1 },
   superBadge:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, backgroundColor: 'rgba(255,200,87,0.25)', borderColor: CultureTokens.gold },
   superBadgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
 
-  // Scroll
-  scroll:         { paddingTop: 20 },
-  section:        { marginBottom: 24 },
+  section:        {},
 
   // Loading
   loadingRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 20 },
@@ -494,4 +536,5 @@ const s = StyleSheet.create({
   // Empty state
   emptyTitle:     { fontSize: 17, fontFamily: 'Poppins_700Bold' },
   emptySub:       { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
+  lockedCard:     { alignItems: 'center', gap: 8, borderRadius: 16, borderWidth: 1, padding: 20 },
 });

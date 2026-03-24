@@ -1,16 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
-import { api, type ActivityData, type IndigenousOrganisation, type IndigenousFestival, type IndigenousBusiness } from '@/lib/api';
+import { api, type ActivityData, type IndigenousOrganisation } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import type { DiscoverCurationResponse, EventData, Community } from '@/shared/schema';
-
-const isWeb = Platform.OS === 'web';
 
 export interface DiscoverFeed {
   trendingEvents?: EventData[];

@@ -51,6 +51,8 @@ import type {
   AdminAuditLog,
   AppUpdate,
   UpdateCategory,
+  DiscoverCurationResponse,
+  DiscoverCurationConfig,
 } from '@/shared/schema';
 
 export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog, AppUpdate, UpdateCategory } from '@/shared/schema';
@@ -273,6 +275,14 @@ const discover = {
     return request<any>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
   },
   feedback: (payload: any) => request<{ ok: boolean }>('POST', 'api/discover/feedback', payload),
+  curation: (params?: { city?: string; country?: string; cultureIds?: string[] }) => {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set('city', params.city);
+    if (params?.country) qs.set('country', params.country);
+    if (params?.cultureIds?.length) qs.set('cultureIds', params.cultureIds.join(','));
+    const q = qs.toString();
+    return request<DiscoverCurationResponse>('GET', `api/discover/curation${q ? `?${q}` : ''}`);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -641,6 +651,10 @@ const admin = {
     const q = qs.toString();
     return request<{ updates: AppUpdate[]; total: number }>('GET', `api/admin/updates${q ? `?${q}` : ''}`);
   },
+  getDiscoverCuration: () =>
+    request<{ config: DiscoverCurationConfig; source: 'default' | 'firestore' }>('GET', 'api/admin/discover-curation'),
+  saveDiscoverCuration: (config: DiscoverCurationConfig) =>
+    request<{ ok: boolean; config: DiscoverCurationConfig }>('PUT', 'api/admin/discover-curation', config),
 };
 
 // ---------------------------------------------------------------------------

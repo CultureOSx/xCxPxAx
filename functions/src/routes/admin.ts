@@ -5,8 +5,51 @@ import { db } from '../admin';
 import { requireRole } from '../middleware/auth';
 import { usersService } from '../services/users';
 import type { UserRole } from '../../../shared/schema';
+import {
+  DISCOVER_FOCUS_OPTIONS,
+  HERITAGE_PLAYLIST_TYPES,
+  type DiscoverCurationConfig,
+} from '../../../shared/schema';
+import { getDiscoverCurationConfig, updateDiscoverCurationConfig } from '../services/discoverCuration';
+import { z } from 'zod';
 
 export const adminRouter = Router();
+
+const featuredArtistSchema = z.object({
+  id: z.string().min(1),
+  profileId: z.string().min(1).optional(),
+  name: z.string().min(1).optional(),
+  subtitle: z.string().min(1).optional(),
+  meta: z.string().min(1).optional(),
+  imageUrl: z.string().url().optional(),
+  accentColor: z.string().min(1).optional(),
+  focus: z.enum(DISCOVER_FOCUS_OPTIONS).optional(),
+  ctaLabel: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  active: z.boolean().optional(),
+});
+
+const heritagePlaylistSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  artist: z.string().min(1),
+  culture: z.string().min(1),
+  imageUrl: z.string().url(),
+  typeLabel: z.enum(HERITAGE_PLAYLIST_TYPES),
+  accentColor: z.string().min(1),
+  focus: z.enum(DISCOVER_FOCUS_OPTIONS),
+  city: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  isLive: z.boolean().optional(),
+  active: z.boolean().optional(),
+  matchKeys: z.array(z.string().min(1)).optional(),
+});
+
+const discoverCurationSchema = z.object({
+  featuredArtists: z.array(featuredArtistSchema),
+  heritagePlaylists: z.array(heritagePlaylistSchema),
+});
 
 // ---------------------------------------------------------------------------
 // Platform Stats
@@ -302,6 +345,33 @@ adminRouter.post('/admin/algolia-backfill', requireRole('admin', 'platformAdmin'
   } catch (err: any) {
     captureRouteError(err, 'POST /admin/algolia-backfill');
     return res.status(500).json({ error: err?.message ?? 'Backfill failed' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Discover curation
+// ---------------------------------------------------------------------------
+adminRouter.get('/admin/discover-curation', requireRole('admin', 'platformAdmin'), async (_req: Request, res: Response) => {
+  try {
+    const { config, source } = await getDiscoverCurationConfig();
+    return res.json({ config, source });
+  } catch (err) {
+    captureRouteError(err, 'GET /admin/discover-curation');
+    return res.status(500).json({ error: 'Failed to fetch discover curation config' });
+  }
+});
+
+adminRouter.put('/admin/discover-curation', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
+  try {
+    const parsed = discoverCurationSchema.parse(req.body) as DiscoverCurationConfig;
+    const config = await updateDiscoverCurationConfig(parsed, req.user!.id);
+    return res.json({ ok: true, config });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.issues[0]?.message ?? 'Invalid discover curation payload' });
+    }
+    captureRouteError(err, 'PUT /admin/discover-curation');
+    return res.status(500).json({ error: 'Failed to update discover curation config' });
   }
 });
 

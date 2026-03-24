@@ -271,6 +271,7 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/moderation" />
       <Stack.Screen name="admin/finance" />
       <Stack.Screen name="admin/platform" />
+      <Stack.Screen name="admin/discover" />
       <Stack.Screen name="admin/data-compliance" />
 
       <Stack.Screen name="updates/index" />

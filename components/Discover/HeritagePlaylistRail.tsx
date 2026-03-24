@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
@@ -7,26 +7,51 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
 import { useLayout } from '@/hooks/useLayout';
-import type { HeritagePlaylistItem } from '@/lib/discover-curation';
+import { captureEvent } from '@/lib/analytics';
+import type { HeritagePlaylistEntry } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
 
 const DEFAULT_SNAP_INTERVAL = 248;
 
 interface HeritagePlaylistRailProps {
-  data: HeritagePlaylistItem[];
+  data: HeritagePlaylistEntry[];
 }
 
 function HeritagePlaylistRailComponent({ data }: HeritagePlaylistRailProps) {
   const { isDesktop } = useLayout();
+  const lastImpressionKey = useRef<string>('');
+
+  useEffect(() => {
+    const impressionKey = data.map((item) => item.id).join('|');
+    if (!impressionKey || lastImpressionKey.current === impressionKey) return;
+    lastImpressionKey.current = impressionKey;
+    captureEvent('discover_heritage_playlist_impression', {
+      rail: 'heritage_playlist',
+      itemIds: data.map((item) => item.id),
+      count: data.length,
+    });
+  }, [data]);
 
   if (data.length === 0) return null;
 
-  const handlePress = (item: HeritagePlaylistItem) => {
+  const handlePress = (item: HeritagePlaylistEntry) => {
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync();
     }
 
-    router.push({ pathname: '/explore', params: { focus: item.focus } });
+    captureEvent('discover_heritage_playlist_tap', {
+      rail: 'heritage_playlist',
+      itemId: item.id,
+      focus: item.focus,
+      typeLabel: item.typeLabel,
+      culture: item.culture,
+      isLive: item.isLive ?? false,
+    });
+
+    router.push({
+      pathname: '/explore',
+      params: { focus: item.focus, source: 'heritage_playlist', playlistId: item.id },
+    });
   };
 
   return (

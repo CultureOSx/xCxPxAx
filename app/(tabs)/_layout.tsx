@@ -78,7 +78,6 @@ export default function TabsLayout() {
       {/* Hidden Routes */}
       <Tabs.Screen name="directory" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />
-      <Tabs.Screen name="discover-classic" options={{ href: null }} />
     </Tabs>
   );
 }

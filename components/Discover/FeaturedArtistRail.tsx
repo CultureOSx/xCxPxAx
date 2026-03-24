@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
@@ -8,7 +8,8 @@ import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import type { DiscoverArtistHighlight } from '@/lib/discover-curation';
+import { captureEvent } from '@/lib/analytics';
+import type { DiscoverArtistHighlight } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
 
 const DEFAULT_SNAP_INTERVAL = 212;
@@ -20,6 +21,18 @@ interface FeaturedArtistRailProps {
 function FeaturedArtistRailComponent({ data }: FeaturedArtistRailProps) {
   const colors = useColors();
   const { isDesktop } = useLayout();
+  const lastImpressionKey = useRef<string>('');
+
+  useEffect(() => {
+    const impressionKey = data.map((item) => item.id).join('|');
+    if (!impressionKey || lastImpressionKey.current === impressionKey) return;
+    lastImpressionKey.current = impressionKey;
+    captureEvent('discover_featured_artists_impression', {
+      rail: 'featured_artists',
+      itemIds: data.map((item) => item.id),
+      count: data.length,
+    });
+  }, [data]);
 
   if (data.length === 0) return null;
 
@@ -28,12 +41,27 @@ function FeaturedArtistRailComponent({ data }: FeaturedArtistRailProps) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
+    captureEvent('discover_featured_artist_tap', {
+      rail: 'featured_artists',
+      itemId: item.id,
+      routeType: item.route.type,
+      routeId: item.route.type === 'artist' ? item.route.id : undefined,
+      focus: item.route.type === 'explore' ? item.route.focus : undefined,
+      source: item.source,
+    });
+
     if (item.route.type === 'artist') {
-      router.push({ pathname: '/artist/[id]', params: { id: item.route.id } });
+      router.push({
+        pathname: '/artist/[id]',
+        params: { id: item.route.id, source: 'featured_artist', featuredArtistId: item.id },
+      });
       return;
     }
 
-    router.push({ pathname: '/explore', params: { focus: item.route.focus } });
+    router.push({
+      pathname: '/explore',
+      params: { focus: item.route.focus, source: 'featured_artist', featuredArtistId: item.id },
+    });
   };
 
   return (

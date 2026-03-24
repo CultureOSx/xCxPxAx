@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  TextInput, Platform, ActivityIndicator, Dimensions, FlatList
+  TextInput, Platform, ActivityIndicator, FlatList
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, CategoryColors, gradients } from '@/constants/theme';
+import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { isIndigenousEvent } from '@/lib/indigenous';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -142,11 +143,11 @@ const ec = StyleSheet.create({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function ExploreScreen() {
-  const params = useLocalSearchParams<{ focus?: string }>();
+  const params = useLocalSearchParams<{ focus?: string; source?: string; playlistId?: string; featuredArtistId?: string }>();
   const insets   = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
-  const { isDesktop, hPad, width } = useLayout();
+  const { isDesktop, hPad } = useLayout();
   const { state } = useOnboarding();
 
   const requestedFocus = typeof params.focus === 'string' && CATEGORIES.some((category) => category.id === params.focus)
@@ -191,12 +192,21 @@ export default function ExploreScreen() {
   const [cols, setCols] = useState<2 | 3>(2);
   const gridCols  = isDesktop ? 6 : cols;
   const colGap    = 12;
-  const colWidth  = Math.floor((width - hPad * 2 - colGap * (gridCols - 1)) / gridCols);
 
   const handleCatPress = useCallback((id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
     setActiveId(id);
   }, []);
+
+  useEffect(() => {
+    if (!params.source) return;
+    captureEvent('discover_curated_destination_view', {
+      source: params.source,
+      focus: requestedFocus,
+      playlistId: params.playlistId,
+      featuredArtistId: params.featuredArtistId,
+    });
+  }, [params.featuredArtistId, params.playlistId, params.source, requestedFocus]);
 
   const locationLabel = state.city
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
