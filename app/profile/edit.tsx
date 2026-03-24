@@ -1,7 +1,8 @@
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
-  TextInput, Alert, KeyboardAvoidingView, ActivityIndicator,
+  TextInput, Alert, KeyboardAvoidingView, ActivityIndicator, Switch
 } from 'react-native';
+import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,11 +22,12 @@ import { Button } from '@/components/ui/Button';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
+import { CultureTokens } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
-const BLUE   = '#0066CC';
-const YELLOW = '#FFCC00';
+const BLUE   = CultureTokens.indigo;
+const YELLOW = CultureTokens.indigo + '20';
 const AVATAR = 110;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,6 +56,10 @@ interface UserData {
   } | null;
   languages?: string[] | null;
   ethnicityText?: string | null;
+  privacySettings?: {
+    profileVisible?: boolean;
+    locationVisible?: boolean;
+  };
 }
 
 type UploadedImage = {
@@ -137,6 +143,7 @@ export default function EditProfileScreen() {
     city: '', state: '', postcode: '', country: 'Australia',
     website: '', instagram: '', twitter: '', tiktok: '', youtube: '', linkedin: '', facebook: '',
     languages: '', ethnicityText: '',
+    isPublicProfile: true, showLocation: true,
   });
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
@@ -160,6 +167,8 @@ export default function EditProfileScreen() {
         facebook:     user.socialLinks?.facebook  || '',
         languages:    (user.languages ?? []).join(', '),
         ethnicityText: user.ethnicityText || '',
+        isPublicProfile: user.privacySettings?.profileVisible ?? true,
+        showLocation: user.privacySettings?.locationVisible ?? true,
       });
       setAvatarUri(user.avatarUrl || null);
     }
@@ -289,6 +298,12 @@ export default function EditProfileScreen() {
 
     const city    = form.city.trim();
     const country = form.country.trim() || 'Australia';
+    const formatLink = (url: string, domain: string) => {
+      if (!url.trim()) return undefined;
+      const clean = url.trim().replace(/^@/, '');
+      return clean.startsWith('http') ? clean : `https://${domain}/${clean}`;
+    };
+
     updateMutation.mutate({
       displayName: form.displayName.trim(),
       email:    form.email.trim()    || null,
@@ -302,15 +317,19 @@ export default function EditProfileScreen() {
       avatarUrl,
       website: form.website.trim() || null,
       socialLinks: {
-        instagram: form.instagram.trim() || undefined,
-        twitter:   form.twitter.trim()   || undefined,
-        tiktok:    form.tiktok.trim()    || undefined,
-        youtube:   form.youtube.trim()   || undefined,
-        linkedin:  form.linkedin.trim()  || undefined,
-        facebook:  form.facebook.trim()  || undefined,
+        instagram: formatLink(form.instagram, 'instagram.com'),
+        twitter:   formatLink(form.twitter, 'x.com'),
+        tiktok:    formatLink(form.tiktok, 'tiktok.com/@'),
+        youtube:   formatLink(form.youtube, 'youtube.com/@'),
+        linkedin:  formatLink(form.linkedin, 'linkedin.com/in'),
+        facebook:  formatLink(form.facebook, 'facebook.com'),
       },
       languages:    form.languages.trim() ? form.languages.split(',').map(l => l.trim()).filter(Boolean) : [],
       ethnicityText: form.ethnicityText.trim() || null,
+      privacySettings: {
+        profileVisible: form.isPublicProfile,
+        locationVisible: form.showLocation,
+      }
     });
   };
 
@@ -319,7 +338,10 @@ export default function EditProfileScreen() {
     .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase());
 
   // ── Input style helper ───────────────────────────────────────────────────
-  const inputStyle = [s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }];
+  const inputStyle = [
+    s.input, 
+    { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, color: colors.text }
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -337,15 +359,25 @@ export default function EditProfileScreen() {
             <Text style={[TextStyles.headline, { color: colors.text }]}>Edit Profile</Text>
           </View>
 
-          <Button
-            variant="primary"
-            size="sm"
-            onPress={handleSave}
-            loading={isBusy}
-            style={{ backgroundColor: BLUE, minWidth: 68 }}
-          >
-            Save
-          </Button>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => router.push(`/profile/${userId}` as any)}
+              style={[s.topBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+              accessibilityLabel="Preview profile"
+            >
+              <Ionicons name="eye-outline" size={18} color={BLUE} />
+            </Pressable>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onPress={handleSave}
+              loading={isBusy}
+              style={{ backgroundColor: BLUE, minWidth: 68 }}
+            >
+              Save
+            </Button>
+          </View>
         </View>
 
         <ScrollView
@@ -380,7 +412,7 @@ export default function EditProfileScreen() {
                 ) : (
                   <LinearGradient colors={['#1A3D70', '#0E2040']} style={StyleSheet.absoluteFill}>
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={[TextStyles.title, { color: '#fff' }]}>{initials}</Text>
+                      <Text style={[TextStyles.title, { color: "white" }]}>{initials}</Text>
                     </View>
                   </LinearGradient>
                 )}
@@ -395,7 +427,7 @@ export default function EditProfileScreen() {
               </View>
             </Pressable>
 
-            <Text style={[TextStyles.title2, { color: '#fff', textAlign: 'center' }]}>{form.displayName || user?.username || 'Your Name'}</Text>
+            <Text style={[TextStyles.title2, { color: "white", textAlign: 'center' }]}>{form.displayName || user?.username || 'Your Name'}</Text>
             <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.6)' }]}>
               {Platform.OS === 'web' ? 'Tap to change · drag & drop' : 'Tap avatar to change photo'}
             </Text>
@@ -481,6 +513,32 @@ export default function EditProfileScreen() {
                   accessibilityLabel="Cultural background"
                 />
               </FieldRow>
+            </SectionCard>
+
+            {/* Privacy & Visibility */}
+            <SectionCard title="Privacy Settings" colors={colors}>
+              <View style={[s.privacyRow, { borderBottomColor: colors.borderLight }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_600SemiBold' }]}>Make Profile Public</Text>
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>Allow other users to search and view your profile</Text>
+                </View>
+                <Switch 
+                  value={form.isPublicProfile} 
+                  onValueChange={v => setForm(p => ({ ...p, isPublicProfile: v }))}
+                  trackColor={{ true: BLUE }}
+                />
+              </View>
+              <View style={s.privacyRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_600SemiBold' }]}>Show Active City</Text>
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>Display your location on your public page</Text>
+                </View>
+                <Switch 
+                  value={form.showLocation} 
+                  onValueChange={v => setForm(p => ({ ...p, showLocation: v }))}
+                  trackColor={{ true: BLUE }}
+                />
+              </View>
             </SectionCard>
 
             {/* Location */}
@@ -608,7 +666,7 @@ const s = StyleSheet.create({
     borderRadius: 11, backgroundColor: BLUE,
     minWidth: 68, alignItems: 'center',
   },
-  saveTopText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  saveTopText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: "white" },
 
   // Scroll
   scroll:        { flexGrow: 1 },
@@ -633,27 +691,27 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   avatarImg:      { width: AVATAR, height: AVATAR },
-  avatarInitials: { fontSize: 36, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  avatarInitials: { fontSize: 36, fontFamily: 'Poppins_700Bold', color: "white" },
   cameraBadge: {
     position: 'absolute', bottom: 4, right: 0,
     width: 30, height: 30, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2.5,
   },
-  heroName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 4 },
+  heroName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: "white", marginBottom: 4 },
   heroHint: { fontSize: 11, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.55)' },
 
   // Body
-  body:        { padding: 16 },
+  body:        { padding: 16, gap: 12 },
   bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center', paddingHorizontal: 24 },
 
   // Input
   input: {
-    height: 48, borderRadius: 12, paddingHorizontal: 14,
-    fontSize: 15, fontFamily: 'Poppins_400Regular',
+    height: 52, borderRadius: 14, paddingHorizontal: 16,
+    fontSize: 15, fontFamily: 'Poppins_500Medium',
     borderWidth: 1,
   },
-  bioInput:  { height: 100, paddingTop: 12, paddingBottom: 12 },
+  bioInput:  { height: 110, paddingTop: 14, paddingBottom: 14 },
   charCount: { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 4 },
 
   // Two-column row
@@ -667,6 +725,12 @@ const s = StyleSheet.create({
     flexShrink: 0, marginTop: 22,
   },
 
+  // Privacy
+  privacyRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingBottom: 16, marginBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, gap: 16,
+  },
+
   // Save button
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -676,5 +740,5 @@ const s = StyleSheet.create({
       default: { shadowColor: BLUE, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 6 },
     }),
   },
-  saveBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  saveBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: "white" },
 });

@@ -3,7 +3,8 @@ import {
   ActivityIndicator, Linking, StyleSheet, useWindowDimensions
 } from 'react-native';
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import { router, useLocalSearchParams, usePathname, Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context';
@@ -136,7 +137,15 @@ export default function EventDetailScreen() {
 
   return (
     <ErrorBoundary>
-      <EventDetail event={event} insets={insets} />
+      <Stack.Screen options={{ title: event.title }} /><Head>
+        <title>{`${event.title} | CulturePass`}</title>
+        <meta name="description" content={event.description || `Join ${event.title} on CulturePass.`} />
+        <meta property="og:title" content={`${event.title} | CulturePass`} />
+        <meta property="og:description" content={event.description || `Join ${event.title} on CulturePass.`} />
+        {event.imageUrl && <meta property="og:image" content={event.imageUrl} />}
+        <meta property="og:url" content={`https://culturepass.app/event/${event.id}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Head><EventDetail event={event} insets={insets} />
     </ErrorBoundary>
   );
 }
@@ -360,9 +369,23 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   const handleShare = useCallback(async () => {
     try {
       const shareUrl = `https://culturepass.app/event/${event.id}`;
-      await Share.share({ title: `${event.title} on CulturePass`, message: `Check out ${event.title} on CulturePass! ${event.venue} - ${formatDate(event.date)}\n\n${shareUrl}`, url: shareUrl });
+      const message = `${event.title}\n📅 ${formatDate(event.date)}\n📍 ${event.venue}\n\nJoin us on CulturePass: ${shareUrl}`;
+      
+      if (Platform.OS === 'web' && navigator.share) {
+        await navigator.share({
+          title: event.title,
+          text: event.description || `Check out ${event.title} on CulturePass`,
+          url: shareUrl
+        });
+      } else {
+        await Share.share({ 
+          title: event.title, 
+          message: message,
+          url: shareUrl 
+        });
+      }
     } catch {}
-  }, [event.id, event.title, event.venue, event.date]);
+  }, [event.id, event.title, event.venue, event.date, event.description]);
 
   const handleSave = useCallback(() => {
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -432,43 +455,66 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
 
   const BottomBarInner = ({ event: ev, colors: c, setCalendarSheetVisible: setCalSheet, openTicketModal: openModal }: any) => {
     if (isFreeOrOpen) {
-      // RSVP mode for free/open events
+      // RSVP mode for free/open events (Premium Glass Design)
       return (
         <>
           <View style={s.bottomPriceSection}>
             <Text style={s.bottomPriceLabel}>Free Entry</Text>
-            <Text style={[s.bottomPriceValue, { color: CultureTokens.teal }]}>
-              {(ev.rsvpGoing ?? 0) > 0 ? `${ev.rsvpGoing} going` : 'RSVP'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="people-outline" size={14} color={CultureTokens.teal} />
+              <Text style={[s.bottomPriceValue, { color: CultureTokens.teal, fontSize: 18 }]}>
+                {ev.rsvpGoing || 0}
+              </Text>
+            </View>
           </View>
-          <View style={s.bottomBtnGroup}>
+
+          <View style={[s.bottomBtnGroup, { flex: 1, gap: 8 }]}>
+            {/* Main Action: Going */}
             <Button
-              variant="outline"
+              variant={myRsvp === 'going' ? 'gradient' : 'primary'}
               size="md"
-              leftIcon="calendar-number-outline"
-              onPress={() => setCalSheet(true)}
-              accessibilityLabel="Add to calendar"
+              leftIcon={myRsvp === 'going' ? 'checkmark-circle' : 'person-add-outline'}
+              onPress={() => handleRsvp('going')}
+              loading={rsvpMutation.isPending && myRsvp === 'going'}
+              style={{ flex: 3, borderRadius: 18, height: 52 }}
+              textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Calendar
+              Interested
             </Button>
-            {RSVP_OPTIONS.map(opt => {
-              const isActive = myRsvp === opt.status;
-              return (
-                <Button
-                  key={opt.status}
-                  variant={isActive ? 'gradient' : 'outline'}
-                  size="md"
-                  leftIcon={opt.icon}
-                  iconColor={isActive ? '#fff' : opt.color}
-                  loading={rsvpMutation.isPending}
-                  onPress={() => handleRsvp(opt.status)}
-                  accessibilityLabel={`RSVP ${opt.label}`}
-                  accessibilityRole="button"
-                >
-                  {opt.label}
-                </Button>
-              );
-            })}
+
+            {/* Secondary: Calendar */}
+            <Pressable
+              onPress={() => setCalSheet(true)}
+              style={({ pressed }) => [
+                s.iconActionBtn, 
+                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+                pressed && { opacity: 0.7 }
+              ]}
+              accessibilityLabel="Calendar"
+            >
+              <Ionicons name="calendar-number-outline" size={22} color={colors.text} />
+            </Pressable>
+
+            {/* Tertiary: Options (Maybe/Not Going) */}
+            <Pressable
+              onPress={() => {
+                // For simplicity, just toggle maybe if not set, or show alert
+                if (myRsvp === 'maybe') handleRsvp('not_going');
+                else handleRsvp('maybe');
+              }}
+              style={({ pressed }) => [
+                s.iconActionBtn, 
+                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+                pressed && { opacity: 0.7 }
+              ]}
+              accessibilityLabel="More RSVP options"
+            >
+              <Ionicons 
+                name={myRsvp === 'maybe' ? 'help-circle' : 'ellipsis-horizontal'} 
+                size={22} 
+                color={myRsvp === 'maybe' ? CultureTokens.saffron : colors.text} 
+              />
+            </Pressable>
           </View>
         </>
       );
@@ -479,46 +525,46 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     return (
       <>
         <View style={s.bottomPriceSection}>
-          <Text style={s.bottomPriceLabel}>From</Text>
-          <Text style={s.bottomPriceValue}>{ev.priceLabel || 'Ticketed'}</Text>
-          {(ev.ticketClickCount ?? 0) > 0 && (
-            <Text style={[s.bottomPriceLabel, { fontSize: 10 }]}>
-              {ev.ticketClickCount} interested
-            </Text>
-          )}
+          <Text style={s.bottomPriceLabel}>Tickets from</Text>
+          <Text style={[s.bottomPriceValue, { fontSize: 24 }]}>{ev.priceLabel || 'TBA'}</Text>
         </View>
-        <View style={s.bottomBtnGroup}>
-          <Button
-            variant="outline"
-            size="md"
-            leftIcon="calendar-number-outline"
-            onPress={() => setCalSheet(true)}
-            accessibilityLabel="Add to calendar"
-          >
-            Calendar
-          </Button>
+        <View style={[s.bottomBtnGroup, { flex: 1 }]}>
           {hasExternal ? (
             <Button
               variant="gradient"
-              size="md"
+              size="lg"
               leftIcon="ticket-outline"
               onPress={handleExternalTicketPress}
-              accessibilityLabel="Buy tickets on organiser website"
-              accessibilityRole="link"
+              accessibilityLabel="Buy tickets"
+              style={{ flex: 1, borderRadius: 20, height: 56 }}
+              textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Buy Tickets
+              Get Tickets
             </Button>
           ) : (
             <Button
               variant="gradient"
-              size="md"
+              size="lg"
               leftIcon="ticket"
               onPress={() => openModal()}
               accessibilityLabel="Get tickets"
+              style={{ flex: 1, borderRadius: 20, height: 56 }}
+              textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Get Tickets
+              Reserve Spot
             </Button>
           )}
+          
+          <Pressable
+            onPress={() => setCalSheet(true)}
+            style={({ pressed }) => [
+              s.iconActionBtn, 
+              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, height: 56, width: 56 },
+              pressed && { opacity: 0.7 }
+            ]}
+          >
+            <Ionicons name="calendar-outline" size={24} color={colors.text} />
+          </Pressable>
         </View>
       </>
     );
@@ -552,7 +598,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                       size="sm"
                       leftIcon="chevron-back"
                       style={s.navBtn}
-                      iconColor="#fff"
+                      iconColor="white"
                     >
                       {null}
                     </Button>
@@ -563,7 +609,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                         size="sm"
                         leftIcon="share-outline"
                         style={s.navBtn}
-                        iconColor="#fff"
+                        iconColor="white"
                       >
                         {null}
                       </Button>
@@ -573,7 +619,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                         size="sm"
                         leftIcon={saved ? "bookmark" : "bookmark-outline"}
                         style={s.navBtn}
-                        iconColor={saved ? CultureTokens.saffron : '#fff'}
+                        iconColor={saved ? CultureTokens.saffron : 'white'}
                       >
                         {null}
                       </Button>
@@ -582,13 +628,13 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
 
                   <View style={s.heroBottomContent}>
                     <View style={s.heroTitleRibbon}>
-                      <Text style={[TextStyles.hero, { color: '#FFFFFF', ...Platform.select({ web: { textShadow: '0px 2px 6px rgba(0,0,0,0.5)' }, default: { textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 } }) }]} numberOfLines={3}>
+                      <Text style={[TextStyles.hero, { color: 'white', ...Platform.select({ web: { textShadow: '0px 2px 6px rgba(0,0,0,0.5)' }, default: { textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 } }) }]} numberOfLines={3}>
                         {event.title}
                       </Text>
                     </View>
                     <View style={s.heroMetaRow}>
                         <View style={[s.heroCardBadge, { backgroundColor: CultureTokens.saffron }]}>
-                            <Text style={[TextStyles.badgeCaps, { color: '#0B0B14' }]}>{event.category || 'Event'}</Text>
+                            <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.category || 'Event'}</Text>
                         </View>
                         <Text style={[TextStyles.captionSemibold, { color: 'rgba(255,255,255,0.9)' }]}>{formatDate(event.date)}</Text>
                     </View>
@@ -602,7 +648,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
               <Card glass={!isDark} padding={20} style={s.heroInfoCard}>
                 <View style={s.heroBadges}>
                   <View style={[s.heroBadge, { backgroundColor: CultureTokens.saffron }]}>
-                    <Text style={[TextStyles.badgeCaps, { color: '#0B0B14' }]}>{event.communityId || 'General'}</Text>
+                    <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.communityId || 'General'}</Text>
                   </View>
                   {(event as any).councilTag ? (
                     <View style={[s.heroBadge, { backgroundColor: colors.primarySoft }]}>
@@ -1004,10 +1050,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   
   heroBottomContent: { paddingHorizontal: 24, paddingBottom: 32, gap: 12 },
   heroTitleRibbon: { alignSelf: 'flex-start' },
-  heroImageTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5, lineHeight: 34, ...Platform.select({ web: { textShadow: '0px 2px 4px rgba(0,0,0,0.3)' }, default: { textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 } }) },
+  heroImageTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: 'white', letterSpacing: -0.5, lineHeight: 34, ...Platform.select({ web: { textShadow: '0px 2px 4px rgba(0,0,0,0.3)' }, default: { textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 } }) },
   heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   heroCardBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-  heroCardBadgeText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#0B0B14', textTransform: 'uppercase', letterSpacing: 0.8 },
+  heroCardBadgeText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: 'black', textTransform: 'uppercase', letterSpacing: 0.8 },
   heroDateRibbonText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.85)' },
 
   heroInfoCard: {
@@ -1018,7 +1064,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 10,
     backgroundColor: colors.surface,
     borderColor: colors.borderLight,
-    shadowColor: '#000',
+    shadowColor: 'black',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -1075,8 +1121,28 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
   floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
-  floatingBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-  bottomPriceSection: { gap: 1 },
+  floatingBottomBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 16, 
+    paddingVertical: 14, 
+    gap: 12,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      android: { elevation: 10 },
+      web: { boxShadow: '0 -4px 12px rgba(0,0,0,0.1)' }
+    })
+  },
+  bottomPriceSection: { minWidth: 90, gap: 2 },
+  iconActionBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bottomPriceLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', color: colors.textSecondary, letterSpacing: 0.8 },
   bottomPriceValue: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
   bottomBtnGroup: { flexDirection: 'row', gap: 10 },

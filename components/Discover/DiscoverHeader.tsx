@@ -68,14 +68,20 @@ function DiscoverHeaderComponent({
           <Ionicons name="search" size={22} color="#FFFFFF" />
         </Pressable>
         {isAuthenticated && (
-          <Pressable 
-            style={styles.headerIconBtn} 
+          <Pressable
+            style={styles.headerIconBtn}
             onPress={() => router.push('/notifications' as any)}
           >
             <Ionicons name="notifications" size={22} color="#FFFFFF" />
             <View style={styles.notifDot} />
           </Pressable>
         )}
+        <Pressable
+          style={styles.headerIconBtn}
+          onPress={() => router.push('/menu' as any)}
+        >
+          <Ionicons name="menu" size={26} color="#FFFFFF" />
+        </Pressable>
       </View>
     </View>
   );
@@ -105,18 +111,21 @@ function DiscoverHeaderComponent({
                     <Ionicons name="notifications-outline" size={24} color={colors.text} />
                   </Pressable>
                 )}
+                <Pressable style={styles.desktopHeaderIconBtn} onPress={() => router.push('/menu' as any)}>
+                  <Ionicons name="menu" size={26} color={colors.text} />
+                </Pressable>
             </View>
         </View>
       ) : (
         <View style={styles.mobileHeroSection}>
-          <View style={styles.heroGreetingRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
-                <Text style={[styles.heroGreetingMobile, { color: colors.textSecondary }]}>
-                  {currentTime} · {weatherSummary}
-                </Text>
-              </View>
-              <LocationPicker />
+          <View style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
+             <LocationPicker />
+          </View>
+          <View>
+            <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
+            <Text style={[styles.heroGreetingMobile, { color: colors.textSecondary }]}>
+              {currentTime} · {weatherSummary}
+            </Text>
           </View>
         </View>
       )}
@@ -170,13 +179,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  heroSectionDesktop: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    marginTop: 40, 
-    marginBottom: 32 
+  heroSectionDesktop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: 40,
+    marginBottom: 32
   },
   heroDesktopLeft: { flex: 1 },
   heroGreetingDesktop: { ...TextStyles.headline, marginBottom: 6 },
@@ -190,8 +199,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 20, marginTop: 16 },
-  heroGreetingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8 },
+  heroGreetingRow: { flexDirection: 'column', alignItems: 'flex-start' },
   heroGreetingMain: { ...TextStyles.title2, marginBottom: 4 },
   heroGreetingMobile: { ...TextStyles.callout },
 });

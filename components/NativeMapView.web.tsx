@@ -1,34 +1,75 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { Spacing, TextStyles } from '@/constants/theme';
+import { Spacing, TextStyles, CultureTokens } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function NativeMapViewWeb() {
+interface NativeMapViewProps {
+  cityGroups: Record<string, { label: string; coords: { latitude: number; longitude: number }; events: any[]; count: number }>;
+  groupEntries: [string, { label: string; coords: { latitude: number; longitude: number }; events: any[]; count: number }][];
+  preferredCity: string | null;
+  selectedCity: string | null;
+  selectedEvents: any[];
+  onMarkerPress: (key: string) => void;
+  onSelectCity: (key: string | null) => void;
+  onClearCity: () => void;
+  onEventPress: (id: string) => void;
+  onOpenSystemMap: (key: string) => void;
+  onOpenEventMap: (event: any) => void;
+  bottomInset: number;
+}
+
+export default function NativeMapViewWeb({
+  selectedCity,
+  cityGroups,
+}: NativeMapViewProps) {
   const colors = useColors();
   const { isDesktop } = useLayout();
 
+  const city = selectedCity ? cityGroups[selectedCity] : null;
+  const mapQuery = city ? city.label : 'Australia';
+
+  if (Platform.OS !== 'web') return null;
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.mapShell}>
+        {/* Using standard web embed which doesn't require API key for search views */}
+        <iframe
+          width="100%"
+          height="100%"
+          style={{ border: 0, borderRadius: 20 }}
+          loading="lazy"
+          allowFullScreen
+          referrerPolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+        />
+
+        {/* Absolute Overlay Info */}
+        {!selectedCity && (
+          <View style={styles.overlay}>
+             <Card glass style={styles.overlayCard} padding={12}>
+                <Ionicons name="map-outline" size={20} color={CultureTokens.indigo} />
+                <Text style={styles.overlayText}>Select a city to explore local events on the map</Text>
+             </Card>
+          </View>
+        )}
+      </View>
+
       <Card
         glass
-        shadow="large"
+        shadow="small"
         style={[
-          styles.card,
+          styles.infoCard,
           {
-            borderColor: colors.border,
-            maxWidth: isDesktop ? 680 : 520,
+            borderColor: colors.borderLight,
+            maxWidth: isDesktop ? 680 : '90%',
           },
         ]}
       >
-        <View style={[styles.iconWrap, { backgroundColor: colors.primary + '20' }]}>
-          <Ionicons name="map-outline" size={28} color={colors.primary} />
-        </View>
-        <Text style={[styles.title, { color: colors.text }]}>Interactive Map on Mobile</Text>
-        <Text style={[styles.text, { color: colors.textSecondary }]}> 
-          Use iOS or Android for full marker interactions and location-aware discovery. 
-          Web currently shows the optimized city/event list experience.
+        <Text style={[styles.text, { color: colors.textSecondary }]}>
+          Discovering events on the map is easy! For the most immersive and interactive experience with real-time markers and directions, we recommend using the <Text style={{ fontFamily: 'Poppins_700Bold', color: colors.text }}>CulturePass Mobile App</Text>.
         </Text>
       </Card>
     </View>
@@ -38,30 +79,44 @@ export default function NativeMapViewWeb() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.lg,
+    padding: 20,
+    gap: 20,
   },
-  card: {
+  mapShell: {
+    flex: 1,
     width: '100%',
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderRadius: 20,
+    minHeight: 400,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
-  iconWrap: {
-    width: 56,
-    height: 56,
+  overlay: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  overlayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+  },
+  overlayText: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#1A1A1A',
+  },
+  infoCard: {
+    width: '100%',
+    alignSelf: 'center',
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    ...TextStyles.title3,
-    textAlign: 'center',
   },
   text: {
-    ...TextStyles.body,
+    ...TextStyles.caption,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 18,
   },
 });

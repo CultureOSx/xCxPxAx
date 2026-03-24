@@ -25,66 +25,38 @@
 
 import { Platform } from 'react-native';
 
-type NativeShadow = {
-  shadowColor: string;
-  shadowOffset: { width: number; height: number };
-  shadowOpacity: number;
-  shadowRadius: number;
-  elevation: number;
+type ShadowConfig = {
+  boxShadow?: string;
 };
 
-type WebShadow = {
-  boxShadow: string;
-};
-
-type ElevationLevel = NativeShadow | WebShadow | Record<string, never>;
+type ElevationLevel = ShadowConfig | Record<string, never>;
 
 // ---------------------------------------------------------------------------
-// Native elevation levels
+// Native elevation levels (migrated to modern RN boxShadow)
 // ---------------------------------------------------------------------------
-const nativeElevation: Record<0 | 1 | 2 | 3 | 4 | 5, NativeShadow | Record<string, never>> = {
+const nativeElevation: Record<0 | 1 | 2 | 3 | 4 | 5, ShadowConfig | Record<string, never>> = {
   0: {},
   1: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    boxShadow: '0px 1px 3px 0px rgba(0, 0, 0, 0.04)',
   },
   2: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
+    boxShadow: '0px 2px 8px 0px rgba(0, 0, 0, 0.07)',
   },
   3: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 14,
-    elevation: 5,
+    boxShadow: '0px 4px 14px 0px rgba(0, 0, 0, 0.10)',
   },
   4: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 8,
+    boxShadow: '0px 8px 24px 0px rgba(0, 0, 0, 0.14)',
   },
   5: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.18,
-    shadowRadius: 40,
-    elevation: 12,
+    boxShadow: '0px 16px 40px 0px rgba(0, 0, 0, 0.18)',
   },
 };
 
 // ---------------------------------------------------------------------------
 // Web elevation levels (CSS box-shadow)
 // ---------------------------------------------------------------------------
-const webElevation: Record<0 | 1 | 2 | 3 | 4 | 5, WebShadow | Record<string, never>> = {
+const webElevation: Record<0 | 1 | 2 | 3 | 4 | 5, ShadowConfig | Record<string, never>> = {
   0: {},
   1: { boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
   2: { boxShadow: '0 2px 10px rgba(0,0,0,0.09)' },

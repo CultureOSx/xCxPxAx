@@ -263,10 +263,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
     zIndex: 10,
-    shadowColor: CultureTokens.coral,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    boxShadow: `0px 2px 4px 0px ${CultureTokens.coral}80`,
   },
   liveBadgeText: {
     fontFamily: 'Poppins_700Bold',

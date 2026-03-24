@@ -9,10 +9,11 @@ import {
   Alert, 
   Share 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppHeaderBar } from '@/components/AppHeaderBar';
+import { BackButton } from '@/components/ui/BackButton';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
@@ -20,8 +21,11 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { TextStyles } from '@/constants/typography';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 interface Ticket {
   id: string;
@@ -86,151 +90,102 @@ function TicketCard({ ticket, onCancel }: TicketCardProps) {
   const bannerColor = ticket.imageColor || CultureTokens.indigo;
 
   return (
-    <View style={[styles.ticketCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.ticketTapArea,
-          pressed && { opacity: 0.93 }
-        ]}
-        onPress={() => {
-          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push({ pathname: '/tickets/[id]', params: { id: ticket.id } });
-        }}
-        accessibilityLabel={`View ticket for ${ticket.eventTitle}`}
-        accessibilityRole="button"
-      >
+    <Card 
+      style={styles.ticketCard}
+      padding={0}
+      onPress={() => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push({ pathname: '/tickets/[id]', params: { id: ticket.id } });
+      }}
+    >
+      <View style={styles.ticketTapArea}>
         {/* Banner */}
         <View style={[styles.ticketBanner, { backgroundColor: bannerColor }]}>
-          <View style={styles.bannerOverlay} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
+            style={StyleSheet.absoluteFillObject}
+          />
           <View style={styles.bannerContent}>
             <View style={styles.statusRow}>
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                <Text style={[styles.statusText, { color: statusStyle.color }]}>{statusStyle.label}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Text style={[styles.statusText, { color: '#FFFFFF' }]}>{statusStyle.label}</Text>
               </View>
-              {ticket.priority && ticket.priority !== 'normal' && (
-                <View style={[styles.priorityBadge, { backgroundColor: priorityStyle.bg }]}>
-                  <Text style={[styles.priorityText, { color: priorityStyle.color }]}>{priorityStyle.label}</Text>
-                </View>
-              )}
             </View>
 
             {isActive && (
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>Active</Text>
+              <View style={[styles.liveBadge, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
+                <View style={[styles.liveDot, { backgroundColor: '#FFFFFF' }]} />
+                <Text style={[styles.liveText, { color: '#FFFFFF' }]}>Active Ticket</Text>
               </View>
             )}
           </View>
         </View>
-
-        {/* Perforated edge */}
-        <View style={[styles.perfDivider, { borderColor: colors.border }]} />
 
         {/* Main content */}
         <View style={styles.ticketBody}>
-          <Text style={[styles.ticketTitle, { color: colors.text }]} numberOfLines={2}>
+          <Text style={[TextStyles.title3, { color: colors.text }]} numberOfLines={2}>
             {ticket.eventTitle}
           </Text>
 
-          {/* Date + Time prominent block */}
           <View style={styles.dateTimeContainer}>
-            {ticket.eventDate && (
-              <View style={styles.dateBlock}>
-                <Text style={styles.dayNumber}>
-                  {new Date(ticket.eventDate).getDate()}
-                </Text>
-                <Text style={styles.monthText}>
-                  {new Date(ticket.eventDate).toLocaleString('en-AU', { month: 'short' }).toUpperCase()}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.timeVenueBlock}>
-              {ticket.eventTime && (
-                <View style={styles.timeRow}>
-                  <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.timeText, { color: colors.text }]}>{ticket.eventTime}</Text>
-                </View>
-              )}
-              {ticket.eventVenue && (
-                <View style={styles.venueRow}>
-                  <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.venueText, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {ticket.eventVenue}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Footer meta */}
-          <View style={styles.ticketFooter}>
-            <View style={styles.metaLeft}>
-              {ticket.tierName && (
-                <View style={[styles.tierBadge, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                  <Text style={styles.tierText}>{ticket.tierName}</Text>
-                </View>
-              )}
-              <Text style={[styles.qtyText, { color: colors.textSecondary }]}>
-                {ticket.quantity || 1} ticket{ticket.quantity !== 1 ? 's' : ''}
+            <View style={[styles.dateBlock, { backgroundColor: colors.backgroundSecondary }]}>
+              <Text style={[TextStyles.title2, { color: colors.text, lineHeight: 28 }]}>
+                {ticket.eventDate ? new Date(ticket.eventDate).getDate() : '--'}
+              </Text>
+              <Text style={[TextStyles.captionSemibold, { color: colors.textSecondary }]}>
+                {ticket.eventDate ? new Date(ticket.eventDate).toLocaleString('en-AU', { month: 'short' }).toUpperCase() : '---'}
               </Text>
             </View>
 
-            <Text style={[styles.priceText, { color: colors.text }]}>
+            <View style={styles.timeVenueBlock}>
+              <View style={styles.timeRow}>
+                <Ionicons name="time-outline" size={14} color={CultureTokens.indigo} />
+                <Text style={[TextStyles.headline, { color: colors.text }]}>{ticket.eventTime || 'TBA'}</Text>
+              </View>
+              <View style={styles.venueRow}>
+                <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+                <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {ticket.eventVenue || 'Online / TBA'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.ticketFooter, { borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 12 }]}>
+            <View style={styles.metaLeft}>
+              <View style={[styles.tierBadge, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                <Text style={[TextStyles.badge, { color: CultureTokens.indigo }]}>{ticket.tierName || 'Standard'}</Text>
+              </View>
+              <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                ×{ticket.quantity || 1}
+              </Text>
+            </View>
+
+            <Text style={[TextStyles.headline, { color: colors.text }]}>
               ${( (ticket.totalPriceCents || 0) / 100 ).toFixed(2)}
             </Text>
           </View>
-
-          {/* QR strip */}
-          {isActive && ticket.ticketCode && (
-            <View style={[styles.qrContainer, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-              <Ionicons name="qr-code-outline" size={18} color={colors.textSecondary} />
-              <Text style={[styles.qrText, { color: colors.text }]} selectable>
-                {ticket.ticketCode}
-              </Text>
-            </View>
-          )}
         </View>
-      </Pressable>
+      </View>
 
-      {/* Action bar - only for active tickets */}
+      {/* Action bar */}
       {isActive && (
-        <View style={[styles.actionBar, { borderTopColor: colors.divider }]}>
+        <View style={[styles.actionBar, { borderTopColor: colors.borderLight, backgroundColor: colors.backgroundSecondary + '40' }]}>
           <View style={styles.actionIcons}>
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={() => handleShare(ticket)}
-            >
+            <Pressable style={styles.iconButton} onPress={() => handleShare(ticket)}>
               <Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
             </Pressable>
-            
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert('Added to Wallet', `Ticket for "${ticket.eventTitle}" saved to wallet.`);
-              }}
-            >
+            <Pressable style={styles.iconButton} onPress={() => Alert.alert('Saved to Wallet')}>
               <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
-            </Pressable>
-
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={() => router.push({ pathname: '/tickets/print/[id]', params: { id: ticket.id, layout: 'full', autoPrint: '1' } })}
-            >
-              <Ionicons name="print-outline" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
 
-          <Pressable 
-            style={styles.cancelButton} 
-            onPress={() => onCancel(ticket)}
-          >
-            <Text style={styles.cancelText}>Cancel Ticket</Text>
+          <Pressable onPress={() => onCancel(ticket)}>
+            <Text style={[TextStyles.labelSemibold, { color: CultureTokens.coral }]}>Cancel Ticket</Text>
           </Pressable>
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
@@ -280,11 +235,17 @@ export default function TicketsScreen() {
   return (
     <AuthGuard icon="ticket-outline" title="My Tickets" message="Sign in to view and manage your event tickets.">
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <AppHeaderBar
-          title="My Tickets"
-          backFallback="/(tabs)/profile"
-          topInset={topInset}
-        />
+        <LinearGradient
+          colors={gradients.culturepassBrand as [string, string, string]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ paddingTop: topInset }}
+        >
+          <View style={styles.header}>
+            <BackButton fallback="/(tabs)/profile" color="#FFFFFF" style={styles.headerBackBtn} />
+            <Text style={[TextStyles.headline, { color: '#FFFFFF', flex: 1, textAlign: 'center', marginRight: 44 }]}>My Tickets</Text>
+          </View>
+        </LinearGradient>
 
         <ScrollView
           style={{ flex: 1 }}
@@ -313,24 +274,21 @@ export default function TicketsScreen() {
               </View>
             ) : tickets.length === 0 ? (
               <View style={styles.emptyState}>
-                <View style={[styles.emptyIconContainer, { backgroundColor: colors.surfaceElevated }]}>
-                  <Ionicons name="ticket-outline" size={48} color={colors.textTertiary} />
+                <View style={[styles.emptyIconContainer, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Ionicons name="ticket-outline" size={48} color={CultureTokens.indigo} />
                 </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>No Tickets Yet</Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  Your upcoming and past event tickets will appear here
+                <Text style={[TextStyles.title2, { color: colors.text }]}>No Tickets Yet</Text>
+                <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 20 }]}>
+                  When you book tickets for events or festivals, they will appear here.
                 </Text>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.browseButton,
-                    { backgroundColor: CultureTokens.indigo },
-                    pressed && { opacity: 0.88 }
-                  ]}
-                  onPress={() => router.push('/(tabs)')}
+                <Button
+                  onPress={() => router.push('/(tabs)/explore' as never)}
+                  variant="primary"
+                  style={{ marginTop: 12, paddingHorizontal: 32 }}
+                  leftIcon="search-outline"
                 >
-                  <Ionicons name="search-outline" size={18} color="#fff" />
-                  <Text style={styles.browseButtonText}>Discover Events</Text>
-                </Pressable>
+                  Discover Events
+                </Button>
               </View>
             ) : (
               <>
@@ -374,13 +332,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
 
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingVertical: 14 
+  },
+  headerBackBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   section: { marginBottom: 32 },
   sectionTitle: {
     fontSize: 13,
     fontFamily: 'Poppins_700Bold',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
+    letterSpacing: 2,
+    marginBottom: 16,
   },
 
   // Ticket Card

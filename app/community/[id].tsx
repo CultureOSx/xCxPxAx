@@ -1,17 +1,19 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable, Platform,
-  ActivityIndicator, useWindowDimensions, Linking,
+  ActivityIndicator, useWindowDimensions, Linking, Alert
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSaved } from '@/contexts/SavedContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 import { getQueryFn } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import type { Community, EventData } from '@/shared/schema';
@@ -329,7 +331,7 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
                   </View>
                 ) : ev.priceLabel ? (
                   <View style={[pc.freePill, { backgroundColor: CultureTokens.indigo }]}>
-                    <Text style={[pc.freePillText, { color: '#fff' }]}>{ev.priceLabel}</Text>
+                    <Text style={[pc.freePillText, { color: 'white' }]}>{ev.priceLabel}</Text>
                   </View>
                 ) : null}
               </View>
@@ -456,7 +458,7 @@ const pc = StyleSheet.create({
 
   eventImg:      { height: 220, position: 'relative', backgroundColor: '#1a1a2e' },
   freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.saffron, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
+  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'black' },
   eventInfo:     { padding: 14, gap: 6 },
   eventTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.3 },
   metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -547,6 +549,8 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
 
@@ -585,6 +589,13 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   });
 
   const handleJoinPress = () => {
+    if (!isAuthenticated) {
+      Alert.alert('Login required', 'Please sign in to join this community.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+      ]);
+      return;
+    }
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (joined) leaveMutation.mutate();
     else joinMutation.mutate();
@@ -976,7 +987,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   heroTitle:      {
     fontSize: 26, fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF', textAlign: 'center', lineHeight: 32,
+    color: 'white', textAlign: 'center', lineHeight: 32,
     ...Platform.select({ web: { textShadow: '0px 1px 4px rgba(0,0,0,0.5)' }, default: { textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 } }),
   },
   heroBadge:      {
@@ -985,7 +996,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
-  heroBadgeText:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', textTransform: 'capitalize' },
+  heroBadgeText:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: 'white', textTransform: 'capitalize' },
   heroStatsRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   heroStat:       { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heroStatText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
@@ -1055,8 +1066,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   floatingBottomBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 20, paddingVertical: 16,
-    backgroundColor: 'rgba(20,20,30,0.7)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.surface,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   joinButton:     {
     width: '100%', flexDirection: 'row', alignItems: 'center',

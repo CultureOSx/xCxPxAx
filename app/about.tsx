@@ -291,7 +291,7 @@ export default function Get2KnowCulturePass() {
             <Ionicons
               name="earth"
               size={isDesktop ? 60 : 48}
-              color="#fff"
+              color="white"
               style={{ opacity: 0.95 }}
             />
           </View>
@@ -329,7 +329,7 @@ export default function Get2KnowCulturePass() {
                   accessibilityLabel="Get started with CulturePass"
                 >
                   <Text style={styles.heroPrimaryBtnText}>Get started</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color="white" />
                 </Pressable>
               </Animated.View>
             </WebLink>
@@ -574,7 +574,7 @@ export default function Get2KnowCulturePass() {
                 style={StyleSheet.absoluteFillObject}
               />
               <Text style={styles.ctaBtnText}>Explore CulturePass</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
+              <Ionicons name="arrow-forward" size={18} color="white" />
             </Pressable>
           </WebLink>
 
@@ -654,7 +654,7 @@ const getStyles = (colors: any) =>
     heroTitle: {
       fontSize: Platform.OS === "web" ? 52 : 36,
       fontFamily: "Poppins_700Bold",
-      color: "#fff",
+      color: "white",
       textAlign: "center",
       lineHeight: Platform.OS === "web" ? 64 : 44,
       maxWidth: 720,
@@ -681,7 +681,7 @@ const getStyles = (colors: any) =>
       alignItems: "center",
       ...(Platform.OS === "web" ? { backdropFilter: "blur(20px)" } : {}),
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.35, shadowRadius: 20 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.35, shadowRadius: 20 },
         android: { elevation: 12 },
       }),
     },
@@ -706,7 +706,7 @@ const getStyles = (colors: any) =>
       backgroundColor: "rgba(255,255,255,0.15)",
     },
     heroPrimaryBtn: {
-      backgroundColor: "#050816",
+      backgroundColor: "black",
       paddingVertical: 15,
       paddingHorizontal: 28,
       borderRadius: 999,
@@ -717,7 +717,7 @@ const getStyles = (colors: any) =>
       minHeight: 52,
       alignSelf: "stretch",
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12 },
         android: { elevation: 8 },
       }),
     },
@@ -726,7 +726,7 @@ const getStyles = (colors: any) =>
       transform: [{ scale: 0.97 }],
     },
     heroPrimaryBtnText: {
-      color: "#fff",
+      color: "white",
       fontSize: 16,
       fontFamily: "Poppins_600SemiBold",
       letterSpacing: 0.3,
@@ -867,7 +867,7 @@ const getStyles = (colors: any) =>
       borderColor: colors.borderLight,
       gap: 10,
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 8 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 8 },
         android: { elevation: 2 },
       }),
     },
@@ -937,7 +937,7 @@ const getStyles = (colors: any) =>
       borderColor: colors.borderLight,
       position: "relative",
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
         android: { elevation: 2 },
       }),
     },
@@ -996,7 +996,7 @@ const getStyles = (colors: any) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.borderLight,
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
         android: { elevation: 2 },
       }),
     },
@@ -1041,7 +1041,7 @@ const getStyles = (colors: any) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.borderLight,
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
         android: { elevation: 2 },
       }),
     },
@@ -1095,7 +1095,7 @@ const getStyles = (colors: any) =>
     visionTitle: {
       fontSize: 32,
       fontFamily: "Poppins_700Bold",
-      color: "#fff",
+      color: "white",
       letterSpacing: -0.3,
     },
     visionDivider: {
@@ -1155,7 +1155,7 @@ const getStyles = (colors: any) =>
       }),
     },
     ctaBtnText: {
-      color: "#fff",
+      color: "white",
       fontSize: 16,
       fontFamily: "Poppins_600SemiBold",
       letterSpacing: 0.3,

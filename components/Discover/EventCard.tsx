@@ -43,60 +43,60 @@ interface EventCardProps {
   highlight?: boolean;
   index?: number;
   isLive?: boolean;
+  containerWidth?: number;
+  containerHeight?: number;
 }
 
 function CardContent({
   event,
   highlight,
   colors,
-}: Pick<EventCardProps, 'event' | 'highlight'> & { colors: ReturnType<typeof useColors> }) {
+  isLive,
+}: Pick<EventCardProps, 'event' | 'highlight' | 'isLive'> & { colors: ReturnType<typeof useColors> }) {
+  // Logic for "Starting Next" if not live
+  const now = new Date();
+  const eventDate = new Date(event.date);
+  const isToday = eventDate.toDateString() === now.toDateString();
+  const isStartingNext = !isLive && isToday;
+
   return (
-    <>
+    <View style={styles.centeredContent}>
+      {isLive ? (
+        <View style={[styles.statusBadge, { backgroundColor: CultureTokens.error }]}>
+          <View style={styles.pulseDot} />
+          <Text style={styles.statusBadgeText}>now live</Text>
+        </View>
+      ) : isStartingNext ? (
+        <View style={[styles.statusBadge, { backgroundColor: CultureTokens.indigo }]}>
+          <Text style={styles.statusBadgeText}>Starting next</Text>
+        </View>
+      ) : null}
+
+      <Text style={[styles.dateText, highlight && styles.dateHighlight]}>
+        {formatEventDateTimeBadge(event.date, event.time)}
+      </Text>
+      
+      <Text style={[styles.titleText, highlight && styles.titleHighlight]} numberOfLines={2}>
+        {event.title}
+      </Text>
+
+      <View style={styles.metaRowCentered}>
+        <Ionicons name="location" size={12} color={`${colors.textInverse}CC`} />
+        <Text style={[styles.locationText, { color: `${colors.textInverse}E6` }]} numberOfLines={1}>
+          {event.venue || event.city}
+        </Text>
+      </View>
+
       {event.priceLabel && (
-        <View style={styles.priceBadge}>
-          <Text style={[styles.priceBadgeText, { color: colors.background }]}>{event.priceLabel}</Text>
+        <View style={styles.pricePill}>
+          <Text style={styles.pricePillText}>{event.priceLabel}</Text>
         </View>
       )}
-      <GlassBadge style={styles.dateRibbon}>
-        <Text style={[styles.date, highlight && styles.dateHighlight]}>
-          {formatEventDateTimeBadge(event.date, event.time)}
-        </Text>
-      </GlassBadge>
-      <GlassBadge>
-        <Text style={[styles.title, highlight && styles.titleHighlight]} numberOfLines={2}>
-          {event.title}
-        </Text>
-      </GlassBadge>
-      <GlassBadge style={styles.metaRibbon}>
-        <View style={styles.metaRow}>
-          <Ionicons name="location" size={13} color={`${colors.textInverse}CC`} />
-          <Text style={[styles.location, { color: `${colors.textInverse}E6` }]} numberOfLines={1}>
-            {event.venue || event.city}
-          </Text>
-          {event.attending != null && event.attending > 0 && (
-            <View style={[styles.attendingBadge, { backgroundColor: `${colors.textInverse}26` }]}>
-              <Ionicons name="people" size={11} color={`${colors.textInverse}BF`} />
-              <Text style={[styles.attendingText, { color: `${colors.textInverse}D9` }]}>{event.attending}</Text>
-            </View>
-          )}
-        </View>
-      </GlassBadge>
-      {event.communityId ? (
-        <GlassBadge style={styles.culturePill}>
-          <Text style={styles.culturePillText}>{event.communityId}</Text>
-        </GlassBadge>
-      ) : null}
-      {typeof event.distanceKm === 'number' ? (
-        <GlassBadge style={styles.distancePill}>
-          <Ionicons name="navigate" size={11} color={`${colors.textInverse}E6`} />
-          <Text style={[styles.distancePillText, { color: `${colors.textInverse}E6` }]}>{event.distanceKm.toFixed(1)} km away</Text>
-        </GlassBadge>
-      ) : null}
-    </>
+    </View>
   );
 }
 
-function EventCard({ event, highlight, index = 0, isLive }: EventCardProps) {
+function EventCard({ event, highlight, index = 0, isLive, containerWidth, containerHeight }: EventCardProps) {
   const colors = useColors();
   const scale = useSharedValue(1);
 
@@ -115,10 +115,18 @@ function EventCard({ event, highlight, index = 0, isLive }: EventCardProps) {
         style={[
           styles.card,
           { backgroundColor: colors.surface },
+          containerWidth ? { width: containerWidth } : null,
+          containerHeight ? { height: containerHeight, minHeight: 280 } : null,
           highlight && styles.highlight,
           animatedStyle,
-          Platform.OS === 'web' && { cursor: 'pointer' as any },
-          isHovered && Platform.OS === 'web' && { transform: [{ scale: 1.02 }] },
+          Platform.OS === 'web' && { 
+            cursor: 'pointer' as any,
+            transition: 'all 0.3s ease',
+          },
+          isHovered && Platform.OS === 'web' && { 
+            transform: [{ scale: 1.02 }],
+            boxShadow: '0px 12px 30px rgba(0,0,0,0.25)',
+          },
           Colors.shadows.medium,
         ]}
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
@@ -134,24 +142,17 @@ function EventCard({ event, highlight, index = 0, isLive }: EventCardProps) {
           source={{ uri: event.imageUrl }}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
-          transition={150}
+          transition={300}
         />
 
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.05)', colors.overlay]}
-          locations={[0, 0.5, 1]}
+          colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.92)']}
+          locations={[0, 0.4, 1]}
           style={StyleSheet.absoluteFillObject}
         />
 
-        {isLive && (
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
-        )}
-
         <View style={styles.contentContainer}>
-          <CardContent event={event} highlight={highlight} colors={colors} />
+          <CardContent event={event} highlight={highlight} colors={colors} isLive={isLive} />
         </View>
       </AnimatedPressable>
     </View>
@@ -162,13 +163,14 @@ const styles = StyleSheet.create({
   card: {
     width: 240,
     height: 260,
-    borderRadius: CardTokens.radius,
+    borderRadius: 24,
     overflow: 'hidden',
+    backgroundColor: '#000',
   },
   highlight: {
     width: '100%',
     height: 320,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: CultureTokens.gold,
   },
   contentContainer: {
@@ -179,122 +181,86 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 32,
   },
-  priceBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: CultureTokens.gold,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  priceBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
-  },
-  glassBadgeBase: {
-    alignSelf: 'flex-start',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.20)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 6,
-    overflow: 'hidden',
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(11,11,20,0.5)' : 'transparent',
-  },
-  dateRibbon: {
-    paddingVertical: 4,
-  },
-  metaRibbon: {
-    marginBottom: 8,
-  },
-  date: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
-    color: CultureTokens.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  dateHighlight: {
-    fontSize: 12,
-  },
-  title: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
-    lineHeight: 21,
-  },
-  titleHighlight: {
-    fontSize: 18,
-    lineHeight: 25,
-  },
-  metaRow: {
-    flexDirection: 'row',
+  centeredContent: {
     alignItems: 'center',
-    gap: 5,
+    paddingBottom: 8,
   },
-  location: {
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
-    flex: 1,
-  },
-  attendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  attendingText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  culturePill: {
-    paddingVertical: 5,
-  },
-  culturePillText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  distancePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-    paddingVertical: 4,
-    paddingHorizontal: 9,
-  },
-  distancePillText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  liveBadge: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 94, 91, 0.9)', // Movement Coral
-    zIndex: 10,
+    borderRadius: 999,
+    marginBottom: 10,
   },
-  liveDot: {
+  statusBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
   },
-  liveText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+  dateText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
+    color: CultureTokens.gold,
+    textTransform: 'uppercase',
     letterSpacing: 1,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  dateHighlight: {
+    fontSize: 13,
+  },
+  titleText: {
+    fontSize: 17,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFF',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 6,
+  },
+  titleHighlight: {
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  metaRowCentered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    justifyContent: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  locationText: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    maxWidth: '90%',
+  },
+  pricePill: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignSelf: 'center',
+  },
+  pricePillText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFF',
+  },
+  glassBadgeBase: {
+    alignSelf: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
 });
 

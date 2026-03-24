@@ -317,10 +317,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surfaceSecondary,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.borderLight,
   },
 
   verifiedText: {
@@ -360,9 +360,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: colors.borderLight,
   },
 
   statIconBox: {
@@ -433,9 +433,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)"
+    borderColor: colors.borderLight
   },
 
   tagText: {

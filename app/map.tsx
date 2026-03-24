@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Platform, ActivityIndicator, ScrollView, TextInput, Linking, useWindowDimensions, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -184,10 +184,11 @@ export default function MapScreen() {
   const bottomInset = Platform.OS === 'web' ? 20 : insets.bottom;
   const { state } = useOnboarding();
   const { isDesktop } = useLayout();
+  const params = useLocalSearchParams<{ city?: string }>();
   const styles = getStyles(colors);
   const webStyles = getWebStyles(colors);
 
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(params.city || null);
   const [indigenousOnly, setIndigenousOnly] = useState(false);
   const [citySearch, setCitySearch] = useState('');
 
@@ -314,7 +315,6 @@ export default function MapScreen() {
             contentContainerStyle={styles.discoveryRow}
             style={styles.discoveryRail}
           >
-            
             <Pressable 
               style={[styles.filterChip, !indigenousOnly && styles.filterChipActive]} 
               onPress={() => setIndigenousOnly(false)}
@@ -328,7 +328,6 @@ export default function MapScreen() {
               <Ionicons name="leaf" size={12} color={indigenousOnly ? CultureTokens.indigo : colors.textTertiary} />
               <Text style={[styles.chipText, indigenousOnly && styles.chipTextActive]}>Indigenous</Text>
             </Pressable>
-
 
             {groupEntries.slice(0, 24).map(([key, group]) => (
               <Pressable
@@ -350,23 +349,45 @@ export default function MapScreen() {
           <Text style={styles.loadingMessage}>Discovering events...</Text>
         </View>
       ) : Platform.OS === 'web' ? (
-        <WebCityList
-          cityGroups={allMapGroups as any} // temporarily casting to match type until interface update
-          selectedCity={selectedCity}
-          onSelectCity={setSelectedCity}
-          onEventPress={onEventPress}
-          colors={colors}
-          webStyles={webStyles}
-          styles={styles}
-          onOpenSystemMap={openCityInMaps}
-          onOpenEventMap={(event) => openCityInMaps(event.city || event.venue || '')}
-          totalEvents={totalEvents}
-          shellStyle={shellStyle}
-          onClearFilters={clearMapState}
-          indigenousOnly={indigenousOnly}
-          setIndigenousOnly={setIndigenousOnly}
-          groupEntries={groupEntries}
-        />
+        <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column' }}>
+          <View style={{ flex: isDesktop ? 1 : undefined }}>
+            <WebCityList
+              cityGroups={allMapGroups as any}
+              selectedCity={selectedCity}
+              onSelectCity={setSelectedCity}
+              onEventPress={onEventPress}
+              colors={colors}
+              webStyles={webStyles}
+              styles={styles}
+              onOpenSystemMap={openCityInMaps}
+              onOpenEventMap={(event) => openCityInMaps(event.city || event.venue || '')}
+              totalEvents={totalEvents}
+              shellStyle={isDesktop ? { maxWidth: '100%', paddingHorizontal: 20 } : shellStyle}
+              onClearFilters={clearMapState}
+              indigenousOnly={indigenousOnly}
+              setIndigenousOnly={setIndigenousOnly}
+              groupEntries={groupEntries}
+            />
+          </View>
+          {isDesktop && (
+             <View style={{ flex: 1.5, borderLeftWidth: 1, borderLeftColor: colors.borderLight }}>
+                <NativeMapView
+                  cityGroups={allMapGroups as any}
+                  groupEntries={groupEntries}
+                  preferredCity={state.city || null}
+                  selectedCity={selectedCity}
+                  selectedEvents={selectedEvents}
+                  onMarkerPress={setSelectedCity}
+                  onSelectCity={setSelectedCity}
+                  onClearCity={() => setSelectedCity(null)}
+                  onEventPress={onEventPress}
+                  onOpenSystemMap={(key) => openCityInMaps(allMapGroups[key]?.label || key)}
+                  onOpenEventMap={(event) => openCityInMaps(event.city || event.venue || '')}
+                  bottomInset={bottomInset}
+                />
+             </View>
+          )}
+        </View>
       ) : (
         <NativeMapView
           cityGroups={allMapGroups as any}

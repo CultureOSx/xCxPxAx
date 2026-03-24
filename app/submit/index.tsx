@@ -108,7 +108,7 @@ const card = StyleSheet.create({
     padding: 16, marginBottom: 12,
     ...Platform.select({
       web: { boxShadow: '0px 1px 6px rgba(0,0,0,0.06)' } as object,
-      default: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+      default: { shadowColor: "black", shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
     }),
   },
   sectionHead:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
@@ -388,7 +388,7 @@ export default function SubmitScreen() {
             <Ionicons name={conf.icon as never} size={40} color={conf.color} />
           </View>
           <View style={[s.successCheckCircle, { backgroundColor: conf.color }]}>
-            <Ionicons name="checkmark" size={14} color="#fff" />
+            <Ionicons name="checkmark" size={14} color="white" />
           </View>
           <Text style={[s.successTitle, { color: colors.text }]}>
             {submittedType === 'event' ? 'Event Submitted!'
@@ -487,7 +487,7 @@ export default function SubmitScreen() {
                       accessibilityLabel={conf.label}
                     >
                       <View style={[s.typeCardIconWrap, { backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : conf.color + '18' }]}>
-                        <Ionicons name={conf.icon as never} size={20} color={isActive ? '#fff' : conf.color} />
+                        <Ionicons name={conf.icon as never} size={20} color={isActive ? 'white' : conf.color} />
                       </View>
                       <Text style={[s.typeCardLabel, { color: isActive ? '#fff' : colors.text }]}>{conf.label}</Text>
                       <Text style={[s.typeCardDesc, { color: isActive ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]} numberOfLines={2}>
@@ -559,7 +559,7 @@ export default function SubmitScreen() {
                   <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
                   <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={StyleSheet.absoluteFillObject} />
                   <View style={s.mediaReplaceBtn}>
-                    <Ionicons name="camera-outline" size={13} color="#fff" />
+                    <Ionicons name="camera-outline" size={13} color="white" />
                     <Text style={s.mediaReplaceBtnText}>Replace Image</Text>
                   </View>
                 </Pressable>
@@ -759,7 +759,7 @@ export default function SubmitScreen() {
                           onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); set('perkType', isActive ? '' : pt.key); }}
                           accessibilityRole="button" accessibilityLabel={pt.label}
                         >
-                          <Ionicons name={pt.icon as never} size={13} color={isActive ? '#fff' : accent} />
+                          <Ionicons name={pt.icon as never} size={13} color={isActive ? 'white' : accent} />
                           <Text style={[s.chipText, { color: isActive ? '#fff' : colors.text }]}>{pt.label}</Text>
                         </Pressable>
                       );
@@ -985,8 +985,8 @@ export default function SubmitScreen() {
                 accessibilityLabel={`Submit ${TYPE_CONFIG[activeTab].label}`}
               >
                 {isPending
-                  ? <ActivityIndicator size="small" color="#fff" />
-                  : <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                  ? <ActivityIndicator size="small" color="white" />
+                  : <Ionicons name="checkmark-circle" size={20} color="white" />
                 }
                 <Text style={s.submitBtnText}>
                   {isPending ? 'Submitting…' : `Submit ${TYPE_CONFIG[activeTab].label}`}
@@ -1064,7 +1064,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20,
   },
-  mediaReplaceBtnText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  mediaReplaceBtnText: { color: "white", fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
   mediaEmpty: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 4,
@@ -1083,10 +1083,10 @@ const s = StyleSheet.create({
     borderRadius: 14, paddingVertical: 16,
     ...Platform.select({
       web: { boxShadow: '0px 4px 16px rgba(0,0,0,0.15)' } as object,
-      default: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+      default: { shadowColor: "black", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
     }),
   },
-  submitBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  submitBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: "white" },
   submitNote:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 10, textAlign: 'center', lineHeight: 18 },
 
   // Success screen
@@ -1096,7 +1096,7 @@ const s = StyleSheet.create({
     padding: 28, alignItems: 'center', gap: 10,
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' } as object,
-      default: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+      default: { shadowColor: "black", shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
     }),
   },
   successIconWrap:  { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
@@ -1107,7 +1107,7 @@ const s = StyleSheet.create({
   successTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginTop: 4 },
   successSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, paddingHorizontal: 8, marginBottom: 8 },
   successBtn:        { width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
-  successBtnText:    { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  successBtnText:    { fontSize: 15, fontFamily: 'Poppins_700Bold', color: "white" },
   successBtnOutline: { width: '100%', paddingVertical: 12, borderRadius: 14, alignItems: 'center', borderWidth: 1, marginTop: 4 },
   successBtnOutlineText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
 });

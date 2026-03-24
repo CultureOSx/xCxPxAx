@@ -216,7 +216,7 @@ export default function HelpScreen() {
                   <Ionicons
                     name={cat.icon as any}
                     size={14}
-                    color={activeCategory === cat.id ? '#0B0B14' : 'rgba(255,255,255,0.6)'}
+                    color={activeCategory === cat.id ? 'black' : 'rgba(255,255,255,0.6)'}
                   />
                   <Text style={[styles.pillText, activeCategory === cat.id && styles.pillTextActive]}>
                     {cat.label}
@@ -374,7 +374,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#fff' },
+  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: 'white' },
   heroSub: {
     fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.9)',
     textAlign: 'center', lineHeight: 24, paddingHorizontal: 12,

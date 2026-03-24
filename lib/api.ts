@@ -224,6 +224,18 @@ const tickets = {
     request<WalletPassLinkResponse>('GET', `api/tickets/${ticketId}/wallet/google`),
 };
 
+const stripeApi = {
+  createCheckoutSession: (ticketData: {
+    eventId: string;
+    eventTitle?: string;
+    eventDate?: string;
+    tierName?: string;
+    quantity?: number;
+    totalPriceCents?: number;
+    currency?: string;
+  }) => request<{ checkoutUrl: string; ticketId: string; sessionId: string }>('POST', 'api/stripe/create-checkout-session', { ticketData }),
+};
+
 // ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------
@@ -244,7 +256,7 @@ const search = {
     if (params.country) qs.set('country', params.country);
     if (params.page != null) qs.set('page', String(params.page));
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
-    return request<{ events: EventData[]; profiles: Profile[]; movies: any[] }>('GET', `api/search?${qs}`);
+    return request<{ events: EventData[]; profiles: Profile[]; movies: any[]; users: any[] }>('GET', `api/search?${qs}`);
   },
 
   suggest: (q: string) =>
@@ -1086,6 +1098,7 @@ export const api = {
   auth,
   events,
   tickets,
+  stripe: stripeApi,
   search,
   discover,
   users,

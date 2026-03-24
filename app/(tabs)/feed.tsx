@@ -1400,7 +1400,7 @@ export default function CultureFeedScreen() {
         if (__DEV__) console.error('[CultureFeed] Failed to create post:', err);
       }
     })();
-  }, [authUser, communities]);
+  }, [authUser, communities, queryClient, state.city, state.country]);
 
 
   const posts = useMemo<FeedPost[]>(() => {

@@ -184,7 +184,8 @@ export default function ExploreScreen() {
   }, [events, activeId, query]);
 
   const featured  = useMemo(() => events.filter(e => e.isFeatured).slice(0, 6), [events]);
-  const gridCols  = isDesktop ? 4 : 2;
+  const [cols, setCols] = useState<2 | 3>(2);
+  const gridCols  = isDesktop ? 6 : cols;
   const colGap    = 12;
   const colWidth  = Math.floor((width - hPad * 2 - colGap * (gridCols - 1)) / gridCols);
 
@@ -301,15 +302,28 @@ export default function ExploreScreen() {
             {/* Header row */}
             <View style={s.sectionHeader}>
               <View style={s.sectionDot} />
-              <Text style={[s.sectionTitle, { color: colors.text }]}>
-                {activeId === 'all' && query === '' ? 'All Events' :
-                 query ? `"${query}"` :
-                 CATEGORIES.find(c => c.id === activeId)?.label ?? 'Events'}
-              </Text>
-              <View style={s.sectionFlex} />
+              <View style={{ flex: 1 }}>
+                <Text style={[s.sectionTitle, { color: colors.text }]}>
+                  {activeId === 'all' && query === '' ? 'Discover Sydney' :
+                   query ? `"${query}"` :
+                   CATEGORIES.find(c => c.id === activeId)?.label ?? 'Events'}
+                </Text>
+              </View>
+
+              {!isDesktop && (
+                <View style={[s.colToggle, { backgroundColor: colors.backgroundSecondary }]}>
+                  <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(2); }} style={[s.toggleBtn, cols === 2 && s.toggleActive]}>
+                    <Ionicons name="grid" size={12} color={cols === 2 ? '#FFFFFF' : colors.textTertiary} />
+                  </Pressable>
+                  <Pressable onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(); setCols(3); }} style={[s.toggleBtn, cols === 3 && s.toggleActive]}>
+                    <Ionicons name="apps" size={12} color={cols === 3 ? '#FFFFFF' : colors.textTertiary} />
+                  </Pressable>
+                </View>
+              )}
+
               {!isLoading && (
-                <Text style={[s.resultCount, { color: colors.textTertiary }]}>
-                  {filtered.length} event{filtered.length !== 1 ? 's' : ''}
+                <Text style={[s.resultCount, { color: colors.textTertiary, marginLeft: 8 }]}>
+                  {filtered.length}
                 </Text>
               )}
             </View>
@@ -398,4 +412,21 @@ const s = StyleSheet.create({
   emptySub:    { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingHorizontal: 24 },
   resetBtn:    { marginTop: 8, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1 },
   resetBtnText:{ fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+
+  colToggle: {
+    flexDirection: 'row',
+    padding: 3,
+    borderRadius: 10,
+    gap: 2,
+  },
+  toggleBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleActive: {
+    backgroundColor: CultureTokens.indigo,
+  },
 });

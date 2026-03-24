@@ -44,6 +44,15 @@ export const CultureIdentityQRWidget = noopWidget<{
   culturePassId: string;
 }>();
 
+export const CultureUpcomingTicketWidget = noopWidget<{
+  eventTitle: string;
+  eventDate: string;
+  eventTime?: string;
+  venue?: string;
+  ticketCode?: string;
+  status: string;
+}>();
+
 export const CultureLiveEventTracker = noopLiveActivity<{
   eventTitle: string;
   venue?: string;

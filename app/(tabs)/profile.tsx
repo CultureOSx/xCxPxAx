@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -167,6 +167,28 @@ export default function ProfileScreen() {
       setRefreshing(false);
     }
   }, [userId]);
+
+  const switchToHostMutation = useMutation({
+    mutationFn: (newRole: string) => api.users.update(userId!, { role: newRole as any }),
+    onSuccess: () => {
+       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+       queryClient.invalidateQueries({ queryKey: ['api/auth/me'] });
+       queryClient.invalidateQueries({ queryKey: ['/api/users/me', 'profile-tab', userId] });
+       Alert.alert('Welcome, Organizer!', 'Your account has been upgraded to a Host account. You can now create and manage events.');
+    },
+    onError: (err: any) => Alert.alert('Error', err.message),
+  });
+
+  const handleBecomeHost = useCallback(() => {
+    Alert.alert(
+      'Become a Host',
+      'This will upgrade your account to an Organizer account. You will be able to create events, manage communities, and access host tools. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Upgrade to Host', onPress: () => switchToHostMutation.mutate('organizer') },
+      ]
+    );
+  }, [switchToHostMutation]);
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ['/api/users/me', 'profile-tab', userId],
@@ -331,22 +353,21 @@ export default function ProfileScreen() {
         <Text style={[TextStyles.body, { color: 'rgba(255,255,255,0.6)', marginTop: 2, marginBottom: 16 }]}>+{displayUser?.handle ?? displayUser?.username}</Text>
       )}
 
-      {/* Points — big number like reference */}
-      <Text style={[TextStyles.display, { fontSize: 52, color: '#FFFFFF', letterSpacing: -1.5, lineHeight: 60 }]}>{points.toLocaleString()}</Text>
-      <View style={s.heroPtsRow}>
-        <Ionicons name="star" size={11} color={YELLOW} />
-        <Text style={[TextStyles.captionSemibold, { color: CultureTokens.gold, letterSpacing: 2 }]}>CULTUREPASS POINTS</Text>
+      {/* Points section (Blue) */}
+      <View style={s.pointsSec}>
+        <Text style={[TextStyles.title, { color: CultureTokens.indigo, fontSize: 32 }]}>{points}</Text>
+        <Text style={[TextStyles.captionSemibold, { color: CultureTokens.indigo, letterSpacing: 2 }]}>CULTUREPASS POINTS</Text>
       </View>
 
-      {/* Tier pill */}
-      <View style={[s.tierPill, { borderColor: CultureTokens.gold + '40', backgroundColor: CultureTokens.gold + '15' }]}>
-        <Ionicons name="shield-checkmark" size={12} color={CultureTokens.gold} />
-        <Text style={[s.tierPillText, { color: CultureTokens.gold }]}>{TIER_LABELS[tier] ?? 'Standard'} Member</Text>
+      {/* Tier pill (Blue) */}
+      <View style={[s.tierPill, { borderColor: CultureTokens.indigo + '40', backgroundColor: CultureTokens.indigo + '15' }]}>
+        <Ionicons name="shield-checkmark" size={12} color={CultureTokens.indigo} />
+        <Text style={[s.tierPillText, { color: CultureTokens.indigo }]}>{TIER_LABELS[tier] ?? 'Standard'} Member</Text>
       </View>
 
-      {/* Yellow bottom line */}
+      {/* Blue bottom line */}
       <LinearGradient
-        colors={[CultureTokens.indigo, CultureTokens.gold, 'rgba(255,200,87,0)']}
+        colors={[CultureTokens.indigo, CultureTokens.indigo + '80', 'rgba(30,58,138,0)']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         style={s.heroBorderLine}
       />
@@ -362,15 +383,27 @@ export default function ProfileScreen() {
       <View style={s.tilesGrid}>
         {/* Row 1 */}
         <View style={s.tilesRow}>
-          <QuickTile icon="person-outline"   label="Edit Profile"  color={BLUE}                   onPress={() => router.push('/profile/edit' as never)}       colors={colors} />
-          <QuickTile icon="people-outline"   label="Communities"   color={CultureTokens.teal}     onPress={() => router.push('/(tabs)/community' as never)}  colors={colors} />
-          <QuickTile icon="calendar-outline" label="My Events"     color={CultureTokens.saffron}  onPress={() => router.push('/tickets/index' as never)}            colors={colors} />
+          <QuickTile icon="person-outline"   label="Edit Profile"  color={CultureTokens.indigo}   onPress={() => router.push('/profile/edit' as never)}       colors={colors} />
+          <QuickTile icon="people-outline"   label="Communities"   color={CultureTokens.indigo}   onPress={() => router.push('/(tabs)/community' as never)}  colors={colors} />
+          <QuickTile icon="calendar-outline" label="My Events"     color={CultureTokens.indigo}   onPress={() => router.push('/tickets/index' as never)}            colors={colors} />
         </View>
         {/* Row 2 */}
         <View style={s.tilesRow}>
-          <QuickTile icon="bookmark-outline" label="Saved"         color={CultureTokens.coral}    onPress={() => router.push('/saved' as never)}              colors={colors} />
-          <QuickTile icon="wallet-outline"   label="Wallet"        color={CultureTokens.gold}     onPress={() => router.push('/payment/wallet' as never)}     colors={colors} />
-          <QuickTile icon="qr-code-outline"  label="Digital ID"    color={BLUE}                   onPress={() => router.push('/profile/qr' as never)}        colors={colors} />
+          <QuickTile icon="eye-outline"          label="View Public"   color={CultureTokens.indigo}   onPress={() => router.push(`/profile/${userId}` as never)}  colors={colors} />
+          <QuickTile icon="share-social-outline" label="Share Profile" color={CultureTokens.indigo}   onPress={handleShare}                                       colors={colors} />
+          <QuickTile 
+            icon={isOrganizer ? "flash-outline" : "star-outline"}  
+            label={isOrganizer ? "Host Tools" : "Become Host"}  
+            color={CultureTokens.indigo}    
+            onPress={isOrganizer ? () => router.push('/dashboard/organizer' as never) : handleBecomeHost} 
+            colors={colors} 
+          />
+        </View>
+        {/* Row 3 */}
+        <View style={s.tilesRow}>
+          <QuickTile icon="settings-outline" label="Settings"      color={CultureTokens.indigo}   onPress={() => router.push('/settings' as never)}          colors={colors} />
+          <QuickTile icon="help-circle-outline" label="Help"       color={CultureTokens.indigo}   onPress={() => router.push('/help' as never)}              colors={colors} />
+          <QuickTile icon="log-out-outline"  label="Sign Out"      color={CultureTokens.indigo}   onPress={handleSignOut}                                     colors={colors} />
         </View>
       </View>
 
@@ -737,7 +770,8 @@ const s = StyleSheet.create({
   heroName:    { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: 1.5, textAlign: 'center', paddingHorizontal: 24 },
   heroHandle:  { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', marginTop: 2, marginBottom: 16 },
   heroPoints:  { fontSize: 52, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -1.5, lineHeight: 60 },
-  heroPtsRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 18 },
+  pointsSec: { alignItems: 'center', marginVertical: 12 },
+  heroPtsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   heroPtsLabel:{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold, letterSpacing: 2 },
 
   tierPill:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 99, borderWidth: 1 },

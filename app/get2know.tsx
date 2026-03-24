@@ -332,7 +332,7 @@ export default function Get2KnowCulturePass() {
           {/* Pill badge */}
           <View style={styles.heroTopPillWrapper}>
             <View style={styles.heroPill}>
-              <Ionicons name="sparkles-outline" size={14} color="#fff" />
+              <Ionicons name="sparkles-outline" size={14} color="white" />
               <Text style={styles.heroPillText}>Global cultural community</Text>
             </View>
           </View>
@@ -340,7 +340,7 @@ export default function Get2KnowCulturePass() {
           <Ionicons
             name="earth"
             size={isDesktop ? 64 : 52}
-            color="#fff"
+            color="white"
             style={{ opacity: 0.95, marginBottom: 6 }}
           />
 
@@ -378,7 +378,7 @@ export default function Get2KnowCulturePass() {
                 <div
                   style={{
                     marginTop: 4,
-                    backgroundColor: "#050816",
+                    backgroundColor: "black",
                     paddingTop: 14,
                     paddingBottom: 14,
                     paddingLeft: 24,
@@ -392,10 +392,10 @@ export default function Get2KnowCulturePass() {
                     cursor: "pointer",
                   }}
                 >
-                  <span style={{ color: "#fff", fontSize: 16, fontFamily: "Poppins_600SemiBold", fontWeight: 600 }}>
+                  <span style={{ color: "white", fontSize: 16, fontFamily: "Poppins_600SemiBold", fontWeight: 600 }}>
                     Get started
                   </span>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color="white" />
                 </div>
               </a>
             ) : (
@@ -411,7 +411,7 @@ export default function Get2KnowCulturePass() {
                   android_ripple={{ color: "rgba(255,255,255,0.18)", borderless: false }}
                 >
                   <Text style={styles.heroPrimaryBtnText}>Get started</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color="white" />
                 </Pressable>
               </Animated.View>
             )}
@@ -628,7 +628,7 @@ export default function Get2KnowCulturePass() {
           <Ionicons
             name="earth"
             size={36}
-            color="#fff"
+            color="white"
             style={{ opacity: 0.5, marginBottom: 16 }}
           />
           <Text style={styles.visionTitle}>The Vision</Text>
@@ -655,7 +655,7 @@ export default function Get2KnowCulturePass() {
                 style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}
               >
                 <Text style={styles.ctaBtnText}>Explore CulturePass</Text>
-                <Ionicons name="arrow-forward" size={18} color="#fff" />
+                <Ionicons name="arrow-forward" size={18} color="white" />
               </Pressable>
             </a>
           ) : (
@@ -667,7 +667,7 @@ export default function Get2KnowCulturePass() {
               android_ripple={{ color: "rgba(255,255,255,0.15)", borderless: false }}
             >
               <Text style={styles.ctaBtnText}>Explore CulturePass</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
+              <Ionicons name="arrow-forward" size={18} color="white" />
             </Pressable>
           )}
 
@@ -728,14 +728,14 @@ const getStyles = (colors: any) =>
     },
     heroPillText: {
       fontSize: 12,
-      color: "#fff",
+      color: "white",
       fontFamily: "Poppins_500Medium",
       letterSpacing: 0.4,
     },
     heroTitle: {
       fontSize: Platform.OS === "web" ? 52 : 34,
       fontFamily: "Poppins_700Bold",
-      color: "#fff",
+      color: "white",
       textAlign: "center",
       marginTop: 14,
       lineHeight: Platform.OS === "web" ? 62 : 42,
@@ -762,7 +762,7 @@ const getStyles = (colors: any) =>
       gap: 0,
       // Elevated shadow for card depth
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16 },
         android: { elevation: 10 },
       }),
     },
@@ -788,7 +788,7 @@ const getStyles = (colors: any) =>
     },
     heroPrimaryBtn: {
       marginTop: 4,
-      backgroundColor: "#050816",
+      backgroundColor: "black",
       paddingVertical: 14,
       paddingHorizontal: 24,
       borderRadius: 999,
@@ -809,7 +809,7 @@ const getStyles = (colors: any) =>
       transform: [{ scale: 0.97 }],
     },
     heroPrimaryBtnText: {
-      color: "#fff",
+      color: "white",
       fontSize: 16,
       fontFamily: "Poppins_600SemiBold",
     },
@@ -1055,7 +1055,7 @@ const getStyles = (colors: any) =>
       gap: 6,
       // Card shadow
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
+        ios: { shadowColor: "black", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
         android: { elevation: 3 },
       }),
     },
@@ -1129,7 +1129,7 @@ const getStyles = (colors: any) =>
     visionTitle: {
       fontSize: 28,
       fontFamily: "Poppins_700Bold",
-      color: "#fff",
+      color: "white",
     },
     visionText: {
       fontSize: 15,
@@ -1184,7 +1184,7 @@ const getStyles = (colors: any) =>
       transform: [{ scale: 0.97 }],
     },
     ctaBtnText: {
-      color: "#fff",
+      color: "white",
       fontSize: 16,
       fontFamily: "Poppins_600SemiBold",
     },

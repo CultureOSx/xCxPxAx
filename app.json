@@ -100,7 +100,7 @@
       "output": "static"
     },
     "plugins": [
-      "expo-router",
+      ["expo-router", { "origin": "https://culturepass.app" }],
       "expo-font",
       "expo-web-browser",
       "expo-apple-authentication",

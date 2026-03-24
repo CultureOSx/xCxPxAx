@@ -33,13 +33,20 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
   { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
   { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },
+  { label: 'Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
 ];
 
 const EXPLORE_NAV: NavItem[] = [
-  { label: 'Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
-  { label: 'Map View', icon: 'map-outline', iconActive: 'map', route: '/map' },
-  { label: 'Directory', icon: 'storefront-outline', iconActive: 'storefront', route: '/(tabs)/directory', matchPrefix: true },
-  { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
+  { label: 'Events List', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
+  { label: 'Map Discovery', icon: 'map-outline', iconActive: 'map', route: '/map' },
+  { label: 'Venues Directory', icon: 'storefront-outline', iconActive: 'storefront', route: '/(tabs)/directory', matchPrefix: true },
+  { label: 'Saved Items', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
+];
+
+const CITIES_NAV: NavItem[] = [
+  { label: 'Sydney', icon: 'navigate-outline', iconActive: 'navigate', route: '/city/Sydney?country=Australia' },
+  { label: 'Melbourne', icon: 'navigate-outline', iconActive: 'navigate', route: '/city/Melbourne?country=Australia' },
+  { label: 'London', icon: 'planet-outline', iconActive: 'planet', route: '/city/London?country=UK' },
 ];
 
 const ORGANIZER_NAV: NavItem[] = [
@@ -62,9 +69,8 @@ const VENUE_NAV: NavItem[] = [{ label: 'Venue Hub', icon: 'storefront-outline', 
 const SPONSOR_NAV: NavItem[] = [{ label: 'Sponsor Hub', icon: 'ribbon-outline', iconActive: 'ribbon', route: '/dashboard/sponsor', matchPrefix: true }];
 
 const BOTTOM_NAV: NavItem[] = [
-  { label: 'Profile', icon: 'person-circle-outline', iconActive: 'person-circle', route: '/(tabs)/profile' },
   { label: 'Settings', icon: 'settings-outline', iconActive: 'settings', route: '/settings' },
-  { label: 'Help', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
+  { label: 'Help & FAQ', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
 ];
 
 // ─── Avatar helper ────────────────────────────────────────────────────────────
@@ -421,6 +427,12 @@ export function WebSidebar() {
           ))}
         </NavSection>
 
+        <NavSection label="Top Cities" mutedColor={mutedColor} colors={colors}>
+          {CITIES_NAV.map((item) => (
+            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
+          ))}
+        </NavSection>
+
         {isOrganizer && (
           <NavSection label="Organizer" mutedColor={mutedColor} colors={colors}>
             {ORGANIZER_NAV.map((item) => (
@@ -692,7 +704,7 @@ function SidebarItem({
       style={[
         ni.item,
         active && [ni.itemActive, { backgroundColor: colors.primarySoft }],
-        showHover && { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' },
+        showHover && { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,12,24,0.04)' },
       ]}
       onPress={onPress}
       onHoverIn={() => setHovered(true)}
@@ -711,14 +723,15 @@ function SidebarItem({
       )}
       <Ionicons
         name={active ? item.iconActive : item.icon}
-        size={18}
-        color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.50)' : 'rgba(0,22,40,0.48)')}
+        size={20}
+        color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.60)' : 'rgba(0,22,40,0.52)')}
       />
       <Text
         style={[
           ni.label,
           { color: active ? colors.primary : colors.text },
           active && ni.labelActive,
+          active && { fontFamily: 'Poppins_700Bold' },
         ]}
         numberOfLines={1}
       >

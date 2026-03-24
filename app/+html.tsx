@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
 
-const siteUrl = 'https://culturepass.au';
+const siteUrl = 'https://culturepass.app';
 const siteTitle = 'CulturePass - Cultural Events and Communities';
 const siteDescription =
   'Discover cultural events, communities, and experiences near you across Australia and beyond with CulturePass.';

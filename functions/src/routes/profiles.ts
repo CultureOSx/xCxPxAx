@@ -71,6 +71,23 @@ profilesRouter.get('/communities/nearby', async (req, res) => {
   }
 });
 
+/** GET /api/communities/joined — IDs of communities the current user has joined */
+// IMPORTANT: This MUST be registered before /communities/:id or Express will match
+// the literal string "joined" as the :id param, causing 404s on this endpoint.
+profilesRouter.get('/communities/joined', requireAuth, async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  try {
+    if (!isFirestoreConfigured) return res.json({ communityIds: [] });
+    const snap = await db.collection('communityMembers')
+      .where('userId', '==', userId)
+      .get();
+    return res.json({ communityIds: snap.docs.map((d) => d.data().communityId as string) });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/communities/joined');
+    return res.status(500).json({ error: 'Failed to fetch joined communities' });
+  }
+});
+
 /** GET /api/communities/:id — community detail */
 profilesRouter.get('/communities/:id', async (req, res) => {
   const id = String(req.params.id ?? '');
@@ -241,17 +258,4 @@ profilesRouter.delete('/communities/:id/leave', requireAuth, async (req: Request
   }
 });
 
-/** GET /api/communities/joined — IDs of communities the current user has joined */
-profilesRouter.get('/communities/joined', requireAuth, async (req: Request, res: Response) => {
-  const userId = req.user!.id;
-  try {
-    if (!isFirestoreConfigured) return res.json({ communityIds: [] });
-    const snap = await db.collection('communityMembers')
-      .where('userId', '==', userId)
-      .get();
-    return res.json({ communityIds: snap.docs.map((d) => d.data().communityId as string) });
-  } catch (err) {
-    captureRouteError(err, 'GET /api/communities/joined');
-    return res.status(500).json({ error: 'Failed to fetch joined communities' });
-  }
-});
+// NOTE: /communities/joined was moved above /communities/:id to prevent route shadowing.

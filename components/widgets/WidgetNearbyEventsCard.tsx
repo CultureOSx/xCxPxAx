@@ -25,31 +25,41 @@ export function WidgetNearbyEventsCard({ events }: WidgetNearbyEventsCardProps) 
 
   return (
     <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
-      <Text style={[styles.heading, { color: colors.text }]}>Happening Near You</Text>
       {events.length === 0 ? (
         <Text style={[styles.empty, { color: colors.textSecondary }]}>No nearby events yet.</Text>
       ) : (
-        events.map((event) => (
-          <Pressable
-            key={event.id}
-            style={[styles.row, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={`Open event ${event.title}`}
-          >
-            <View style={styles.rowText}>
-              <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-                {event.title}
-              </Text>
-              <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-                {formatStart(event.date, event.time)} {event.venue ? `• ${event.venue}` : ''}
-              </Text>
-            </View>
-            <Text style={[styles.price, { color: event.isFree ? CultureTokens.teal : CultureTokens.saffron }]}>
-              {event.isFree ? 'Free' : `$${Math.round((event.priceCents ?? 0) / 100)}`}
-            </Text>
-          </Pressable>
-        ))
+        <View style={styles.list}>
+          {events.map((event, idx) => (
+            <Pressable
+              key={event.id}
+              style={[
+                styles.row, 
+                { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary },
+                idx > 0 && { marginTop: 8 }
+              ]}
+              onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`Open event ${event.title}`}
+            >
+              <View style={styles.rowText}>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+                  {event.title}
+                </Text>
+                <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+                  <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>
+                    {formatStart(event.date, event.time)}
+                  </Text>
+                  {event.venue ? ` • ${event.venue}` : ''}
+                </Text>
+              </View>
+              <View style={[styles.priceBadge, { backgroundColor: event.isFree ? CultureTokens.teal + '15' : CultureTokens.saffron + '15' }]}>
+                <Text style={[styles.price, { color: event.isFree ? CultureTokens.teal : CultureTokens.saffron }]}>
+                  {event.isFree ? 'Free' : `$${Math.round((event.priceCents ?? 0) / 100)}`}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
       )}
     </View>
   );
@@ -59,20 +69,20 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: CardTokens.radiusLarge,
     borderWidth: 1,
-    padding: CardTokens.padding,
-    gap: 10,
+    padding: 16,
   },
-  heading: {
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
+  list: {
+    gap: 0,
   },
   empty: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
+    paddingVertical: 10,
   },
   row: {
     borderWidth: 1,
-    borderRadius: CardTokens.radius,
+    borderRadius: 12,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -85,14 +95,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Poppins_700Bold',
   },
   meta: {
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
   },
+  priceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   price: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },
 });

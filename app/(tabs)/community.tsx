@@ -128,13 +128,16 @@ const FeaturedCard = memo(function FeaturedCard({
   profile,
   colors,
   styles,
+  currentUserId,
 }: {
   profile: Profile;
   colors: ReturnType<typeof useColors>;
   styles: ReturnType<typeof getStyles>;
+  currentUserId?: string | null;
 }) {
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(profile.id);
+  const isManaged = profile.ownerId === currentUserId || (profile as any).memberRole === 'admin' || (profile as any).memberRole === 'organizer';
   const meta = TYPE_META[profile.entityType] ?? { color: CultureTokens.indigo, icon: 'people' as const };
   const [joining, setJoining] = useState(false);
 
@@ -218,15 +221,26 @@ const FeaturedCard = memo(function FeaturedCard({
               {fmt(profile.membersCount ?? 0)}
             </Text>
           </View>
-          <Button
-            onPress={handleJoin}
-            variant={joined ? 'outline' : 'primary'}
-            size="sm"
-            disabled={joining}
-            style={[styles.fcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
-          >
-            {joining ? '...' : joined ? 'Joined' : 'Join'}
-          </Button>
+          {isManaged ? (
+            <Button
+              onPress={() => router.push(`/dashboard/organizer/${profile.id}` as never)}
+              variant="outline"
+              size="sm"
+              style={[styles.fcJoinBtn, { borderColor: CultureTokens.indigo }]}
+            >
+              <Text style={[TextStyles.labelSemibold, { color: CultureTokens.indigo, fontSize: 11 }]}>Manage</Text>
+            </Button>
+          ) : (
+            <Button
+              onPress={handleJoin}
+              variant={joined ? 'outline' : 'primary'}
+              size="sm"
+              disabled={joining}
+              style={[styles.fcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
+            >
+              {joining ? '...' : joined ? 'Joined' : 'Join'}
+            </Button>
+          )}
         </View>
       </View>
     </Card>
@@ -240,13 +254,16 @@ const CommunityCard = memo(function CommunityCard({
   profile,
   colors,
   styles,
+  currentUserId,
 }: {
   profile: Profile;
   colors: ReturnType<typeof useColors>;
   styles: ReturnType<typeof getStyles>;
+  currentUserId?: string | null;
 }) {
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(profile.id);
+  const isManaged = profile.ownerId === currentUserId || (profile as any).memberRole === 'admin' || (profile as any).memberRole === 'organizer';
   const meta = TYPE_META[profile.entityType] ?? { color: CultureTokens.indigo, icon: 'people' as const };
   const cultureTags = (profile as any).cultureIds ?? (profile as any).cultures ?? [];
   const [joining, setJoining] = useState(false);
@@ -298,6 +315,22 @@ const CommunityCard = memo(function CommunityCard({
             <Text style={[TextStyles.labelSemibold, { color: meta.color, fontSize: 10, textTransform: 'uppercase' }]}>
               {profile.entityType}
             </Text>
+            {isManaged && (
+              <>
+                <View style={styles.lcDot} />
+                <View style={[styles.statusBadge, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                  <Text style={[styles.statusBadgeText, { color: CultureTokens.indigo }]}>Managed</Text>
+                </View>
+              </>
+            )}
+            {!isManaged && joined && (
+              <>
+                <View style={styles.lcDot} />
+                <View style={[styles.statusBadge, { backgroundColor: CultureTokens.teal + '15' }]}>
+                  <Text style={[styles.statusBadgeText, { color: CultureTokens.teal }]}>Following</Text>
+                </View>
+              </>
+            )}
             {profile.city && (
               <>
                 <View style={styles.lcDot} />
@@ -332,15 +365,26 @@ const CommunityCard = memo(function CommunityCard({
           )}
         </View>
         <View style={styles.lcRight}>
-          <Button
-            onPress={handleJoin}
-            variant={joined ? 'outline' : 'primary'}
-            size="sm"
-            disabled={joining}
-            style={[styles.lcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
-          >
-            {joining ? '...' : joined ? 'Joined' : 'Join'}
-          </Button>
+          {isManaged ? (
+            <Button
+              onPress={() => router.push(`/dashboard/organizer/${profile.id}` as never)}
+              variant="outline"
+              size="sm"
+              style={{ borderColor: CultureTokens.indigo }}
+            >
+              <Text style={[TextStyles.labelSemibold, { color: CultureTokens.indigo, fontSize: 11 }]}>Manage</Text>
+            </Button>
+          ) : (
+            <Button
+              onPress={handleJoin}
+              variant={joined ? 'outline' : 'primary'}
+              size="sm"
+              disabled={joining}
+              style={[styles.lcJoinBtn, !joined && { backgroundColor: meta.color, borderColor: meta.color }]}
+            >
+              {joining ? '...' : joined ? 'Joined' : 'Join'}
+            </Button>
+          )}
         </View>
       </View>
     </Card>
@@ -660,7 +704,7 @@ export default function CommunitiesScreen() {
                 contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
               >
                 {yourJoinedProfiles.map((p) => (
-                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} currentUserId={userId} />
                 ))}
               </ScrollView>
             </View>
@@ -679,7 +723,7 @@ export default function CommunitiesScreen() {
                 contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
               >
                 {featuredProfiles.map((p) => (
-                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} currentUserId={userId} />
                 ))}
               </ScrollView>
             </View>
@@ -705,7 +749,7 @@ export default function CommunitiesScreen() {
                 contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
               >
                 {yourCultureCommunities.map((p) => (
-                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />
+                  <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} currentUserId={userId} />
                 ))}
               </ScrollView>
             </View>
@@ -753,8 +797,8 @@ export default function CommunitiesScreen() {
               columnWrapperStyle={useThreeColumnResults ? { gap: 16 } : undefined}
               renderItem={({ item }) => (
                 useThreeColumnResults
-                  ? <View style={{ flex: 1 }}><CommunityCard profile={item} colors={colors} styles={styles} /></View>
-                  : <CommunityCard profile={item} colors={colors} styles={styles} />
+                  ? <View style={{ flex: 1 }}><CommunityCard profile={item} colors={colors} styles={styles} currentUserId={userId} /></View>
+                  : <CommunityCard profile={item} colors={colors} styles={styles} currentUserId={userId} />
               )}
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
@@ -905,8 +949,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     justifyContent: 'center',
   },
   lcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lcDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.textTertiary },
-  lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  lcDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.textTertiary, marginHorizontal: 4 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase' },
+  lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   lcRight: { marginLeft: 12 },
   lcJoinBtn: { minWidth: 70 },
 

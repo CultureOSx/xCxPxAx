@@ -51,4 +51,15 @@ export function syncCultureWidgetSnapshots(payload: CultureWidgetSnapshotPayload
     displayName: payload.displayName ?? 'CulturePass Member',
     culturePassId: payload.culturePassId ?? payload.upcomingTicket?.ticket.cpTicketId ?? payload.upcomingTicket?.ticket.id ?? 'CP-ID',
   });
+
+  if (payload.upcomingTicket) {
+    widgets.CultureUpcomingTicketWidget.updateSnapshot({
+      eventTitle: payload.upcomingTicket.eventTitle,
+      eventDate: payload.upcomingTicket.eventDate,
+      eventTime: payload.upcomingTicket.eventTime,
+      venue: payload.upcomingTicket.eventVenue,
+      ticketCode: payload.upcomingTicket.ticket.ticketCode,
+      status: payload.upcomingTicket.ticket.status,
+    });
+  }
 }

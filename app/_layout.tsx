@@ -29,8 +29,8 @@ import { useColors } from "@/hooks/useColors";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useLayout } from "@/hooks/useLayout";
 import { initializeWidgets } from "@/lib/widgets/register";
+import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
-import { BackButton } from "@/components/ui/BackButton";
 
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 // Web font loader for Expo web is automatically handled by @expo-google-fonts
@@ -159,10 +159,10 @@ function AuthGuard() {
       'contacts',
     ];
 
-    // Some (tabs) are fully open to guests (index, communities, map). 
+    // Some (tabs) are fully open to guests (index, communities, map).
     // Others (like profile, perks, calendar) require login.
-    const isProtected = 
-      protectedRoutes.includes(segments[0] as string) || 
+    const isProtected =
+      protectedRoutes.includes(segments[0] as string) ||
       (segments[0] === '(tabs)' && (segments[1] === 'profile' || segments[1] === 'perks' || segments[1] === 'calendar' || segments[1] === 'dashboard'));
 
     const inOnboardingGroup = segments[0] === '(onboarding)';
@@ -280,53 +280,7 @@ function RootLayoutNav() {
   );
 }
 
-function GlobalBackButtonOverlay() {
-  const segments = useSegments();
-  const { isDesktop, sidebarWidth } = useLayout();
-  const insets = useSafeAreaInsets();
 
-  const first = segments.at(0) as string | undefined;
-  const second = segments.at(1) as string | undefined;
-  const hasCustomHeader =
-    (first === "profile" && second === "qr") ||
-    (first === "payment" && second === "wallet") ||
-    first === "tickets" ||
-    first === "help";
-  // These screens render their own BackButton — suppress the global overlay to avoid duplicates
-  const hasOwnBackButton =
-    first === "events" ||
-    first === "settings" ||
-    first === "community" ||
-    first === "updates" ||
-    (first === "admin" && (second === "handles" || second === "updates")) ||
-    (first === "profile" && second === "edit");
-  const hideBackButton =
-    !first
-    || first === "(tabs)"
-    || first === "(onboarding)"
-    || first === "landing"
-    || hasCustomHeader
-    || hasOwnBackButton;
-
-  if (hideBackButton) return null;
-
-  const left = Platform.OS === "web" && isDesktop ? sidebarWidth + 16 : 16;
-  const top = (Platform.OS === "web" ? 0 : insets.top) + 10;
-
-  return (
-    <View
-      pointerEvents="box-none"
-      style={{
-        position: "absolute",
-        top,
-        left,
-        zIndex: 1200,
-      }}
-    >
-      <BackButton circled />
-    </View>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Responsive web shell — centres content on wide screens, phone frame on small
@@ -363,12 +317,15 @@ function WebShell({ children }: { children: React.ReactNode }) {
 //       └── DataSync    (syncs auth user → onboarding state)
 //       └── SavedProvider / ContactsProvider / ...
 // ---------------------------------------------------------------------------
+import { Ionicons } from '@expo/vector-icons';
+
 function RootLayoutContent() {
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
+    ...Ionicons.font,
   });
 
   const onLayoutRootView = useCallback(async () => {
@@ -412,6 +369,7 @@ function RootLayoutContent() {
                       >
                         {/* Syncs auth user city/country → OnboardingContext */}
                         <DataSync />
+                        <WidgetSync />
                         <AuthGuard />
                         {isWeb ? (
                           <WebShell>
@@ -422,7 +380,6 @@ function RootLayoutContent() {
                             <RootLayoutNav />
                           </KeyboardProvider>
                         )}
-                        <GlobalBackButtonOverlay />
                       </GestureHandlerRootView>
                     </ContactsProvider>
                   </SavedProvider>
@@ -455,7 +412,6 @@ function RootLayoutContent() {
                           <RootLayoutNav />
                         </KeyboardProvider>
                       )}
-                      <GlobalBackButtonOverlay />
                     </GestureHandlerRootView>
                   </ContactsProvider>
                 </SavedProvider>

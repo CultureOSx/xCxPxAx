@@ -126,7 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         };
         try {
-          profileData = await fetchProfileWithRetry();
+          try {
+            profileData = await fetchProfileWithRetry();
+          } catch (profileErr) {
+            // 404 means the user is authenticated in Firebase but no Firestore profile exists yet.
+            if (profileErr instanceof ApiError && profileErr.status === 404) {
+              profileData = {};
+            } else {
+              throw profileErr; // Re-throw to be caught by the outer handler
+            }
+          }
           
           const needsBootstrap = !profileData.createdAt || !profileData.culturePassId;
           if (needsBootstrap) {
@@ -140,7 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           // "Failed to fetch" = network / CORS error (e.g. localhost hitting prod API without CORS origin).
           // The user is still authenticated via Firebase; profile data will be sparse.
-          const isNetworkError = error instanceof TypeError && error.message === 'Failed to fetch';
+          const isNetworkError = 
+            (error instanceof TypeError && error.message === 'Failed to fetch') ||
+            (error instanceof ApiError && error.status === 0);
+            
           if (isNetworkError && __DEV__) {
             console.warn('[auth] Profile fetch failed (network/CORS) — app running without server profile. Deploy functions or use emulator.');
           } else {

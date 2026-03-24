@@ -120,71 +120,77 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
   const priceLabel = event.isFree ? 'Free' : event.priceCents ? formatPrice(event.priceCents, event.country) : null;
 
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
-      style={({ pressed }) => [
-        { backgroundColor: colors.surface, borderRadius: 20, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: colors.borderLight, ...shadows.medium },
-        pressed && { opacity: 0.93 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={`View event: ${event.title}`}
-    >
-      {/* Hero image */}
-      <View style={{ position: 'relative' }}>
-        {event.heroImageUrl || event.imageUrl ? (
-          <Image
-            source={{ uri: event.heroImageUrl ?? event.imageUrl }}
-            style={{ width: '100%', height: 180 }}
-            contentFit="cover"
-            accessibilityLabel={`${event.title} hero image`}
-          />
-        ) : (
-          <View style={{ width: '100%', height: 180, backgroundColor: (event.imageColor ?? CultureTokens.saffron) + '30', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="calendar" size={48} color={event.imageColor ?? CultureTokens.saffron} />
+    <View style={[{ marginBottom: 16, position: 'relative' }]}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+        style={({ pressed }) => [
+          { backgroundColor: colors.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight, ...shadows.medium },
+          pressed && { opacity: 0.93 },
+        ]}
+        accessibilityRole="link"
+        accessibilityLabel={`View event: ${event.title}`}
+      >
+        {/* Hero image area */}
+        <View style={{ position: 'relative' }}>
+          {event.heroImageUrl || event.imageUrl ? (
+            <Image
+              source={{ uri: event.heroImageUrl ?? event.imageUrl }}
+              style={{ width: '100%', height: 180 }}
+              contentFit="cover"
+              accessibilityLabel={`${event.title} hero image`}
+            />
+          ) : (
+            <View style={{ width: '100%', height: 180, backgroundColor: (event.imageColor ?? CultureTokens.saffron) + '30', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="calendar" size={48} color={event.imageColor ?? CultureTokens.saffron} />
+            </View>
+          )}
+          {/* Date badge */}
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
+            <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' }}>{dateLabel}</Text>
           </View>
-        )}
-        {/* Date badge */}
-        <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
-          <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' }}>{dateLabel}</Text>
+          {/* Price badge */}
+          {priceLabel ? (
+            <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: CultureTokens.saffron, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' }}>{priceLabel}</Text>
+            </View>
+          ) : null}
         </View>
-        {/* Price badge */}
-        {priceLabel ? (
-          <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: CultureTokens.saffron, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' }}>{priceLabel}</Text>
-          </View>
-        ) : null}
-        {/* Save button */}
-        <Pressable
-          onPress={handleSave}
-          style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel={isSaved ? 'Unsave event' : 'Save event'}
-          hitSlop={10}
-        >
-          <Animated.View style={animatedHeart}>
-            <Ionicons name={isSaved ? 'heart' : 'heart-outline'} size={20} color={isSaved ? CultureTokens.coral : '#fff'} />
-          </Animated.View>
-        </Pressable>
-      </View>
 
-      {/* Info */}
-      <View style={{ padding: 14, gap: 6 }}>
-        <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text }} numberOfLines={2}>{event.title}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {event.category ? (
-            <View style={{ backgroundColor: CultureTokens.saffron + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron }}>{event.category}</Text>
-            </View>
-          ) : null}
-          {event.city ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="location-outline" size={13} color={colors.textSecondary} />
-              <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary }}>{event.city}</Text>
-            </View>
-          ) : null}
+        {/* Info */}
+        <View style={{ padding: 14, gap: 6 }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text }} numberOfLines={2}>{event.title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {event.category ? (
+              <View style={{ backgroundColor: CultureTokens.saffron + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron }}>{event.category}</Text>
+              </View>
+            ) : null}
+            {event.city ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="location-outline" size={13} color={colors.textSecondary} />
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary }}>{event.city}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+
+      {/* Save button - Now a sibling to the main Pressable to avoid nesting <button> on Web */}
+      <Pressable
+        onPress={handleSave}
+        style={({ pressed }) => [
+          { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8, zIndex: 10 },
+          pressed && { opacity: 0.7, scale: 0.95 } as any
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={isSaved ? 'Unsave event' : 'Save event'}
+        hitSlop={15}
+      >
+        <Animated.View style={animatedHeart}>
+          <Ionicons name={isSaved ? 'heart' : 'heart-outline'} size={20} color={isSaved ? CultureTokens.coral : '#fff'} />
+        </Animated.View>
+      </Pressable>
+    </View>
   );
 }
 

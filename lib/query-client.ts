@@ -96,17 +96,16 @@ function routeForBase(baseUrl: string, route: string): string {
   const basePath = new URL(baseUrl).pathname.replace(/\/+$/, '');
   const baseHasApiPrefix = basePath.endsWith('/api');
   const routeHasApiPrefix = cleanedRoute.startsWith('api/');
-  const directFunctionsBase = isDirectFunctionsBase(baseUrl);
 
-  // Direct Cloud Functions URLs already consume the exported function name (`/api`).
-  // Keep the route's own `/api/...` prefix so Express routes defined as `/api/...` still match.
-  if (directFunctionsBase && baseHasApiPrefix && routeHasApiPrefix) {
-    return cleanedRoute;
-  }
-
+  // If the base URL exported by the Cloud Function already ends in /api,
+  // we must ensure we don't send /api/api/... by stripping it from the route.
   if (baseHasApiPrefix && routeHasApiPrefix) {
     return cleanedRoute.slice(4);
   }
+
+  // If we are hitting a Hosting rewrite (base is just root /) 
+  // but the route is missing the api/ prefix, we might want to add it?
+  // Our api.ts always includes it, so we're safe.
 
   return cleanedRoute;
 }

@@ -304,7 +304,7 @@ export default function VenueDetailScreen() {
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
-  errorText: { fontFamily: "Poppins_500Medium", fontSize: 16, color: "rgba(255,255,255,0.6)" },
+  errorText: { fontFamily: "Poppins_500Medium", fontSize: 16, color: colors.textSecondary },
   backLinkBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: CultureTokens.teal + '15' },
   backLinkText: { fontFamily: "Poppins_600SemiBold", fontSize: 14, color: CultureTokens.teal },
 
@@ -349,7 +349,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surfaceSecondary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -357,7 +357,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignSelf: "flex-start",
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.borderLight,
   },
   verifiedBadgeText: {
     fontFamily: "Poppins_600SemiBold",
@@ -388,13 +388,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   statCard: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 14,
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: colors.borderLight,
   },
   statIconBox: {
     width: 36,
@@ -437,12 +437,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   addressCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     gap: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: colors.borderLight,
     marginBottom: 24,
   },
   addressIconBox: {
@@ -471,7 +471,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   directionsBtnText: {
     fontFamily: "Poppins_700Bold",
     fontSize: 13,
-    color: "#0B0B14",
+    color: "black",
   },
 
   section: { marginBottom: 28 },
@@ -494,12 +494,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 10,
   },
   tagChip: {
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: colors.surfaceSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: colors.borderLight,
   },
   tagText: {
     fontFamily: "Poppins_500Medium",
@@ -508,11 +508,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
 
   hoursCard: {
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: colors.borderLight,
   },
   hoursText: {
     fontFamily: "Poppins_400Regular",
@@ -527,7 +527,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 12,
     gap: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
+    borderBottomColor: colors.borderLight,
   },
   contactIconBox: {
     width: 36,

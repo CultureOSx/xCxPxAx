@@ -84,7 +84,7 @@ function NotificationPreview({ title, message }: { title: string; message: strin
       <View style={[np.notifCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
         <View style={np.notifHeader}>
           <View style={[np.notifIcon, { backgroundColor: CultureTokens.indigo }]}>
-            <Ionicons name="notifications" size={13} color="#fff" />
+            <Ionicons name="notifications" size={13} color="white" />
           </View>
           <Text style={[np.notifApp, { color: colors.textSecondary }]}>CulturePass</Text>
           <Text style={[np.notifTime, { color: colors.textTertiary }]}>now</Text>
@@ -382,8 +382,8 @@ export default function AdminNotificationsScreen() {
                         accessibilityLabel={opt.label}
                       >
                         <Ionicons name={opt.icon as never} size={14}
-                          color={active ? '#FFFFFF' : colors.textSecondary} />
-                        <Text style={[s.typeChipText, { color: active ? '#FFFFFF' : colors.textSecondary }]}>
+                          color={active ? 'white' : colors.textSecondary} />
+                        <Text style={[s.typeChipText, { color: active ? 'white' : colors.textSecondary }]}>
                           {opt.label}
                         </Text>
                       </Pressable>
@@ -477,7 +477,7 @@ export default function AdminNotificationsScreen() {
                           accessibilityState={{ checked: active }}
                         >
                           <Text style={{ fontSize: 14 }}>{nat.emoji}</Text>
-                          <Text style={[s.typeChipText, { color: active ? '#FFFFFF' : colors.textSecondary }]}>
+                          <Text style={[s.typeChipText, { color: active ? 'white' : colors.textSecondary }]}>
                             {nat.label}
                           </Text>
                         </Pressable>
@@ -591,8 +591,8 @@ export default function AdminNotificationsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Send campaign"
                 >
-                  <Ionicons name="send" size={16} color={approval && !isExpired ? '#FFFFFF' : colors.textTertiary} />
-                  <Text style={[s.sendBtnText, { color: approval && !isExpired ? '#FFFFFF' : colors.textTertiary }]}>
+                  <Ionicons name="send" size={16} color={approval && !isExpired ? 'white' : colors.textTertiary} />
+                  <Text style={[s.sendBtnText, { color: approval && !isExpired ? 'white' : colors.textTertiary }]}>
                     Send Now
                   </Text>
                 </Pressable>
@@ -714,7 +714,7 @@ const s = StyleSheet.create({
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
   filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  filterBadgeText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', textTransform: 'uppercase' },
+  filterBadgeText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: "white", textTransform: 'uppercase' },
 
   typeLabelRow:     { marginTop: 4 },
   typeLabel:        { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 8 },

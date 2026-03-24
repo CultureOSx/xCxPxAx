@@ -42,13 +42,21 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Local development
   'http://localhost:8081',
   'http://localhost:8082',
+  'http://localhost:8083',
+  'http://localhost:8084',
+  'http://localhost:8085',
   'http://localhost:19006',
   'http://localhost:3000',
   'http://localhost:5000',
+  'http://localhost:5173',
   'http://127.0.0.1:8081',
   'http://127.0.0.1:8082',
+  'http://127.0.0.1:8083',
+  'http://127.0.0.1:8084',
+  'http://127.0.0.1:8085',
   'http://127.0.0.1:19006',
   'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
 ];
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -84,30 +92,42 @@ app.use(authenticate);
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // --- Routes ---
-app.use('/api', authRouter);
-app.use('/api', ticketsRouter);
-app.use('/api', usersRouter);
-app.use('/api', locationsRouter);
-app.use('/api', profilesRouter);
-app.use('/api', activitiesRouter);
-app.use('/api', moviesRouter);
-app.use('/api', councilRouter);
-app.use('/api', adminRouter);
-app.use('/api', miscRouter);
-app.use('/api', searchRouter);
-app.use('/api', socialRouter);
-app.use('/api', discoveryRouter);
-app.use('/api', perksRouter);
-app.use('/api', updatesRouter);
-app.use('/api', feedRouter);
-app.use('/api', importRouter);
-app.use('/api', membershipRouter);
+// Mount major routers at both root and /api for compatibility between 
+// direct Cloud Function calls and Firebase Hosting rewrites.
+const mount = (path: string, router: any) => {
+  app.use(path, router);
+  app.use(`/api${path}`, router);
+};
 
-app.use('/api', createEventsRouter());
+mount('/', authRouter);
+mount('/', ticketsRouter);
+mount('/', usersRouter);
+mount('/', locationsRouter);
+mount('/', profilesRouter);
+mount('/', activitiesRouter);
+mount('/', moviesRouter);
+mount('/', councilRouter);
+mount('/', adminRouter);
+mount('/', miscRouter);
+mount('/', searchRouter);
+mount('/', socialRouter);
+mount('/', discoveryRouter);
+mount('/', perksRouter);
+mount('/', updatesRouter);
+mount('/', feedRouter);
+mount('/', importRouter);
+mount('/', membershipRouter);
+
+// Special handling for factory routers
+const eventsRouter = createEventsRouter();
+app.use('/', eventsRouter);
+app.use('/api', eventsRouter);
+
+const indigenousRouter = createIndigenousRouter();
+app.use('/', indigenousRouter);
+app.use('/api', indigenousRouter);
 
 app.use(createStripeRouter());
-
-app.use('/api', createIndigenousRouter());
 
 // Default 404
 app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));

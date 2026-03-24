@@ -1,10 +1,12 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Share, Linking } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Share, Linking, Alert } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { routeWithRedirect } from '@/lib/routes';
 import { useColors } from '@/hooks/useColors';
 import { ButtonTokens, CardTokens, CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +23,20 @@ export default function MovieDetailScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
+
+  const handleTicketPress = (url: string) => {
+    if (!isAuthenticated) {
+      Alert.alert('Login required', 'Please sign in to buy tickets.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+      ]);
+      return;
+    }
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Linking.openURL(url);
+  };
   
   const { data: movie, isLoading } = useQuery({
     queryKey: ['/api/movies', id],
@@ -154,7 +170,7 @@ export default function MovieDetailScreen() {
                 <Text style={[TextStyles.headline, { color: colors.text, marginBottom: 12 }]}>Buy Tickets Online</Text>
                 <Pressable 
                   style={({pressed}) => [styles.externalBtn, { backgroundColor: '#D90429', opacity: pressed ? 0.8 : 1 }]} 
-                  onPress={() => Linking.openURL('https://www.hoyts.com.au/movies')} 
+                  onPress={() => handleTicketPress('https://www.hoyts.com.au/movies')} 
                   accessibilityRole="button"
                 > 
                   <Ionicons name="open-outline" size={18} color="#FFF" />
@@ -162,7 +178,7 @@ export default function MovieDetailScreen() {
                 </Pressable>
                 <Pressable 
                   style={({pressed}) => [styles.externalBtn, { backgroundColor: '#0055A5', opacity: pressed ? 0.8 : 1 }]} 
-                  onPress={() => Linking.openURL('https://www.eventcinemas.com.au/Movies')} 
+                  onPress={() => handleTicketPress('https://www.eventcinemas.com.au/Movies')} 
                   accessibilityRole="button"
                 > 
                   <Ionicons name="open-outline" size={18} color="#FFF" />
@@ -170,7 +186,7 @@ export default function MovieDetailScreen() {
                 </Pressable>
                 <Pressable 
                   style={({pressed}) => [styles.externalBtn, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight, opacity: pressed ? 0.8 : 1 }]} 
-                  onPress={() => Linking.openURL('https://www.dendy.com.au/movies')} 
+                  onPress={() => handleTicketPress('https://www.dendy.com.au/movies')} 
                   accessibilityRole="button"
                 > 
                   <Ionicons name="open-outline" size={18} color={colors.text} />
@@ -189,9 +205,8 @@ export default function MovieDetailScreen() {
           <Pressable
             style={({pressed}) => [styles.bookButton, { opacity: pressed ? 0.8 : 1 }]}
             onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const query = encodeURIComponent(`${movie.title} movie tickets ${movie.city || ''}`);
-              Linking.openURL(`https://www.google.com/search?q=${query}`);
+              handleTicketPress(`https://www.google.com/search?q=${query}`);
             }}
             accessibilityRole="button"
             accessibilityLabel={`Book tickets for ${movie.title}`}

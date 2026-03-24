@@ -23,7 +23,7 @@ import { Card } from '@/components/ui/Card';
 
 const isWeb = Platform.OS === 'web';
 
-type ResultType = 'event' | 'movie' | 'restaurant' | 'activity' | 'shopping' | 'community';
+type ResultType = 'event' | 'movie' | 'restaurant' | 'activity' | 'shopping' | 'community' | 'person';
 
 interface SearchResult {
   id: string;
@@ -67,6 +67,7 @@ export default function SearchScreen() {
     activity:   { label: 'Activities',   icon: 'football',   color: CultureTokens.teal },
     shopping:   { label: 'Stores',       icon: 'bag',        color: '#FF9F1C' },
     community:  { label: 'Communities',  icon: 'people',     color: CultureTokens.indigo },
+    person:     { label: 'People',       icon: 'person',     color: CultureTokens.coral },
   }), []);
 
   useAlgoliaSearch({
@@ -138,6 +139,20 @@ export default function SearchScreen() {
       });
     });
 
+    // 4. People (Users)
+    const localUsers = Array.isArray(searchData?.users) ? searchData.users : [];
+    localUsers.forEach((u: any) => {
+      results.push({
+        id: u.id,
+        type: 'person',
+        title: u.displayName || u.username || 'Anonymous User',
+        subtitle: `@${u.username || 'user'} · ${u.city || 'CulturePass'}`,
+        imageUrl: u.avatarUrl,
+        icon: TYPE_CONFIG.person.icon,
+        color: TYPE_CONFIG.person.color,
+      });
+    });
+
     return results;
   }, [query, searchData, TYPE_CONFIG]);
 
@@ -160,7 +175,8 @@ export default function SearchScreen() {
       restaurant: '/restaurants/[id]',
       activity: '/activities/[id]',
       shopping: '/shopping/[id]',
-      community: '/community/[id]',
+      community: '/profile/[id]',
+      person: '/profile/[id]',
     };
     router.push({ pathname: routes[result.type] as never, params: { id: result.id } });
   };
@@ -296,7 +312,8 @@ export default function SearchScreen() {
                           restaurant: '/restaurants',
                           activity: '/activities',
                           shopping: '/shopping',
-                          community: '/(tabs)/community',
+                          community: '/profile/[id]',
+                          person: '/profile/[id]',
                         };
                         router.push(routes[key] as never);
                       }}

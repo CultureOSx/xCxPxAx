@@ -1,8 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
+import { BackButton } from '@/components/ui/BackButton';
 
 const RULES = [
   {
@@ -34,12 +37,30 @@ export default function CommunityGuidelinesScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   return (
-    <View style={[styles.container, { paddingTop: topInset }]}>
-      <View style={styles.header}>
-        <View style={{ width: 44 }} />
-        <Text style={styles.title}>Community Guidelines</Text>
-        <View style={{ width: 44 }} />
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={gradients.culturepassBrand as [string, string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: topInset }}
+      >
+        <View style={styles.header}>
+          <BackButton 
+            fallback="/(tabs)/profile" 
+            style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]} 
+            color="#FFFFFF"
+          />
+          <Text style={[styles.title, { color: '#FFFFFF' }]}>Guidelines</Text>
+          <Pressable
+            onPress={() => router.push('/menu' as any)}
+            style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}
+            accessibilityRole="button"
+            accessibilityLabel="Menu"
+          >
+            <Ionicons name="menu" size={26} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40, paddingTop: 10 }}>
         <Text style={styles.lead}> 
@@ -66,9 +87,16 @@ export default function CommunityGuidelinesScreen() {
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:  { flex: 1, backgroundColor: colors.background },
-  header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:    { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
-  title:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  title:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
   lead:       { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20, color: colors.textSecondary, textAlign: 'center' },
   card:       { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
   cardTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },

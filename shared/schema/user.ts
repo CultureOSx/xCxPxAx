@@ -72,6 +72,7 @@ export interface User {
   phone?: string;
   membership?: Membership;
   role?: UserRole;
+  privacySettings?: PrivacySettings;
 }
 
 export interface RecommendationProfile {

@@ -1,10 +1,10 @@
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EventData } from '@/shared/schema';
 
 function formatDate(dateStr: string): string {
@@ -45,6 +45,11 @@ export default function NativeMapViewComponent({
   cityGroups, groupEntries, preferredCity, selectedCity, selectedEvents, onMarkerPress, onSelectCity, onClearCity, onEventPress, onOpenSystemMap, onOpenEventMap, bottomInset
 }: NativeMapViewProps) {
   const mapRef = useRef<MapView>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [selectedCity]);
 
   useEffect(() => {
     if (!selectedCity) return;
@@ -94,13 +99,18 @@ export default function NativeMapViewComponent({
 
       {selectedCity && selectedEvents.length > 0 && (
         <Animated.View entering={FadeInUp.duration(300)} style={[styles.bottomSheet, { paddingBottom: bottomInset + 10 }]}>
-          <View style={styles.sheetHandle} />
+          <Pressable onPress={() => setIsExpanded(true)} style={styles.sheetHandleArea}>
+            <View style={styles.sheetHandle} />
+          </Pressable>
           <View style={styles.sheetHeader}>
             <View>
               <Text style={styles.sheetCity}>{cityGroups[selectedCity]?.label || selectedCity}</Text>
               <Text style={styles.sheetCount}>{selectedEvents.length} events</Text>
             </View>
             <View style={styles.sheetActions}>
+              <Pressable onPress={() => setIsExpanded(true)} hitSlop={10} style={{ marginRight: 8 }}>
+                <Ionicons name="expand" size={24} color={Colors.primary} />
+              </Pressable>
               <Pressable onPress={() => onOpenSystemMap(selectedCity)} hitSlop={10}>
                 <Ionicons name="navigate-circle" size={28} color={Colors.primary} />
               </Pressable>
@@ -139,6 +149,50 @@ export default function NativeMapViewComponent({
               </Pressable>
             ))}
           </ScrollView>
+
+          {/* Full Screen Modal List */}
+          <Modal visible={isExpanded} animationType="slide" transparent={true} onRequestClose={() => setIsExpanded(false)}>
+            <View style={[styles.modalContainer, { paddingTop: bottomInset + 40 }]}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{cityGroups[selectedCity]?.label || selectedCity}</Text>
+                  <Pressable onPress={() => setIsExpanded(false)} hitSlop={10}>
+                    <Ionicons name="close-circle" size={32} color={Colors.primary} />
+                  </Pressable>
+                </View>
+                <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 16 }}>
+                  {selectedEvents.map((event) => (
+                    <Pressable
+                      key={`modal-${event.id}`}
+                      style={styles.modalEventCard}
+                      onPress={() => {
+                        setIsExpanded(false);
+                        onEventPress(event.id);
+                      }}
+                    >
+                      {event.imageUrl ? (
+                        <Image source={{ uri: event.imageUrl }} style={styles.modalEventImage} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.modalEventImage, { backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
+                          <Ionicons name="calendar" size={32} color={Colors.primary} />
+                        </View>
+                      )}
+                      <View style={styles.modalEventInfo}>
+                        <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
+                        <Text style={styles.modalEventTitle} numberOfLines={2}>{event.title}</Text>
+                        {event.venue && (
+                          <View style={styles.eventMeta}>
+                            <Ionicons name="location-outline" size={13} color="#8E8E93" />
+                            <Text style={styles.eventVenue} numberOfLines={1}>{event.venue}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </Animated.View>
       )}
 
@@ -178,4 +232,13 @@ const styles = StyleSheet.create({
   eventTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: Colors.text, lineHeight: 20, marginBottom: 6 },
   eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 6 },
   eventVenue: { fontSize: 11, fontFamily: 'Poppins_400Regular', color: '#8E8E93', flex: 1 },
+  sheetHandleArea: { width: '100%', paddingTop: 8, paddingBottom: 4, alignItems: 'center', justifyContent: 'center' },
+  modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { flex: 1, backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: Colors.borderLight || 'rgba(255,255,255,0.08)' },
+  modalTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: Colors.text },
+  modalEventCard: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: Colors.borderLight || 'rgba(255,255,255,0.06)' },
+  modalEventImage: { width: 100, height: '100%' },
+  modalEventInfo: { padding: 14, flex: 1 },
+  modalEventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: Colors.text, lineHeight: 22, marginBottom: 8 },
 });

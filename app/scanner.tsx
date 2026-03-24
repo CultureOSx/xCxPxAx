@@ -419,7 +419,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a ticket QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setTicketCameraActive(false)} accessibilityRole="button" accessibilityLabel="Close camera">
-                <Ionicons name="close" size={16} color="#fff" />
+                <Ionicons name="close" size={16} color="white" />
               </Pressable>
             </View>
           )}
@@ -568,7 +568,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a CulturePass QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setCpCameraActive(false)} accessibilityRole="button" accessibilityLabel="Close camera">
-                <Ionicons name="close" size={16} color="#fff" />
+                <Ionicons name="close" size={16} color="white" />
               </Pressable>
             </View>
           )}
