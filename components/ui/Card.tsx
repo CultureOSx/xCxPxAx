@@ -30,6 +30,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface CardProps {
   onPress?: () => void;
+  disabled?: boolean;
   shadow?: keyof typeof shadows;
   /** Enable glassmorphism background */
   glass?: boolean;
@@ -47,6 +48,7 @@ interface CardProps {
 
 export function Card({
   onPress,
+  disabled = false,
   shadow: shadowKey = 'medium',
   glass: isGlass = false,
   haptic = true,
@@ -83,8 +85,9 @@ export function Card({
         ? glassStyle.borderColor
         : colors.cardBorder,
       borderWidth: 1,
+      opacity: disabled ? 0.6 : 1,
     },
-    Platform.OS === 'web' && onPress ? (styles.webHover as object) : undefined,
+    Platform.OS === 'web' && onPress && !disabled ? (styles.webHover as object) : undefined,
     style,
   ];
 
@@ -109,10 +112,12 @@ export function Card({
         onPress={handleCardPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        disabled={disabled}
         style={[animatedStyle, cardStyle] as StyleProp<ViewStyle>}
         accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled }}
       >
         {children}
       </AnimatedPressable>

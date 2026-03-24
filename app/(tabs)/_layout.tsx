@@ -7,7 +7,6 @@ const TAB_CONFIG = [
   { name: 'index',        title: 'Discover',  icon: 'compass-outline' },
   { name: 'feed',       title: 'Feed',      icon: 'newspaper-outline' },
   { name: 'calendar',     title: 'Calendar',  icon: 'calendar-outline' },
-  { name: 'community',    title: 'Community', icon: 'people-outline' },
   { name: 'perks',        title: 'Perks',     icon: 'gift-outline' },
   { name: 'profile',      title: 'Profile',   icon: 'person-outline' },
 ] as const;
@@ -16,6 +15,7 @@ const HIDDEN_ROUTES = [
   'explore',
   'directory',
   'dashboard',
+  'community',
   // add more hidden / deep-link only screens here
 ] as const;
 

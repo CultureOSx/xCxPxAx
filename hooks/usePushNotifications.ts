@@ -20,6 +20,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
@@ -39,6 +40,12 @@ interface NotificationData {
 // ---------------------------------------------------------------------------
 async function registerPushToken(userId: string): Promise<void> {
   if (Platform.OS === 'web') return;
+
+  const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+  if (isExpoGo && Platform.OS === 'android') {
+    console.warn('Push notifications are not supported in Expo Go on Android. Use a development build.');
+    return;
+  }
 
   try {
     // Dynamic import — expo-notifications may not be installed in all environments
@@ -111,6 +118,11 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!isAuthenticated || !userId || Platform.OS === 'web') return;
+
+    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+    if (isExpoGo && Platform.OS === 'android') {
+      return; // Completly bypass push tokens to avoid side-effect crashes in expo-notifications
+    }
 
     // Register token
     registerPushToken(userId);
