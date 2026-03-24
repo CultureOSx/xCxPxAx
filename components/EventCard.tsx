@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
@@ -52,11 +52,11 @@ function EventCardInner({ event, isLive }: EventCardProps) {
         accessibilityHint={`Double tap to view details for ${event.title}`}
       >
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: event.imageUrl ?? undefined }}
+          <CultureImage
+            uri={event.imageUrl ?? undefined}
             style={styles.image}
             contentFit="cover"
-            transition={200}
+            recyclingKey={`event-${event.id}`}
           />
           {ageBadge && (
             <View style={styles.ageBadge}>

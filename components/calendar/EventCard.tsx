@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { CardTokens, CultureTokens, TextStyles } from '@/constants/theme';
@@ -18,7 +18,7 @@ export default function EventCard({ event }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {event.imageUrl ? (
-        <Image source={{ uri: event.imageUrl }} style={styles.image} contentFit="cover" />
+        <CultureImage uri={event.imageUrl} style={styles.image} contentFit="cover" recyclingKey={`calendar-event-${event.id}`} />
       ) : (
         <View style={[styles.imagePlaceholder, { backgroundColor: colors.primaryGlow }]}>
           <Ionicons name="calendar" size={28} color={colors.primary} />
