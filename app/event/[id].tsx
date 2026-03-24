@@ -28,6 +28,8 @@ import { routeWithRedirect } from '@/lib/routes';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useImageUpload } from '@/hooks/useImageUpload';
+import * as ImagePicker from 'expo-image-picker';
 
 const isWeb = Platform.OS === 'web';
 
@@ -163,6 +165,34 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   const isDesktop = width >= 1024;
   const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
+
+  const { uploadImage, deleteImage, uploading } = useImageUpload();
+
+  const handlePickCover = useCallback(async () => {
+    if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      try {
+        if (event.imageUrl) {
+          await deleteImage('events', event.id, event.imageUrl, 'imageUrl');
+        }
+        await uploadImage(result, 'events', event.id, 'imageUrl');
+        // Hero image url is also kept in sync usually
+        await api.events.update(event.id, { heroImageUrl: result.assets[0].uri } as any); // just for local sync if needed, though hook updates DB
+        queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
+      } catch (err) {
+        Alert.alert('Upload Error', String(err));
+      }
+    }
+  }, [event.id, event.imageUrl, uploadImage, deleteImage]);
+
+  const canEdit = userId === event.organizerId || userId === (event as any).createdBy || __DEV__;
 
   // Re-enabled localized distance mapping safely
   const distanceKm = useMemo(() => {
@@ -583,6 +613,22 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
             <View style={s.heroWrapper}>
               <View style={[s.heroSection, { height: isDesktop ? 450 : 380 + topInset }, isDesktop && { borderRadius: 32, marginHorizontal: 20, marginTop: 20, overflow: 'hidden' }]}>
                 <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
+                
+                {canEdit && (
+                  <Pressable 
+                    onPress={handlePickCover} 
+                    style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' }]}
+                    accessibilityLabel="Change cover image"
+                  >
+                    {uploading ? (
+                      <ActivityIndicator size="large" color="white" />
+                    ) : (
+                      <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' }}>
+                        <Ionicons name="camera" size={24} color="white" />
+                      </View>
+                    )}
+                  </Pressable>
+                )}
                 
                 <LinearGradient
                   colors={['rgba(11,11,20,0.5)', 'transparent', 'rgba(11,11,20,0.9)']}

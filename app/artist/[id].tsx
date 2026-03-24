@@ -24,6 +24,10 @@ import type { Profile } from "@shared/schema";
 import { api } from "@/lib/api";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColors } from "@/hooks/useColors";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useAuth } from "@/lib/auth";
+import { queryClient } from "@/lib/query-client";
+import * as ImagePicker from "expo-image-picker";
 
 export default function ArtistDetailScreen() {
   const colors = useColors();
@@ -34,13 +38,42 @@ export default function ArtistDetailScreen() {
   const topInset = Platform.OS === "web" ? 0 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const goBack = () =>
-    navigation.canGoBack() ? router.back() : router.replace("/");
-
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     queryFn: () => api.profiles.get(id),
   });
+
+  const goBack = useCallback(() => (
+    navigation.canGoBack() ? router.back() : router.replace("/")
+  ), [navigation]);
+
+  const { userId } = useAuth();
+  const { uploadImage, deleteImage, uploading } = useImageUpload();
+
+  const handlePickCover = useCallback(async () => {
+    if(!Platform.OS.match(/web/)) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      try {
+        if (profile?.coverImageUrl || profile?.avatarUrl) {
+          const oldUrl = profile.coverImageUrl || profile.avatarUrl;
+          await deleteImage('profiles', profile.id, oldUrl!, profile.coverImageUrl ? 'coverImageUrl' : 'avatarUrl');
+        }
+        await uploadImage(result, 'profiles', profile!.id, 'coverImageUrl');
+        queryClient.invalidateQueries({ queryKey: ['/api/profiles', id] });
+      } catch (err) {
+        Alert.alert('Upload Error', String(err));
+      }
+    }
+  }, [profile, id, uploadImage, deleteImage]);
+
+  const canEdit = userId === (profile as any)?.userId || userId === (profile as any)?.creatorId || __DEV__;
 
   const handleShare = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -115,6 +148,22 @@ export default function ArtistDetailScreen() {
                 colors={[CultureTokens.coral, colors.background]}
                 style={styles.heroImage}
               />
+            )}
+            
+            {canEdit && (
+              <Pressable 
+                onPress={handlePickCover} 
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' }]}
+                accessibilityLabel="Change cover image"
+              >
+                {uploading ? (
+                  <ActivityIndicator size="large" color="white" />
+                ) : (
+                  <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' }}>
+                    <Ionicons name="camera" size={24} color="white" />
+                  </View>
+                )}
+              </Pressable>
             )}
 
             <LinearGradient

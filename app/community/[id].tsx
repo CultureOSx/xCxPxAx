@@ -25,6 +25,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useImageUpload } from '@/hooks/useImageUpload';
+import * as ImagePicker from 'expo-image-picker';
 import { TextStyles } from '@/constants/typography';
 import { BackButton } from '@/components/ui/BackButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -551,6 +553,8 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const isDesktop = width >= 1024;
   const { isAuthenticated } = useAuth();
   const pathname = usePathname();
+  const memberCount = community.memberCount ?? community.membersCount ?? 0;
+  const memberRole = community.memberRole;
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
 
@@ -603,12 +607,35 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
 
   const isMutating = joinMutation.isPending || leaveMutation.isPending;
 
+  const { uploadImage, deleteImage, uploading } = useImageUpload();
+
+  const handlePickImage = useCallback(async () => {
+    if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      try {
+        if (community.imageUrl) {
+          await deleteImage('communities', community.id, community.imageUrl, 'imageUrl');
+        }
+        await uploadImage(result, 'communities', community.id, 'imageUrl');
+        queryClient.invalidateQueries({ queryKey: ['/api/communities', community.id] });
+      } catch (err) {
+        Alert.alert('Upload Error', String(err));
+      }
+    }
+  }, [community, uploadImage, deleteImage]);
+
+  const canEdit = memberRole === 'admin' || memberRole === 'organizer' || __DEV__;
+
   // ── Derived data ──────────────────────────────────────────────────────────
   const feedPosts = useMemo(() => synthesizePosts(community, relatedEvents), [community, relatedEvents]);
   const communityLinks = useMemo(() => buildLinks(community), [community]);
-
-  const memberCount = community.memberCount ?? community.membersCount ?? 0;
-  const memberRole = community.memberRole;
 
   // ── Helper Sub-component ──────────────────────────────────────────────────
   const CommunityBottomBarInner = () => (
@@ -835,6 +862,19 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     <Text style={{ fontSize: 32 }}>{community.iconEmoji}</Text>
                   ) : (
                     <Ionicons name={icon as never} size={30} color={colors.textInverse} />
+                  )}
+                  {canEdit && (
+                    <Pressable 
+                      onPress={handlePickImage} 
+                      style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.15)', alignItems: 'center', justifyContent: 'center' }]}
+                      accessibilityLabel="Change image"
+                    >
+                      {uploading ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Ionicons name="camera" size={20} color="white" style={{ position: 'absolute' }} />
+                      )}
+                    </Pressable>
                   )}
                 </View>
                 <Text style={s.heroTitle} numberOfLines={2}>{community.name}</Text>

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, Linking } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, Linking, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,12 +8,14 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ButtonTokens, CardTokens } from '@/constants/theme';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
+import { useImageUpload } from '@/hooks/useImageUpload';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Perk } from '@/components/perks/types';
 import { PERK_TYPE_INFO } from '@/components/perks/constants';
@@ -40,6 +42,32 @@ export default function PerkDetailScreen() {
     queryFn: (): Promise<Perk> => api.perks.get(id) as unknown as Promise<Perk>,
     enabled: !!id,
   });
+
+  const { uploadImage, deleteImage, uploading } = useImageUpload();
+
+  const handlePickCover = useCallback(async () => {
+    if(!Platform.OS.match(/web/)) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      try {
+        if ((perk as any)?.coverUrl) {
+          await deleteImage('perks', perk!.id, (perk as any).coverUrl, 'coverUrl');
+        }
+        await uploadImage(result, 'perks', perk!.id, 'coverUrl');
+        queryClient.invalidateQueries({ queryKey: ['/api/perks', id] });
+      } catch (err) {
+        Alert.alert('Upload Error', String(err));
+      }
+    }
+  }, [perk, id, uploadImage, deleteImage]);
+
+  const canEdit = userId === (perk as any)?.createdBy || userId === (perk as any)?.providerId || __DEV__;
 
   const { data: membership } = useQuery<{ tier: string }>({
     queryKey: ['/api/membership', userId],
@@ -128,13 +156,30 @@ export default function PerkDetailScreen() {
   return (
     <ErrorBoundary>
       <View style={styles.container}>
-        <PerkHero
-          perk={perk}
-          topInset={topInset}
-          typeInfo={typeInfo}
-          isIndigenous={isIndigenous}
-          onShare={handleShare}
-        />
+        <View style={{ position: 'relative' }}>
+          <PerkHero
+            perk={perk}
+            topInset={topInset}
+            typeInfo={typeInfo}
+            isIndigenous={isIndigenous}
+            onShare={handleShare}
+          />
+          {canEdit && (
+            <Pressable 
+              onPress={handlePickCover} 
+              style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.15)', alignItems: 'center', justifyContent: 'center', paddingTop: topInset }]}
+              accessibilityLabel="Change cover image"
+            >
+              {uploading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', marginTop: 40 }}>
+                  <Ionicons name="camera" size={20} color="white" />
+                </View>
+              )}
+            </Pressable>
+          )}
+        </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
