@@ -1,5 +1,5 @@
 import { db, isFirestoreConfigured } from '../admin';
-import type { Profile } from '@shared/schema';
+import type { Profile } from '../../../shared/schema';
 import {
   DEFAULT_DISCOVER_CURATION,
   type DiscoverArtistHighlight,
@@ -7,7 +7,7 @@ import {
   type DiscoverCurationResponse,
   type DiscoverFeaturedArtistEntry,
   type HeritagePlaylistEntry,
-} from '@shared/schema';
+} from '../../../shared/schema';
 
 const COLLECTION_NAME = 'appConfig';
 const DOCUMENT_ID = 'discoverCuration';

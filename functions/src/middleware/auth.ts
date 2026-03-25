@@ -19,7 +19,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { authAdmin } from '../admin';
-import type { UserRole } from '@shared/schema';
+import type { UserRole } from '../../../shared/schema';
 
 // ---------------------------------------------------------------------------
 // Types

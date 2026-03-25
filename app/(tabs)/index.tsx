@@ -41,7 +41,11 @@ export default function DiscoverScreen() {
     communityRailData,
     nearbyRailData,
     activityRailData,
+    eventsLoading,
+    communitiesLoading,
+    activitiesLoading,
     nearbyLoading,
+    discoverLoading,
     state,
     isAuthenticated,
   } = useDiscoverData();
@@ -52,7 +56,7 @@ export default function DiscoverScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          isDesktop && { width: contentWidth, alignSelf: 'center' as any }
+          isDesktop && { width: contentWidth, alignSelf: 'center' as const }
         ]}
         refreshControl={
           <RefreshControl 
@@ -99,29 +103,32 @@ export default function DiscoverScreen() {
           data={nowBuckets.startingSoon} 
         />
 
-        <EventRail 
-          title="Popular Near You" 
-          subtitle={`Trending events around ${state.city}`} 
-          data={popularRailData} 
+        <EventRail
+          title="Popular Near You"
+          subtitle={`Trending events around ${state.city}`}
+          data={popularRailData}
+          isLoading={eventsLoading || discoverLoading}
         />
 
-        <EventRail 
-          title="Events in Your Area" 
-          subtitle="Happening in your local community" 
+        <EventRail
+          title="Events in Your Area"
+          subtitle="Happening in your local community"
           data={nearbyRailData}
           isLoading={nearbyLoading}
         />
 
-        <CommunityRail 
-          title="Diaspora Communities" 
-          subtitle="Connect with your heritage" 
-          data={communityRailData} 
+        <CommunityRail
+          title="Diaspora Communities"
+          subtitle="Connect with your heritage"
+          data={communityRailData}
+          isLoading={communitiesLoading}
         />
 
-        <ActivityRail 
-          title="Culture & Exploration" 
-          subtitle="Workshops, tours, and cultural sites" 
-          data={activityRailData} 
+        <ActivityRail
+          title="Culture & Exploration"
+          subtitle="Workshops, tours, and cultural sites"
+          data={activityRailData}
+          isLoading={activitiesLoading}
         />
 
         <CategoryRail />

@@ -27,9 +27,11 @@ service firebase.storage {
     }
 
     // ── Public reads — event and profile images are public ──────────────────
-    match /events/{eventId}/{filename} {
+    match /events/{uploaderId}/{filename} {
       allow read: if true;
-      allow write: if false; // Cloud Functions only
+      allow write: if isOwner(uploaderId)
+                   && request.resource.size < 10 * 1024 * 1024  // max 10 MB
+                   && request.resource.contentType.matches('image/.*');
     }
 
     match /profiles/{profileId}/{filename} {

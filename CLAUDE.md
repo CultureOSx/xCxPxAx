@@ -26,38 +26,112 @@ Council (LGA) is a **location attribute** for proximity services, not a governan
 
 ```
 app/                    Expo Router screens
-  (onboarding)/         Login, signup, location, interests, culture-match, communities
-  (tabs)/               5-tab layout: Discover, Calendar, Community, Perks, Profile
-                        + directory.tsx, explore.tsx, events.tsx inside tabs group
+  (onboarding)/         cultures.tsx (culture-match), location.tsx (city picker)
+  (tabs)/               Tab layout: index.tsx (Discover), feed.tsx, calendar.tsx,
+                        community.tsx, dashboard.tsx, directory.tsx, explore.tsx,
+                        perks.tsx, profile.tsx + _layout.tsx
+  [handle].tsx          Public handle redirect (/@username)
+  about.tsx             About CulturePass page
+  map.tsx               Full-screen map view
+  scanner.tsx           QR ticket scanner
+  landing.tsx           Marketing landing page
+  menu.tsx              Slide-out menu
+
+  activities/           [id].tsx, index.tsx — Activity detail + listing
+  admin/                dashboard.tsx, users.tsx, audit-logs.tsx, notifications.tsx,
+                        data-compliance.tsx, discover.tsx (curate featured/heritage),
+                        finance.tsx, handles.tsx, import.tsx, moderation.tsx,
+                        platform.tsx, updates.tsx
+  artist/[id].tsx       Artist public profile
+  business/[id].tsx     Business public profile
+  checkout/index.tsx    Unified checkout flow
+  city/[name].tsx       City landing page
+  communities/index.tsx Community listing
+  community/[id].tsx    Community detail
+  contacts/             index.tsx, [cpid].tsx — Contacts directory
+  council/              (directory cards only — no detail page)
+  dashboard/            organizer.tsx, venue.tsx, sponsor.tsx, wallet-readiness.tsx,
+                        widgets.tsx, backstage/[id].tsx (artist backstage portal)
   event/[id].tsx        Event detail + ticket purchase
-  event/create.tsx      9-step event creation wizard (basics, image, location, datetime,
-                        entry type, tickets[conditional], team/artists/sponsors, culture, review)
-  profile/, tickets/    User profile, ticket management
-  admin/                Admin panels: dashboard.tsx, users.tsx, audit-logs.tsx, notifications.tsx
-  dashboard/            Organizer panels: organizer.tsx, venue.tsx, sponsor.tsx
-  payment/              Payment flows
-  search/, saved/       Search results, saved items
-  settings/             User settings
-  membership/           Subscription management
+  event/create.tsx      9-step wizard (basics, image, location, datetime, entry type,
+                        tickets[conditional], team/artists/sponsors, culture, review)
+  events.tsx            All Events page (single-line filter: category + date + price)
+  help/index.tsx        Help centre
+  legal/                cookies.tsx, event-terms.tsx, guidelines.tsx, privacy.tsx,
+                        terms.tsx, xGprivacy.tsx, xGterms.tsx
+  membership/upgrade.tsx  Subscription upgrade flow
+  movies/               index.tsx, [id].tsx — Movie listing + detail
+  notifications/index.tsx  Notification centre
+  onboarding/           cultures.tsx, location.tsx (additional onboarding screens)
+  organiser/[id].tsx    Organiser public profile
+  payment/              cancel.tsx, methods.tsx, success.tsx, transactions.tsx, wallet.tsx
+  perks/[id].tsx        Perk detail
+  profile/              [id].tsx, edit.tsx, public.tsx, qr.tsx
+                        _components/ — BrandDots, DetailRow, LoadingSkeleton, ProfileBottomBar,
+                        ProfileEvents, ProfileReviews, ProfileSocials, ProfileStats, ProfileTags,
+                        SectionHeader, SocialCard, StatItem
+  restaurants/          index.tsx, [id].tsx — Restaurant listing + detail
+  saved/index.tsx       Saved events + communities
+  search/index.tsx      Search results
+  settings/             index.tsx, about.tsx, help.tsx, location.tsx,
+                        notifications.tsx, privacy.tsx
+  shopping/             index.tsx, [id].tsx — Shopping listing + detail
+  submit/index.tsx      Content submission
+  tickets/              index.tsx, [id].tsx, print/ — Ticket management + printing
+  updates/              index.tsx, [id].tsx — Platform updates
+  user/[id].tsx         User profile (by ID)
+  venue/[id].tsx        Venue public profile
 
 components/
   ui/                   Button, Card, Badge, Input, Avatar, Checkbox, Skeleton, SocialButton,
-                        BackButton, PasswordStrengthIndicator, InlinePopoverSelect
-  Discover/             EventCard, WebHeroCarousel, WebRailSection, WebEventRailCard,
-                        SpotlightCard, CommunityCard, CityCard, CategoryCard, SectionHeader
+                        BackButton, PasswordStrengthIndicator, InlinePopoverSelect,
+                        CultureImage, DatePickerInput, FilterChips, HeaderAvatar
+  Discover/             HeroCarousel, EventRail, CommunityRail, CategoryRail, CityRail,
+                        ActivityRail, FeaturedArtistRail, HeritagePlaylistRail,
+                        IndigenousSpotlight, FeedCard, SpotlightCard, SuperAppLinks,
+                        SectionHeader, WebHeroCarousel, WebRailSection, WebEventRailCard,
+                        EventCard, CommunityCard, CityCard, CategoryCard, DiscoverHeader
+  xDiscover/            Mirror of Discover/ — used in alternative discover layout
+  browse/               BrowseCard, BrowseHeader, BrowseLayout, PromotedRail
+  calendar/             CalendarFilters, CalendarMonthGrid, CalendarTabs, EventCard, MapToggle
+  council/              RepresentativeCard
+  dashboard/            DashboardNav, DashboardShell
+  event-create/         StepBasics, StepImage, StepLocation, StepDatetime, StepEntry,
+                        StepTickets, StepTeam, StepCulture, StepReview, Field, ReviewRow,
+                        styles.ts, types.ts
+  perks/                PerkAbout, PerkAvailability, PerkCard, PerkCouponModal, PerkDetails,
+                        PerkHero, PerkIndigenousCard, PerkMembershipCard,
+                        constants.ts, types.ts, utils.ts
+  profile/              GuestProfileView, MenuItem,
+                        CultureWalletMap (.native.tsx / .web.tsx variants)
+  profile-public/       BrandDots, DetailRow, LoadingSkeleton, ProfileBottomBar,
+                        ProfileEvents, ProfileReviews, ProfileSocials, ProfileStats,
+                        ProfileTags, SectionHeader, SocialCard, StatItem, constants.ts, styles.ts
+  scanner/              TicketResultCard, Scanner.styles.ts, types.ts, utils.ts
+  tabs/                 CustomTabBar, TabScreenShell, TabSectionShell
+  user/                 UserProfileHero, UserProfileDetails, UserProfileIdentity,
+                        UserProfileTier, UserProfileAbout, UserProfileSocial, profileUtils.ts
   web/                  WebSidebar.tsx (240px desktop sidebar), WebTopBar.tsx
-  tabs/                 TabScreenShell.tsx, TabSectionShell.tsx
-  calendar/             Filter, MonthGrid, event cards, map toggle (5 files)
-  perks/                PerkCouponModal, PerkDetails, PerkHero, etc. (10 files)
-  scanner/              Ticket result card, Scanner styles, utils, types (4 files)
-  profile/              GuestProfileView, MenuItem
-  user/                 UserProfileHero, Details, Identity, Tier, About, Social, utils (7 files)
+  widgets/              WidgetIdentityQRCard, WidgetNearbyEventsCard, WidgetSpotlightCard,
+                        WidgetUpcomingTicketCard
+  AppHeaderBar.tsx      Top header bar (screens that need one)
   AuthGuard.tsx         Wraps protected screens — redirects to login if unauthenticated
-  ErrorBoundary.tsx     Wrap every screen with async data in this
   BrowsePage.tsx        Browse/discovery page shell
-  NativeMapView.tsx     Platform-specific map (.native.tsx / .web.tsx variants)
+  ErrorBoundary.tsx     Wrap every screen with async data in this
+  ErrorFallback.tsx     Fallback UI for ErrorBoundary
+  EventCard.tsx         Shared event card (root-level)
+  EventCardSkeleton.tsx Loading skeleton for EventCard
+  FeedCardSkeleton.tsx  Loading skeleton for feed cards
   FilterChip.tsx        Filter chip component
   FilterModal.tsx       Filter modal
+  HeaderLogo.tsx        CulturePass logo for headers
+  KeyboardAwareScrollViewCompat.tsx  Cross-platform keyboard-aware scroll
+  LocationPicker.tsx    Reusable location picker component
+  NativeMapView.tsx     Platform-specific map (.native.tsx / .web.tsx variants)
+  ProfileHeaderBar.tsx  Header bar for profile screens
+  ProfileQuickMenu.tsx  Quick action menu on profiles
+  SocialLinksBar.tsx    Row of social link icons
+  WidgetSync.tsx        Home screen widget sync coordinator
 
 constants/
   theme.ts              SINGLE IMPORT POINT — re-exports all tokens
@@ -66,33 +140,52 @@ constants/
   spacing.ts            4-point grid, Breakpoints, Layout
   elevation.ts          ButtonTokens, CardTokens, InputTokens, AvatarTokens, TabBarTokens
   animations.ts         Animation durations and easing
+  cultures.ts           Culture/ethnicity tag list for onboarding + event tagging
+  eventCategories.ts    Event category list with icons + colors
+  languages.ts          Supported language list
   locations.ts          City/country list with coordinates
-  onboardingInterests.ts Interest categories + tags for onboarding
+  onboardingCommunities.ts  Community suggestions shown during onboarding
+  onboardingInterests.ts    Interest categories + tags for onboarding
 
 hooks/
+  useAlgolia.ts         Algolia search hook — useAlgoliaSearch({ indexName, query, city, council })
+  useBrowseData.ts      Data fetching for Browse/Directory screens
   useColors.ts          Theme-aware color access (dark = default on native, light = web)
-  useLayout.ts          Responsive layout values: isDesktop, numColumns, hPad, sidebarWidth, columnWidth()
-  useRole.ts            Role checking: isOrganizer, isAdmin, hasMinRole()
-  useProfile.ts         User profile loading with React Query
   useCouncil.ts         Council LGA data for location services (area events, civic reminders)
+  useDiscoverData.ts    Data fetching for Discover tab (hero, rails, spotlights)
+  useImageUpload.ts     Image picker + upload to Firebase Storage
+  useLayout.ts          Responsive layout values: isDesktop, numColumns, hPad, sidebarWidth, columnWidth()
   useLocationFilter.ts  Location filtering logic
   useLocations.ts       Location list management
-  useNearestCity.ts     Geolocation → nearest supported city
   useNearbyEvents.ts    GPS-based proximity event discovery (calls /api/events/nearby)
-  useAlgolia.ts         Algolia search hook — useAlgoliaSearch({ indexName, query, city, council })
+  useNearestCity.ts     Geolocation → nearest supported city
+  useProfile.ts         User profile loading with React Query
   usePushNotifications.ts  FCM token registration + notification handlers
+  useRole.ts            Role checking: isOrganizer, isAdmin, hasMinRole()
+  queries/              useEvents.ts, useExplore.ts, usePerks.ts — scoped query hooks
 
 lib/
+  analytics.ts          Analytics event tracking (PostHog / Firebase Analytics)
   api.ts                Typed API client — ONLY way to call the backend (150+ endpoints)
   auth.tsx              Firebase Auth provider + useAuth() hook
-  firebase.ts           Firebase SDK init (platform-aware: AsyncStorage on native, localStorage on web)
-  query-client.ts       TanStack React Query setup + apiRequest()
+  community.ts          Community utility functions
   config.ts             App configuration — reads EXPO_PUBLIC_* env vars; no hardcoded fallbacks
+  dateUtils.ts          Date formatting and calculation utilities
   feature-flags.ts      Feature flag rollout system
+  feedService.ts        Client-side feed ranking + caching utilities
+  firebase.ts           Firebase SDK init (platform-aware: AsyncStorage on native, localStorage on web)
+  firebase/explore.ts   Firebase helpers for Explore/Discovery data fetching
+  image-manipulator.ts  Platform-specific image processing (.native.ts / .web.ts variants)
+  indigenous.ts         Indigenous content utilities and filters
+  live-activity.ts      iOS Live Activities integration (ticket countdown, event updates)
+  navigation.ts         Navigation utilities
+  push.ts               Push notification helpers (FCM token, send, schedule)
+  query-client.ts       TanStack React Query setup + apiRequest()
   reporting.ts          Content moderation report system (submitReport, confirmAndReport, quickReport)
                         ← NOT Sentry. Sentry has been removed from this project entirely.
-  navigation.ts         Navigation utilities
-  image-manipulator.ts  Platform-specific image processing (.native.ts / .web.ts variants)
+  routes.ts             Typed route constants to avoid string literals in navigation
+  storage.ts            AsyncStorage helpers (typed wrappers)
+  widgets/              register.ts, sync.ts, sync.types.ts — iOS/Android home screen widget support
 
 contexts/
   OnboardingContext     city, country, interests, isComplete — synced from auth user on login
@@ -100,35 +193,45 @@ contexts/
   ContactsContext       user contacts directory
 
 shared/schema.ts        Shared TypeScript types — master re-export
-shared/schema/          Domain schemas: event, user, ticket, profile, notification, perk,
-                        wallet, social, media, moderation, common, entities
+shared/schema/          Domain schemas:
+                          activity, activityLog, admin, booking, checkin, common, council,
+                          discover, entities, event, eventAnalytics, eventStats, feedItem,
+                          feedSection, media, message, moderation, movie, notification,
+                          organizerStats, perk, profile, reaction, report, reservation,
+                          review, savedItem, social, thread, ticket, update, user,
+                          waitlist, wallet
 
 functions/src/
-  app.ts                Express app — routes split across 19 route files (app.ts itself is ~112 lines)
+  app.ts                Express app — routes split across route files (app.ts itself is ~112 lines)
   admin.ts              Firebase Admin SDK singleton
   index.ts              Cloud Functions entry point (exports `api` HTTP function + `onEventWritten` trigger)
   triggers.ts           Firestore trigger: onEventWritten → syncs to feed collection + Algolia index
   middleware/
     auth.ts             Firebase ID token verification + role guards (requireAuth, requireRole, etc.)
     moderation.ts       Content moderation (bad words, suspicious links, XSS, SQL injection)
-  routes/               19 route files — one per domain
+  routes/               One file per domain (22 route files)
     admin.ts            Admin routes incl. POST /admin/algolia-backfill
     events.ts           Event CRUD + GET /api/events/nearby (geoHash proximity)
     search.ts           GET /api/search — Algolia first, Firestore fallback
     feed.ts             GET /api/feed — multi-signal server-side ranking
+    discovery.ts        Discovery curation endpoints (featured artists, heritage playlists)
     auth.ts, tickets.ts, users.ts, profiles.ts, council.ts, perks.ts,
-    membership.ts, social.ts, stripe.ts, discovery.ts, indigenous.ts,
-    locations.ts, activities.ts, movies.ts, updates.ts, misc.ts, import.ts
+    membership.ts, social.ts, stripe.ts, indigenous.ts, locations.ts,
+    activities.ts, movies.ts, updates.ts, misc.ts, import.ts, utils.ts
   services/
     algolia.ts          Algolia index service:
                           algoliaEventsIndex.indexEvent() / .deleteEvent()
                           algoliaProfilesIndex.indexProfile() / .deleteProfile()
                           exports: searchClient, EVENTS_INDEX, PROFILES_INDEX
+    discoverCuration.ts Manage featured artists + heritage playlists for Discover tab
     firestore.ts        Typed Firestore data service (usersService, eventsService, etc.)
     search.ts           Weighted full-text + trigram Firestore search (fallback when Algolia absent)
     cache.ts            In-memory TTL cache (60s default)
     rollout.ts          Feature flag phased rollout
     locations.ts        Location and city management
+    activities.ts, events.ts, misc.ts, movies.ts, notifications.ts, perks.ts,
+    profiles.ts, tickets.ts, updates.ts, users.ts, wallets.ts, walletPasses.ts,
+    appleWalletWebService.ts, importer.ts, base.ts
   jobs/
     algoliaBackfill.ts  One-time backfill: indexes all published events + profiles into Algolia.
                         Checks algoliaIndexedAt to skip already-indexed docs. Exposed via admin route.
@@ -844,6 +947,25 @@ See `firestore.rules`:
 - [x] Directory full category set: All / Events / Indigenous / Businesses / Venues / Organisations / Councils / Government / Charities
 - [x] Server-side feed ranking (`GET /api/feed`) — 7-signal weighted algorithm
 
+### Feature Sprint (2026-03) ✅ Complete
+- [x] Discover curation service (`functions/src/services/discoverCuration.ts`) — manage featured artists + heritage playlists
+- [x] Admin discover screen (`app/admin/discover.tsx`) — curate Discover tab content
+- [x] `useDiscoverData` hook — typed data fetching for hero, rails, spotlights, activities
+- [x] xDiscover + Discover component sets — FeaturedArtistRail, HeritagePlaylistRail, ActivityRail, IndigenousSpotlight
+- [x] Artist backstage portal (`app/dashboard/backstage/[id].tsx`) — live chat + artist tools
+- [x] Public entity profiles: `app/artist/[id].tsx`, `app/business/[id].tsx`, `app/organiser/[id].tsx`, `app/venue/[id].tsx`
+- [x] Content types: Activities, Movies, Restaurants, Shopping (routes + services)
+- [x] Home screen widgets — iOS/Android (`lib/widgets/`, `components/widgets/`)
+- [x] iOS Live Activities (`lib/live-activity.ts`) — ticket countdown, event updates
+- [x] Apple Wallet passes (`functions/src/services/walletPasses.ts`, `appleWalletWebService.ts`)
+- [x] Analytics wired (`lib/analytics.ts` — PostHog / Firebase Analytics)
+- [x] Community tab refactor — diaspora group support, modals, new components
+- [x] Feed tab (`app/(tabs)/feed.tsx`) + `lib/feedService.ts` — personalised event feed
+- [x] Browse system (`components/browse/`) — BrowseCard, BrowseLayout, PromotedRail
+- [x] Profile public components (`app/profile/_components/`, `components/profile-public/`)
+- [x] `hooks/queries/` — scoped query hooks (useEvents, useExplore, usePerks)
+- [x] Expanded admin suite: finance, data-compliance, moderation, handles, import, platform, updates screens
+
 ### Pending — Pre-Launch (April 15 target)
 - [ ] **Algolia env vars**: set `EXPO_PUBLIC_ALGOLIA_APP_ID` + `EXPO_PUBLIC_ALGOLIA_SEARCH_KEY` in `.env` and `eas.json`; set `ALGOLIA_APP_ID` + `ALGOLIA_ADMIN_KEY` in Cloud Functions config; run backfill
 - [ ] **GeoHash backfill**: events missing `latitude`/`longitude`/`geoHash` need geocoding script
@@ -857,7 +979,6 @@ See `firestore.rules`:
 - [ ] Rewards points redemption UI (balance chip on Perks tab, checkout toggle)
 - [ ] Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
 - [ ] Push notification deep links + per-category opt-out settings
-- [ ] Organiser public profile pages (`profile/organizer/[id].tsx`)
 - [ ] NZ + UAE city grouping on onboarding (cities grouped by country with flags)
-- [ ] Wallet top-up + Apple/Google Pay (Stripe PaymentIntent, `.pkpass` generation)
+- [ ] Wallet top-up + Apple/Google Pay UI (Stripe PaymentIntent + `.pkpass` — backend ready, UI pending)
 - [ ] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)

@@ -93,6 +93,7 @@
     "expo-web-browser": "~55.0.10",
     "expo-widgets": "^55.0.4",
     "firebase": "^11.10.0",
+    "firebase-tools": "^15.11.0",
     "makeerror": "^1.0.12",
     "next-fonts": "^1.5.1",
     "posthog-react-native": "^4.37.2",

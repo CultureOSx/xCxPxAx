@@ -36,15 +36,17 @@ function getCountryFlag(country: string): string {
 }
 
 export interface LocationPickerProps {
-  /** 'icon' = compact icon button (location when empty, flag when selected). 'full' = chip with label */
-  variant?: 'icon' | 'full';
+  /** 'icon' = compact icon button. 'full' = bordered chip. 'text' = bare inline text, no frame */
+  variant?: 'icon' | 'full' | 'text';
   /** Icon color (e.g. '#fff' for gradient headers) */
   iconColor?: string;
   /** Style for the icon button container */
   buttonStyle?: ViewStyle;
+  /** Text color for 'text' variant */
+  textColor?: string;
 }
 
-export function LocationPicker({ variant = 'full', iconColor, buttonStyle }: LocationPickerProps) {
+export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textColor }: LocationPickerProps) {
   const { state, updateLocation } = useOnboarding();
   const colors = useColors();
   const scheme = useColorScheme();
@@ -108,7 +110,20 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle }: Loc
 
   return (
     <>
-      {variant === 'icon' ? (
+      {variant === 'text' ? (
+        <Pressable
+          style={styles.textTrigger}
+          onPress={open}
+          accessibilityRole="button"
+          accessibilityLabel={state.city ? `Location: ${state.city}, ${country}. Tap to change` : 'Select location'}
+        >
+          <Text style={styles.textTriggerFlag}>{state.city ? countryFlag : '📍'}</Text>
+          <Text style={[styles.textTriggerLabel, { color: textColor ?? colors.textSecondary }]} numberOfLines={1}>
+            {locationLabel}
+          </Text>
+          <Ionicons name="chevron-down" size={12} color={textColor ?? colors.textTertiary} />
+        </Pressable>
+      ) : variant === 'icon' ? (
         <Pressable
           style={[
             styles.iconTrigger,
@@ -558,5 +573,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  // Text variant — no background, no border, blends inline with surrounding text
+  textTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  textTriggerFlag: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  textTriggerLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 20,
   },
 });

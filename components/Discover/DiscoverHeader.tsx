@@ -118,15 +118,11 @@ function DiscoverHeaderComponent({
         </View>
       ) : (
         <View style={styles.mobileHeroSection}>
-          <View style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
-             <LocationPicker />
-          </View>
-          <View>
-            <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
-            <Text style={[styles.heroGreetingMobile, { color: colors.textSecondary }]}>
-              {currentTime} · {weatherSummary}
-            </Text>
-          </View>
+          <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
+          <LocationPicker variant="text" />
+          <Text style={[styles.heroTimeWeather, { color: colors.textSecondary }]}>
+            {currentTime}{weatherSummary ? ` · ${weatherSummary}` : ''}
+          </Text>
         </View>
       )}
     </View>
@@ -199,9 +195,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8 },
+  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8, gap: 8 },
   heroGreetingRow: { flexDirection: 'column', alignItems: 'flex-start' },
-  heroGreetingMain: { ...TextStyles.title2, marginBottom: 4 },
+  heroGreetingMain: { ...TextStyles.title2 },
+  heroTimeWeather: { ...TextStyles.caption, opacity: 0.75 },
   heroGreetingMobile: { ...TextStyles.callout },
 });
 

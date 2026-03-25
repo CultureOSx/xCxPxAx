@@ -1,82 +1,215 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Pressable,
+  Platform,
+  useWindowDimensions,
+} from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useLayout } from '@/hooks/useLayout';
-import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
 import SectionHeader from './SectionHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useFeaturedCities, cityGradient, type FeaturedCityData } from '@/hooks/useFeaturedCities';
 
-const CITY_SNAP_INTERVAL = 176;
+// ---------------------------------------------------------------------------
+// City card — shared between native grid and web rail
+// ---------------------------------------------------------------------------
 
-const majorCities = [
-  { id: 'syd', name: 'Sydney', country: 'Australia', image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=400&q=80' },
-  { id: 'mel', name: 'Melbourne', country: 'Australia', image: 'https://images.unsplash.com/photo-1514395462725-fb4566210144?auto=format&fit=crop&w=400&q=80' },
-  { id: 'bne', name: 'Brisbane', country: 'Australia', image: 'https://images.unsplash.com/photo-1554030439-0bf90e2908f5?auto=format&fit=crop&w=400&q=80' },
-  { id: 'per', name: 'Perth', country: 'Australia', image: 'https://images.unsplash.com/photo-1534445883836-7cd3b4eb7932?auto=format&fit=crop&w=400&q=80' },
-  { id: 'adk', name: 'Adelaide', country: 'Australia', image: 'https://images.unsplash.com/photo-1558231737-293699b867ba?auto=format&fit=crop&w=400&q=80' },
-];
+const CARD_HEIGHT = 120;
 
-export function CityRailComponent() {
-  const { isDesktop } = useLayout();
-  const colors = useColors();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+function CityCard({
+  city,
+  width,
+}: {
+  city: FeaturedCityData;
+  width: number;
+}) {
+  const gradient = cityGradient(city.countryCode);
+
+  const handlePress = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/city/[name]' as never,
+      params: { name: city.name, country: city.countryName },
+    });
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [s.card, { width, height: CARD_HEIGHT, opacity: pressed ? 0.85 : 1 }]}
+      accessibilityRole="button"
+      accessibilityLabel={`Explore ${city.name}, ${city.countryName}`}
+    >
+      {/* Background: image if available, else gradient */}
+      {city.imageUrl ? (
+        <Image
+          source={{ uri: city.imageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={300}
+        />
+      ) : (
+        <LinearGradient
+          colors={gradient}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+      )}
+
+      {/* Dark overlay for text legibility */}
+      <View style={s.overlay} />
+
+      {/* Text */}
+      <View style={s.textWrap}>
+        <Text style={s.emoji}>{city.countryEmoji}</Text>
+        <Text style={s.cityName} numberOfLines={1}>{city.name}</Text>
+        <Text style={s.countryName} numberOfLines={1}>{city.countryName}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton placeholder
+// ---------------------------------------------------------------------------
+
+function CityCardSkeleton({ width }: { width: number }) {
+  return <Skeleton width={width} height={CARD_HEIGHT} borderRadius={16} />;
+}
+
+// ---------------------------------------------------------------------------
+// CityRail — 2-column wrapped grid on native, horizontal scroll on web
+// ---------------------------------------------------------------------------
+
+function CityRailComponent() {
+  const { isDesktop, hPad } = useLayout();
+  const { width: screenWidth } = useWindowDimensions();
+  const { cities, isLoading } = useFeaturedCities();
+
+  const isNative = Platform.OS !== 'web';
+
+  // Card width:
+  //   Native 2-col: (screenWidth - 2*hPad - gap) / 2
+  //   Web horizontal: fixed 160px (matching original design)
+  const cardWidth = useMemo(() => {
+    if (!isNative) return 160;
+    const gap = 12;
+    return Math.floor((screenWidth - hPad * 2 - gap) / 2);
+  }, [isNative, screenWidth, hPad]);
+
+  // Loading skeleton items
+  const skeletonData = ['s1', 's2', 's3', 's4', 's5', 's6'] as const;
+
+  if (isNative) {
+    // ── Native: 2-column grid (FlatList with numColumns) ──────────────────
+    return (
+      <View style={s.container}>
+        <View style={[s.headerPad, { paddingHorizontal: hPad }]}>
+          <SectionHeader title="Explore Cities" onSeeAll={() => {}} />
+        </View>
+
+        {isLoading ? (
+          <View style={[s.grid, { paddingHorizontal: hPad }]}>
+            {skeletonData.map((k) => (
+              <CityCardSkeleton key={k} width={cardWidth} />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={cities}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={[s.grid, { paddingHorizontal: hPad }]}
+            columnWrapperStyle={s.row}
+            renderItem={({ item }) => <CityCard city={item} width={cardWidth} />}
+          />
+        )}
+      </View>
+    );
+  }
+
+  // ── Web: horizontal scroll rail (original behaviour, already good) ────────
+  return (
+    <View style={s.container}>
+      <View style={[s.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader title="Explore Cities" onSeeAll={() => {}} />
       </View>
-      <FlatList
-        horizontal
-        data={majorCities}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push({ pathname: '/city/[name]' as any, params: { name: item.name, country: item.country } });
-            }}
-            style={({ pressed }) => [styles.cityCard, { backgroundColor: colors.surface }, pressed && { opacity: 0.85 }]}
-          >
-            <Image source={{ uri: item.image }} style={styles.cityCardImg} contentFit="cover" />
-            <View style={styles.cityCardOverlay} />
-            <Text style={styles.cityCardName}>{item.name}</Text>
-          </Pressable>
-        )}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
-        snapToInterval={CITY_SNAP_INTERVAL}
-        snapToAlignment="start"
-        decelerationRate="fast"
-      />
+
+      {isLoading ? (
+        <View style={s.webSkeletonRow}>
+          {skeletonData.map((k) => (
+            <CityCardSkeleton key={k} width={cardWidth} />
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          horizontal
+          data={cities}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <CityCard city={item} width={cardWidth} />}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[s.webRail, isDesktop && { paddingHorizontal: 0 }]}
+          snapToInterval={cardWidth + 12}
+          snapToAlignment="start"
+          decelerationRate="fast"
+        />
+      )}
     </View>
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { marginBottom: 32 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
-  cityCard: { 
-    width: 160, 
-    height: 100, 
-    borderRadius: 16, 
-    overflow: 'hidden', 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    backgroundColor: colors.surface,
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
+const s = StyleSheet.create({
+  container:     { marginBottom: 32 },
+  headerPad:     { paddingHorizontal: 20 },
+  // Native grid
+  grid:          { gap: 12 },
+  row:           { gap: 12, marginBottom: 12 },
+  // Web rail
+  webRail:       { paddingHorizontal: 20, gap: 12, paddingRight: 40 },
+  webSkeletonRow:{ flexDirection: 'row', paddingHorizontal: 20, gap: 12 },
+  // Card
+  card: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: '#1B0F2E',
   },
-  cityCardImg: { ...StyleSheet.absoluteFillObject },
-  cityCardOverlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(11, 11, 20, 0.4)' 
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(11, 11, 20, 0.35)',
   },
-  cityCardName: { 
-    ...TextStyles.title3, 
-    color: '#FFFFFF', 
-    zIndex: 1 
+  textWrap: {
+    padding: 10,
+    gap: 2,
+  },
+  emoji: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  cityName: {
+    ...TextStyles.title3,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Poppins_700Bold',
+  },
+  countryName: {
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.7)',
   },
 });
 

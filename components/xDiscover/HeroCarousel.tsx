@@ -9,6 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import type { EventData } from '@/shared/schema';
 
@@ -45,7 +46,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id } })}
       >
         <Image
-          source={{ uri: item.imageUrl }}
+          source={{ uri: item.imageUrl ?? '' }}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
           transition={200}
@@ -84,7 +85,15 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
     </View>
   ), [events.length, heroCardWidth, isDesktop, styles]);
 
-  if (events.length === 0) return null;
+  if (events.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={{ paddingHorizontal: isDesktop ? 0 : 20 }}>
+          <Skeleton height={420} borderRadius={16} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

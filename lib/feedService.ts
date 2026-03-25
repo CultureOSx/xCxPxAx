@@ -120,7 +120,9 @@ export function subscribeComments(
         emitComments(postKey, comments);
         emitCommentCount(postKey, comments.length);
       })
-      .catch(() => { /* silently ignore — local state still shown */ });
+      .catch((err: unknown) => {
+        if (__DEV__) console.error('[feedService] getComments failed:', err);
+      });
   }
 
   return unsub;
@@ -233,7 +235,9 @@ export function subscribeLiked(
         }
         emitLikeCount(postKey, likesCount);
       })
-      .catch(() => { /* silently ignore */ });
+      .catch((err: unknown) => {
+        if (__DEV__) console.error('[feedService] getLike failed:', err);
+      });
   }
 
   return () => {

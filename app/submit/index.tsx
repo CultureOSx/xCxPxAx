@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient, getApiUrl, getAccessToken } from '@/lib/query-client';
@@ -128,8 +128,16 @@ export default function SubmitScreen() {
   const colors  = useColors();
   const { hPad, isDesktop } = useLayout();
   const { isAdmin, isOrganizer } = useRole();
+  const params  = useLocalSearchParams<{ type?: string }>();
 
-  const [activeTab, setActiveTab]   = useState<SubmitType>('event');
+  // Pre-select type from URL param (e.g. /submit?type=organisation)
+  const initialType = ((): SubmitType => {
+    const t = params.type;
+    if (t && Object.keys(TYPE_CONFIG).includes(t)) return t as SubmitType;
+    return 'event';
+  })();
+
+  const [activeTab, setActiveTab]   = useState<SubmitType>(initialType);
   const [form, setForm]             = useState<FormState>({ ...initialForm });
   const [isFree, setIsFree]         = useState(false);
   const [imageUri, setImageUri]     = useState<string | null>(null);

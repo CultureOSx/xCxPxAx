@@ -74,7 +74,10 @@ export function useDiscoverData() {
       .then(w => {
         if (!cancelled) setWeatherSummary(`${Math.round(w.temperature)}°C ${w.weathercode === 0 ? 'Clear' : ''}`);
       })
-      .catch(() => { if (!cancelled) setWeatherSummary(''); });
+      .catch((err: unknown) => {
+        if (!cancelled) setWeatherSummary('');
+        if (__DEV__) console.error('[useDiscoverData] weather fetch failed:', err);
+      });
     return () => { cancelled = true; };
   }, [coords.lat, coords.lon]);
 
@@ -272,22 +275,22 @@ export function useDiscoverData() {
 
   const nearbyLoading = gpsLoading || eventsLoading;
 
-  const popularRailData = useMemo(() => 
+  const popularRailData = useMemo((): (EventData | string)[] =>
     eventsLoading || discoverLoading ? ['s1', 's2', 's3', 's4'] : popularEvents,
     [eventsLoading, discoverLoading, popularEvents]
   );
 
-  const communityRailData = useMemo(() => 
+  const communityRailData = useMemo((): (Community | string)[] =>
     communitiesLoading ? ['s1', 's2', 's3', 's4'] : allCommunities,
     [communitiesLoading, allCommunities]
   );
 
-  const nearbyRailData = useMemo(() => 
+  const nearbyRailData = useMemo((): (EventData | string)[] =>
     nearbyLoading ? ['s1', 's2', 's3', 's4'] : nearbyEvents,
     [nearbyLoading, nearbyEvents]
   );
 
-  const activityRailData = useMemo(() => 
+  const activityRailData = useMemo((): (ActivityData | string)[] =>
     activitiesLoading ? ['s1', 's2', 's3', 's4'] : allActivities,
     [activitiesLoading, allActivities]
   );

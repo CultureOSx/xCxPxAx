@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 
 export function Field({
@@ -12,11 +12,20 @@ export function Field({
   colors: ReturnType<typeof useColors>;
 }) {
   return (
-    <View style={{ marginBottom: 20 }}>
-      <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        {label}
-      </Text>
+    <View style={s.wrap}>
+      <Text style={[s.label, { color: colors.textSecondary }]}>{label}</Text>
       {children}
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  wrap: { marginBottom: 20 },
+  label: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+});

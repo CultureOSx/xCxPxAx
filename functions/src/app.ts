@@ -25,6 +25,7 @@ import { updatesRouter } from './routes/updates';
 import { feedRouter } from './routes/feed';
 import { importRouter } from './routes/import';
 import { membershipRouter } from './routes/membership';
+import { citiesRouter } from './routes/cities';
 
 
 
@@ -117,6 +118,7 @@ mount('/', updatesRouter);
 mount('/', feedRouter);
 mount('/', importRouter);
 mount('/', membershipRouter);
+mount('/', citiesRouter);
 
 // Special handling for factory routers
 const eventsRouter = createEventsRouter();

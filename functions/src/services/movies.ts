@@ -1,5 +1,5 @@
 import { db } from '../admin';
-import { MovieData, MovieInput } from '@shared/schema';
+import { MovieData, MovieInput } from '../../../shared/schema';
 
 const moviesCol = () => db.collection('movies');
 

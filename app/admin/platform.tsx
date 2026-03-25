@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
@@ -177,17 +176,8 @@ function PlatformContent() {
     enabled: isSuperAdmin,
   });
 
-  const locationsQuery = useQuery({
-    queryKey: ['locations'],
-    queryFn:  () => api.locations.list(),
-    staleTime: 300_000,
-    enabled:  isSuperAdmin,
-  });
-
   const phase    = rolloutQuery.data?.phase ?? 'internal';
   const features = rolloutQuery.data?.features ?? {};
-
-  const allCities = locationsQuery.data?.locations.flatMap(l => l.cities) ?? [];
 
   if (!isSuperAdmin && !roleLoading) return null;
 
@@ -261,48 +251,24 @@ function PlatformContent() {
 
             {/* ── City Management ───────────────────────────────────────── */}
             <View style={s.section}>
-              <SectionHeader label="City Management" sub="Supported cities and locations" />
-              {locationsQuery.isLoading ? (
-                <ActivityIndicator color={CultureTokens.teal} style={{ marginVertical: 20 }} />
-              ) : (
-                <>
-                  <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-                    {(locationsQuery.data?.locations ?? []).map((loc, i) => (
-                      <Animated.View key={loc.country} entering={FadeInDown.delay(i * 40).duration(250)}>
-                        <View style={[s.locationRow, { borderBottomColor: colors.borderLight }]}>
-                          <View style={[s.locationIcon, { backgroundColor: CultureTokens.teal + '18' }]}>
-                            <Ionicons name="globe-outline" size={16} color={CultureTokens.teal} />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[s.locationCountry, { color: colors.text }]}>{loc.country}</Text>
-                            <Text style={[s.locationCities, { color: colors.textTertiary }]}>
-                              {loc.cities.slice(0, 5).join(', ')}{loc.cities.length > 5 ? ` +${loc.cities.length - 5} more` : ''}
-                            </Text>
-                          </View>
-                          <View style={[s.cityCountBadge, { backgroundColor: CultureTokens.teal + '18' }]}>
-                            <Text style={[s.cityCountText, { color: CultureTokens.teal }]}>{loc.cities.length}</Text>
-                          </View>
-                        </View>
-                      </Animated.View>
-                    ))}
-                  </View>
-
-                  <View style={[s.statsRow, { marginTop: 10 }]}>
-                    <View style={[s.statChip, { backgroundColor: colors.surface, borderColor: CultureTokens.teal + '30' }]}>
-                      <Ionicons name="globe-outline" size={14} color={CultureTokens.teal} />
-                      <Text style={[s.statChipText, { color: colors.text }]}>
-                        {locationsQuery.data?.locations.length ?? 0} countries
-                      </Text>
-                    </View>
-                    <View style={[s.statChip, { backgroundColor: colors.surface, borderColor: CultureTokens.indigo + '30' }]}>
-                      <Ionicons name="location-outline" size={14} color={CultureTokens.indigo} />
-                      <Text style={[s.statChipText, { color: colors.text }]}>
-                        {allCities.length} cities
-                      </Text>
-                    </View>
-                  </View>
-                </>
-              )}
+              <SectionHeader label="City Management" sub="Cities shown in Discover CityRail" />
+              <Pressable
+                style={[s.card, s.navCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                onPress={() => router.push('/admin/locations')}
+                accessibilityRole="button"
+                accessibilityLabel="Manage cities and countries"
+              >
+                <View style={[s.locationIcon, { backgroundColor: CultureTokens.teal + '18' }]}>
+                  <Ionicons name="globe-outline" size={18} color={CultureTokens.teal} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.locationCountry, { color: colors.text }]}>Cities &amp; Countries</Text>
+                  <Text style={[s.locationCities, { color: colors.textTertiary }]}>
+                    Add, edit, reorder and upload cover images for the Discover rail
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+              </Pressable>
             </View>
 
             {/* ── API Keys & Webhooks ───────────────────────────────────── */}
@@ -427,6 +393,7 @@ const s = StyleSheet.create({
   loadingWrap:    { alignItems: 'center', gap: 12, paddingVertical: 80 },
   loadingText:    { fontSize: 14, fontFamily: 'Poppins_400Regular' },
   // Location
+  navCard:        { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   locationRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
   locationIcon:   { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   locationCountry:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold' },

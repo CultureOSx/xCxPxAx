@@ -59,6 +59,41 @@ profilesRouter.get('/communities', async (req, res) => {
   }
 });
 
+/** POST /api/communities — create a new community */
+profilesRouter.post('/communities', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { name, description, communityCategory, city, country, imageUrl } = req.body as {
+      name?: string;
+      description?: string;
+      communityCategory?: string;
+      city?: string;
+      country?: string;
+      imageUrl?: string;
+    };
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ error: 'name is required' });
+    }
+
+    const result = await profilesService.create({
+      entityType: 'community',
+      name: name.trim(),
+      description,
+      category: communityCategory,
+      city,
+      country,
+      imageUrl,
+      ownerId: req.user!.id,
+      isVerified: false,
+    });
+
+    return res.status(201).json({ community: result });
+  } catch (err) {
+    captureRouteError(err, 'POST /api/communities');
+    return res.status(500).json({ error: 'Failed to create community' });
+  }
+});
+
 /** GET /api/communities/nearby — list nearby communities */
 profilesRouter.get('/communities/nearby', async (req, res) => {
   const city = String(req.query.city ?? '').trim();

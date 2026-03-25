@@ -806,6 +806,9 @@ const communities = {
 
   joined: () =>
     request<{ communityIds: string[] }>('GET', 'api/communities/joined'),
+
+  create: (data: { name: string; description?: string; communityCategory?: string; city?: string; country?: string; imageUrl?: string }) =>
+    request<{ community: Community }>('POST', 'api/communities', data).then(r => r.community),
 };
 
 // ---------------------------------------------------------------------------
@@ -1098,6 +1101,53 @@ const feed = {
 };
 
 // ---------------------------------------------------------------------------
+// Featured Cities
+// ---------------------------------------------------------------------------
+
+export interface FeaturedCityData {
+  id: string;
+  name: string;
+  slug: string;
+  countryCode: string;
+  countryName: string;
+  countryEmoji: string;
+  stateCode?: string;
+  imageUrl?: string;
+  featured: boolean;
+  order: number;
+  lat?: number;
+  lng?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const cities = {
+  /** Public — returns featured cities for Discover CityRail */
+  featured: () =>
+    request<{ cities: FeaturedCityData[] }>('GET', 'api/cities/featured').then((r) => r.cities),
+
+  /** Admin — all cities */
+  list: () =>
+    request<{ cities: FeaturedCityData[] }>('GET', 'api/cities').then((r) => r.cities),
+
+  /** Admin — create */
+  create: (input: Omit<FeaturedCityData, 'id' | 'slug' | 'createdAt' | 'updatedAt'>) =>
+    request<{ city: FeaturedCityData }>('POST', 'api/cities', input).then((r) => r.city),
+
+  /** Admin — update */
+  update: (id: string, patch: Partial<Omit<FeaturedCityData, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>) =>
+    request<{ ok: boolean }>('PATCH', `api/cities/${id}`, patch),
+
+  /** Admin — delete */
+  delete: (id: string) =>
+    request<{ ok: boolean }>('DELETE', `api/cities/${id}`),
+
+  /** Admin — re-seed defaults */
+  seed: () =>
+    request<{ ok: boolean; message: string }>('POST', 'api/cities/seed'),
+};
+
+// ---------------------------------------------------------------------------
 // CulturePass ID lookup
 // ---------------------------------------------------------------------------
 const cpid = {
@@ -1132,6 +1182,7 @@ export const api = {
   businesses,
   council,
   locations,
+  cities,
   cpid,
   admin,
   culture,

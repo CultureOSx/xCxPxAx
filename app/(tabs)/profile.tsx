@@ -15,58 +15,81 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { PerkData } from '@/shared/schema/perk';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { NATIONALITIES } from '@/constants/cultures';
 import type { User } from '@shared/schema';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { ProfileQuickMenuTrigger } from '@/components/ProfileQuickMenu';
 import { CultureTokens, shadows } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
-import Animated, { 
-  FadeInRight, 
-  SlideInUp, 
+import Animated, {
+  SlideInUp,
   FadeIn,
 } from 'react-native-reanimated';
-import Svg, { Line } from 'react-native-svg';
 import { CultureWalletMap } from '../../components/profile/CultureWalletMap';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const HERO_BG     = '#0B0B14';
-const BLUE        = CultureTokens.indigo;
+const HERO_BG = '#0B0B14';
+const BLUE    = CultureTokens.indigo;
 
-const LOYALTY_PASSES = [
-  { id: '1', title: 'Classical India', level: 'Silver', progress: 0.6, color: '#FF9933', icon: 'musical-note' },
-  { id: '2', title: 'K-Pop Explorer', level: 'Gold', progress: 0.9, color: '#CD2E3A', icon: 'sparkles' },
-  { id: '3', title: 'Oud Artisan', level: 'Bronze', progress: 0.3, color: '#006341', icon: 'color-palette' },
-];
-
-const DIGITAL_HERITAGE_TOKENS = [
-  { id: 't1', title: 'Suki: Neon Seoul Live', date: '24 Mar 2026', image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=400', color: '#CD2E3A', rarity: 'Rare' },
-  { id: 't2', title: 'Aarav: Ganges Echoes', date: '20 Mar 2026', image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400', color: '#FF9933', rarity: 'Epic' },
-];
-
-const ANCESTRY_TREE_DATA = [
-  { id: 'root', label: 'Common Origin', x: 200, y: 50, color: '#fff' },
-  { id: 'asia', parentId: 'root', label: 'Asia', x: 100, y: 150, color: '#FF9933' },
-  { id: 'europe', parentId: 'root', label: 'Europe', x: 300, y: 150, color: '#005BAE' },
-  { id: 'india', parentId: 'asia', label: 'India', x: 50, y: 250, color: '#FF9933', emoji: '🇮🇳' },
-  { id: 'korea', parentId: 'asia', label: 'S. Korea', x: 150, y: 250, color: '#CD2E3A', emoji: '🇰🇷' },
-  { id: 'greece', parentId: 'europe', label: 'Greece', x: 300, y: 250, color: '#005BAE', emoji: '🇬🇷' },
-];
-
-const MATCHED_CULTURES = [
-  { id: '1', name: 'India', lat: 20.5937, lng: 78.9629, emoji: '🇮🇳', color: '#FF9933' },
-  { id: '2', name: 'South Korea', lat: 35.9078, lng: 127.7669, emoji: '🇰🇷', color: '#CD2E3A' },
-  { id: '3', name: 'Greece', lat: 39.0742, lng: 21.8243, emoji: '🇬🇷', color: '#005BAE' },
-];
+// Approximate country centroids for the Culture Wallet Map.
+// Keys match Nationality.id from constants/cultures.ts.
+const NATIONALITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  indian:     { lat: 20.5937,  lng: 78.9629  },
+  chinese:    { lat: 35.8617,  lng: 104.1954 },
+  korean:     { lat: 35.9078,  lng: 127.7669 },
+  japanese:   { lat: 36.2048,  lng: 138.2529 },
+  vietnamese: { lat: 14.0583,  lng: 108.2772 },
+  filipino:   { lat: 12.8797,  lng: 121.7740 },
+  indonesian: { lat: -0.7893,  lng: 113.9213 },
+  thai:       { lat: 15.8700,  lng: 100.9925 },
+  malay:      { lat: 4.2105,   lng: 101.9758 },
+  greek:      { lat: 39.0742,  lng: 21.8243  },
+  italian:    { lat: 41.8719,  lng: 12.5674  },
+  spanish:    { lat: 40.4637,  lng: -3.7492  },
+  lebanese:   { lat: 33.8547,  lng: 35.8623  },
+  egyptian:   { lat: 26.8206,  lng: 30.8025  },
+  nigerian:   { lat: 9.0820,   lng: 8.6753   },
+  ghanaian:   { lat: 7.9465,   lng: -1.0232  },
+  somali:     { lat: 5.1521,   lng: 46.1996  },
+  ethiopian:  { lat: 9.1450,   lng: 40.4897  },
+  mexican:    { lat: 23.6345,  lng: -102.5528 },
+  colombian:  { lat: 4.5709,   lng: -74.2973  },
+  brazilian:  { lat: -14.2350, lng: -51.9253  },
+  kiwi:       { lat: -40.9006, lng: 174.8860  },
+  aboriginal: { lat: -25.2744, lng: 133.7751  },
+  maori:      { lat: -40.9006, lng: 174.8860  },
+};
 
 // ─── Ancestry Tree Modal ─────────────────────────────────────────────────────
 
-function AncestryTreeModal({ visible, onClose, colors }: { visible: boolean, onClose: () => void, colors: any }) {
+interface CultureMarker {
+  id: string;
+  name: string;
+  emoji: string;
+  lat: number;
+  lng: number;
+  color: string;
+}
+
+function AncestryTreeModal({
+  visible,
+  onClose,
+  colors,
+  cultures,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  colors: ReturnType<typeof useColors>;
+  cultures: CultureMarker[];
+}) {
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -74,26 +97,32 @@ function AncestryTreeModal({ visible, onClose, colors }: { visible: boolean, onC
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose}><BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} /></Pressable>
         <Animated.View entering={SlideInUp.springify().damping(22)} style={[treeStyles.sheet, { backgroundColor: colors.background, paddingTop: insets.top + 20 }]}>
           <View style={treeStyles.header}>
-            <View><Text style={[treeStyles.title, { color: colors.text }]}>Ancestry Tree</Text><Text style={[treeStyles.subtitle, { color: colors.textSecondary }]}>Tracing your heritage</Text></View>
-            <TouchableOpacity onPress={onClose} style={treeStyles.closeBtn}><Ionicons name="close" size={24} color={colors.textSecondary} /></TouchableOpacity>
+            <View>
+              <Text style={[treeStyles.title, { color: colors.text }]}>Your Heritage</Text>
+              <Text style={[treeStyles.subtitle, { color: colors.textSecondary }]}>Cultures from your profile</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={treeStyles.closeBtn}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={treeStyles.treeScroll}>
-            <View style={treeStyles.canvas}>
-              <Svg height="400" width="400">
-                {ANCESTRY_TREE_DATA.map(node => {
-                  const parent = node.parentId ? ANCESTRY_TREE_DATA.find(n => n.id === node.parentId) : null;
-                  return parent ? <Line key={`line-${node.id}`} x1={parent.x} y1={parent.y} x2={node.x} y2={node.y} stroke={node.color} strokeWidth="2" strokeDasharray="4, 4" opacity={0.6} /> : null;
-                })}
-              </Svg>
-              {ANCESTRY_TREE_DATA.map((node, idx) => (
-                <Animated.View key={node.id} entering={FadeIn.delay(idx * 150).springify()} style={[treeStyles.nodeWrap, { left: node.x - 40, top: node.y - 40 }]}>
-                  <View style={[treeStyles.nodeCircle, { borderColor: node.color, backgroundColor: colors.surface }]}>{node.emoji ? <Text style={treeStyles.nodeEmoji}>{node.emoji}</Text> : <Ionicons name="planet-outline" size={20} color={node.color} />}</View>
-                  <Text style={[treeStyles.nodeLabel, { color: colors.text }]}>{node.label}</Text>
+            <View style={treeStyles.cultureGrid}>
+              {cultures.map((c, idx) => (
+                <Animated.View key={c.id} entering={FadeIn.delay(idx * 120).springify()} style={[treeStyles.cultureNode, { backgroundColor: colors.surface }]}>
+                  <Text style={treeStyles.cultureEmoji}>{c.emoji}</Text>
+                  <Text style={[treeStyles.nodeLabel, { color: colors.text }]}>{c.name}</Text>
                 </Animated.View>
               ))}
             </View>
             <Card style={treeStyles.insightCard} padding={20}>
-              <View style={treeStyles.insightRow}><Ionicons name="git-branch-outline" size={24} color={BLUE} /><Text style={[treeStyles.insightText, { color: colors.text }]}>Strong confluence between South Asian Diaspora and East Asian Traditions.</Text></View>
+              <View style={treeStyles.insightRow}>
+                <Ionicons name="git-branch-outline" size={24} color={BLUE} />
+                <Text style={[treeStyles.insightText, { color: colors.text }]}>
+                  {cultures.length === 1
+                    ? `Rooted in ${cultures[0].name} heritage.`
+                    : `Your CulturePass spans ${cultures.length} cultural traditions.`}
+                </Text>
+              </View>
             </Card>
           </ScrollView>
         </Animated.View>
@@ -110,14 +139,13 @@ const treeStyles = StyleSheet.create({
   subtitle: { fontSize: 13, fontFamily: 'Poppins_500Medium', opacity: 0.8 },
   closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' },
   treeScroll: { paddingBottom: 60 },
-  canvas: { width: 400, height: 400, alignSelf: 'center', marginTop: 20 },
-  nodeWrap: { position: 'absolute', width: 80, alignItems: 'center', gap: 8 },
-  nodeCircle: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  nodeEmoji: { fontSize: 24 },
-  nodeLabel: { fontSize: 11, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
+  cultureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, padding: 24, justifyContent: 'center' },
+  cultureNode: { alignItems: 'center', padding: 20, borderRadius: 24, gap: 8, minWidth: 100 },
+  cultureEmoji: { fontSize: 36 },
+  nodeLabel: { fontSize: 13, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
   insightCard: { margin: 24, borderRadius: 28 },
   insightRow: { flexDirection: 'row', gap: 16 },
-  insightText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', lineHeight: 22 },
+  insightText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, flex: 1 },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -128,9 +156,42 @@ export default function ProfileScreen() {
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
   const colors = useColors();
   const { userId, user: authUser } = useAuth();
+  const { state: onboardingState } = useOnboarding();
   const [showAncestry, setShowAncestry] = useState(false);
 
-  const { data: user, isLoading: userLoading } = useQuery<User>({ queryKey: ['/api/users/me', userId], queryFn: () => api.users.me() as any, enabled: !!userId });
+  const { data: user, isLoading: userLoading } = useQuery<User>({
+    queryKey: ['/api/users/me', userId],
+    queryFn: () => api.users.me(),
+    enabled: !!userId,
+  });
+
+  const { data: perks = [] } = useQuery<PerkData[]>({
+    queryKey: ['/api/perks'],
+    queryFn: () => api.perks.list(),
+    enabled: !!userId,
+  });
+
+  // Build culture wallet markers from the user's actual nationality/culture data.
+  const matchedCultures = useMemo(() => {
+    const natId = onboardingState?.nationalityId;
+    const cultureIds: string[] = onboardingState?.cultureIds ?? [];
+    const natIds = new Set<string>(natId ? [natId] : []);
+    cultureIds.forEach(cid => {
+      const nat = Object.values(NATIONALITIES).find(n => n.cultureIds.includes(cid));
+      if (nat) natIds.add(nat.id);
+    });
+    return Array.from(natIds)
+      .map((id, idx) => {
+        const nat = NATIONALITIES[id];
+        const coords = NATIONALITY_COORDS[id];
+        if (!nat || !coords) return null;
+        return { id: `${id}-${idx}`, name: nat.label, lat: coords.lat, lng: coords.lng, emoji: nat.emoji, color: CultureTokens.saffron };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+  }, [onboardingState?.nationalityId, onboardingState?.cultureIds]);
+
+  const hasCultureData = matchedCultures.length > 0;
+
   if (!userId) return <GuestProfileView topInset={insets.top} />;
   if (userLoading) return null;
 
@@ -144,60 +205,45 @@ export default function ProfileScreen() {
         <View style={[s.hero, { paddingTop: insets.top + 12 }]}>
           <LinearGradient colors={[HERO_BG, BLUE + '40', '#1B0F2E']} style={StyleSheet.absoluteFillObject} />
           {!isDesktopWeb && <ProfileQuickMenuTrigger colors={colors} />}
-          <View style={s.avatarWrap}><LinearGradient colors={[CultureTokens.gold, CultureTokens.saffron]} style={s.avatarRing}><View style={s.avatarInner}><Image source={{ uri: displayUser?.avatarUrl || `https://ui-avatars.com/api/?name=${displayName}` }} style={s.avatarImg} /></View></LinearGradient></View>
+          <View style={s.avatarWrap}><LinearGradient colors={[CultureTokens.gold, CultureTokens.saffron]} style={s.avatarRing}><View style={s.avatarInner}><Image source={{ uri: displayUser?.avatarUrl ?? '' }} style={s.avatarImg} /></View></LinearGradient></View>
           <Text style={s.heroName}>{displayName.toUpperCase()}</Text>
         </View>
-        
+
         <View style={s.content}>
-          {/* ANCESTRY Trigger */}
-          <Card onPress={() => setShowAncestry(true)} style={s.ancestryTrigger} padding={24}>
-            <View style={s.ancestryRow}><View style={[s.ancestryIcon, { backgroundColor: CultureTokens.gold + '15' }]}><Ionicons name="git-network-outline" size={32} color={CultureTokens.gold} /></View><Text style={[s.ancestryTitle, { color: colors.text }]}>Ancestry Tree</Text><Ionicons name="chevron-forward" size={24} color={colors.textTertiary} /></View>
-          </Card>
+          {/* ANCESTRY Trigger — only show when user has culture data */}
+          {hasCultureData && (
+            <Card onPress={() => setShowAncestry(true)} style={s.ancestryTrigger} padding={24}>
+              <View style={s.ancestryRow}><View style={[s.ancestryIcon, { backgroundColor: CultureTokens.gold + '15' }]}><Ionicons name="git-network-outline" size={32} color={CultureTokens.gold} /></View><Text style={[s.ancestryTitle, { color: colors.text }]}>Ancestry Tree</Text><Ionicons name="chevron-forward" size={24} color={colors.textTertiary} /></View>
+            </Card>
+          )}
 
-          {/* DIGITAL HERITAGE ARCHIVE Implementation */}
-          <View style={s.archiveSection}>
-            <View style={s.sectionHeader}>
-              <Text style={[s.sectionTitle, { color: colors.text }]}>Performance Archive</Text>
-              <Text style={[s.sectionSubtitle, { color: colors.textSecondary }]}>Collectibles from past Backstage sessions</Text>
+          {/* CULTURAL WALLET MAP — only show when user has culture markers */}
+          {hasCultureData && (
+            <View style={s.walletSection}>
+              <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Culture Wallet</Text>
+              <View style={s.mapContainer}>
+                <CultureWalletMap cultures={matchedCultures} />
+              </View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.archiveScroll}>
-              {DIGITAL_HERITAGE_TOKENS.map((token, idx) => (
-                <Animated.View key={token.id} entering={FadeInRight.delay(idx * 150).springify()} style={[s.tokenCard, { backgroundColor: colors.surface }]}>
-                  <Image source={{ uri: token.image }} style={s.tokenImage} />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
-                  <View style={[s.rarityBadge, { backgroundColor: token.color }]}><Text style={s.rarityText}>{token.rarity.toUpperCase()}</Text></View>
-                  <View style={s.tokenContent}>
-                    <Text style={s.tokenTitle}>{token.title}</Text>
-                    <Text style={s.tokenDate}>{token.date}</Text>
+          )}
+
+          {/* PERKS Section — only show when user has real perks */}
+          {perks.length > 0 && (
+            <View style={s.perksSection}>
+              <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Community Perks</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.perksScroll}>
+                {perks.slice(0, 5).map(perk => (
+                  <View key={perk.id} style={[s.passCard, { backgroundColor: colors.surface }]}>
+                    <LinearGradient colors={[CultureTokens.saffron, CultureTokens.indigo + '80']} style={s.passIconWrap}><Ionicons name="gift-outline" size={20} color="#fff" /></LinearGradient>
+                    <View style={s.passDetails}><Text style={[s.passTitle, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text></View>
                   </View>
-                </Animated.View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* CULTURAL WALLET MAP (Conditional for Web) */}
-          <View style={s.walletSection}>
-            <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Culture Wallet</Text>
-            <View style={s.mapContainer}>
-              <CultureWalletMap cultures={MATCHED_CULTURES} />
+                ))}
+              </ScrollView>
             </View>
-          </View>
-
-          {/* PERKS Section */}
-          <View style={s.perksSection}>
-            <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Community Perks</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.perksScroll}>
-              {LOYALTY_PASSES.map(pass => (
-                <View key={pass.id} style={[s.passCard, { backgroundColor: colors.surface }]}>
-                  <LinearGradient colors={[pass.color, pass.color + '40']} style={s.passIconWrap}><Ionicons name={pass.icon as any} size={20} color="#fff" /></LinearGradient>
-                  <View style={s.passDetails}><Text style={[s.passTitle, { color: colors.text }]}>{pass.title}</Text><View style={[s.progressBar, { backgroundColor: colors.borderLight }]}><View style={[s.progressFill, { width: `${pass.progress * 100}%`, backgroundColor: pass.color }]} /></View></View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
+          )}
         </View>
       </ScrollView>
-      <AncestryTreeModal visible={showAncestry} onClose={() => setShowAncestry(false)} colors={colors} />
+      <AncestryTreeModal visible={showAncestry} onClose={() => setShowAncestry(false)} colors={colors} cultures={matchedCultures} />
     </View>
   );
 }

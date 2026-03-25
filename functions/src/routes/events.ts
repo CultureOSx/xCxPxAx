@@ -115,7 +115,7 @@ const createEventSchema = z.object({
   priceCents:  z.coerce.number().int().min(0).optional(),
   priceLabel:  z.string().max(50).optional(),
   category:    z.string().max(100).optional(),
-  eventType:   z.enum(['In-Person', 'Online', 'Hybrid']).optional(),
+  eventType:   z.enum(['festival', 'concert', 'workshop', 'puja', 'sports', 'food', 'cultural', 'community', 'exhibition', 'conference', 'other']).optional(),
   ageSuitability: z.string().max(20).optional(),
   priceTier:   z.string().max(20).optional(),
   capacity:    z.coerce.number().int().min(1).optional(),
@@ -168,21 +168,6 @@ function parseBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
   if (!result.success) throw new Error(result.error.errors.map((e) => e.message).join(', '));
   return result.data;
 }
-
-function councilMatchScore(
-  council: DevCouncil,
-  location: { postcode?: number; suburb?: string; city?: string; state?: string },
-) {
-  let score = 0;
-  const postcode = Number(location.postcode ?? 0);
-  if (postcode && council.servicePostcodes.includes(postcode)) score += 40;
-  if (location.suburb && council.serviceSuburbs.some((s) => s.toLowerCase() === location.suburb!.toLowerCase())) score += 30;
-  if (location.city && council.serviceCities.some((c) => c.toLowerCase() === location.city!.toLowerCase())) score += 20;
-  if (location.state && council.state.toLowerCase() === location.state.toLowerCase()) score += 10;
-  return score;
-}
-
-
 
 // ---------------------------------------------------------------------------
 // Factory
@@ -633,16 +618,3 @@ export function createEventsRouter() {
   return router;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function findBestCouncil(councils: DevCouncil[], loc: ResolvedLocation): DevCouncil | undefined {
-  let best: DevCouncil | undefined;
-  let highest = 0;
-  for (const c of councils) {
-    const score = councilMatchScore(c, { postcode: loc.postcode, city: loc.city, state: loc.state });
-    if (score > highest) { highest = score; best = c; }
-  }
-  return best;
-}

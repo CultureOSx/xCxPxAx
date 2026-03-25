@@ -97,6 +97,7 @@ function getDateLabel(dateStr: string | undefined): string {
 /** Simple debounce — returns a stable fn that only fires after `ms` silence. */
 function useDebounced<T extends (...args: Parameters<T>) => void>(fn: T, ms = 600): T {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   return useCallback(
     (...args: Parameters<T>) => {
       if (timer.current) clearTimeout(timer.current);
