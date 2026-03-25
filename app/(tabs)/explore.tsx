@@ -176,7 +176,7 @@ const ec = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: CultureTokens.gold,
+    backgroundColor: CultureTokens.teal,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -184,22 +184,24 @@ const ec = StyleSheet.create({
   freeBadgeText: {
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    color: '#0B0B14',
+    color: '#fff',
   },
   indigenousBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: CultureTokens.gold,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     zIndex: 2,
+    borderWidth: 1,
+    borderColor: CultureTokens.gold + '60',
   },
   indigenousBadgeText: {
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    color: '#0B0B14',
+    color: CultureTokens.gold,
   },
   featuredDot: {
     position: 'absolute',
@@ -396,9 +398,16 @@ export default function ExploreScreen() {
 
           <View style={[s.header, { paddingHorizontal: hPad }]}>
             <View style={s.headerTitles}>
-              <Text style={[s.headerTitle, { color: colors.text }]}>Explore</Text>
+              <Text style={[s.headerTitle, { color: colors.text }]}>
+                {activeId === 'indigenous' ? '🪃 Indigenous' : 'Explore'}
+              </Text>
               <Text style={[s.headerSub, { color: colors.textSecondary }]}>
-                Discover what&apos;s happening in <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>{locationLabel}</Text>
+                {activeId === 'indigenous'
+                  ? 'First Nations culture and events in '
+                  : 'Discover what\u2019s happening in '}
+                <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>
+                  {locationLabel}
+                </Text>
               </Text>
             </View>
             <Pressable
@@ -444,6 +453,7 @@ export default function ExploreScreen() {
         <View style={{ flex: 1 }}>
           <FlashList<EventData>
             data={filtered}
+            extraData={gridCols}
             keyExtractor={(item: EventData) => item.id}
             numColumns={gridCols}
             // @ts-ignore - estimatedItemSize complains on this TS config
@@ -469,6 +479,28 @@ export default function ExploreScreen() {
                     ))}
                   </ScrollView>
                 </View>
+
+                {/* ── Indigenous banner ── */}
+                {activeId === 'indigenous' && (
+                  <LinearGradient
+                    colors={[CultureTokens.gold + '28', CultureTokens.gold + '08']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={s.indigenousBanner}
+                  >
+                    <View style={s.indigenousBannerRow}>
+                      <View style={[s.indigenousBannerAccent, { backgroundColor: CultureTokens.gold }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[s.indigenousBannerTitle, { color: colors.text }]}>
+                          Celebrating First Nations Culture
+                        </Text>
+                        <Text style={[s.indigenousBannerSub, { color: colors.textSecondary }]}>
+                          Indigenous events, art and experiences in {locationLabel}
+                        </Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                )}
 
                 {/* Featured horizontal rail */}
                 {activeId === 'all' && query === '' && featured.length > 0 && (
@@ -508,11 +540,13 @@ export default function ExploreScreen() {
                     },
                   ]}
                 >
-                  <View style={[s.sectionDot, { backgroundColor: CultureTokens.indigo }]} />
+                  <View style={[s.sectionDot, {
+                    backgroundColor: activeId === 'indigenous' ? CultureTokens.gold : CultureTokens.indigo,
+                  }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={[s.sectionTitle, { color: colors.text }]}>
                       {activeId === 'all' && query === ''
-                        ? `Discover`
+                        ? `Events in ${locationLabel}`
                         : query
                         ? `"${query}"`
                         : activeCat?.label ?? 'Events'}
@@ -540,18 +574,31 @@ export default function ExploreScreen() {
                 {!isLoading && filtered.length === 0 && (
                   <View style={s.emptyWrap}>
                     <LinearGradient
-                      colors={[CultureTokens.indigo + '20', CultureTokens.indigo + '08'] as [string, string]}
+                      colors={[
+                        (activeId === 'indigenous' ? CultureTokens.gold : CultureTokens.indigo) + '20',
+                        (activeId === 'indigenous' ? CultureTokens.gold : CultureTokens.indigo) + '08',
+                      ] as [string, string]}
                       style={s.emptyIconCircle}
                     >
-                      <Ionicons name="search-outline" size={32} color={CultureTokens.indigo} />
+                      <Ionicons
+                        name={activeId === 'indigenous' ? 'leaf-outline' : 'search-outline'}
+                        size={32}
+                        color={activeId === 'indigenous' ? CultureTokens.gold : CultureTokens.indigo}
+                      />
                     </LinearGradient>
                     <Text style={[s.emptyTitle, { color: colors.text }]}>
-                      {activeCat && activeId !== 'all'
+                      {activeId === 'indigenous'
+                        ? 'No Indigenous events found'
+                        : activeCat && activeId !== 'all'
                         ? `No ${activeCat.label} events`
                         : 'No events found'}
                     </Text>
                     <Text style={[s.emptySub, { color: colors.textSecondary }]}>
-                      {query ? 'Try a different search' : 'Try a different category'}
+                      {activeId === 'indigenous'
+                        ? 'Check back soon — new First Nations events are added regularly'
+                        : query
+                        ? 'Try a different search'
+                        : 'Try a different category'}
                     </Text>
                     {(activeId !== 'all' || query !== '') && (
                       <View style={{ marginTop: 20 }}>
@@ -703,5 +750,32 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
+  },
+
+  // Indigenous banner
+  indigenousBanner: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    marginTop: 4,
+  },
+  indigenousBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  indigenousBannerAccent: {
+    width: 4,
+    height: 40,
+    borderRadius: 2,
+  },
+  indigenousBannerTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 15,
+    marginBottom: 3,
+  },
+  indigenousBannerSub: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 13,
   },
 });
