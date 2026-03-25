@@ -315,7 +315,7 @@ function OrganizerDashboardContent() {
             <View style={[dashboardStyles.tipsCard, { backgroundColor: colors.surfaceElevated }]}>
               <Ionicons name="bulb-outline" size={20} color={CultureTokens.gold} />
               <Text style={[dashboardStyles.tipsText, { color: colors.textSecondary }]}>
-                Pro Tip: Curated listening items with "Discover" deep-links increase profile reach by up to 40%.
+                {`Pro Tip: Curated listening items with 'Discover' deep-links increase profile reach by up to 40%.`}
               </Text>
             </View>
           </Animated.View>

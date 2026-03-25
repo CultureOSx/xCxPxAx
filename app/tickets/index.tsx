@@ -70,7 +70,7 @@ interface TicketCardProps {
   onCancel: (t: Ticket) => void;
 }
 
-const TicketCard = React.memo(({ ticket, onCancel }: TicketCardProps) => {
+function TicketCardInner({ ticket, onCancel }: TicketCardProps) {
   const colors = useColors();
   const isActive = ticket.status === 'confirmed';
 
@@ -181,7 +181,10 @@ const TicketCard = React.memo(({ ticket, onCancel }: TicketCardProps) => {
       )}
     </Card>
   );
-});
+}
+
+TicketCardInner.displayName = 'TicketCard';
+const TicketCard = React.memo(TicketCardInner);
 
 export default function TicketsScreen() {
   const insets = useSafeAreaInsets();

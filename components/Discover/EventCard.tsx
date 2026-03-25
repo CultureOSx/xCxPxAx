@@ -11,6 +11,10 @@ import { formatEventDateTimeBadge } from '@/lib/dateUtils';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+function isFreePriceLabel(label: string | undefined): boolean {
+  return Boolean(label && label.trim().toLowerCase() === 'free');
+}
+
 interface EventCardProps {
   event: {
     id: string;
@@ -74,7 +78,15 @@ function CardContent({
       </View>
 
       {event.priceLabel && (
-        <View style={styles.pricePill}>
+        <View
+          style={[
+            styles.pricePill,
+            isFreePriceLabel(event.priceLabel) && {
+              backgroundColor: CultureTokens.teal + 'E6',
+              borderColor: CultureTokens.teal + 'AA',
+            },
+          ]}
+        >
           <Text style={styles.pricePillText}>{event.priceLabel}</Text>
         </View>
       )}

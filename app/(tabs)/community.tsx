@@ -4,18 +4,18 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   Platform,
   ScrollView,
   Pressable,
+  FlatList,
+  ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  interpolate,
-  useAnimatedScrollHandler,
+  FadeInDown, FadeInUp,
+  useSharedValue, useAnimatedStyle, withSpring,
+  interpolateColor, withTiming,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,6 @@ import { CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { FilterChipRow } from '@/components/FilterChip';
 import { CommunityGridCard } from '@/components/community/CommunityGridCard';
 import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewDrawer';
 import { useCommunities } from '@/hooks/queries/useCommunities';
@@ -47,42 +46,96 @@ const CATEGORIES = [
 
 const FALLBACK_CULTURE_IDS = ['indian', 'chinese', 'korean', 'nigerian', 'greek', 'italian'];
 
-const STICKY_HEADER_HEIGHT = 56;
+const isWeb = Platform.OS === 'web';
+
+// ─── Inline animated FilterChip ───────────────────────────────────────────────
+
+function FilterChip({
+  label, active, onPress, icon,
+}: {
+  label: string; active: boolean; onPress: () => void; icon?: string;
+}) {
+  const colors = useColors();
+  const scale = useSharedValue(1);
+  const bg = useSharedValue(0);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: interpolateColor(
+      bg.value, [0, 1],
+      active
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        : [colors.surface, colors.surfaceElevated],
+    ),
+  }));
+  return (
+    <Pressable
+      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
+      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
+      onPress={() => { if (!isWeb) Haptics.selectionAsync(); onPress(); }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+    >
+      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
+        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+const fc = StyleSheet.create({
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+});
+
+function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
+}
+
+// ─── Community Skeleton Card ──────────────────────────────────────────────────
+
+function CommunityCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return (
+    <View style={[sk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+      <View style={[sk.image, { backgroundColor: colors.borderLight }]} />
+      <View style={sk.body}>
+        <View style={[sk.line, { width: '75%', backgroundColor: colors.borderLight }]} />
+        <View style={[sk.line, { width: '50%', backgroundColor: colors.borderLight, marginTop: 6 }]} />
+        <View style={[sk.pill, { backgroundColor: colors.borderLight, marginTop: 8 }]} />
+      </View>
+    </View>
+  );
+}
+
+const sk = StyleSheet.create({
+  card:  { borderRadius: 16, overflow: 'hidden', borderWidth: 1, marginBottom: 0 },
+  image: { height: 110, borderRadius: 0 },
+  body:  { padding: 12 },
+  line:  { height: 12, borderRadius: 6 },
+  pill:  { height: 20, width: 80, borderRadius: 10 },
+});
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function CommunitiesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { numColumns, hPad, columnWidth, columnGap, isDesktop } = useLayout();
+  const { hPad, columnWidth, isDesktop } = useLayout();
   const { state: onboardingState } = useOnboarding();
+
+  const topInset = isWeb ? 0 : insets.top;
+  const bottomInset = isWeb ? 0 : insets.bottom;
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCulture, setSelectedCulture] = useState<string | null>(null);
   const [selectedPreview, setSelectedPreview] = useState<Community | null>(null);
 
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => { scrollY.value = event.contentOffset.y; },
-  });
-  const webScrollHandler = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      scrollY.value = e.nativeEvent.contentOffset.y;
-    },
-    [scrollY],
-  );
+  const numCols = isDesktop ? 3 : 2;
+  const colGap  = isDesktop ? 20 : 12;
 
-  const heroContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 200], [1, 0.4], 'clamp'),
-    transform: [{ translateY: interpolate(scrollY.value, [0, 260], [0, -55], 'clamp') }],
-  }));
-
-  const headerBgStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [220, 290], [0, 1], 'clamp'),
-  }));
-
-  const { data: communitiesRaw = [] } = useCommunities({
+  const { data: communitiesRaw = [], isLoading, refetch, isRefetching } = useCommunities({
     city: onboardingState?.city,
     country: onboardingState?.country,
     nationalityId: onboardingState?.nationalityId,
@@ -158,422 +211,304 @@ export default function CommunitiesScreen() {
     return list;
   }, [communitiesRaw, search, selectedCategory, selectedCulture]);
 
+  const filtersActive = selectedCategory !== 'All' || selectedCulture !== null || search.trim().length > 0;
+
+  const locationLabel = onboardingState?.city
+    ? `${onboardingState.city}${onboardingState.country ? `, ${onboardingState.country}` : ''}`
+    : onboardingState?.country || 'your region';
+
+  const clearFilters = useCallback(() => {
+    setSelectedCategory('All');
+    setSelectedCulture(null);
+    setSearch('');
+  }, []);
+
   const cardW = Math.floor(columnWidth());
-  const topPad = Platform.OS === 'web' ? 24 : insets.top + STICKY_HEADER_HEIGHT + 16;
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   const handleCardPress = useCallback((item: Community) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedPreview(item);
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Community }) => (
-      <CommunityGridCard item={item} width={cardW} onPress={handleCardPress} />
+    ({ item, index }: { item: Community; index: number }) => (
+      <Animated.View
+        entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+        style={{ flex: 1 }}
+      >
+        <CommunityGridCard item={item} width={cardW} onPress={handleCardPress} />
+      </Animated.View>
     ),
     [cardW, handleCardPress],
   );
 
-  const renderHeader = () => (
-    <View>
-      {/* ── Hero ── */}
-      <View style={s.heroWrapper}>
-        <Animated.View style={[StyleSheet.absoluteFill, heroContentStyle]}>
-          <LinearGradient
-            colors={['#0B0B14', CultureTokens.indigo + '35', '#0B0B14']}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-          />
-          <View style={s.glowCircle1} />
-          <View style={s.glowCircle2} />
+  return (
+    <ErrorBoundary>
+      <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
 
-          <View style={[s.heroContent, { paddingTop: topPad }]}>
-            <Text style={s.heroTitle}>Diaspora Communities</Text>
-            <Text style={s.heroSubtitle}>Connect with your heritage</Text>
-
-            <View style={s.heroControlRow}>
-              <View style={[s.searchBar, { backgroundColor: colors.surface }]}>
-                <Ionicons name="search" size={17} color={colors.textSecondary} />
-                <TextInput
-                  style={[s.searchInput, { color: colors.text }]}
-                  placeholder="Search communities, cultures..."
-                  placeholderTextColor={colors.textTertiary}
-                  value={search}
-                  onChangeText={setSearch}
-                />
-                {search.length > 0 && (
-                  <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search">
-                    <Ionicons name="close-circle" size={17} color={colors.textTertiary} />
-                  </Pressable>
-                )}
-              </View>
-              <Pressable
-                style={[s.bellBtn, { backgroundColor: 'rgba(255,255,255,0.12)' }]}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.selectionAsync();
-                  router.push('/notifications');
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Notifications"
-              >
-                {Platform.OS === 'ios' ? (
-                  <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-                ) : null}
-                <Ionicons name="notifications-outline" size={20} color="#fff" />
-              </Pressable>
+        {/* ── Header ── */}
+        <Animated.View
+          entering={FadeInUp.duration(320).springify()}
+          style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[s.headerTitle, { color: colors.text }]}>Communities</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+              <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                {locationLabel}
+                {!isLoading && filteredCommunities.length > 0
+                  ? ` · ${filteredCommunities.length.toLocaleString()} shown`
+                  : ''}
+              </Text>
             </View>
           </View>
-        </Animated.View>
-      </View>
 
-      <View style={{ backgroundColor: colors.background }}>
-        {/* ── Culture identity chips ── */}
-        <View style={s.cultureSection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[s.cultureScroll, { paddingHorizontal: hPad }]}
-          >
-            {cultureChips.map((chip) => {
-              const active = selectedCulture === chip.id;
-              return (
-                <Pressable
-                  key={chip.id}
-                  style={({ pressed }) => [
-                    s.cultureChip,
-                    {
-                      backgroundColor: active ? CultureTokens.indigo + '20' : colors.surface,
-                      borderColor: active ? CultureTokens.indigo : colors.borderLight,
-                      opacity: pressed ? 0.82 : 1,
-                    },
-                  ]}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.selectionAsync();
-                    setSelectedCulture(active ? null : chip.id);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Filter by ${chip.label}`}
-                >
-                  <Text style={s.cultureEmoji}>{chip.emoji}</Text>
-                  <Text
-                    style={[s.cultureLabel, { color: active ? CultureTokens.indigo : colors.text }]}
-                    numberOfLines={1}
-                  >
-                    {chip.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
+          {/* Search input */}
+          <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Ionicons name="search" size={15} color={colors.textTertiary} />
+            <TextInput
+              style={[s.searchInput, { color: colors.text }]}
+              placeholder="Search..."
+              placeholderTextColor={colors.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+            />
+            {search.length > 0 && (
+              <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
+                <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
+              </Pressable>
+            )}
+          </View>
 
-        {/* ── Category filter chips ── */}
-        <View style={s.chipsWrap}>
-          <FilterChipRow
-            items={CATEGORIES}
-            selectedId={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
-        </View>
-
-        {/* ── Results count ── */}
-        <View style={[s.listHeader, { paddingHorizontal: hPad }]}>
-          <Text style={[s.resultsText, { color: colors.textSecondary }]}>
-            {filteredCommunities.length}{' '}
-            {filteredCommunities.length === 1 ? 'community' : 'communities'}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderEmptyState = () => (
-    <View style={[s.emptyWrap, { paddingHorizontal: hPad }]}>
-      <LinearGradient
-        colors={[CultureTokens.indigo + '40', CultureTokens.teal + '30']}
-        style={s.emptyIconCircle}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Ionicons name="globe-outline" size={36} color="#fff" />
-      </LinearGradient>
-      <Text style={[s.emptyHeading, { color: colors.text }]}>No communities found</Text>
-      <Text style={[s.emptySub, { color: colors.textSecondary }]}>Try a different filter</Text>
-    </View>
-  );
-
-  const renderFooter = () => (
-    <View style={[s.ctaBanner, { marginHorizontal: hPad }]}>
-      <LinearGradient
-        colors={[CultureTokens.indigo + '20', CultureTokens.teal + '15']}
-        style={[StyleSheet.absoluteFill, s.ctaBannerGradient]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={s.ctaTextBlock}>
-        <Text style={[s.ctaTitle, { color: colors.text }]}>Start Your Community</Text>
-        <Text style={[s.ctaSub, { color: colors.textSecondary }]}>
-          Bring your culture together
-        </Text>
-      </View>
-      <Pressable
-        style={[s.ctaBtn, { backgroundColor: CultureTokens.indigo }]}
-        onPress={() => {
-          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push('/submit?type=organisation' as any);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Create a community"
-      >
-        <Text style={s.ctaBtnText}>Create +</Text>
-      </Pressable>
-    </View>
-  );
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* ── Sticky top header (mobile / tablet only) ── */}
-      {!isDesktop && (
-        <View style={[s.stickyHeader, { paddingTop: topInset + 8 }]}>
-          <Animated.View
-            style={[StyleSheet.absoluteFill, headerBgStyle, { backgroundColor: colors.background }]}
-          />
-          <Text style={[s.stickyTitle, { color: '#FFFFFF' }]}>Communities</Text>
           <Pressable
-            style={[s.stickyAddBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+            onPress={() => refetch()}
+            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh communities"
+          >
+            {isRefetching
+              ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+              : <Ionicons name="refresh" size={18} color={colors.text} />}
+            {Platform.OS === 'ios' && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
+          </Pressable>
+        </Animated.View>
+
+        {/* ── Shell ── */}
+        <View style={[s.shell, isDesktop && s.shellDesktop]}>
+
+          {/* ── Filter rows ── */}
+          <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
+
+            {/* Row 1: Category filters */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+              accessibilityRole="tablist"
+              accessibilityLabel="Category filters"
+            >
+              {CATEGORIES.map(cat => (
+                <FilterChip
+                  key={cat.id}
+                  label={cat.label}
+                  active={selectedCategory === cat.id}
+                  onPress={() => setSelectedCategory(cat.id)}
+                  icon={cat.icon}
+                />
+              ))}
+
+              {filtersActive && (
+                <>
+                  <FilterDivider colors={colors} />
+                  <Pressable
+                    onPress={clearFilters}
+                    style={[s.clearBtn, { borderColor: colors.borderLight }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear all filters"
+                  >
+                    <Ionicons name="close" size={12} color={colors.textTertiary} />
+                    <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                  </Pressable>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Row 2: Culture / nationality filters */}
+            {cultureChips.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[s.filterRow, s.filterRowSecondary, { paddingHorizontal: hPad }]}
+                accessibilityRole="tablist"
+                accessibilityLabel="Culture filters"
+              >
+                {cultureChips.map((chip) => {
+                  const active = selectedCulture === chip.id;
+                  return (
+                    <Pressable
+                      key={chip.id}
+                      onPress={() => {
+                        if (!isWeb) Haptics.selectionAsync();
+                        setSelectedCulture(active ? null : chip.id);
+                      }}
+                      style={({ pressed }) => [
+                        s.cultureChip,
+                        {
+                          backgroundColor: active ? CultureTokens.indigo + '20' : colors.surface,
+                          borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                          opacity: pressed ? 0.82 : 1,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${chip.label}`}
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={s.cultureEmoji}>{chip.emoji}</Text>
+                      <Text
+                        style={[s.cultureLabel, { color: active ? CultureTokens.indigo : colors.text }]}
+                        numberOfLines={1}
+                      >
+                        {chip.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
+
+          {/* ── Grid ── */}
+          {isLoading ? (
+            <FlatList
+              key={`skeleton-${numCols}`}
+              data={Array.from({ length: 8 })}
+              renderItem={() => <View style={{ flex: 1 }}><CommunityCardSkeleton colors={colors} /></View>}
+              keyExtractor={(_, i) => `sk-${i}`}
+              numColumns={numCols}
+              columnWrapperStyle={numCols > 1 ? { gap: colGap } : undefined}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap }]}
+              scrollEnabled={false}
+            />
+          ) : (
+            <FlatList
+              key={`communities-${numCols}`}
+              data={filteredCommunities}
+              renderItem={renderItem}
+              keyExtractor={(item: Community) => item.id}
+              numColumns={numCols}
+              columnWrapperStyle={numCols > 1 ? { gap: colGap } : undefined}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap, paddingBottom: bottomInset + 80 }]}
+              showsVerticalScrollIndicator={false}
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              ListFooterComponent={() => {
+                if (!isLoading && filteredCommunities.length > 0) return (
+                  <View style={s.listFooter}>
+                    <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                    <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
+                      {filteredCommunities.length} {filteredCommunities.length !== 1 ? 'communities' : 'community'} shown
+                    </Text>
+                    <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                  </View>
+                );
+                return null;
+              }}
+              ListEmptyComponent={
+                <View style={s.emptyState}>
+                  <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Ionicons name="globe-outline" size={28} color={colors.textTertiary} />
+                  </View>
+                  <Text style={[s.emptyTitle, { color: colors.text }]}>No communities found</Text>
+                  <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
+                    {filtersActive
+                      ? 'Try adjusting your filters or clearing the search.'
+                      : `No communities yet in ${locationLabel}.`}
+                  </Text>
+                  {filtersActive && (
+                    <Pressable
+                      style={[s.resetBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
+                      onPress={clearFilters}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="refresh-outline" size={14} color={CultureTokens.indigo} />
+                      <Text style={[s.resetBtnText, { color: CultureTokens.indigo }]}>Reset filters</Text>
+                    </Pressable>
+                  )}
+                </View>
+              }
+              ListFooterComponentStyle={s.footerWrap}
+            />
+          )}
+        </View>
+
+        {/* ── Create CTA (bottom-right corner) ── */}
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={[s.fab, { backgroundColor: CultureTokens.indigo, bottom: bottomInset + 96 }]}
+        >
+          <Pressable
             onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/submit?type=organisation' as any);
+              if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/submit?type=organisation' as never);
             }}
             accessibilityRole="button"
             accessibilityLabel="Create a community"
+            style={s.fabInner}
           >
             <Ionicons name="add" size={22} color="#fff" />
           </Pressable>
-        </View>
-      )}
-
-      <ErrorBoundary>
-        <Animated.FlatList
-          key={numColumns}
-          data={filteredCommunities}
-          numColumns={numColumns}
-          keyExtractor={(item: Community) => item.id}
-          renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmptyState}
-          ListFooterComponent={renderFooter}
-          onScroll={Platform.OS === 'web' ? webScrollHandler : scrollHandler}
-          scrollEventThrottle={16}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-          columnWrapperStyle={
-            numColumns > 1
-              ? { paddingHorizontal: hPad, gap: columnGap, marginBottom: columnGap }
-              : undefined
-          }
-          showsVerticalScrollIndicator={false}
-        />
-      </ErrorBoundary>
+        </Animated.View>
+      </View>
 
       <CommunityPreviewDrawer
         profile={selectedPreview}
         onClose={() => setSelectedPreview(null)}
       />
-    </View>
+    </ErrorBoundary>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  stickyHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  stickyTitle: {
-    fontSize: 22,
-    fontFamily: 'Poppins_700Bold',
-  },
-  stickyAddBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroWrapper: {
-    height: 320,
-    overflow: 'hidden',
-  },
-  glowCircle1: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: CultureTokens.indigo + '18',
-    top: -50,
-    right: -40,
-  },
-  glowCircle2: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: CultureTokens.teal + '12',
-    bottom: 30,
-    left: -30,
-  },
-  heroContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    justifyContent: 'flex-end',
-    gap: 4,
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
-    letterSpacing: -0.4,
-    marginBottom: 2,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: 16,
-  },
-  heroControlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    height: 44,
-  },
-  bellBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  cultureSection: {
-    paddingTop: 20,
-    paddingBottom: 4,
-  },
-  cultureScroll: {
-    gap: 8,
-    paddingBottom: 8,
-  },
-  cultureChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    borderWidth: 1.5,
-  },
-  cultureEmoji: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  cultureLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  chipsWrap: {
-    marginTop: 12,
-    paddingHorizontal: 4,
-  },
-  listHeader: {
-    marginTop: 4,
-    marginBottom: 14,
-  },
-  resultsText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    gap: 12,
-  },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  emptyHeading: {
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.2,
-  },
-  emptySub: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-  },
-  ctaBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    overflow: 'hidden',
-    padding: 20,
-    marginTop: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: CultureTokens.indigo + '30',
-    gap: 12,
-  },
-  ctaBannerGradient: {
-    borderRadius: 20,
-  },
-  ctaTextBlock: {
-    flex: 1,
-    gap: 2,
-  },
-  ctaTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_700Bold',
-  },
-  ctaSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
-  },
-  ctaBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  ctaBtnText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_700Bold',
-    color: '#fff',
-  },
+  container:      { flex: 1 },
+
+  header:         { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
+  headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
+  headerSub:      { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
+
+  searchBar:      { flex: 1, flexDirection: 'row', alignItems: 'center', height: 36, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, gap: 6 },
+  searchInput:    { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', height: 36, padding: 0 },
+
+  shell:          { flex: 1 },
+  shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
+
+  filterBlock:    { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
+  filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  filterRowSecondary: { paddingBottom: 4 },
+  clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+
+  cultureChip:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, borderWidth: 1.5 },
+  cultureEmoji:   { fontSize: 14, lineHeight: 18 },
+  cultureLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+
+  list:           { paddingTop: 20, gap: 20 },
+  listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
+  listFooterText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
+  endLine:        { flex: 1, height: 1, opacity: 0.5 },
+  footerWrap:     {},
+
+  emptyState:     { alignItems: 'center', paddingVertical: 100, paddingHorizontal: 40, gap: 14 },
+  emptyIcon:      { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8 },
+  emptyTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
+  emptyDesc:      { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
+  resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
+
+  fab:            { position: 'absolute', right: 20, width: 52, height: 52, borderRadius: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 6 },
+  fabInner:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

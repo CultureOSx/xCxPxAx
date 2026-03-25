@@ -7,7 +7,14 @@ import {
   Platform, ActivityIndicator, RefreshControl, Modal,
   TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
 } from 'react-native';
-import Reanimated, { FadeInDown } from 'react-native-reanimated';
+import Reanimated, {
+  FadeInDown,
+  useSharedValue as useReSharedValue,
+  useAnimatedStyle as useReAnimatedStyle,
+  withSpring as withReSpring,
+  withTiming as withReTiming,
+  interpolateColor as reInterpolateColor,
+} from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
@@ -26,7 +33,6 @@ import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { getCommunityHeadline } from '@/lib/community';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { LocationPicker } from '@/components/LocationPicker';
 import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
 import { Button } from '@/components/ui/Button';
 import * as ImagePicker from 'expo-image-picker';
@@ -137,52 +143,91 @@ function UserAvatar({ name, avatarUrl, size = 34, colorIdx = 0 }: { name?: strin
 // ── Filter tabs ───────────────────────────────────────────────────────────────
 
 const FILTER_TABS: { id: FeedFilter; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { id: 'for-you',     label: 'For You',      icon: 'sparkles' },
-  { id: 'events',      label: 'Events',        icon: 'calendar' },
-  { id: 'communities', label: 'Communities',   icon: 'people' },
+  { id: 'for-you',     label: 'For You',     icon: 'sparkles' },
+  { id: 'events',      label: 'Events',       icon: 'calendar' },
+  { id: 'communities', label: 'Communities',  icon: 'people' },
 ];
 
-function FeedFilterBar({ active, onChange, eventCount, commCount, colors }: {
+// Inline animated chip for feed filter (follows events.tsx pattern)
+function FeedFilterChip({
+  label, active, onPress, icon, count, colors,
+}: {
+  label: string; active: boolean; onPress: () => void;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  count?: number;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const scale = useReSharedValue(1);
+  const bg = useReSharedValue(0);
+  const animStyle = useReAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: reInterpolateColor(
+      bg.value, [0, 1],
+      active
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        : [colors.surface, colors.surfaceElevated],
+    ),
+  }));
+  return (
+    <Pressable
+      onPressIn={() => { scale.value = withReSpring(0.92); bg.value = withReTiming(1, { duration: 100 }); }}
+      onPressOut={() => { scale.value = withReSpring(1);   bg.value = withReTiming(0, { duration: 100 }); }}
+      onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+    >
+      <Reanimated.View style={[ffc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+        <Ionicons name={icon} size={13} color={active ? '#fff' : colors.textTertiary} />
+        <Text style={[ffc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
+        {count != null && count > 0 && (
+          <View style={[ffc.badge, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : colors.surfaceElevated }]}>
+            <Text style={[ffc.badgeText, { color: active ? '#fff' : colors.textTertiary }]}>
+              {count > 99 ? '99+' : count}
+            </Text>
+          </View>
+        )}
+      </Reanimated.View>
+    </Pressable>
+  );
+}
+
+const ffc = StyleSheet.create({
+  chip:      { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
+  text:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
+  badge:     { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', lineHeight: 14 },
+});
+
+function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }: {
   active: FeedFilter;
   onChange: (f: FeedFilter) => void;
   eventCount: number;
   commCount: number;
   colors: ReturnType<typeof useColors>;
+  hPad: number;
 }) {
   return (
     <View style={[fb.wrap, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={fb.scroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[fb.scroll, { paddingHorizontal: hPad }]}
+        accessibilityRole="tablist"
+        accessibilityLabel="Feed filters"
+      >
         {FILTER_TABS.map((tab) => {
-          const isActive = active === tab.id;
-          const count = tab.id === 'events' ? eventCount : tab.id === 'communities' ? commCount : 0;
+          const count = tab.id === 'events' ? eventCount : tab.id === 'communities' ? commCount : undefined;
           return (
-            <Pressable
+            <FeedFilterChip
               key={tab.id}
-              style={[fb.tab, isActive && { borderBottomColor: CultureTokens.indigo }]}
-              onPress={() => {
-                onChange(tab.id);
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-              }}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isActive }}
-              accessibilityLabel={tab.label}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={15}
-                color={isActive ? CultureTokens.indigo : colors.textTertiary}
-              />
-              <Text style={[fb.label, { color: isActive ? CultureTokens.indigo : colors.textSecondary }]}>
-                {tab.label}
-              </Text>
-              {count > 0 && (
-                <View style={[fb.badge, { backgroundColor: isActive ? CultureTokens.indigo : colors.surfaceElevated }]}>
-                  <Text style={[fb.badgeText, { color: isActive ? '#fff' : colors.textTertiary }]}>
-                    {count > 99 ? '99+' : count}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
+              label={tab.label}
+              active={active === tab.id}
+              onPress={() => onChange(tab.id)}
+              icon={tab.icon}
+              count={count}
+              colors={colors}
+            />
           );
         })}
       </ScrollView>
@@ -191,12 +236,8 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors }: {
 }
 
 const fb = StyleSheet.create({
-  wrap:      { borderBottomWidth: StyleSheet.hairlineWidth },
-  scroll:    { flexDirection: 'row', paddingHorizontal: 16, gap: 4 },
-  tab:       { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 2.5, borderBottomColor: 'transparent' },
-  label:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  badge:     { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  badgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', lineHeight: 14 },
+  wrap:  { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
+  scroll:{ flexDirection: 'row', gap: 7 },
 });
 
 // ── Stories bar ───────────────────────────────────────────────────────────────
@@ -856,7 +897,7 @@ const ph = StyleSheet.create({
 // ── Post card ─────────────────────────────────────────────────────────────────
 
 // -- PostCard Memoized --
-const PostCard = React.memo(({ post, colorIdx }: { post: FeedPost; colorIdx: number }) => {
+function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
   const colors = useColors();
   const isDark = useColorScheme() === 'dark';
   const accent = ACCENT[colorIdx % ACCENT.length];
@@ -893,7 +934,6 @@ const PostCard = React.memo(({ post, colorIdx }: { post: FeedPost; colorIdx: num
       case 'event': {
         const ev = post.event;
         const dateLabel = getDateLabel(ev.date);
-        const isToday   = dateLabel === 'Today';
         const isFree    = ev.isFree || ev.priceCents === 0;
         return (
           <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={`View event: ${ev.title}`}>
@@ -1064,7 +1104,10 @@ const PostCard = React.memo(({ post, colorIdx }: { post: FeedPost; colorIdx: num
       />
     </>
   );
-});
+}
+
+PostCardInner.displayName = 'PostCard';
+const PostCard = React.memo(PostCardInner);
 
 const pcd = StyleSheet.create({
   card:           { borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', marginBottom: 12, elevation: 3 },
@@ -1492,49 +1535,45 @@ export default function CultureFeedScreen() {
           headerShown: false,
         }} 
       />
-      <View style={[sc.root, { backgroundColor: colors.background }]}>
-        {/* Fixed branded header */}
-        <LinearGradient
-          colors={gradients.culturepassBrand as [string, string]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      <View style={[sc.root, { backgroundColor: colors.background, paddingTop: topInset }]}>
+        {/* ── Header ── */}
+        <Reanimated.View
+          style={[sc.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
         >
-          <View style={{ height: topInset }} />
-          <View style={[sc.header, { paddingHorizontal: hPad }]}>
-            <View style={sc.headerLeft}>
-              <HeaderAvatar />
-              <View style={sc.titleBlock}>
-                <Text style={sc.title}>Culture Feed</Text>
-                <View style={sc.locationRow}>
-                  <Text style={{ fontSize: 13 }}>{countryFlag}</Text>
-                  <Text style={sc.locationText}>{locationLabel}</Text>
-                </View>
-              </View>
-            </View>
-            <View style={sc.headerRight}>
-              <LocationPicker
-                variant="icon"
-                iconColor="#fff"
-                buttonStyle={sc.headerIconBtn}
-              />
-              <Pressable
-                style={sc.headerIconBtn}
-                onPress={() => router.push('/search' as any)}
-                accessibilityRole="button"
-                accessibilityLabel="Search"
-              >
-                <Ionicons name="search-outline" size={18} color="#fff" />
-              </Pressable>
-              <Pressable
-                style={sc.headerIconBtn}
-                onPress={() => gate(() => router.push('/notifications' as any))}
-                accessibilityRole="button"
-                accessibilityLabel="Notifications"
-              >
-                <Ionicons name="notifications-outline" size={18} color="#fff" />
-              </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={[sc.title, { color: colors.text }]}>Culture Feed</Text>
+            <View style={sc.locationRow}>
+              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+              <Text style={[sc.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {countryFlag} {locationLabel}
+                {!isLoading && filteredPosts.length > 0
+                  ? ` · ${filteredPosts.length} posts`
+                  : ''}
+              </Text>
             </View>
           </View>
-        </LinearGradient>
+          <View style={sc.headerRight}>
+            <HeaderAvatar />
+            <Pressable
+              style={[sc.headerIconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+              onPress={() => router.push('/search' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+            >
+              <Ionicons name="search-outline" size={18} color={colors.text} />
+            </Pressable>
+            <Pressable
+              style={[sc.headerIconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+              onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); handleRefresh(); }}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh feed"
+            >
+              {refreshing || isFetching
+                ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                : <Ionicons name="refresh" size={18} color={colors.text} />}
+            </Pressable>
+          </View>
+        </Reanimated.View>
 
         {/* Sticky filter tabs — outside FlatList */}
         <FeedFilterBar
@@ -1543,6 +1582,7 @@ export default function CultureFeedScreen() {
           eventCount={eventCount}
           commCount={commCount}
           colors={colors}
+          hPad={hPad}
         />
 
         {/* Fetch indicator */}
@@ -1624,18 +1664,16 @@ export default function CultureFeedScreen() {
 
 const sc = StyleSheet.create({
   root:         { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  headerLeft:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  titleBlock:   { gap: 1 },
-  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.4, lineHeight: 26 },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
   locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 11, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', lineHeight: 15 },
-  headerRight:  { flexDirection: 'row', gap: 8 },
-  headerIconBtn:{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  locationText: { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
+  headerRight:  { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  headerIconBtn:{ width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
   fetchBar:     { height: 2, backgroundColor: CultureTokens.indigo + '30' },
   fetchProgress:{ height: 2, width: '60%' },
   list:         { paddingTop: 4 },
-  listDesktop:  { maxWidth: 800, width: '100%', alignSelf: 'center' },
+  listDesktop:  { maxWidth: 800, width: '100%', alignSelf: 'center' as const },
   empty:        { alignItems: 'center', paddingVertical: 60, gap: 10 },
   emptyIcon:    { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 4 },
   emptyTitle:   { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24 },

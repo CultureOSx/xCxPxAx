@@ -38,6 +38,9 @@ function EventCardInner({ event, isLive }: EventCardProps) {
       ? `$${(event.priceCents / 100).toFixed(2)}`
       : null);
 
+  const isFreeDisplay =
+    priceDisplay != null && String(priceDisplay).trim().toLowerCase() === 'free';
+
   const ageBadge =
     event.ageSuitability && event.ageSuitability !== 'all' ? event.ageSuitability : null;
 
@@ -132,7 +135,11 @@ function EventCardInner({ event, isLive }: EventCardProps) {
                 </View>
               ))}
               {priceDisplay ? (
-                <Text style={[styles.price, { color: colors.text }]}>{priceDisplay}</Text>
+                <Text
+                  style={[styles.price, { color: isFreeDisplay ? CultureTokens.teal : colors.text }]}
+                >
+                  {priceDisplay}
+                </Text>
               ) : null}
             </View>
           </View>

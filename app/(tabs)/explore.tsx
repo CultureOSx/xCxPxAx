@@ -452,6 +452,7 @@ export default function ExploreScreen() {
         {/* ── Event Grid & Content ── */}
         <View style={{ flex: 1 }}>
           <FlashList<EventData>
+            key={`grid-${gridCols}`}
             data={filtered}
             extraData={gridCols}
             keyExtractor={(item: EventData) => item.id}

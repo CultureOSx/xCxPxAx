@@ -7,8 +7,13 @@ import {
   Platform,
   TextInput,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown, FadeInUp,
+  useSharedValue, useAnimatedStyle, withSpring,
+  interpolateColor, withTiming,
+} from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -16,26 +21,70 @@ import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens, EntityTypeColors, shadows, gradients, TextStyles, Typography } from '@/constants/theme';
-import { useState, useMemo, useCallback } from 'react';
+import { CultureTokens, EntityTypeColors, shadows } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { profileKeys, eventKeys, councilKeys } from '@/hooks/queries/keys';
 import { queryClient } from '@/lib/query-client';
 import type { Profile, EventData } from '@/shared/schema';
 import { api, type CouncilData } from '@/lib/api';
-import { FilterChipRow, FilterItem } from '@/components/FilterChip';
+import type { FilterItem } from '@/components/FilterChip';
 import { Button } from '@/components/ui/Button';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 // import { Typography } from '@/constants/typography'; // REMOVED: Typography consolidated into theme import above
-import { DEFAULT_DISCOVER_CURATION } from '@/shared/schema/discover';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { isIndigenousProfile } from '@/lib/indigenous';
-import { formatEventDateTimeBadge, formatPrice } from '@/lib/dateUtils';
+import { formatPrice } from '@/lib/dateUtils';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const isWeb = Platform.OS === 'web';
+
+// ─── Inline animated FilterChip ───────────────────────────────────────────────
+
+function FilterChip({
+  label, active, onPress, icon,
+}: {
+  label: string; active: boolean; onPress: () => void; icon?: string;
+}) {
+  const colors = useColors();
+  const scale = useSharedValue(1);
+  const bg = useSharedValue(0);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: interpolateColor(
+      bg.value, [0, 1],
+      active
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        : [colors.surface, colors.surfaceElevated],
+    ),
+  }));
+  return (
+    <Pressable
+      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
+      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
+      onPress={() => { if (!isWeb) Haptics.selectionAsync(); onPress(); }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+    >
+      <Animated.View style={[dirfc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
+        <Text style={[dirfc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+const dirfc = StyleSheet.create({
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+});
+
+function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -71,12 +120,6 @@ function getOptionalString(record: Record<string, unknown>, key: string): string
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'k';
-  return num.toString();
-}
-
 function getTags(profile: Profile): string[] {
   return Array.isArray(profile.tags) ? (profile.tags as string[]) : [];
 }
@@ -85,27 +128,6 @@ function getDirectoryListingType(profile: Profile): string {
   const category = (profile.category ?? '').toLowerCase();
   if (category === 'council') return 'council';
   return profile.entityType;
-}
-
-// ─── Skeleton Card ────────────────────────────────────────────────────────────
-
-function SkeletonBlock({ width, height, radius = 8, colors }: { width: number | `${number}%`; height: number; radius?: number; colors: ReturnType<typeof useColors> }) {
-  return <View style={{ width, height, borderRadius: radius, backgroundColor: colors.borderLight, marginBottom: 4 }} />;
-}
-
-function DirectoryCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={[{ backgroundColor: colors.surface, borderRadius: 16, overflow: 'hidden', marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight }]}>
-      <View style={{ flexDirection: 'row', padding: 14, gap: 12, alignItems: 'center' }}>
-        <View style={{ width: 70, height: 70, borderRadius: 14, backgroundColor: colors.borderLight }} />
-        <View style={{ flex: 1, gap: 8 }}>
-          <SkeletonBlock width="70%" height={14} colors={colors} />
-          <SkeletonBlock width="45%" height={11} colors={colors} />
-          <SkeletonBlock width="55%" height={11} colors={colors} />
-        </View>
-      </View>
-    </View>
-  );
 }
 
 // ─── Event Card for Directory ──────────────────────────────────────────────────
@@ -126,9 +148,9 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
     onSave(event.id);
   };
 
-  const dateLabel = formatEventDateTimeBadge(event.date, event.time, event.country);
   const priceLabel = event.isFree ? 'Free' : event.priceCents ? formatPrice(event.priceCents, event.country) : null;
   const categoryColor = CultureTokens.gold;
+  const priceAccent = priceLabel === 'Free' ? CultureTokens.teal : categoryColor;
 
   // Robust day/month extraction
   let dayNum = '', monthStr = '';
@@ -179,8 +201,8 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
             ) : null}
             <View style={s.eventCardFooter}>
               {priceLabel ? (
-                <View style={[s.eventPriceBadge, { backgroundColor: categoryColor + '20' }]}>
-                  <Text style={[s.eventPriceText, { color: categoryColor }]}>{priceLabel}</Text>
+                <View style={[s.eventPriceBadge, { backgroundColor: priceAccent + '20' }]}>
+                  <Text style={[s.eventPriceText, { color: priceAccent }]}>{priceLabel}</Text>
                 </View>
               ) : null}
               <Text style={[s.viewLink, { color: categoryColor }]}>View Event →</Text>
@@ -396,9 +418,6 @@ export default function DirectoryScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const shellMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
 
-  const shellStyle = isWeb || isTablet
-    ? { maxWidth: shellMaxWidth, width: '100%' as const, alignSelf: 'center' as const }
-    : undefined;
   const useWebTwoColumnResults = isWeb && shellMaxWidth >= 900;
 
   const [selectedType, setSelectedType] = useState('All');
@@ -411,7 +430,7 @@ export default function DirectoryScreen() {
     queryFn: () => api.profiles.list(),
   });
 
-  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+  const { data: eventsData } = useQuery({
     queryKey: eventKeys.list({ city: onboardingState.city ?? undefined, country: onboardingState.country ?? undefined, pageSize: 50 }),
     queryFn: () => api.events.list({ city: onboardingState.city ?? undefined, country: onboardingState.country ?? undefined, pageSize: 50 }),
     staleTime: 60_000,
@@ -527,15 +546,6 @@ export default function DirectoryScreen() {
     });
   }, []);
 
-  const directoryStats = useMemo(
-    () => [
-      { id: 'listings', label: 'Listings', value: typeCounts.All ?? 0, icon: 'grid-outline', color: CultureTokens.indigo },
-      { id: 'events', label: 'Events', value: typeCounts.event ?? 0, icon: 'calendar-outline', color: CultureTokens.gold },
-      { id: 'verified', label: 'Verified', value: nonCommunityProfiles.filter((p) => p.isVerified).length, icon: 'checkmark-circle-outline', color: CultureTokens.teal },
-    ],
-    [typeCounts, nonCommunityProfiles]
-  );
-
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -563,127 +573,99 @@ export default function DirectoryScreen() {
 
   const hasActiveFilters = selectedType !== 'All' || search.trim().length > 0;
 
-  const resultContext = useMemo(() => {
-    const filters: string[] = [];
-    if (selectedType !== 'All') {
-      const selectedFilter = ENTITY_FILTERS.find((filter) => filter.label === selectedType);
-      filters.push(selectedFilter?.display ?? selectedType);
-    }
-    if (search.trim()) filters.push(`"${search.trim()}"`);
-    return filters.length > 0 ? `Filtered by ${filters.join(' • ')}` : 'Showing all listings';
-  }, [selectedType, search]);
-
   return (
     <ErrorBoundary>
       <View style={[s.container, { backgroundColor: colors.background }]}>
 
         {/* ── Header ── */}
-        <View style={[s.header, { paddingTop: topInset + 16, backgroundColor: colors.background }]}>
-          <View style={shellStyle}>
-            <View style={[s.headerTopRow, { paddingHorizontal: hPad }]}>
-              {/* Title block */}
-              <View style={s.headerTitleWrap}>
-                <Text style={[s.title, { color: colors.text }]}>Directory</Text>
-                <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-                  Find businesses, venues & organizations
-                </Text>
-              </View>
-            </View>
-
-            {/* Search bar */}
-            <View style={[s.searchRow, { paddingHorizontal: hPad, paddingTop: 14 }]}>
-              <View style={[
-                s.searchContainer,
-                { backgroundColor: colors.surface, borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight },
-              ]}>
-                <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
-                <TextInput
-                  style={[s.searchInput, { color: colors.text }]}
-                  placeholder="Search businesses, venues, events…"
-                  placeholderTextColor={colors.textTertiary}
-                  value={search}
-                  onChangeText={setSearch}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  returnKeyType="search"
-                />
-                {search.length > 0 ? (
-                  <Pressable onPress={() => setSearch('')} hitSlop={14} accessibilityRole="button" accessibilityLabel="Clear search">
-                    <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-                  </Pressable>
-                ) : (
-                  <Ionicons name="location-outline" size={20} color={colors.textTertiary} />
-                )}
-              </View>
-            </View>
-
-            {!hasActiveFilters && (
-              <View style={s.featuredContainer}>
-                <View style={s.featuredHeader}>
-                  <View style={s.featuredHeaderLeft}>
-                    <Ionicons name="sparkles" size={16} color={CultureTokens.gold} />
-                    <Text style={[TextStyles.title3, { color: colors.text }]}>Featured Artists</Text>
-                  </View>
-                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>SYDNEY CREATORS</Text>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.featuredScroll, { paddingHorizontal: hPad }]}>
-                  {DEFAULT_DISCOVER_CURATION.featuredArtists.map((artist) => (
-                    <Pressable 
-                      key={artist.id} 
-                      style={[s.featuredCard, { backgroundColor: colors.surface }]}
-                      onPress={() => router.push({ pathname: '/profile/[id]', params: { id: artist.id } })}
-                    >
-                      <Image source={{ uri: artist.imageUrl }} style={s.featuredImage} contentFit="cover" />
-                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.featuredGradient} />
-                      <View style={s.featuredInfo}>
-                        <Text style={s.featuredName}>{artist.name}</Text>
-                        <Text style={s.featuredTitle}>{artist.subtitle}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Stats bar */}
-            <View style={[s.statsBar, { paddingHorizontal: hPad, paddingTop: 12, paddingBottom: 8 }]}>
-              <Text style={[s.statsText, { color: colors.textSecondary }]}>
-                {filtered.length} result{filtered.length !== 1 ? 's' : ''}{onboardingState.city ? ` in ${onboardingState.city}` : ''}
+        <Animated.View
+          entering={FadeInUp.duration(320).springify()}
+          style={[s.header, { paddingTop: topInset, paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[s.title, { color: colors.text }]}>Directory</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+              <Text style={[s.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                {onboardingState.city
+                  ? `${onboardingState.city}${onboardingState.country ? `, ${onboardingState.country}` : ''}`
+                  : onboardingState.country || 'your region'}
+                {!isLoading && filtered.length > 0
+                  ? ` · ${filtered.length.toLocaleString()} shown`
+                  : ''}
               </Text>
-              <View style={s.statsRight}>
-                {directoryStats.map((stat, i) => (
-                  <View key={stat.id} style={s.statPill}>
-                    {i > 0 ? <View style={[s.statDivider, { backgroundColor: colors.borderLight }]} /> : null}
-                    <Text style={[s.statValue, { color: colors.text }]}>{formatNumber(stat.value)}</Text>
-                    <Text style={[s.statLabel, { color: colors.textTertiary }]}>{stat.label}</Text>
-                  </View>
-                ))}
-              </View>
             </View>
-
-            {/* Filter chips */}
-            <View style={s.chipsSection}>
-              <FilterChipRow items={filterItems} selectedId={selectedType} onSelect={handleFilterSelect} />
-            </View>
-
-            {/* Filter meta row */}
-            {hasActiveFilters && (
-              <View style={[s.filterMetaRow, { paddingHorizontal: hPad, marginBottom: 4 }]}>
-                <Text style={[s.filterMetaText, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {resultContext}
-                </Text>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  pill
-                  onPress={() => { setSelectedType('All'); setSearch(''); }}
-                  disabled={!hasActiveFilters}
-                >
-                  Clear
-                </Button>
-              </View>
-            )}
           </View>
+
+          {/* Search input */}
+          <View style={[
+            s.searchContainer,
+            { backgroundColor: colors.surface, borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight },
+          ]}>
+            <Ionicons name="search" size={15} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+            <TextInput
+              style={[s.searchInput, { color: colors.text }]}
+              placeholder="Search…"
+              placeholderTextColor={colors.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              returnKeyType="search"
+            />
+            {search.length > 0 ? (
+              <Pressable onPress={() => setSearch('')} hitSlop={14} accessibilityRole="button" accessibilityLabel="Clear search">
+                <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {/* Refresh button */}
+          <Pressable
+            onPress={handleRefresh}
+            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh directory"
+          >
+            {refreshing
+              ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+              : <Ionicons name="refresh" size={18} color={colors.text} />}
+          </Pressable>
+        </Animated.View>
+
+        {/* ── Filter rows ── */}
+        <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+            accessibilityRole="tablist"
+            accessibilityLabel="Entity type filters"
+          >
+            {filterItems.map(filter => (
+              <FilterChip
+                key={filter.id}
+                label={typeof filter.label === 'string' ? filter.label : filter.id}
+                active={selectedType === filter.id}
+                onPress={() => handleFilterSelect(filter.id)}
+                icon={typeof filter.icon === 'string' ? filter.icon : undefined}
+              />
+            ))}
+            {hasActiveFilters && (
+              <>
+                <FilterDivider colors={colors} />
+                <Pressable
+                  onPress={() => { setSelectedType('All'); setSearch(''); }}
+                  style={[s.clearBtn, { borderColor: colors.borderLight }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear all filters"
+                >
+                  <Ionicons name="close" size={12} color={colors.textTertiary} />
+                  <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
         </View>
 
         {/* ── Divider ── */}
@@ -705,12 +687,7 @@ export default function DirectoryScreen() {
               )}
             </Animated.View>
           )}
-          ListHeaderComponent={
-            <View style={shellStyle}>
-              {/* Stats and context already handled in fixed header area above the scroll but if we want them to scroll, we move them here. 
-                  Currently they are outside the ScrollView in the original code. I'll stick to the original layout intent but use FlashList for results. */}
-            </View>
-          }
+          ListHeaderComponent={null}
           ListEmptyComponent={
             <DirectoryEmptyState
               selectedType={selectedType}
@@ -746,102 +723,49 @@ const s = StyleSheet.create({
 
   // Header
   header: {
-    paddingBottom: 0,
-    ...shadows.small,
-  },
-  headerTopRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 14,
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitleWrap: { flex: 1 },
+  iconBtn: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
   title: {
-    fontSize: 26,
+    fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.4,
-    lineHeight: 32,
+    lineHeight: 26,
   },
   subtitle: {
     fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
-    marginTop: 2,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 18,
   },
 
   // Search
-  searchRow: {},
   searchContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    gap: 10,
+    height: 36,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    gap: 6,
     borderWidth: 1,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    height: 36,
     padding: 0,
     minWidth: 0,
   },
 
-  // Stats bar
-  statsBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  statsText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
-  },
-  statsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 0,
-  },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-  },
-  statDivider: {
-    width: 1,
-    height: 12,
-    marginRight: 8,
-  },
-  statValue: {
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
-  },
-
-  // Filter chips
-  chipsSection: {
-    paddingTop: 8,
-    paddingBottom: 6,
-  },
-
-  // Filter meta
-  filterMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingBottom: 8,
-  },
-  filterMetaText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
-  },
+  // Filter block
+  filterBlock: { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4 },
+  filterRow:   { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  clearBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 
   // Divider
   divider: {

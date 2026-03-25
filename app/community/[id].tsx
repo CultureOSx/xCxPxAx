@@ -484,8 +484,8 @@ const pc = StyleSheet.create({
   moreBtn:       { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
 
   eventImg:      { height: 220, position: 'relative', backgroundColor: '#1a1a2e' },
-  freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.gold, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'black' },
+  freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.teal, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   eventInfo:     { padding: 14, gap: 6 },
   eventTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.3 },
   metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 5 },
