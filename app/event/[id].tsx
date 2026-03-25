@@ -101,7 +101,8 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const s = getStyles(colors);
+  const isDark = useIsDark();
+  const s = getStyles(colors, isDark);
 
   const { data: event, isLoading, isError } = useQuery<EventData>({
     queryKey: ['/api/events', id],
@@ -157,8 +158,8 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   const { userId } = useAuth();
   const { state: onboardingState } = useOnboarding();
   const colors = useColors();
-  const s = getStyles(colors);
   const isDark = useIsDark();
+  const s = getStyles(colors, isDark);
   const saved = isEventSaved(event.id);
   const pathname = usePathname();
   const { width } = useWindowDimensions();
@@ -536,7 +537,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
               <Ionicons 
                 name={myRsvp === 'maybe' ? 'help-circle' : 'ellipsis-horizontal'} 
                 size={22} 
-                color={myRsvp === 'maybe' ? CultureTokens.saffron : colors.text} 
+                color={myRsvp === 'maybe' ? CultureTokens.gold : colors.text} 
               />
             </Pressable>
           </View>
@@ -632,37 +633,34 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                 <View style={[s.heroOverlay, { paddingTop: topInset + 12 }]}>
                   {/* Top Header Buttons */}
                   <View style={s.heroNav}>
-                    <Button
+                    <Pressable
                       onPress={() => goBackOrReplace('/(tabs)')}
-                      variant="ghost"
-                      size="sm"
-                      leftIcon="chevron-back"
-                      style={s.navBtn}
-                      iconColor="white"
+                      style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Go back"
                     >
-                      {null}
-                    </Button>
+                      <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                      <Ionicons name="chevron-back" size={24} color="white" />
+                    </Pressable>
                     <View style={s.heroActions}>
-                      <Button
+                      <Pressable
                         onPress={handleShare}
-                        variant="ghost"
-                        size="sm"
-                        leftIcon="share-outline"
-                        style={s.navBtn}
-                        iconColor="white"
+                        style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Share"
                       >
-                        {null}
-                      </Button>
-                      <Button
+                        <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                        <Ionicons name="share-outline" size={20} color="white" />
+                      </Pressable>
+                      <Pressable
                         onPress={handleSave}
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={saved ? "bookmark" : "bookmark-outline"}
-                        style={s.navBtn}
-                        iconColor={saved ? CultureTokens.saffron : 'white'}
+                        style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save event"
                       >
-                        {null}
-                      </Button>
+                        <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                        <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={20} color={saved ? CultureTokens.gold : 'white'} />
+                      </Pressable>
                     </View>
                   </View>
 
@@ -673,7 +671,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                       </Text>
                     </View>
                     <View style={s.heroMetaRow}>
-                        <View style={[s.heroCardBadge, { backgroundColor: CultureTokens.saffron }]}>
+                        <View style={[s.heroCardBadge, { backgroundColor: CultureTokens.gold }]}>
                             <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.category || 'Event'}</Text>
                         </View>
                         <Text style={[TextStyles.captionSemibold, { color: 'rgba(255,255,255,0.9)' }]}>{formatDate(event.date)}</Text>
@@ -687,7 +685,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
             <View style={s.detailShell}>
               <Card glass={!isDark} padding={20} style={s.heroInfoCard}>
                 <View style={s.heroBadges}>
-                  <View style={[s.heroBadge, { backgroundColor: CultureTokens.saffron }]}>
+                  <View style={[s.heroBadge, { backgroundColor: CultureTokens.gold }]}>
                     <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.communityId || 'General'}</Text>
                   </View>
                   {(event as any).councilTag ? (
@@ -771,8 +769,8 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                   style={s.infoCard}
                   padding={16}
                 >
-                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.saffron + '15' }]}>
-                    <Ionicons name="calendar-number-outline" size={20} color={CultureTokens.saffron} />
+                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.gold + '15' }]}>
+                    <Ionicons name="calendar-number-outline" size={20} color={CultureTokens.gold} />
                   </View>
                   <View style={[s.infoTextWrap, { flex: 1 }]}>
                     <Text style={TextStyles.badgeCaps}>Calendar</Text>
@@ -831,7 +829,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                           <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>{tier.available} available</Text>
                         </View>
                         <View style={s.tierRight}>
-                          <Text style={[TextStyles.title3, { color: CultureTokens.saffron }]}>
+                          <Text style={[TextStyles.title3, { color: CultureTokens.gold }]}>
                             {tier.priceCents === 0 ? "Free" : `$${(tier.priceCents / 100).toFixed(2)}`}
                           </Text>
                           <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
@@ -1065,7 +1063,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   shellWrapper: { flex: 1 },
   shellInner: { flex: 1 },
@@ -1084,8 +1082,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroWrapper: { width: '100%' },
   heroSection: { position: 'relative', justifyContent: 'flex-end', overflow: 'hidden' },
   heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, justifyContent: 'space-between' },
-  heroNav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
-  navBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(11, 11, 20, 0.45)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' },
+  heroNav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, zIndex: 20 },
+  navBtn: { width: 44, height: 44, borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11, 11, 20, 0.45)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' },
   heroActions: { flexDirection: 'row', gap: 10 },
   
   heroBottomContent: { paddingHorizontal: 24, paddingBottom: 32, gap: 12 },
@@ -1104,11 +1102,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 10,
     backgroundColor: colors.surface,
     borderColor: colors.borderLight,
-    shadowColor: 'black',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    boxShadow: isDark 
+      ? '0px 8px 24px rgba(0,0,0,0.5)' 
+      : '0px 8px 24px rgba(44,42,114,0.08)',
   },
   heroBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
@@ -1117,16 +1113,27 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroOrganizer: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
   countdownWrapper: { marginBottom: 20 },
-  countdownEndedBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.borderLight },
+  countdownEndedBox: { 
+    flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.borderLight,
+    boxShadow: '0px 2px 8px rgba(0,0,0,0.05)'
+  },
   countdownEndedText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
-  countdownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderRadius: 20, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  countdownRow: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderRadius: 20, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    boxShadow: isDark 
+      ? '0px 4px 12px rgba(0,0,0,0.4)' 
+      : '0px 4px 12px rgba(44,42,114,0.06)',
+  },
   countBlock: { alignItems: 'center', minWidth: 44 },
   countNum: { fontSize: 24, fontFamily: 'Poppins_700Bold', lineHeight: 30, color: colors.text },
   countLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', color: colors.textTertiary, letterSpacing: 0.5 },
   countSep: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.borderLight, paddingBottom: 12 },
 
   infoGrid: { gap: 12, marginBottom: 20 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, gap: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  infoCard: { 
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, gap: 16, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.4)' : '0px 2px 8px rgba(44,42,114,0.04)'
+  },
   infoIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
   infoTextWrap: { flex: 1, gap: 2 },
   infoLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8, color: colors.textTertiary },
@@ -1149,12 +1156,15 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   capacityFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   capacityFootText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
 
-  tierCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  tierCard: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.35)' : '0px 2px 8px rgba(44,42,114,0.04)'
+  },
   tierLeft: { gap: 2 },
   tierName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   tierAvail: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   tierRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tierPrice: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: CultureTokens.saffron },
+  tierPrice: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
 
   metricRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   metricIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
@@ -1168,11 +1178,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 16, 
     paddingVertical: 14, 
     gap: 12,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 12 },
-      android: { elevation: 10 },
-      web: { boxShadow: '0 -4px 12px rgba(0,0,0,0.1)' }
-    })
+    boxShadow: isDark 
+      ? '0px -4px 16px rgba(0,0,0,0.6)' 
+      : '0px -4px 16px rgba(44,42,114,0.1)',
   },
   bottomPriceSection: { minWidth: 90, gap: 2 },
   iconActionBtn: {
@@ -1210,7 +1218,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   quantityBtn: { width: 48, height: 48, borderRadius: 14 },
   quantityNum: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
 
-  priceSummaryBox: { padding: 20, borderRadius: 24, borderWidth: 1, gap: 12, marginTop: 24, marginBottom: 24, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  priceSummaryBox: { 
+    padding: 20, borderRadius: 24, borderWidth: 1, gap: 12, marginTop: 24, marginBottom: 24, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    boxShadow: isDark ? '0px 4px 16px rgba(0,0,0,0.4)' : '0px 4px 12px rgba(44,42,114,0.06)'
+  },
   pRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pRowLabel: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   pRowVal: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },

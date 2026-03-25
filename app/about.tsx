@@ -39,20 +39,20 @@ const CULTURES = [
 
 const PROBLEMS = [
   { text: "Events scattered across social media", icon: "megaphone-outline" as const, color: CultureTokens.coral },
-  { text: "Communities operating in silos", icon: "git-branch-outline" as const, color: CultureTokens.saffron },
+  { text: "Communities operating in silos", icon: "git-branch-outline" as const, color: CultureTokens.gold },
   { text: "People missing events they would love", icon: "heart-dislike-outline" as const, color: "#3A86FF" },
   { text: "Artists struggling to reach audiences", icon: "mic-outline" as const, color: CultureTokens.teal },
 ];
 
 const STEPS = [
-  { icon: "location-outline" as const, color: CultureTokens.saffron, title: "Choose Your City", desc: "Sydney, Melbourne, Brisbane, Perth & more" },
+  { icon: "location-outline" as const, color: CultureTokens.gold, title: "Choose Your City", desc: "Sydney, Melbourne, Brisbane, Perth & more" },
   { icon: "people-circle-outline" as const, color: CultureTokens.teal, title: "Pick Your Cultures", desc: "Indian, Korean, Greek, Lebanese, Aboriginal…" },
   { icon: "calendar-outline" as const, color: CultureTokens.gold, title: "Discover & Attend", desc: "Browse events, buy tickets, store in your wallet" },
   { icon: "chatbubble-ellipses-outline" as const, color: CultureTokens.indigo, title: "Stay Connected", desc: "Follow artists, sponsors and communities" },
 ];
 
 const FEATURES = [
-  { icon: "sparkles-outline" as const, color: CultureTokens.saffron, title: "Discover Events", desc: "Find festivals, food events, networking and cultural gatherings in your city." },
+  { icon: "sparkles-outline" as const, color: CultureTokens.gold, title: "Discover Events", desc: "Find festivals, food events, networking and cultural gatherings in your city." },
   { icon: "people-outline" as const, color: CultureTokens.teal, title: "Join Communities", desc: "Connect with cultural organisations, clubs and diaspora groups near you." },
   { icon: "ticket-outline" as const, color: CultureTokens.gold, title: "Digital Tickets", desc: "Purchase tickets, store in your wallet and check in with QR codes." },
   { icon: "pricetag-outline" as const, color: CultureTokens.coral, title: "Exclusive Perks", desc: "Unlock discounts and rewards from local cultural businesses." },
@@ -146,7 +146,7 @@ const statStyles = StyleSheet.create({
   number: {
     fontSize: 32,
     fontWeight: "800",
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     fontFamily: "Poppins_700Bold",
     letterSpacing: -0.5,
   },
@@ -262,7 +262,7 @@ export default function Get2KnowCulturePass() {
           HERO SECTION — Immersive gradient with glassmorphism card
          ══════════════════════════════════════════════════════════════════════ */}
       <LinearGradient
-        colors={gradients.culturepassBrand ?? [CultureTokens.indigo, CultureTokens.saffron, CultureTokens.coral]}
+        colors={gradients.culturepassBrand ?? [CultureTokens.indigo, CultureTokens.gold, CultureTokens.coral]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.hero}
@@ -282,7 +282,7 @@ export default function Get2KnowCulturePass() {
         <FadeInView style={styles.heroContent}>
           {/* Top pill badge */}
           <View style={styles.heroPill}>
-            <Ionicons name="sparkles" size={13} color={CultureTokens.saffron} />
+            <Ionicons name="sparkles" size={13} color={CultureTokens.gold} />
             <Text style={styles.heroPillText}>Global cultural community</Text>
           </View>
 
@@ -368,7 +368,7 @@ export default function Get2KnowCulturePass() {
       <FadeInView delay={100}>
         <View style={styles.sectionCenter}>
           <View style={styles.sectionBadge}>
-            <Ionicons name="earth-outline" size={22} color={CultureTokens.saffron} />
+            <Ionicons name="earth-outline" size={22} color={CultureTokens.gold} />
           </View>
           <Text style={styles.sectionTitle}>Explore Cultures Around the World</Text>
           <Text style={styles.sectionDesc}>
@@ -416,13 +416,13 @@ export default function Get2KnowCulturePass() {
           {/* Solution banner */}
           <View style={styles.solutionBanner}>
             <LinearGradient
-              colors={[CultureTokens.indigo + "18", CultureTokens.saffron + "18"]}
+              colors={[CultureTokens.indigo + "18", CultureTokens.gold + "18"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
-            <View style={[styles.solutionIconWrap, { backgroundColor: CultureTokens.saffron + "20" }]}>
-              <Ionicons name="sparkles" size={24} color={CultureTokens.saffron} />
+            <View style={[styles.solutionIconWrap, { backgroundColor: CultureTokens.gold + "20" }]}>
+              <Ionicons name="sparkles" size={24} color={CultureTokens.gold} />
             </View>
             <Text style={styles.solutionTitle}>CulturePass connects it all.</Text>
             <Text style={styles.solutionSubtext}>
@@ -537,7 +537,7 @@ export default function Get2KnowCulturePass() {
           {/* Decorative dots */}
           {Platform.OS === "web" && (
             <>
-              <View style={[styles.decorCircle, { top: "10%", right: "12%", width: 100, height: 100, opacity: 0.05, borderColor: CultureTokens.saffron }]} />
+              <View style={[styles.decorCircle, { top: "10%", right: "12%", width: 100, height: 100, opacity: 0.05, borderColor: CultureTokens.gold }]} />
               <View style={[styles.decorCircle, { bottom: "15%", left: "8%", width: 150, height: 150, opacity: 0.04, borderColor: CultureTokens.teal }]} />
             </>
           )}
@@ -568,7 +568,7 @@ export default function Get2KnowCulturePass() {
               accessibilityLabel="Explore CulturePass"
             >
               <LinearGradient
-                colors={[CultureTokens.indigo, CultureTokens.saffron]}
+                colors={[CultureTokens.indigo, CultureTokens.gold]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={StyleSheet.absoluteFillObject}
@@ -1048,7 +1048,7 @@ const getStyles = (colors: any) =>
     quoteMark: {
       fontSize: 40,
       fontFamily: "Poppins_700Bold",
-      color: CultureTokens.saffron,
+      color: CultureTokens.gold,
       lineHeight: 40,
       marginBottom: 4,
       opacity: 0.6,
@@ -1101,7 +1101,7 @@ const getStyles = (colors: any) =>
     visionDivider: {
       width: 48,
       height: 3,
-      backgroundColor: CultureTokens.saffron,
+      backgroundColor: CultureTokens.gold,
       borderRadius: 999,
       marginVertical: 20,
     },

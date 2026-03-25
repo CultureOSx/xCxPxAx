@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
 |-----------|-----|-------|
 | `#0B0B14`, `#000000` | Dark backgrounds | `colors.background`, `colors.backgroundSecondary` |
 | `#FFFFFF` | White text | `colors.text` (in dark) or `colors.textInverse` |
-| `#FF8C42` | Saffron (events) | `CultureTokens.saffron` or `CultureTokens.event` |
+| `#FF8C42` | Saffron (events) | `CultureTokens.gold` or `CultureTokens.event` |
 | `#FF5E5B` | Coral (artists) | `CultureTokens.coral` or `CultureTokens.artist` |
 | `#2EC4B6` | Teal (venues) | `CultureTokens.teal` or `CultureTokens.venue` |
 | `#FFC857` | Gold (premium) | `CultureTokens.gold` or `CultureTokens.movie` |
@@ -145,7 +145,7 @@ For each component/screen:
 
 ### Step 3: Hardcoded Colors → Tokens (5 min)
 - [ ] Find all `'#'` hex color values
-- [ ] Replace `'#FF8C42'` with `CultureTokens.saffron`
+- [ ] Replace `'#FF8C42'` with `CultureTokens.gold`
 - [ ] Replace `'#FF5E5B'` with `CultureTokens.coral`
 - [ ] Replace `'#2C2A72'` with `CultureTokens.indigo`
 - [ ] Replace `'#2EC4B6'` with `CultureTokens.teal`
@@ -204,7 +204,7 @@ color: colors.text
 
 **Replace:**
 ```
-CultureTokens.saffron
+CultureTokens.gold
 ```
 
 ### Command 5: Button Heights

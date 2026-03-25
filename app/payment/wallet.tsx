@@ -80,7 +80,7 @@ const LOYALTY_CYCLE_DAYS = 365;
 const LOYALTY_CYCLE_COLORS = [
   CultureTokens.indigo,
   CultureTokens.teal,
-  CultureTokens.saffron,
+  CultureTokens.gold,
   CultureTokens.coral,
   CultureTokens.gold,
 ] as const;
@@ -221,7 +221,7 @@ export default function WalletScreen() {
   const tierConfigMap = useMemo<Record<string, { label: string; colors: [string, string]; icon: string }>>(() => ({
     free:    { label: 'Standard', colors: ['#2A2A35', '#1B1B25'], icon: 'shield-outline' },
     plus:    { label: 'Plus',     colors: [CultureTokens.indigo, '#1E1C59'], icon: 'star' },
-    premium: { label: 'Premium',  colors: [CultureTokens.saffron, '#CC6F33'], icon: 'diamond' },
+    premium: { label: 'Premium',  colors: [CultureTokens.gold, '#CC6F33'], icon: 'diamond' },
     elite:   { label: 'Elite',    colors: [CultureTokens.teal, '#1A8F84'], icon: 'trophy' },
     vip:     { label: 'VIP',      colors: [CultureTokens.coral, '#CC4745'], icon: 'ribbon' },
     pro:     { label: 'Pro',      colors: ['#3A86FF', '#285FCC'], icon: 'briefcase' },

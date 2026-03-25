@@ -31,7 +31,7 @@
 | Token | Hex | Meaning |
 |---|---|---|
 | `CultureTokens.indigo` | `#2C2A72` | Primary CTA, trust, platform identity |
-| `CultureTokens.saffron` | `#FF8C42` | Warm discovery, festivals, events |
+| `CultureTokens.gold` | `#FF8C42` | Warm discovery, festivals, events |
 | `CultureTokens.coral` | `#FF5E5B` | Action energy, movement, urgency |
 | `CultureTokens.gold` | `#FFC857` | Cultural premium, Temple Gold, CulturePass+ status |
 | `CultureTokens.teal` | `#2EC4B6` | Global belonging, ocean, venues |

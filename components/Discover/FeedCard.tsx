@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   eventDateAccent: {
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     fontSize: 12,
     fontFamily: 'Poppins_700Bold',
     textTransform: 'uppercase',

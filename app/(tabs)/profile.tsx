@@ -11,19 +11,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
-import { CultureTokens, CardTokens, gradients, shadows } from '@/constants/theme';
+import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
+import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/schema';
 import type { PerkData } from '@/shared/schema/perk';
+import QRCode from 'react-native-qrcode-svg';
+import { ProfileScanner } from '@/components/scanner/ProfileScanner';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -165,10 +169,14 @@ const sk = StyleSheet.create({
 export default function ProfileScreen() {
   const insets   = useSafeAreaInsets();
   const colors   = useColors();
+  const isDark   = useIsDark();
+  const { root, hero, act, tier, sec, cul, prk, cpid, soc, det, set, sout, cmap } = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { isDesktop, hPad } = useLayout();
   const { userId, user: authUser, logout } = useAuth();
   const { state: onboarding } = useOnboarding();
   const [showCultureMap, setShowCultureMap] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const queryClient = useQueryClient();
 
   const { user, isLoading } = useCurrentUser();
   const { data: perks = [] } = usePerks();
@@ -187,12 +195,13 @@ export default function ProfileScreen() {
         const nat = NATIONALITIES[id];
         const coords = NAT_COORDS[id];
         if (!nat || !coords) return null;
-        return { id: `${id}-${idx}`, name: nat.label, emoji: nat.emoji, lat: coords.lat, lng: coords.lng, color: CultureTokens.saffron };
+        return { id: `${id}-${idx}`, name: nat.label, emoji: nat.emoji, lat: coords.lat, lng: coords.lng, color: CultureTokens.gold };
       })
       .filter((c): c is NonNullable<typeof c> => c !== null);
   }, [onboarding?.nationalityId, onboarding?.cultureIds]);
 
 
+  const displayUser = (user || authUser) as Partial<User>;
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const name = displayUser?.displayName || displayUser?.username || 'a CulturePass member';
@@ -204,7 +213,6 @@ export default function ProfileScreen() {
   if (!userId) return <GuestProfileView topInset={insets.top} />;
   if (isLoading) return <ProfileSkeleton colors={colors} />;
 
-  const displayUser = (user || authUser) as Partial<User>;
   const displayName = displayUser?.displayName || displayUser?.username || 'CulturePass Member';
   const handle      = displayUser?.handle ?? displayUser?.username;
   const locationText = [displayUser?.city, displayUser?.country].filter(Boolean).join(', ');
@@ -227,6 +235,14 @@ export default function ProfileScreen() {
   return (
     <ErrorBoundary>
       <View style={[root.wrap, { backgroundColor: colors.background }]}>
+        <ProfileScanner 
+          visible={showScanner} 
+          onClose={() => setShowScanner(false)} 
+          onSuccess={(scannedId) => {
+            // Refetch to see new follower?
+            queryClient.invalidateQueries({ queryKey: ['/api/profiles/me'] });
+          }}
+        />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
@@ -246,22 +262,24 @@ export default function ProfileScreen() {
             <View style={[hero.nav, { paddingHorizontal: hPad }]}>
               {!isDesktop && (
                 <Pressable
-                  style={hero.navBtn}
+                  style={({ pressed }) => [hero.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                   onPress={() => router.push('/settings' as any)}
                   accessibilityRole="button"
                   accessibilityLabel="Settings"
                 >
-                  <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.9)" />
+                  <BlurView intensity={Platform.OS === 'ios' ? 24 : 50} tint="dark" style={StyleSheet.absoluteFill} />
+                  <Ionicons name="settings-outline" size={20} color="#fff" />
                 </Pressable>
               )}
               <View style={{ flex: 1 }} />
               <Pressable
-                style={hero.navBtn}
+                style={({ pressed }) => [hero.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                 onPress={handleShare}
                 accessibilityRole="button"
                 accessibilityLabel="Share profile"
               >
-                <Ionicons name="share-outline" size={20} color="rgba(255,255,255,0.9)" />
+                <BlurView intensity={Platform.OS === 'ios' ? 24 : 50} tint="dark" style={StyleSheet.absoluteFill} />
+                <Ionicons name="share-outline" size={20} color="#fff" />
               </Pressable>
             </View>
 
@@ -339,24 +357,24 @@ export default function ProfileScreen() {
             </Pressable>
             <Pressable
               style={[act.btn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync();
+                setShowScanner(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Scan ID"
+            >
+              <Ionicons name="scan-outline" size={15} color={colors.text} />
+              <Text style={[act.label, { color: colors.text }]}>Scan</Text>
+            </Pressable>
+            <Pressable
+              style={[act.btn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
               onPress={handleShare}
               accessibilityRole="button"
               accessibilityLabel="Share profile"
             >
               <Ionicons name="share-outline" size={15} color={colors.text} />
               <Text style={[act.label, { color: colors.text }]}>Share</Text>
-            </Pressable>
-            <Pressable
-              style={[act.btn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-                router.push('/profile/qr' as any);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Show QR code"
-            >
-              <Ionicons name="qr-code-outline" size={15} color={colors.text} />
-              <Text style={[act.label, { color: colors.text }]}>QR Code</Text>
             </Pressable>
           </View>
 
@@ -456,11 +474,11 @@ export default function ProfileScreen() {
                     accessibilityLabel={perk.title}
                   >
                     <LinearGradient
-                      colors={[CultureTokens.saffron + '30', CultureTokens.indigo + '20']}
+                      colors={[CultureTokens.gold + '30', CultureTokens.indigo + '20']}
                       style={prk.cardGrad}
                     />
-                    <View style={[prk.icon, { backgroundColor: CultureTokens.saffron + '20' }]}>
-                      <Ionicons name="gift-outline" size={18} color={CultureTokens.saffron} />
+                    <View style={[prk.icon, { backgroundColor: CultureTokens.gold + '20' }]}>
+                      <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
                     </View>
                     <Text style={[prk.title, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
                     {(perk as any).discount && (
@@ -525,6 +543,18 @@ export default function ProfileScreen() {
                   <Text style={[cpid.metaValue, { color: tierConf.color }]}>{tierConf.label}</Text>
                 </View>
               </View>
+              {/* QR Code Overlay (Premium look) */}
+              <View style={cpid.qrOverlay}>
+                <View style={cpid.qrPadding}>
+                  <QRCode
+                    value={`culturepass://profile/${displayUser?.id || userId}`}
+                    size={72}
+                    backgroundColor="transparent"
+                    color={CultureTokens.teal}
+                  />
+                </View>
+              </View>
+
               {/* Footer */}
               <View style={[cpid.footer, { borderTopColor: 'rgba(255,255,255,0.1)' }]}>
                 <Text style={cpid.footerText}>Verified Digital Identity</Text>
@@ -685,6 +715,7 @@ export default function ProfileScreen() {
             cultures={matchedCultures}
             colors={colors}
             insets={insets}
+            cmap={cmap}
           />
         )}
       </View>
@@ -696,11 +727,12 @@ export default function ProfileScreen() {
 import { CultureWalletMap } from '../../components/profile/CultureWalletMap';
 // ── Culture Map Modal ─────────────────────────────────────────────────────────
 
-function CultureMapModal({ visible, onClose, cultures, colors, insets }: {
+function CultureMapModal({ visible, onClose, cultures, colors, insets, cmap }: {
   visible: boolean; onClose: () => void;
   cultures: { id: string; name: string; emoji: string; lat: number; lng: number; color: string }[];
   colors: ReturnType<typeof useColors>;
   insets: ReturnType<typeof useSafeAreaInsets>;
+  cmap: any;
 }) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -751,135 +783,170 @@ function CultureMapModal({ visible, onClose, cultures, colors, insets }: {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const root = StyleSheet.create({ wrap: { flex: 1 } });
-
-const hero = StyleSheet.create({
-  container:     { alignItems: 'center', paddingBottom: 28, overflow: 'hidden' },
-  arcOuter: {
-    position: 'absolute', top: -80, right: -80,
-    width: 220, height: 220, borderRadius: 110,
-    borderWidth: 28, borderColor: CultureTokens.teal + '10',
-    pointerEvents: 'none',
-  } as any,
-  arcInner: {
-    position: 'absolute', top: -40, right: -40,
-    width: 130, height: 130, borderRadius: 65,
-    borderWidth: 18, borderColor: CultureTokens.indigo + '12',
-    pointerEvents: 'none',
-  } as any,
-  nav:       { flexDirection: 'row', alignItems: 'center', width: '100%', paddingBottom: 20 },
-  navBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  name:      { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.4, textAlign: 'center' },
-  handle:    { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.55)', marginTop: 2, marginBottom: 14 },
-  culturePills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 20, paddingHorizontal: 20 },
-  culturePill:  { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 50 },
-  culturePillText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)', lineHeight: 15 },
-  statsBar:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%' },
-  statsAccentLine: { position: 'absolute', top: 0, left: 24, right: 24, height: 1.5, opacity: 0.5 },
-  statItem:  { flex: 1, alignItems: 'center' },
-  statNum:   { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.5 },
-  statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2, letterSpacing: 0.3 },
-  statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
-});
-
-const act = StyleSheet.create({
-  row:   { flexDirection: 'row', gap: 10 },
-  btn:   { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12 },
-  label: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-});
-
-const tier = StyleSheet.create({
-  card:       { borderRadius: CardTokens.radius, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden' },
-  left:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconWrap:   { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  label:      { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
-  since:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 15 },
-  upgradeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-  upgradeTxt: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
-});
-
-const sec = StyleSheet.create({
-  wrap:    {},
-  card:    { borderRadius: CardTokens.radius, borderWidth: 1, padding: 18 },
-  bioText: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 26 },
-});
-
-const cul = StyleSheet.create({
-  grid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  chip:      { alignItems: 'center', paddingVertical: 14, paddingHorizontal: 18, borderRadius: 14, borderWidth: 1, gap: 6, minWidth: 88 },
-  chipLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', lineHeight: 16 },
-});
-
-const prk = StyleSheet.create({
-  scroll:   { gap: 12, paddingRight: 20 },
-  card:     { width: 160, padding: 16, borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', gap: 10 },
-  cardGrad: { ...StyleSheet.absoluteFillObject },
-  icon:     { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  title:    { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 19 },
-  badge:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, alignSelf: 'flex-start' },
-  badgeText:{ fontSize: 11, fontFamily: 'Poppins_700Bold', lineHeight: 15 },
-});
-
-const cpid = StyleSheet.create({
-  card:        { borderRadius: 24, padding: 24, overflow: 'hidden' },
-  accentLine:  { position: 'absolute', top: 0, left: 0, right: 0, height: 2.5 },
-  topRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 },
-  logoRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIcon:    { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  logoText:    { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#fff', letterSpacing: 0.4 },
-  shieldBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  centerBlock: { alignItems: 'center', marginBottom: 26 },
-  cpidLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 9, color: '#94A3B8', letterSpacing: 4, marginBottom: 8 },
-  cpidValue:   { fontFamily: 'Poppins_700Bold', fontSize: 30, color: '#fff', letterSpacing: 5 },
-  underline:   { width: 160, height: 1.5, marginTop: 10, opacity: 0.65 },
-  metaRow:     { flexDirection: 'row', marginBottom: 20, gap: 8 },
-  metaItem:    { flex: 1 },
-  metaLabel:   { fontFamily: 'Poppins_400Regular', fontSize: 9, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 4 },
-  metaValue:   { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#fff' },
-  footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, paddingTop: 14 },
-  footerText:  { fontFamily: 'Poppins_500Medium', fontSize: 11, color: '#94A3B8', letterSpacing: 0.3 },
-});
-
-const soc = StyleSheet.create({
-  grid:    { gap: 10 },
-  card:    { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, overflow: 'hidden', borderWidth: 1 },
-  strip:   { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3.5, borderRadius: 2 },
-  iconWrap:{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  label:   { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 15, lineHeight: 20 },
-});
-
-const det = StyleSheet.create({
-  card:    { borderRadius: CardTokens.radius, borderWidth: 1, padding: 18 },
-  row:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  iconWrap:{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  text:    { flex: 1 },
-  label:   { fontFamily: 'Poppins_400Regular', fontSize: 11, letterSpacing: 0.3, marginBottom: 2, lineHeight: 15 },
-  value:   { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 20 },
-  divider: { height: 1, marginVertical: 14, marginLeft: 58 },
-});
-
-const set = StyleSheet.create({
-  card:    { borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden' },
-  row:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
-  iconWrap:{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:   { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium', lineHeight: 20 },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 64 },
-});
-
-const sout = StyleSheet.create({
-  btn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, borderWidth: 1 },
-  label: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', lineHeight: 20 },
-});
-
-const cmap = StyleSheet.create({
-  overlay:  { flex: 1, justifyContent: 'flex-end' },
-  sheet:    { borderTopLeftRadius: 32, borderTopRightRadius: 32, flex: 1, maxHeight: '92%' },
-  header:   { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 20 },
-  title:    { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 30 },
-  sub:      { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, lineHeight: 18 },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 24, marginBottom: 20 },
-  chip:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  chipLabel:{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  mapWrap:  { flex: 1, marginHorizontal: 24, marginBottom: 32, borderRadius: 24, overflow: 'hidden' },
+const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
+  root: StyleSheet.create({ wrap: { flex: 1 } }),
+  hero: StyleSheet.create({
+    container: { alignItems: 'center', paddingBottom: 28, overflow: 'hidden' },
+    arcOuter: {
+      position: 'absolute', top: -80, right: -80,
+      width: 220, height: 220, borderRadius: 110,
+      borderWidth: 28, borderColor: CultureTokens.teal + '10',
+    },
+    arcInner: {
+      position: 'absolute', top: -40, right: -40,
+      width: 130, height: 130, borderRadius: 65,
+      borderWidth: 18, borderColor: CultureTokens.indigo + '12',
+    },
+    nav: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingBottom: 20 },
+    navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    name: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.4, textAlign: 'center' },
+    handle: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.55)', marginTop: 2, marginBottom: 14 },
+    culturePills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 20, paddingHorizontal: 20 },
+    culturePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 50 },
+    culturePillText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)', lineHeight: 15 },
+    statsBar: { 
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, 
+      backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 8, 
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%',
+      boxShadow: '0px 4px 12px rgba(0,0,0,0.2)'
+    },
+    statsAccentLine: { position: 'absolute', top: 0, left: 24, right: 24, height: 1.5, opacity: 0.5 },
+    statItem: { flex: 1, alignItems: 'center' },
+    statNum: { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.5 },
+    statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2, letterSpacing: 0.3 },
+    statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
+  }),
+  act: StyleSheet.create({
+    row: { flexDirection: 'row', gap: 10 },
+    btn: { 
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
+      boxShadow: '0px 2px 4px rgba(0,0,0,0.05)'
+    },
+    label: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
+  }),
+  tier: StyleSheet.create({
+    card: { 
+      borderRadius: CardTokens.radius, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden',
+      boxShadow: isDark ? '0px 4px 12px rgba(0,0,0,0.3)' : '0px 4px 12px rgba(0,0,0,0.04)'
+    },
+    left: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    label: { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
+    since: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 15 },
+    upgradeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
+    upgradeTxt: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
+  }),
+  sec: StyleSheet.create({
+    wrap: {},
+    card: { 
+      padding: 16, borderRadius: 16, borderWidth: 1, 
+      boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.25)' : '0px 2px 8px rgba(0,0,0,0.03)'
+    },
+    bioText: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
+  }),
+  cul: StyleSheet.create({
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    chip: { 
+      flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
+      boxShadow: isDark ? '0px 2px 6px rgba(0,0,0,0.2)' : '0px 2px 6px rgba(0,0,0,0.03)'
+    },
+    chipLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  }),
+  prk: StyleSheet.create({
+    scroll: { gap: 12, paddingVertical: 4 },
+    card: { 
+      width: 160, padding: 14, borderRadius: 20, borderWidth: 1, overflow: 'hidden',
+      boxShadow: '0px 4px 10px rgba(0,0,0,0.06)'
+    },
+    cardGrad: { ...StyleSheet.absoluteFillObject, opacity: 0.1 },
+    icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    title: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18, height: 36 },
+    badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginTop: 10 },
+    badgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  }),
+  cpid: StyleSheet.create({
+    card: { 
+      padding: 24, borderRadius: 28, overflow: 'hidden', position: 'relative',
+      boxShadow: isDark ? '0px 12px 32px rgba(0,0,0,0.6)' : '0px 12px 32px rgba(44,42,114,0.12)'
+    },
+    accentLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2 },
+    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+    logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    logoIcon: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+    logoText: { color: '#fff', fontSize: 15, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
+    shieldBadge: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.1)' },
+    centerBlock: { alignItems: 'center', marginBottom: 32 },
+    cpidLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginBottom: 4 },
+    cpidValue: { color: '#fff', fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: 4 },
+    underline: { width: 120, height: 2, marginTop: 8 },
+    metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+    metaItem: { gap: 4 },
+    metaLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
+    metaValue: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+    qrOverlay: {
+      position: 'absolute',
+      right: 20,
+      top: 60,
+      padding: 6,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    qrPadding: {
+      padding: 2,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+    },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTopWidth: 1 },
+    footerText: { color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  }),
+  soc: StyleSheet.create({
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    card: { 
+      flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: '45%', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, overflow: 'hidden',
+      boxShadow: '0px 2px 6px rgba(0,0,0,0.03)'
+    },
+    strip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+    iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },
+  }),
+  det: StyleSheet.create({
+    card: { 
+      borderRadius: 20, borderWidth: 1, padding: 4,
+      boxShadow: '0px 2px 8px rgba(0,0,0,0.03)'
+    },
+    row: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
+    iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    text: { flex: 1, gap: 2 },
+    label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
+    value: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+    divider: { height: 1, marginHorizontal: 16 },
+  }),
+  set: StyleSheet.create({
+    card: { 
+      borderRadius: 20, borderWidth: 1, padding: 4,
+      boxShadow: '0px 4px 12px rgba(0,0,0,0.04)'
+    },
+    row: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 },
+    iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    label: { fontSize: 15, fontFamily: 'Poppins_500Medium', flex: 1 },
+    divider: { height: 1, marginHorizontal: 14 },
+  }),
+  sout: StyleSheet.create({
+    btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed' },
+    label: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  }),
+  cmap: StyleSheet.create({
+    overlay: { flex: 1, justifyContent: 'flex-end' },
+    sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '90%', paddingBottom: 40 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 20 },
+    title: { fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
+    sub: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
+    closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 24, marginBottom: 24 },
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
+    chipLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+    mapWrap: { flex: 1, borderRadius: 24, overflow: 'hidden', marginHorizontal: 24, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  })
 });

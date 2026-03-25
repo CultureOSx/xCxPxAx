@@ -3,14 +3,17 @@ import React, {
   useState, useMemo, useCallback, useEffect, useRef,
 } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, FlatList, ScrollView,
+  View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, RefreshControl, Modal,
-  TextInput, KeyboardAvoidingView, Keyboard, Share, Animated,
+  TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
 } from 'react-native';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { feedKeys, communityKeys } from '@/hooks/queries/keys';
@@ -19,7 +22,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, CardTokens, gradients, shadows } from '@/constants/theme';
+import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { getCommunityHeadline } from '@/lib/community';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -40,7 +43,7 @@ import type { EventData, Community } from '@/shared/schema';
 
 const ACCENT = [
   CultureTokens.indigo, CultureTokens.teal, CultureTokens.coral,
-  CultureTokens.saffron, CultureTokens.gold, '#7C3AED', '#059669',
+  CultureTokens.gold, CultureTokens.gold, '#7C3AED', '#059669',
 ];
 
 const COUNTRY_FLAG: Record<string, string> = {
@@ -212,7 +215,7 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
         <Pressable style={st.item} onPress={onCreatePost} accessibilityRole="button" accessibilityLabel={isAuthenticated ? 'Create post' : 'Sign in'}>
           <View style={st.ringWrap}>
             <LinearGradient
-              colors={gradients.culturepassBrand as [string, string, string]}
+              colors={gradients.culturepassBrand as [string, string]}
               style={st.ring}
             >
               <View style={[st.inner, { backgroundColor: colors.background }]}>
@@ -306,8 +309,8 @@ function CreatePostStub({ authUser, colors, onPress, isAuthenticated, city }: {
         </Text>
       </View>
       {isAuthenticated && (
-        <View style={[cp.imgBtn, { backgroundColor: CultureTokens.saffron + '18' }]}>
-          <Ionicons name="image-outline" size={18} color={CultureTokens.saffron} />
+        <View style={[cp.imgBtn, { backgroundColor: CultureTokens.gold + '18' }]}>
+          <Ionicons name="image-outline" size={18} color={CultureTokens.gold} />
         </View>
       )}
     </Pressable>
@@ -370,18 +373,18 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
       accessibilityLabel="Browse trending events"
     >
       <LinearGradient
-        colors={[CultureTokens.saffron + '12', CultureTokens.coral + '08']}
+        colors={[CultureTokens.gold + '12', CultureTokens.coral + '08']}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
       />
-      <View style={[ti.iconWrap, { backgroundColor: CultureTokens.saffron + '20' }]}>
-        <Ionicons name="flame" size={20} color={CultureTokens.saffron} />
+      <View style={[ti.iconWrap, { backgroundColor: CultureTokens.gold + '20' }]}>
+        <Ionicons name="flame" size={20} color={CultureTokens.gold} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[ti.title, { color: colors.text }]}>
           🔥 Trending{city ? ` in ${city}` : ' Near You'}
         </Text>
-        <Text style={[ti.sub, { color: colors.textSecondary }]}>Discover what's popular this week</Text>
+        <Text style={[ti.sub, { color: colors.textSecondary }]}>Discover what&apos;s popular this week</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
     </Pressable>
@@ -538,7 +541,7 @@ function CommentsSheet({ visible, onClose, post, colors }: {
       await addComment(pid, pcol, {
         authorId: user.id,
         authorName: user.username || user.email || 'User',
-        authorAvatar: user.avatar || user.image || user.photo || undefined,
+        authorAvatar: (user as any).avatar || (user as any).image || (user as any).photo || undefined,
         body: body.trim(),
       });
       setBody('');
@@ -785,7 +788,7 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
 }) {
   const { isAuthenticated } = useAuth();
   const badge = post.kind === 'event'
-    ? { icon: 'calendar-outline' as const, label: 'Event',  color: CultureTokens.saffron }
+    ? { icon: 'calendar-outline' as const, label: 'Event',  color: CultureTokens.gold }
     : post.kind === 'announcement'
       ? { icon: 'megaphone-outline' as const, label: 'Update', color: CultureTokens.teal }
       : null;
@@ -852,8 +855,10 @@ const ph = StyleSheet.create({
 
 // ── Post card ─────────────────────────────────────────────────────────────────
 
-function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
+// -- PostCard Memoized --
+const PostCard = React.memo(({ post, colorIdx }: { post: FeedPost; colorIdx: number }) => {
   const colors = useColors();
+  const isDark = useColorScheme() === 'dark';
   const accent = ACCENT[colorIdx % ACCENT.length];
   const { user, isAuthenticated } = useAuth();
   const gate = useAuthGate();
@@ -908,15 +913,15 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
               />
 
               {/* Top-left: category / date badge */}
-              <View style={[pcd.datePill, { backgroundColor: isToday ? accent : 'rgba(0,0,0,0.55)' }]}>
+              <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={pcd.datePill}>
                 <Ionicons name="calendar-outline" size={10} color="rgba(255,255,255,0.9)" />
                 <Text style={pcd.datePillText}>{dateLabel}</Text>
-              </View>
+              </BlurView>
 
               {/* Top-right: price pill */}
-              <View style={[pcd.pricePill, { backgroundColor: isFree ? CultureTokens.teal : accent }]}>
+              <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={[pcd.pricePill, { backgroundColor: isFree ? CultureTokens.teal + 'AA' : accent + 'AA' }]}>
                 <Text style={pcd.pricePillText}>{isFree ? 'Free' : ev.priceLabel ?? 'Tickets'}</Text>
-              </View>
+              </BlurView>
 
               {/* Bottom-left: venue + city */}
               <View style={pcd.eventFooter}>
@@ -1028,7 +1033,16 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
 
   return (
     <>
-      <View style={[pcd.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }, shadows.small as any]}>
+      <View style={[
+        pcd.card, 
+        { 
+          backgroundColor: colors.surface, 
+          borderColor: colors.borderLight,
+          boxShadow: isDark 
+            ? '0px 4px 12px rgba(0,0,0,0.45)' 
+            : '0px 4px 12px rgba(44,42,114,0.08)',
+        }
+      ]}>
         <PostCardHeader post={post} accent={accent} colors={colors} colorIdx={colorIdx} onMorePress={handleMorePress} />
         {renderContent()}
         <ReactionsBar post={post} colors={colors} />
@@ -1050,10 +1064,10 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
       />
     </>
   );
-}
+});
 
 const pcd = StyleSheet.create({
-  card:           { borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
+  card:           { borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', marginBottom: 12, elevation: 3 },
   // Event
   eventImg:       { height: 248, position: 'relative', backgroundColor: '#111827' },
   datePill:       { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
@@ -1439,12 +1453,22 @@ export default function CultureFeedScreen() {
 
   const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (item.kind === '_trending') {
-      return <TrendingInterstitial city={item.city} colors={colors} />;
+      return (
+        <Reanimated.View 
+          entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
+        >
+          <TrendingInterstitial city={item.city} colors={colors} />
+        </Reanimated.View>
+      );
     }
     return (
-      <ErrorBoundary>
-        <PostCard post={item} colorIdx={index} />
-      </ErrorBoundary>
+      <Reanimated.View 
+        entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
+      >
+        <ErrorBoundary>
+          <PostCard post={item} colorIdx={index} />
+        </ErrorBoundary>
+      </Reanimated.View>
     );
   }, [colors]);
 
@@ -1462,10 +1486,16 @@ export default function CultureFeedScreen() {
 
   return (
     <ErrorBoundary>
+      <Stack.Screen 
+        options={{ 
+          title: 'Feed | CulturePass',
+          headerShown: false,
+        }} 
+      />
       <View style={[sc.root, { backgroundColor: colors.background }]}>
         {/* Fixed branded header */}
         <LinearGradient
-          colors={gradients.culturepassBrand as [string, string, string]}
+          colors={gradients.culturepassBrand as [string, string]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         >
           <View style={{ height: topInset }} />
@@ -1530,20 +1560,19 @@ export default function CultureFeedScreen() {
             {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} colors={colors} />)}
           </ScrollView>
         ) : (
-          <FlatList
+          <FlashList
             data={listItems}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             ListHeaderComponent={renderListHeader}
+            // @ts-ignore
+            estimatedItemSize={400}
             contentContainerStyle={[
               sc.list,
               { paddingHorizontal: hPad, paddingBottom: bottomInset + 96 },
               isDesktop && sc.listDesktop,
             ]}
             showsVerticalScrollIndicator={false}
-            maxToRenderPerBatch={6}
-            windowSize={8}
-            initialNumToRender={4}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

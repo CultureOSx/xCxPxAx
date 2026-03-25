@@ -98,7 +98,7 @@ export function ProfileHeaderBar({
               />
             ) : (
               <LinearGradient
-                colors={[CultureTokens.indigo, CultureTokens.saffron]}
+                colors={[CultureTokens.indigo, CultureTokens.coral]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[StyleSheet.absoluteFill, { borderRadius: avatarSize / 2 }]}
@@ -130,7 +130,7 @@ export function ProfileHeaderBar({
                     <Image source={{ uri: user.avatarUrl }} style={styles.menuAvatar} contentFit="cover" />
                   ) : (
                     <LinearGradient
-                      colors={[CultureTokens.indigo, CultureTokens.saffron]}
+                      colors={[CultureTokens.indigo, CultureTokens.coral]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={[styles.menuAvatar, styles.menuAvatarFallback]}

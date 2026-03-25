@@ -10,7 +10,7 @@ import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage'
 
 const shoppingCategories: CategoryFilter[] = [
   { label: 'All', icon: 'bag-handle', color: CultureTokens.indigo },
-  { label: 'Groceries', icon: 'cart', color: CultureTokens.saffron },
+  { label: 'Groceries', icon: 'cart', color: CultureTokens.gold },
   { label: 'Fashion', icon: 'shirt', color: CultureTokens.indigo },
   { label: 'Jewellery', icon: 'diamond', color: CultureTokens.gold },
   { label: 'Electronics', icon: 'phone-portrait', color: CultureTokens.community },

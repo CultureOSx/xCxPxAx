@@ -36,6 +36,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 export default function LoginScreen() {
   const colors = useColors();
@@ -214,7 +215,7 @@ export default function LoginScreen() {
       {Platform.OS === 'web' ? (
         <>
           <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, filter: 'blur(50px)' } as any]} />
         </>
       ) : null}
 
@@ -267,11 +268,14 @@ export default function LoginScreen() {
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               <View style={styles.logoRow}>
-                <View style={[styles.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+                <View style={[styles.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight, overflow: 'hidden' }]}>
+                  <LinearGradient
+                    colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
                   <Ionicons name="globe-outline" size={32} color="#FFFFFF" />
                 </View>
-                <Text style={styles.brandName}>CulturePass</Text>
-                <Text style={styles.brandTagline}>We Belong Anywhere</Text>
+                <BrandWordmark size="lg" withTagline />
               </View>
 
               <Text style={[styles.title, { color: colors.textInverse }]}>Welcome back.</Text>
@@ -303,7 +307,7 @@ export default function LoginScreen() {
                   <View style={styles.passwordHeader}>
                     <Text style={[styles.label, { color: colors.textInverse }]}>Password</Text>
                     <Pressable hitSlop={12} onPress={() => router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as any)}>
-                      <Text style={[styles.forgotText, { color: CultureTokens.saffron }]}>Forgot Password?</Text>
+                      <Text style={[styles.forgotText, { color: CultureTokens.gold }]}>Forgot Password?</Text>
                     </Pressable>
                   </View>
                   <Input
@@ -335,7 +339,7 @@ export default function LoginScreen() {
                 loading={loading}
                 disabled={!isValid || loading}
                 onPress={handleLogin}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Sign In
               </Button>
@@ -361,7 +365,7 @@ export default function LoginScreen() {
                 hitSlop={12}
               >
                 <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                  Don&apos;t have an account? <Text style={[styles.switchLink, { color: CultureTokens.saffron }]}>Sign Up</Text>
+                  Don&apos;t have an account? <Text style={[styles.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
                 </Text>
               </Pressable>
             </View>
@@ -391,7 +395,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   logoRow: { alignItems: 'center', marginBottom: 28, gap: 6 },
   logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1 },
   brandName:    { fontSize: 28, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo, letterSpacing: -0.5 },
-  brandTagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, letterSpacing: 1.2 },
+  brandTagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold, letterSpacing: 1.2 },
   title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
   subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 36 },
   errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },

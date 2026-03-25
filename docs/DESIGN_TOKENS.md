@@ -24,7 +24,7 @@ These define the CulturePass identity. Use sparingly, intentionally.
 import { CultureTokens } from '@/constants/theme';
 
 CultureTokens.indigo      // #2C2A72 — Culture Indigo (primary brand)
-CultureTokens.saffron    // #FF8C42 — Festival Saffron (warm discovery)
+CultureTokens.gold    // #FF8C42 — Festival Saffron (warm discovery)
 CultureTokens.coral      // #FF5E5B — Movement Coral (action energy)
 CultureTokens.gold       // #FFC857 — Temple Gold (cultural premium)
 CultureTokens.teal       // #2EC4B6 — Ocean Teal (global belonging)
@@ -476,7 +476,7 @@ const brandColor = CultureTokens.indigo;   // always #2C2A72
 <View style={{ backgroundColor: '#FF8C42' }} />
 
 // ✓ Always use tokens
-<View style={{ backgroundColor: CultureTokens.saffron }} />
+<View style={{ backgroundColor: CultureTokens.gold }} />
 
 // ✓ Or use hook for theme colors
 const colors = useColors();

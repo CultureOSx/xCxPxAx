@@ -309,7 +309,7 @@ import { dark } from '@/constants/colors';  // Wrong export
 {...styles.container, backgroundColor: colors.background}  // Inline + theme
 
 backgroundColor: colors.background  // Theme-aware
-const color = CultureTokens.saffron;     // Brand colors
+const color = CultureTokens.gold;     // Brand colors
 
 import { CultureTokens } from '@/constants/theme';  // Correct
 ```

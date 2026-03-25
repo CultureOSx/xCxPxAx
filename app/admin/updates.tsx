@@ -25,7 +25,7 @@ const CATEGORY_LABELS: Record<UpdateCategory, string> = {
 };
 const CATEGORY_COLORS: Record<UpdateCategory, string> = {
   release: CultureTokens.indigo, feature: CultureTokens.teal,
-  fix: CultureTokens.coral, announcement: CultureTokens.saffron,
+  fix: CultureTokens.coral, announcement: CultureTokens.gold,
 };
 
 function slugify(text: string) {

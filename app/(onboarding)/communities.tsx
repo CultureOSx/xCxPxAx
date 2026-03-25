@@ -26,7 +26,7 @@ import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 const CHIP_COLORS = [
   CultureTokens.coral,
   CultureTokens.teal,
-  CultureTokens.saffron,
+  CultureTokens.gold,
   CultureTokens.indigo,
   CultureTokens.gold,
   '#9B59B6', // Amethyst
@@ -84,7 +84,7 @@ export default function CommunitiesScreen() {
       {Platform.OS === 'web' ? (
         <>
           <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, filter: 'blur(50px)' } as any]} />
         </>
       ) : null}
 
@@ -191,7 +191,7 @@ export default function CommunitiesScreen() {
                 rightIcon="arrow-forward"
                 disabled={selected.length === 0}
                 onPress={handleNext}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Continue
               </Button>

@@ -120,7 +120,7 @@ export default function LocationPickerScreen() {
           </View>
         ) : indigenousLand ? (
           <View style={s.landBanner}>
-            <Ionicons name="leaf" size={20} color={CultureTokens.saffron} />
+            <Ionicons name="leaf" size={20} color={CultureTokens.gold} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={s.landTitle}>Indigenous Acknowledgment</Text>
               <Text style={s.landText}>
@@ -205,7 +205,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   landTitle: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 12,
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,

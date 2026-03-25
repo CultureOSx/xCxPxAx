@@ -192,7 +192,7 @@ export default function RestaurantDetailScreen() {
               <Text style={styles.reserveText}>Make Reservation</Text>
             </Pressable>
           ) : (
-            <Pressable style={[styles.reserveButton, { backgroundColor: CultureTokens.saffron }]} onPress={() => Alert.alert('Order', 'Opening delivery options...')}>
+            <Pressable style={[styles.reserveButton, { backgroundColor: CultureTokens.gold }]} onPress={() => Alert.alert('Order', 'Opening delivery options...')}>
               <Ionicons name="bicycle" size={18} color={colors.background} />
               <Text style={[styles.reserveText, { color: colors.background }]}>Order Delivery</Text>
             </Pressable>

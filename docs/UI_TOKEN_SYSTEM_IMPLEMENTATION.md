@@ -134,7 +134,7 @@ CulturePass uses a comprehensive **UI Token System** (see [DESIGN_TOKENS.md](./D
 
 **Core Brand Tokens** (cultural identity):
 - CultureTokens.indigo (#2C2A72) — Culture Indigo, primary brand
-- CultureTokens.saffron (#FF8C42) — Festival Saffron, warm discovery
+- CultureTokens.gold (#FF8C42) — Festival Saffron, warm discovery
 - ... (all 5 core tokens)
 
 **Functional Tokens** (category-specific):
@@ -276,7 +276,7 @@ const MyComponent = () => {
 ```typescript
 import { CultureTokens } from '@/constants/theme';
 
-<View style={{ backgroundColor: CultureTokens.saffron }} />
+<View style={{ backgroundColor: CultureTokens.gold }} />
 // Always #FF8C42, regardless of theme
 ```
 

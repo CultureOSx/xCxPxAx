@@ -16,7 +16,7 @@ interface Props {
 }
 
 const ENTRY_OPTIONS = [
-  { id: 'ticketed' as EntryType, label: 'Ticketed', sub: 'Paid or free tickets required', icon: 'ticket-outline' as const, color: CultureTokens.saffron },
+  { id: 'ticketed' as EntryType, label: 'Ticketed', sub: 'Paid or free tickets required', icon: 'ticket-outline' as const, color: CultureTokens.gold },
   { id: 'free_open' as EntryType, label: 'Free / Open Entry', sub: 'No ticket required to attend', icon: 'people-outline' as const, color: CultureTokens.teal },
 ] as const;
 

@@ -17,7 +17,7 @@ import type { Community } from '@/shared/schema';
 // Deterministic gradient derived from first char of community name
 const COVER_GRADIENTS: [string, string][] = [
   [CultureTokens.indigo, '#1B0F2E'],
-  [CultureTokens.saffron, '#6B3A0A'],
+  [CultureTokens.gold, '#6B3A0A'],
   [CultureTokens.coral, '#6B1A18'],
   [CultureTokens.teal, '#0D3B35'],
   [CultureTokens.gold, '#6B4600'],

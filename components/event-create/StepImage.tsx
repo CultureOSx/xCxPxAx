@@ -67,12 +67,12 @@ export function StepImage({ form, setField, colors, s, imageUploading, imageUplo
         >
           {imageUploading ? (
             <>
-              <ActivityIndicator size="large" color={CultureTokens.saffron} />
+              <ActivityIndicator size="large" color={CultureTokens.gold} />
               <Text style={[s.imagePickerText, { color: colors.textSecondary }]}>Uploading…</Text>
             </>
           ) : (
             <>
-              <Ionicons name="cloud-upload-outline" size={48} color={CultureTokens.saffron} />
+              <Ionicons name="cloud-upload-outline" size={48} color={CultureTokens.gold} />
               <Text style={[s.imagePickerText, { color: colors.text }]}>Tap to select an image</Text>
               <Text style={[s.imagePickerSub, { color: colors.textSecondary }]}>JPG or PNG, 16:9 recommended</Text>
             </>
@@ -88,7 +88,7 @@ export function StepImage({ form, setField, colors, s, imageUploading, imageUplo
       ) : null}
 
       <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20' }]}>
-        <Ionicons name="information-circle-outline" size={18} color={CultureTokens.saffron} />
+        <Ionicons name="information-circle-outline" size={18} color={CultureTokens.gold} />
         <Text style={[s.infoText, { color: colors.textSecondary }]}>
           You can skip this step and add an image later by editing the event.
         </Text>

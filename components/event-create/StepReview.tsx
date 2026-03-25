@@ -75,8 +75,8 @@ export function StepReview({ form, colors, s, availableCultures, publishError }:
         />
       )}
 
-      <View style={[s.infoBox, { backgroundColor: CultureTokens.saffron + '15', borderColor: CultureTokens.saffron + '40', marginTop: 8 }]}>
-        <Ionicons name="rocket-outline" size={18} color={CultureTokens.saffron} />
+      <View style={[s.infoBox, { backgroundColor: CultureTokens.gold + '15', borderColor: CultureTokens.gold + '40', marginTop: 8 }]}>
+        <Ionicons name="rocket-outline" size={18} color={CultureTokens.gold} />
         <Text style={[s.infoText, { color: colors.textSecondary }]}>
           Your event will be published immediately and appear in Discover.
         </Text>

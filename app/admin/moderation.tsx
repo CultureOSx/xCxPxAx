@@ -24,7 +24,7 @@ type ModerationTab = 'reports' | 'events';
 type ReportStatus = 'pending' | 'resolved' | 'dismissed';
 
 const TARGET_TYPE_META: Record<string, { label: string; icon: string; color: string }> = {
-  event:     { label: 'Event',     icon: 'calendar-outline',  color: CultureTokens.saffron },
+  event:     { label: 'Event',     icon: 'calendar-outline',  color: CultureTokens.gold },
   community: { label: 'Community', icon: 'people-outline',    color: CultureTokens.indigo },
   profile:   { label: 'Profile',   icon: 'person-outline',    color: CultureTokens.teal },
   post:      { label: 'Post',      icon: 'chatbubble-outline', color: '#A78BFA' },
@@ -183,12 +183,12 @@ function EventApprovalCard({ event, onApprove, index }: {
   const colors = useColors();
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 280)).springify().damping(20)}>
-      <View style={[ec.card, { backgroundColor: colors.surface, borderColor: CultureTokens.saffron + '30' }]}>
-        <View style={[ec.accent, { backgroundColor: CultureTokens.saffron }]} />
+      <View style={[ec.card, { backgroundColor: colors.surface, borderColor: CultureTokens.gold + '30' }]}>
+        <View style={[ec.accent, { backgroundColor: CultureTokens.gold }]} />
         <View style={{ flex: 1, gap: 8 }}>
           <View style={ec.header}>
-            <View style={[ec.catBadge, { backgroundColor: CultureTokens.saffron + '18', borderColor: CultureTokens.saffron + '44' }]}>
-              <Text style={[ec.catText, { color: CultureTokens.saffron }]}>{event.category ?? 'Event'}</Text>
+            <View style={[ec.catBadge, { backgroundColor: CultureTokens.gold + '18', borderColor: CultureTokens.gold + '44' }]}>
+              <Text style={[ec.catText, { color: CultureTokens.gold }]}>{event.category ?? 'Event'}</Text>
             </View>
             <View style={{ flex: 1 }} />
             {event.createdAt ? (
@@ -369,7 +369,7 @@ function ModerationContent() {
             {/* Stats */}
             <View style={s.statsRow}>
               <StatChip value={reportsQuery.data?.total ?? 0}  label="Reports"  color={CultureTokens.coral}   icon="flag-outline" />
-              <StatChip value={pendingCount}                    label="Pending"  color={CultureTokens.saffron} icon="time-outline" />
+              <StatChip value={pendingCount}                    label="Pending"  color={CultureTokens.gold} icon="time-outline" />
               <StatChip value={eventsQuery.data?.total ?? '…'} label="Events"   color={CultureTokens.teal}    icon="calendar-outline" />
             </View>
 
@@ -377,7 +377,7 @@ function ModerationContent() {
             <View style={[s.tabBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               {([
                 { key: 'reports' as ModerationTab, label: 'Flagged Content', icon: 'flag-outline', color: CultureTokens.coral },
-                { key: 'events'  as ModerationTab, label: 'Event Approvals', icon: 'calendar-outline', color: CultureTokens.saffron },
+                { key: 'events'  as ModerationTab, label: 'Event Approvals', icon: 'calendar-outline', color: CultureTokens.gold },
               ] as const).map(t => (
                 <Pressable
                   key={t.key}

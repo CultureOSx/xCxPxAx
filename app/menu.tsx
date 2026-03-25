@@ -6,13 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+import { Stack } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens, CardTokens } from '@/constants/theme';
+import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRole } from '@/hooks/useRole';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface MenuItem {
   id: string;
@@ -25,16 +27,16 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'profile', label: 'My Profile', icon: 'person-circle-outline', route: '/(tabs)/profile', requiresAuth: true },
-  { id: 'tickets', label: 'My Tickets', icon: 'ticket-outline', route: '/tickets', requiresAuth: true, color: CultureTokens.saffron },
-  { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet-outline', route: '/payment/wallet', requiresAuth: true, color: CultureTokens.gold },
+  { id: 'profile', label: 'My Identity', icon: 'person-circle-outline', route: '/(tabs)/profile', requiresAuth: true },
+  { id: 'tickets', label: 'Festival Tickets', icon: 'ticket-outline', route: '/tickets', requiresAuth: true, color: CultureTokens.gold },
+  { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet-outline', route: '/payment/wallet', requiresAuth: true, color: CultureTokens.teal },
   { id: 'saved', label: 'Saved & Pinned', icon: 'bookmark-outline', route: '/saved', requiresAuth: true },
-  { id: 'submit', label: 'Create & Publish', icon: 'add-circle-outline', route: '/submit', requiresAuth: true, color: CultureTokens.coral },
-  { id: 'scanner', label: 'QR Door Scanner', icon: 'qr-code-outline', route: '/scanner', requiresAuth: true, color: CultureTokens.indigo },
+  { id: 'submit', label: 'Creator Studio', icon: 'add-circle-outline', route: '/submit', requiresAuth: true, color: CultureTokens.coral },
+  { id: 'scanner', label: 'Gate Scan (Staff)', icon: 'qr-code-outline', route: '/scanner', requiresAuth: true, color: CultureTokens.indigo },
   { id: 'communities', label: 'Directory', icon: 'grid-outline', route: '/(tabs)/directory' },
   { id: 'help', label: 'Support & Help', icon: 'help-circle-outline', route: '/help' },
   { id: 'settings', label: 'App Settings', icon: 'settings-outline', route: '/settings' },
-  { id: 'admin', label: 'Admin Dashboard', icon: 'shield-checkmark-outline', route: '/admin/dashboard', requiresAdmin: true, color: CultureTokens.error },
+  { id: 'admin', label: 'Admin Terminal', icon: 'shield-checkmark-outline', route: '/admin/dashboard', requiresAdmin: true, color: CultureTokens.error },
 ];
 
 export default function MenuScreen() {
@@ -72,13 +74,28 @@ export default function MenuScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <View style={[styles.header, { borderBottomColor: colors.borderLight }]}>
-          <Pressable onPress={() => { haptic(); router.back(); }} style={styles.closeBtn}>
-            <Ionicons name="close" size={28} color={colors.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Menu</Text>
-          <View style={{ width: 44 }} />
+      <Stack.Screen 
+        options={{ 
+          title: 'Menu | CulturePass',
+          headerShown: false,
+        }} 
+      />
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={[colors.background, colors.surface]}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+
+        <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderLight }]}>
+          <View style={styles.headerInner}>
+            <Pressable onPress={() => { haptic(); router.back(); }} style={styles.closeBtn}>
+              <Ionicons name="close-circle-outline" size={28} color={colors.text} />
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Menu</Text>
+            <View style={{ width: 44 }} />
+          </View>
         </View>
 
         <ScrollView
@@ -167,12 +184,14 @@ export default function MenuScreen() {
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   root: { flex: 1 },
   header: {
-    height: 56,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerInner: {
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: { ...TextStyles.title2 },
   closeBtn: {

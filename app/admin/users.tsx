@@ -46,7 +46,7 @@ type AdminUser = {
 const ROLE_META: Record<UserRole, { label: string; description: string; color: string; icon: string }> = {
   user:          { label: 'User',           description: 'Standard member',              color: '#8E8E93',              icon: 'person-outline' },
   organizer:     { label: 'Organizer',      description: 'Creates & manages events',     color: CultureTokens.indigo,   icon: 'calendar-outline' },
-  business:      { label: 'Business',       description: 'Business listing owner',       color: CultureTokens.saffron,  icon: 'briefcase-outline' },
+  business:      { label: 'Business',       description: 'Business listing owner',       color: CultureTokens.gold,  icon: 'briefcase-outline' },
   sponsor:       { label: 'Sponsor',        description: 'Community sponsor',            color: CultureTokens.gold,     icon: 'ribbon-outline' },
   cityAdmin:     { label: 'City Admin',     description: 'Manages a city region',        color: CultureTokens.teal,     icon: 'location-outline' },
   moderator:     { label: 'Moderator',      description: 'Reviews content & reports',    color: '#5AC8FA',              icon: 'shield-outline' },

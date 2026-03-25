@@ -166,7 +166,7 @@ export default function CheckoutPage() {
           <View style={styles.footer}>
             <View style={styles.row}>
               <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-              <Text style={[styles.totalValue, { color: CultureTokens.saffron }]}>
+              <Text style={[styles.totalValue, { color: CultureTokens.gold }]}>
                 {totalPriceCents === 0 ? 'Free' : `$${(totalPriceCents / 100).toFixed(2)}`}
               </Text>
             </View>

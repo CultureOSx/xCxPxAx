@@ -53,10 +53,10 @@ export function WebTopBar() {
         </Pressable>
         <Pressable style={styles.logoBlock} onPress={() => router.push('/(tabs)')} accessibilityLabel="Home">
           <LinearGradient
-            colors={[CultureTokens.indigo, CultureTokens.saffron]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={[CultureTokens.indigo, CultureTokens.coral]}
             style={styles.logoBg}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
           >
             <Ionicons name="globe-outline" size={22} color="#fff" />
           </LinearGradient>
@@ -114,7 +114,7 @@ export function WebTopBar() {
             router.push('/notifications');
           }}
         >
-          <Ionicons name="notifications-outline" size={20} color={CultureTokens.saffron} />
+          <Ionicons name="notifications-outline" size={20} color={CultureTokens.indigo} />
         </Pressable>
         <Pressable
           style={styles.iconBtn}
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   tagLine: {
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
     letterSpacing: 0.7,

@@ -23,6 +23,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { SymbolView } from 'expo-symbols';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -43,30 +44,40 @@ const TABS = [
     label: 'Discover',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
+    sfSymbol: 'safari' as const,
+    sfSymbolActive: 'safari.fill' as const,
   },
   {
     name: 'feed',
     label: 'Feed',
     icon: 'newspaper-outline' as const,
     iconActive: 'newspaper' as const,
+    sfSymbol: 'newspaper' as const,
+    sfSymbolActive: 'newspaper.fill' as const,
   },
   {
     name: 'community',
     label: 'Community',
     icon: 'people-circle-outline' as const,
     iconActive: 'people-circle' as const,
+    sfSymbol: 'person.2.circle' as const,
+    sfSymbolActive: 'person.2.circle.fill' as const,
   },
   {
     name: 'calendar',
     label: 'Calendar',
     icon: 'calendar-outline' as const,
     iconActive: 'calendar' as const,
+    sfSymbol: 'calendar' as const,
+    sfSymbolActive: 'calendar' as const,
   },
   {
     name: 'profile',
     label: 'Profile',
     icon: 'person-circle-outline' as const,
     iconActive: 'person-circle' as const,
+    sfSymbol: 'person.crop.circle' as const,
+    sfSymbolActive: 'person.crop.circle.fill' as const,
   },
 ] as const;
 
@@ -164,6 +175,15 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDa
               )}
               {badgeCount ? <Badge count={badgeCount} /> : null}
             </View>
+          ) : Platform.OS === 'ios' ? (
+            <SymbolView
+              name={(isActive ? tab.sfSymbolActive : tab.sfSymbol) as any}
+              size={22}
+              tintColor={iconColor}
+              fallback={
+                <Ionicons name={isActive ? tab.iconActive : tab.icon} size={22} color={iconColor} />
+              }
+            />
           ) : (
             <Ionicons name={isActive ? tab.iconActive : tab.icon} size={22} color={iconColor} />
           )}
@@ -288,7 +308,9 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           bar.pill,
           {
             borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-            shadowColor: isDark ? '#000' : CultureTokens.indigo,
+            boxShadow: isDark 
+              ? '0px 6px 20px rgba(0,0,0,0.6)' 
+              : '0px 6px 20px rgba(44,42,114,0.18)',
           },
         ]}
       >
@@ -370,9 +392,6 @@ const bar = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'visible',
     paddingHorizontal: 8,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
     elevation: 14,
   },
   topLine: {

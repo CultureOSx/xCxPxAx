@@ -1148,6 +1148,27 @@ const cities = {
 };
 
 // ---------------------------------------------------------------------------
+// Social (Following / Saving contacts)
+// ---------------------------------------------------------------------------
+const social = {
+  follow: (targetType: 'user' | 'profile' | 'community', targetId: string) =>
+    request<{ ok: boolean }>('POST', `api/social/follow/${targetType}/${targetId}`),
+
+  unfollow: (targetType: 'user' | 'profile' | 'community', targetId: string) =>
+    request<{ ok: boolean }>('DELETE', `api/social/follow/${targetType}/${targetId}`),
+
+  /** Check if the current user is following the target */
+  isFollowing: async (targetType: 'user' | 'profile' | 'community', targetId: string) => {
+    try {
+      const res = await request<{ following: boolean }>('GET', `api/social/is-following/${targetType}/${targetId}`);
+      return res.following;
+    } catch {
+      return false;
+    }
+  },
+};
+
+// ---------------------------------------------------------------------------
 // CulturePass ID lookup
 // ---------------------------------------------------------------------------
 const cpid = {
@@ -1184,6 +1205,7 @@ export const api = {
   locations,
   cities,
   cpid,
+  social,
   admin,
   culture,
   widgets,

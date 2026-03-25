@@ -38,7 +38,7 @@ const CultureSpotlightLayout = (props: CultureSpotlightWidgetProps) => {
       <Text modifiers={[font({ size: 12 }), lineLimit(1), foregroundColor('white')]}>
         {props.subtitle ?? 'Featured cultural event'}
       </Text>
-      <Text modifiers={[font({ size: 11 }), lineLimit(1), foregroundColor(CultureTokens.saffron)]}>
+      <Text modifiers={[font({ size: 11 }), lineLimit(1), foregroundColor(CultureTokens.gold)]}>
         {[props.city, props.startsAt].filter(Boolean).join(' • ')}
       </Text>
     </VStack>

@@ -14,7 +14,7 @@ import { useColors } from '@/hooks/useColors';
 
 const activityCategories: CategoryFilter[] = [
   { label: 'All', icon: 'compass', color: CultureTokens.indigo },
-  { label: 'Theme Parks', icon: 'happy', color: CultureTokens.saffron },
+  { label: 'Theme Parks', icon: 'happy', color: CultureTokens.gold },
   { label: 'Gaming', icon: 'game-controller', color: CultureTokens.community },
   { label: 'Workshops', icon: 'construct', color: CultureTokens.gold },
   { label: 'Nature', icon: 'leaf', color: CultureTokens.teal },
@@ -217,7 +217,7 @@ export default function ActivitiesScreen() {
       <BrowsePage
         title="Activities"
         tagline="Experiences & More"
-        accentColor={CultureTokens.saffron}
+        accentColor={CultureTokens.gold}
         accentIcon="fitness"
         categories={activityCategories}
         categoryKey="category"

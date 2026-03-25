@@ -8,7 +8,7 @@ import { CultureTokens } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const NOTIFICATION_SETTINGS = [
-  { key: 'eventReminders',   title: 'Event Reminders',    description: "Upcoming events you're interested in or have tickets for",          icon: 'calendar-outline' as const, color: CultureTokens.saffron },
+  { key: 'eventReminders',   title: 'Event Reminders',    description: "Upcoming events you're interested in or have tickets for",          icon: 'calendar-outline' as const, color: CultureTokens.gold },
   { key: 'communityUpdates', title: 'Community Updates',  description: 'New posts, events, and announcements from your communities',        icon: 'people-outline'   as const, color: CultureTokens.teal },
   { key: 'perkAlerts',       title: 'Perk Alerts',        description: 'New perks, discounts, and exclusive offers',                        icon: 'gift-outline'     as const, color: CultureTokens.gold },
   { key: 'marketingEmails',  title: 'Marketing Emails',   description: 'Newsletters, promotions, and personalised recommendations by email', icon: 'mail-outline'     as const, color: CultureTokens.coral },

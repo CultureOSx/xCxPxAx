@@ -14,7 +14,7 @@ import { goBackOrReplace } from '@/lib/navigation';
 const PRIVACY_SETTINGS = [
   { key: 'profileVisibility', title: 'Profile Visibility', description: 'Your profile is public and visible to all users. Disable to make it private.',              icon: 'eye-outline'       as const, color: CultureTokens.teal },
   { key: 'dataSharing',       title: 'Data Sharing',       description: 'Allow CulturePass to use anonymised usage data to improve the platform.',                  icon: 'analytics-outline' as const, color: CultureTokens.indigo },
-  { key: 'activityStatus',    title: 'Activity Status',    description: 'Show other users when you are online or recently active.',                                  icon: 'pulse-outline'     as const, color: CultureTokens.saffron },
+  { key: 'activityStatus',    title: 'Activity Status',    description: 'Show other users when you are online or recently active.',                                  icon: 'pulse-outline'     as const, color: CultureTokens.gold },
   { key: 'showLocation',      title: 'Show Location',      description: 'Display your city and country on your public profile.',                                    icon: 'location-outline'  as const, color: CultureTokens.coral },
 ];
 

@@ -52,8 +52,8 @@ export function WidgetNearbyEventsCard({ events }: WidgetNearbyEventsCardProps) 
                   {event.venue ? ` • ${event.venue}` : ''}
                 </Text>
               </View>
-              <View style={[styles.priceBadge, { backgroundColor: event.isFree ? CultureTokens.teal + '15' : CultureTokens.saffron + '15' }]}>
-                <Text style={[styles.price, { color: event.isFree ? CultureTokens.teal : CultureTokens.saffron }]}>
+              <View style={[styles.priceBadge, { backgroundColor: event.isFree ? CultureTokens.teal + '15' : CultureTokens.gold + '15' }]}>
+                <Text style={[styles.price, { color: event.isFree ? CultureTokens.teal : CultureTokens.gold }]}>
                   {event.isFree ? 'Free' : `$${Math.round((event.priceCents ?? 0) / 100)}`}
                 </Text>
               </View>

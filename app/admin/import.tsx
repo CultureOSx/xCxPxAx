@@ -37,7 +37,7 @@ const PRESETS = [
     city: 'Sydney',
     country: 'Australia',
     icon: 'musical-notes-outline',
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     description: 'Music & cultural events from What\'s On Sydney',
   },
   {
@@ -434,7 +434,7 @@ function ImportContent() {
               {[
                 { icon: 'git-branch-outline', color: CultureTokens.teal,    title: 'Drupal JSON:API', desc: 'City of Sydney, NSW Government portals — auto-detected' },
                 { icon: 'code-slash-outline', color: CultureTokens.indigo,  title: 'JSON-LD (schema.org)', desc: 'Structured event data embedded in HTML pages' },
-                { icon: 'globe-outline',       color: CultureTokens.saffron, title: 'Generic HTML Scraping', desc: 'Extracts events from common event listing page patterns' },
+                { icon: 'globe-outline',       color: CultureTokens.gold, title: 'Generic HTML Scraping', desc: 'Extracts events from common event listing page patterns' },
                 { icon: 'document-text-outline', color: '#A78BFA',           title: 'Raw JSON', desc: 'Paste or upload JSON arrays using schema.org Event format' },
               ].map((fmt, i, arr) => (
                 <View key={fmt.title}>

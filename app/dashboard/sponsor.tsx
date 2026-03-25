@@ -255,7 +255,7 @@ function SponsorDashboardContent() {
               <MetricCard icon="megaphone"      value={totalReach}   label="Total Reach"     accent={CultureTokens.indigo} />
               <MetricCard icon="ticket"         value={totalTickets} label="Tickets Sold"    accent={CultureTokens.teal} />
               <MetricCard icon="cash"           value={`$${(totalRevenue / 100).toFixed(0)}`} label="Revenue"  accent={CultureTokens.gold} />
-              <MetricCard icon="trending-up"    value={avgAttendance} label="Avg Attendance" accent={CultureTokens.saffron} />
+              <MetricCard icon="trending-up"    value={avgAttendance} label="Avg Attendance" accent={CultureTokens.gold} />
               <MetricCard icon="calendar"       value={events.length} label="Events Backed"  accent={CultureTokens.coral} />
               <MetricCard icon="flash"          value={upcoming.length} label="Upcoming"    accent='#A78BFA' />
             </View>

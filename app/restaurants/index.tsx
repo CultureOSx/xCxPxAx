@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 
 const restaurantCuisines: CategoryFilter[] = [
   { label: 'All', icon: 'restaurant', color: CultureTokens.indigo },
-  { label: 'South Indian', icon: 'flame', color: CultureTokens.saffron },
+  { label: 'South Indian', icon: 'flame', color: CultureTokens.gold },
   { label: 'North Indian', icon: 'star', color: CultureTokens.gold },
   { label: 'Sri Lankan', icon: 'leaf', color: CultureTokens.indigo },
   { label: 'Street Food', icon: 'fast-food', color: CultureTokens.teal },
@@ -114,7 +114,7 @@ export default function RestaurantsScreen() {
   return (
     <BrowsePage
       title="Restaurants"
-      accentColor={CultureTokens.saffron}
+      accentColor={CultureTokens.gold}
       accentIcon="restaurant"
       categories={restaurantCuisines}
       categoryKey="cuisine"

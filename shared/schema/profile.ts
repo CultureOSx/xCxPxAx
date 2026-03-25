@@ -10,7 +10,7 @@ export interface Profile {
   handleStatus?: 'pending' | 'approved' | 'rejected';
   title?: string;
   type?: EntityType;
-  entityType: 'community' | 'business' | 'venue' | 'artist' | 'organizer' | 'restaurant' | 'brand';
+  entityType: 'community' | 'business' | 'venue' | 'artist' | 'organizer' | 'restaurant' | 'brand' | 'creator';
   description?: string;
   imageUrl?: string;
   coverImageUrl?: string;

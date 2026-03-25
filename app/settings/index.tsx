@@ -1,4 +1,5 @@
-import { useColors } from '@/hooks/useColors';
+import React, { useMemo } from 'react';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,7 +27,8 @@ interface SettingSection { title: string; items: SettingItem[] }
 
 export default function AccountSettingsScreen() {
   const colors = useColors();
-  const s = getStyles(colors);
+  const isDark = useIsDark();
+  const s = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const insets  = useSafeAreaInsets();
   const webTop  = 0;
   const { width } = useWindowDimensions();
@@ -78,7 +80,7 @@ export default function AccountSettingsScreen() {
       title: 'Account',
       items: [
         { icon: 'person-outline',        label: 'Edit Profile',         sub: 'Name, bio, photo, social links',   color: CultureTokens.indigo,   route: '/profile/edit' },
-        { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.saffron, route: '/settings/privacy' },
+        { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.gold, route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,    route: '/settings/notifications' },
         { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: CultureTokens.teal,   route: '/settings/location' },
       ],
@@ -95,7 +97,7 @@ export default function AccountSettingsScreen() {
     {
       title: 'My Content',
       items: [
-        { icon: 'ticket-outline',   label: 'My Tickets',       sub: 'Upcoming and past events',     color: CultureTokens.saffron, route: '/tickets' },
+        { icon: 'ticket-outline',   label: 'My Tickets',       sub: 'Upcoming and past events',     color: CultureTokens.gold, route: '/tickets' },
         { icon: 'bookmark-outline', label: 'Saved Items',      sub: 'Events, perks, businesses',    color: CultureTokens.coral,    route: '/saved' },
         { icon: 'people-outline',   label: 'My Communities',   sub: "Groups you've joined",         color: CultureTokens.teal,   route: '/(tabs)/community' },
       ],
@@ -104,7 +106,7 @@ export default function AccountSettingsScreen() {
       title: 'Organizer Tools',
       items: [
         { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',   color: CultureTokens.indigo,   route: '/dashboard/organizer' },
-        { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',    color: CultureTokens.saffron, route: '/scanner' },
+        { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',    color: CultureTokens.gold, route: '/scanner' },
         { icon: 'add-circle-outline', label: 'Submit Content',      sub: 'Events, businesses, listings',     color: CultureTokens.coral,    route: '/submit' },
         ...(canTargetCampaigns ? [{ icon: 'megaphone-outline', label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: CultureTokens.gold, route: '/admin/notifications' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'document-text-outline', label: 'Campaign Audit Logs', sub: 'Review admin send history', color: CultureTokens.warning, route: '/admin/audit-logs' }] : []),
@@ -130,7 +132,7 @@ export default function AccountSettingsScreen() {
       title: 'Legal',
       items: [
         { icon: 'shield-checkmark-outline', label: 'Privacy Policy',       color: CultureTokens.gold,      route: '/legal/privacy' },
-        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.saffron, route: '/legal/terms' },
+        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.gold, route: '/legal/terms' },
         { icon: 'finger-print-outline',     label: 'Cookie Policy',        color: CultureTokens.coral,    route: '/legal/cookies' },
         { icon: 'people-circle-outline',    label: 'Community Guidelines', color: CultureTokens.teal,   route: '/legal/guidelines' },
       ],
@@ -157,7 +159,7 @@ export default function AccountSettingsScreen() {
       title: 'Legal',
       items: [
         { icon: 'shield-checkmark-outline', label: 'Privacy Policy',       color: CultureTokens.gold,      route: '/legal/privacy' },
-        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.saffron, route: '/legal/terms' },
+        { icon: 'document-text-outline',    label: 'Terms of Service',     color: CultureTokens.gold, route: '/legal/terms' },
         { icon: 'finger-print-outline',     label: 'Cookie Policy',        color: CultureTokens.coral,    route: '/legal/cookies' },
         { icon: 'people-circle-outline',    label: 'Community Guidelines', color: CultureTokens.teal,   route: '/legal/guidelines' },
       ],
@@ -309,13 +311,18 @@ export default function AccountSettingsScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
 
-  profileCard:  { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 20, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  profileCard:  { 
+    marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, 
+    borderRadius: 20, padding: 20, overflow: 'hidden', backgroundColor: colors.surface, 
+    borderWidth: 1, borderColor: colors.borderLight,
+    boxShadow: isDark ? '0px 4px 12px rgba(0,0,0,0.3)' : '0px 4px 12px rgba(0,0,0,0.04)'
+  },
   profileRow:   { flexDirection: 'row', alignItems: 'center', gap: LayoutRules.iconTextGap },
   avatarWrap:   { position: 'relative' },
   avatar:       { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: colors.borderLight },
@@ -331,7 +338,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
   locationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
 
-  guestCard:    { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 24, padding: 24, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: colors.borderLight },
+  guestCard:    { 
+    marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, 
+    borderRadius: 24, padding: 24, alignItems: 'center', backgroundColor: colors.surface, 
+    borderWidth: 1, borderStyle: 'dashed' as const, borderColor: colors.borderLight,
+    boxShadow: isDark ? '0px 8px 24px rgba(0,0,0,0.3)' : '0px 8px 24px rgba(0,0,0,0.05)'
+  },
   guestTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center', color: colors.text },
   guestSub:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, marginBottom: 24, color: colors.textSecondary },
   guestSignInBtn:{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center', paddingVertical: 13, borderRadius: 14, width: '100%', marginBottom: 12, backgroundColor: CultureTokens.indigo },
@@ -349,8 +361,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     overflow: 'hidden', 
     backgroundColor: colors.surface, 
     borderColor: colors.borderLight,
-    elevation: 3,
-    ...Platform.select({ web: { boxShadow: '0px 4px 10px rgba(0,0,0,0.1)' }, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 } }),
+    boxShadow: isDark ? '0px 4px 15px rgba(0,0,0,0.4)' : '0px 4px 15px rgba(0,0,0,0.06)'
   },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

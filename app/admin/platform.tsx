@@ -21,7 +21,7 @@ type RolloutPhase = typeof ROLLOUT_PHASES[number];
 
 const PHASE_META: Record<RolloutPhase, { label: string; color: string; description: string }> = {
   internal: { label: 'Internal',  color: CultureTokens.coral,   description: 'Team members only' },
-  pilot:    { label: 'Pilot',     color: CultureTokens.saffron, description: '~10% of users' },
+  pilot:    { label: 'Pilot',     color: CultureTokens.gold, description: '~10% of users' },
   half:     { label: 'Half',      color: CultureTokens.teal,    description: '~50% of users' },
   full:     { label: 'Full',      color: '#22C55E',              description: 'All users' },
 };
@@ -275,7 +275,7 @@ function PlatformContent() {
             <View style={s.section}>
               <SectionHeader label="API Keys & Webhooks" sub="Managed via environment variables" />
               {([
-                { label: 'Firebase API Key',     icon: 'flame-outline',         note: 'EXPO_PUBLIC_FIREBASE_API_KEY',    color: CultureTokens.saffron },
+                { label: 'Firebase API Key',     icon: 'flame-outline',         note: 'EXPO_PUBLIC_FIREBASE_API_KEY',    color: CultureTokens.gold },
                 { label: 'Google Maps Key',      icon: 'map-outline',           note: 'EXPO_PUBLIC_GOOGLE_MAPS_KEY',    color: '#4285F4' },
                 { label: 'Stripe Secret',        icon: 'card-outline',          note: 'STRIPE_SECRET_KEY (server only)', color: CultureTokens.teal },
                 { label: 'Stripe Webhook',       icon: 'link-outline',          note: 'STRIPE_WEBHOOK_SECRET',          color: CultureTokens.gold },
@@ -310,7 +310,7 @@ function PlatformContent() {
               <SectionHeader label="Platform Settings" />
               {([
                 { label: 'Rate limit (global)',    value: '90 req/min',   icon: 'speedometer-outline',    color: CultureTokens.teal },
-                { label: 'Rate limit (notifs)',    value: '12 req/min',   icon: 'megaphone-outline',      color: CultureTokens.saffron },
+                { label: 'Rate limit (notifs)',    value: '12 req/min',   icon: 'megaphone-outline',      color: CultureTokens.gold },
                 { label: 'Cache TTL',              value: '60 seconds',   icon: 'time-outline',           color: CultureTokens.indigo },
                 { label: 'Import sample size',     value: '500 tickets',  icon: 'layers-outline',         color: CultureTokens.gold },
                 { label: 'Max pagination limit',   value: '100 records',  icon: 'list-outline',           color: '#A78BFA' },
@@ -343,7 +343,7 @@ function PlatformContent() {
                   { service: 'Firebase Auth',     status: 'Operational', color: '#22C55E', icon: 'shield-checkmark-outline' },
                   { service: 'Firebase Storage',  status: 'Operational', color: '#22C55E', icon: 'archive-outline' },
                   { service: 'Stripe',            status: 'Operational', color: '#22C55E', icon: 'card-outline' },
-                  { service: 'Sentry',            status: 'Monitoring',  color: CultureTokens.saffron, icon: 'bug-outline' },
+                  { service: 'Sentry',            status: 'Monitoring',  color: CultureTokens.gold, icon: 'bug-outline' },
                 ]).map((item, i) => (
                   <Animated.View key={item.service} entering={FadeInDown.delay(i * 30).duration(250)}>
                     <View style={[s.healthRow, { borderBottomColor: colors.borderLight }]}>

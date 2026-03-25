@@ -97,8 +97,8 @@ function EventRow({ event }: { event: VenueEvent }) {
         )}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 4 }}>
-        <View style={[er.badge, { backgroundColor: event.status === 'published' ? CultureTokens.teal + '20' : CultureTokens.saffron + '20' }]}>
-          <Text style={[er.badgeText, { color: event.status === 'published' ? CultureTokens.teal : CultureTokens.saffron }]}>
+        <View style={[er.badge, { backgroundColor: event.status === 'published' ? CultureTokens.teal + '20' : CultureTokens.gold + '20' }]}>
+          <Text style={[er.badgeText, { color: event.status === 'published' ? CultureTokens.teal : CultureTokens.gold }]}>
             {event.status === 'published' ? 'Live' : 'Draft'}
           </Text>
         </View>
@@ -221,7 +221,7 @@ function VenueDashboardContent() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <StatPill icon="calendar"    value={events.length}        label="Total Events"   accent={CultureTokens.indigo} />
               <StatPill icon="people"      value={totalAttending}       label="Attendees"      accent={CultureTokens.teal} />
-              <StatPill icon="ticket"      value={totalTicketsSold}     label="Tickets Sold"   accent={CultureTokens.saffron} />
+              <StatPill icon="ticket"      value={totalTicketsSold}     label="Tickets Sold"   accent={CultureTokens.gold} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
               <StatPill icon="cash"        value={`$${(totalRevenue / 100).toFixed(0)}`} label="Revenue"   accent={CultureTokens.gold} />
@@ -237,7 +237,7 @@ function VenueDashboardContent() {
               {[
                 { icon: 'add-circle-outline', label: 'New Event', color: CultureTokens.indigo,  route: '/submit' },
                 { icon: 'qr-code-outline',    label: 'Scanner',   color: CultureTokens.teal,    route: '/scanner' },
-                { icon: 'analytics-outline',  label: 'Organizer', color: CultureTokens.saffron, route: '/dashboard/organizer' },
+                { icon: 'analytics-outline',  label: 'Organizer', color: CultureTokens.gold, route: '/dashboard/organizer' },
               ].map(a => (
                 <Pressable
                   key={a.label}

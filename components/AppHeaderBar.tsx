@@ -44,7 +44,7 @@ export function AppHeaderBar({
 
   return (
     <LinearGradient
-      colors={gradients.culturepassBrand as [string, string, string]}
+      colors={gradients.culturepassBrand as [string, string]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.gradient, { paddingTop: topInset ?? 10 }]}

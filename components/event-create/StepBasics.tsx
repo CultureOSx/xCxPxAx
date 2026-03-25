@@ -59,8 +59,8 @@ export function StepBasics({ form, setField, colors, s, stepError, haptic }: Pro
                 style={({ pressed }) => [
                   s.typeChip,
                   {
-                    borderColor: isSelected ? CultureTokens.saffron : colors.border,
-                    backgroundColor: isSelected ? CultureTokens.saffron + '15' : colors.surfaceElevated,
+                    borderColor: isSelected ? CultureTokens.gold : colors.border,
+                    backgroundColor: isSelected ? CultureTokens.gold + '15' : colors.surfaceElevated,
                   },
                   pressed && { opacity: 0.8 },
                 ]}
@@ -70,7 +70,7 @@ export function StepBasics({ form, setField, colors, s, stepError, haptic }: Pro
                 accessibilityState={{ selected: isSelected }}
               >
                 <Text style={s.typeEmoji}>{emoji}</Text>
-                <Text style={[TextStyles.labelSemibold, { color: isSelected ? CultureTokens.saffron : colors.text }]}>{label}</Text>
+                <Text style={[TextStyles.labelSemibold, { color: isSelected ? CultureTokens.gold : colors.text }]}>{label}</Text>
               </Pressable>
             );
           })}

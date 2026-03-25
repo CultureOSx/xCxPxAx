@@ -107,7 +107,7 @@ export default function ScannerScreen() {
     free:    { label: 'Free',    color: colors.textSecondary, icon: 'shield-outline' },
     plus:    { label: 'Plus',    color: CultureTokens.indigo,     icon: 'star' },
     premium: { label: 'Premium', color: CultureTokens.gold,       icon: 'diamond' },
-    vip:     { label: 'VIP',     color: CultureTokens.saffron,    icon: 'diamond' },
+    vip:     { label: 'VIP',     color: CultureTokens.gold,    icon: 'diamond' },
   }), [colors.textSecondary]);
 
   useEffect(() => {
@@ -316,7 +316,7 @@ export default function ScannerScreen() {
 
   const hintItems = useMemo(() => [
     { icon: 'finger-print',          color: CultureTokens.indigo,  label: 'CulturePass ID',  example: 'CP-123456' },
-    { icon: 'code-slash',             color: CultureTokens.saffron, label: 'JSON QR Data',    example: '{"type":"culturepass_id","cpid":"CP-..."}' },
+    { icon: 'code-slash',             color: CultureTokens.gold, label: 'JSON QR Data',    example: '{"type":"culturepass_id","cpid":"CP-..."}' },
     { icon: 'document-text-outline',  color: CultureTokens.coral,   label: 'vCard Data',      example: 'BEGIN:VCARD...' },
   ], []);
 
@@ -434,7 +434,7 @@ export default function ScannerScreen() {
               <View style={s.scanInputSection}>
                 <Pressable style={s.camScanBtn} onPress={startTicketCamera}>
                   <LinearGradient
-                    colors={[CultureTokens.indigo, CultureTokens.saffron]}
+                    colors={[CultureTokens.indigo, CultureTokens.gold]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={s.camScanGradient}
@@ -688,9 +688,9 @@ export default function ScannerScreen() {
                     <Ionicons
                       name={contactAlreadySaved ? 'checkmark-circle' : 'bookmark-outline'}
                       size={18}
-                      color={contactAlreadySaved ? CultureTokens.success : CultureTokens.saffron}
+                      color={contactAlreadySaved ? CultureTokens.success : CultureTokens.gold}
                     />
-                    <Text style={[s.cpActionText, { color: contactAlreadySaved ? CultureTokens.success : CultureTokens.saffron }]}>
+                    <Text style={[s.cpActionText, { color: contactAlreadySaved ? CultureTokens.success : CultureTokens.gold }]}>
                       {contactAlreadySaved ? 'Saved' : 'Save Contact'}
                     </Text>
                   </Pressable>

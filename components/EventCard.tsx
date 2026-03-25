@@ -93,7 +93,7 @@ function EventCardInner({ event, isLive }: EventCardProps) {
             {event.title}
           </Text>
           <View style={styles.dateRow}>
-            <Ionicons name="calendar-outline" size={12} color={CultureTokens.indigo} />
+            <Ionicons name="calendar-outline" size={12} color={CultureTokens.gold} />
             <Text style={styles.date}>{formatEventDateTime(event.date, event.time)}</Text>
           </View>
 
@@ -112,10 +112,10 @@ function EventCardInner({ event, isLive }: EventCardProps) {
                 <View
                   style={[
                     styles.categoryPill,
-                    { backgroundColor: CultureTokens.saffron + '15', borderColor: CultureTokens.saffron + '30' },
+                    { backgroundColor: CultureTokens.gold + '15', borderColor: CultureTokens.gold + '30' },
                   ]}
                 >
-                  <Text style={[styles.categoryText, { color: CultureTokens.saffron }]}>
+                  <Text style={[styles.categoryText, { color: CultureTokens.gold }]}>
                     {event.category}
                   </Text>
                 </View>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   date: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 13,
-    color: CultureTokens.indigo,
+    color: CultureTokens.gold,
     flexShrink: 1,
   },
   meta: {

@@ -71,7 +71,7 @@ function createPlaylistDraft(): HeritagePlaylistEntry {
     culture: '',
     imageUrl: '',
     typeLabel: 'Music',
-    accentColor: CultureTokens.saffron,
+    accentColor: CultureTokens.gold,
     focus: 'heritage',
     active: true,
     matchKeys: [],
@@ -605,7 +605,7 @@ function DiscoverAdminContent() {
                       label="Live Badge"
                       active={selectedPlaylist.isLive === true}
                       onPress={() => updatePlaylist('isLive', !(selectedPlaylist.isLive === true))}
-                      accent={CultureTokens.saffron}
+                      accent={CultureTokens.gold}
                     />
                   </View>
                 </View>

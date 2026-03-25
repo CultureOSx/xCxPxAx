@@ -385,7 +385,7 @@ ALGOLIA_ADMIN_KEY=
 import { CultureTokens } from '@/constants/theme';
 
 CultureTokens.indigo   // #2C2A72 — Culture Indigo (primary brand CTA)
-CultureTokens.saffron  // #FF8C42 — Festival Saffron (warm discovery)
+CultureTokens.gold  // #FFC857 — Temple Gold (warm discovery)
 CultureTokens.coral    // #FF5E5B — Movement Coral (action energy)
 CultureTokens.gold     // #FFC857 — Temple Gold (cultural premium)
 CultureTokens.teal     // #2EC4B6 — Ocean Teal (global belonging)

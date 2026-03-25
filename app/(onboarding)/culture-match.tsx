@@ -186,8 +186,9 @@ export default function CultureMatchScreen() {
 
       {Platform.OS === 'web' && (
         <>
-          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4, transform: [{ scale: 1.5 }] } as any]} />
+          <View style={[styles.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.gold, opacity: 0.25, transform: [{ scale: 1.2 }] } as any]} />
+          <View style={[styles.orb, { top: '30%', left: '10%', backgroundColor: CultureTokens.teal, opacity: 0.15, transform: [{ scale: 0.8 }] } as any]} />
         </>
       )}
 
@@ -214,11 +215,15 @@ export default function CultureMatchScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop, !isDesktop && { paddingTop: 20 }]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: 32 }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <BlurView 
+                intensity={isDesktop ? 80 : 60} 
+                tint="dark" 
+                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} 
+              />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(20,20,35,0.85)', borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} />
             )}
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
@@ -226,7 +231,23 @@ export default function CultureMatchScreen() {
               {/* Step indicator dots */}
               <View style={styles.dotRow}>
                 {(['nationality', 'culture', 'language'] as Step[]).map((s, i) => (
-                  <View key={s} style={[styles.dot, i === stepIndex && styles.dotActive]} />
+                  <View 
+                    key={s} 
+                    style={[
+                      styles.dot, 
+                      i === stepIndex && styles.dotActive,
+                      i < stepIndex && { backgroundColor: CultureTokens.gold + '80' }
+                    ]} 
+                  >
+                    {i === stepIndex && (
+                      <LinearGradient
+                        colors={[CultureTokens.gold, '#FFD700']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
+                  </View>
                 ))}
               </View>
 
@@ -260,7 +281,7 @@ export default function CultureMatchScreen() {
                           key={nat.id}
                           style={({ pressed }) => [
                             styles.natChip,
-                            { borderColor: isSelected ? CultureTokens.saffron : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.saffron}33` : colors.overlay },
+                            { borderColor: isSelected ? CultureTokens.gold : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.gold}33` : colors.overlay },
                             pressed && { opacity: 0.75 },
                           ]}
                           onPress={() => pickNationality(nat)}
@@ -270,7 +291,7 @@ export default function CultureMatchScreen() {
                         >
                           <Text style={styles.natEmoji}>{nat.emoji}</Text>
                           <Text style={[styles.natLabel, { color: colors.textInverse }]} numberOfLines={1}>{nat.label}</Text>
-                          {isSelected && <Ionicons name="checkmark-circle" size={14} color={CultureTokens.saffron} style={styles.natCheck} />}
+                          {isSelected && <Ionicons name="checkmark-circle" size={14} color={CultureTokens.gold} style={styles.natCheck} />}
                         </Pressable>
                       );
                     })}
@@ -282,11 +303,11 @@ export default function CultureMatchScreen() {
               {step === 'culture' && (
                 <View>
                   {selectedNationality && (
-                    <View style={[styles.selectedNatBadge, { borderColor: CultureTokens.saffron, backgroundColor: `${CultureTokens.saffron}20` }]}>
+                    <View style={[styles.selectedNatBadge, { borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}20` }]}>
                       <Text style={styles.selectedNatEmoji}>{selectedNationality.emoji}</Text>
-                      <Text style={[styles.selectedNatLabel, { color: CultureTokens.saffron }]}>{selectedNationality.label}</Text>
+                      <Text style={[styles.selectedNatLabel, { color: CultureTokens.gold }]}>{selectedNationality.label}</Text>
                       <Pressable onPress={() => setStep('nationality')} hitSlop={8}>
-                        <Ionicons name="pencil-outline" size={14} color={CultureTokens.saffron} />
+                        <Ionicons name="pencil-outline" size={14} color={CultureTokens.gold} />
                       </Pressable>
                     </View>
                   )}
@@ -311,7 +332,7 @@ export default function CultureMatchScreen() {
                           key={culture.id}
                           style={({ pressed }) => [
                             styles.cultureChip,
-                            { borderColor: isSelected ? CultureTokens.saffron : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.saffron}33` : colors.overlay },
+                            { borderColor: isSelected ? CultureTokens.gold : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.gold}33` : colors.overlay },
                             pressed && { opacity: 0.75 },
                           ]}
                           onPress={() => toggleCulture(culture)}
@@ -321,7 +342,7 @@ export default function CultureMatchScreen() {
                         >
                           <Text style={styles.cultureEmoji}>{culture.emoji}</Text>
                           <Text style={[styles.cultureLabel, { color: colors.textInverse }]}>{culture.label}</Text>
-                          {isSelected && <Ionicons name="checkmark" size={16} color={CultureTokens.saffron} />}
+                          {isSelected && <Ionicons name="checkmark" size={16} color={CultureTokens.gold} />}
                         </Pressable>
                       );
                     })}
@@ -412,7 +433,7 @@ export default function CultureMatchScreen() {
                   fullWidth={step === 'nationality'}
                   rightIcon={step === 'language' ? undefined : 'arrow-forward'}
                   onPress={canProceed ? goNext : goNext}
-                  style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron, flex: step !== 'nationality' ? 1 : undefined }]}
+                  style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold, flex: step !== 'nationality' ? 1 : undefined }]}
                 >
                   {step === 'language' ? 'Continue' : 'Next'}
                 </Button>
@@ -459,49 +480,49 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
 
   // Step dots
   dotRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
-  dot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)' },
-  dotActive:    { width: 24, backgroundColor: CultureTokens.saffron },
+  dot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
+  dotActive:    { width: 32 },
 
   // Header
   headerBlock:  { alignItems: 'center', marginBottom: 28 },
-  iconWrapper:  { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
-  title:        { fontSize: 28, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 20 },
+  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
+  subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
 
   // Search input
-  searchInput:  { borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15, fontFamily: 'Poppins_400Regular', marginBottom: 16 },
-  helper:       { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 12 },
+  searchInput:  { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', marginBottom: 16 },
+  helper:       { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 12, opacity: 0.7 },
 
   // Nationality chips
-  chipGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  natChip:      { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, maxWidth: '48%' },
-  natEmoji:     { fontSize: 18 },
-  natLabel:     { fontSize: 13, fontFamily: 'Poppins_500Medium', flex: 1 },
-  natCheck:     { marginLeft: 2 },
+  chipGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  natChip:      { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '48%' },
+  natEmoji:     { fontSize: 20 },
+  natLabel:     { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },
+  natCheck:     { marginLeft: 4 },
 
   // Selected nationality badge
-  selectedNatBadge:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginBottom: 16 },
-  selectedNatEmoji:  { fontSize: 18 },
-  selectedNatLabel:  { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  selectedNatBadge:  { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginBottom: 20 },
+  selectedNatEmoji:  { fontSize: 20 },
+  selectedNatLabel:  { fontSize: 15, fontFamily: 'Poppins_700Bold' },
 
   // Culture chips
-  cultureChip:  { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
-  cultureEmoji: { fontSize: 16 },
-  cultureLabel: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  emptyNote:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginVertical: 16 },
+  cultureChip:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 10 },
+  cultureEmoji: { fontSize: 18 },
+  cultureLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  emptyNote:    { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginVertical: 20 },
 
   // Language selection
-  selectedLangWrap:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  selectedLangChip:   { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: CultureTokens.saffron, backgroundColor: `${CultureTokens.saffron}26`, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
-  selectedLangText:   { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  langChip:     { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 2 },
-  langLabel:    { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  langNative:   { fontSize: 11, fontFamily: 'Poppins_400Regular' },
+  selectedLangWrap:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  selectedLangChip:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}26`, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 8 },
+  selectedLangText:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  langChip:     { borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, gap: 4 },
+  langLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  langNative:   { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.7 },
 
   // Actions
-  actions:      { flexDirection: 'row', gap: 12, marginTop: 28 },
-  skipBtn:      { flex: 0, minWidth: 90 },
-  submitBtn:    { height: 56, borderRadius: 16 },
-  skipLink:     { alignItems: 'center', marginTop: 16, paddingVertical: 8 },
-  skipLinkText: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  actions:      { flexDirection: 'row', gap: 12, marginTop: 32 },
+  skipBtn:      { flex: 0, minWidth: 100, borderRadius: 16 },
+  submitBtn:    { height: 60, borderRadius: 20 },
+  skipLink:     { alignItems: 'center', marginTop: 24, paddingVertical: 8 },
+  skipLinkText: { fontSize: 14, fontFamily: 'Poppins_500Medium', letterSpacing: 0.2 },
 });

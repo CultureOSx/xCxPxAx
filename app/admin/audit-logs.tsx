@@ -21,8 +21,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 const ACTION_META: Record<string, { label: string; color: string; icon: string; category: string }> = {
   'notifications.targeted.dry_run': { label: 'Notif Dry Run',   color: CultureTokens.teal,    icon: 'eye-outline',          category: 'notifications' },
   'notifications.targeted.send':    { label: 'Notif Live Send', color: CultureTokens.indigo,  icon: 'send',                  category: 'notifications' },
-  'event.created':                  { label: 'Event Created',   color: CultureTokens.saffron, icon: 'calendar-outline',      category: 'events' },
-  'event.updated':                  { label: 'Event Updated',   color: CultureTokens.saffron, icon: 'create-outline',        category: 'events' },
+  'event.created':                  { label: 'Event Created',   color: CultureTokens.gold, icon: 'calendar-outline',      category: 'events' },
+  'event.updated':                  { label: 'Event Updated',   color: CultureTokens.gold, icon: 'create-outline',        category: 'events' },
   'event.deleted':                  { label: 'Event Deleted',   color: CultureTokens.coral,   icon: 'trash-outline',         category: 'events' },
   'event.published':                { label: 'Event Published', color: '#22C55E',              icon: 'checkmark-circle-outline', category: 'events' },
   'user.role_changed':              { label: 'Role Changed',    color: '#A78BFA',              icon: 'shield-outline',        category: 'users' },
@@ -335,7 +335,7 @@ function AuditLogsContent() {
                 <StatChip value={data?.count ?? 0}       label="Total"      color={colors.primary}       icon="document-text-outline" />
                 <StatChip value={liveCount}               label="Live Sends" color={CultureTokens.indigo} icon="send" />
                 <StatChip value={dryRunCount}             label="Dry Runs"   color={CultureTokens.teal}   icon="eye-outline" />
-                <StatChip value={totalReach.toLocaleString()} label="Reach"  color={CultureTokens.saffron} icon="people-outline" />
+                <StatChip value={totalReach.toLocaleString()} label="Reach"  color={CultureTokens.gold} icon="people-outline" />
               </Animated.View>
             ) : null}
 

@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,6 +63,16 @@ function ComingSoonRailComponent({
               {
                 backgroundColor: colors.surface,
                 borderColor: accentColor + '40',
+                ...Platform.select({
+                  ios: {
+                    shadowColor: accentColor,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                  },
+                  android: { elevation: 4 },
+                  web: { boxShadow: `0px 4px 12px ${accentColor}25` } as any
+                })
               },
             ]}
           >

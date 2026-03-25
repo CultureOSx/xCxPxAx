@@ -125,7 +125,7 @@ export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageT
                   key={c.id}
                   style={({ pressed }) => [
                     s.tagChip,
-                    { borderColor: isSelected ? CultureTokens.saffron : colors.border, backgroundColor: isSelected ? CultureTokens.saffron + '22' : colors.background },
+                    { borderColor: isSelected ? CultureTokens.gold : colors.border, backgroundColor: isSelected ? CultureTokens.gold + '22' : colors.background },
                     pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => toggleCultureTag(c.id)}
@@ -134,7 +134,7 @@ export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageT
                   accessibilityState={{ checked: isSelected }}
                 >
                   <Text style={s.tagEmoji}>{c.emoji}</Text>
-                  <Text style={[s.tagLabel, { color: isSelected ? CultureTokens.saffron : colors.text }]}>{c.label}</Text>
+                  <Text style={[s.tagLabel, { color: isSelected ? CultureTokens.gold : colors.text }]}>{c.label}</Text>
                 </Pressable>
               );
             })}

@@ -354,11 +354,21 @@ export function WebSidebar() {
       {/* ── Brand header: logo + wordmark ── */}
       <View style={s.brandHeader}>
         <LinearGradient
-          colors={isDark ? ['rgba(44,42,114,0.30)', 'rgba(44,42,114,0.05)'] : ['rgba(44,42,114,0.10)', 'rgba(44,42,114,0.00)']}
+          colors={isDark ? ['rgba(44,42,114,0.45)', 'rgba(44,42,114,0.15)'] : ['rgba(44,42,114,0.12)', 'rgba(44,42,114,0.02)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
+        {/* Modern vibrant background overlay */}
+        <View style={[StyleSheet.absoluteFill, { opacity: isDark ? 0.08 : 0.04 }]}>
+          <LinearGradient
+            colors={[CultureTokens.indigo, CultureTokens.teal, CultureTokens.coral]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+
         <View style={s.brandRow}>
           <Pressable
             style={s.brandLogoBtn}
@@ -366,19 +376,21 @@ export function WebSidebar() {
             accessibilityLabel="CulturePass home"
             accessibilityRole="button"
           >
-            <View style={s.logoIcon}>
+            <View style={[s.logoIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
               <Image source={require('../../assets/images/culturepass-logo.png')} style={s.logoImage} contentFit="cover" />
             </View>
             <View style={s.wordmarkWrap}>
-              <LinearGradient
-                colors={[CultureTokens.indigo, CultureTokens.saffron, CultureTokens.coral]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={s.wordmarkGradient}
-              >
-                <Text style={s.wordmarkText} numberOfLines={1}>CulturePass</Text>
-              </LinearGradient>
-              <Text style={[s.wordmarkSub, { color: colors.textTertiary }]} numberOfLines={1}>Belong Anywhere</Text>
+              <View style={s.wordmarkContainer}>
+                <LinearGradient
+                   colors={['#0066CC', '#FFCC00', '#FF5E5B']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={s.wordmarkGradient}
+                >
+                  <Text style={s.wordmarkText} numberOfLines={1}>CulturePass</Text>
+                </LinearGradient>
+              </View>
+              <Text style={[s.wordmarkSub, { color: colors.textSecondary }]} numberOfLines={1}>Belong Anywhere</Text>
             </View>
           </Pressable>
           <Pressable
@@ -394,7 +406,7 @@ export function WebSidebar() {
 
         {/* Time + weather — compact single row */}
         <View style={s.weatherRow}>
-          <Ionicons name="time-outline" size={10} color={mutedColor} />
+          <Ionicons name="time-outline" size={12} color={mutedColor} />
           <Text style={[s.weatherText, { color: colors.textTertiary }]} numberOfLines={1}>
             {dateLabel} · {timeLabel}{weatherSummary ? `  ·  ${weatherSummary}` : ''}
           </Text>
@@ -788,26 +800,30 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
     wordmarkWrap: {
       minWidth: 0,
       flexShrink: 1,
+      gap: 1,
+    },
+    wordmarkContainer: {
+      alignSelf: 'flex-start',
+      borderRadius: 6,
+      overflow: 'hidden',
     },
     wordmarkGradient: {
-      borderRadius: 4,
-      paddingHorizontal: 0,
-      alignSelf: 'flex-start',
-      backgroundColor: 'transparent',
+      paddingHorizontal: 8,
+      paddingVertical: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     wordmarkText: {
-      fontSize: 17,
+      fontSize: 16,
       fontFamily: 'Poppins_700Bold',
-      color: '#fff',
-      letterSpacing: -0.5,
-      lineHeight: 24,
-      backgroundColor: 'transparent',
+      color: '#FFFFFF',
+      letterSpacing: -0.2,
     },
     wordmarkSub: {
       fontSize: 10,
-      fontFamily: 'Poppins_400Regular',
+      fontFamily: 'Poppins_500Medium',
+      marginLeft: 8,
       letterSpacing: 0.2,
-      marginTop: 1,
     },
     headerCollapseBtn: {
       width: 26,
@@ -1063,7 +1079,7 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
       paddingHorizontal: 12,
     },
     actionBtnPrimary: {
-      backgroundColor: CultureTokens.saffron,
+      backgroundColor: CultureTokens.gold,
       borderWidth: 0,
     },
     actionBtnPrimaryText: {

@@ -186,7 +186,7 @@ function FinanceContent() {
                   index={0} icon="ticket-outline" label="Paid Tickets"
                   value={paidTickets.toLocaleString()}
                   sub="All time"
-                  accent={CultureTokens.saffron}
+                  accent={CultureTokens.gold}
                 />
                 <MetricCard
                   index={1} icon="cash-outline" label="Avg Ticket"
@@ -197,14 +197,14 @@ function FinanceContent() {
               </View>
 
               <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.borderLight, marginTop: 12 }]}>
-                <InfoRow index={0} icon="ticket-outline"  label="Total paid tickets"    value={paidTickets.toLocaleString()}                            accent={CultureTokens.saffron} />
+                <InfoRow index={0} icon="ticket-outline"  label="Total paid tickets"    value={paidTickets.toLocaleString()}                            accent={CultureTokens.gold} />
                 <InfoRow index={1} icon="cash-outline"    label="Sample revenue"         value={fmtMoney(sampleRevenue)}                                 accent={CultureTokens.teal} />
                 <InfoRow index={2} icon="analytics-outline" label="Avg ticket value"     value={avgTicketCents > 0 ? `$${(avgTicketCents / 100).toFixed(2)}` : '—'} accent={CultureTokens.coral} />
                 <InfoRow index={3} icon="layers-outline"  label="Sample size"            value={`${sampleSize} tickets`}                                 accent='#A78BFA' />
               </View>
 
-              <View style={[s.infoBox, { backgroundColor: CultureTokens.saffron + '10', borderColor: CultureTokens.saffron + '30' }]}>
-                <Ionicons name="information-circle-outline" size={16} color={CultureTokens.saffron} />
+              <View style={[s.infoBox, { backgroundColor: CultureTokens.gold + '10', borderColor: CultureTokens.gold + '30' }]}>
+                <Ionicons name="information-circle-outline" size={16} color={CultureTokens.gold} />
                 <Text style={[s.infoText, { color: colors.textSecondary }]}>
                   Revenue figures are based on a sample of up to 500 paid tickets. For full revenue reports with daily/weekly breakdowns, use Stripe Dashboard.
                 </Text>
@@ -238,7 +238,7 @@ function FinanceContent() {
                 <InfoRow index={0} icon="today-outline"        label="Daily report"          value="Via Stripe"            accent={CultureTokens.teal} />
                 <InfoRow index={1} icon="calendar-outline"     label="Weekly summary"        value="Via Stripe"            accent={CultureTokens.indigo} />
                 <InfoRow index={2} icon="bar-chart-outline"    label="Monthly breakdown"     value="Via Stripe"            accent={CultureTokens.gold} />
-                <InfoRow index={3} icon="download-outline"     label="Export transactions"   value="CSV via Stripe"        accent={CultureTokens.saffron} />
+                <InfoRow index={3} icon="download-outline"     label="Export transactions"   value="CSV via Stripe"        accent={CultureTokens.gold} />
               </View>
 
               <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '12', borderColor: CultureTokens.indigo + '30' }]}>

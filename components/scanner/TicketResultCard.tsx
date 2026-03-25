@@ -47,7 +47,7 @@ export function TicketResultCard({ result, onClose, onScanNext, onPrintBadge }: 
             )}
             {t.eventTime && (
               <View style={rs.metaItem}>
-                <Ionicons name="time-outline" size={12} color={CultureTokens.saffron} />
+                <Ionicons name="time-outline" size={12} color={CultureTokens.gold} />
                 <Text style={rs.metaText}>{t.eventTime}</Text>
               </View>
             )}

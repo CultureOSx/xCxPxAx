@@ -331,10 +331,10 @@ function AdminDashboardContent() {
           <SectionLabel label="QUICK ACTIONS" />
           <NavGrid gap={columnGap}>
             <QuickAction width={qaW} icon="cloud-download-outline" label="Import Data"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/import' as never)} />
-            <QuickAction width={qaW} icon="megaphone-outline"      label="Notifications"     accent={CultureTokens.saffron} onPress={() => router.push('/admin/notifications')} />
+            <QuickAction width={qaW} icon="megaphone-outline"      label="Notifications"     accent={CultureTokens.gold} onPress={() => router.push('/admin/notifications')} />
             <QuickAction width={qaW} icon="people-outline"         label="Manage Users"      accent={CultureTokens.indigo}  onPress={() => router.push('/admin/users')} />
             <QuickAction width={qaW} icon="add-circle-outline"     label="Create Event"      accent={CultureTokens.indigo}  onPress={() => router.push('/event/create' as never)} />
-            <QuickAction width={qaW} icon="at-outline"             label="Handles"           accent={pending > 0 ? CultureTokens.coral : CultureTokens.saffron} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
+            <QuickAction width={qaW} icon="at-outline"             label="Handles"           accent={pending > 0 ? CultureTokens.coral : CultureTokens.gold} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
             <QuickAction width={qaW} icon="list-outline"           label="Audit Logs"        accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
             <QuickAction width={qaW} icon="newspaper-outline"      label="Release Notes"     accent={CultureTokens.gold}    onPress={() => router.push('/admin/updates')} />
             {isSuperAdmin ? (
@@ -358,12 +358,12 @@ function AdminDashboardContent() {
           ) : (
             <NavGrid gap={columnGap}>
               <StatTile index={0} width={statW} icon="people"              label="Total Users"     value={fmtNum(stats?.totalUsers)}            accent={CultureTokens.indigo} />
-              <StatTile index={1} width={statW} icon="calendar"            label="Live Events"     value={fmtNum(stats?.totalEvents)}           accent={CultureTokens.saffron} />
+              <StatTile index={1} width={statW} icon="calendar"            label="Live Events"     value={fmtNum(stats?.totalEvents)}           accent={CultureTokens.gold} />
               <StatTile index={2} width={statW} icon="ticket-outline"      label="Tickets Sold"    value={fmtNum(stats?.totalTicketsSold)}      accent={CultureTokens.teal} />
               <StatTile index={3} width={statW} icon="person-add"          label="New This Week"   value={fmtNum(stats?.newUsersThisWeek)}      accent="#22C55E" />
               <StatTile index={4} width={statW} icon="megaphone-outline"   label="Organizers"      value={fmtNum(stats?.activeOrganizers)}      accent="#A78BFA" />
               <StatTile index={5} width={statW} icon="shield-checkmark"    label="Councils"        value={fmtNum(stats?.activeCouncils)}        accent={CultureTokens.coral} />
-              <StatTile index={6} width={statW} icon="at-outline"          label="Pending Handles" value={fmtNum(stats?.pendingHandlesCount)}   accent={CultureTokens.saffron} alert={(stats?.pendingHandlesCount ?? 0) > 0} />
+              <StatTile index={6} width={statW} icon="at-outline"          label="Pending Handles" value={fmtNum(stats?.pendingHandlesCount)}   accent={CultureTokens.gold} alert={(stats?.pendingHandlesCount ?? 0) > 0} />
               <StatTile index={7} width={statW} icon="flag-outline"        label="Reports"         value={fmtNum(stats?.pendingModerationCount)} accent={CultureTokens.coral}  alert={(stats?.pendingModerationCount ?? 0) > 0} />
             </NavGrid>
           )}
@@ -401,7 +401,7 @@ function AdminDashboardContent() {
             <NavCard index={0} width={cardW} icon="people-outline"           label="User Management"      sub="Search, roles & bans"       accent={CultureTokens.indigo}  onPress={() => router.push('/admin/users')} />
             <NavCard index={1} width={cardW} icon="shield-checkmark-outline" label="Role Assignment"       sub="Promote organisers"         accent="#A78BFA"               onPress={() => router.push('/admin/users')} />
             <NavCard index={2} width={cardW} icon="id-card-outline"          label="Identity Verify"       sub="Sydney-verified accounts"   accent={CultureTokens.teal}    onPress={() => router.push('/admin/users')} />
-            <NavCard index={3} width={cardW} icon="at-outline"               label="Handle Approvals"      sub={`${pending > 0 ? `${pending} pending` : 'Approve +handles'}`} accent={CultureTokens.saffron} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
+            <NavCard index={3} width={cardW} icon="at-outline"               label="Handle Approvals"      sub={`${pending > 0 ? `${pending} pending` : 'Approve +handles'}`} accent={CultureTokens.gold} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
           </NavGrid>
         </View>
 
@@ -410,7 +410,7 @@ function AdminDashboardContent() {
           <SectionLabel label="CONTENT & MODERATION" count={3} />
           <NavGrid gap={columnGap}>
             <NavCard index={0} width={cardW} icon="flag-outline"            label="Flagged Content"       sub="Review user reports"        accent={CultureTokens.coral}   onPress={() => router.push('/admin/moderation' as never)} badge={stats?.pendingModerationCount && stats.pendingModerationCount > 0 ? stats.pendingModerationCount : undefined} />
-            <NavCard index={1} width={cardW} icon="calendar-number-outline" label="Event Approvals"        sub="Pending events"             accent={CultureTokens.saffron} onPress={() => router.push('/admin/moderation' as never)} />
+            <NavCard index={1} width={cardW} icon="calendar-number-outline" label="Event Approvals"        sub="Pending events"             accent={CultureTokens.gold} onPress={() => router.push('/admin/moderation' as never)} />
             <NavCard index={2} width={cardW} icon="list-outline"            label="Audit Logs"             sub="Platform activity trail"    accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
           </NavGrid>
         </View>
@@ -419,7 +419,7 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="COMMUNICATIONS" count={3} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="megaphone-outline" label="Push Notifications" sub="Targeted campaigns"       accent={CultureTokens.saffron} onPress={() => router.push('/admin/notifications')} />
+            <NavCard index={0} width={cardW} icon="megaphone-outline" label="Push Notifications" sub="Targeted campaigns"       accent={CultureTokens.gold} onPress={() => router.push('/admin/notifications')} />
             <NavCard index={1} width={cardW} icon="mail-outline"      label="Email Campaigns"    sub="Transactional & marketing" accent={CultureTokens.teal}    onPress={() => router.push('/admin/notifications')} />
             <NavCard index={2} width={cardW} icon="newspaper-outline" label="Release Notes"      sub="Changelog & updates"      accent={CultureTokens.indigo}  onPress={() => router.push('/admin/updates')} />
           </NavGrid>
@@ -469,7 +469,7 @@ function AdminDashboardContent() {
                 <NavCard index={1} width={cardW} icon="globe-outline"     label="City Management"  sub="Add supported cities"     accent={CultureTokens.teal}    onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={2} width={cardW} icon="key-outline"       label="API Keys"         sub="Stripe, Firebase, 3rd-party" accent="#A78BFA"            onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={3} width={cardW} icon="construct-outline" label="Platform Settings" sub="Config, rate limits"     accent={CultureTokens.coral}   onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={4} width={cardW} icon="server-outline"    label="Platform Health"  sub="API status & metrics"     accent={CultureTokens.saffron} onPress={() => router.push('/admin/platform' as never)} />
+                <NavCard index={4} width={cardW} icon="server-outline"    label="Platform Health"  sub="API status & metrics"     accent={CultureTokens.gold} onPress={() => router.push('/admin/platform' as never)} />
                 <NavCard index={5} width={cardW} icon="sparkles-outline"  label="Discover Curation" sub="Featured artists & playlist rails" accent={CultureTokens.indigo} onPress={() => router.push('/admin/discover' as never)} />
               </NavGrid>
             </View>
@@ -500,7 +500,7 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="OPS & TOOLS" count={4} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="apps-outline"       label="Widgets"          sub="Home & lockscreen cards" accent={CultureTokens.saffron} onPress={() => router.push('/dashboard/widgets' as never)} />
+            <NavCard index={0} width={cardW} icon="apps-outline"       label="Widgets"          sub="Home & lockscreen cards" accent={CultureTokens.gold} onPress={() => router.push('/dashboard/widgets' as never)} />
             <NavCard index={1} width={cardW} icon="map-outline"        label="Discovery Map"    sub="Browse nearby culture"   accent={CultureTokens.teal}    onPress={() => router.push('/(tabs)/explore' as never)} />
             <NavCard index={2} width={cardW} icon="business-outline"   label="Venues Directory" sub="All venues & hosts"      accent={CultureTokens.indigo}  onPress={() => router.push('/(tabs)/directory' as never)} />
             <NavCard index={3} width={cardW} icon="bookmark-outline"   label="Saved Items"      sub="Bookmarks & wishlists"   accent={CultureTokens.gold}    onPress={() => router.push('/saved' as never)} />

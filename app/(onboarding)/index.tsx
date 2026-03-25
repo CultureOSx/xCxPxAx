@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 import { useColors } from '@/hooks/useColors';
 
 const FEATURES = [
-  { icon: 'calendar' as const, color: CultureTokens.saffron, bg: 'rgba(255, 140, 66, 0.15)', text: 'Discover cultural events near you' },
+  { icon: 'calendar' as const, color: CultureTokens.gold, bg: 'rgba(255, 140, 66, 0.15)', text: 'Discover cultural events near you' },
   { icon: 'people' as const, color: CultureTokens.coral, bg: 'rgba(255, 94, 91, 0.15)', text: 'Join vibrant communities' },
   { icon: 'gift' as const, color: CultureTokens.gold, bg: 'rgba(255, 200, 87, 0.15)', text: 'Unlock exclusive member perks' },
 ];
@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
 
       {/* Decorative Orbs */}
       <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, ...Platform.select({ web: { filter: 'blur(50px)' }, default: {} }) } as any]} />
-      <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, ...Platform.select({ web: { filter: 'blur(50px)' }, default: {} }) } as any]} />
+      <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, ...Platform.select({ web: { filter: 'blur(50px)' }, default: {} }) } as any]} />
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
@@ -99,7 +99,7 @@ export default function WelcomeScreen() {
                 fullWidth
                 rightIcon="arrow-forward"
                 onPress={goToSignup}
-                style={[shadows.medium, { backgroundColor: CultureTokens.saffron }]}
+                style={[shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Create Account
               </Button>
@@ -162,7 +162,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     marginBottom: 20, borderWidth: 1,
   },
   title: { fontSize: 36, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
-  tagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 2, textTransform: 'uppercase', color: CultureTokens.saffron, marginTop: 4 },
+  tagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 2, textTransform: 'uppercase', color: CultureTokens.gold, marginTop: 4 },
   subtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 12, lineHeight: 22 },
 
   featureList: { gap: 12, marginBottom: 16 },

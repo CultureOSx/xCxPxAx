@@ -188,7 +188,7 @@ export default function UpgradeScreen() {
             <Text style={s.sectionTitle}>What You&apos;ll Get</Text>
             {[
               { icon: 'cash-outline', title: '2% Cashback', desc: 'Earn rewards on every ticket', color: CultureTokens.teal },
-              { icon: 'time-outline', title: '48h Early Access', desc: 'First to buy hot tickets', color: CultureTokens.saffron },
+              { icon: 'time-outline', title: '48h Early Access', desc: 'First to buy hot tickets', color: CultureTokens.gold },
               { icon: 'gift-outline', title: 'Exclusive Perks', desc: 'Members-only deals & discounts', color: CultureTokens.coral },
               { icon: 'shield-checkmark-outline', title: 'Plus Badge', desc: 'Stand out in the community', color: CultureTokens.gold },
             ].map((benefit) => (
@@ -357,7 +357,7 @@ export default function UpgradeScreen() {
         <View style={s.highlightsSection}>
           {[
             { bg: CultureTokens.success + '15', color: CultureTokens.success, icon: 'cash',  title: '2% Cashback',    desc: 'Every ticket purchase earns you cashback, automatically credited to your wallet.' },
-            { bg: CultureTokens.saffron + '15', color: CultureTokens.saffron, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
+            { bg: CultureTokens.gold + '15', color: CultureTokens.gold, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
             { bg: CultureTokens.coral + '15',   color: CultureTokens.coral,   icon: 'gift',  title: 'Exclusive Perks', desc: 'Access members-only deals and discounts from restaurants, shops, and cultural venues.' },
           ].map(h => (
             <View key={h.title} style={s.highlightCard}>

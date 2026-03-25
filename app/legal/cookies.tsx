@@ -8,7 +8,7 @@ const COOKIE_TYPES = [
   { name: 'Essential Cookies',   desc: 'Required for the app to function. They enable core features like secure login, session management, and payment processing. These cannot be disabled.',                                                           icon: 'lock-closed' as const, color: CultureTokens.coral, required: true },
   { name: 'Analytics Cookies',   desc: 'Help us understand how users interact with CulturePass. We use anonymised analytics to improve the user experience, identify popular features, and fix issues.',                                                 icon: 'analytics' as const,   color: CultureTokens.indigo, required: false },
   { name: 'Preference Cookies',  desc: 'Remember your settings such as language preference, selected location, theme, and notification preferences. These make your experience more personalised.',                                                      icon: 'settings' as const,    color: CultureTokens.teal, required: false },
-  { name: 'Marketing Cookies',   desc: 'Used to deliver relevant event recommendations and sponsor offers based on your interests and browsing behaviour. You can opt out of these at any time.',                                                        icon: 'megaphone' as const,   color: CultureTokens.saffron, required: false },
+  { name: 'Marketing Cookies',   desc: 'Used to deliver relevant event recommendations and sponsor offers based on your interests and browsing behaviour. You can opt out of these at any time.',                                                        icon: 'megaphone' as const,   color: CultureTokens.gold, required: false },
 ];
 
 const SECTIONS = [
@@ -39,7 +39,7 @@ export default function CookiesScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 10 }} showsVerticalScrollIndicator={false}>
         <View style={styles.intro}>
           <View style={styles.iconWrap}>
-            <Ionicons name="finger-print" size={28} color={CultureTokens.saffron} />
+            <Ionicons name="finger-print" size={28} color={CultureTokens.gold} />
           </View>
           <Text style={styles.introTitle}>Data & Cookie Policy</Text>
           <Text style={styles.introDate}>Last updated: 1 February 2026</Text>
@@ -83,7 +83,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center' },
-  iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.saffron + '15' },
+  iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.gold + '15' },
   introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },
   introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
   introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },

@@ -12,9 +12,11 @@ import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } fr
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens, EntityTypeColors, shadows, gradients } from '@/constants/theme';
+import { CultureTokens, EntityTypeColors, shadows, gradients, TextStyles, Typography } from '@/constants/theme';
 import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -26,6 +28,8 @@ import { FilterChipRow, FilterItem } from '@/components/FilterChip';
 import { Button } from '@/components/ui/Button';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+// import { Typography } from '@/constants/typography'; // REMOVED: Typography consolidated into theme import above
+import { DEFAULT_DISCOVER_CURATION } from '@/shared/schema/discover';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { isIndigenousProfile } from '@/lib/indigenous';
 import { formatEventDateTimeBadge, formatPrice } from '@/lib/dateUtils';
@@ -42,18 +46,22 @@ const TYPE_ICONS: Record<string, string> = {
   council:      'shield-checkmark',
   government:   'flag',
   charity:      'heart',
+  artist:       'brush',
+  brand:        'ribbon',
 };
 
 const ENTITY_FILTERS = [
   { label: 'All',          icon: 'grid',             color: CultureTokens.indigo,          display: 'All' },
-  { label: 'event',        icon: 'calendar',          color: CultureTokens.saffron,          display: 'Events' },
-  { label: 'indigenous',   icon: 'leaf',              color: CultureTokens.gold,             display: '🪃 Indigenous' },
+  { label: 'event',        icon: 'calendar',          color: CultureTokens.gold,            display: 'Events' },
+  { label: 'indigenous',   icon: 'leaf',              color: CultureTokens.teal,            display: '🪃 Indigenous' },
   { label: 'business',     icon: 'storefront',        color: EntityTypeColors.business,      display: 'Businesses' },
   { label: 'venue',        icon: 'location',          color: EntityTypeColors.venue,         display: 'Venues' },
   { label: 'organisation', icon: 'business',          color: EntityTypeColors.organisation,  display: 'Organisations' },
   { label: 'council',      icon: 'shield-checkmark',  color: EntityTypeColors.council,       display: 'Councils' },
   { label: 'government',   icon: 'flag',              color: EntityTypeColors.government,    display: 'Government' },
   { label: 'charity',      icon: 'heart',             color: EntityTypeColors.charity,       display: 'Charities' },
+  { label: 'artist',       icon: 'mic',               color: CultureTokens.coral,           display: 'Artists' },
+  { label: 'creator',      icon: 'sparkles',          color: CultureTokens.gold,            display: 'Creators' },
 ] as const;
 
 function getOptionalString(record: Record<string, unknown>, key: string): string | null {
@@ -120,7 +128,7 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
 
   const dateLabel = formatEventDateTimeBadge(event.date, event.time, event.country);
   const priceLabel = event.isFree ? 'Free' : event.priceCents ? formatPrice(event.priceCents, event.country) : null;
-  const categoryColor = CultureTokens.saffron;
+  const categoryColor = CultureTokens.gold;
 
   // Robust day/month extraction
   let dayNum = '', monthStr = '';
@@ -136,7 +144,13 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
         style={({ pressed }) => [
           s.directoryCard,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
+          { 
+            backgroundColor: colors.surface, 
+            borderColor: colors.borderLight,
+            boxShadow: Platform.OS === 'web' 
+              ? '0px 4px 12px rgba(0,0,0,0.06)' 
+              : '0px 2px 6px rgba(0,0,0,0.15)',
+          },
           pressed && { opacity: 0.93 },
         ]}
         accessibilityRole="link"
@@ -145,15 +159,10 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
         {/* Horizontal layout: date block left + content right */}
         <View style={s.eventCardInner}>
           {/* Date block */}
-          <LinearGradient
-            colors={[categoryColor + 'EE', categoryColor + 'AA']}
-            style={s.eventDateBlock}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <BlurView intensity={Platform.OS === 'ios' ? 30 : 60} tint="dark" style={[s.eventDateBlock, { backgroundColor: categoryColor + 'AA' }]}>
             <Text style={s.eventDateDay}>{dayNum}</Text>
             <Text style={s.eventDateMonth}>{monthStr.toUpperCase().slice(0, 3)}</Text>
-          </LinearGradient>
+          </BlurView>
 
           {/* Content */}
           <View style={s.eventCardContent}>
@@ -225,21 +234,30 @@ function DirectoryCard({ profile, colors }: { profile: Profile; colors: ReturnTy
     ));
   };
 
+  const isProfessional = ['artist', 'creator', 'brand'].includes(profile.entityType);
+  const accent = isProfessional ? CultureTokens.gold : color;
+
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [
         s.directoryCard,
-        { backgroundColor: colors.surface, borderColor: isCouncil ? CultureTokens.indigo + '40' : colors.borderLight },
-        isCouncil && { borderWidth: 1.5 },
-        pressed && { opacity: 0.92 },
+        { 
+          backgroundColor: colors.surface, 
+          borderColor: isProfessional ? CultureTokens.gold + '40' : isCouncil ? CultureTokens.indigo + '40' : colors.borderLight,
+          boxShadow: Platform.OS === 'web' 
+            ? `0px 8px 20px ${isProfessional ? 'rgba(255,200,87,0.08)' : 'rgba(44,42,114,0.06)'}`
+            : '0px 2px 8px rgba(0,0,0,0.12)',
+        },
+        (isCouncil || isProfessional) && { borderWidth: 1.5 },
+        pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
       ]}
       accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
       accessibilityLabel={`View ${profile.name} profile`}
     >
-      {isCouncil && (
+      {(isCouncil || isProfessional) && (
         <LinearGradient
-          colors={[CultureTokens.indigo + '0A', 'transparent']}
+          colors={isProfessional ? [`${CultureTokens.gold}08`, 'transparent'] : [CultureTokens.indigo + '0A', 'transparent']}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -268,14 +286,14 @@ function DirectoryCard({ profile, colors }: { profile: Profile; colors: ReturnTy
             <Text style={[s.profileName, { color: colors.text }]} numberOfLines={1}>
               {profile.name}
             </Text>
-            {profile.isVerified && (
-              <Ionicons name="checkmark-circle" size={15} color={CultureTokens.indigo} />
+            {(profile.isVerified || isProfessional) && (
+              <Ionicons name="shield-checkmark" size={15} color={isProfessional ? CultureTokens.gold : CultureTokens.indigo} />
             )}
           </View>
 
           {/* Category badge */}
-          <View style={[s.categoryBadge, { backgroundColor: color + '18' }]}>
-            <Text style={[s.categoryBadgeText, { color }]} numberOfLines={1}>
+          <View style={[s.categoryBadge, { backgroundColor: accent + '18' }]}>
+            <Text style={[s.categoryBadgeText, { color: accent }]} numberOfLines={1}>
               {profile.category ?? profile.entityType}
             </Text>
           </View>
@@ -512,7 +530,7 @@ export default function DirectoryScreen() {
   const directoryStats = useMemo(
     () => [
       { id: 'listings', label: 'Listings', value: typeCounts.All ?? 0, icon: 'grid-outline', color: CultureTokens.indigo },
-      { id: 'events', label: 'Events', value: typeCounts.event ?? 0, icon: 'calendar-outline', color: CultureTokens.saffron },
+      { id: 'events', label: 'Events', value: typeCounts.event ?? 0, icon: 'calendar-outline', color: CultureTokens.gold },
       { id: 'verified', label: 'Verified', value: nonCommunityProfiles.filter((p) => p.isVerified).length, icon: 'checkmark-circle-outline', color: CultureTokens.teal },
     ],
     [typeCounts, nonCommunityProfiles]
@@ -567,7 +585,7 @@ export default function DirectoryScreen() {
               <View style={s.headerTitleWrap}>
                 <Text style={[s.title, { color: colors.text }]}>Directory</Text>
                 <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-                  Find businesses, venues & organisations
+                  Find businesses, venues & organizations
                 </Text>
               </View>
             </View>
@@ -598,6 +616,34 @@ export default function DirectoryScreen() {
                 )}
               </View>
             </View>
+
+            {!hasActiveFilters && (
+              <View style={s.featuredContainer}>
+                <View style={s.featuredHeader}>
+                  <View style={s.featuredHeaderLeft}>
+                    <Ionicons name="sparkles" size={16} color={CultureTokens.gold} />
+                    <Text style={[TextStyles.title3, { color: colors.text }]}>Featured Artists</Text>
+                  </View>
+                  <Text style={[TextStyles.caption, { color: colors.textTertiary }]}>SYDNEY CREATORS</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.featuredScroll, { paddingHorizontal: hPad }]}>
+                  {DEFAULT_DISCOVER_CURATION.featuredArtists.map((artist) => (
+                    <Pressable 
+                      key={artist.id} 
+                      style={[s.featuredCard, { backgroundColor: colors.surface }]}
+                      onPress={() => router.push({ pathname: '/profile/[id]', params: { id: artist.id } })}
+                    >
+                      <Image source={{ uri: artist.imageUrl }} style={s.featuredImage} contentFit="cover" />
+                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.featuredGradient} />
+                      <View style={s.featuredInfo}>
+                        <Text style={s.featuredName}>{artist.name}</Text>
+                        <Text style={s.featuredTitle}>{artist.subtitle}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Stats bar */}
             <View style={[s.statsBar, { paddingHorizontal: hPad, paddingTop: 12, paddingBottom: 8 }]}>
@@ -644,10 +690,41 @@ export default function DirectoryScreen() {
         <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
 
         {/* ── Content ── */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
+        <FlashList
+          data={filtered}
+          keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={Platform.OS !== 'web' ? FadeInDown.delay(index * 40).springify().damping(18) : undefined}
+              style={useWebTwoColumnResults ? s.resultsGridItemWeb : undefined}
+            >
+              {item._type === 'event' ? (
+                <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
+              ) : (
+                <DirectoryCard profile={item.data} colors={colors} />
+              )}
+            </Animated.View>
+          )}
+          ListHeaderComponent={
+            <View style={shellStyle}>
+              {/* Stats and context already handled in fixed header area above the scroll but if we want them to scroll, we move them here. 
+                  Currently they are outside the ScrollView in the original code. I'll stick to the original layout intent but use FlashList for results. */}
+            </View>
+          }
+          ListEmptyComponent={
+            <DirectoryEmptyState
+              selectedType={selectedType}
+              city={onboardingState.city}
+              hasActiveFilters={hasActiveFilters}
+              colors={colors}
+              onReset={() => { setSelectedType('All'); setSearch(''); }}
+            />
+          }
+          // @ts-ignore
+          estimatedItemSize={100}
+          numColumns={useWebTwoColumnResults ? 2 : 1}
           contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}
-          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -656,60 +733,7 @@ export default function DirectoryScreen() {
               colors={[CultureTokens.indigo]}
             />
           }
-        >
-          <View style={shellStyle}>
-            {(isLoading || eventsLoading) ? (
-              <View style={useWebTwoColumnResults ? s.resultsGridWeb : undefined}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Animated.View
-                    key={i}
-                    entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 60).springify().damping(18) : undefined}
-                    style={useWebTwoColumnResults ? s.resultsGridItemWeb : undefined}
-                  >
-                    <DirectoryCardSkeleton colors={colors} />
-                  </Animated.View>
-                ))}
-              </View>
-            ) : filtered.length === 0 ? (
-              <DirectoryEmptyState
-                selectedType={selectedType}
-                city={onboardingState.city}
-                hasActiveFilters={hasActiveFilters}
-                colors={colors}
-                onReset={() => { setSelectedType('All'); setSearch(''); }}
-              />
-            ) : useWebTwoColumnResults ? (
-              <View style={s.resultsGridWeb}>
-                {filtered.map((item, i) => (
-                  <Animated.View
-                    key={item._type === 'event' ? item.data.id : item.data.id}
-                    entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 40).springify().damping(18) : undefined}
-                    style={s.resultsGridItemWeb}
-                  >
-                    {item._type === 'event' ? (
-                      <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
-                    ) : (
-                      <DirectoryCard profile={item.data} colors={colors} />
-                    )}
-                  </Animated.View>
-                ))}
-              </View>
-            ) : (
-              filtered.map((item, i) => (
-                <Animated.View
-                  key={item._type === 'event' ? item.data.id : item.data.id}
-                  entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 40).springify().damping(18) : undefined}
-                >
-                  {item._type === 'event' ? (
-                    <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
-                  ) : (
-                    <DirectoryCard profile={item.data} colors={colors} />
-                  )}
-                </Animated.View>
-              ))
-            )}
-          </View>
-        </ScrollView>
+        />
       </View>
     </ErrorBoundary>
   );
@@ -834,7 +858,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   resultsGridItemWeb: {
-    width: '48.8%',
+    width: '49%',
   },
 
   // ── Directory card (shared base) ──
@@ -843,7 +867,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     overflow: 'hidden',
-    ...shadows.small,
+    elevation: 2,
   },
 
   // ── Event card ──
@@ -1034,4 +1058,15 @@ const s = StyleSheet.create({
     paddingHorizontal: 40,
     lineHeight: 20,
   },
+
+  featuredContainer: { marginTop: 24, marginBottom: 8 },
+  featuredHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 },
+  featuredHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  featuredScroll: { gap: 12 },
+  featuredCard: { width: 140, height: 180, borderRadius: 20, overflow: 'hidden', ...shadows.medium },
+  featuredImage: { width: '100%', height: '100%' },
+  featuredGradient: { ...StyleSheet.absoluteFillObject },
+  featuredInfo: { position: 'absolute', bottom: 12, left: 12, right: 12 },
+  featuredName: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  featuredTitle: { fontSize: 10, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
 });

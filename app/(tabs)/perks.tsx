@@ -270,7 +270,7 @@ function PerksEmptyState({ colors }: { colors: ReturnType<typeof useColors> }) {
   return (
     <View style={s.emptyState}>
       <LinearGradient
-        colors={[CultureTokens.gold + '30', CultureTokens.saffron + '20']}
+        colors={[CultureTokens.gold + '30', CultureTokens.gold + '20']}
         style={s.emptyIconCircle}
       >
         <Ionicons name="gift" size={36} color={CultureTokens.gold} />

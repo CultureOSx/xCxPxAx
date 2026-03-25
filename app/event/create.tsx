@@ -411,7 +411,7 @@ export default function CreateEventScreen() {
       <View style={s.progressTrack}>
         <View style={[s.progressFill, {
           width: `${((stepIndex + 1) / visibleSteps.length) * 100}%` as `${number}%`,
-          backgroundColor: CultureTokens.saffron,
+          backgroundColor: CultureTokens.gold,
         }]} />
       </View>
 
@@ -424,7 +424,7 @@ export default function CreateEventScreen() {
             <View key={vs} style={s.stepDotWrap}>
               <View style={[
                 s.stepDot,
-                active && { backgroundColor: CultureTokens.saffron, width: 24 },
+                active && { backgroundColor: CultureTokens.gold, width: 24 },
                 done && { backgroundColor: CultureTokens.indigo },
                 !active && !done && { backgroundColor: colors.borderLight },
               ]}>
@@ -452,7 +452,7 @@ export default function CreateEventScreen() {
             {/* Step header */}
             <View style={s.stepHeader}>
               <View style={[s.stepIconWrap, { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo + '30' }]}>
-                <Ionicons name={STEP_ICONS[step]} size={24} color={CultureTokens.saffron} />
+                <Ionicons name={STEP_ICONS[step]} size={24} color={CultureTokens.gold} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[TextStyles.title2, { color: colors.text }]}>{STEP_TITLES[step]}</Text>
@@ -534,7 +534,7 @@ export default function CreateEventScreen() {
                 rightIcon={step === 'review' ? undefined : 'arrow-forward'}
                 onPress={goNext}
                 disabled={isPending || imageUploading}
-                style={[s.navNext, { backgroundColor: CultureTokens.saffron, flex: stepIndex > 0 ? 1 : undefined }]}
+                style={[s.navNext, { backgroundColor: CultureTokens.gold, flex: stepIndex > 0 ? 1 : undefined }]}
               >
                 {isPending ? (
                   <ActivityIndicator size="small" color="#fff" />

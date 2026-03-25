@@ -26,7 +26,7 @@ import { getPostcodeData, getPostcodesByPlace } from '@shared/location/australia
 type SubmitType = 'event' | 'organisation' | 'business' | 'artist' | 'perk';
 
 const TYPE_CONFIG: Record<SubmitType, { label: string; description: string; icon: string; color: string }> = {
-  event:        { label: 'Event',        description: 'Festivals, concerts & workshops', icon: 'calendar',     color: CultureTokens.saffron },
+  event:        { label: 'Event',        description: 'Festivals, concerts & workshops', icon: 'calendar',     color: CultureTokens.gold },
   organisation: { label: 'Organisation', description: 'Cultural groups & communities',   icon: 'people',       color: CultureTokens.teal    },
   business:     { label: 'Business',     description: 'Shops, restaurants & services',   icon: 'business',     color: CultureTokens.indigo  },
   artist:       { label: 'Artist',       description: 'Musicians, dancers & creatives',  icon: 'color-palette',color: CultureTokens.coral   },

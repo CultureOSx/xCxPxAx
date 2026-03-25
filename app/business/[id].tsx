@@ -85,8 +85,8 @@ export default function BusinessDetailScreen() {
                 )}
                 {business.isIndigenousOwned && (
                   <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(139,69,19,0.2)', borderColor: 'rgba(139,69,19,0.4)' }]}>
-                    <Ionicons name="earth" size={16} color={CultureTokens.saffron} />
-                    <Text style={[styles.verifiedText, { color: CultureTokens.saffron }]}>Indigenous Owned</Text>
+                    <Ionicons name="earth" size={16} color={CultureTokens.gold} />
+                    <Text style={[styles.verifiedText, { color: CultureTokens.gold }]}>Indigenous Owned</Text>
                   </View>
                 )}
               </View>
@@ -124,7 +124,7 @@ export default function BusinessDetailScreen() {
               <View style={styles.indigenousBox}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   <View style={styles.indigenousIconBox}>
-                    <Ionicons name="earth" size={20} color={CultureTokens.saffron} />
+                    <Ionicons name="earth" size={20} color={CultureTokens.gold} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.indigenousTitle}>100% Indigenous Owned</Text>
@@ -135,7 +135,7 @@ export default function BusinessDetailScreen() {
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   <View style={styles.indigenousTag}>
-                    <Ionicons name="checkmark-circle" size={14} color={CultureTokens.saffron} />
+                    <Ionicons name="checkmark-circle" size={14} color={CultureTokens.gold} />
                     <Text style={styles.indigenousTagText}>Indigenous Owned</Text>
                   </View>
                   {business.supplyNationRegistered && (
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderLeftWidth: 4,
-    borderLeftColor: CultureTokens.saffron,
+    borderLeftColor: CultureTokens.gold,
     borderWidth: 1,
     borderColor: 'rgba(255, 140, 66, 0.2)'
   },
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: CultureTokens.saffron + '15',
+    backgroundColor: CultureTokens.gold + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -370,14 +370,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: CultureTokens.saffron + '15',
+    backgroundColor: CultureTokens.gold + '15',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: CultureTokens.saffron + '30'
+    borderColor: CultureTokens.gold + '30'
   },
-  indigenousTagText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron },
+  indigenousTagText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold },
   
   supplyNationTag: {
     flexDirection: 'row',

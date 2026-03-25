@@ -9,6 +9,7 @@ export interface FilterItem {
   label: string;
   icon?: string;
   color?: string;
+  backgroundColor?: string;
   count?: number;
 }
 
@@ -43,7 +44,7 @@ export function FilterChip({ item, isActive, onPress, size = 'medium' }: FilterC
         isSmall && styles.chipSmall,
         isActive
           ? { backgroundColor: accentColor, borderColor: accentColor }
-          : { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+          : { backgroundColor: item.backgroundColor || colors.surfaceElevated, borderColor: item.color ? item.color + '40' : colors.border },
         pressed && !isActive && styles.chipPressed,
         pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
         isActive && styles.chipActiveShadow,

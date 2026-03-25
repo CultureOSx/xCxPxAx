@@ -62,28 +62,28 @@ const createShadow = (
 export const CultureTokens = {
   // Core brand palette
   indigo: "#0066CC",        // CulturePass Blue — primary brand
-  saffron: "#FFCC00",       // CulturePass Yellow — discovery warmth
   coral: "#FF5E5B",         // Movement Coral — action energy
-  gold: "#FFC857",          // Temple Gold — cultural premium
+  gold: "#FFC857",          // Temple Gold — warm discovery
   teal: "#2EC4B6",          // Ocean Teal — global belonging
+  purple: "#AF52DE",        // Community Purple
 
   // Functional overrides
-  event: "#FFCC00",         // Events use Saffron
-  eventSoft: "#FFE1CC",     // Event background tint
+  event: "#FFC857",         // Events now use Gold
+  eventSoft: "#FFF8E1",     // Event background tint
   artist: "#FF5E5B",        // Artists use Coral
-  artistSoft: "#FFD6D5",    // Artist background tint
+  artistSoft: "#FFF1F0",    // Artist background tint
   venue: "#2EC4B6",         // Venues use Teal
-  venueSoft: "#D7F5F1",     // Venue background tint
-  movie: "#FFC857",         // Movies use Gold
-  movieSoft: "#FFF3CC",     // Movie background tint
-  community: "#3A86FF",     // Community use Bright Blue
-  communitySoft: "#DCE8FF", // Community background tint
+  venueSoft: "#F0FDFB",     // Venue background tint
+  movie: "#AF52DE",         // Movies use Purple
+  movieSoft: "#F5F3FF",     // Movie background tint
+  community: "#0066CC",     // Community use Brand Blue
+  communitySoft: "#EBF5FF", // Community background tint
 
   // Status overrides
   success: "#2EC4B6",       // Success = Teal
   warning: "#FFC857",       // Warning = Gold
   error: "#FF5E5B",         // Error = Coral
-  info: "#3A86FF",          // Info = Blue
+  info: "#0066CC",          // Info = Blue
 } as const;
 
 /**
@@ -242,13 +242,13 @@ export const light: ColorTheme = {
   tabBar: "rgba(255,255,255,0.98)",
   tabBarBorder: "rgba(230,211,179,0.5)",
   tabIconDefault: "#8D8D8D",
-  tabIconSelected: CultureTokens.saffron,
+  tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
 
   // Cultural brand tokens
   cultureBrand: CultureTokens.indigo,
-  culturePrimary: CultureTokens.saffron,
+  culturePrimary: CultureTokens.indigo,
   cultureSecondary: CultureTokens.coral,
   cultureAccent: CultureTokens.gold,
   cultureHighlight: CultureTokens.teal,
@@ -297,13 +297,13 @@ export const dark: ColorTheme = {
   tabBar: "rgba(11, 11, 20, 0.95)",
   tabBarBorder: "rgba(42, 39, 71, 0.4)",
   tabIconDefault: "#8D8D8D",
-  tabIconSelected: CultureTokens.saffron,
+  tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
 
   // Cultural brand tokens
   cultureBrand: CultureTokens.indigo,
-  culturePrimary: CultureTokens.saffron,
+  culturePrimary: CultureTokens.indigo,
   cultureSecondary: CultureTokens.coral,
   cultureAccent: CultureTokens.gold,
   cultureHighlight: CultureTokens.teal,
@@ -357,16 +357,14 @@ export const gradients = {
    */
   culturepassBrand: [
     CultureTokens.indigo,
-    CultureTokens.saffron,
     CultureTokens.coral,
-  ] as [string, string, string],
+  ] as [string, string],
 
-  /** CulturePass Signature Gradient (reversed: Coral → Saffron → Indigo) */
+  /** CulturePass Signature Gradient (reversed: Coral → Indigo) */
   culturepassBrandReversed: [
     CultureTokens.coral,
-    CultureTokens.saffron,
     CultureTokens.indigo,
-  ] as [string, string, string],
+  ] as [string, string],
 
   /** Primary brand gradient — CulturePass Blue to Deep Blue */
   primary: ["#0066CC", "#004EA8"] as [string, string],

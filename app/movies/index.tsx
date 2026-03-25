@@ -7,7 +7,7 @@ import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage'
 
 const movieGenres: CategoryFilter[] = [
   { label: 'All', icon: 'film', color: CultureTokens.indigo },
-  { label: 'Action', icon: 'flash', color: CultureTokens.saffron },
+  { label: 'Action', icon: 'flash', color: CultureTokens.gold },
   { label: 'Drama', icon: 'heart', color: CultureTokens.indigo },
   { label: 'Comedy', icon: 'happy', color: CultureTokens.gold },
   { label: 'Horror', icon: 'skull', color: CultureTokens.indigo },

@@ -32,7 +32,7 @@ const CultureNearYouLayout = (props: CultureNearYouWidgetProps) => {
         cornerRadius(16),
       ]}
     >
-      <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundColor(CultureTokens.saffron)]}>
+      <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundColor(CultureTokens.gold)]}>
         CULTURE NEAR YOU
       </Text>
       <Text modifiers={[font({ size: 12 }), lineLimit(1), foregroundColor('white')]}>

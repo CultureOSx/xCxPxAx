@@ -111,12 +111,13 @@ export default function LocationScreen() {
       />
 
       {/* Decorative Orbs */}
-      {Platform.OS === 'web' ? (
+      {Platform.OS === 'web' && (
         <>
-          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4, transform: [{ scale: 1.5 }] } as any]} />
+          <View style={[styles.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.teal, opacity: 0.25, transform: [{ scale: 1.2 }] } as any]} />
+          <View style={[styles.orb, { top: '40%', left: '15%', backgroundColor: CultureTokens.gold, opacity: 0.15, transform: [{ scale: 0.8 }] } as any]} />
         </>
-      ) : null}
+      )}
 
       {isDesktop && (
         <View style={styles.desktopBackRow}>
@@ -149,22 +150,26 @@ export default function LocationScreen() {
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: 32 }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <BlurView 
+                intensity={80} 
+                tint="dark" 
+                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} 
+              />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(20,20,35,0.9)', borderRadius: 32 }]} />
             )}
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               <View style={styles.headerBlock}>
-                <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
-                  <Ionicons name={step === 'state' ? "map-outline" : "business-outline"} size={28} color={colors.textInverse} />
+                <View style={[styles.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: CultureTokens.teal + '15' }]}>
+                  <Ionicons name={step === 'state' ? "map" : "location"} size={36} color={CultureTokens.teal} />
                 </View>
-                <Text style={[styles.title, { color: colors.textInverse }]}>
+                <Text style={[styles.title, { color: '#FFFFFF' }]}>
                   {step === 'state' ? 'Where are you?' : 'Select your city'}
                 </Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.7)' }]}>
                   {step === 'state' 
                     ? 'Select your state to discover culture near you.' 
                     : 'Choose your home city for local recommendations.'}
@@ -176,18 +181,18 @@ export default function LocationScreen() {
                   <Pressable
                     style={({pressed}) => [
                       styles.detectBtn,
-                      { backgroundColor: pressed ? `${CultureTokens.saffron}33` : `${CultureTokens.saffron}1A`, borderColor: `${CultureTokens.saffron}80` },
+                      { backgroundColor: pressed ? `${CultureTokens.gold}33` : `${CultureTokens.gold}1A`, borderColor: `${CultureTokens.gold}80` },
                       isDetecting && { opacity: 0.7 }
                     ]}
                     onPress={handleDetectLocation}
                     disabled={isDetecting}
                   >
                     {isDetecting ? (
-                      <ActivityIndicator size="small" color={CultureTokens.saffron} />
+                      <ActivityIndicator size="small" color={CultureTokens.gold} />
                     ) : (
-                      <Ionicons name="navigate" size={18} color={CultureTokens.saffron} />
+                      <Ionicons name="navigate" size={18} color={CultureTokens.gold} />
                     )}
-                    <Text style={[styles.detectBtnText, { color: CultureTokens.saffron }]}>
+                    <Text style={[styles.detectBtnText, { color: CultureTokens.gold }]}>
                       {isDetecting ? 'Detecting location…' : 'Use My Location'}
                     </Text>
                   </Pressable>
@@ -236,8 +241,8 @@ export default function LocationScreen() {
                     ]}
                     hitSlop={12}
                   >
-                    <Ionicons name="arrow-back" size={16} color={CultureTokens.saffron} />
-                    <Text style={[styles.backToStateText, { color: CultureTokens.saffron }]}>
+                    <Ionicons name="arrow-back" size={16} color={CultureTokens.gold} />
+                    <Text style={[styles.backToStateText, { color: CultureTokens.gold }]}>
                       Back to states
                     </Text>
                   </Pressable>
@@ -293,7 +298,7 @@ export default function LocationScreen() {
                 rightIcon="arrow-forward"
                 disabled={!state.country || !state.city}
                 onPress={handleNext}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Continue
               </Button>
@@ -321,27 +326,47 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   formContainerDesktop: { maxWidth: 520 },
   formBlur: { borderWidth: 1 },
   formContent: { paddingTop: 40 },
-  headerBlock: { alignItems: 'center', marginBottom: 32 },
-  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
-  detectBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 16, paddingVertical: 16, marginBottom: 24, borderWidth: 1 },
-  detectBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  // Step dots? (Matching culture-match)
+  dotRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
+  dot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
+  dotActive:    { width: 32, backgroundColor: CultureTokens.teal },
+
+  // Header
+  headerBlock:  { alignItems: 'center', marginBottom: 28 },
+  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
+  subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+
+  // Search input
+  searchInput:  { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', marginBottom: 20 },
+
+  // Detection
+  detectBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, borderRadius: 16, borderWidth: 1.5, marginBottom: 24 },
+  detectBtnText:{ fontSize: 14, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
+
+  // Errors
   errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },
   errorText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  
+  // List
+  listContent:  { paddingBottom: 20 },
   grid: { gap: 12 },
-  stateCard: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: 16, padding: 18, borderWidth: 1 },
+  stateCard: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: 16, padding: 18, borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, marginBottom: 8 },
   stateEmoji: { fontSize: 28 },
   stateName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', marginBottom: 2 },
   cityCount: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  
   backToStateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20, alignSelf: 'flex-start' },
   backToStateText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   selectedStateRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 24, paddingBottom: 20, borderBottomWidth: 1 },
   stateEmojiLarge: { fontSize: 36 },
   selectedStateText: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
+  
   cityGrid: { gap: 10 },
-  cityCard: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, borderWidth: 1 },
+  cityCard: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1 },
   cityName: { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium' },
   spacer: { height: 32 },
-  submitBtn: { height: 56, borderRadius: 16 },
+  submitBtn: { height: 60, borderRadius: 20 },
+  
+  emptyText: { color: '#FFFFFF', textAlign: 'center', marginTop: 40, opacity: 0.5 },
 });

@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  TextInput, Platform, ActivityIndicator, FlatList,
+  TextInput, Platform, ActivityIndicator
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { FlashList } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -64,12 +66,14 @@ function eventMatchesCategory(event: EventData, catId: string): boolean {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ExploreEventCard({ event }: { event: EventData }) {
+function ExploreEventCard({ event, index }: { event: EventData, index: number }) {
   const colors = useColors();
-  const { columnWidth, isDesktop } = useLayout();
-  // Uniform card width for all
-  const cardWidth = columnWidth(isDesktop ? 3 : 2);
   const isIndigenous = isIndigenousEvent(event);
+  
+  // Height variation for masonry effect
+  const imgHeights = [240, 180, 210, 260, 200];
+  const imgHeight = imgHeights[index % imgHeights.length];
+
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
@@ -77,49 +81,22 @@ function ExploreEventCard({ event }: { event: EventData }) {
       accessibilityLabel={event.title}
       style={({ pressed }) => [
         ec.card,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight, width: cardWidth },
-        pressed && { opacity: 0.85 },
+        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
         isIndigenous && { borderWidth: 2, borderColor: CultureTokens.gold },
       ]}
     >
       {/* Image */}
-      <View style={ec.imgWrap}>
-          <Image
-            source={{ uri: event.imageUrl ?? undefined }}
-            style={ec.fill}
-            contentFit="cover"
-            transition={150}
-          />
-          <LinearGradient
-            colors={['transparent', colors.background + 'C0']}
-            style={ec.fill}
-          />
-          {/* Price badge */}
-          {(event.priceCents === 0 || event.isFree) ? (
-            <View style={ec.freeBadge}>
-              <Text style={ec.freeBadgeText}>FREE</Text>
-            </View>
-          ) : event.priceLabel ? (
-            <View style={[ec.freeBadge, { backgroundColor: CultureTokens.indigo }]}> 
-              <Text style={ec.freeBadgeText}>{event.priceLabel}</Text>
-            </View>
-          ) : null}
-          {/* Indigenous badge */}
-          {isIndigenous && (
-            <View style={ec.indigenousBadge}>
-              <Text style={ec.indigenousBadgeText}>🪃 Indigenous</Text>
-            </View>
-          )}
-          {/* Featured star */}
-          {event.isFeatured ? (
-            <View style={ec.featuredDot}>
-              <Ionicons name="star" size={10} color={CultureTokens.gold} />
-            </View>
-          ) : null}
-        </View>
+      <View style={[ec.imgWrap, { height: imgHeight, backgroundColor: colors.surfaceElevated }]}>
+        <Image
+          source={{ uri: event.imageUrl ?? undefined }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={150}
+        />
         <LinearGradient
-          colors={['transparent', colors.background + 'C0']}
-          style={ec.fill}
+          colors={['transparent', 'rgba(0,0,0,0.6)']}
+          style={StyleSheet.absoluteFillObject}
         />
         {/* Price badge */}
         {(event.priceCents === 0 || event.isFree) ? (
@@ -147,8 +124,12 @@ function ExploreEventCard({ event }: { event: EventData }) {
 
       {/* Details below, centered */}
       <View style={ec.detailsWrap}>
-        <Text style={ec.imgTitle} numberOfLines={2}>{event.title}</Text>
-        <Text style={ec.imgDate} numberOfLines={1}>{formatEventDateTime(event.date, event.time)}</Text>
+        <Text style={[ec.imgTitle, { color: colors.text }]} numberOfLines={2}>
+          {event.title}
+        </Text>
+        <Text style={[ec.imgDate, { color: CultureTokens.indigo }]} numberOfLines={1}>
+          {formatEventDateTime(event.date, event.time)}
+        </Text>
         {(event.venue || event.city) ? (
           <View style={ec.metaRowCentered}>
             <Ionicons name="location-outline" size={11} color={colors.textTertiary} />
@@ -163,43 +144,42 @@ function ExploreEventCard({ event }: { event: EventData }) {
 }
 
 const ec = StyleSheet.create({
-  fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   card: {
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
+    marginBottom: 4,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
       },
-      android: { elevation: 3 },
+      android: { elevation: 4 },
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.08)' } as any,
     }),
   },
   imgWrap: {
-    height: 150,
     position: 'relative',
-    backgroundColor: '#1a1a2e',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     overflow: 'hidden',
   },
   detailsWrap: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    padding: 12,
+    padding: 14,
     gap: 4,
   },
   freeBadge: {
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: CultureTokens.saffron,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 7,
+    backgroundColor: CultureTokens.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   freeBadgeText: {
     fontSize: 10,
@@ -212,7 +192,7 @@ const ec = StyleSheet.create({
     right: 8,
     backgroundColor: CultureTokens.gold,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
     zIndex: 2,
   },
@@ -224,44 +204,39 @@ const ec = StyleSheet.create({
   featuredDot: {
     position: 'absolute',
     top: 8,
-    left: 38,
+    left: 42,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  imgOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    gap: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
   },
   imgTitle: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 13,
-    color: '#111',
+    fontSize: 14,
     lineHeight: 18,
+    textAlign: 'left',
   },
   imgDate: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 11,
-    color: '#222',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    textAlign: 'left',
   },
   metaRowCentered: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   meta: {
     fontSize: 11,
     fontFamily: 'Poppins_500Medium',
-    textAlign: 'center',
-    color: '#222',
+    textAlign: 'left',
   },
 });
 
@@ -276,6 +251,7 @@ function CategoryPill({
   isActive: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
@@ -284,25 +260,25 @@ function CategoryPill({
       accessibilityState={{ selected: isActive }}
       style={({ pressed }) => [
         cpill.base,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
       ]}
     >
       {isActive ? (
         <LinearGradient
-          colors={[cat.color, cat.color + 'CC'] as [string, string]}
+          colors={[cat.color, cat.color + 'E6'] as [string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={cpill.inner}
         >
-          <Ionicons name={cat.icon as any} size={14} color="#fff" />
+          <Ionicons name={cat.icon as any} size={15} color="#fff" />
           <Text style={[cpill.label, { color: '#fff', fontFamily: 'Poppins_600SemiBold' }]}>
             {cat.label}
           </Text>
         </LinearGradient>
       ) : (
-        <View style={[cpill.innerInactive]}>
-          <Ionicons name={cat.icon as any} size={14} color={cat.color} />
-          <Text style={[cpill.label, { color: '#999' }]}>{cat.label}</Text>
+        <View style={[cpill.innerInactive, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+          <Ionicons name={cat.icon as any} size={15} color={cat.color} />
+          <Text style={[cpill.label, { color: colors.textSecondary }]}>{cat.label}</Text>
         </View>
       )}
     </Pressable>
@@ -317,68 +293,41 @@ const cpill = StyleSheet.create({
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: 100,
-  },
-  catsWrap: {
-    paddingVertical: 14,
-  },
-  catsScroll: {
-    gap: 14,
-    paddingVertical: 4,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  emptySub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
-    textAlign: 'center',
-    paddingHorizontal: 24,
-  },
-  base: {
-    borderRadius: 100,
-    overflow: 'hidden',
-    marginRight: 0,
-  },
-  inner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 100,
   },
   innerInactive: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins_500Medium',
   },
 });
-      : 'all';
 
-  const [query,    setQuery]    = useState('');
+export default function ExploreScreen() {
+  const { state } = useOnboarding();
+  const colors = useColors();
+  const params = useLocalSearchParams<{ focus?: string; source?: string; playlistId?: string; featuredArtistId?: string }>();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const { hPad, isDesktop, isTablet } = useLayout();
+
+  const requestedFocus = params.focus ? params.focus : 'all';
+
+  const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string>(requestedFocus);
-  // Always use 4 columns for event grid
-  const gridCols = 4;
+
+  // Responsive columns config
+  const gridCols = isDesktop ? 4 : isTablet ? 3 : 2;
   const colGap = 12;
 
   useEffect(() => {
@@ -390,10 +339,7 @@ const cpill = StyleSheet.create({
     country: state.country,
     pageSize: 80,
   });
-  const events = useMemo(
-    () => eventsPage?.events ?? [],
-    [eventsPage],
-  );
+  const events = useMemo(() => eventsPage?.events ?? [], [eventsPage]);
 
   const filtered = useMemo(() => {
     let list = events.filter((e) => eventMatchesCategory(e, activeId));
@@ -409,10 +355,7 @@ const cpill = StyleSheet.create({
     return list;
   }, [events, activeId, query]);
 
-  const featured  = useMemo(() => events.filter((e) => e.isFeatured).slice(0, 6), [events]);
-  // Always use 4 columns for event grid
-  const gridCols = 4;
-  const colGap = 12;
+  const featured = useMemo(() => events.filter((e) => e.isFeatured).slice(0, 6), [events]);
 
   const handleCatPress = useCallback((id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -439,94 +382,102 @@ const cpill = StyleSheet.create({
     <ErrorBoundary>
       <View style={[s.root, { backgroundColor: colors.background }]}>
 
-        {/* ── Header ── */}
-        <View
-          style={[
-            s.header,
-            {
-              paddingTop: topInset + 16,
-              paddingHorizontal: hPad,
-              backgroundColor: colors.background,
-              borderBottomColor: colors.borderLight,
-            },
-          ]}
-        >
-          <View style={s.headerTitles}>
-            <Text style={[s.headerTitle, { color: colors.text }]}>Explore</Text>
-            <Text style={[s.headerSub, { color: colors.textSecondary }]}>
-              Discover what's happening in {locationLabel}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => router.push('/search')}
-            style={[s.searchIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Search"
-          >
-            <Ionicons name="search" size={18} color={colors.textSecondary} />
-          </Pressable>
-        </View>
-
-        {/* ── Search bar ── */}
-        <View style={[s.searchBarWrap, { paddingHorizontal: hPad }]}>
-          <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="search-outline" size={16} color={colors.textTertiary} />
-            <TextInput
-              style={[s.searchInput, { color: colors.text }]}
-              placeholder="Search events, venues…"
-              placeholderTextColor={colors.textTertiary}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-              accessibilityLabel="Search events"
+        {/* ── Premium Glassmorphic Header ── */}
+        <View style={{ paddingTop: topInset }}>
+          {Platform.OS === 'ios' ? (
+            <BlurView
+              intensity={80}
+              tint={colors.background === '#0B0B14' ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background + '80' }]}
             />
-            {query.length > 0 ? (
-              <Pressable
-                onPress={() => setQuery('')}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-              >
-                <Ionicons name="close-circle" size={16} color={colors.textTertiary} />
-              </Pressable>
-            ) : null}
+          ) : (
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background }]} />
+          )}
+
+          <View style={[s.header, { paddingHorizontal: hPad }]}>
+            <View style={s.headerTitles}>
+              <Text style={[s.headerTitle, { color: colors.text }]}>Explore</Text>
+              <Text style={[s.headerSub, { color: colors.textSecondary }]}>
+                Discover what&apos;s happening in <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>{locationLabel}</Text>
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => router.push('/search')}
+              style={[s.searchIconBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+            >
+              <Ionicons name="search" size={18} color={colors.textSecondary} />
+            </Pressable>
           </View>
-        </View>
 
-        {/* ── Category pills ── */}
-        <View style={[s.catsWrap, { backgroundColor: colors.background }]}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[s.catsScroll, { paddingHorizontal: hPad }]}
-          >
-            {CATEGORIES.map((cat) => (
-              <CategoryPill
-                key={cat.id}
-                cat={cat}
-                isActive={activeId === cat.id}
-                onPress={() => handleCatPress(cat.id)}
+          {/* ── Search bar ── */}
+          <View style={[s.searchBarWrap, { paddingHorizontal: hPad }]}>
+            <View style={[s.searchBar, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+              <Ionicons name="search-outline" size={18} color={colors.textTertiary} />
+              <TextInput
+                style={[s.searchInput, { color: colors.text }]}
+                placeholder="Search events, venues…"
+                placeholderTextColor={colors.textTertiary}
+                value={query}
+                onChangeText={setQuery}
+                returnKeyType="search"
+                accessibilityLabel="Search events"
               />
-            ))}
-          </ScrollView>
+              {query.length > 0 ? (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+          
+          <View style={s.bottomBorder} />
         </View>
 
-        {/* ── Event grid ── */}
-        <View style={{ flex: 1, paddingHorizontal: hPad }}>
-          <FlatList
-            key={gridCols}
+        {/* ── Event Grid & Content ── */}
+        <View style={{ flex: 1 }}>
+          <FlashList<EventData>
             data={filtered}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: EventData) => item.id}
             numColumns={gridCols}
+            // @ts-ignore - estimatedItemSize complains on this TS config
+            estimatedItemSize={250}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: hPad }}
             ListHeaderComponent={
-              <>
+              <View style={{ marginBottom: 16 }}>
+                {/* ── Category pills ── */}
+                <View style={s.catsWrap}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.catsScroll}
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <CategoryPill
+                        key={cat.id}
+                        cat={cat}
+                        isActive={activeId === cat.id}
+                        onPress={() => handleCatPress(cat.id)}
+                      />
+                    ))}
+                  </ScrollView>
+                </View>
+
                 {/* Featured horizontal rail */}
                 {activeId === 'all' && query === '' && featured.length > 0 && (
                   <View style={s.section}>
                     <View style={s.sectionHeader}>
-                      <View style={s.sectionDot} />
+                      <LinearGradient
+                        colors={[CultureTokens.indigo, CultureTokens.gold]}
+                        style={s.sectionDot}
+                      />
                       <Text style={[s.sectionTitle, { color: colors.text }]}>Featured</Text>
                       <View style={{ flex: 1 }} />
                       <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
@@ -536,10 +487,13 @@ const cpill = StyleSheet.create({
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ gap: 12 }}
+                      contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
+                      style={{ marginHorizontal: -hPad, paddingHorizontal: hPad }}
                     >
-                      {featured.map((ev) => (
-                        <ExploreEventCard key={ev.id} event={ev} />
+                      {featured.map((ev, index) => (
+                        <View key={ev.id} style={{ width: 280 }}>
+                          <ExploreEventCard event={ev} index={index} />
+                        </View>
                       ))}
                     </ScrollView>
                   </View>
@@ -550,28 +504,27 @@ const cpill = StyleSheet.create({
                   style={[
                     s.sectionHeader,
                     {
-                      marginTop:
-                        activeId === 'all' && query === '' && featured.length > 0 ? 28 : 12,
+                      marginTop: activeId === 'all' && query === '' && featured.length > 0 ? 28 : 8,
                     },
                   ]}
                 >
-                  <View style={s.sectionDot} />
+                  <View style={[s.sectionDot, { backgroundColor: CultureTokens.indigo }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={[s.sectionTitle, { color: colors.text }]}>
                       {activeId === 'all' && query === ''
-                        ? `Discover ${locationLabel}`
+                        ? `Discover`
                         : query
                         ? `"${query}"`
                         : activeCat?.label ?? 'Events'}
                     </Text>
                   </View>
 
-                  {/* Grid column toggle removed: always 4 columns */}
-
                   {!isLoading && (
-                    <Text style={[s.resultCount, { color: colors.textTertiary, marginLeft: 8 }]}>
-                      {filtered.length}
-                    </Text>
+                    <View style={{ backgroundColor: colors.surfaceElevated, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight }}>
+                      <Text style={[s.resultCount, { color: colors.textSecondary }]}>
+                        {filtered.length} {filtered.length === 1 ? 'event' : 'events'}
+                      </Text>
+                    </View>
                   )}
                 </View>
 
@@ -590,7 +543,7 @@ const cpill = StyleSheet.create({
                       colors={[CultureTokens.indigo + '20', CultureTokens.indigo + '08'] as [string, string]}
                       style={s.emptyIconCircle}
                     >
-                      <Ionicons name="search-outline" size={28} color={CultureTokens.indigo} />
+                      <Ionicons name="search-outline" size={32} color={CultureTokens.indigo} />
                     </LinearGradient>
                     <Text style={[s.emptyTitle, { color: colors.text }]}>
                       {activeCat && activeId !== 'all'
@@ -601,7 +554,7 @@ const cpill = StyleSheet.create({
                       {query ? 'Try a different search' : 'Try a different category'}
                     </Text>
                     {(activeId !== 'all' || query !== '') && (
-                      <View style={{ marginTop: 12 }}>
+                      <View style={{ marginTop: 20 }}>
                         <Button
                           variant="outline"
                           pill
@@ -616,11 +569,11 @@ const cpill = StyleSheet.create({
                     )}
                   </View>
                 )}
-              </>
+              </View>
             }
-            renderItem={({ item }) => (
-              <View style={{ padding: colGap / 2 }}>
-                <ExploreEventCard event={item} />
+            renderItem={({ item, index }: { item: EventData, index: number }) => (
+              <View style={{ padding: colGap / 2, paddingHorizontal: hPad * 0.2 }}>
+                 <ExploreEventCard event={item} index={index} />
               </View>
             )}
           />
@@ -632,89 +585,123 @@ const cpill = StyleSheet.create({
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: CultureTokens.indigo + '10',
+    paddingTop: 16,
+    paddingBottom: 16,
     gap: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    backgroundColor: undefined,
   },
   headerTitles: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
   headerTitle: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 26,
+    fontSize: 28,
     letterSpacing: -0.5,
   },
   headerSub: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: 13,
+    fontSize: 14,
   },
   searchIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
-
-  // Search bar
   searchBarWrap: {
-    marginTop: 18,
-    marginBottom: 10,
+    paddingBottom: 16,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    height: 48,
-    borderRadius: 14,
+    gap: 10,
+    height: 52,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_400Regular',
     padding: 0,
   },
-
-  // Category chips
+  bottomBorder: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(150,150,150,0.15)',
+    width: '100%',
+  },
   catsWrap: {
-    paddingVertical: 14,
+    paddingVertical: 16,
+    marginHorizontal: -16, 
   },
   catsScroll: {
-    gap: 14,
-    paddingVertical: 4,
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  section: {
+    marginTop: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  sectionDot: {
+    width: 6,
+    height: 18,
+    borderRadius: 3,
+  },
+  sectionTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 20,
+    letterSpacing: -0.3,
+  },
+  seeAll: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+  },
+  resultCount: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 12,
+  },
+  loadingWrap: {
+    marginTop: 60,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 14,
   },
   emptyWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginTop: 60,
+    paddingHorizontal: 30,
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 8,
   },
   emptySub: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
-    paddingHorizontal: 24,
   },
-});
-
-
 });

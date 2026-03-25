@@ -211,7 +211,7 @@ export default function SignUpScreen() {
       {Platform.OS === 'web' ? (
         <>
           <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, filter: 'blur(50px)' } as any]} />
         </>
       ) : null}
 
@@ -265,7 +265,7 @@ export default function SignUpScreen() {
               </View>
 
               <Text style={[styles.title, { color: colors.textInverse }]}>Create Account.</Text>
-              <Text style={[styles.benefitsRow, { color: CultureTokens.saffron }]}>
+              <Text style={[styles.benefitsRow, { color: CultureTokens.gold }]}>
                 🎉 Free events · Community access · Exclusive perks
               </Text>
 
@@ -354,7 +354,7 @@ export default function SignUpScreen() {
                   onToggle={(v) => { setAgreed(v); clearErrors(); }}
                   label={
                     <Text style={[styles.checkText, { color: colors.textInverse }]}>
-                      I agree to the <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/terms')}>Terms</Text> & <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/privacy')}>Privacy</Text>
+                      I agree to the <Text style={[styles.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/terms')}>Terms</Text> & <Text style={[styles.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/privacy')}>Privacy</Text>
                     </Text>
                   }
                 />
@@ -368,7 +368,7 @@ export default function SignUpScreen() {
                 loading={loading}
                 disabled={!isValid || loading}
                 onPress={handleSignUp}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Create Account
               </Button>
@@ -394,7 +394,7 @@ export default function SignUpScreen() {
                 hitSlop={12}
               >
                 <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                  Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.saffron }]}>Sign In</Text>
+                  Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.gold }]}>Sign In</Text>
                 </Text>
               </Pressable>
             </View>

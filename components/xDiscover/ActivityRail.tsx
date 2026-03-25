@@ -60,7 +60,7 @@ function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll }: A
                   <Ionicons name="location-outline" size={11} color={colors.textTertiary} />
                   <Text style={[styles.activityMetaText, { color: colors.textSecondary }]}>{item.city}</Text>
                 </View>
-                <View style={[styles.metaPill, { borderColor: CultureTokens.saffron + '50' }]}>
+                <View style={[styles.metaPill, { borderColor: CultureTokens.gold + '50' }]}>
                   <Ionicons name="pricetag-outline" size={11} color={colors.textTertiary} />
                   <Text style={[styles.activityMetaText, { color: colors.textSecondary }]}>{item.priceLabel || 'Free'}</Text>
                 </View>

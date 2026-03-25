@@ -70,9 +70,9 @@ export function StepDatetime({ form, setField, colors, s }: Props) {
       ) : null}
 
       <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20', marginTop: 8 }]}>
-        <Ionicons name="information-circle-outline" size={18} color={CultureTokens.saffron} />
-        <Text style={[s.infoText, { color: colors.textSecondary }]}>
-          Time in 24h format (e.g. 18:30).
+        <Ionicons name="information-circle-outline" size={18} color={CultureTokens.gold} />
+        <Text style={[s.infoText, { color: CultureTokens.gold }]}>
+          Need more time/date options? Use the event details to add complex schedules.
         </Text>
       </View>
     </View>

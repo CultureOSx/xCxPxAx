@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { BackButton } from '@/components/ui/BackButton';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -70,7 +70,7 @@ interface TicketCardProps {
   onCancel: (t: Ticket) => void;
 }
 
-function TicketCard({ ticket, onCancel }: TicketCardProps) {
+const TicketCard = React.memo(({ ticket, onCancel }: TicketCardProps) => {
   const colors = useColors();
   const isActive = ticket.status === 'confirmed';
 
@@ -78,7 +78,7 @@ function TicketCard({ ticket, onCancel }: TicketCardProps) {
     ticket.status === 'confirmed' ? { bg: CultureTokens.teal + '20', color: CultureTokens.teal, label: 'Confirmed' } :
     ticket.status === 'used'      ? { bg: colors.surfaceElevated, color: colors.textTertiary, label: 'Used' } :
     ticket.status === 'cancelled' ? { bg: CultureTokens.coral + '15', color: CultureTokens.coral, label: 'Cancelled' } :
-    ticket.status === 'expired'   ? { bg: CultureTokens.saffron + '15', color: CultureTokens.saffron, label: 'Expired' } :
+    ticket.status === 'expired'   ? { bg: CultureTokens.gold + '15', color: CultureTokens.gold, label: 'Expired' } :
                                     { bg: colors.surfaceElevated, color: colors.textTertiary, label: ticket.status || 'Unknown' };
 
   const bannerColor = ticket.imageColor || CultureTokens.indigo;
@@ -181,7 +181,7 @@ function TicketCard({ ticket, onCancel }: TicketCardProps) {
       )}
     </Card>
   );
-}
+});
 
 export default function TicketsScreen() {
   const insets = useSafeAreaInsets();
@@ -228,9 +228,10 @@ export default function TicketsScreen() {
 
   return (
     <AuthGuard icon="ticket-outline" title="My Tickets" message="Sign in to view and manage your event tickets.">
+      <Stack.Screen options={{ title: 'My Tickets | CulturePass' }} />
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <LinearGradient
-          colors={gradients.culturepassBrand as [string, string, string]}
+          colors={gradients.culturepassBrand as [string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ paddingTop: topInset }}

@@ -226,7 +226,7 @@ function DataComplianceContent() {
           <ExportButton
             label="Event Data Export"
             icon="calendar-outline"
-            accent={CultureTokens.saffron}
+            accent={CultureTokens.gold}
             onPress={() => Alert.alert('Event Export', 'Event data export is not yet available in-app. Use Firebase Console → Firestore → Export for bulk event data.')}
           />
           <ExportButton
@@ -260,7 +260,7 @@ function DataComplianceContent() {
               step={2}
               title="Verify identity"
               body="Confirm the requester's identity matches the account via their email or Firebase UID."
-              accent={CultureTokens.saffron}
+              accent={CultureTokens.gold}
             />
             <GdprStep
               step={3}
@@ -336,7 +336,7 @@ function DataComplianceContent() {
               sub="Cookie and tracking disclosures"
               icon="ellipsis-horizontal-outline"
               route="/legal/cookies"
-              accent={CultureTokens.saffron}
+              accent={CultureTokens.gold}
             />
             <PolicyRow
               index={3}
@@ -364,7 +364,7 @@ function DataComplianceContent() {
               { label: 'User profiles',      value: 'Until deletion request', icon: 'person-outline',    color: CultureTokens.indigo },
               { label: 'Tickets',             value: 'Permanent (financial record)', icon: 'ticket-outline',   color: CultureTokens.teal },
               { label: 'Audit logs',          value: '90 days (Firestore)',   icon: 'list-outline',     color: '#A78BFA' },
-              { label: 'Event data',          value: '2 years post-event',    icon: 'calendar-outline', color: CultureTokens.saffron },
+              { label: 'Event data',          value: '2 years post-event',    icon: 'calendar-outline', color: CultureTokens.gold },
               { label: 'Payment records',     value: '7 years (legal requirement)', icon: 'card-outline', color: CultureTokens.gold },
             ]).map((item, i) => (
               <Animated.View key={item.label} entering={FadeInDown.delay(i * 40).duration(260)}>

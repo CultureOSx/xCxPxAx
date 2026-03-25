@@ -229,10 +229,10 @@ export default function TicketDetailScreen() {
   const ticketStatus = ticket.status as string | null;
   const statusInfo =
     ticketStatus === 'confirmed' ? { color: CultureTokens.teal,      bg: CultureTokens.teal + '20',      label: 'Confirmed',      icon: 'checkmark-circle' as const } :
-    ticketStatus === 'pending'   ? { color: CultureTokens.saffron,   bg: CultureTokens.saffron + '20',   label: 'Payment Pending',icon: 'time'             as const } :
+    ticketStatus === 'pending'   ? { color: CultureTokens.gold,   bg: CultureTokens.gold + '20',   label: 'Payment Pending',icon: 'time'             as const } :
     ticketStatus === 'used'      ? { color: colors.textSecondary,    bg: colors.borderLight,             label: 'Scanned',        icon: 'checkmark-done'   as const } :
     ticketStatus === 'cancelled' ? { color: CultureTokens.coral,     bg: CultureTokens.coral + '20',     label: 'Cancelled',      icon: 'close-circle'     as const } :
-    ticketStatus === 'expired'   ? { color: CultureTokens.saffron,   bg: CultureTokens.saffron + '20',   label: 'Expired',        icon: 'time'             as const } :
+    ticketStatus === 'expired'   ? { color: CultureTokens.gold,   bg: CultureTokens.gold + '20',   label: 'Expired',        icon: 'time'             as const } :
                                    { color: colors.textSecondary,    bg: colors.borderLight,             label: ticketStatus || 'Unknown', icon: 'help-circle' as const };
 
   const isActive  = ticket.status === 'confirmed';
@@ -294,8 +294,8 @@ export default function TicketDetailScreen() {
                   )}
                   {t.eventTime && (
                     <View style={s.infoItem}>
-                      <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.saffron + '15' }]}>
-                        <Ionicons name="time" size={16} color={CultureTokens.saffron} />
+                      <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.gold + '15' }]}>
+                        <Ionicons name="time" size={16} color={CultureTokens.gold} />
                       </View>
                       <View>
                         <Text style={s.infoLabel}>Time</Text>
@@ -408,8 +408,8 @@ export default function TicketDetailScreen() {
                 style={({pressed}) => [s.actionBtn, pressed && { backgroundColor: colors.backgroundSecondary }]} 
                 onPress={handleShare}
               >
-                <View style={[s.actionIcon, { backgroundColor: CultureTokens.saffron + '15' }]}>
-                  <Ionicons name="share-outline" size={18} color={CultureTokens.saffron} />
+                <View style={[s.actionIcon, { backgroundColor: CultureTokens.gold + '15' }]}>
+                  <Ionicons name="share-outline" size={18} color={CultureTokens.gold} />
                 </View>
                 <Text style={s.actionText}>Share Ticket</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />

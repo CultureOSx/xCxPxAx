@@ -50,17 +50,17 @@ export function StepTickets({ form, setField, colors, s, currency, showAddTier, 
       ))}
 
       {showAddTier ? (
-        <View style={[s.addTierForm, { backgroundColor: colors.surfaceElevated, borderColor: CultureTokens.saffron + '40' }]}>
+        <View style={[s.addTierForm, { backgroundColor: colors.surfaceElevated, borderColor: CultureTokens.gold + '40' }]}>
           <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>TIER NAME</Text>
           <View style={s.tierPresets}>
             {TIER_PRESETS.map((preset) => (
               <Pressable
                 key={preset}
                 onPress={() => setNewTier((t) => ({ ...t, name: preset }))}
-                style={[s.tierPreset, { borderColor: newTier.name === preset ? CultureTokens.saffron : colors.border, backgroundColor: newTier.name === preset ? CultureTokens.saffron + '15' : colors.background }]}
+                style={[s.tierPreset, { borderColor: newTier.name === preset ? CultureTokens.gold : colors.border, backgroundColor: newTier.name === preset ? CultureTokens.gold + '15' : colors.background }]}
                 accessibilityRole="button"
               >
-                <Text style={[s.tierPresetText, { color: newTier.name === preset ? CultureTokens.saffron : colors.textSecondary }]}>{preset}</Text>
+                <Text style={[s.tierPresetText, { color: newTier.name === preset ? CultureTokens.gold : colors.textSecondary }]}>{preset}</Text>
               </Pressable>
             ))}
           </View>
@@ -97,18 +97,18 @@ export function StepTickets({ form, setField, colors, s, currency, showAddTier, 
           </View>
           <View style={s.row}>
             <Button variant="outline" size="sm" onPress={() => setShowAddTier(false)} style={{ flex: 1 }}>Cancel</Button>
-            <Button variant="primary" size="sm" onPress={addTier} style={{ flex: 1, backgroundColor: CultureTokens.saffron }}>Add Tier</Button>
+            <Button variant="primary" size="sm" onPress={addTier} style={{ flex: 1, backgroundColor: CultureTokens.gold }}>Add Tier</Button>
           </View>
         </View>
       ) : (
         <Pressable
           onPress={() => { setShowAddTier(true); haptic(); }}
-          style={[s.addTierBtn, { borderColor: CultureTokens.saffron + '60', backgroundColor: CultureTokens.saffron + '10' }]}
+          style={[s.addTierBtn, { borderColor: CultureTokens.gold + '60', backgroundColor: CultureTokens.gold + '10' }]}
           accessibilityRole="button"
           accessibilityLabel="Add ticket tier"
         >
-          <Ionicons name="add-circle-outline" size={22} color={CultureTokens.saffron} />
-          <Text style={[s.addTierText, { color: CultureTokens.saffron }]}>Add Ticket Tier</Text>
+          <Ionicons name="add-circle-outline" size={22} color={CultureTokens.gold} />
+          <Text style={[s.addTierText, { color: CultureTokens.gold }]}>Add Ticket Tier</Text>
         </Pressable>
       )}
 

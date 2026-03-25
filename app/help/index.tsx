@@ -34,7 +34,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'account',
     label: 'Account & Profile',
     icon: 'person-circle-outline',
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     items: [
       { q: 'How do I edit my profile?', a: 'Go to Settings → Edit Profile (or tap your avatar on the Profile tab). You can update your display name, bio, profile photo, city, social links, and interests.' },
       { q: 'How do I change my password?', a: 'Go to Settings → Privacy & Security → Change Password. You\'ll receive a reset link at your registered email address.' },
@@ -305,7 +305,7 @@ export default function HelpScreen() {
           <View style={styles.contactCard}>
             {[
               { label: 'Privacy Policy', icon: 'shield-checkmark-outline', color: CultureTokens.teal, route: '/legal/privacy' },
-              { label: 'Terms of Service', icon: 'document-text-outline', color: CultureTokens.saffron, route: '/legal/terms' },
+              { label: 'Terms of Service', icon: 'document-text-outline', color: CultureTokens.gold, route: '/legal/terms' },
               { label: 'Cookie Policy', icon: 'finger-print-outline', color: CultureTokens.coral, route: '/legal/cookies' },
               { label: 'Community Guidelines', icon: 'people-circle-outline', color: CultureTokens.success, route: '/legal/guidelines' },
             ].map((item, i, arr) => (

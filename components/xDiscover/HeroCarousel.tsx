@@ -64,7 +64,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
 
         <View style={styles.heroCardContent}>
           <View style={styles.heroCardMetaTop}>
-            <View style={[styles.heroCardPrice, { backgroundColor: (item.priceCents === 0 || item.isFree) ? CultureTokens.saffron : CultureTokens.indigo }]}>
+            <View style={[styles.heroCardPrice, { backgroundColor: (item.priceCents === 0 || item.isFree) ? CultureTokens.gold : CultureTokens.indigo }]}>
               <Text style={styles.heroCardPriceText}>
                 {(item.priceCents === 0 || item.isFree) ? 'FREE' : item.priceLabel || 'TICKETS'}
               </Text>

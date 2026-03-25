@@ -210,7 +210,7 @@ export default function InterestsScreen() {
       {Platform.OS === 'web' && (
         <>
           <View style={[s.orb, { top: -80, right: -60, backgroundColor: CultureTokens.indigo }] as never} />
-          <View style={[s.orb, { bottom: 100, left: -80, backgroundColor: CultureTokens.saffron, opacity: 0.25 }] as never} />
+          <View style={[s.orb, { bottom: 100, left: -80, backgroundColor: CultureTokens.gold, opacity: 0.25 }] as never} />
         </>
       )}
       {/* Header */}
@@ -256,7 +256,7 @@ export default function InterestsScreen() {
                   s.progressFill,
                   {
                     width: `${progressFill * 100}%` as never,
-                    backgroundColor: isReady ? CultureTokens.teal : CultureTokens.saffron,
+                    backgroundColor: isReady ? CultureTokens.teal : CultureTokens.gold,
                   },
                 ]}
               />
@@ -272,7 +272,7 @@ export default function InterestsScreen() {
             <View style={s.chipWrap}>
               {popularInterestsSydney.map(interest => {
                 const cat = categoryByInterest.get(interest);
-                const accent = cat?.accentColor ?? CultureTokens.saffron;
+                const accent = cat?.accentColor ?? CultureTokens.gold;
                 const icon = (interestIcons[interest] as string | undefined) ?? 'star';
                 return (
                   <InterestChip
@@ -398,7 +398,7 @@ export default function InterestsScreen() {
           onPress={handleFinish}
           style={[
             s.ctaBtn,
-            isReady && { backgroundColor: CultureTokens.saffron },
+            isReady && { backgroundColor: CultureTokens.gold },
             shadows.large,
           ]}
         >

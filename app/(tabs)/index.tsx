@@ -148,7 +148,7 @@ export default function DiscoverScreen() {
           title="Restaurants Near You"
           subtitle="Cultural dining in your neighbourhood"
           icon="restaurant"
-          accentColor={CultureTokens.saffron}
+          accentColor={CultureTokens.gold}
         />
 
         <ComingSoonRail

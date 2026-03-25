@@ -15,7 +15,7 @@ const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; ic
   release:      { label: 'Release',      color: CultureTokens.indigo,  icon: 'rocket-outline' },
   feature:      { label: 'Feature',      color: CultureTokens.teal,    icon: 'sparkles-outline' },
   fix:          { label: 'Fix',          color: CultureTokens.coral,   icon: 'construct-outline' },
-  announcement: { label: 'Announcement', color: CultureTokens.saffron, icon: 'megaphone-outline' },
+  announcement: { label: 'Announcement', color: CultureTokens.gold, icon: 'megaphone-outline' },
 };
 
 function formatDate(iso?: string) {

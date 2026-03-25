@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Platform, ActivityIndicator, useColorScheme } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,6 +58,7 @@ function EventRow({
   isAuthenticated: boolean;
   isWeb: boolean;
 }) {
+  const isDark = useColorScheme() === 'dark';
   const safeDate = toSafeDateKey(event.date);
   const dayNum = safeDate ? new Date(`${safeDate}T00:00:00`).getDate() : null;
   const monthAbbr = safeDate ? MONTHS_SHORT[new Date(`${safeDate}T00:00:00`).getMonth()] : 'TBA';
@@ -65,7 +67,7 @@ function EventRow({
     event.category === 'council' || event.category === 'Council' || event.category === 'civic';
   const isFree = (event.priceCents ?? 0) === 0;
 
-  const accentColor = isCouncilEvent ? CultureTokens.teal : CultureTokens.saffron;
+  const accentColor = isCouncilEvent ? CultureTokens.teal : CultureTokens.gold;
 
   const handlePress = () => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -82,15 +84,15 @@ function EventRow({
         {
           backgroundColor: colors.surface,
           borderColor: colors.borderLight,
+          boxShadow: isDark 
+            ? '0px 4px 12px rgba(0,0,0,0.45)' 
+            : '0px 4px 12px rgba(44,42,114,0.08)',
         },
         pressed && { opacity: 0.85 },
       ]}
     >
       {/* Left date block */}
-      <LinearGradient
-        colors={[accentColor + '22', accentColor + '0A']}
-        style={evRow.dateBlock}
-      >
+      <BlurView intensity={isDark ? 30 : 50} tint="dark" style={[evRow.dateBlock, { backgroundColor: accentColor + '22' }]}>
         {dayNum !== null ? (
           <>
             <Text style={[evRow.dateDay, { color: accentColor }]}>{dayNum}</Text>
@@ -99,7 +101,7 @@ function EventRow({
         ) : (
           <Text style={[evRow.dateTba, { color: accentColor }]}>TBA</Text>
         )}
-      </LinearGradient>
+      </BlurView>
 
       {/* Content */}
       <View style={evRow.content}>
@@ -162,15 +164,7 @@ const evRow = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.07,
-        shadowRadius: 8,
-      },
-      android: { elevation: 2 },
-    }),
+    elevation: 3,
   },
   dateBlock: {
     width: 60,
@@ -256,6 +250,7 @@ const evRow = StyleSheet.create({
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const isDark = useColorScheme() === 'dark';
 
   const { isDesktop, isTablet, width } = useLayout();
   const isWeb = Platform.OS === 'web';
@@ -598,7 +593,13 @@ export default function CalendarScreen() {
               <View
                 style={[
                   s.calCard,
-                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                  { 
+                    backgroundColor: colors.surface, 
+                    borderColor: colors.borderLight,
+                    boxShadow: isDark 
+                      ? '0px 8px 30px rgba(0,0,0,0.5)' 
+                      : '0px 8px 30px rgba(44,42,114,0.12)',
+                  },
                   isDesktopWeb && s.calCardCompact,
                 ]}
               >
@@ -782,12 +783,15 @@ export default function CalendarScreen() {
                     {
                       backgroundColor: colors.surface,
                       borderColor: CultureTokens.indigo + '30',
+                      boxShadow: isDark 
+                        ? '0px 2px 8px rgba(0,0,0,0.3)' 
+                        : '0px 2px 8px rgba(44,42,114,0.04)',
                     },
                   ]}
                 >
-                  <View style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
+                  <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
                     <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
-                  </View>
+                  </BlurView>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.civicTitle, { color: colors.text }]}>{reminder.title}</Text>
                     <Text style={[s.civicSub, { color: colors.textSecondary }]}>
@@ -975,15 +979,7 @@ const s = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     marginTop: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: { elevation: 3 },
-    }),
+    elevation: 4,
   },
   calCardCompact: { marginHorizontal: 0 },
 
@@ -1069,15 +1065,7 @@ const s = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: { elevation: 1 },
-    }),
+    elevation: 2,
   },
   civicIcon: {
     width: 40,

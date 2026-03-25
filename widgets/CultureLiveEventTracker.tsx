@@ -38,7 +38,7 @@ const CultureLiveEventTrackerLayout = (props: CultureLiveEventTrackerProps) => {
           cornerRadius(16),
         ]}
       >
-        <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundColor(CultureTokens.saffron)]}>
+        <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundColor(CultureTokens.gold)]}>
           LIVE EVENT
         </Text>
         <Text modifiers={[font({ size: 15, weight: 'bold' }), lineLimit(1), foregroundColor('white')]}>
@@ -60,17 +60,17 @@ const CultureLiveEventTrackerLayout = (props: CultureLiveEventTrackerProps) => {
       </VStack>
     ),
     compactLeading: (
-      <Text modifiers={[font({ size: 11, weight: 'bold' }), foregroundColor(CultureTokens.saffron)]}>
+      <Text modifiers={[font({ size: 11, weight: 'bold' }), foregroundColor(CultureTokens.gold)]}>
         CP
       </Text>
     ),
     compactTrailing: (
-      <Text modifiers={[font({ size: 11 }), lineLimit(1), foregroundColor('white')]}>
+      <Text modifiers={[font({ size: 11 }), lineLimit(1), foregroundColor(CultureTokens.gold)]}>
         {status}
       </Text>
     ),
     minimal: (
-      <Text modifiers={[font({ size: 11, weight: 'bold' }), foregroundColor(CultureTokens.saffron)]}>
+      <Text modifiers={[font({ size: 11, weight: 'bold' }), foregroundColor(CultureTokens.gold)]}>
         CP
       </Text>
     ),

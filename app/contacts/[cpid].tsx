@@ -27,7 +27,7 @@ const getTierDisplay = (colors: any): Record<string, { label: string; color: str
   plus: { label: 'Plus', color: CultureTokens.indigo, icon: 'star' },
   premium: { label: 'Premium', color: CultureTokens.gold, icon: 'diamond' },
   elite: { label: 'Elite', color: '#8E44AD', icon: 'trophy' },
-  vip: { label: 'VIP', color: CultureTokens.saffron, icon: 'ribbon' },
+  vip: { label: 'VIP', color: CultureTokens.gold, icon: 'ribbon' },
   pro: { label: 'Pro', color: CultureTokens.teal, icon: 'briefcase' },
 });
 
@@ -374,8 +374,8 @@ export default function ContactDetailScreen() {
               <Text style={[styles.quickActionLabel, { color: CultureTokens.coral }]}>Save</Text>
             </Pressable>
             <Pressable style={styles.quickActionBtn} onPress={handleShare}>
-              <Ionicons name="share-social" size={22} color={CultureTokens.saffron} />
-              <Text style={[styles.quickActionLabel, { color: CultureTokens.saffron }]}>Share</Text>
+              <Ionicons name="share-social" size={22} color={CultureTokens.gold} />
+              <Text style={[styles.quickActionLabel, { color: CultureTokens.gold }]}>Share</Text>
             </Pressable>
           </View>
         </View>
@@ -490,8 +490,8 @@ export default function ContactDetailScreen() {
           </Pressable>
 
           <Pressable style={styles.actionBtn} onPress={handleShare}>
-            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.saffron + '15' }]}>
-              <Ionicons name="share-outline" size={20} color={CultureTokens.saffron} />
+            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.gold + '15' }]}>
+              <Ionicons name="share-outline" size={20} color={CultureTokens.gold} />
             </View>
             <Text style={styles.actionBtnText}>Share Contact</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />

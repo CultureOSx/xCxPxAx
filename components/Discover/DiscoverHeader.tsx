@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 const isWeb = Platform.OS === 'web';
 
@@ -52,12 +53,13 @@ function DiscoverHeaderComponent({
       />
       <View style={styles.brandBlock}>
         <View style={styles.logoCircle}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+            style={StyleSheet.absoluteFillObject}
+          />
           <Image source={require('@/assets/images/icon.png')} style={styles.logoImg} />
         </View>
-        <View style={styles.brandTextBlock}>
-          <Text style={styles.brandAppName}>CulturePass</Text>
-          <Text style={styles.brandTagline}>Explore Culture</Text>
-        </View>
+        <BrandWordmark size="sm" withTagline light />
       </View>
 
       <View style={styles.topBarSpacer} />
@@ -212,7 +214,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroTagline: {
     fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     textTransform: 'uppercase',
     letterSpacing: 2,
   },
@@ -221,7 +223,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroTaglineDesktop: {
     fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     textTransform: 'uppercase',
     letterSpacing: 2,
     marginTop: 2,

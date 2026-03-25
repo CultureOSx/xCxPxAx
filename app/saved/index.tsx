@@ -374,7 +374,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   eventImage: { width: 120, minHeight: 140 },
   eventInfo: { flex: 1, padding: 16, gap: 6, justifyContent: 'center' },
   eventCommunityRow: { flexDirection: 'row' },
-  eventCommunity: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5, color: CultureTokens.saffron, backgroundColor: CultureTokens.saffron + '15' },
+  eventCommunity: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5, color: CultureTokens.gold, backgroundColor: CultureTokens.gold + '15' },
   eventTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, color: colors.text },
   
   metaGroup: { gap: 6, marginVertical: 6 },

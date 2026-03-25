@@ -281,20 +281,20 @@ ALGOLIA_ADMIN_KEY=
 ```typescript
 import { CultureTokens } from '@/constants/theme';
 
-CultureTokens.indigo   // #2C2A72 — Culture Indigo (primary brand CTA)
-CultureTokens.saffron  // #FF8C42 — Festival Saffron (warm discovery)
+CultureTokens.indigo   // #0066CC — CulturePass Blue (primary brand)
 CultureTokens.coral    // #FF5E5B — Movement Coral (action energy)
-CultureTokens.gold     // #FFC857 — Temple Gold (cultural premium)
+CultureTokens.gold     // #FFC857 — Temple Gold (warm discovery)
 CultureTokens.teal     // #2EC4B6 — Ocean Teal (global belonging)
+CultureTokens.purple   // #AF52DE — Community Purple
 ```
 
 ### Functional Category Tokens
 ```typescript
-CultureTokens.event      // Saffron — event listing
+CultureTokens.event      // Gold — event listing
 CultureTokens.artist     // Coral — artist profiles
 CultureTokens.venue      // Teal — venues
-CultureTokens.movie      // Gold — movies
-CultureTokens.community  // Bright Blue — communities
+CultureTokens.movie      // Purple — movies
+CultureTokens.community  // Brand Blue — communities
 ```
 
 ### Component Tokens
@@ -330,7 +330,7 @@ Web uses light mode (`useColors()` always returns `light` theme on web).
 ```typescript
 import { gradients } from '@/constants/theme';
 
-gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners, CTAs
+gradients.culturepassBrand  // [Indigo, Coral] — hero banners, CTAs
 gradients.primary           // [Indigo, Blue] — tab bar active pill
 gradients.aurora            // light blue/purple — backgrounds
 gradients.sunset            // warm orange/coral — event cards

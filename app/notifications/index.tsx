@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -9,9 +11,9 @@ import { notificationKeys } from '@/hooks/queries/keys';
 import { api, type Notification as AppNotification } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens, shadows } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const isWeb = Platform.OS === 'web';
@@ -21,7 +23,7 @@ const isWeb = Platform.OS === 'web';
 const NOTIF_TYPE_INFO: Record<string, { icon: string; color: string; label: string }> = {
   system:    { icon: 'settings',      color: CultureTokens.teal,    label: 'System'    },
   event:     { icon: 'calendar',      color: CultureTokens.coral,   label: 'Events'    },
-  perk:      { icon: 'gift',          color: CultureTokens.saffron, label: 'Perks'     },
+  perk:      { icon: 'gift',          color: CultureTokens.gold, label: 'Perks'     },
   community: { icon: 'people',        color: '#22C55E',             label: 'Community' },
   payment:   { icon: 'wallet',        color: '#22C55E',             label: 'Wallet'    },
   follow:    { icon: 'person-add',    color: CultureTokens.gold,    label: 'Social'    },
@@ -138,7 +140,8 @@ export default function NotificationsScreen() {
   const insets   = useSafeAreaInsets();
   const { userId } = useAuth();
   const colors   = useColors();
-  const s        = getStyles(colors);
+  const isDark   = useIsDark();
+  const s        = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [activeFilter, setActiveFilter] = useState('all');
 
@@ -174,6 +177,16 @@ export default function NotificationsScreen() {
 
   const topPad = Platform.OS === 'web' ? 0 : insets.top;
 
+  // Flattened data for FlashList
+  const flatData = useMemo(() => {
+    const list: (AppNotification | { id: string; isHeader: boolean; label: string })[] = [];
+    groups.forEach(g => {
+      list.push({ id: `header-${g.label}`, isHeader: true, label: g.label });
+      g.items.forEach(item => list.push(item));
+    });
+    return list;
+  }, [groups]);
+
   return (
     <View style={[s.screen, { paddingTop: topPad }]}>
       {/* ── Header ── */}
@@ -184,6 +197,7 @@ export default function NotificationsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
+          <BlurView intensity={Platform.OS === 'ios' ? 20 : 0} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
 
@@ -263,20 +277,26 @@ export default function NotificationsScreen() {
             {activeFilter === 'all' ? 'No notifications yet' : `No ${activeFilter} notifications`}
           </Text>
           <Text style={[s.emptySub, { color: colors.textSecondary }]}>
-            We'll let you know when something happens
+            We&apos;ll let you know when something happens
           </Text>
         </View>
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 60 }]}
-        >
-          {groups.map(({ label, items }) => (
-            <View key={label}>
-              <Text style={[s.groupLabel, { color: colors.textTertiary }]}>{label}</Text>
-              {items.map((notif) => (
+        <View style={{ flex: 1 }}>
+          <FlashList
+            data={flatData}
+            keyExtractor={(item) => item.id}
+            // @ts-ignore - estimatedItemSize is required but may have type issues with complex unions
+            estimatedItemSize={120}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: insets.bottom + 100 }}
+            getItemType={(item) => ('isHeader' in item ? 'header' : 'notif')}
+            renderItem={({ item }) => {
+              if ('isHeader' in item) {
+                return <Text style={[s.groupLabel, { color: colors.textTertiary }]}>{item.label}</Text>;
+              }
+              const notif = item as AppNotification;
+              return (
                 <NotifRow
-                  key={notif.id}
                   notif={notif}
                   colors={colors}
                   s={s}
@@ -285,10 +305,10 @@ export default function NotificationsScreen() {
                     if (!notif.read) markReadMutation.mutate(notif.id);
                   }}
                 />
-              ))}
-            </View>
-          ))}
-        </ScrollView>
+              );
+            }}
+          />
+        </View>
       )}
     </View>
   );
@@ -296,7 +316,7 @@ export default function NotificationsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => StyleSheet.create({
   screen:  { flex: 1, backgroundColor: colors.background },
 
   // Header
@@ -312,9 +332,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface + '80',
     borderWidth: 1,
     borderColor: colors.borderLight,
+    overflow: 'hidden',
   },
   headerCenter: {
     flex: 1,
@@ -353,7 +374,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
-    ...shadows.small,
+    boxShadow: isDark ? '0px 2px 6px rgba(0,0,0,0.3)' : '0px 2px 6px rgba(0,0,0,0.05)',
   },
   filterTabText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   filterCount:    { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
@@ -382,7 +403,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: colors.surface,
     marginBottom: 10,
     overflow: 'hidden',
-    ...shadows.small,
+    boxShadow: isDark ? '0px 4px 10px rgba(0,0,0,0.3)' : '0px 4px 10px rgba(0,0,0,0.04)',
   },
   notifCardUnread: {
     borderColor: CultureTokens.indigo + '30',

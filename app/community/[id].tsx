@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import { getQueryFn } from '@/lib/query-client';
 import { api } from '@/lib/api';
+import { FlashList } from '@shopify/flash-list';
 import {
   getCommunityActivityMeta,
   getCommunityCadenceLabel,
@@ -82,7 +83,7 @@ function getInitials(name: string): string {
 
 const COMMUNITY_TYPE_COLORS: Record<string, string> = {
   diaspora:   CultureTokens.indigo,
-  indigenous: CultureTokens.saffron,
+  indigenous: CultureTokens.gold,
   language:   CultureTokens.teal,
   religion:   CultureTokens.coral,
 };
@@ -96,7 +97,7 @@ const COMMUNITY_TYPE_ICONS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   cultural:     CultureTokens.indigo,
-  business:     CultureTokens.saffron,
+  business:     CultureTokens.gold,
   council:      CultureTokens.teal,
   charity:      CultureTokens.coral,
   club:         CultureTokens.community,
@@ -105,7 +106,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const AVATAR_COLORS = [
   CultureTokens.indigo, CultureTokens.teal, CultureTokens.coral,
-  CultureTokens.saffron, CultureTokens.gold, '#7C3AED', '#059669',
+  CultureTokens.gold, CultureTokens.gold, '#7C3AED', '#059669',
 ];
 
 // ─── Feed synthesis ───────────────────────────────────────────────────────────
@@ -266,7 +267,7 @@ function ReactionsBar({
         <Text style={[rb.actionText, { color: colors.textSecondary }]}>{comments}</Text>
       </Pressable>
       <Pressable style={rb.action} onPress={() => setShared(true)} accessibilityRole="button" accessibilityLabel="Share">
-        <Ionicons name="arrow-redo-outline" size={18} color={shared ? CultureTokens.teal : colors.textSecondary} />
+        <Ionicons name="share-outline" size={18} color={shared ? CultureTokens.teal : colors.textSecondary} />
         <Text style={[rb.actionText, { color: shared ? CultureTokens.teal : colors.textSecondary }]}>Share</Text>
       </Pressable>
     </View>
@@ -423,7 +424,16 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
     <Card 
       glass={!isDark} 
       padding={0} 
-      style={[pc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+      style={[
+        pc.card, 
+        { 
+          backgroundColor: colors.surface, 
+          borderColor: colors.borderLight,
+          boxShadow: isDark 
+            ? '0px 4px 16px rgba(0,0,0,0.5)' 
+            : '0px 4px 16px rgba(44,42,114,0.08)',
+        }
+      ]}
     >
       <View style={pc.header}>
         <CommAvatar community={post.community} size={40} colorIdx={colorIdx} />
@@ -434,8 +444,8 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
             {post.kind === 'event' && (
               <>
                 <View style={[pc.dotSep, { backgroundColor: colors.textTertiary }]} />
-                <Ionicons name="calendar-outline" size={11} color={CultureTokens.saffron} />
-                <Text style={[TextStyles.badgeCaps, { color: CultureTokens.saffron }]}>Event</Text>
+                <Ionicons name="calendar-outline" size={11} color={CultureTokens.gold} />
+                <Text style={[TextStyles.badgeCaps, { color: CultureTokens.gold }]}>Event</Text>
               </>
             )}
             {post.kind === 'announcement' && (
@@ -474,7 +484,7 @@ const pc = StyleSheet.create({
   moreBtn:       { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
 
   eventImg:      { height: 220, position: 'relative', backgroundColor: '#1a1a2e' },
-  freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.saffron, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.gold, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'black' },
   eventInfo:     { padding: 14, gap: 6 },
   eventTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.3 },
@@ -563,6 +573,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const s = getStyles(colors);
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(community.id);
+  const isDark = useIsDark();
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -682,68 +693,84 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
     switch (activeTab) {
       case 'feed':
         return (
-          <View style={{ paddingTop: 16, paddingBottom: 8 }}>
-            {feedPosts.length === 0 ? (
-              <View style={s.emptyState}>
-                <Ionicons name="newspaper-outline" size={40} color={colors.textTertiary} />
-                <Text style={s.emptyStateText}>No posts yet</Text>
-              </View>
-            ) : (
-              feedPosts.map((post, i) => (
-                <PostCard key={post.id} post={post} colorIdx={i} />
-              ))
-            )}
+          <View style={{ paddingTop: 16, paddingBottom: 8, minHeight: 400 }}>
+            <FlashList
+              data={feedPosts}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item, index }) => (
+                <PostCard post={item} colorIdx={index} />
+              )}
+              // @ts-ignore
+              estimatedItemSize={350}
+              scrollEnabled={false} // Since we are inside a ScrollView, we have to disable this for now or refactor the whole page
+              ListEmptyComponent={
+                <View style={s.emptyState}>
+                  <Ionicons name="newspaper-outline" size={40} color={colors.textTertiary} />
+                  <Text style={s.emptyStateText}>No posts yet</Text>
+                </View>
+              }
+            />
           </View>
         );
 
       case 'events':
         return (
-          <View style={{ paddingTop: 16 }}>
-            {relatedEvents.length === 0 ? (
-              <View style={s.emptyState}>
-                <Ionicons name="calendar-outline" size={40} color={colors.textTertiary} />
-                <Text style={s.emptyStateText}>No upcoming events</Text>
-              </View>
-            ) : (
-              relatedEvents.map((event) => (
+          <View style={{ paddingTop: 16, minHeight: 400 }}>
+            <FlashList
+              data={relatedEvents}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <Pressable
-                  key={event.id}
                   style={({ pressed }) => [
                     s.eventCard,
+                    {
+                      boxShadow: isDark 
+                        ? '0px 2px 8px rgba(0,0,0,0.35)' 
+                        : '0px 2px 8px rgba(44,42,114,0.04)',
+                    },
                     pressed && { opacity: 0.8, backgroundColor: colors.surfaceElevated },
                   ]}
-                  onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+                  onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id } })}
                   accessibilityRole="button"
-                  accessibilityLabel={`View event: ${event.title}`}
+                  accessibilityLabel={`View event: ${item.title}`}
                 >
-                  <Image source={{ uri: event.imageUrl }} style={s.eventImage} contentFit="cover" transition={200} />
+                  <Image source={{ uri: item.imageUrl }} style={s.eventImage} contentFit="cover" transition={200} />
                   <View style={s.eventInfo}>
-                    <Text style={s.eventTitle} numberOfLines={1}>{event.title}</Text>
-                    <Text style={s.eventDate}>{formatEventDateTime(event.date, event.time)}</Text>
-                    {event.venue ? (
-                      <Text style={s.eventVenue} numberOfLines={1}>{event.venue}</Text>
+                    <Text style={s.eventTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={[s.eventDate, { color: color }]}>{formatEventDateTime(item.date, item.time)}</Text>
+                    {item.venue ? (
+                      <Text style={s.eventVenue} numberOfLines={1}>{item.venue}</Text>
                     ) : null}
                   </View>
                   <Pressable
                     style={s.eventCalendarBtn}
                     onPress={() => {
-                      const start = toCalendarDate(event.date, event.time);
+                      const start = toCalendarDate(item.date, item.time);
                       if (!start) return;
                       const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
-                      const details = event.description || 'Event on CulturePass';
-                      const location = [event.venue, event.city, event.country].filter(Boolean).join(', ');
-                      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarTimestamp(start)}/${toGoogleCalendarTimestamp(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                      const details = item.description || 'Event on CulturePass';
+                      const location = [item.venue, item.city, item.country].filter(Boolean).join(', ');
+                      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(item.title)}&dates=${toGoogleCalendarTimestamp(start)}/${toGoogleCalendarTimestamp(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
                       Linking.openURL(url).catch(() => {});
                     }}
                     accessibilityRole="button"
                     accessibilityLabel="Add to Google Calendar"
                   >
-                    <Ionicons name="calendar-number-outline" size={16} color={CultureTokens.indigo} />
+                    <Ionicons name="calendar-number-outline" size={16} color={color} />
                   </Pressable>
                   <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                 </Pressable>
-              ))
-            )}
+              )}
+              // @ts-ignore
+              estimatedItemSize={100}
+              scrollEnabled={false}
+              ListEmptyComponent={
+                <View style={s.emptyState}>
+                  <Ionicons name="calendar-outline" size={40} color={colors.textTertiary} />
+                  <Text style={s.emptyStateText}>No upcoming events</Text>
+                </View>
+              }
+            />
           </View>
         );
 
@@ -902,8 +929,8 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
               </View>
             ) : null}
 
-            <View style={[s.wellbeingCard, { backgroundColor: CultureTokens.saffron + '10', borderColor: CultureTokens.saffron + '30' }]}>
-              <Ionicons name="heart-circle" size={28} color={CultureTokens.saffron} style={{ marginTop: 2 }} />
+            <View style={[s.wellbeingCard, { backgroundColor: CultureTokens.gold + '10', borderColor: CultureTokens.gold + '30' }]}>
+              <Ionicons name="heart-circle" size={28} color={CultureTokens.gold} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={s.wellbeingTitle}>Mental Health & Belonging</Text>
                 <Text style={s.wellbeingDesc}>
@@ -953,7 +980,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
       {isWeb && (
         <>
           <View style={[s.orb, { top: -50, right: -100, backgroundColor: color, opacity: 0.15, filter: 'blur(80px)' } as never]} />
-          <View style={[s.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, filter: 'blur(100px)' } as never]} />
+          <View style={[s.orb, { top: 400, left: -100, backgroundColor: CultureTokens.gold, opacity: 0.1, filter: 'blur(100px)' } as never]} />
         </>
       )}
 
@@ -991,8 +1018,8 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Report community"
                   >
+                    <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
                     <Ionicons name="flag-outline" size={20} color={colors.textInverse} />
-                    {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                   </Pressable>
                 </View>
               </View>
@@ -1037,7 +1064,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   )}
                   {community.isIndigenous && (
                     <View style={[s.heroBadge, { backgroundColor: 'rgba(255,140,66,0.25)', borderColor: 'rgba(255,140,66,0.5)' }]}>
-                      <Text style={[s.heroBadgeText, { color: CultureTokens.saffron }]}>Indigenous</Text>
+                      <Text style={[s.heroBadgeText, { color: CultureTokens.gold }]}>Indigenous</Text>
                     </View>
                   )}
                   {(memberRole === 'admin' || memberRole === 'organizer') && (

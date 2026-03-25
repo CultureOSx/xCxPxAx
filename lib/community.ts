@@ -8,7 +8,7 @@ import type {
 
 const CATEGORY_ACCENTS: Record<string, string> = {
   cultural: CultureTokens.indigo,
-  club: CultureTokens.saffron,
+  club: CultureTokens.gold,
   professional: CultureTokens.teal,
   business: CultureTokens.gold,
   council: CultureTokens.teal,

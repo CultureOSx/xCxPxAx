@@ -25,7 +25,7 @@ export const interestCategories: InterestCategory[] = [
   {
     id: 'cultural',
     title: 'Cultural & Community',
-    accentColor: CultureTokens.saffron,
+    accentColor: CultureTokens.gold,
     softColor: CultureTokens.eventSoft,
     interests: [
       'Cultural Festivals',

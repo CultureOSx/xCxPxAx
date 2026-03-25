@@ -74,7 +74,7 @@ import { CultureTokens, ButtonTokens, CardTokens, InputTokens, gradients } from 
 import { useColors } from '@/hooks/useColors';
 
 CultureTokens.indigo    // #2C2A72 — Culture Indigo (primary brand)
-CultureTokens.saffron   // #FF8C42 — Festival Saffron (events/discovery)
+CultureTokens.gold   // #FF8C42 — Festival Saffron (events/discovery)
 CultureTokens.coral     // #FF5E5B — Movement Coral (action/CTA)
 CultureTokens.gold      // #FFC857 — Temple Gold (premium/cultural)
 CultureTokens.teal      // #2EC4B6 — Ocean Teal (global belonging)

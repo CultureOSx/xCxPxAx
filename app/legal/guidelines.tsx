@@ -39,7 +39,7 @@ export default function CommunityGuidelinesScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={gradients.culturepassBrand as [string, string, string]}
+        colors={gradients.culturepassBrand as [string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: topInset }}

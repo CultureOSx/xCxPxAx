@@ -61,7 +61,7 @@ export default function SearchScreen() {
   const { state } = useOnboarding();
 
   const TYPE_CONFIG = useMemo((): Record<ResultType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> => ({
-    event:      { label: 'Events',       icon: 'calendar',   color: CultureTokens.saffron },
+    event:      { label: 'Events',       icon: 'calendar',   color: CultureTokens.gold },
     movie:      { label: 'Movies',       icon: 'film',       color: CultureTokens.gold },
     restaurant: { label: 'Dining',       icon: 'restaurant', color: CultureTokens.coral },
     activity:   { label: 'Activities',   icon: 'football',   color: CultureTokens.teal },
@@ -191,7 +191,7 @@ export default function SearchScreen() {
         
         {/* Decorative Orbs */}
         <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.3, filter: 'blur(80px)' } as any]} />
-        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.15, filter: 'blur(100px)' } as any]} />
+        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.gold, opacity: 0.15, filter: 'blur(100px)' } as any]} />
 
         {/* Top Bar — Location, Search, Notifications */}
         <LinearGradient

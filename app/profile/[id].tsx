@@ -19,6 +19,8 @@ import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
 import TabScreenShell from '@/components/tabs/TabScreenShell';
 import { useLayout } from '@/hooks/useLayout';
+import { BrandPlaylist } from '@/components/profile/BrandPlaylist';
+import { DEFAULT_DISCOVER_CURATION } from '@/shared/schema/discover';
 
 const ENTITY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   community: 'people',
@@ -183,6 +185,8 @@ export default function ProfileDetailScreen() {
   const locationText = showLocation ? [profile.city, profile.country].filter(Boolean).join(', ') : '';
   
   const heroImage = profile.coverImageUrl || profile.avatarUrl;
+  const isProfessional = ['artist', 'creator', 'brand'].includes(profile.entityType);
+  const accentColor = isProfessional ? CultureTokens.gold : CultureTokens.indigo;
 
   const matchedEvents = allEventsData.filter((ev) => {
     const pName = (profile.name || '').toLowerCase();
@@ -264,15 +268,31 @@ export default function ProfileDetailScreen() {
             </View>
 
             <View style={styles.headerInfo}>
+              {isProfessional && (
+                <View style={styles.communityContext}>
+                  <Ionicons name="sparkles" size={10} color={CultureTokens.gold} />
+                  <Text style={[styles.communityContextText, { color: CultureTokens.gold }]}>
+                    {`CREATORS OF ${profile.city?.toUpperCase() || 'YOUR CITY'}`}
+                  </Text>
+                </View>
+              )}
               <Text style={styles.profileNameMain} numberOfLines={1}>{profile.name}</Text>
               <View style={styles.metaRowInline}>
-                 <View style={styles.roleBadge}>
-                   <Ionicons name={entityIcon} size={12} color="rgba(255,255,255,0.8)" />
-                   <Text style={styles.roleLabel}>{profile.entityType.toUpperCase()}</Text>
+                 <View style={[styles.roleBadge, isProfessional && { backgroundColor: 'rgba(255,200,87,0.2)' }]}>
+                   <Ionicons name={entityIcon} size={12} color={isProfessional ? CultureTokens.gold : "rgba(255,255,255,0.8)"} />
+                   <Text style={[styles.roleLabel, isProfessional && { color: CultureTokens.gold }]}>
+                      {isProfessional ? (profile.entityType === 'artist' ? 'FEATURED ARTIST' : 'CITY CREATOR') : profile.entityType.toUpperCase()}
+                   </Text>
                  </View>
                  {locationText ? (
                    <Text style={styles.locationLabel}> • {locationText}</Text>
                  ) : null}
+                 {isProfessional && (
+                   <View style={styles.verifiedBadge}>
+                     <Ionicons name="shield-checkmark" size={12} color={CultureTokens.gold} />
+                     <Text style={styles.verifiedText}>VERIFIED BRAND</Text>
+                   </View>
+                 )}
               </View>
             </View>
 
@@ -314,12 +334,23 @@ export default function ProfileDetailScreen() {
                 {profile.bio || profile.description || 'Welcome to my shared space on CulturePass. Discovery starts here.'}
               </Text>
               <View style={[styles.cpidSmallChip, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="finger-print" size={14} color={entityColor} />
+                <Ionicons name="finger-print" size={14} color={accentColor} />
                 <Text style={[TextStyles.captionSemibold, { color: colors.textSecondary }]}>
                    CPID: {(profile as any).culturePassId || profile.id}
                 </Text>
               </View>
             </Card>
+
+            {isProfessional && (
+              <BrandPlaylist 
+                playlist={DEFAULT_DISCOVER_CURATION.heritagePlaylists}
+                title="Heritage Playlist"
+                onItemPress={(item) => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync();
+                  router.push('/(tabs)/discovery');
+                }}
+              />
+            )}
 
             {(profile.website || profile.phone || profile.contactEmail) && (
               <View style={styles.sectionWrap}>
@@ -455,6 +486,17 @@ const getStyles = (colors: any, insets: any, isDesktop: boolean) => StyleSheet.c
     color: '#FFFFFF',
     letterSpacing: -0.5,
   },
+  communityContext: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  communityContextText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.2,
+  },
   metaRowInline: { flexDirection: 'row', alignItems: 'center' },
   roleBadge: {
     flexDirection: 'row',
@@ -513,7 +555,25 @@ const getStyles = (colors: any, insets: any, isDesktop: boolean) => StyleSheet.c
     paddingVertical: 6,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginTop: 16,
+     marginTop: 16,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 8,
+    backgroundColor: 'rgba(255,200,87,0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,200,87,0.3)',
+  },
+  verifiedText: {
+    fontSize: 9,
+    fontFamily: 'Poppins_700Bold',
+    color: CultureTokens.gold,
+    letterSpacing: 0.5,
   },
 
   sectionWrap: { marginBottom: 24 },

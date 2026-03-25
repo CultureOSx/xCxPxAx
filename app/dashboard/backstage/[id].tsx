@@ -119,7 +119,7 @@ export default function ArtistBackstagePortal() {
             </TouchableOpacity>
           </View>
           <TouchableOpacity style={styles.giftBtn}>
-            <LinearGradient colors={[CultureTokens.gold, CultureTokens.saffron]} style={styles.giftFill}>
+            <LinearGradient colors={[CultureTokens.gold, CultureTokens.gold]} style={styles.giftFill}>
               <Ionicons name="gift" size={24} color="#000" />
             </LinearGradient>
           </TouchableOpacity>
