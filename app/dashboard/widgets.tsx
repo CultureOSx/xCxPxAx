@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ActivityIndicator, StyleSheet, Text, View, Platform, Pressable } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +11,6 @@ import { WidgetUpcomingTicketCard } from '@/components/widgets/WidgetUpcomingTic
 import { WidgetIdentityQRCard } from '@/components/widgets/WidgetIdentityQRCard';
 import { BackButton } from '@/components/ui/BackButton';
 import TabScreenShell from '@/components/tabs/TabScreenShell';
-import TabSectionShell from '@/components/tabs/TabSectionShell';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';

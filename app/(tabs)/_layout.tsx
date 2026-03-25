@@ -2,15 +2,12 @@
 import { Tabs } from 'expo-router';
 import { CustomTabBar } from '@/components/tabs/CustomTabBar';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors } from '@/hooks/useColors';
 
 /**
  * Main Tab Layout — CulturePass v1.1
  * Updated 5-tab structure: Feed | Events | Community | Calendar | Profile
  */
 export default function TabsLayout() {
-  const colors = useColors();
-
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}

@@ -4,26 +4,12 @@ import CultureImage from '@/components/ui/CultureImage';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { Colors, CultureTokens, CardTokens, SpringConfig } from '@/constants/theme';
+import { Colors, CultureTokens, SpringConfig } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { formatEventDateTimeBadge } from '@/lib/dateUtils';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function GlassBadge({ children, style }: { children: React.ReactNode, style?: any }) {
-  return (
-    <View style={[styles.glassBadgeBase, style]}>
-      {Platform.OS !== 'android' ? (
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(11,11,20,0.85)' }]} />
-      )}
-      {children}
-    </View>
-  );
-}
 
 interface EventCardProps {
   event: {

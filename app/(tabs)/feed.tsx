@@ -20,6 +20,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, CardTokens, gradients, HeaderTokens, shadows } from '@/constants/theme';
 import { api } from '@/lib/api';
+import { getCommunityHeadline } from '@/lib/community';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LocationPicker } from '@/components/LocationPicker';
 import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
@@ -880,7 +881,7 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
               <View style={{ flex: 1 }}>
                 <Text style={[pc.welcomeTitle, { color: colors.text }]}>Welcome to {post.community.name}!</Text>
                 <Text style={[pc.welcomeSub, { color: colors.textSecondary }]} numberOfLines={2}>
-                  {post.community.description || 'Join to stay updated on cultural events and activities.'}
+                  {getCommunityHeadline(post.community)}
                 </Text>
               </View>
             </View>

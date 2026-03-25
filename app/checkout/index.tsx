@@ -25,7 +25,7 @@ import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 import { useAuth } from '@/lib/auth';
 import { BlurView } from 'expo-blur';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 
 const isWeb = Platform.OS === 'web';
 

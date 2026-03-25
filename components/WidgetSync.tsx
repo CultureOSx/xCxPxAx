@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { api } from '@/lib/api';
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import type { EventData } from '@/shared/schema';
 

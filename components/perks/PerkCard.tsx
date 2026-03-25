@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
-import { CultureTokens, SpringConfig, Colors } from '@/constants/theme';
+import { CultureTokens, SpringConfig } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import type { PerkData } from '@/shared/schema';
 

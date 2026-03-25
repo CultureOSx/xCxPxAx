@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { Spacing, TextStyles, CultureTokens } from '@/constants/theme';
+import { TextStyles, CultureTokens } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 interface NativeMapViewProps {

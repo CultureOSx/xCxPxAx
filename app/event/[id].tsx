@@ -477,12 +477,6 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     setCalendarSheetVisible(false);
   }, [calendarParams]);
 
-  const RSVP_OPTIONS = [
-    { status: 'going' as const,     icon: 'checkmark-circle' as const, label: 'Going',    color: CultureTokens.teal },
-    { status: 'maybe' as const,     icon: 'help-circle' as const,      label: 'Maybe',    color: CultureTokens.saffron },
-    { status: 'not_going' as const, icon: 'close-circle' as const,     label: "Can't Go", color: colors.textTertiary },
-  ] as const;
-
   const BottomBarInner = ({ event: ev, colors: c, setCalendarSheetVisible: setCalSheet, openTicketModal: openModal }: any) => {
     if (isFreeOrOpen) {
       // RSVP mode for free/open events (Premium Glass Design)

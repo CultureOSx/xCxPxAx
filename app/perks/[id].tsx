@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ButtonTokens, CardTokens } from '@/constants/theme';

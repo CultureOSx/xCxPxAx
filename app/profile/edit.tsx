@@ -61,14 +61,6 @@ interface UserData {
   };
 }
 
-type UploadedImage = {
-  id: string;
-  imageUrl: string;
-  thumbnailUrl: string;
-  width: number;
-  height: number;
-};
-
 const SOCIAL_FIELDS: {
   icon: string; color: string;
   field: 'instagram' | 'twitter' | 'tiktok' | 'youtube' | 'linkedin' | 'facebook' | 'website';

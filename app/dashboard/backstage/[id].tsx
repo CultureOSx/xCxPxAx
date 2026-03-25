@@ -9,14 +9,13 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { 
-  FadeInDown, 
   FadeInUp, 
   FadeInLeft,
   useSharedValue,
@@ -26,9 +25,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { CultureTokens, shadows } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
-import { Button } from '@/components/ui/Button';
+import { CultureTokens } from '@/constants/theme';
 
 const MOCK_MESSAGES = [
   { id: '1', user: 'CultureEnthusiast', text: 'This performance is incredible! Loving the visuals.', color: CultureTokens.indigo },
@@ -37,18 +34,15 @@ const MOCK_MESSAGES = [
 ];
 
 export default function ArtistBackstagePortal() {
-  const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const [chat, setChat] = useState(MOCK_MESSAGES);
   const [msg, setMsg] = useState('');
-  const [isLive, setIsLive] = useState(true);
 
   // Live indicator animation
   const pulse = useSharedValue(1);
   useEffect(() => {
     pulse.value = withRepeat(withSequence(withTiming(1.2, { duration: 600 }), withTiming(1, { duration: 600 })), -1, true);
-  }, []);
+  }, [pulse]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulse.value,

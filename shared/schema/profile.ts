@@ -209,6 +209,33 @@ export interface CommunityLink {
   icon: string;
 }
 
+export type CommunityActivityLevel = 'new' | 'steady' | 'active' | 'thriving';
+export type CommunityJoinMode = 'open' | 'request' | 'invite';
+export type CommunityCadence = 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'seasonal';
+
+export interface CommunityHealthSnapshot {
+  memberGrowth30d?: number;
+  activeMembers7d?: number;
+  weeklyPosts?: number;
+  engagementScore?: number;
+  responseRate?: number;
+  upcomingEventsCount?: number;
+}
+
+export interface CommunityTrustSignals {
+  moderationEnabled?: boolean;
+  safeSpacePolicy?: boolean;
+  verifiedLeadersCount?: number;
+  codeOfConductUrl?: string;
+  responseRate?: number;
+}
+
+export interface CommunityDiscoverySignals {
+  matchScore?: number;
+  mutualMembersCount?: number;
+  featuredReason?: string;
+}
+
 export interface Community extends Omit<Profile, 'type'> {
   type: 'community';
   membersCount?: number;
@@ -234,6 +261,28 @@ export interface Community extends Omit<Profile, 'type'> {
   links?: CommunityLink[];
   /** Authenticated user's role in this community (populated per-request) */
   memberRole?: CommunityMemberRole;
+  /** Short one-line positioning for cards and rails */
+  headline?: string;
+  /** Clear statement of purpose or promise */
+  mission?: string;
+  /** Primary language label for display */
+  primaryLanguageLabel?: string;
+  /** Number of city chapters represented by this community */
+  chapterCount?: number;
+  /** City names where the community is active */
+  chapterCities?: string[];
+  /** How often the community gathers or programs */
+  meetingCadence?: CommunityCadence;
+  /** Whether members can join directly or require approval */
+  joinMode?: CommunityJoinMode;
+  /** Overall momentum classification for ranking and UI */
+  activityLevel?: CommunityActivityLevel;
+  /** Health and engagement metrics */
+  communityHealth?: CommunityHealthSnapshot;
+  /** Trust and safety metadata */
+  trustSignals?: CommunityTrustSignals;
+  /** Personalization and discovery metadata */
+  discoverySignals?: CommunityDiscoverySignals;
 
   // ── Civic governance fields ──────────────────────────────────────────────
   /** Australian government tier — present on civic/council communities */

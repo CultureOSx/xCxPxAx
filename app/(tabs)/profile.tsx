@@ -6,8 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  Alert,
-  Share,
   useWindowDimensions,
   TouchableOpacity,
   Modal,
@@ -16,35 +14,24 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
-import { Button } from '@/components/ui/Button';
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { useRole } from '@/hooks/useRole';
 import { useColors } from '@/hooks/useColors';
-import type { User, MembershipSummary } from '@shared/schema';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import type { User } from '@shared/schema';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { ProfileQuickMenuTrigger } from '@/components/ProfileQuickMenu';
 import { CultureTokens, shadows } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
-import { TextStyles } from '@/constants/typography';
 import Animated, { 
   FadeInRight, 
-  FadeInDown, 
   SlideInUp, 
   FadeIn,
 } from 'react-native-reanimated';
 import Svg, { Line } from 'react-native-svg';
-
-// Simple Platform-safe Map components
-const MapView = Platform.OS === 'web' ? View : require('react-native-maps').default;
-const Marker = Platform.OS === 'web' ? View : require('react-native-maps').Marker;
-const PROVIDER_GOOGLE = Platform.OS === 'web' ? undefined : require('react-native-maps').PROVIDER_GOOGLE;
+import { CultureWalletMap } from '../../components/profile/CultureWalletMap';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -75,11 +62,6 @@ const MATCHED_CULTURES = [
   { id: '1', name: 'India', lat: 20.5937, lng: 78.9629, emoji: '🇮🇳', color: '#FF9933' },
   { id: '2', name: 'South Korea', lat: 35.9078, lng: 127.7669, emoji: '🇰🇷', color: '#CD2E3A' },
   { id: '3', name: 'Greece', lat: 39.0742, lng: 21.8243, emoji: '🇬🇷', color: '#005BAE' },
-];
-
-const MAP_STYLE = [
-  { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
 ];
 
 // ─── Ancestry Tree Modal ─────────────────────────────────────────────────────
@@ -197,18 +179,7 @@ export default function ProfileScreen() {
           <View style={s.walletSection}>
             <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Culture Wallet</Text>
             <View style={s.mapContainer}>
-              {Platform.OS === 'web' ? (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1A1A1A', alignItems: 'center', justifyContent: 'center' }]}>
-                  <Image source={{ uri: 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=800' }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                  <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                  <Ionicons name="map-outline" size={40} color="#fff" style={{ opacity: 0.5 }} />
-                  <Text style={{ color: '#fff', marginTop: 12, fontFamily: 'Poppins_600SemiBold' }}>Interactive Map on App</Text>
-                </View>
-              ) : (
-                <MapView provider={PROVIDER_GOOGLE} style={s.map} customMapStyle={MAP_STYLE} initialRegion={{ latitude: 20, longitude: 100, latitudeDelta: 120, longitudeDelta: 120 }} scrollEnabled={false}>
-                  {MATCHED_CULTURES.map(c => <Marker key={c.id} coordinate={{ latitude: c.lat, longitude: c.lng }}><View style={[s.marker, { backgroundColor: c.color }]}><Text style={s.markerEmoji}>{c.emoji}</Text></View></Marker>)}
-                </MapView>
-              )}
+              <CultureWalletMap cultures={MATCHED_CULTURES} />
             </View>
           </View>
 

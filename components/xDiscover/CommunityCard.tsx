@@ -4,24 +4,29 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, CardTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
+import type { Community } from '@/shared/schema';
+import {
+  getCommunityAccent,
+  getCommunityActivityMeta,
+  getCommunityEventsCount,
+  getCommunityHeadline,
+  getCommunityMemberCount,
+  getCommunitySignals,
+} from '@/lib/community';
 
 interface CommunityCardProps {
-  community: {
-    id: string;
-    name: string;
-    description?: string;
-    memberCount?: number;
-    iconEmoji?: string;
-    color?: string;
-    slug?: string;
-  };
+  community: Community;
   index?: number;
 }
 
 function CommunityCard({ community, index = 0 }: CommunityCardProps) {
   const colors = useColors();
-  const accent = community.color || colors.primary;
-  const members = community.memberCount || 0;
+  const accent = getCommunityAccent(community, colors.primary);
+  const members = getCommunityMemberCount(community);
+  const upcomingEvents = getCommunityEventsCount(community);
+  const headline = getCommunityHeadline(community);
+  const activity = getCommunityActivityMeta(community);
+  const signals = getCommunitySignals(community);
 
   return (
     <View>
@@ -47,11 +52,48 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
             <Ionicons name="people" size={24} color={accent} />
           )}
         </View>
+        <View style={styles.badgeRow}>
+          <View style={[styles.metaBadge, { backgroundColor: accent + '15', borderColor: accent + '35' }]}>
+            <Text style={[styles.metaBadgeText, { color: accent }]} numberOfLines={1}>
+              {signals[0] ?? 'Community'}
+            </Text>
+          </View>
+          <View style={[styles.metaBadge, { backgroundColor: activity.color + '12', borderColor: activity.color + '25' }]}>
+            <Text style={[styles.metaBadgeText, { color: activity.color }]}>{activity.label}</Text>
+          </View>
+        </View>
         <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
           {community.name}
         </Text>
-        <Text style={[styles.members, { color: colors.textSecondary }]}>{members.toLocaleString()} members</Text>
-        {community.description ? (
+        <Text style={[styles.headline, { color: colors.textSecondary }]} numberOfLines={2}>
+          {headline}
+        </Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
+            <Text style={[styles.members, { color: colors.textSecondary }]}>
+              {members.toLocaleString()} members
+            </Text>
+          </View>
+          {upcomingEvents > 0 ? (
+            <View style={styles.statItem}>
+              <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.members, { color: colors.textSecondary }]}>
+                {upcomingEvents} events
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {signals.length > 1 ? (
+          <View style={styles.signalRow}>
+            {signals.slice(1).map((signal) => (
+              <View key={signal} style={[styles.signalChip, { backgroundColor: colors.backgroundSecondary }]}>
+                <Text style={[styles.signalText, { color: colors.textSecondary }]}>{signal}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {community.description && community.description !== headline ? (
           <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
             {community.description}
           </Text>
@@ -63,7 +105,7 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 196,
+    width: 228,
     borderRadius: CardTokens.radius,
     padding: CardTokens.padding,
     borderWidth: StyleSheet.hairlineWidth,
@@ -76,15 +118,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 14,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  metaBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  metaBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   name: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
     marginBottom: 4,
   },
-  members: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+  headline: {
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 18,
     marginBottom: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 10,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  members: {
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+  },
+  signalRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  signalChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  signalText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_500Medium',
   },
   description: {
     fontSize: 12,

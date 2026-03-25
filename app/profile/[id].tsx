@@ -64,26 +64,6 @@ function formatNumber(num: number) {
   return num.toString();
 }
 
-function toCalendarDate(date: string, time?: string): Date | null {
-  const [year, month, day] = date.split('-').map(Number);
-  if (!year || !month || !day) return null;
-  const dt = new Date(year, month - 1, day, 18, 0, 0, 0);
-  const match = (time ?? '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-  if (match) {
-    let hour = Number(match[1]);
-    const minute = Number(match[2]);
-    const ampm = match[3]?.toUpperCase();
-    if (ampm === 'PM' && hour !== 12) hour += 12;
-    if (ampm === 'AM' && hour === 12) hour = 0;
-    dt.setHours(hour, minute, 0, 0);
-  }
-  return dt;
-}
-
-function toGoogleCalendarTimestamp(value: Date): string {
-  return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-}
-
 export default function ProfileDetailScreen() {
   const colors = useColors();
   const { isDesktop, width } = useLayout();
@@ -126,8 +106,8 @@ export default function ProfileDetailScreen() {
               membersCount: 0,
               privacySettings: user.privacySettings || { profileVisible: true, locationVisible: true },
             };
-          } catch (userErrer: any) {
-             throw new Error("Could not find an Entity or a User with that ID.");
+          } catch {
+            throw new Error('Could not find an Entity or a User with that ID.');
           }
         }
         throw err;

@@ -1,10 +1,9 @@
 // app/(tabs)/community.tsx
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   TextInput,
   Platform,
@@ -19,8 +18,6 @@ import Animated, {
   interpolate,
   useAnimatedScrollHandler,
   FadeInDown,
-  FadeIn,
-  SlideInUp,
   SlideInDown,
   FadeInLeft,
 } from 'react-native-reanimated';
@@ -33,18 +30,27 @@ import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens, EntityTypeColors, shadows } from '@/constants/theme';
+import { CultureTokens, shadows } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { FilterChipRow, type FilterItem } from '@/components/FilterChip';
+import { FilterChipRow } from '@/components/FilterChip';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 import { api } from '@/lib/api';
+import {
+  getCommunityAccent,
+  getCommunityActivityMeta,
+  getCommunityEventsCount,
+  getCommunityHeadline,
+  getCommunityLabel,
+  getCommunityMemberCount,
+  getCommunitySignals,
+} from '@/lib/community';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES, DIASPORA_GROUPS } from '@/constants/cultures';
-import type { Profile } from '@/shared/schema';
+import type { Community } from '@/shared/schema';
 
 // ─── Constants & Types ────────────────────────────────────────────────────────
 
@@ -200,14 +206,19 @@ function CommunityPreviewDrawer({
   onClose, 
   colors 
 }: { 
-  profile: Profile | null; 
+  profile: Community | null; 
   onClose: () => void; 
   colors: any 
 }) {
   const insets = useSafeAreaInsets();
   if (!profile) return null;
 
-  const accentColor = CULTURE_COLORS[profile.nationalityId || ''] || CultureTokens.indigo;
+  const accentColor = getCommunityAccent(profile, CULTURE_COLORS[profile.nationalityId || ''] || CultureTokens.indigo);
+  const memberCount = getCommunityMemberCount(profile);
+  const eventsCount = getCommunityEventsCount(profile);
+  const activity = getCommunityActivityMeta(profile);
+  const signals = getCommunitySignals(profile);
+  const headline = getCommunityHeadline(profile);
 
   return (
     <Modal visible={!!profile} transparent animationType="none" onRequestClose={onClose}>
@@ -235,33 +246,43 @@ function CommunityPreviewDrawer({
           </View>
 
           <View style={drawerStyles.content}>
-            <View style={drawerStyles.header}>
-              <View style={drawerStyles.titleRow}>
-                <Text style={[drawerStyles.name, { color: colors.text }]}>{profile.name}</Text>
-                {profile.isVerified && <Ionicons name="checkmark-circle" size={20} color={CultureTokens.indigo} />}
-              </View>
+              <View style={drawerStyles.header}>
+                <View style={drawerStyles.titleRow}>
+                  <Text style={[drawerStyles.name, { color: colors.text }]}>{profile.name}</Text>
+                  {profile.isVerified && <Ionicons name="checkmark-circle" size={20} color={CultureTokens.indigo} />}
+                </View>
               <Text style={[drawerStyles.sub, { color: colors.textSecondary }]}>
-                {profile.category || 'Cultural Group'} • {profile.city || 'Australia'}
+                {getCommunityLabel(profile)} • {[profile.city, profile.country].filter(Boolean).join(', ') || 'Australia'}
               </Text>
             </View>
 
             <View style={drawerStyles.statsRow}>
               <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[drawerStyles.statVal, { color: colors.text }]}>{profile.membersCount || 0}</Text>
+                <Text style={[drawerStyles.statVal, { color: colors.text }]}>{memberCount}</Text>
                 <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Members</Text>
               </View>
               <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[drawerStyles.statVal, { color: colors.text }]}>12</Text>
+                <Text style={[drawerStyles.statVal, { color: colors.text }]}>{eventsCount}</Text>
                 <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Events</Text>
               </View>
               <View style={[drawerStyles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[drawerStyles.statVal, { color: colors.text }]}>94%</Text>
-                <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Active</Text>
+                <Text style={[drawerStyles.statVal, { color: activity.color }]}>{activity.label}</Text>
+                <Text style={[drawerStyles.statLab, { color: colors.textTertiary }]}>Momentum</Text>
               </View>
             </View>
 
+            {signals.length > 1 ? (
+              <View style={drawerStyles.signalRow}>
+                {signals.slice(1).map((signal) => (
+                  <View key={signal} style={[drawerStyles.signalChip, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Text style={[drawerStyles.signalChipText, { color: colors.textSecondary }]}>{signal}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
             <Text style={[drawerStyles.desc, { color: colors.textSecondary }]} numberOfLines={3}>
-              {profile.description || `${profile.name} is a vibrant community group based in ${profile.city || 'Australia'}. Join us to celebrate our traditions, share stories, and connect with fellow members.`}
+              {headline}
             </Text>
 
             <View style={drawerStyles.actions}>
@@ -307,6 +328,9 @@ const drawerStyles = StyleSheet.create({
   statBox: { flex: 1, padding: 12, borderRadius: 16, alignItems: 'center' },
   statVal: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
   statLab: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  signalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  signalChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  signalChipText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
   desc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 24 },
   actions: { gap: 12 },
   joinBtn: { height: 56, borderRadius: 16, justifyContent: 'center' },
@@ -317,8 +341,12 @@ const drawerStyles = StyleSheet.create({
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 
-function CommunityGridCard({ item, colors, onPreview }: { item: Profile, colors: any, onPreview: (p: Profile) => void }) {
-  const accentColor = CULTURE_COLORS[item.nationalityId || ''] || CultureTokens.indigo;
+function CommunityGridCard({ item, colors, onPreview }: { item: Community, colors: any, onPreview: (p: Community) => void }) {
+  const accentColor = getCommunityAccent(item, CULTURE_COLORS[item.nationalityId || ''] || CultureTokens.indigo);
+  const headline = getCommunityHeadline(item);
+  const signals = getCommunitySignals(item);
+  const members = getCommunityMemberCount(item);
+  const activity = getCommunityActivityMeta(item);
   
   return (
     <Animated.View entering={FadeInDown.springify().damping(20)} style={styles.cardWrapper}>
@@ -342,18 +370,34 @@ function CommunityGridCard({ item, colors, onPreview }: { item: Profile, colors:
               <View style={styles.cardText}>
                 <Text numberOfLines={1} style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
                 <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
-                  {item.category || 'Cultural Group'} • {item.city || 'Worldwide'}
+                  {getCommunityLabel(item)} • {item.city || 'Worldwide'}
                 </Text>
               </View>
             </View>
+            <Text numberOfLines={2} style={[styles.cardHeadline, { color: colors.textSecondary }]}>
+              {headline}
+            </Text>
+            {signals.length > 1 ? (
+              <View style={styles.cardSignalRow}>
+                {signals.slice(1, 3).map((signal) => (
+                  <View key={signal} style={[styles.cardSignalChip, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Text style={[styles.cardSignalText, { color: colors.textSecondary }]}>{signal}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             <View style={styles.cardStats}>
               <View style={styles.statItem}>
                 <Ionicons name="people" size={14} color={colors.textTertiary} />
-                <Text style={[styles.statText, { color: colors.textTertiary }]}>{item.membersCount || 0} members</Text>
+                <Text style={[styles.statText, { color: colors.textTertiary }]}>{members} members</Text>
               </View>
-              {(item as any).isTrending && (
+              {(item as any).isTrending ? (
                 <View style={[styles.activityPulse, { backgroundColor: accentColor + '15' }]}>
                   <Text style={[styles.activityText, { color: accentColor }]}>🔥 Trending</Text>
+                </View>
+              ) : (
+                <View style={[styles.activityPulse, { backgroundColor: activity.color + '15' }]}>
+                  <Text style={[styles.activityText, { color: activity.color }]}>{activity.label}</Text>
                 </View>
               )}
             </View>
@@ -382,7 +426,7 @@ export default function CommunitiesScreen() {
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedPreview, setSelectedPreview] = useState<Profile | null>(null);
+  const [selectedPreview, setSelectedPreview] = useState<Community | null>(null);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -394,28 +438,55 @@ export default function CommunitiesScreen() {
     transform: [{ scale: interpolate(scrollY.value, [-100, 0, 300], [1.1, 1, 0.9], 'clamp') }],
   }));
 
-  const { data: profilesRaw } = useQuery({
-    queryKey: ['/api/profiles', onboardingState?.city, selectedCategory],
-    queryFn: () => api.profiles.list({ city: onboardingState?.city }),
+  const { data: communitiesRaw = [] } = useQuery<Community[]>({
+    queryKey: ['/api/communities', onboardingState?.city, onboardingState?.country, onboardingState?.nationalityId],
+    queryFn: () => api.communities.list({
+      city: onboardingState?.city,
+      country: onboardingState?.country,
+      nationalityId: onboardingState?.nationalityId,
+    }),
   });
 
   const communities = useMemo(() => {
-    const raw = (profilesRaw as any) || [];
-    const base = Array.isArray(raw) ? raw : (raw.profiles || []);
-    return base.filter((p: any) => p.entityType === 'community').map((p: any, i: number) => ({
-      ...p,
-      isTrending: i % 4 === 0, // Mocking trending
+    return communitiesRaw.map((community, index) => ({
+      ...community,
+      isTrending: index % 4 === 0,
     }));
-  }, [profilesRaw]);
+  }, [communitiesRaw]);
 
   const filteredCommunities = useMemo(() => {
     let list = communities;
+    if (selectedCategory !== 'All') {
+      const normalized = selectedCategory.toLowerCase();
+      list = list.filter((community) => {
+        const category = community.communityCategory?.toLowerCase();
+        const type = community.communityType?.toLowerCase();
+        const legacy = community.category?.toLowerCase();
+        return category === normalized || type === normalized || legacy === normalized;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((p: any) => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+      list = list.filter((community) => {
+        const haystack = [
+          community.name,
+          community.description,
+          community.headline,
+          community.countryOfOrigin,
+          community.primaryLanguageLabel,
+          ...(community.cultures ?? []),
+          ...(community.cultureIds ?? []),
+          ...(community.languageIds ?? []),
+          ...(community.chapterCities ?? []),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(q);
+      });
     }
     return list;
-  }, [communities, search]);
+  }, [communities, search, selectedCategory]);
 
   const renderHeader = () => (
     <View>
@@ -565,6 +636,10 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
   cardSub: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  cardHeadline: { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18, marginTop: 12 },
+  cardSignalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  cardSignalChip: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999 },
+  cardSignalText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
   cardStats: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   statItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statText: { fontSize: 12, fontFamily: 'Poppins_500Medium' },

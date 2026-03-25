@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
@@ -39,7 +39,6 @@ export default function CultureMatchScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const s = getStyles(colors);
-  const isDark = useIsDark();
   const { userId } = useAuth();
 
   const [selectedCultures, setSelectedCultures] = useState<string[]>([]);

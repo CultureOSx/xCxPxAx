@@ -7,7 +7,6 @@ import {
   Pressable,
   Platform,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
@@ -18,7 +17,6 @@ import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import Animated, {
   useAnimatedStyle,
-  withSpring,
   useSharedValue,
   interpolate,
   Extrapolation,
@@ -26,7 +24,7 @@ import Animated, {
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens, Spacing } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FilterChips from '@/components/ui/FilterChips';
@@ -47,7 +45,7 @@ const DEFAULT_CITY_IMAGE = 'https://images.unsplash.com/photo-1477959858617-67f8
 export default function CityScreen() {
   const { name, country } = useLocalSearchParams<{ name: string; country?: string }>();
   const colors = useColors();
-  const { isDesktop, contentWidth, width, hPad } = useLayout();
+  const { isDesktop, contentWidth, width } = useLayout();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -92,15 +90,6 @@ export default function CityScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
-
-  const EXPLORE_CATEGORIES = [
-    { id: 'all', label: 'All', icon: 'grid-outline' },
-    { id: 'indigenous', label: 'Indigenous', icon: 'leaf-outline' },
-    { id: 'music', label: 'Music', icon: 'musical-notes' },
-    { id: 'food', label: 'Dining', icon: 'restaurant' },
-    { id: 'arts', label: 'Arts', icon: 'color-palette' },
-    { id: 'nightlife', label: 'Nightlife', icon: 'moon' },
-  ];
 
   const gridGap = 16;
   // Padding is fixed to 20 horizontally on mobile (total 40)

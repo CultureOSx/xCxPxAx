@@ -81,12 +81,6 @@ function TicketCard({ ticket, onCancel }: TicketCardProps) {
     ticket.status === 'expired'   ? { bg: CultureTokens.saffron + '15', color: CultureTokens.saffron, label: 'Expired' } :
                                     { bg: colors.surfaceElevated, color: colors.textTertiary, label: ticket.status || 'Unknown' };
 
-  const priorityStyle = 
-    ticket.priority === 'vip'   ? { bg: CultureTokens.gold + '20', color: CultureTokens.gold, label: 'VIP' } :
-    ticket.priority === 'high'  ? { bg: CultureTokens.coral + '20', color: CultureTokens.coral, label: 'High' } :
-    ticket.priority === 'low'   ? { bg: CultureTokens.teal + '20', color: CultureTokens.teal, label: 'Low' } :
-                                  { bg: colors.surfaceElevated, color: colors.textTertiary, label: 'Standard' };
-
   const bannerColor = ticket.imageColor || CultureTokens.indigo;
 
   return (

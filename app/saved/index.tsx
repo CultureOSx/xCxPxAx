@@ -9,6 +9,15 @@ import { useMemo, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import {
+  getCommunityAccent,
+  getCommunityActivityMeta,
+  getCommunityEventsCount,
+  getCommunityHeadline,
+  getCommunityLabel,
+  getCommunityMemberCount,
+  getCommunitySignals,
+} from '@/lib/community';
 import type { Community, EventData } from '@/shared/schema';
 import { AuthGuard } from '@/components/AuthGuard';
 import { CultureTokens } from '@/constants/theme';
@@ -228,7 +237,15 @@ export default function SavedScreen() {
                 ) : (
                   joinedCommunityItems.map((community: Community) => (
                     <View key={community.id}>
-                      <View style={s.communityCard}>
+                      <View
+                        style={[
+                          s.communityCard,
+                          {
+                            borderColor:
+                              getCommunityAccent(community, CultureTokens.indigo) + '22',
+                          },
+                        ]}
+                      >
                         <Pressable
                           style={({ pressed }) => [s.communityCardMain, pressed && { transform: [{ scale: 0.98 }] }]}
                           onPress={() => {
@@ -236,26 +253,73 @@ export default function SavedScreen() {
                             router.push({ pathname: '/community/[id]', params: { id: community.id } });
                           }}
                         >
-                          <View style={s.communityAvatar}>
-                            <Ionicons name="people" size={28} color={CultureTokens.indigo} />
+                          <View
+                            style={[
+                              s.communityAvatar,
+                              {
+                                backgroundColor:
+                                  getCommunityAccent(community, CultureTokens.indigo) + '15',
+                              },
+                            ]}
+                          >
+                            {community.iconEmoji ? (
+                              <Text style={s.communityEmoji}>{community.iconEmoji}</Text>
+                            ) : (
+                              <Ionicons
+                                name="people"
+                                size={28}
+                                color={getCommunityAccent(community, CultureTokens.indigo)}
+                              />
+                            )}
                           </View>
                           
                           <View style={s.communityInfo}>
                             <Text style={s.communityName} numberOfLines={1}>{community.name}</Text>
-                            <View style={s.communityTypeBadge}>
-                              <Text style={s.communityType}>{community.category}</Text>
+                            <View
+                              style={[
+                                s.communityTypeBadge,
+                                {
+                                  backgroundColor:
+                                    getCommunityAccent(community, CultureTokens.indigo) + '12',
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  s.communityType,
+                                  { color: getCommunityAccent(community, CultureTokens.indigo) },
+                                ]}
+                              >
+                                {getCommunitySignals(community)[0] ?? getCommunityLabel(community)}
+                              </Text>
                             </View>
+                            <Text style={s.communityHeadline} numberOfLines={2}>
+                              {getCommunityHeadline(community)}
+                            </Text>
                             
                             <View style={s.communityStats}>
                               <Ionicons name="people-outline" size={14} color={colors.textSecondary} />
-                              <Text style={s.communityStatText}>{community.memberCount ?? 0} members</Text>
-                              {(community as unknown as Record<string, unknown>).events !== undefined && Number((community as unknown as Record<string, unknown>).events) > 0 && (
+                              <Text style={s.communityStatText}>
+                                {getCommunityMemberCount(community)} members
+                              </Text>
+                              {getCommunityEventsCount(community) > 0 && (
                                 <>
                                   <View style={s.statDot} />
                                   <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-                                  <Text style={s.communityStatText}>{String((community as unknown as Record<string, unknown>).events)} events</Text>
+                                  <Text style={s.communityStatText}>
+                                    {getCommunityEventsCount(community)} events
+                                  </Text>
                                 </>
                               )}
+                              <View style={s.statDot} />
+                              <Text
+                                style={[
+                                  s.communityActivity,
+                                  { color: getCommunityActivityMeta(community).color },
+                                ]}
+                              >
+                                {getCommunityActivityMeta(community).label}
+                              </Text>
                             </View>
                           </View>
                         </Pressable>
@@ -324,14 +388,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   communityCard: { borderRadius: 20, marginBottom: 12, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, position: 'relative', overflow: 'hidden' },
   communityCardMain: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingRight: 68, gap: 14 },
   communityAvatar: { width: 60, height: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '15' },
+  communityEmoji: { fontSize: 28 },
   communityInfo: { flex: 1, gap: 4, justifyContent: 'center' },
   communityName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  communityHeadline: { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18, color: colors.textSecondary },
   
   communityTypeBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: colors.backgroundSecondary },
   communityType: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textSecondary },
   
   communityStats: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   communityStatText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  communityActivity: { fontSize: 12, fontFamily: 'Poppins_700Bold' },
   statDot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 2, backgroundColor: colors.textSecondary },
   
   leaveBtnFloating: { position: 'absolute', right: 14, top: '50%', marginTop: -20, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.borderLight },

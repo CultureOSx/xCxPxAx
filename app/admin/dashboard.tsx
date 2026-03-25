@@ -333,6 +333,7 @@ function AdminDashboardContent() {
             <QuickAction width={qaW} icon="cloud-download-outline" label="Import Data"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/import' as never)} />
             <QuickAction width={qaW} icon="megaphone-outline"      label="Notifications"     accent={CultureTokens.saffron} onPress={() => router.push('/admin/notifications')} />
             <QuickAction width={qaW} icon="people-outline"         label="Manage Users"      accent={CultureTokens.indigo}  onPress={() => router.push('/admin/users')} />
+            <QuickAction width={qaW} icon="add-circle-outline"     label="Create Event"      accent={CultureTokens.indigo}  onPress={() => router.push('/event/create' as never)} />
             <QuickAction width={qaW} icon="at-outline"             label="Handles"           accent={pending > 0 ? CultureTokens.coral : CultureTokens.saffron} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
             <QuickAction width={qaW} icon="list-outline"           label="Audit Logs"        accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
             <QuickAction width={qaW} icon="newspaper-outline"      label="Release Notes"     accent={CultureTokens.gold}    onPress={() => router.push('/admin/updates')} />
@@ -492,6 +493,17 @@ function AdminDashboardContent() {
             <NavCard index={0} width={cardW} icon="grid-outline"       label="Organizer"    sub="Events & tickets"           accent={CultureTokens.indigo}  onPress={() => router.push('/dashboard/organizer' as never)} />
             <NavCard index={1} width={cardW} icon="storefront-outline" label="Venue"        sub="Analytics & hosting"        accent={CultureTokens.teal}    onPress={() => router.push('/dashboard/venue' as never)} />
             <NavCard index={2} width={cardW} icon="ribbon-outline"     label="Sponsor"      sub="Sponsored events & reach"   accent={CultureTokens.gold}    onPress={() => router.push('/dashboard/sponsor' as never)} />
+          </NavGrid>
+        </View>
+
+        {/* ── Ops & Tools ──────────────────────────────────────────────────── */}
+        <View style={s.section}>
+          <SectionLabel label="OPS & TOOLS" count={4} />
+          <NavGrid gap={columnGap}>
+            <NavCard index={0} width={cardW} icon="apps-outline"       label="Widgets"          sub="Home & lockscreen cards" accent={CultureTokens.saffron} onPress={() => router.push('/dashboard/widgets' as never)} />
+            <NavCard index={1} width={cardW} icon="map-outline"        label="Discovery Map"    sub="Browse nearby culture"   accent={CultureTokens.teal}    onPress={() => router.push('/(tabs)/explore' as never)} />
+            <NavCard index={2} width={cardW} icon="business-outline"   label="Venues Directory" sub="All venues & hosts"      accent={CultureTokens.indigo}  onPress={() => router.push('/(tabs)/directory' as never)} />
+            <NavCard index={3} width={cardW} icon="bookmark-outline"   label="Saved Items"      sub="Bookmarks & wishlists"   accent={CultureTokens.gold}    onPress={() => router.push('/saved' as never)} />
           </NavGrid>
         </View>
 

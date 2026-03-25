@@ -2,8 +2,7 @@ import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CardTokens, CultureTokens, gradients } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 
 interface WidgetIdentityQRCardProps {
@@ -13,8 +12,6 @@ interface WidgetIdentityQRCardProps {
 }
 
 export function WidgetIdentityQRCard({ displayName, culturePassId, role }: WidgetIdentityQRCardProps) {
-  const colors = useColors();
-
   const roleLabel = role === 'business' ? 'BUSINESS CARD' :
                   role === 'organizer' ? 'ORGANIZER CARD' : 
                   'DIGITAL IDENTITY';

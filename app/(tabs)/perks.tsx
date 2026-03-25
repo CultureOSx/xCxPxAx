@@ -4,18 +4,13 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, {
   useSharedValue,
-  useAnimatedStyle,
-  interpolate,
   useAnimatedScrollHandler,
-  FadeInDown,
   FadeInRight,
   SlideInRight,
 } from 'react-native-reanimated';
@@ -25,13 +20,9 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useQuery } from '@tanstack/react-query';
 
 import { CultureTokens, shadows } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
-import { useAuth } from '@/lib/auth';
-import { api } from '@/lib/api';
 import { FilterChipRow } from '@/components/FilterChip';
 import { PerkCard } from '@/components/perks/PerkCard';
 import { usePerks } from '@/hooks/queries/usePerks';
@@ -137,8 +128,6 @@ function QuestCard({ quest, colors }: { quest: any, colors: any }) {
 export default function PerksTabScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isDesktop } = useLayout();
-  const { userId } = useAuth();
 
   const [viewMode, setViewMode] = useState<'perks' | 'quests'>('quests');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -148,8 +137,8 @@ export default function PerksTabScreen() {
     onScroll: (event) => { scrollY.value = event.contentOffset.y; },
   });
 
-  const { data: perksPages, isLoading, refetch, isRefetching } = usePerks();
-  const perks = perksPages?.pages.flatMap(p => p.perks) || [];
+  const { data: perksPages, refetch, isRefetching } = usePerks();
+  const perks = useMemo(() => perksPages?.pages.flatMap((p) => p.perks) ?? [], [perksPages]);
 
   const filteredItems = useMemo(() => {
     if (viewMode === 'quests') return CULTURAL_QUESTS;

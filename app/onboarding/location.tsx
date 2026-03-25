@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +16,6 @@ export default function LocationPickerScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const s = getStyles(colors);
-  const isDark = useIsDark();
   const { userId } = useAuth();
 
   const [city, setCity] = useState('');

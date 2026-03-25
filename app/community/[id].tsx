@@ -16,6 +16,19 @@ import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import { getQueryFn } from '@/lib/query-client';
 import { api } from '@/lib/api';
+import {
+  getCommunityActivityMeta,
+  getCommunityCadenceLabel,
+  getCommunityDiscoveryReasons,
+  getCommunityEventsCount,
+  getCommunityHeadline,
+  getCommunityJoinLabel,
+  getCommunityLabel,
+  getCommunityLocationLabel,
+  getCommunityMemberCount,
+  getCommunitySignals,
+  getCommunityTrustSignals,
+} from '@/lib/community';
 import type { Community, EventData } from '@/shared/schema';
 import { confirmAndReport } from '@/lib/reporting';
 import { useColors, useIsDark } from '@/hooks/useColors';
@@ -178,6 +191,8 @@ function buildLinks(community: Community): { title: string; url: string; icon: s
   const links = [...(community.links ?? [])];
   if (community.website && !links.find(l => l.url === community.website))
     links.push({ title: 'Website', url: community.website, icon: 'globe-outline' });
+  if (community.trustSignals?.codeOfConductUrl && !links.find(l => l.url === community.trustSignals?.codeOfConductUrl))
+    links.push({ title: 'Code of Conduct', url: community.trustSignals.codeOfConductUrl, icon: 'shield-checkmark-outline' });
   if (community.socialLinks?.instagram && !links.find(l => l.url?.includes('instagram')))
     links.push({ title: 'Instagram', url: community.socialLinks.instagram, icon: 'logo-instagram' });
   if (community.socialLinks?.facebook && !links.find(l => l.url?.includes('facebook')))
@@ -382,7 +397,7 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
               Welcome to {post.community.name}!
             </Text>
             <Text style={[pc.welcomeSub, { color: colors.textSecondary }]} numberOfLines={2}>
-              {post.community.description || 'Join this community to stay updated on local events and cultural activities.'}
+              {getCommunityHeadline(post.community)}
             </Text>
           </View>
         );
@@ -553,7 +568,6 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const isDesktop = width >= 1024;
   const { isAuthenticated } = useAuth();
   const pathname = usePathname();
-  const memberCount = community.memberCount ?? community.membersCount ?? 0;
   const memberRole = community.memberRole;
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
@@ -629,13 +643,24 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
         Alert.alert('Upload Error', String(err));
       }
     }
-  }, [community, uploadImage, deleteImage]);
+  }, [community, uploadImage, deleteImage, queryClient]);
 
   const canEdit = memberRole === 'admin' || memberRole === 'organizer' || __DEV__;
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const feedPosts = useMemo(() => synthesizePosts(community, relatedEvents), [community, relatedEvents]);
   const communityLinks = useMemo(() => buildLinks(community), [community]);
+  const memberCount = getCommunityMemberCount(community);
+  const headline = getCommunityHeadline(community);
+  const communityLabel = getCommunityLabel(community);
+  const activity = getCommunityActivityMeta(community);
+  const communitySignals = getCommunitySignals(community);
+  const trustSignals = getCommunityTrustSignals(community);
+  const discoveryReasons = getCommunityDiscoveryReasons(community);
+  const joinLabel = getCommunityJoinLabel(community);
+  const cadenceLabel = getCommunityCadenceLabel(community);
+  const locationLabel = getCommunityLocationLabel(community);
+  const eventsCount = Math.max(getCommunityEventsCount(community), relatedEvents.length);
 
   // ── Helper Sub-component ──────────────────────────────────────────────────
   const CommunityBottomBarInner = () => (
@@ -725,15 +750,45 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
       case 'about':
         return (
           <View style={{ paddingTop: 20, gap: 20 }}>
-            {/* Description */}
             <Card padding={20}>
-              <Text style={TextStyles.badgeCaps}>About Community</Text>
+              <Text style={TextStyles.badgeCaps}>Community Snapshot</Text>
+              <Text style={[s.snapshotHeadline, { color: colors.text }]}>{headline}</Text>
               <Text style={[TextStyles.body, { color: colors.textSecondary, lineHeight: 26, marginTop: 12 }]}>
-                {community.description || 'A vibrant cultural community connecting people through shared heritage and traditions.'}
+                {community.mission || community.description || 'A vibrant cultural community connecting people through shared heritage and traditions.'}
               </Text>
+
+              <View style={s.snapshotGrid}>
+                {locationLabel ? (
+                  <View style={[s.snapshotTile, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="location-outline" size={16} color={color} />
+                    <Text style={[s.snapshotLabel, { color: colors.textTertiary }]}>Location</Text>
+                    <Text style={[s.snapshotValue, { color: colors.text }]}>{locationLabel}</Text>
+                  </View>
+                ) : null}
+                {cadenceLabel ? (
+                  <View style={[s.snapshotTile, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="repeat-outline" size={16} color={color} />
+                    <Text style={[s.snapshotLabel, { color: colors.textTertiary }]}>Cadence</Text>
+                    <Text style={[s.snapshotValue, { color: colors.text }]}>{cadenceLabel}</Text>
+                  </View>
+                ) : null}
+                {joinLabel ? (
+                  <View style={[s.snapshotTile, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="person-add-outline" size={16} color={color} />
+                    <Text style={[s.snapshotLabel, { color: colors.textTertiary }]}>Membership</Text>
+                    <Text style={[s.snapshotValue, { color: colors.text }]}>{joinLabel}</Text>
+                  </View>
+                ) : null}
+                {community.chapterCount && community.chapterCount > 1 ? (
+                  <View style={[s.snapshotTile, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="git-network-outline" size={16} color={color} />
+                    <Text style={[s.snapshotLabel, { color: colors.textTertiary }]}>Chapters</Text>
+                    <Text style={[s.snapshotValue, { color: colors.text }]}>{community.chapterCount} active cities</Text>
+                  </View>
+                ) : null}
+              </View>
             </Card>
 
-            {/* Culture tags */}
             {community.cultures && community.cultures.length > 0 && (
               <View>
                 <Text style={s.sectionTitle}>Culture Tags</Text>
@@ -747,17 +802,106 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
               </View>
             )}
 
-            {/* Location */}
-            {(community.city || community.country) && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
-                <Text style={s.description}>
-                  {[community.city, community.country].filter(Boolean).join(', ')}
-                </Text>
+            {trustSignals.length > 0 ? (
+              <View>
+                <Text style={s.sectionTitle}>Trust & Safety</Text>
+                <View style={s.infoChipRow}>
+                  {trustSignals.map((signal) => (
+                    <View
+                      key={signal}
+                      style={[s.infoChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
+                    >
+                      <Ionicons name="shield-checkmark-outline" size={14} color={CultureTokens.teal} />
+                      <Text style={[s.infoChipText, { color: colors.textSecondary }]}>{signal}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            )}
+            ) : null}
 
-            {/* Wellbeing card */}
+            {community.communityHealth ? (
+              <View>
+                <Text style={s.sectionTitle}>Community Health</Text>
+                <View style={s.healthGrid}>
+                  {community.communityHealth.memberGrowth30d != null ? (
+                    <View style={[s.healthTile, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <Text style={[s.healthValue, { color: activity.color }]}>
+                        {community.communityHealth.memberGrowth30d > 0 ? '+' : ''}
+                        {community.communityHealth.memberGrowth30d}%
+                      </Text>
+                      <Text style={[s.healthLabel, { color: colors.textSecondary }]}>30-day growth</Text>
+                    </View>
+                  ) : null}
+                  {community.communityHealth.activeMembers7d != null ? (
+                    <View style={[s.healthTile, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <Text style={[s.healthValue, { color: colors.text }]}>
+                        {community.communityHealth.activeMembers7d}
+                      </Text>
+                      <Text style={[s.healthLabel, { color: colors.textSecondary }]}>Active this week</Text>
+                    </View>
+                  ) : null}
+                  {community.communityHealth.weeklyPosts != null ? (
+                    <View style={[s.healthTile, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <Text style={[s.healthValue, { color: colors.text }]}>
+                        {community.communityHealth.weeklyPosts}
+                      </Text>
+                      <Text style={[s.healthLabel, { color: colors.textSecondary }]}>Weekly posts</Text>
+                    </View>
+                  ) : null}
+                  {community.communityHealth.engagementScore != null ? (
+                    <View style={[s.healthTile, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <Text style={[s.healthValue, { color: colors.text }]}>
+                        {community.communityHealth.engagementScore}
+                      </Text>
+                      <Text style={[s.healthLabel, { color: colors.textSecondary }]}>Engagement score</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
+
+            {discoveryReasons.length > 0 ? (
+              <View>
+                <Text style={s.sectionTitle}>Why It Shows Up For You</Text>
+                <View style={s.infoChipRow}>
+                  {discoveryReasons.map((reason) => (
+                    <View
+                      key={reason}
+                      style={[s.infoChip, { backgroundColor: CultureTokens.gold + '12', borderColor: CultureTokens.gold + '25' }]}
+                    >
+                      <Ionicons name="sparkles-outline" size={14} color={CultureTokens.gold} />
+                      <Text style={[s.infoChipText, { color: colors.textSecondary }]}>{reason}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {(community.chapterCities && community.chapterCities.length > 0) || locationLabel ? (
+              <View style={{ gap: 10 }}>
+                <Text style={s.sectionTitle}>Footprint</Text>
+                {locationLabel ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+                    <Text style={s.description}>{locationLabel}</Text>
+                  </View>
+                ) : null}
+                {community.chapterCities && community.chapterCities.length > 0 ? (
+                  <View style={s.infoChipRow}>
+                    {community.chapterCities.map((city) => (
+                      <View
+                        key={city}
+                        style={[s.infoChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
+                      >
+                        <Ionicons name="pin-outline" size={14} color={color} />
+                        <Text style={[s.infoChipText, { color: colors.textSecondary }]}>{city}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
             <View style={[s.wellbeingCard, { backgroundColor: CultureTokens.saffron + '10', borderColor: CultureTokens.saffron + '30' }]}>
               <Ionicons name="heart-circle" size={28} color={CultureTokens.saffron} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
@@ -878,11 +1022,12 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   )}
                 </View>
                 <Text style={s.heroTitle} numberOfLines={2}>{community.name}</Text>
+                <Text style={s.heroHeadline} numberOfLines={2}>{headline}</Text>
 
                 {/* Badges row */}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <View style={s.heroBadgeRow}>
                   <View style={s.heroBadge}>
-                    <Text style={s.heroBadgeText}>{community.communityType || 'General'}</Text>
+                    <Text style={s.heroBadgeText}>{communityLabel}</Text>
                   </View>
                   {community.isVerified && (
                     <View style={[s.heroBadge, { backgroundColor: 'rgba(46,196,182,0.25)', borderColor: 'rgba(46,196,182,0.5)' }]}>
@@ -903,6 +1048,15 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                       </Text>
                     </View>
                   )}
+                  {joinLabel ? (
+                    <View style={[s.heroBadge, { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
+                      <Ionicons name="person-add-outline" size={12} color={colors.textInverse} />
+                      <Text style={s.heroBadgeText}>{joinLabel}</Text>
+                    </View>
+                  ) : null}
+                  <View style={[s.heroBadge, { backgroundColor: activity.color + '24', borderColor: activity.color + '55' }]}>
+                    <Text style={[s.heroBadgeText, { color: 'white' }]}>{activity.label}</Text>
+                  </View>
                 </View>
 
                 {/* Stats row */}
@@ -914,7 +1068,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   <View style={s.heroStatDot} />
                   <View style={s.heroStat}>
                     <Ionicons name="calendar" size={14} color="rgba(255,255,255,0.85)" />
-                    <Text style={s.heroStatText}>{relatedEvents.length} events</Text>
+                    <Text style={s.heroStatText}>{eventsCount} events</Text>
                   </View>
                   {community.countryOfOrigin ? (
                     <>
@@ -926,6 +1080,22 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     </>
                   ) : null}
                 </View>
+
+                {communitySignals.length > 1 || discoveryReasons.length > 0 ? (
+                  <View style={s.heroSignalRow}>
+                    {communitySignals.slice(1).map((signal) => (
+                      <View key={signal} style={s.heroSignalChip}>
+                        <Text style={s.heroSignalText}>{signal}</Text>
+                      </View>
+                    ))}
+                    {discoveryReasons.slice(0, 1).map((reason) => (
+                      <View key={reason} style={[s.heroSignalChip, s.heroDiscoveryChip]}>
+                        <Ionicons name="sparkles-outline" size={12} color={CultureTokens.gold} />
+                        <Text style={[s.heroSignalText, { color: CultureTokens.gold }]}>{reason}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
               </View>
             </View>
 
@@ -1030,6 +1200,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     color: 'white', textAlign: 'center', lineHeight: 32,
     ...Platform.select({ web: { textShadow: '0px 1px 4px rgba(0,0,0,0.5)' }, default: { textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 } }),
   },
+  heroHeadline:   {
+    maxWidth: 540,
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 6,
+  },
+  heroBadgeRow:   { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' },
   heroBadge:      {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 10,
@@ -1041,6 +1221,20 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroStat:       { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heroStatText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
   heroStatDot:    { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.4)' },
+  heroSignalRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 },
+  heroSignalChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  heroDiscoveryChip: { backgroundColor: 'rgba(255,200,87,0.12)', borderColor: 'rgba(255,200,87,0.26)' },
+  heroSignalText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.88)' },
 
   // ── Tab bar ──
   tabBar: {
@@ -1079,11 +1273,38 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   // ── About tab ──
   sectionTitle:   { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text },
   description:    { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
+  snapshotHeadline: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginTop: 10 },
+  snapshotGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 18 },
+  snapshotTile:   { minWidth: 140, flexGrow: 1, borderRadius: 16, padding: 14, gap: 6 },
+  snapshotLabel:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.4 },
+  snapshotValue:  { fontSize: 14, fontFamily: 'Poppins_600SemiBold', lineHeight: 20 },
   culturePill:    {
     paddingHorizontal: 12, paddingVertical: 5,
     borderRadius: 10, borderWidth: 1,
   },
   culturePillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  infoChipRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  infoChip:       {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  infoChipText:   { fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  healthGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  healthTile:     {
+    minWidth: 140,
+    flexGrow: 1,
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 6,
+  },
+  healthValue:    { fontSize: 22, fontFamily: 'Poppins_700Bold' },
+  healthLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
   wellbeingCard:  { flexDirection: 'row', alignItems: 'flex-start', gap: 14, borderRadius: 20, padding: 20, borderWidth: 1 },
   wellbeingTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 4, color: colors.text },
   wellbeingDesc:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: colors.textSecondary },

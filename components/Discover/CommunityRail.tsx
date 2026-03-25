@@ -6,7 +6,7 @@ import CommunityCard from './CommunityCard';
 import { CommunityCardSkeleton } from '@/components/CommunityCardSkeleton';
 import type { Community } from '@/shared/schema';
 
-const DEFAULT_SNAP_INTERVAL = 196;
+const DEFAULT_SNAP_INTERVAL = 228;
 
 interface CommunityRailProps {
   title: string;

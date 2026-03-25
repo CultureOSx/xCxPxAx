@@ -118,7 +118,7 @@ interface TabItemProps {
   isDark: boolean;
 }
 
-function TabItem({ tab, isActive, onPress, isDark }: TabItemProps) {
+function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDark }: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
@@ -156,11 +156,24 @@ function TabItem({ tab, isActive, onPress, isDark }: TabItemProps) {
 
         {/* Icon area */}
         <View style={item.iconWrap}>
-          <Ionicons
-            name={isActive ? tab.iconActive : tab.icon}
-            size={22}
-            color={isActive ? '#ffffff' : inactiveIconColor}
-          />
+          {tab.name === 'profile' ? (
+            <View style={[item.avatarOuter, isActive && item.avatarOuterActive]}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={item.avatarImg} />
+              ) : (
+                <View style={item.avatarInner}>
+                  <Text style={item.avatarInitials}>{initials ?? '?'}</Text>
+                </View>
+              )}
+              {badgeCount ? <Badge count={badgeCount} /> : null}
+            </View>
+          ) : (
+            <Ionicons
+              name={isActive ? tab.iconActive : tab.icon}
+              size={22}
+              color={isActive ? '#ffffff' : inactiveIconColor}
+            />
+          )}
         </View>
 
         {/* Label */}
@@ -254,7 +267,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   useColors();
   const isDark = useColorScheme() === 'dark';
   const { isDesktop } = useLayout();
-  const { user, userId, isAuthenticated } = useAuth();
+  const { user, userId } = useAuth();
 
   // Always call hooks first
   const { data: notifCount = 0 } = useQuery<number>({
@@ -322,12 +335,16 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
+          const isProfileTab = tab.name === 'profile';
           return (
             <TabItem
               key={route.key}
               tab={tab}
               isActive={isActive}
               isDark={isDark}
+              badgeCount={isProfileTab ? notifCount : undefined}
+              avatarUrl={isProfileTab ? (user as any)?.avatarUrl : undefined}
+              initials={isProfileTab ? initials : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',

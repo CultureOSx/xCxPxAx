@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -11,8 +11,6 @@ import { CultureTokens } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-
-const isWeb = Platform.OS === 'web';
 
 export default function OrganiserProfilePage() {
   const { id } = useLocalSearchParams<{ id: string }>();
