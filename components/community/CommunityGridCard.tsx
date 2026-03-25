@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   coverGradientBottom: {
-    top: '40%' as unknown as number,
+    top: '40%', // Allow string for percentage, safe for RN style
   },
   initialWrap: {
     width: 52,

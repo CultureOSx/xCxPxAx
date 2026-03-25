@@ -532,7 +532,7 @@ export default function SubmitScreen() {
                       ]}>
                         <Ionicons name={conf.icon as never} size={isActive ? 22 : 18} color={conf.color} />
                       </View>
-                      <Text style={[s.typeCardLabel, { color: isActive ? colors.text : colors.text }]}>{conf.label}</Text>
+                      <Text style={[s.typeCardLabel, { color: isActive ? colors.primary : colors.textTertiary }]}>{conf.label}</Text>
                       <Text style={[s.typeCardDesc, { color: colors.textTertiary }]} numberOfLines={2}>
                         {conf.description}
                       </Text>

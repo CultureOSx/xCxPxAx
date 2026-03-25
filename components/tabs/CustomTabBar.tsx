@@ -269,8 +269,9 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const displayName = user?.displayName ?? user?.username ?? '';
   const initials = displayName
     .trim()
-    .split(' ')
-    .map((w: string) => w[0])
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w: string) => (w[0] || ''))
     .slice(0, 2)
     .join('')
     .toUpperCase() || '?';

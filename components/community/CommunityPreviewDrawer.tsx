@@ -52,11 +52,23 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
   if (!profile) return null;
 
   function handleJoin() {
-    joinCommunity(profile!.id);
-    onClose();
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+    joinCommunity(profile!.id, {
+      onSuccess: () => {
+        onClose();
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      },
+      onError: (e: any) => {
+        if (Platform.OS === 'web') {
+          alert('Failed to join community. Please try again.');
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { Alert } = require('react-native');
+          Alert.alert('Join failed', 'Failed to join community. Please try again.');
+        }
+      },
+    });
   }
 
   function handleViewProfile() {

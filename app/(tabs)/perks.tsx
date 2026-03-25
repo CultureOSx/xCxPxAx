@@ -71,16 +71,28 @@ const CATEGORIES = [
 
 // ─── Quest Card ───────────────────────────────────────────────────────────────
 
+
 function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
   const colors = useColors();
   const [checkingIn, setCheckingIn] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const checkInTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleCheckIn = () => {
+    if (checkInTimerRef.current) clearTimeout(checkInTimerRef.current);
     setCheckingIn(true);
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setTimeout(() => { setCheckingIn(false); setCompleted(true); }, 1500);
+    checkInTimerRef.current = setTimeout(() => {
+      setCheckingIn(false);
+      setCompleted(true);
+    }, 1500);
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (checkInTimerRef.current) clearTimeout(checkInTimerRef.current);
+    };
+  }, []);
 
   const progressPct = (quest.progress / quest.total) * 100;
 

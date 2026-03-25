@@ -64,12 +64,11 @@ function eventMatchesCategory(event: EventData, catId: string): boolean {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ExploreEventCard({ event, wide }: { event: EventData; wide?: boolean }) {
+function ExploreEventCard({ event }: { event: EventData }) {
   const colors = useColors();
   const { columnWidth, isDesktop } = useLayout();
-  // Responsive card width
-  const cardWidth = wide ? '100%' : columnWidth(isDesktop ? 3 : 2);
-  // Indigenous highlight
+  // Uniform card width for all
+  const cardWidth = columnWidth(isDesktop ? 3 : 2);
   const isIndigenous = isIndigenousEvent(event);
   return (
     <Pressable
@@ -79,19 +78,45 @@ function ExploreEventCard({ event, wide }: { event: EventData; wide?: boolean })
       style={({ pressed }) => [
         ec.card,
         { backgroundColor: colors.surface, borderColor: colors.borderLight, width: cardWidth },
-        wide && ec.cardWide,
         pressed && { opacity: 0.85 },
         isIndigenous && { borderWidth: 2, borderColor: CultureTokens.gold },
       ]}
     >
-      {/* Image + gradient overlay */}
-      <View style={[ec.imgWrap, wide && ec.imgWrapWide]}>
-        <Image
-          source={{ uri: event.imageUrl ?? undefined }}
-          style={ec.fill}
-          contentFit="cover"
-          transition={150}
-        />
+      {/* Image */}
+      <View style={ec.imgWrap}>
+          <Image
+            source={{ uri: event.imageUrl ?? undefined }}
+            style={ec.fill}
+            contentFit="cover"
+            transition={150}
+          />
+          <LinearGradient
+            colors={['transparent', colors.background + 'C0']}
+            style={ec.fill}
+          />
+          {/* Price badge */}
+          {(event.priceCents === 0 || event.isFree) ? (
+            <View style={ec.freeBadge}>
+              <Text style={ec.freeBadgeText}>FREE</Text>
+            </View>
+          ) : event.priceLabel ? (
+            <View style={[ec.freeBadge, { backgroundColor: CultureTokens.indigo }]}> 
+              <Text style={ec.freeBadgeText}>{event.priceLabel}</Text>
+            </View>
+          ) : null}
+          {/* Indigenous badge */}
+          {isIndigenous && (
+            <View style={ec.indigenousBadge}>
+              <Text style={ec.indigenousBadgeText}>🪃 Indigenous</Text>
+            </View>
+          )}
+          {/* Featured star */}
+          {event.isFeatured ? (
+            <View style={ec.featuredDot}>
+              <Ionicons name="star" size={10} color={CultureTokens.gold} />
+            </View>
+          ) : null}
+        </View>
         <LinearGradient
           colors={['transparent', colors.background + 'C0']}
           style={ec.fill}
@@ -118,19 +143,14 @@ function ExploreEventCard({ event, wide }: { event: EventData; wide?: boolean })
             <Ionicons name="star" size={10} color={CultureTokens.gold} />
           </View>
         ) : null}
-        {/* Title overlay at bottom of image */}
-        <View style={ec.imgOverlay}>
-          <Text style={ec.imgTitle} numberOfLines={2}>{event.title}</Text>
-          <Text style={ec.imgDate} numberOfLines={1}>
-            {formatEventDateTime(event.date, event.time)}
-          </Text>
-        </View>
       </View>
 
-      {/* Bottom info */}
-      <View style={ec.body}>
+      {/* Details below, centered */}
+      <View style={ec.detailsWrap}>
+        <Text style={ec.imgTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={ec.imgDate} numberOfLines={1}>{formatEventDateTime(event.date, event.time)}</Text>
         {(event.venue || event.city) ? (
-          <View style={ec.metaRow}>
+          <View style={ec.metaRowCentered}>
             <Ionicons name="location-outline" size={11} color={colors.textTertiary} />
             <Text style={[ec.meta, { color: colors.textSecondary }]} numberOfLines={1}>
               {event.venue || event.city}
@@ -158,13 +178,20 @@ const ec = StyleSheet.create({
       android: { elevation: 3 },
     }),
   },
-  cardWide: { width: '100%' },
   imgWrap: {
     height: 150,
     position: 'relative',
     backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: 'hidden',
   },
-  imgWrapWide: { height: 150 },
+  detailsWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    gap: 4,
+  },
   freeBadge: {
     position: 'absolute',
     top: 8,
@@ -216,27 +243,25 @@ const ec = StyleSheet.create({
   imgTitle: {
     fontFamily: 'Poppins_700Bold',
     fontSize: 13,
-    color: '#fff',
+    color: '#111',
     lineHeight: 18,
   },
   imgDate: {
     fontFamily: 'Poppins_500Medium',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#222',
   },
-  body: {
-    padding: 10,
-    gap: 4,
-  },
-  metaRow: {
+  metaRowCentered: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    justifyContent: 'center',
   },
   meta: {
     fontSize: 11,
     fontFamily: 'Poppins_500Medium',
-    flex: 1,
+    textAlign: 'center',
+    color: '#222',
   },
 });
 
@@ -297,46 +322,64 @@ const cpill = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 100,
   },
+  catsWrap: {
+    paddingVertical: 14,
+  },
+  catsScroll: {
+    gap: 14,
+    paddingVertical: 4,
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  emptySub: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  base: {
+    borderRadius: 100,
+    overflow: 'hidden',
+    marginRight: 0,
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 100,
+  },
   innerInactive: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(0,0,0,0.07)',
   },
   label: {
     fontSize: 12,
     fontFamily: 'Poppins_500Medium',
   },
 });
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
-export default function ExploreScreen() {
-  const params = useLocalSearchParams<{
-    focus?: string;
-    source?: string;
-    playlistId?: string;
-    featuredArtistId?: string;
-  }>();
-  const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const colors   = useColors();
-  const { isDesktop, hPad } = useLayout();
-  const { state } = useOnboarding();
-
-  const requestedFocus =
-    typeof params.focus === 'string' &&
-    CATEGORIES.some((category) => category.id === params.focus)
-      ? params.focus
       : 'all';
 
   const [query,    setQuery]    = useState('');
   const [activeId, setActiveId] = useState<string>(requestedFocus);
+  // Always use 4 columns for event grid
+  const gridCols = 4;
+  const colGap = 12;
 
   useEffect(() => {
     setActiveId(requestedFocus);
@@ -367,9 +410,9 @@ export default function ExploreScreen() {
   }, [events, activeId, query]);
 
   const featured  = useMemo(() => events.filter((e) => e.isFeatured).slice(0, 6), [events]);
-  const [cols, setCols] = useState<2 | 3>(2);
-  const gridCols  = isDesktop ? 6 : cols;
-  const colGap    = 12;
+  // Always use 4 columns for event grid
+  const gridCols = 4;
+  const colGap = 12;
 
   const handleCatPress = useCallback((id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -523,32 +566,7 @@ export default function ExploreScreen() {
                     </Text>
                   </View>
 
-                  {!isDesktop && (
-                    <View style={[s.colToggle, { backgroundColor: colors.backgroundSecondary }]}>
-                      <Pressable
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.impactAsync();
-                          setCols(2);
-                        }}
-                        style={[s.toggleBtn, cols === 2 && s.toggleActive]}
-                        accessibilityRole="button"
-                        accessibilityLabel="2-column grid"
-                      >
-                        <Ionicons name="grid" size={12} color={cols === 2 ? '#FFFFFF' : colors.textTertiary} />
-                      </Pressable>
-                      <Pressable
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.impactAsync();
-                          setCols(3);
-                        }}
-                        style={[s.toggleBtn, cols === 3 && s.toggleActive]}
-                        accessibilityRole="button"
-                        accessibilityLabel="3-column grid"
-                      >
-                        <Ionicons name="apps" size={12} color={cols === 3 ? '#FFFFFF' : colors.textTertiary} />
-                      </Pressable>
-                    </View>
-                  )}
+                  {/* Grid column toggle removed: always 4 columns */}
 
                   {!isLoading && (
                     <Text style={[s.resultCount, { color: colors.textTertiary, marginLeft: 8 }]}>
@@ -602,7 +620,7 @@ export default function ExploreScreen() {
             }
             renderItem={({ item }) => (
               <View style={{ padding: colGap / 2 }}>
-                <ExploreEventCard event={item} wide />
+                <ExploreEventCard event={item} />
               </View>
             )}
           />
@@ -618,10 +636,16 @@ const s = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingBottom: 12,
+    alignItems: 'center',
+    paddingBottom: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+    borderBottomColor: CultureTokens.indigo + '10',
+    gap: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    backgroundColor: undefined,
   },
   headerTitles: {
     flex: 1,
@@ -648,8 +672,8 @@ const s = StyleSheet.create({
 
   // Search bar
   searchBarWrap: {
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 18,
+    marginBottom: 10,
   },
   searchBar: {
     flexDirection: 'row',
@@ -669,35 +693,13 @@ const s = StyleSheet.create({
 
   // Category chips
   catsWrap: {
-    paddingVertical: 10,
+    paddingVertical: 14,
   },
   catsScroll: {
-    gap: 8,
-    paddingVertical: 2,
+    gap: 14,
+    paddingVertical: 4,
   },
-
-  // Sections
-  section:       { marginBottom: 28 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionDot:    { width: 4, height: 18, borderRadius: 2, backgroundColor: CultureTokens.indigo },
-  sectionTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  seeAll:        { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  resultCount:   { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-
-  // Loading
-  loadingWrap:  { alignItems: 'center', paddingVertical: 48, gap: 10 },
-  loadingText:  { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-
-  // Empty
   emptyWrap: {
-    alignItems: 'center',
-    paddingVertical: 48,
-    gap: 10,
-  },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -712,23 +714,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 24,
   },
+});
 
-  // Column toggle
-  colToggle: {
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: 10,
-    gap: 2,
-  },
-  toggleBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleActive: {
-    backgroundColor: CultureTokens.indigo,
-  },
 
 });

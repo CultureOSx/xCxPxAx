@@ -122,10 +122,13 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
   const priceLabel = event.isFree ? 'Free' : event.priceCents ? formatPrice(event.priceCents, event.country) : null;
   const categoryColor = CultureTokens.saffron;
 
-  // Split date for the left date block
-  const dateParts = dateLabel ? dateLabel.split(' ') : [];
-  const dayNum = dateParts[0] ?? '';
-  const monthStr = dateParts[1] ?? '';
+  // Robust day/month extraction
+  let dayNum = '', monthStr = '';
+  const dateObj = new Date(event.date);
+  if (!isNaN(dateObj.getTime())) {
+    dayNum = dateObj.toLocaleString(undefined, { day: 'numeric' });
+    monthStr = dateObj.toLocaleString(undefined, { month: 'short' });
+  }
 
   return (
     <View style={{ marginBottom: 12, position: 'relative' }}>

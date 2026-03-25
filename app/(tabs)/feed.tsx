@@ -536,8 +536,10 @@ function CommentsSheet({ visible, onClose, post, colors }: {
     setSubmitting(true);
     try {
       await addComment(pid, pcol, {
-        authorId: user.id, authorName: user.username || user.email || 'User',
-        authorAvatar: undefined, body: body.trim(),
+        authorId: user.id,
+        authorName: user.username || user.email || 'User',
+        authorAvatar: user.avatar || user.image || user.photo || undefined,
+        body: body.trim(),
       });
       setBody('');
     } catch (e) {

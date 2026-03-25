@@ -65,10 +65,11 @@ export function useNearbyEvents(params: {
   radius?: number;
   pageSize?: number;
 }) {
+  const locationAvailable = Number.isFinite(params.lat) && Number.isFinite(params.lng);
   return useQuery({
     queryKey: eventKeys.nearby(params as Record<string, unknown>),
     queryFn: () => api.events.nearby(params),
-    enabled: params.lat !== 0 && params.lng !== 0,
+    enabled: locationAvailable,
     staleTime: 1000 * 60 * 2,
   });
 }

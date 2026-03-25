@@ -192,13 +192,14 @@ export default function ProfileScreen() {
       .filter((c): c is NonNullable<typeof c> => c !== null);
   }, [onboarding?.nationalityId, onboarding?.cultureIds]);
 
+
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const name = displayUser?.displayName || displayUser?.username || 'a CulturePass member';
     try {
       await Share.share({ message: `Check out ${name}'s profile on CulturePass!` });
     } catch { /* user cancelled */ }
-  }, []);
+  }, [displayUser?.displayName, displayUser?.username]);
 
   if (!userId) return <GuestProfileView topInset={insets.top} />;
   if (isLoading) return <ProfileSkeleton colors={colors} />;
@@ -652,7 +653,20 @@ export default function ProfileScreen() {
               style={[sout.btn, { borderColor: CultureTokens.coral + '50' }]}
               onPress={async () => {
                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                try { await logout(); } catch { /* ignore */ }
+                try {
+                  await logout();
+                } catch (e) {
+                  // Minimal feedback and logging
+                  if (__DEV__) console.error(e);
+                  if (Platform.OS === 'web') {
+                    alert('Logout failed. Please try again.');
+                  } else {
+                    // Use Alert from react-native
+                    // eslint-disable-next-line @typescript-eslint/no-var-requires
+                    const { Alert } = require('react-native');
+                    Alert.alert('Logout failed', 'Please try again.');
+                  }
+                }
               }}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
@@ -678,9 +692,9 @@ export default function ProfileScreen() {
   );
 }
 
-// ── Culture Map Modal ─────────────────────────────────────────────────────────
 
 import { CultureWalletMap } from '../../components/profile/CultureWalletMap';
+// ── Culture Map Modal ─────────────────────────────────────────────────────────
 
 function CultureMapModal({ visible, onClose, cultures, colors, insets }: {
   visible: boolean; onClose: () => void;
