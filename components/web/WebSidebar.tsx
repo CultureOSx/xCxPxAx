@@ -33,44 +33,42 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
   { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
   { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },
-  { label: 'Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
 ];
 
-const EXPLORE_NAV: NavItem[] = [
-  { label: 'Events List', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
-  { label: 'Map Discovery', icon: 'map-outline', iconActive: 'map', route: '/map' },
-  { label: 'Venues Directory', icon: 'storefront-outline', iconActive: 'storefront', route: '/(tabs)/directory', matchPrefix: true },
-  { label: 'Saved Items', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
-];
-
-const CITIES_NAV: NavItem[] = [
-  { label: 'Sydney', icon: 'navigate-outline', iconActive: 'navigate', route: '/city/Sydney?country=Australia' },
-  { label: 'Melbourne', icon: 'navigate-outline', iconActive: 'navigate', route: '/city/Melbourne?country=Australia' },
-  { label: 'London', icon: 'planet-outline', iconActive: 'planet', route: '/city/London?country=UK' },
+const LIBRARY_NAV: NavItem[] = [
+  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
+  { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
+  { label: 'All Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
+  { label: 'Map', icon: 'map-outline', iconActive: 'map', route: '/map' },
+  { label: 'Directory', icon: 'storefront-outline', iconActive: 'storefront', route: '/(tabs)/directory', matchPrefix: true },
 ];
 
 const ORGANIZER_NAV: NavItem[] = [
   { label: 'Dashboard', icon: 'grid-outline', iconActive: 'grid', route: '/dashboard/organizer', matchPrefix: true },
-  { label: 'Council Ops', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/dashboard/council', matchPrefix: true },
-  { label: 'Widgets', icon: 'apps-outline', iconActive: 'apps', route: '/dashboard/widgets', matchPrefix: true },
   { label: 'Create Event', icon: 'add-circle-outline', iconActive: 'add-circle', route: '/event/create' },
   { label: 'Scanner', icon: 'qr-code-outline', iconActive: 'qr-code', route: '/scanner' },
+  { label: 'Widgets', icon: 'apps-outline', iconActive: 'apps', route: '/dashboard/widgets', matchPrefix: true },
+];
+
+const VENUE_NAV: NavItem[] = [
+  { label: 'Venue Hub', icon: 'storefront-outline', iconActive: 'storefront', route: '/dashboard/venue', matchPrefix: true },
+];
+
+const SPONSOR_NAV: NavItem[] = [
+  { label: 'Sponsor Hub', icon: 'ribbon-outline', iconActive: 'ribbon', route: '/dashboard/sponsor', matchPrefix: true },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Admin Hub', icon: 'shield-half-outline', iconActive: 'shield-half', route: '/admin/dashboard', matchPrefix: false },
-  { label: 'Council Mgmt', icon: 'business-outline', iconActive: 'business', route: '/admin/council-management', matchPrefix: true },
   { label: 'Users', icon: 'people-outline', iconActive: 'people', route: '/admin/users', matchPrefix: true },
+  { label: 'Moderation', icon: 'eye-outline', iconActive: 'eye', route: '/admin/moderation', matchPrefix: true },
   { label: 'Audit Logs', icon: 'list-outline', iconActive: 'list', route: '/admin/audit-logs', matchPrefix: true },
   { label: 'Notify', icon: 'megaphone-outline', iconActive: 'megaphone', route: '/admin/notifications', matchPrefix: true },
 ];
 
-const VENUE_NAV: NavItem[] = [{ label: 'Venue Hub', icon: 'storefront-outline', iconActive: 'storefront', route: '/dashboard/venue', matchPrefix: true }];
-const SPONSOR_NAV: NavItem[] = [{ label: 'Sponsor Hub', icon: 'ribbon-outline', iconActive: 'ribbon', route: '/dashboard/sponsor', matchPrefix: true }];
-
 const BOTTOM_NAV: NavItem[] = [
   { label: 'Settings', icon: 'settings-outline', iconActive: 'settings', route: '/settings' },
-  { label: 'Help & FAQ', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
+  { label: 'Help', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
 ];
 
 // ─── Avatar helper ────────────────────────────────────────────────────────────
@@ -129,6 +127,34 @@ function AvatarWithRing({
   );
 }
 
+// ─── Tier badge ───────────────────────────────────────────────────────────────
+function TierBadge({ tier }: { tier?: string }) {
+  if (!tier || tier === 'free') return null;
+  const label = tier.charAt(0).toUpperCase() + tier.slice(1);
+  return (
+    <View style={tierBadge.pill}>
+      <Text style={tierBadge.text}>{label}</Text>
+    </View>
+  );
+}
+
+const tierBadge = StyleSheet.create({
+  pill: {
+    backgroundColor: CultureTokens.teal + '28',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderColor: CultureTokens.teal + '55',
+  },
+  text: {
+    fontSize: 9,
+    fontFamily: 'Poppins_700Bold',
+    color: CultureTokens.teal,
+    letterSpacing: 0.3,
+  },
+});
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function WebSidebar() {
   const pathname = usePathname();
@@ -137,8 +163,8 @@ export function WebSidebar() {
   const isDark = useColorScheme() === 'dark';
   const { user, logout, isAuthenticated, userId } = useAuth();
   const { isOrganizer, isAdmin, role } = useRole();
-  const isVenue = role === 'business' || role === 'organizer' || isAdmin;
-  const isSponsor = role === 'sponsor' || role === 'business' || isAdmin;
+  const isVenue = role === 'business';
+  const isSponsor = role === 'sponsor';
   const { data: councilData } = useCouncil();
   const [collapsed, setCollapsed] = useState(false);
   const [now, setNow] = useState<Date>(() => new Date());
@@ -153,9 +179,7 @@ export function WebSidebar() {
     refetchInterval: 60_000,
   });
 
-  const navWithBadge: NavItem[] = MAIN_NAV.map((item) =>
-    item.label === 'Profile' && notifCount > 0 ? { ...item, badge: notifCount } : item,
-  );
+  const navWithBadge: NavItem[] = MAIN_NAV;
 
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) return pathname.startsWith(item.route.replace('/(tabs)', ''));
@@ -166,13 +190,17 @@ export function WebSidebar() {
 
   const navigate = (route: string) => router.navigate(route as Parameters<typeof router.navigate>[0]);
 
-
-
   const bg = colors.surface;
   const border = colors.borderLight;
   const mutedColor = isDark ? 'rgba(232,244,255,0.35)' : 'rgba(0,22,40,0.32)';
   const myCouncil = councilData?.council;
   const locationLabel = user?.city ?? user?.country ?? 'Australia';
+
+  // User identity
+  const displayName = user?.displayName ?? user?.username ?? user?.id?.slice(0, 8) ?? 'You';
+  const handle = user?.username ? `@${user.username}` : '';
+  const initials = displayName.trim().split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const memberTier = (user as any)?.subscriptionTier ?? (user as any)?.membership?.tier;
 
   // Clock
   useEffect(() => {
@@ -240,7 +268,7 @@ export function WebSidebar() {
 
         {/* Main nav icons */}
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={r.railIcons}>
-          {navWithBadge.map((item) => {
+          {[...MAIN_NAV, ...LIBRARY_NAV].map((item) => {
             const active = isActive(item);
             return (
               <Pressable
@@ -251,7 +279,7 @@ export function WebSidebar() {
               >
                 {active && (
                   <LinearGradient
-                    colors={gradients.culturepassBrand}
+                    colors={[CultureTokens.indigo, CultureTokens.teal]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={r.railActiveBar}
@@ -262,11 +290,6 @@ export function WebSidebar() {
                   size={19}
                   color={active ? colors.primary : mutedColor}
                 />
-                {(item.badge ?? 0) > 0 && (
-                  <View style={r.badgeDot}>
-                    <Text style={r.badgeDotTxt}>{item.badge}</Text>
-                  </View>
-                )}
               </Pressable>
             );
           })}
@@ -278,9 +301,7 @@ export function WebSidebar() {
         <View style={[r.divider, { backgroundColor: border }]} />
         {BOTTOM_NAV.map((item) => {
           const active = isActive(item);
-          const navRoute = item.label === 'Profile' && !isAuthenticated
-            ? routeWithRedirect('/(onboarding)/login', pathname) as string
-            : item.route;
+          const navRoute = item.route;
 
           return (
             <Pressable
@@ -291,7 +312,7 @@ export function WebSidebar() {
             >
               {active && (
                 <LinearGradient
-                  colors={gradients.culturepassBrand}
+                  colors={[CultureTokens.indigo, CultureTokens.teal]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                   style={r.railActiveBar}
@@ -308,7 +329,7 @@ export function WebSidebar() {
 
         {/* Expand */}
         <Pressable style={[r.railItem, r.railActionBtn]} onPress={() => setCollapsed(false)} accessibilityLabel="Expand sidebar">
-          <Ionicons name="chevron-forward-outline" size={18} color="#000000" />
+          <Ionicons name="chevron-forward-outline" size={18} color={mutedColor} />
         </Pressable>
 
         {/* Logout */}
@@ -329,17 +350,18 @@ export function WebSidebar() {
   // ─── Expanded sidebar ─────────────────────────────────────────────────────
   return (
     <View style={[s.sidebar, { backgroundColor: bg, borderRightColor: border }]}>
-      {/* ── Logo + collapse at top ── */}
-      <View style={s.profileHeader}>
+
+      {/* ── Brand header: logo + wordmark ── */}
+      <View style={s.brandHeader}>
         <LinearGradient
-          colors={isDark ? ['rgba(44,42,114,0.22)', 'transparent'] : ['rgba(44,42,114,0.07)', 'transparent']}
+          colors={isDark ? ['rgba(44,42,114,0.30)', 'rgba(44,42,114,0.05)'] : ['rgba(44,42,114,0.10)', 'rgba(44,42,114,0.00)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 0, flex: 1, position: 'relative' }}>
+        <View style={s.brandRow}>
           <Pressable
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}
+            style={s.brandLogoBtn}
             onPress={() => navigate('/(tabs)')}
             accessibilityLabel="CulturePass home"
             accessibilityRole="button"
@@ -347,94 +369,81 @@ export function WebSidebar() {
             <View style={s.logoIcon}>
               <Image source={require('../../assets/images/culturepass-logo.png')} style={s.logoImage} contentFit="cover" />
             </View>
-            <View style={{ minWidth: 0, flexShrink: 1, flexDirection: 'column' }}>
+            <View style={s.wordmarkWrap}>
               <LinearGradient
                 colors={[CultureTokens.indigo, CultureTokens.saffron, CultureTokens.coral]}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ borderRadius: 6, paddingHorizontal: 4, alignSelf: 'flex-start' }}
+                end={{ x: 1, y: 0 }}
+                style={s.wordmarkGradient}
               >
-                <Text style={[TextStyles.title2, { lineHeight: 30, letterSpacing: -0.7, backgroundColor: 'transparent', color: '#FFFFFF', textShadow: '0px 1px 2px rgba(44,42,114,0.12)', flexShrink: 1 } as any]} numberOfLines={1}>
-                  CulturePass
-                </Text>
+                <Text style={s.wordmarkText} numberOfLines={1}>CulturePass</Text>
               </LinearGradient>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
-                <Text style={[TextStyles.labelSemibold, { color: colors.textSecondary, letterSpacing: 0.1, flexShrink: 1, fontSize: 12 }]} numberOfLines={1}>
-                  Belong Anywhere
-                </Text>
-              </View>
+              <Text style={[s.wordmarkSub, { color: colors.textTertiary }]} numberOfLines={1}>Belong Anywhere</Text>
             </View>
           </Pressable>
-          <Pressable 
-            onPress={() => setCollapsed(true)} 
-            hitSlop={15} 
-            accessibilityRole="button" 
-            accessibilityLabel="Collapse" 
-            style={({ pressed }) => [s.headerBtn, pressed && { opacity: 0.7 }]}
+          <Pressable
+            onPress={() => setCollapsed(true)}
+            hitSlop={15}
+            accessibilityRole="button"
+            accessibilityLabel="Collapse sidebar"
+            style={({ pressed }) => [s.headerCollapseBtn, pressed && { opacity: 0.6 }]}
           >
-            <Ionicons name="chevron-back" size={20} color={colors.textTertiary} style={{ marginRight: -2 }} />
+            <Ionicons name="chevron-back" size={18} color={colors.textTertiary} />
           </Pressable>
+        </View>
+
+        {/* Time + weather — compact single row */}
+        <View style={s.weatherRow}>
+          <Ionicons name="time-outline" size={10} color={mutedColor} />
+          <Text style={[s.weatherText, { color: colors.textTertiary }]} numberOfLines={1}>
+            {dateLabel} · {timeLabel}{weatherSummary ? `  ·  ${weatherSummary}` : ''}
+          </Text>
         </View>
       </View>
 
-      {/* ── Action Buttons (Post Event only if auth) ── */}
-      {isAuthenticated && (
-        <View style={s.actionButtons}>
-          <View style={s.actionBtnRow}>
-            {/* Primary – Post Event */}
-            <Pressable
-              style={({ pressed }) => [
-                s.actionBtn,
-                s.actionBtnPrimary,
-                { backgroundColor: CultureTokens.saffron },
-                pressed && s.actionBtnPressed,
-              ]}
-              onPress={() => navigate('/event/create')}
-              accessibilityRole="button"
-              accessibilityLabel="Create a new event"
-              accessibilityHint="Opens the event creation screen"
-            >
-              <Ionicons name="add-circle" size={20} color="#0B0B14" />
-              <Text style={[s.actionBtnPrimaryText, { color: '#0B0B14' }]} numberOfLines={1}>
-                Post Event
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* Brand gradient divider */}
-      <View style={s.gradientDivider}>
-        <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.saffron, 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ height: 1, flex: 1 }}
-        />
+      <LinearGradient
+        colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={s.gradientLine}
+      />
+
+      {/* ── Create CTA ── */}
+      <View style={s.ctaWrap}>
+        <Pressable
+          onPress={() => navigate('/submit')}
+          accessibilityRole="button"
+          accessibilityLabel="Create new content"
+          style={({ pressed }) => [s.ctaBtn, pressed && { opacity: 0.88 }]}
+        >
+          <LinearGradient
+            colors={[CultureTokens.indigo, CultureTokens.teal]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={s.ctaBtnGradient}
+          >
+            <Text style={s.ctaBtnText}>＋ Create</Text>
+          </LinearGradient>
+        </Pressable>
       </View>
 
       {/* ── Scrollable nav ── */}
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 6, paddingTop: 4 }}>
-        <View style={s.navGroup}>
+        <NavSection label="Discover" mutedColor={mutedColor} colors={colors}>
           {navWithBadge.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
-          ))}
-        </View>
-
-        <NavSection label="Explore" mutedColor={mutedColor} colors={colors}>
-          {EXPLORE_NAV.map((item) => (
             <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
           ))}
         </NavSection>
 
-        <NavSection label="Top Cities" mutedColor={mutedColor} colors={colors}>
-          {CITIES_NAV.map((item) => (
+        <NavSection label="Library" mutedColor={mutedColor} colors={colors}>
+          {LIBRARY_NAV.map((item) => (
             <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
           ))}
         </NavSection>
 
         {isOrganizer && (
-          <NavSection label="Organizer" mutedColor={mutedColor} colors={colors}>
+          <NavSection label="Organiser Tools" mutedColor={mutedColor} colors={colors}>
             {ORGANIZER_NAV.map((item) => (
               <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
             ))}
@@ -466,48 +475,48 @@ export function WebSidebar() {
         )}
       </ScrollView>
 
-      {/* ── Context strip: date / weather ── */}
-      <View style={[s.contextCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderColor: border }]}>
-        <View style={s.contextRow}>
-          <Ionicons name="time-outline" size={11} color={mutedColor} />
-          <Text style={[s.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {dateLabel} · {timeLabel}
-          </Text>
-        </View>
-        <View style={s.contextRow}>
-          <Ionicons name="location-outline" size={11} color={mutedColor} />
-          <Text style={[s.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {locationLabel}{weatherSummary ? ` · ${weatherSummary}` : ''}
-          </Text>
-        </View>
-      </View>
+      {/* ── Council context pill (no-nav, display only) ── */}
+      {myCouncil && (
+        <Pressable
+          style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
+          onPress={() => navigate('/(tabs)/directory')}
+          accessibilityRole="button"
+          accessibilityLabel="Browse local directory"
+        >
+          <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
+            <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>{myCouncil.name}</Text>
+            <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
+              {myCouncil.suburb ?? 'Local'}{myCouncil.state ? `, ${myCouncil.state}` : ''}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
+        </Pressable>
+      )}
 
-      {/* ── Council card ── */}
-      <Pressable
-        style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
-        onPress={() => navigate(isAuthenticated ? '/(tabs)/council' : '/council/select')}
-        accessibilityRole="button"
-        accessibilityLabel={isAuthenticated ? 'Open council' : 'Choose council'}
-      >
-        <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
-          <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>
-            {myCouncil?.name ?? 'Choose a council'}
-          </Text>
-          <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
-            {myCouncil
-              ? `${myCouncil.suburb ?? 'Local'}${myCouncil.state ? `, ${myCouncil.state}` : ''}`
-              : 'Connect to your community'}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
-      </Pressable>
-
-      {/* ── Profile block + Quick menu at bottom ── */}
+      {/* ── Bottom section: Settings / Help / Account ── */}
       <View style={[s.thinDivider, { backgroundColor: border }]} />
       <View style={s.bottomNavSection}>
+
+        {/* Settings + Help — always visible */}
+        <View style={s.navGroup}>
+          {BOTTOM_NAV.map((item) => (
+            <SidebarItem
+              key={item.route}
+              item={item}
+              active={isActive(item)}
+              isDark={isDark}
+              onPress={() => navigate(item.route)}
+              colors={colors}
+            />
+          ))}
+        </View>
+
+        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 4 }]} />
+
+        {/* Account block */}
         {isAuthenticated && user ? (
           <SidebarProfileBlock
             user={user}
@@ -519,47 +528,32 @@ export function WebSidebar() {
             onLogout={logout}
           />
         ) : (
-          <>
-            <View style={s.sectionHeader}>
-              <View style={[s.sectionDot, { backgroundColor: mutedColor }]} />
-              <Text style={[s.sectionLabel, { color: mutedColor }]}>Account</Text>
-            </View>
-            <View style={s.navGroup}>
-              {BOTTOM_NAV.map((item) => {
-                const isProfile = item.label === 'Profile';
-                const label = isProfile ? 'Sign In' : item.label;
-                const icon = isProfile ? 'log-in-outline' : item.icon;
-                const iconActive = isProfile ? 'log-in' : item.iconActive;
-                const navRoute = isProfile ? '/(onboarding)/login' : item.route;
-                
-                return (
-                  <SidebarItem
-                    key={item.route}
-                    item={{ ...item, label, icon, iconActive, route: navRoute }}
-                    active={pathname === navRoute}
-                    isDark={isDark}
-                    onPress={() => navigate(navRoute)}
-                    colors={colors}
-                  />
-                );
-              })}
-            </View>
-            <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
-              <Button
-                variant="gradient"
-                size="md"
-                leftIcon="person-add"
-                onPress={() => navigate('/(onboarding)/signup')}
-                fullWidth
-                style={{ height: 44, borderRadius: 14, boxShadow: '0px 2px 8px rgba(255,140,66,0.18)' } as any}
-                textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
-                hoverStyle={{ opacity: 0.92 }}
-              >
-                Join CulturePass
-              </Button>
-            </View>
-          </>
+          <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
+            <Pressable
+              style={[s.signInBtn, { borderColor: colors.borderLight }]}
+              onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}
+              accessibilityRole="button"
+            >
+              <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
+              <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
+            </Pressable>
+            <Button
+              variant="gradient"
+              size="md"
+              leftIcon="person-add"
+              onPress={() => navigate('/(onboarding)/signup')}
+              fullWidth
+              style={{ height: 40, borderRadius: 12 } as any}
+              textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
+              hoverStyle={{ opacity: 0.92 }}
+            >
+              Join CulturePass
+            </Button>
+          </View>
         )}
+
+        {/* Version */}
+        <Text style={[s.versionText, { color: colors.textTertiary }]}>v2.0 · CulturePass AU</Text>
       </View>
     </View>
   );
@@ -613,7 +607,7 @@ function SidebarProfileBlock({
         accessibilityRole="button"
         accessibilityLabel="Open profile menu"
       >
-        <AvatarWithRing avatarUrl={user.avatarUrl} initials={initials} size={40} isGuest={false} />
+        <AvatarWithRing avatarUrl={(user as any).avatarUrl} initials={initials} size={40} isGuest={false} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[s.profileBlockName, { color: colors.text }]} numberOfLines={1}>{displayName}</Text>
           <Text style={[s.profileBlockSub, { color: colors.textSecondary }]}>Quick menu</Text>
@@ -627,7 +621,7 @@ function SidebarProfileBlock({
           <View style={[s.profileModalCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <View style={[s.profileModalHeader, { borderBottomColor: colors.borderLight }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <AvatarWithRing avatarUrl={user.avatarUrl} initials={initials} size={36} isGuest={false} />
+                <AvatarWithRing avatarUrl={(user as any).avatarUrl} initials={initials} size={36} isGuest={false} />
                 <Text style={[s.profileModalName, { color: colors.text }]} numberOfLines={1}>{displayName}</Text>
               </View>
               <Pressable onPress={() => setMenuVisible(false)} hitSlop={8}>
@@ -672,8 +666,7 @@ function NavSection({ label, mutedColor, children, colors }: { label: string; mu
   return (
     <>
       <View style={s.sectionHeader}>
-        <View style={[s.sectionDot, { backgroundColor: mutedColor }]} />
-        <Text style={[s.sectionLabel, { color: mutedColor }]}>{label}</Text>
+        <Text style={[s.sectionLabel, { color: mutedColor }]}>{label.toUpperCase()}</Text>
       </View>
       <View style={s.navGroup}>{children}</View>
     </>
@@ -712,26 +705,27 @@ function SidebarItem({
       accessibilityRole="menuitem"
       accessibilityState={{ selected: active }}
     >
-      {/* Left gradient accent bar */}
+      {/* Left accent bar */}
       {active && (
-        <LinearGradient
-          colors={gradients.culturepassBrand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={ni.activeBar}
-        />
+        <View style={ni.activeBar}>
+          <LinearGradient
+            colors={[CultureTokens.indigo, CultureTokens.teal]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
       )}
       <Ionicons
         name={active ? item.iconActive : item.icon}
-        size={20}
+        size={18}
         color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.60)' : 'rgba(0,22,40,0.52)')}
       />
       <Text
         style={[
           ni.label,
-          { color: active ? colors.primary : colors.text },
+          { color: active ? colors.primary : colors.textSecondary },
           active && ni.labelActive,
-          active && { fontFamily: 'Poppins_700Bold' },
         ]}
         numberOfLines={1}
       >
@@ -757,81 +751,193 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
       paddingTop: 0,
       paddingBottom: 0,
     },
-    profileHeader: {
+
+    // ── Brand header ──
+    brandHeader: {
+      paddingHorizontal: 14,
+      paddingTop: 18,
+      paddingBottom: 12,
+      overflow: 'hidden',
+      gap: 12,
+    },
+    brandRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    brandLogoBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 12,
-      overflow: 'hidden',
+      flex: 1,
+      minWidth: 0,
     },
     logoIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
       backgroundColor: 'rgba(0,0,0,0.06)',
+      flexShrink: 0,
     },
     logoImage: {
       width: '100%',
       height: '100%',
     },
-    headerBtn: {
-      width: 28,
-      height: 28,
+    wordmarkWrap: {
+      minWidth: 0,
+      flexShrink: 1,
+    },
+    wordmarkGradient: {
+      borderRadius: 4,
+      paddingHorizontal: 0,
+      alignSelf: 'flex-start',
+      backgroundColor: 'transparent',
+    },
+    wordmarkText: {
+      fontSize: 17,
+      fontFamily: 'Poppins_700Bold',
+      color: '#fff',
+      letterSpacing: -0.5,
+      lineHeight: 24,
+      backgroundColor: 'transparent',
+    },
+    wordmarkSub: {
+      fontSize: 10,
+      fontFamily: 'Poppins_400Regular',
+      letterSpacing: 0.2,
+      marginTop: 1,
+    },
+    headerCollapseBtn: {
+      width: 26,
+      height: 26,
       borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'transparent',
+      flexShrink: 0,
     },
-    actionButtons: {
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 16,
-    },
-    actionBtnRow: {
+
+    // ── Weather row (compact, in brand header) ──
+    weatherRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 5,
     },
-    actionBtn: {
+    weatherText: {
+      fontSize: 10.5,
+      fontFamily: 'Poppins_400Regular',
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      minHeight: 46,
-      borderRadius: 12,
-      paddingHorizontal: 12,
     },
-    actionBtnPrimary: {
-      backgroundColor: CultureTokens.saffron,
-      borderWidth: 0,
-    },
-    actionBtnPrimaryText: {
-      ...TextStyles.labelSemibold,
-      color: '#0B0B14',
-      letterSpacing: -0.1,
-    },
-    actionBtnPressed: {
-      opacity: 0.88,
-    },
-    gradientDivider: {
-      paddingHorizontal: 0,
+
+    gradientLine: {
+      height: 1,
       marginBottom: 4,
     },
+
+    // ── Create CTA ──
+    ctaWrap: {
+      paddingHorizontal: 12,
+      paddingTop: 8,
+      paddingBottom: 10,
+    },
+    ctaBtn: {
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    ctaBtnGradient: {
+      paddingVertical: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 12,
+    },
+    ctaBtnText: {
+      fontSize: 14,
+      fontFamily: 'Poppins_700Bold',
+      color: '#fff',
+      letterSpacing: 0.1,
+    },
+
+    // ── Nav groups ──
+    navGroup: {
+      paddingHorizontal: 8,
+      gap: 1,
+    },
+    sectionHeader: {
+      paddingHorizontal: 14,
+      paddingTop: 16,
+      paddingBottom: 5,
+    },
+    sectionLabel: {
+      fontSize: 10,
+      fontFamily: 'Poppins_700Bold',
+      letterSpacing: 1.2,
+    },
+
+    // ── Council card ──
+    councilCard: {
+      marginHorizontal: 10,
+      marginBottom: 6,
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 9,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 9,
+    },
+    councilIconWrap: {
+      width: 26,
+      height: 26,
+      borderRadius: 8,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    councilName: {
+      fontSize: 11.5,
+      fontFamily: 'Poppins_600SemiBold',
+      lineHeight: 16,
+    },
+    councilSub: {
+      fontSize: 10,
+      fontFamily: 'Poppins_400Regular',
+    },
+
+    // ── Bottom section ──
     thinDivider: {
       height: StyleSheet.hairlineWidth,
       marginHorizontal: 12,
       marginVertical: 4,
     },
     bottomNavSection: {
-      paddingTop: 8,
-      paddingBottom: 12,
+      paddingTop: 4,
+      paddingBottom: 8,
     },
+    signInBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      paddingVertical: 9,
+    },
+    signInBtnText: {
+      fontSize: 13,
+      fontFamily: 'Poppins_600SemiBold',
+    },
+    versionText: {
+      fontSize: 9,
+      fontFamily: 'Poppins_400Regular',
+      letterSpacing: 0.3,
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      paddingTop: 4,
+    },
+
+    // ── Profile block / modal ──
     profileBlock: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -907,77 +1013,8 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
       fontSize: 14,
       fontFamily: 'Poppins_600SemiBold',
     },
-    navGroup: {
-      paddingHorizontal: 8,
-      gap: 1,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 14,
-      paddingTop: 14,
-      paddingBottom: 4,
-    },
-    sectionDot: {
-      width: 3,
-      height: 3,
-      borderRadius: 2,
-    },
-    sectionLabel: {
-      fontSize: 9,
-      fontFamily: 'Poppins_600SemiBold',
-      letterSpacing: 1.1,
-      textTransform: 'uppercase',
-    },
-    contextCard: {
-      marginHorizontal: 10,
-      marginBottom: 6,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 10,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      gap: 4,
-    },
-    contextRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-    },
-    contextText: {
-      fontSize: 10.5,
-      fontFamily: 'Poppins_400Regular',
-      flex: 1,
-    },
-    councilCard: {
-      marginHorizontal: 10,
-      marginBottom: 6,
-      borderWidth: 1,
-      borderRadius: 10,
-      paddingHorizontal: 10,
-      paddingVertical: 9,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 9,
-    },
-    councilIconWrap: {
-      width: 26,
-      height: 26,
-      borderRadius: 8,
-      borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-    },
-    councilName: {
-      fontSize: 11.5,
-      fontFamily: 'Poppins_600SemiBold',
-      lineHeight: 16,
-    },
-    councilSub: {
-      fontSize: 10,
-      fontFamily: 'Poppins_400Regular',
-    },
+
+    // legacy (kept for compatibility in profile block sub-usage)
     footer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1004,6 +1041,85 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
     rolePillText: {
       fontSize: 9,
       fontFamily: 'Poppins_600SemiBold',
+    },
+    actionButtons: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 16,
+    },
+    actionBtnRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    actionBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      minHeight: 46,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+    },
+    actionBtnPrimary: {
+      backgroundColor: CultureTokens.saffron,
+      borderWidth: 0,
+    },
+    actionBtnPrimaryText: {
+      ...TextStyles.labelSemibold,
+      color: '#0B0B14',
+      letterSpacing: -0.1,
+    },
+    actionBtnPressed: {
+      opacity: 0.88,
+    },
+    gradientDivider: {
+      paddingHorizontal: 0,
+      marginBottom: 4,
+    },
+    contextCard: {
+      marginHorizontal: 10,
+      marginBottom: 6,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      gap: 4,
+    },
+    contextRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+    },
+    contextText: {
+      fontSize: 10.5,
+      fontFamily: 'Poppins_400Regular',
+      flex: 1,
+    },
+
+    // legacy header used in old profile header
+    profileHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 12,
+      overflow: 'hidden',
+    },
+    headerBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+    },
+    sectionDot: {
+      width: 3,
+      height: 3,
+      borderRadius: 2,
     },
   });
 
@@ -1044,9 +1160,9 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
       paddingTop: 2,
     },
     railItem: {
-      width: 38,
-      height: 38,
-      borderRadius: 10,
+      width: 44,
+      height: 44,
+      borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
@@ -1057,8 +1173,8 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
     railActiveBar: {
       position: 'absolute',
       left: 0,
-      top: 7,
-      bottom: 7,
+      top: 8,
+      bottom: 8,
       width: 3,
       borderRadius: 2,
     },
@@ -1084,30 +1200,32 @@ const getSidebarStyles = (colors: ReturnType<typeof useColors>) => {
     item: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 9,
-      borderRadius: 9,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
+      gap: 12,
+      borderRadius: 12,
+      height: 44,
+      paddingHorizontal: 12,
       position: 'relative',
+      overflow: 'hidden',
     },
     itemActive: {
-      borderRadius: 9,
+      borderRadius: 12,
     },
     activeBar: {
       position: 'absolute',
       left: 0,
-      top: 7,
-      bottom: 7,
+      top: 8,
+      bottom: 8,
       width: 3,
       borderRadius: 2,
+      overflow: 'hidden',
     },
     label: {
-      ...TextStyles.caption,
-      fontWeight: '500',
+      fontSize: 14,
+      fontFamily: 'Poppins_600SemiBold',
       flex: 1,
     },
     labelActive: {
-      fontWeight: '600',
+      fontFamily: 'Poppins_700Bold',
     },
     badge: {
       backgroundColor: Colors.error,

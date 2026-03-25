@@ -35,12 +35,14 @@ function DiscoverHeaderComponent({
   const { user } = useAuth();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const greeting = useMemo(() => {
+  const { timeGreeting, firstName } = useMemo(() => {
     const hour = new Date().getHours();
-    const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    const firstName = user?.displayName?.split(' ')[0] ?? user?.username ?? null;
-    return firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+    const tg = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const fn = user?.displayName?.split(' ')[0] ?? user?.username ?? null;
+    return { timeGreeting: tg, firstName: fn };
   }, [user?.displayName, user?.username]);
+
+  const greeting = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
 
   const renderTopBar = () => (
     <View style={[styles.topBar, { paddingTop: insets.top + (isWeb ? 0 : 4) }]}>
@@ -97,6 +99,7 @@ function DiscoverHeaderComponent({
                   {currentTime} · {weatherSummary}
                 </Text>
                 <Text style={[styles.heroTitleDesktop, { color: colors.text }]}>{greeting}</Text>
+                <Text style={styles.heroTaglineDesktop}>Belong Anywhere</Text>
                 <Text style={[styles.heroSubtitleDesktop, { color: colors.textSecondary }]}>
                   Explore festivals, communities, and events in {city}.
                 </Text>
@@ -118,7 +121,10 @@ function DiscoverHeaderComponent({
         </View>
       ) : (
         <View style={styles.mobileHeroSection}>
-          <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>{greeting}</Text>
+          <Text style={[styles.heroGreetingMain, { color: colors.text }]} numberOfLines={1}>
+            {greeting}
+          </Text>
+          <Text style={styles.heroTagline}>Belong Anywhere</Text>
           <LocationPicker variant="text" />
           <Text style={[styles.heroTimeWeather, { color: colors.textSecondary }]}>
             {currentTime}{weatherSummary ? ` · ${weatherSummary}` : ''}
@@ -195,11 +201,32 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8, gap: 8 },
+  mobileHeroSection: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8, gap: 6 },
   heroGreetingRow: { flexDirection: 'column', alignItems: 'flex-start' },
-  heroGreetingMain: { ...TextStyles.title2 },
+  heroGreetingMain: {
+    fontSize: 30,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.5,
+    lineHeight: 36,
+  },
+  heroTagline: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+    color: CultureTokens.saffron,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  },
   heroTimeWeather: { ...TextStyles.caption, opacity: 0.75 },
   heroGreetingMobile: { ...TextStyles.callout },
+  heroTaglineDesktop: {
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
+    color: CultureTokens.saffron,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginTop: 2,
+    marginBottom: 8,
+  },
 });
 
 export const DiscoverHeader = React.memo(DiscoverHeaderComponent);

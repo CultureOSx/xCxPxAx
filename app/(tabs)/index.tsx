@@ -21,6 +21,8 @@ import { CommunityRail } from '@/components/Discover/CommunityRail';
 import { ActivityRail } from '@/components/Discover/ActivityRail';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
+import { ComingSoonRail } from '@/components/Discover/ComingSoonRail';
+import { CultureTokens } from '@/constants/theme';
 
 export default function DiscoverScreen() {
   const colors = useColors();
@@ -134,6 +136,48 @@ export default function DiscoverScreen() {
         <CategoryRail />
 
         <CityRail />
+
+        <ComingSoonRail
+          title="For Your Culture"
+          subtitle="Personalised events matching your heritage"
+          icon="heart"
+          accentColor={CultureTokens.coral}
+        />
+
+        <ComingSoonRail
+          title="Restaurants Near You"
+          subtitle="Cultural dining in your neighbourhood"
+          icon="restaurant"
+          accentColor={CultureTokens.saffron}
+        />
+
+        <ComingSoonRail
+          title="Movies & Entertainment"
+          subtitle="Cultural films, screenings and shows"
+          icon="film"
+          accentColor={CultureTokens.gold}
+        />
+
+        <ComingSoonRail
+          title="Shopping & Markets"
+          subtitle="Cultural goods, fashion and artisans"
+          icon="bag"
+          accentColor={CultureTokens.teal}
+        />
+
+        <ComingSoonRail
+          title="Perks Near You"
+          subtitle="Exclusive rewards at cultural venues"
+          icon="gift"
+          accentColor={CultureTokens.indigo}
+        />
+
+        <ComingSoonRail
+          title="Trending Artists"
+          subtitle="Rising cultural artists in your city"
+          icon="musical-notes"
+          accentColor="#A855F7"
+        />
 
         <View style={styles.footerSpacer} />
       </ScrollView>

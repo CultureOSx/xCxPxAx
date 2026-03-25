@@ -17,7 +17,7 @@ import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
 import { useRole } from '@/hooks/useRole';
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, CardTokens } from '@/constants/theme';
 import { useLayout } from '@/hooks/useLayout';
 import { getPostcodeData, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 
@@ -74,9 +74,12 @@ function Card({ children, colors, hPad }: { children: React.ReactNode; colors: R
 function SectionLabel({ label, icon, accent, colors }: { label: string; icon: string; accent: string; colors: ReturnType<typeof useColors> }) {
   return (
     <View style={card.sectionHead}>
-      <View style={[card.sectionIconBg, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon as never} size={14} color={accent} />
-      </View>
+      <LinearGradient
+        colors={[accent + '28', accent + '10']}
+        style={card.sectionIconBg}
+      >
+        <Ionicons name={icon as never} size={15} color={accent} />
+      </LinearGradient>
       <Text style={[card.sectionTitle, { color: colors.text }]}>{label}</Text>
     </View>
   );
@@ -104,16 +107,16 @@ function Field({
 
 const card = StyleSheet.create({
   wrap: {
-    borderRadius: 16, borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: CardTokens.radius, borderWidth: StyleSheet.hairlineWidth,
     padding: 16, marginBottom: 12,
     ...Platform.select({
       web: { boxShadow: '0px 1px 6px rgba(0,0,0,0.06)' } as object,
-      default: { shadowColor: "black", shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+      default: { shadowColor: 'black', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
     }),
   },
   sectionHead:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionIconBg: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle:  { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  sectionIconBg: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   field:         { marginBottom: 12 },
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   fieldLabel:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
@@ -392,11 +395,14 @@ export default function SubmitScreen() {
       <View style={[s.successRoot, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <LinearGradient colors={[conf.color + '20', 'transparent']} style={StyleSheet.absoluteFillObject} />
         <View style={[s.successCard, { backgroundColor: colors.surface, borderColor: conf.color + '30' }]}>
-          <View style={[s.successIconWrap, { backgroundColor: conf.color + '15' }]}>
-            <Ionicons name={conf.icon as never} size={40} color={conf.color} />
+          {/* Outer ring */}
+          <View style={[s.successIconRing, { borderColor: conf.color + '30' }]}>
+            <View style={[s.successIconWrap, { backgroundColor: conf.color + '15' }]}>
+              <Ionicons name={conf.icon as never} size={40} color={conf.color} />
+            </View>
           </View>
           <View style={[s.successCheckCircle, { backgroundColor: conf.color }]}>
-            <Ionicons name="checkmark" size={14} color="white" />
+            <Ionicons name="checkmark" size={14} color="#fff" />
           </View>
           <Text style={[s.successTitle, { color: colors.text }]}>
             {submittedType === 'event' ? 'Event Submitted!'
@@ -408,15 +414,23 @@ export default function SubmitScreen() {
               ? 'Your perk is now active and available to members.'
               : "Our team will review your submission within 2\u20133 business days. You'll receive an email once approved."}
           </Text>
-          <Pressable style={[s.successBtn, { backgroundColor: conf.color }]} onPress={() => setSubmitted(false)}>
+          <Pressable
+            style={[s.successBtn, { backgroundColor: conf.color }]}
+            onPress={() => setSubmitted(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Submit another"
+          >
             <Text style={s.successBtnText}>Submit Another</Text>
           </Pressable>
           <Pressable
             style={[s.successBtnOutline, { borderColor: conf.color + '50' }]}
             onPress={() => router.replace('/(tabs)')}
+            accessibilityRole="button"
+            accessibilityLabel="Go to Discover"
           >
             <Text style={[s.successBtnOutlineText, { color: conf.color }]}>Go to Discover</Text>
           </Pressable>
+          <Text style={[s.successTagline, { color: colors.textTertiary }]}>Powered by CulturePass ✦</Text>
         </View>
       </View>
     );
@@ -433,21 +447,29 @@ export default function SubmitScreen() {
       >
         <View style={[s.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
 
-          {/* Header */}
-          <View style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
+          {/* ── Header with gradient backdrop ── */}
+          <LinearGradient
+            colors={['#0B0B14', accent + '40', '#0B0B14']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[s.headerGradient, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}
+          >
             <Pressable
               onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-              style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+              style={s.backBtn}
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="chevron-back" size={22} color={colors.text} />
+              <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={[s.headerTitle, { color: colors.text }]}>Create New</Text>
-              <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].label}</Text>
+              <Text style={s.headerTitle}>Create New</Text>
+              <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
-          </View>
+            <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
+              <Ionicons name={TYPE_CONFIG[activeTab].icon as never} size={14} color={accent} />
+            </View>
+          </LinearGradient>
 
           <ScrollView
             style={{ flex: 1 }}
@@ -463,7 +485,7 @@ export default function SubmitScreen() {
             {/* ── Type Selector ── */}
             <View style={s.typeSection}>
               <Text style={[s.typeSectionLabel, { color: colors.textSecondary, paddingHorizontal: hPad }]}>
-                WHAT ARE YOU SUBMITTING?
+                WHAT ARE YOU CREATING?
               </Text>
               <ScrollView
                 horizontal
@@ -479,8 +501,10 @@ export default function SubmitScreen() {
                       style={[
                         s.typeCard,
                         {
-                          backgroundColor: isActive ? conf.color : colors.surface,
                           borderColor: isActive ? conf.color : colors.borderLight,
+                          backgroundColor: isActive ? 'transparent' : colors.surface,
+                          borderBottomColor: isActive ? conf.color : colors.borderLight,
+                          borderBottomWidth: isActive ? 4 : StyleSheet.hairlineWidth,
                         },
                       ]}
                       onPress={() => {
@@ -494,11 +518,22 @@ export default function SubmitScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={conf.label}
                     >
-                      <View style={[s.typeCardIconWrap, { backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : conf.color + '18' }]}>
-                        <Ionicons name={conf.icon as never} size={20} color={isActive ? 'white' : conf.color} />
+                      {isActive && (
+                        <LinearGradient
+                          colors={[conf.color + '22', conf.color + '10']}
+                          style={[StyleSheet.absoluteFillObject, { borderRadius: 18 }]}
+                        />
+                      )}
+                      <View style={[
+                        s.typeCardIconWrap,
+                        isActive
+                          ? { width: 44, height: 44, backgroundColor: conf.color + '22' }
+                          : { width: 36, height: 36, backgroundColor: conf.color + '18' },
+                      ]}>
+                        <Ionicons name={conf.icon as never} size={isActive ? 22 : 18} color={conf.color} />
                       </View>
-                      <Text style={[s.typeCardLabel, { color: isActive ? '#fff' : colors.text }]}>{conf.label}</Text>
-                      <Text style={[s.typeCardDesc, { color: isActive ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]} numberOfLines={2}>
+                      <Text style={[s.typeCardLabel, { color: isActive ? colors.text : colors.text }]}>{conf.label}</Text>
+                      <Text style={[s.typeCardDesc, { color: colors.textTertiary }]} numberOfLines={2}>
                         {conf.description}
                       </Text>
                     </Pressable>
@@ -509,15 +544,49 @@ export default function SubmitScreen() {
 
             {/* Organizer notice for events */}
             {activeTab === 'event' && !isOrganizer && (
-              <View style={[s.notice, { backgroundColor: colors.warning + '12', borderColor: colors.warning + '40', marginHorizontal: hPad }]}>
-                <Ionicons name="information-circle-outline" size={18} color={colors.warning} />
+              <View style={[s.notice, { backgroundColor: colors.surface, marginHorizontal: hPad }]}>
+                <View style={[s.noticeStrip, { backgroundColor: colors.warning }]} />
+                <Ionicons name="information-circle-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
                 <Text style={[s.noticeText, { color: colors.textSecondary }]}>
                   Only organizer or admin accounts can publish events. Your submission will be saved as a draft.
                 </Text>
               </View>
             )}
 
-            {/* ── Basic Information ── */}
+            {/* ── Cover Photo (standalone full-bleed section) ── */}
+            {imageUri ? (
+              <Pressable
+                style={[s.mediaPrevieFull, { marginHorizontal: hPad }]}
+                onPress={uploadImage}
+                accessibilityRole="button"
+                accessibilityLabel="Replace image"
+              >
+                <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.55)']}
+                  style={[StyleSheet.absoluteFillObject, s.mediaGradientOverlay]}
+                />
+                <View style={s.mediaReplaceBtn}>
+                  <Ionicons name="camera-outline" size={13} color="#fff" />
+                  <Text style={s.mediaReplaceBtnText}>Replace</Text>
+                </View>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[s.mediaEmpty, { borderColor: accent + '50', marginHorizontal: hPad }]}
+                onPress={uploadImage}
+                accessibilityRole="button"
+                accessibilityLabel="Upload cover photo"
+              >
+                <View style={[s.mediaEmptyIconWrap, { backgroundColor: accent + '18' }]}>
+                  <Ionicons name="image-outline" size={28} color={accent} />
+                </View>
+                <Text style={[s.mediaEmptyTitle, { color: colors.text }]}>Add Cover Photo</Text>
+                <Text style={[s.mediaEmptySub, { color: colors.textTertiary }]}>16:9 recommended</Text>
+              </Pressable>
+            )}
+
+            {/* ── Basic Information (name + description only) ── */}
             <Card colors={colors} hPad={hPad}>
               <SectionLabel colors={colors} accent={accent} icon="document-text-outline" label="Basic Information" />
 
@@ -529,7 +598,7 @@ export default function SubmitScreen() {
                 <TextInput
                   style={[s.input, {
                     backgroundColor: colors.background,
-                    borderColor: fieldErrors.name ? colors.error : colors.borderLight,
+                    borderColor: fieldErrors.name ? colors.error : colors.border,
                     color: colors.text,
                   }]}
                   value={form.name}
@@ -547,7 +616,7 @@ export default function SubmitScreen() {
 
               <Field label="Description" hint={`${form.description.length}/500`}>
                 <TextInput
-                  style={[s.input, s.textArea, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                  style={[s.input, s.textArea, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={form.description}
                   onChangeText={v => set('description', v)}
                   placeholder="Tell us more about this…"
@@ -555,39 +624,6 @@ export default function SubmitScreen() {
                   multiline numberOfLines={4} textAlignVertical="top" maxLength={500}
                 />
               </Field>
-
-              {/* Image upload / preview */}
-              {imageUri ? (
-                <Pressable
-                  style={[s.mediaPreviewWrap, { borderColor: accent + '60' }]}
-                  onPress={uploadImage}
-                  accessibilityRole="button"
-                  accessibilityLabel="Replace image"
-                >
-                  <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={StyleSheet.absoluteFillObject} />
-                  <View style={s.mediaReplaceBtn}>
-                    <Ionicons name="camera-outline" size={13} color="white" />
-                    <Text style={s.mediaReplaceBtnText}>Replace Image</Text>
-                  </View>
-                </Pressable>
-              ) : (
-                <Pressable
-                  style={[s.mediaEmpty, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
-                  onPress={uploadImage}
-                  accessibilityRole="button"
-                  accessibilityLabel="Upload cover image"
-                >
-                  <View style={[s.mediaEmptyIcon, { backgroundColor: accent + '15' }]}>
-                    <Ionicons name="image-outline" size={22} color={accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.mediaEmptyTitle, { color: colors.text }]}>Add Cover Image</Text>
-                    <Text style={[s.mediaEmptySub, { color: colors.textTertiary }]}>Recommended: 1600 × 900 px</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-                </Pressable>
-              )}
             </Card>
 
             {/* ── Event Details ── */}
@@ -601,7 +637,7 @@ export default function SubmitScreen() {
                       <TextInput
                         style={[s.input, {
                           backgroundColor: colors.background,
-                          borderColor: fieldErrors.date ? colors.error : colors.borderLight,
+                          borderColor: fieldErrors.date ? colors.error : colors.border,
                           color: colors.text,
                         }]}
                         value={form.date}
@@ -615,7 +651,7 @@ export default function SubmitScreen() {
                   <View style={{ flex: 1 }}>
                     <Field label="Time">
                       <TextInput
-                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                         value={form.time}
                         onChangeText={v => set('time', v)}
                         placeholder="e.g. 6:00 PM"
@@ -627,7 +663,7 @@ export default function SubmitScreen() {
 
                 <Field label="Venue">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.venue} onChangeText={v => set('venue', v)}
                     placeholder="Venue name" placeholderTextColor={colors.textTertiary}
                   />
@@ -635,16 +671,16 @@ export default function SubmitScreen() {
 
                 <Field label="Address">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.address} onChangeText={v => set('address', v)}
                     placeholder="Full street address" placeholderTextColor={colors.textTertiary}
                   />
                 </Field>
 
-                {/* Free toggle */}
-                <View style={[s.toggleRow, { borderTopColor: colors.divider, borderBottomColor: colors.divider }]}>
-                  <View style={[s.toggleIconWrap, { backgroundColor: isFree ? accent + '18' : colors.backgroundSecondary }]}>
-                    <Ionicons name="ticket-outline" size={16} color={isFree ? accent : colors.textSecondary} />
+                {/* Free toggle — card style */}
+                <View style={[s.toggleRow, { backgroundColor: colors.surface, borderRadius: 14 }]}>
+                  <View style={[s.toggleIconWrap, { backgroundColor: isFree ? accent + '18' : colors.background }]}>
+                    <Ionicons name="ticket-outline" size={18} color={isFree ? accent : colors.textSecondary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.toggleLabel, { color: colors.text }]}>Free event</Text>
@@ -667,7 +703,7 @@ export default function SubmitScreen() {
                     <View style={{ flex: 1 }}>
                       <Field label="Price (AUD)">
                         <TextInput
-                          style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                          style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                           value={form.price} onChangeText={v => set('price', v)}
                           placeholder="0.00" placeholderTextColor={colors.textTertiary} keyboardType="decimal-pad"
                         />
@@ -676,7 +712,7 @@ export default function SubmitScreen() {
                     <View style={{ flex: 1 }}>
                       <Field label="Capacity">
                         <TextInput
-                          style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                          style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                           value={form.capacity} onChangeText={v => set('capacity', v)}
                           placeholder="Unlimited" placeholderTextColor={colors.textTertiary} keyboardType="number-pad"
                         />
@@ -687,7 +723,7 @@ export default function SubmitScreen() {
 
                 <Field label="External Ticket Link" hint="Optional">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.externalTicketUrl} onChangeText={v => set('externalTicketUrl', v)}
                     placeholder="https://eventbrite.com/…" placeholderTextColor={colors.textTertiary}
                     keyboardType="url" autoCapitalize="none"
@@ -696,7 +732,7 @@ export default function SubmitScreen() {
 
                 <Field label="Community" hint="Optional">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.communityId} onChangeText={v => set('communityId', v)}
                     placeholder="Community ID" placeholderTextColor={colors.textTertiary} autoCapitalize="none"
                   />
@@ -711,7 +747,7 @@ export default function SubmitScreen() {
 
                 <Field label="Host Name" hint="Optional">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.hostName} onChangeText={v => set('hostName', v)}
                     placeholder="e.g. CulturePass Events Team" placeholderTextColor={colors.textTertiary}
                   />
@@ -721,7 +757,7 @@ export default function SubmitScreen() {
                   <View style={{ flex: 1 }}>
                     <Field label="Host Email" hint="Optional">
                       <TextInput
-                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                         value={form.hostEmail} onChangeText={v => set('hostEmail', v)}
                         placeholder="host@example.com" placeholderTextColor={colors.textTertiary}
                         keyboardType="email-address" autoCapitalize="none"
@@ -731,7 +767,7 @@ export default function SubmitScreen() {
                   <View style={{ flex: 1 }}>
                     <Field label="Host Phone" hint="Optional">
                       <TextInput
-                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                         value={form.hostPhone} onChangeText={v => set('hostPhone', v)}
                         placeholder="+61 400 000 000" placeholderTextColor={colors.textTertiary}
                         keyboardType="phone-pad"
@@ -742,7 +778,7 @@ export default function SubmitScreen() {
 
                 <Field label="Sponsors" hint="Optional — comma-separated names">
                   <TextInput
-                    style={[s.input, s.textArea, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, s.textArea, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.sponsors} onChangeText={v => set('sponsors', v)}
                     placeholder="e.g. Brand A, Brand B, Brand C" placeholderTextColor={colors.textTertiary}
                     multiline numberOfLines={3} textAlignVertical="top"
@@ -763,12 +799,17 @@ export default function SubmitScreen() {
                       return (
                         <Pressable
                           key={pt.key}
-                          style={[s.chip, { backgroundColor: isActive ? accent : colors.background, borderColor: isActive ? accent : colors.borderLight }]}
+                          style={[
+                            s.chip,
+                            isActive
+                              ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                              : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                          ]}
                           onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); set('perkType', isActive ? '' : pt.key); }}
                           accessibilityRole="button" accessibilityLabel={pt.label}
                         >
-                          <Ionicons name={pt.icon as never} size={13} color={isActive ? 'white' : accent} />
-                          <Text style={[s.chipText, { color: isActive ? '#fff' : colors.text }]}>{pt.label}</Text>
+                          <Ionicons name={pt.icon as never} size={13} color={isActive ? '#fff' : accent} />
+                          <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{pt.label}</Text>
                         </Pressable>
                       );
                     })}
@@ -778,7 +819,7 @@ export default function SubmitScreen() {
                 {(form.perkType === 'discount_percent' || form.perkType === 'discount_fixed' || form.perkType === 'cashback') && (
                   <Field label={form.perkType === 'discount_percent' ? 'Discount (%)' : 'Amount ($)'}>
                     <TextInput
-                      style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                      style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                       value={form.discountValue} onChangeText={v => set('discountValue', v)}
                       placeholder={form.perkType === 'discount_percent' ? '20' : '10'}
                       placeholderTextColor={colors.textTertiary} keyboardType="numeric"
@@ -788,7 +829,7 @@ export default function SubmitScreen() {
 
                 <Field label="Provider Name">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.providerName} onChangeText={v => set('providerName', v)}
                     placeholder="e.g. CulturePass" placeholderTextColor={colors.textTertiary}
                   />
@@ -801,11 +842,16 @@ export default function SubmitScreen() {
                       return (
                         <Pressable
                           key={cat}
-                          style={[s.chip, { backgroundColor: isActive ? accent : colors.background, borderColor: isActive ? accent : colors.borderLight }]}
+                          style={[
+                            s.chip,
+                            isActive
+                              ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                              : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                          ]}
                           onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); set('perkCategory', isActive ? '' : cat); }}
                           accessibilityRole="button" accessibilityLabel={cat}
                         >
-                          <Text style={[s.chipText, { color: isActive ? '#fff' : colors.text }]}>
+                          <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>
                             {cat.charAt(0).toUpperCase() + cat.slice(1)}
                           </Text>
                         </Pressable>
@@ -827,7 +873,7 @@ export default function SubmitScreen() {
                       <TextInput
                         style={[s.input, {
                           backgroundColor: colors.background,
-                          borderColor: fieldErrors.city ? colors.error : colors.borderLight,
+                          borderColor: fieldErrors.city ? colors.error : colors.border,
                           color: colors.text,
                         }]}
                         value={form.city} onChangeText={v => set('city', v)}
@@ -840,7 +886,7 @@ export default function SubmitScreen() {
                       <TextInput
                         style={[s.input, {
                           backgroundColor: colors.background,
-                          borderColor: fieldErrors.state ? colors.error : colors.borderLight,
+                          borderColor: fieldErrors.state ? colors.error : colors.border,
                           color: colors.text,
                         }]}
                         value={form.state} onChangeText={v => set('state', v)}
@@ -856,7 +902,7 @@ export default function SubmitScreen() {
                       <TextInput
                         style={[s.input, {
                           backgroundColor: colors.background,
-                          borderColor: fieldErrors.postcode ? colors.error : colors.borderLight,
+                          borderColor: fieldErrors.postcode ? colors.error : colors.border,
                           color: colors.text,
                         }]}
                         value={form.postcode} onChangeText={v => set('postcode', v)}
@@ -868,7 +914,7 @@ export default function SubmitScreen() {
                   <View style={{ flex: 1 }}>
                     <Field label="Country">
                       <TextInput
-                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                         value={form.country} onChangeText={v => set('country', v)}
                         placeholder="Australia" placeholderTextColor={colors.textTertiary}
                       />
@@ -887,7 +933,7 @@ export default function SubmitScreen() {
                   <TextInput
                     style={[s.input, {
                       backgroundColor: colors.background,
-                      borderColor: fieldErrors.contactEmail ? colors.error : colors.borderLight,
+                      borderColor: fieldErrors.contactEmail ? colors.error : colors.border,
                       color: colors.text,
                     }]}
                     value={form.contactEmail} onChangeText={v => set('contactEmail', v)}
@@ -898,7 +944,7 @@ export default function SubmitScreen() {
 
                 <Field label="Phone">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.phone} onChangeText={v => set('phone', v)}
                     placeholder="+61 400 000 000" placeholderTextColor={colors.textTertiary} keyboardType="phone-pad"
                   />
@@ -908,7 +954,7 @@ export default function SubmitScreen() {
                   <TextInput
                     style={[s.input, {
                       backgroundColor: colors.background,
-                      borderColor: fieldErrors.website ? colors.error : colors.borderLight,
+                      borderColor: fieldErrors.website ? colors.error : colors.border,
                       color: colors.text,
                     }]}
                     value={form.website} onChangeText={v => set('website', v)}
@@ -929,11 +975,16 @@ export default function SubmitScreen() {
                     return (
                       <Pressable
                         key={cat}
-                        style={[s.chip, { backgroundColor: isActive ? accent : colors.background, borderColor: isActive ? accent : colors.borderLight }]}
+                        style={[
+                          s.chip,
+                          isActive
+                            ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                            : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                        ]}
                         onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); set('category', isActive ? '' : cat); }}
                         accessibilityRole="button" accessibilityLabel={cat}
                       >
-                        <Text style={[s.chipText, { color: isActive ? '#fff' : colors.text }]}>{cat}</Text>
+                        <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{cat}</Text>
                       </Pressable>
                     );
                   })}
@@ -947,7 +998,7 @@ export default function SubmitScreen() {
                 <SectionLabel colors={colors} accent={accent} icon="card-outline" label="Business Details" />
                 <Field label="ABN (Australian Business Number)">
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.abn} onChangeText={v => set('abn', v)}
                     placeholder="XX XXX XXX XXX" placeholderTextColor={colors.textTertiary} keyboardType="number-pad"
                   />
@@ -968,7 +1019,7 @@ export default function SubmitScreen() {
                   { field: 'airpal'    as const, icon: 'person-circle-outline', label: 'AirPal', prefix: 'airpal.me/@'   },
                 ] as const).map(({ field, icon, label, prefix }) => (
                   <Field key={field} label={label}>
-                    <View style={[s.inputWithIcon, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
+                    <View style={[s.inputWithIcon, { backgroundColor: colors.background, borderColor: colors.border }]}>
                       <Ionicons name={icon as never} size={16} color={colors.textTertiary} />
                       <Text style={[s.inputPrefix, { color: colors.textTertiary }]}>{prefix}</Text>
                       <TextInput
@@ -986,25 +1037,35 @@ export default function SubmitScreen() {
             {/* ── Submit ── */}
             <View style={[s.submitWrap, { paddingHorizontal: hPad }]}>
               <Pressable
-                style={[s.submitBtn, { backgroundColor: accent }, isPending && { opacity: 0.7 }]}
                 onPress={handleSubmit}
                 disabled={isPending}
                 accessibilityRole="button"
                 accessibilityLabel={`Submit ${TYPE_CONFIG[activeTab].label}`}
+                style={[isPending && { opacity: 0.7 }]}
               >
-                {isPending
-                  ? <ActivityIndicator size="small" color="white" />
-                  : <Ionicons name="checkmark-circle" size={20} color="white" />
-                }
-                <Text style={s.submitBtnText}>
-                  {isPending ? 'Submitting…' : `Submit ${TYPE_CONFIG[activeTab].label}`}
-                </Text>
+                <LinearGradient
+                  colors={[accent, accent + 'BB']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={s.submitBtn}
+                >
+                  {isPending
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                  }
+                  <Text style={s.submitBtnText}>
+                    {isPending ? 'Submitting…' : `Submit ${TYPE_CONFIG[activeTab].label}`}
+                  </Text>
+                </LinearGradient>
               </Pressable>
-              <Text style={[s.submitNote, { color: colors.textTertiary }]}>
-                {activeTab === 'perk'
-                  ? 'Your perk will be created and made available immediately.'
-                  : 'All submissions are reviewed within 2–3 business days.'}
-              </Text>
+              <View style={s.submitNoteRow}>
+                <Ionicons name="lock-closed-outline" size={12} color={colors.textTertiary} />
+                <Text style={[s.submitNote, { color: colors.textTertiary }]}>
+                  {activeTab === 'perk'
+                    ? 'Your perk will be created and made available immediately.'
+                    : 'Reviewed within 2–3 business days'}
+                </Text>
+              </View>
             </View>
 
           </ScrollView>
@@ -1019,13 +1080,21 @@ export default function SubmitScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
 
-  header: {
+  headerGradient: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn:     { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  headerSub:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', marginTop: 1 },
+  backBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  headerSub:   { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 1 },
+  headerTypeBadge: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+  },
 
   scroll:        { paddingTop: 20 },
   scrollDesktop: { maxWidth: 720, width: '100%', alignSelf: 'center' },
@@ -1034,21 +1103,50 @@ const s = StyleSheet.create({
   typeSectionLabel: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.8, marginBottom: 10 },
   typeScroll:       { gap: 10, paddingBottom: 4 },
   typeCard: {
-    width: 118, borderRadius: 14, borderWidth: 1,
-    padding: 14, gap: 6,
+    width: 130, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth,
+    padding: 14, gap: 6, overflow: 'hidden',
     ...Platform.select({ web: { cursor: 'pointer' } as object, default: {} }),
   },
-  typeCardIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  typeCardLabel: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  typeCardIconWrap: { borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  typeCardLabel: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
   typeCardDesc:  { fontSize: 11, fontFamily: 'Poppins_400Regular', lineHeight: 15 },
 
-  notice:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
-  noticeText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flex: 1, lineHeight: 18 },
+  notice: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    borderRadius: 12, padding: 12, marginBottom: 12, overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 6px rgba(0,0,0,0.06)' } as object,
+      default: { shadowColor: 'black', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+    }),
+  },
+  noticeStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+  noticeText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', flex: 1, lineHeight: 18 },
 
-  input:    { borderRadius: 10, padding: 12, fontSize: 14, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
+  // Cover photo
+  mediaPrevieFull: {
+    height: 220, borderRadius: 14, overflow: 'hidden',
+    position: 'relative', marginBottom: 12,
+  },
+  mediaGradientOverlay: { borderRadius: 14 },
+  mediaReplaceBtn: {
+    position: 'absolute', bottom: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+  },
+  mediaReplaceBtnText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  mediaEmpty: {
+    height: 200, borderRadius: 14, borderWidth: 2,
+    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center',
+    gap: 8, marginBottom: 12,
+  },
+  mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  mediaEmptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  mediaEmptySub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+
+  input:    { borderRadius: 12, padding: 14, fontSize: 14, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },
 
-  inputWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11 },
+  inputWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12 },
   inputInner:    { flex: 1, fontSize: 14, fontFamily: 'Poppins_400Regular', padding: 0 },
   inputPrefix:   { fontSize: 13, fontFamily: 'Poppins_400Regular' },
 
@@ -1056,46 +1154,28 @@ const s = StyleSheet.create({
 
   toggleRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
-    marginVertical: 4,
+    padding: 14, marginVertical: 8,
   },
-  toggleIconWrap: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  toggleIconWrap: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   toggleLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   toggleSub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
 
-  mediaPreviewWrap: {
-    height: 150, borderRadius: 12, borderWidth: 1, overflow: 'hidden',
-    position: 'relative', marginBottom: 4,
-  },
-  mediaReplaceBtn: {
-    position: 'absolute', bottom: 10, right: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20,
-  },
-  mediaReplaceBtnText: { color: "white", fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  mediaEmpty: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 4,
-  },
-  mediaEmptyIcon:  { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  mediaEmptyTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  mediaEmptySub:   { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  chip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
   chipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 
   submitWrap: { marginTop: 4, marginBottom: 8 },
   submitBtn:  {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    borderRadius: 14, paddingVertical: 16,
+    borderRadius: 16, paddingVertical: 17,
     ...Platform.select({
       web: { boxShadow: '0px 4px 16px rgba(0,0,0,0.15)' } as object,
-      default: { shadowColor: "black", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+      default: { shadowColor: 'black', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
     }),
   },
-  submitBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: "white" },
-  submitNote:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 10, textAlign: 'center', lineHeight: 18 },
+  submitBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  submitNoteRow: { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 10 },
+  submitNote:    { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
 
   // Success screen
   successRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
@@ -1104,18 +1184,24 @@ const s = StyleSheet.create({
     padding: 28, alignItems: 'center', gap: 10,
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' } as object,
-      default: { shadowColor: "black", shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+      default: { shadowColor: 'black', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
     }),
   },
-  successIconWrap:  { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  successIconRing: {
+    width: 96, height: 96, borderRadius: 24 + 4,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, marginBottom: 4,
+  },
+  successIconWrap:  { width: 88, height: 88, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   successCheckCircle: {
     width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     position: 'absolute', top: 26, left: '50%' as never, marginLeft: 16,
   },
-  successTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginTop: 4 },
+  successTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginTop: 4 },
   successSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, paddingHorizontal: 8, marginBottom: 8 },
   successBtn:        { width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
-  successBtnText:    { fontSize: 15, fontFamily: 'Poppins_700Bold', color: "white" },
+  successBtnText:    { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff' },
   successBtnOutline: { width: '100%', paddingVertical: 12, borderRadius: 14, alignItems: 'center', borderWidth: 1, marginTop: 4 },
   successBtnOutlineText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  successTagline: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 8 },
 });

@@ -11,7 +11,9 @@ import { CultureTokens, gradients } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCouncil } from '@/hooks/useCouncil';
-import type { EventData } from '@/shared/schema';
+import { useEventsList } from '@/hooks/queries/useEvents';
+import { ticketKeys } from '@/hooks/queries/keys';
+import type { EventData, Ticket } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
@@ -20,7 +22,9 @@ import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -39,93 +43,272 @@ function toSafeDateKey(value: string | undefined | null) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+// ---------------------------------------------------------------------------
+// EventRow sub-component
+// ---------------------------------------------------------------------------
+function EventRow({
+  event,
+  colors,
+  isAuthenticated,
+  isWeb,
+}: {
+  event: EventData;
+  colors: ReturnType<typeof useColors>;
+  isAuthenticated: boolean;
+  isWeb: boolean;
+}) {
+  const safeDate = toSafeDateKey(event.date);
+  const dayNum = safeDate ? new Date(`${safeDate}T00:00:00`).getDate() : null;
+  const monthAbbr = safeDate ? MONTHS_SHORT[new Date(`${safeDate}T00:00:00`).getMonth()] : 'TBA';
+
+  const isCouncilEvent =
+    event.category === 'council' || event.category === 'Council' || event.category === 'civic';
+  const isFree = (event.priceCents ?? 0) === 0;
+
+  const accentColor = isCouncilEvent ? CultureTokens.teal : CultureTokens.saffron;
+
+  const handlePress = () => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: '/event/[id]', params: { id: event.id } });
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={event.title}
+      style={({ pressed }) => [
+        evRow.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.borderLight,
+        },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      {/* Left date block */}
+      <LinearGradient
+        colors={[accentColor + '22', accentColor + '0A']}
+        style={evRow.dateBlock}
+      >
+        {dayNum !== null ? (
+          <>
+            <Text style={[evRow.dateDay, { color: accentColor }]}>{dayNum}</Text>
+            <Text style={[evRow.dateMonth, { color: accentColor + 'CC' }]}>{monthAbbr}</Text>
+          </>
+        ) : (
+          <Text style={[evRow.dateTba, { color: accentColor }]}>TBA</Text>
+        )}
+      </LinearGradient>
+
+      {/* Content */}
+      <View style={evRow.content}>
+        <Text style={[evRow.title, { color: colors.text }]} numberOfLines={2}>
+          {event.title}
+        </Text>
+        {(event.venue || event.city) ? (
+          <View style={evRow.metaRow}>
+            <Ionicons name="location-outline" size={12} color={colors.textTertiary} />
+            <Text style={[evRow.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+              {event.venue || event.city}
+            </Text>
+          </View>
+        ) : null}
+        <View style={evRow.badgeRow}>
+          <View
+            style={[
+              evRow.priceBadge,
+              isFree
+                ? { backgroundColor: CultureTokens.teal + '18', borderColor: CultureTokens.teal + '40' }
+                : { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '40' },
+            ]}
+          >
+            <Text
+              style={[
+                evRow.priceText,
+                { color: isFree ? CultureTokens.teal : CultureTokens.indigo },
+              ]}
+            >
+              {formatPrice(event.priceCents ?? 0)}
+            </Text>
+          </View>
+          {event.category ? (
+            <View style={[evRow.catChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+              <Text style={[evRow.catText, { color: colors.textTertiary }]} numberOfLines={1}>
+                {event.category}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+
+      {/* Thumbnail */}
+      {event.imageUrl ? (
+        <Image
+          source={{ uri: event.imageUrl }}
+          style={[evRow.thumb, { backgroundColor: colors.backgroundSecondary }]}
+          contentFit="cover"
+        />
+      ) : null}
+    </Pressable>
+  );
+}
+
+const evRow = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  dateBlock: {
+    width: 60,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 2,
+  },
+  dateDay: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  dateMonth: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dateTba: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 11,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 5,
+  },
+  title: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  meta: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    flex: 1,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  priceBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  priceText: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 11,
+  },
+  catChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  catText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 11,
+  },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    margin: 10,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Main CalendarScreen
+// ---------------------------------------------------------------------------
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const styles = getStyles(colors);
-  
+
   const { isDesktop, isTablet, width } = useLayout();
   const isWeb = Platform.OS === 'web';
   const isDesktopWeb = isWeb && isDesktop;
-  
-  const webTopInset = isWeb ? (isDesktopWeb ? 32 : 16) : insets.top;
+
+  const topInset = isWeb ? 0 : insets.top;
   const contentMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
   const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
-  
+
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  
+
   const { data: councilData } = useCouncil();
   const council = councilData?.council;
   const councilEvents = useMemo(() => councilData?.events ?? [], [councilData]);
 
   const { user, isAuthenticated, userId } = useAuth();
-  
-  const { data: allEventsRaw = [], isLoading } = useQuery<EventData[]>({
-    queryKey: ['/api/events', user?.country, user?.city],
-    queryFn: async () => {
-      // Increase pageSize to 300 to ensure we don't miss events on the calendar
-      const data = await api.events.list({ city: user?.city, country: user?.country, pageSize: 300 });
-      return data.events ?? [];
-    },
-    enabled: !!user,
-  });
 
-  const { data: ticketsData } = useQuery<any[]>({
-    queryKey: ['/api/tickets', userId],
-    queryFn: () => userId ? api.tickets.forUser(userId) : Promise.resolve([]),
-    enabled: !!userId,
+  const { data: eventsPage, isLoading } = useEventsList({
+    city: user?.city,
+    country: user?.country,
+    pageSize: 300,
   });
-  const tickets = useMemo(() => Array.isArray(ticketsData) ? ticketsData : [], [ticketsData]);
+  const allEventsRaw = useMemo(() => eventsPage?.events ?? [], [eventsPage]);
 
-  const { data: rsvpsData } = useQuery<any[]>({
-    queryKey: ['/api/user_event_rsvp', userId],
-    queryFn: () => userId ? api.rsvps.listForUser(userId) : Promise.resolve([]),
-    enabled: !!userId,
-  });
-  const rsvps = useMemo(() => Array.isArray(rsvpsData) ? rsvpsData : [], [rsvpsData]);
-
-  const { data: likesData } = useQuery<any[]>({
-    queryKey: ['/api/user_event_likes', userId],
-    queryFn: () => userId ? api.likes.listForUser(userId) : Promise.resolve([]),
-    enabled: !!userId,
-  });
-  const likes = useMemo(() => Array.isArray(likesData) ? likesData : [], [likesData]);
-
-  useQuery<any[]>({
-    queryKey: ['/api/user_council_subscriptions', userId],
+  const { data: tickets = [] } = useQuery<Ticket[]>({
+    queryKey: ticketKeys.forUser(userId ?? ''),
+    queryFn: () => api.tickets.forUser(userId!),
     enabled: !!userId,
   });
 
-  const { data: interestsData } = useQuery<any[]>({
-    queryKey: ['/api/user_interests', userId],
-    queryFn: () => userId ? api.interests.listForUser(userId) : Promise.resolve([]),
-    enabled: !!userId,
-  });
-  const interests = useMemo(() => Array.isArray(interestsData) ? interestsData : [], [interestsData]);
-
-  useQuery<any[]>({
-    queryKey: ['/api/profiles', 'community'],
-    queryFn: () => api.profiles.list({ entityType: 'community' }),
-  });
+  // rsvps, likes, and interests are backed by stub endpoints (return []).
+  // Kept as typed empty-array queries until real endpoints land.
+  const rsvps: unknown[] = [];
+  const likes: unknown[] = [];
+  const interests: unknown[] = [];
 
   const allEvents = useMemo(() => {
     const ids = new Set();
     const merged: any[] = [];
-    
+
     [...allEventsRaw, ...councilEvents].forEach((ev: any) => {
       const eid = ev.id || ev._id || ev.id?.toString();
       if (eid && !ids.has(eid)) {
         merged.push(ev);
         ids.add(eid);
       } else if (!eid) {
-        // If no ID, still include it but don't deduplicate
         merged.push(ev);
       }
     });
-    
+
     return merged as EventData[];
   }, [allEventsRaw, councilEvents]);
 
@@ -136,44 +319,49 @@ export default function CalendarScreen() {
     switch (activeChip) {
       case 'All':
         break;
-      case 'Today':
+      case 'Today': {
         const todayStr = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-        events = events.filter(e => toSafeDateKey(e.date) === todayStr);
+        events = events.filter((e) => toSafeDateKey(e.date) === todayStr);
         break;
+      }
       case 'My Events':
         if (isAuthenticated) {
           const rsvpIds = new Set((rsvps as any[]).map((r: any) => r.eventId));
-          events = events.filter(e => rsvpIds.has(e.id));
+          events = events.filter((e) => rsvpIds.has(e.id));
         }
         break;
       case 'Tickets':
         if (isAuthenticated) {
           const ticketIds = new Set((tickets as any[]).map((t: any) => t.eventId));
-          events = events.filter(e => ticketIds.has(e.id));
+          events = events.filter((e) => ticketIds.has(e.id));
         }
         break;
       case 'Council':
-        events = events.filter(e => (e as any).councilId);
+        events = events.filter((e) => (e as any).councilId);
         break;
       case 'Interests':
         if (isAuthenticated) {
           const likeIds = new Set((likes as any[]).map((l: any) => l.eventId));
           const interestTags = new Set((interests as any[]).map((i: any) => i.interestTag));
-          events = events.filter(e => likeIds.has(e.id) || (e.tags && e.tags.some((tag: string) => interestTags.has(tag))));
+          events = events.filter(
+            (e) =>
+              likeIds.has(e.id) ||
+              (e.tags && e.tags.some((tag: string) => interestTags.has(tag))),
+          );
         }
         break;
       default:
-        events = events.filter(e => {
+        events = events.filter((e) => {
           const cat = (e.category || '').toLowerCase();
           const target = activeChip.toLowerCase();
-          return cat === target || ( (e as any).councilId && activeChip === 'Council' );
+          return cat === target || ((e as any).councilId && activeChip === 'Council');
         });
     }
     return events;
   }, [activeChip, allEvents, tickets, rsvps, likes, interests, isAuthenticated, today]);
 
   const eventsInMonthCount = useMemo(() => {
-    return allEvents.filter(e => {
+    return allEvents.filter((e) => {
       const dk = toSafeDateKey(e.date);
       if (!dk) return false;
       const d = new Date(`${dk}T00:00:00`);
@@ -189,7 +377,7 @@ export default function CalendarScreen() {
 
   const eventDates = useMemo(() => {
     const set = new Set<string>();
-    filteredEvents.forEach(e => {
+    filteredEvents.forEach((e) => {
       const dateKey = toSafeDateKey(e.date);
       if (dateKey) set.add(dateKey);
     });
@@ -198,7 +386,7 @@ export default function CalendarScreen() {
 
   const eventCountByDate = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredEvents.forEach(e => {
+    filteredEvents.forEach((e) => {
       const dateKey = toSafeDateKey(e.date);
       if (dateKey) map[dateKey] = (map[dateKey] || 0) + 1;
     });
@@ -207,46 +395,66 @@ export default function CalendarScreen() {
 
   const selectedEvents = useMemo(() => {
     if (!selectedDate) return [];
-    return filteredEvents.filter(e => toSafeDateKey(e.date) === selectedDate);
+    return filteredEvents.filter((e) => toSafeDateKey(e.date) === selectedDate);
   }, [filteredEvents, selectedDate]);
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    return filteredEvents.filter(e => {
-      const eventDate = toSafeDateKey(e.date);
-      if (!eventDate) return false;
-      const dateObj = new Date(`${eventDate}T00:00:00`);
-      return dateObj.getTime() >= now.getTime() && dateObj.getTime() <= now.getTime() + sevenDays;
-    }).slice(0, 10);
+    return filteredEvents
+      .filter((e) => {
+        const eventDate = toSafeDateKey(e.date);
+        if (!eventDate) return false;
+        const dateObj = new Date(`${eventDate}T00:00:00`);
+        return (
+          dateObj.getTime() >= now.getTime() &&
+          dateObj.getTime() <= now.getTime() + sevenDays
+        );
+      })
+      .slice(0, 10);
   }, [filteredEvents]);
 
   const civicReminders = useMemo(() => {
-    return filteredEvents.filter(e => {
-      const eventDate = toSafeDateKey(e.date);
-      if (!eventDate) return false;
-      const dateObj = new Date(`${eventDate}T00:00:00`);
-      return (e.category === 'council' || e.category === 'civic' || (e as any).councilId) &&
-        dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear;
-    }).map(e => ({
-      id: e.id,
-      title: e.title,
-      dateKey: toSafeDateKey(e.date),
-      note: e.description,
-    }));
+    return filteredEvents
+      .filter((e) => {
+        const eventDate = toSafeDateKey(e.date);
+        if (!eventDate) return false;
+        const dateObj = new Date(`${eventDate}T00:00:00`);
+        return (
+          (e.category === 'council' ||
+            e.category === 'civic' ||
+            (e as any).councilId) &&
+          dateObj.getMonth() === currentMonth &&
+          dateObj.getFullYear() === currentYear
+        );
+      })
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        dateKey: toSafeDateKey(e.date),
+        note: e.description,
+      }));
   }, [filteredEvents, currentMonth, currentYear]);
 
   const prevMonth = useCallback(() => {
     if (!isWeb) Haptics.selectionAsync();
-    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
-    else setCurrentMonth((m) => m - 1);
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
     setSelectedDate(null);
   }, [currentMonth, isWeb]);
 
   const nextMonth = useCallback(() => {
     if (!isWeb) Haptics.selectionAsync();
-    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1); }
-    else setCurrentMonth((m) => m + 1);
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((y) => y + 1);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
     setSelectedDate(null);
   }, [currentMonth, isWeb]);
 
@@ -258,20 +466,29 @@ export default function CalendarScreen() {
     setSelectedDate(todayStr);
   }, [today, isWeb]);
 
-  const handleChipSelect = useCallback((id: string) => {
-    setActiveChip(id);
-    if (id === 'Today') {
-      goToday();
-    }
-  }, [goToday]);
+  const handleChipSelect = useCallback(
+    (id: string) => {
+      setActiveChip(id);
+      if (id === 'Today') {
+        goToday();
+      }
+    },
+    [goToday],
+  );
+
+  // Formatted "Today" label for the subheading
+  const todayLabel = useMemo(() => {
+    const dayName = DAYS[today.getDay()];
+    return `Today · ${dayName} ${today.getDate()} ${MONTHS[today.getMonth()]}`;
+  }, [today]);
 
   if (isLoading) {
     return (
       <ErrorBoundary>
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingCard}>
+        <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
+          <View style={[s.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={styles.loadingText}>Loading Calendar...</Text>
+            <Text style={[s.loadingText, { color: colors.text }]}>Loading Calendar...</Text>
           </View>
         </View>
       </ErrorBoundary>
@@ -280,27 +497,70 @@ export default function CalendarScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[styles.container]}>
-        {/* Brand gradient top bar */}
-        <LinearGradient
-          colors={gradients.culturepassBrand as [string, string, string]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ paddingTop: webTopInset }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="calendar-clear" size={22} color={CultureTokens.gold} />
+      <View style={[s.root, { backgroundColor: colors.background }]}>
+
+        {/* ── Header with gradient tint ── */}
+        <View style={{ paddingTop: topInset, backgroundColor: colors.background }}>
+          <LinearGradient
+            colors={[colors.background, CultureTokens.indigo + '12', colors.background] as [string, string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.headerGradient}
+          >
+            {/* Month navigation */}
+            <View style={s.monthNavRow}>
+              {/* Left chevron pill */}
+              <Pressable
+                onPress={prevMonth}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+                style={({ pressed }) => [
+                  s.navPill,
+                  { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons name="chevron-back" size={18} color={colors.text} />
+              </Pressable>
+
+              {/* Month + year */}
+              <View style={s.monthCenter}>
+                <Text style={[s.monthTitle, { color: colors.text }]}>
+                  {MONTHS[currentMonth]} {currentYear}
+                </Text>
+                <Text style={[s.todaySubline, { color: colors.textSecondary }]}>
+                  {todayLabel}
+                </Text>
+              </View>
+
+              {/* Right chevron pill */}
+              <Pressable
+                onPress={nextMonth}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+                style={({ pressed }) => [
+                  s.navPill,
+                  { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons name="chevron-forward" size={18} color={colors.text} />
+              </Pressable>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[TextStyles.title2, { color: '#fff', letterSpacing: -0.3 }]}>Culture Calendar</Text>
-              <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.8)' }]}>{MONTHS[currentMonth]} {currentYear}</Text>
+
+            {/* Events count badge */}
+            <View style={s.eventsCountRow}>
+              <View style={[s.eventsCountBadge, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '30' }]}>
+                <Ionicons name="calendar-outline" size={13} color={CultureTokens.indigo} />
+                <Text style={[s.eventsCountText, { color: CultureTokens.indigo }]}>
+                  {eventsInMonthCount} events this month
+                </Text>
+              </View>
             </View>
-            <View style={{ backgroundColor: 'rgba(0,0,0,0.25)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-              <Text style={[TextStyles.labelSemibold, { color: '#fff' }]}>{eventsInMonthCount} events</Text>
-            </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -312,91 +572,101 @@ export default function CalendarScreen() {
             paddingHorizontal: contentHorizontalPadding,
           }}
         >
-          {/* Category & Community filters relocated below hero */}
-          <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 16 }}>
+          {/* ── Filter chips ── */}
+          <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 4 }}>
             <FilterChipRow
               selectedId={activeChip}
               onSelect={handleChipSelect}
               items={[
-                { id: 'All',        label: 'All',        icon: 'apps' },
-                { id: 'Today',      label: 'Today',      icon: 'today' },
-                { id: 'Festival',   label: 'Festival',   icon: 'color-palette' },
-                { id: 'Movie',      label: 'Movie',      icon: 'film' },
-                { id: 'Workshop',   label: 'Workshop',   icon: 'hammer' },
-                { id: 'Concert',    label: 'Concert',    icon: 'musical-notes' },
-                { id: 'Food',       label: 'Food',       icon: 'restaurant' },
-                { id: 'Civic',      label: 'Civic',      icon: 'business' },
+                { id: 'All',      label: 'All',      icon: 'apps' },
+                { id: 'Today',    label: 'Today',    icon: 'today' },
+                { id: 'Festival', label: 'Festival', icon: 'color-palette' },
+                { id: 'Movie',    label: 'Movie',    icon: 'film' },
+                { id: 'Workshop', label: 'Workshop', icon: 'hammer' },
+                { id: 'Concert',  label: 'Concert',  icon: 'musical-notes' },
+                { id: 'Food',     label: 'Food',     icon: 'restaurant' },
+                { id: 'Civic',    label: 'Civic',    icon: 'business' },
               ]}
               size="small"
             />
           </View>
 
-          {/* Redundant Today button merged into filter chips */}
+          <View style={isDesktopWeb ? s.desktopSplit : undefined}>
+            <View style={isDesktopWeb ? s.desktopCalendarCol : undefined}>
 
-          {/* Summary chips removed as per user request */}
-
-          <View style={isDesktopWeb ? styles.desktopSplit : undefined}>
-            <View style={isDesktopWeb ? styles.desktopCalendarCol : undefined}>
-              {/* Calendar card */}
-              <View style={[styles.calCard, isDesktopWeb && styles.calCardCompact]}> 
-                <View style={styles.monthNav}>
-                  <Pressable 
-                    onPress={prevMonth} 
-                    hitSlop={14} 
-                    style={({pressed}) => [styles.navBtn, { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
-                  >
-                    <Ionicons name="chevron-back" size={20} color={colors.text} />
-                  </Pressable>
-                  <View style={{ alignItems: 'center' }}>
-                    <Text style={styles.monthText}>{MONTHS[currentMonth]}</Text>
-                    <Text style={[styles.yearText, { color: colors.textTertiary }]}>{currentYear}</Text>
-                  </View>
-                  <Pressable 
-                    onPress={nextMonth} 
-                    hitSlop={14} 
-                    style={({pressed}) => [styles.navBtn, { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
-                  >
-                    <Ionicons name="chevron-forward" size={20} color={colors.text} />
-                  </Pressable>
+              {/* ── Calendar card ── */}
+              <View
+                style={[
+                  s.calCard,
+                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                  isDesktopWeb && s.calCardCompact,
+                ]}
+              >
+                {/* Day-of-week header row */}
+                <View style={s.dayHeaders}>
+                  {DAY_LETTERS.map((d, i) => (
+                    <Text key={`${d}-${i}`} style={[s.dayHeaderText, { color: colors.textTertiary }]}>
+                      {d}
+                    </Text>
+                  ))}
                 </View>
 
-                <View style={styles.dayHeaders}>
-                  {DAYS.map((d) => <Text key={d} style={styles.dayHeaderText}>{d}</Text>)}
-                </View>
-
-                <View style={styles.daysGrid}>
+                {/* Date grid */}
+                <View style={s.daysGrid}>
                   {days.map((day, idx) => {
-                    if (day === null) return <View key={`e-${idx}`} style={[styles.dayCell, styles.dayCellEmpty]} />;
-                    const dateKey  = formatDateKey(currentYear, currentMonth, day);
-                    const hasEvent = eventDates.has(dateKey);
-                    const count    = eventCountByDate[dateKey] ?? 0;
-                    const isSelected = selectedDate === dateKey;
-                    const isToday    = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-
-                    let dayStyle: any = styles.dayCellDefault;
-                    let textStyle: any = styles.dayTextDefault;
-
-                    if (isSelected) {
-                      dayStyle = styles.dayCellSelected;
-                      textStyle = styles.dayTextSelected;
-                    } else if (isToday) {
-                      dayStyle = styles.dayCellToday;
-                      textStyle = styles.dayTextToday;
+                    if (day === null) {
+                      return <View key={`empty-${idx}`} style={s.dayCellEmpty} />;
                     }
+                    const dateKey = formatDateKey(currentYear, currentMonth, day);
+                    const hasEvent = eventDates.has(dateKey);
+                    const isSelected = selectedDate === dateKey;
+                    const isToday =
+                      day === today.getDate() &&
+                      currentMonth === today.getMonth() &&
+                      currentYear === today.getFullYear();
 
                     return (
                       <Pressable
                         key={dateKey}
-                        onPress={() => { if(!isWeb) Haptics.selectionAsync(); setSelectedDate(isSelected ? null : dateKey); }}
-                        style={({ pressed }) => [styles.dayCell, dayStyle, pressed && { opacity: 0.7 }]}
+                        onPress={() => {
+                          if (!isWeb) Haptics.selectionAsync();
+                          setSelectedDate(isSelected ? null : dateKey);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${day} ${MONTHS[currentMonth]}`}
+                        style={({ pressed }) => [
+                          s.dayCell,
+                          isSelected
+                            ? { backgroundColor: CultureTokens.indigo }
+                            : isToday
+                            ? { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '60', borderWidth: 1.5 }
+                            : { backgroundColor: 'transparent' },
+                          pressed && { opacity: 0.65 },
+                        ]}
                       >
-                        <Text style={[styles.dayText, textStyle]}>{day}</Text>
+                        <Text
+                          style={[
+                            s.dayText,
+                            isSelected
+                              ? { color: '#fff' }
+                              : isToday
+                              ? { color: CultureTokens.indigo }
+                              : { color: colors.text },
+                          ]}
+                        >
+                          {day}
+                        </Text>
                         {hasEvent && (
-                          <View style={styles.dotRow}>
-                            {Array.from({ length: Math.min(count, 3) }).map((_, di) => (
-                              <View key={di} style={[styles.dot, isSelected && styles.dotSelected]} />
-                            ))}
-                          </View>
+                          <View
+                            style={[
+                              s.eventDot,
+                              {
+                                backgroundColor: isSelected
+                                  ? '#fff'
+                                  : CultureTokens.coral,
+                              },
+                            ]}
+                          />
                         )}
                       </Pressable>
                     );
@@ -404,83 +674,132 @@ export default function CalendarScreen() {
                 </View>
               </View>
 
+              {/* ── Selected date events ── */}
               {selectedDate && (
-                <View style={styles.eventsSection}>
-                  <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}> 
-                      {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                <View style={s.eventsSection}>
+                  <View style={s.sectionRow}>
+                    <Text style={[s.sectionTitle, { color: colors.text }]}>
+                      Events on{' '}
+                      {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-AU', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      })}
                     </Text>
-                    <Text style={styles.sectionCount}>{selectedEvents.length} events</Text>
+                    <Text style={[s.sectionCount, { color: colors.textTertiary }]}>
+                      {selectedEvents.length}
+                    </Text>
                   </View>
                   {selectedEvents.length === 0 ? (
-                    <View style={styles.empty}>
-                      <View style={styles.emptyIconCircle}>
-                        <Ionicons name="calendar-outline" size={36} color={colors.textSecondary} />
-                      </View>
-                      <Text style={styles.emptyText}>No events on this day.</Text>
-                    </View>
+                    <EmptyState
+                      colors={colors}
+                      title="No events this day"
+                      subtitle="Explore nearby events"
+                      onSubtitlePress={() => router.push('/events')}
+                    />
                   ) : (
-                    selectedEvents.map((event) => <EventRow key={event.id} event={event} colors={colors} styles={styles} isAuthenticated={isAuthenticated} isWeb={isWeb} />)
+                    selectedEvents.map((event) => (
+                      <EventRow
+                        key={event.id}
+                        event={event}
+                        colors={colors}
+                        isAuthenticated={isAuthenticated}
+                        isWeb={isWeb}
+                      />
+                    ))
                   )}
                 </View>
               )}
             </View>
 
+            {/* ── Desktop: upcoming column ── */}
             {isDesktopWeb && (
-              <View style={styles.desktopUpcomingCol}>
-                <View style={styles.eventsSectionSide}>
-                  <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>Upcoming Events</Text>
-                    <Pressable onPress={() => router.push('/events')}>
-                      <Text style={styles.seeAll}>See all</Text>
+              <View style={s.desktopUpcomingCol}>
+                <View style={s.eventsSection}>
+                  <View style={s.sectionRow}>
+                    <Text style={[s.sectionTitle, { color: colors.text }]}>Upcoming Events</Text>
+                    <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
+                      <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
                     </Pressable>
                   </View>
                   {upcomingEvents.length > 0 ? (
-                    upcomingEvents.map((event) => <EventRow key={event.id} event={event} colors={colors} styles={styles} isAuthenticated={isAuthenticated} isWeb={isWeb} />)
+                    upcomingEvents.map((event) => (
+                      <EventRow
+                        key={event.id}
+                        event={event}
+                        colors={colors}
+                        isAuthenticated={isAuthenticated}
+                        isWeb={isWeb}
+                      />
+                    ))
                   ) : (
-                    <View style={styles.empty}>
-                      <View style={styles.emptyIconCircle}>
-                        <Ionicons name="calendar-clear-outline" size={36} color={colors.textSecondary} />
-                      </View>
-                      <Text style={styles.emptyText}>No upcoming events found.</Text>
-                    </View>
+                    <EmptyState
+                      colors={colors}
+                      title="No upcoming events"
+                      subtitle="Check back soon"
+                    />
                   )}
                 </View>
               </View>
             )}
           </View>
 
+          {/* ── Mobile: upcoming events (no date selected) ── */}
           {!isDesktopWeb && !selectedDate && upcomingEvents.length > 0 && (
-            <View style={styles.eventsSection}>
-              <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Upcoming Events</Text>
-                <Pressable onPress={() => router.push('/events')}>
-                  <Text style={styles.seeAll}>See all</Text>
+            <View style={s.eventsSection}>
+              <View style={s.sectionRow}>
+                <Text style={[s.sectionTitle, { color: colors.text }]}>All Upcoming</Text>
+                <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
+                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
                 </Pressable>
               </View>
-              {upcomingEvents.map((event) => <EventRow key={event.id} event={event} colors={colors} styles={styles} isAuthenticated={isAuthenticated} isWeb={isWeb} />)}
+              {upcomingEvents.map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  colors={colors}
+                  isAuthenticated={isAuthenticated}
+                  isWeb={isWeb}
+                />
+              ))}
             </View>
           )}
 
+          {/* ── Civic reminders ── */}
           {!selectedDate && civicReminders.length > 0 && (
-            <View style={styles.eventsSection}>
-              <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Civic Reminders</Text>
-                <Pressable onPress={() => router.push('/events')}>
-                  <Text style={styles.seeAll}>All Events</Text>
+            <View style={s.eventsSection}>
+              <View style={s.sectionRow}>
+                <Text style={[s.sectionTitle, { color: colors.text }]}>Civic Reminders</Text>
+                <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
+                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>All Events</Text>
                 </Pressable>
               </View>
               {civicReminders.map((reminder) => (
-                <View key={reminder.id} style={styles.civicRow}>
-                  <View style={styles.civicIcon}> 
+                <View
+                  key={reminder.id}
+                  style={[
+                    s.civicRow,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: CultureTokens.indigo + '30',
+                    },
+                  ]}
+                >
+                  <View style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
                     <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.civicEventTitle}>{reminder.title}</Text>
-                    <Text style={styles.civicEventVenue}>
-                      {new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
-                      {' • '}{reminder.note}
-                      {council ? ` • ${council.name}` : ''}
+                    <Text style={[s.civicTitle, { color: colors.text }]}>{reminder.title}</Text>
+                    <Text style={[s.civicSub, { color: colors.textSecondary }]}>
+                      {reminder.dateKey
+                        ? new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString('en-AU', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'short',
+                          })
+                        : ''}
+                      {reminder.note ? ` · ${reminder.note}` : ''}
+                      {council ? ` · ${council.name}` : ''}
                     </Text>
                   </View>
                 </View>
@@ -488,14 +807,14 @@ export default function CalendarScreen() {
             </View>
           )}
 
+          {/* ── Empty (no upcoming, no date selected) ── */}
           {!isDesktopWeb && !selectedDate && upcomingEvents.length === 0 && (
-            <View style={styles.eventsSection}>
-              <View style={styles.empty}>
-                <View style={styles.emptyIconCircle}>
-                  <Ionicons name="calendar-clear-outline" size={36} color={colors.textSecondary} />
-                </View>
-                <Text style={styles.emptyText}>No events found.</Text>
-              </View>
+            <View style={s.eventsSection}>
+              <EmptyState
+                colors={colors}
+                title="No events found"
+                subtitle="Try a different filter"
+              />
             </View>
           )}
         </ScrollView>
@@ -505,201 +824,290 @@ export default function CalendarScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// Event row component
+// EmptyState sub-component
 // ---------------------------------------------------------------------------
-function EventRow({ event, colors, styles, isAuthenticated, isWeb }: { event: EventData; colors: ReturnType<typeof useColors>; styles: any; isAuthenticated: boolean; isWeb: boolean }) {
-  const safeDate = toSafeDateKey(event.date);
-  const eventDateLabel = safeDate
-    ? new Date(`${safeDate}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-    : 'Date TBA';
-
-  const isCouncilEvent = event.category === 'council' || event.category === 'Council' || event.category === 'civic';
-  
-  const handlePress = () => {
-    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/event/[id]', params: { id: event.id } });
-  };
-  
-  const isFree = (event.priceCents ?? 0) === 0;
-
-  const accentColor = isCouncilEvent ? CultureTokens.teal : CultureTokens.saffron;
-
+function EmptyState({
+  colors,
+  title,
+  subtitle,
+  onSubtitlePress,
+}: {
+  colors: ReturnType<typeof useColors>;
+  title: string;
+  subtitle: string;
+  onSubtitlePress?: () => void;
+}) {
   return (
-    <Card
-      onPress={handlePress}
-      style={styles.eventRow}
-      padding={0}
+    <View
+      style={[
+        empty.wrap,
+        {
+          backgroundColor: colors.backgroundSecondary,
+          borderColor: colors.borderLight,
+        },
+      ]}
     >
-      {/* Left accent strip */}
-      <View style={[styles.eventAccentStrip, { backgroundColor: accentColor }]} />
-
-      <Image source={{ uri: event.imageUrl }} style={styles.eventImg} contentFit="cover" />
-
-      <View style={styles.eventInfo}>
-        <Text style={[TextStyles.headline, { color: colors.text }]} numberOfLines={1}>{event.title}</Text>
-        <View style={styles.eventMeta}>
-          <Ionicons name="time" size={14} color={CultureTokens.indigo} />
-          <Text style={[TextStyles.labelSemibold, { color: CultureTokens.indigo }]}>
-            {eventDateLabel} · {event.time || 'Time TBA'}
-          </Text>
-        </View>
-        <View style={styles.eventMeta}>
-          <Ionicons name="location" size={14} color={colors.textTertiary} />
-          <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>{event.venue}</Text>
-        </View>
+      <View style={[empty.iconCircle, { backgroundColor: CultureTokens.indigo + '14' }]}>
+        <Ionicons name="calendar-outline" size={32} color={CultureTokens.indigo} />
       </View>
-
-      <View style={[styles.priceChip, isFree ? styles.priceChipFree : styles.priceChipPaid]}>
-        <Text style={[TextStyles.labelSemibold, isFree ? styles.priceTextFree : styles.priceTextPaid]}>
-          {formatPrice(event.priceCents ?? 0)}
-        </Text>
-      </View>
-    </Card>
+      <Text style={[empty.title, { color: colors.text }]}>{title}</Text>
+      {onSubtitlePress ? (
+        <Pressable onPress={onSubtitlePress} accessibilityRole="link">
+          <Text style={[empty.link, { color: CultureTokens.indigo }]}>{subtitle} →</Text>
+        </Pressable>
+      ) : (
+        <Text style={[empty.sub, { color: colors.textSecondary }]}>{subtitle}</Text>
+      )}
+    </View>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles Implementation
-// ---------------------------------------------------------------------------
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  loadingCard: { backgroundColor: colors.surface, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.borderLight },
-  loadingText: { color: colors.text, fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginTop: 16 },
-
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, color: colors.text },
-  headerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
-
-  todayBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '30' },
-  todayBtnText: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: CultureTokens.indigo, letterSpacing: 0.5 },
-
-  filterRow: { flexDirection: 'row', gap: 10, paddingVertical: 12, paddingHorizontal: 16 },
-  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
-  filterChipActive: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  filterChipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: colors.textSecondary },
-  filterChipTextActive: { color: '#fff' },
-
-  summaryRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingVertical: 20, flexWrap: 'wrap' },
-  chipPrimary: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 50, borderWidth: 1 },
-  chipTextPrimary: { fontFamily: 'Poppins_700Bold', fontSize: 13 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 50, borderWidth: 1 },
-  chipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
-
-  // Hero banner
-  heroBanner: { marginHorizontal: 16, marginTop: 4, marginBottom: 12, borderRadius: 20, padding: 16, overflow: 'hidden', shadowColor: CultureTokens.indigo, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
-  heroOrb: { position: 'absolute' },
-  heroContent: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
-  heroIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  heroRibbon: { 
-    alignSelf: 'flex-start',
-    backgroundColor: '#ffffff1a', // Fixed transparency for Android (approx 10% white)
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ffffff26', // Approx 15% white
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  heroTitle: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#fff', letterSpacing: -0.2 },
-  heroStatsBadge: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+const empty = StyleSheet.create({
+  wrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderStyle: 'dashed',
   },
-  heroStatsText: {
-    fontFamily: 'Poppins_700Bold',
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 15,
+  },
+  sub: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 13,
-    color: '#fff',
   },
-  heroSub: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.8)' },
+  link: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+  },
+});
 
-  calCard: { marginHorizontal: 16, borderRadius: 28, padding: 24, paddingBottom: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 6 },
-  calCardCompact: { marginHorizontal: 0 },
-  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  navBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
-  monthText: { fontFamily: 'Poppins_700Bold', fontSize: 18, color: colors.text },
-  yearText: { fontFamily: 'Poppins_400Regular', fontSize: 13 },
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+const s = StyleSheet.create({
+  root: { flex: 1 },
 
-  dayHeaders: { flexDirection: 'row', marginBottom: 16 },
-  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11, color: colors.textTertiary, textTransform: 'uppercase', letterSpacing: 1 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingCard: {
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  loadingText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 15,
+    marginTop: 16,
+  },
 
-  daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 16, marginVertical: 4, gap: 4, borderWidth: 1.5 },
-  dayCellEmpty: { borderColor: 'transparent' },
-
-  dayCellDefault: { backgroundColor: 'transparent', borderColor: 'transparent' },
-  dayTextDefault: { color: colors.text },
-
-  dayCellSelected: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  dayTextSelected: { color: '#fff' },
-
-  dayCellToday: { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '40' },
-  dayTextToday: { color: CultureTokens.indigo },
-
-  dayText: { fontFamily: 'Poppins_600SemiBold', fontSize: 17 },
-  dotRow: { flexDirection: 'row', gap: 3, height: 5, marginTop: 2 },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: CultureTokens.saffron },
-  dotSelected: { backgroundColor: '#fff' },
-
-  eventsSection: { paddingHorizontal: 20, paddingTop: 24 },
-  eventsSectionSide: { paddingHorizontal: 0, paddingTop: 0 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  sectionTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: colors.text },
-  sectionCount: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: colors.textTertiary },
-  seeAll: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: CultureTokens.indigo, textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 16, borderRadius: 28, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight },
-  emptyIconCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: colors.textSecondary },
-
-  eventRow: {
+  // Header
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  monthNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
-    marginBottom: 16,
-    padding: 20,
-    gap: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    overflow: 'hidden',
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  eventAccentStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 6 },
-  eventImg: { width: 72, height: 72, borderRadius: 16, backgroundColor: colors.backgroundSecondary },
-  eventInfo: { flex: 1, gap: 6 },
-  eventTitle: { fontFamily: 'Poppins_700Bold', fontSize: 17, color: colors.text, letterSpacing: -0.3 },
-  eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, backgroundColor: 'transparent' },
-  eventTime: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: CultureTokens.indigo, textTransform: 'uppercase' },
-  eventVenue: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: colors.textSecondary, flexShrink: 1 },
+  navPill: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthCenter: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 2,
+  },
+  monthTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 22,
+    letterSpacing: -0.3,
+  },
+  todaySubline: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+  },
+  eventsCountRow: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  eventsCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  eventsCountText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 12,
+  },
 
-  priceChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
-  priceChipFree: { backgroundColor: CultureTokens.teal + '12', borderColor: CultureTokens.teal + '30' },
-  priceTextFree: { color: CultureTokens.teal },
-  priceChipPaid: { backgroundColor: CultureTokens.indigo + '12', borderColor: CultureTokens.indigo + '30' },
-  priceTextPaid: { color: CultureTokens.indigo },
-  priceText: { fontFamily: 'Poppins_700Bold', fontSize: 13 },
+  // Calendar card
+  calCard: {
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    marginTop: 0,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+      },
+      android: { elevation: 3 },
+    }),
+  },
+  calCardCompact: { marginHorizontal: 0 },
 
-  civicRow: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: CultureTokens.indigo + '30', borderRadius: 24, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-  civicIcon: { width: 44, height: 44, borderRadius: 16, backgroundColor: CultureTokens.indigo + '12', alignItems: 'center', justifyContent: 'center' },
-  civicEventTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: colors.text, letterSpacing: -0.2 },
-  civicEventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: colors.textSecondary, flexShrink: 1, marginTop: 2 },
+  // Day-of-week header
+  dayHeaders: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  dayHeaderText: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
 
-  desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 32, paddingHorizontal: 20, width: '100%', alignSelf: 'center', marginTop: 12 },
+  // Days grid
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCellEmpty: {
+    width: '14.28%',
+    minHeight: 38,
+    borderRadius: 10,
+  },
+  dayCell: {
+    width: '14.28%',
+    minHeight: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 2,
+    gap: 2,
+    paddingVertical: 4,
+  },
+  dayText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+  },
+  eventDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+
+  // Sections
+  eventsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+  },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 16,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  sectionCount: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    marginLeft: 8,
+  },
+  seeAll: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Civic reminders
+  civicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: { elevation: 1 },
+    }),
+  },
+  civicIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  civicTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 14,
+    letterSpacing: -0.1,
+  },
+  civicSub: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    marginTop: 2,
+    flexShrink: 1,
+  },
+
+  // Desktop split layout
+  desktopSplit: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 32,
+    paddingHorizontal: 20,
+    width: '100%',
+    alignSelf: 'center',
+    marginTop: 12,
+  },
   desktopCalendarCol: { flex: 1.5 },
   desktopUpcomingCol: { flex: 1 },
 });

@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, CardTokens } from '@/constants/theme';
+import { router } from 'expo-router';
+import { CardTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import type { Community } from '@/shared/schema';
 import {
   getCommunityAccent,
   getCommunityActivityMeta,
   getCommunityEventsCount,
-  getCommunityHeadline,
   getCommunityMemberCount,
   getCommunitySignals,
 } from '@/lib/community';
@@ -24,163 +26,222 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
   const accent = getCommunityAccent(community, colors.primary);
   const members = getCommunityMemberCount(community);
   const upcomingEvents = getCommunityEventsCount(community);
-  const headline = getCommunityHeadline(community);
   const activity = getCommunityActivityMeta(community);
   const signals = getCommunitySignals(community);
 
+  // First letter of community name for the placeholder cover
+  const initial = (community.name ?? '?').charAt(0).toUpperCase();
+
+  function handlePress() {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push({
+      pathname: '/community/[id]',
+      params: { id: community.slug || community.id },
+    });
+  }
+
   return (
-    <View>
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-          pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
-          Platform.OS === 'web' && { cursor: 'pointer' as any },
-          Colors.shadows.small,
-        ]}
-        onPress={() =>
-          router.push({
-            pathname: '/community/[id]',
-            params: { id: community.slug || community.id },
-          })
-        }
-      >
-        <View style={[styles.iconWrap, { backgroundColor: accent + '15' }]}>
-          {community.iconEmoji ? (
-            <Text style={{ fontSize: 24 }}>{community.iconEmoji}</Text>
-          ) : (
-            <Ionicons name="people" size={24} color={accent} />
-          )}
-        </View>
-        <View style={styles.badgeRow}>
-          <View style={[styles.metaBadge, { backgroundColor: accent + '15', borderColor: accent + '35' }]}>
-            <Text style={[styles.metaBadgeText, { color: accent }]} numberOfLines={1}>
-              {signals[0] ?? 'Community'}
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.surface },
+        pressed && styles.cardPressed,
+        Platform.OS === 'web' && ({ cursor: 'pointer' } as object),
+      ]}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${community.name} community`}
+    >
+      {/* Cover area */}
+      <View style={styles.cover}>
+        {community.imageUrl ? (
+          <Image
+            source={{ uri: community.imageUrl }}
+            style={styles.coverImage}
+            contentFit="cover"
+            accessibilityLabel={`${community.name} cover image`}
+          />
+        ) : (
+          <LinearGradient
+            colors={[accent + 'CC', accent + '66']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+
+        {/* Bottom gradient overlay for text legibility */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.5)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.coverBottomGradient}
+        />
+
+        {/* Initial letter when no image */}
+        {!community.imageUrl && (
+          <View style={styles.initialWrap} pointerEvents="none">
+            <Text style={styles.initialText}>{initial}</Text>
+          </View>
+        )}
+
+        {/* Top-left: type badge */}
+        {signals.length > 0 && (
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeBadgeText} numberOfLines={1}>
+              {signals[0]}
             </Text>
           </View>
-          <View style={[styles.metaBadge, { backgroundColor: activity.color + '12', borderColor: activity.color + '25' }]}>
-            <Text style={[styles.metaBadgeText, { color: activity.color }]}>{activity.label}</Text>
+        )}
+
+        {/* Top-right: verified badge */}
+        {community.isVerified && (
+          <View style={styles.verifiedBadge}>
+            <Ionicons name="checkmark" size={11} color="#FFFFFF" />
           </View>
-        </View>
-        <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+        )}
+      </View>
+
+      {/* Info strip */}
+      <View style={[styles.infoStrip, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.communityName, { color: colors.text }]} numberOfLines={1}>
           {community.name}
         </Text>
-        <Text style={[styles.headline, { color: colors.textSecondary }]} numberOfLines={2}>
-          {headline}
-        </Text>
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
-            <Text style={[styles.members, { color: colors.textSecondary }]}>
-              {members.toLocaleString()} members
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>
+              {members.toLocaleString()}
             </Text>
           </View>
-          {upcomingEvents > 0 ? (
+          {upcomingEvents > 0 && (
             <View style={styles.statItem}>
               <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
-              <Text style={[styles.members, { color: colors.textSecondary }]}>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>
                 {upcomingEvents} events
               </Text>
             </View>
-          ) : null}
+          )}
         </View>
-        {signals.length > 1 ? (
-          <View style={styles.signalRow}>
-            {signals.slice(1).map((signal) => (
-              <View key={signal} style={[styles.signalChip, { backgroundColor: colors.backgroundSecondary }]}>
-                <Text style={[styles.signalText, { color: colors.textSecondary }]}>{signal}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {community.description && community.description !== headline ? (
-          <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
-            {community.description}
+
+        <View style={[styles.activityPill, { backgroundColor: accent + '16' }]}>
+          <Text style={[styles.activityText, { color: accent }]}>
+            {activity.label.toUpperCase()}
           </Text>
-        ) : null}
-      </Pressable>
-    </View>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 228,
+    width: 220,
     borderRadius: CardTokens.radius,
-    padding: CardTokens.padding,
-    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
-  iconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
+  },
+  // Cover
+  cover: {
+    width: '100%',
+    height: 160,
+    backgroundColor: '#1A1A2E',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverBottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 64,
+  },
+  initialWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
   },
-  badgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
+  initialText: {
+    fontSize: 48,
+    fontFamily: 'Poppins_700Bold',
+    color: 'rgba(255,255,255,0.9)',
   },
-  metaBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  typeBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(0,0,0,0.40)',
     borderRadius: 999,
-    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
   },
-  metaBadgeText: {
+  typeBadgeText: {
     fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
+    color: '#FFFFFF',
   },
-  name: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 4,
+  verifiedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#2C2A72',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headline: {
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
-    lineHeight: 18,
-    marginBottom: 10,
+  // Info strip
+  infoStrip: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+  communityName: {
+    fontSize: 14,
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 6,
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  members: {
+  statText: {
     fontSize: 12,
     fontFamily: 'Poppins_500Medium',
   },
-  signalRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 10,
-  },
-  signalChip: {
+  activityPill: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 999,
   },
-  signalText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
-  },
-  description: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 18,
+  activityText: {
+    fontSize: 9,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.6,
   },
 });
 
-// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
 export default React.memo(CommunityCard);

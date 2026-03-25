@@ -1,16 +1,15 @@
 /**
- * CustomTabBar — floating glassmorphic tab bar for CulturePass.
+ * CustomTabBar — clean floating tab bar for CulturePass.
  *
  * Features:
  * - Floating pill with rounded corners + shadow
- * - Brand gradient (Indigo → Saffron) active pill
+ * - Active state: indigo icon + label + small dot indicator below icon
  * - Spring scale animation on press
  * - Haptic feedback (iOS/Android)
  * - User avatar in Profile tab
  * - Notification badge on Profile tab
- * - BlurView background on iOS, solid semi-transparent on Android/Web
- * - Gradient top-border accent line
- * - Hidden automatically on desktop web (sidebar takes over)
+ * - BlurView on iOS, solid on Android/Web
+ * - Hidden on desktop web (sidebar takes over)
  */
 
 import React, { useRef } from 'react';
@@ -34,45 +33,40 @@ import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
 const TABS = [
   {
     name: 'index',
-    label: 'Discovery',
+    label: 'Discover',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
-    accent: CultureTokens.indigo,
   },
   {
     name: 'feed',
     label: 'Feed',
-    icon: 'home-outline' as const,
-    iconActive: 'home' as const,
-    accent: CultureTokens.teal,
+    icon: 'newspaper-outline' as const,
+    iconActive: 'newspaper' as const,
   },
   {
     name: 'community',
     label: 'Community',
     icon: 'people-circle-outline' as const,
     iconActive: 'people-circle' as const,
-    accent: CultureTokens.coral,
   },
   {
     name: 'calendar',
     label: 'Calendar',
     icon: 'calendar-outline' as const,
     iconActive: 'calendar' as const,
-    accent: CultureTokens.saffron,
   },
   {
     name: 'profile',
     label: 'Profile',
     icon: 'person-circle-outline' as const,
     iconActive: 'person-circle' as const,
-    accent: CultureTokens.indigo,
   },
 ] as const;
 
@@ -92,10 +86,10 @@ function Badge({ count }: { count: number }) {
 const badge = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    top: 0,
-    right: -2,
-    minWidth: 16,
-    height: 16,
+    top: -1,
+    right: -3,
+    minWidth: 15,
+    height: 15,
     borderRadius: 8,
     backgroundColor: CultureTokens.coral,
     alignItems: 'center',
@@ -103,7 +97,7 @@ const badge = StyleSheet.create({
     paddingHorizontal: 3,
     zIndex: 10,
   },
-  txt: { fontSize: 8.5, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  txt: { fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#fff' },
 });
 
 // ─── Individual tab item ──────────────────────────────────────────────────────
@@ -116,15 +110,16 @@ interface TabItemProps {
   avatarUrl?: string;
   initials?: string;
   isDark: boolean;
+  colors: ReturnType<typeof useColors>;
 }
 
-function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDark }: TabItemProps) {
+function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDark, colors }: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.82, duration: 70, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 4, tension: 280, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 0.84, duration: 65, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, friction: 5, tension: 300, useNativeDriver: true }),
     ]).start();
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync().catch(() => {});
@@ -132,91 +127,81 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDa
     onPress();
   };
 
-  const inactiveIconColor = isDark ? 'rgba(232,244,255,0.42)' : 'rgba(0,22,40,0.40)';
-  const inactiveLabelColor = isDark ? 'rgba(232,244,255,0.38)' : 'rgba(0,22,40,0.36)';
+  const iconColor = isActive ? CultureTokens.indigo : colors.textTertiary;
+  const labelColor = isActive ? CultureTokens.indigo : colors.textTertiary;
 
   return (
     <Pressable
       onPress={handlePress}
-      style={item.wrap}
+      style={tabItem.wrap}
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={tab.label}
     >
-      <Animated.View style={[item.inner, { transform: [{ scale }] }]}>
-        {/* Active gradient pill */}
-        {isActive && (
-          <LinearGradient
-            colors={gradients.culturepassBrand}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={item.activePill}
-          />
-        )}
-
-        {/* Icon area */}
-        <View style={item.iconWrap}>
+      <Animated.View style={[tabItem.inner, { transform: [{ scale }] }]}>
+        {/* Icon */}
+        <View style={tabItem.iconWrap}>
           {tab.name === 'profile' ? (
-            <View style={[item.avatarOuter, isActive && item.avatarOuterActive]}>
+            <View
+              style={[
+                tabItem.avatarOuter,
+                isActive && { borderColor: CultureTokens.indigo + '80', borderWidth: 1.5 },
+              ]}
+            >
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={item.avatarImg} />
+                <Image source={{ uri: avatarUrl }} style={tabItem.avatarImg} />
               ) : (
-                <View style={item.avatarInner}>
-                  <Text style={item.avatarInitials}>{initials ?? '?'}</Text>
+                <View
+                  style={[
+                    tabItem.avatarInner,
+                    { backgroundColor: isDark ? 'rgba(44,42,114,0.25)' : 'rgba(44,42,114,0.08)' },
+                  ]}
+                >
+                  <Text style={[tabItem.avatarInitials, { color: iconColor }]}>
+                    {initials ?? '?'}
+                  </Text>
                 </View>
               )}
               {badgeCount ? <Badge count={badgeCount} /> : null}
             </View>
           ) : (
-            <Ionicons
-              name={isActive ? tab.iconActive : tab.icon}
-              size={22}
-              color={isActive ? '#ffffff' : inactiveIconColor}
-            />
+            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={22} color={iconColor} />
           )}
         </View>
 
         {/* Label */}
-        <Text
-          style={[
-            item.label,
-            isActive ? item.labelActive : { color: inactiveLabelColor },
-          ]}
-          numberOfLines={1}
-        >
+        <Text style={[tabItem.label, { color: labelColor }]} numberOfLines={1}>
           {tab.label}
         </Text>
+
+        {/* Active indicator dot */}
+        {isActive && (
+          <View style={tabItem.dot} />
+        )}
       </Animated.View>
     </Pressable>
   );
 }
 
-const item = StyleSheet.create({
+const tabItem = StyleSheet.create({
   wrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
   },
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 58,
-    paddingVertical: 7,
-    paddingHorizontal: 4,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     gap: 3,
-    overflow: 'hidden',
-  },
-  activePill: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
+    minWidth: 44,
   },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
   },
 
   // Avatar (profile tab)
@@ -227,49 +212,47 @@ const item = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  avatarOuterActive: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   avatarInner: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarImg: { width: 22, height: 22 },
+  avatarImg: { width: 26, height: 26, borderRadius: 13 },
   avatarInitials: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    color: '#fff',
   },
 
   label: {
-    fontSize: 9,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: 9.5,
+    fontFamily: 'Poppins_600SemiBold',
     letterSpacing: 0.1,
     textAlign: 'center',
   },
-  labelActive: {
-    fontFamily: 'Poppins_700Bold',
-    color: '#ffffff',
-    fontSize: 9,
+
+  dot: {
+    width: 4,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: CultureTokens.indigo,
+    marginTop: 1,
   },
 });
 
 // ─── Main tab bar ─────────────────────────────────────────────────────────────
 
 export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
-  useColors();
+  const colors = useColors();
   const isDark = useColorScheme() === 'dark';
   const { isDesktop } = useLayout();
   const { user, userId } = useAuth();
 
-  // Always call hooks first
   const { data: notifCount = 0 } = useQuery<number>({
     queryKey: ['notifications', 'unread-count', userId],
     queryFn: async () => {
@@ -284,11 +267,17 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   if (Platform.OS === 'web' && isDesktop) return null;
 
   const displayName = user?.displayName ?? user?.username ?? '';
-  const initials = displayName.trim().split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const initials = displayName
+    .trim()
+    .split(' ')
+    .map((w: string) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || '?';
 
   const bottomPad = Math.max(insets.bottom, 8);
 
-  // Only render TABS that are in the current route list (skip hidden screens)
+  // Only render tabs that match our TABS config
   const visibleRoutes = state.routes.filter((r) => TABS.some((t) => t.name === r.name));
 
   return (
@@ -297,12 +286,12 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
         style={[
           bar.pill,
           {
-            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-            shadowColor: isDark ? '#000' : '#0066CC',
+            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+            shadowColor: isDark ? '#000' : CultureTokens.indigo,
           },
         ]}
       >
-        {/* Background: BlurView (iOS) or solid (Android/Web) */}
+        {/* Background */}
         {Platform.OS === 'ios' ? (
           <BlurView
             intensity={90}
@@ -321,15 +310,15 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           />
         )}
 
-        {/* Brand gradient top edge line */}
+        {/* Brand gradient top edge */}
         <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.saffron, 'rgba(255,140,66,0)']}
+          colors={[CultureTokens.indigo, CultureTokens.teal, 'rgba(46,196,182,0)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={bar.topLine}
         />
 
-        {/* Tab items */}
+        {/* All tabs — evenly distributed */}
         {visibleRoutes.map((route) => {
           const tab = TABS.find((t) => t.name === route.name);
           if (!tab) return null;
@@ -342,6 +331,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               tab={tab}
               isActive={isActive}
               isDark={isDark}
+              colors={colors}
               badgeCount={isProfileTab ? notifCount : undefined}
               avatarUrl={isProfileTab ? (user as any)?.avatarUrl : undefined}
               initials={isProfileTab ? initials : undefined}
@@ -363,11 +353,11 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   );
 }
 
-// ─── Container styles ─────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const bar = StyleSheet.create({
   root: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingTop: 6,
     backgroundColor: 'transparent',
   },
@@ -377,10 +367,9 @@ const bar = StyleSheet.create({
     height: 64,
     borderRadius: 28,
     borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-    // Shadow
-    shadowOffset: { width: 0, height: 8 },
+    overflow: 'visible',
+    paddingHorizontal: 8,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 20,
     elevation: 14,
@@ -391,5 +380,7 @@ const bar = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1.5,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
 });
