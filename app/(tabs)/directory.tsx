@@ -31,13 +31,15 @@ import type { Profile, EventData } from '@/shared/schema';
 import { api, type CouncilData } from '@/lib/api';
 import type { FilterItem } from '@/components/FilterChip';
 import { Button } from '@/components/ui/Button';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 // import { Typography } from '@/constants/typography'; // REMOVED: Typography consolidated into theme import above
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { isIndigenousProfile } from '@/lib/indigenous';
 import { formatPrice } from '@/lib/dateUtils';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { EventCardSkeleton } from '@/components/EventCardSkeleton';
+import { useLocations } from '@/hooks/useLocations';
 
 const isWeb = Platform.OS === 'web';
 
@@ -56,7 +58,7 @@ function FilterChip({
     backgroundColor: interpolateColor(
       bg.value, [0, 1],
       active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
         : [colors.surface, colors.surfaceElevated],
     ),
   }));
@@ -169,9 +171,11 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
           { 
             backgroundColor: colors.surface, 
             borderColor: colors.borderLight,
-            boxShadow: Platform.OS === 'web' 
-              ? '0px 4px 12px rgba(0,0,0,0.06)' 
-              : '0px 2px 6px rgba(0,0,0,0.15)',
+            ...Platform.select({
+              ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+              android: { elevation: 2 },
+              web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' } as any,
+            }),
           },
           pressed && { opacity: 0.93 },
         ]}
@@ -266,10 +270,12 @@ function DirectoryCard({ profile, colors }: { profile: Profile; colors: ReturnTy
         s.directoryCard,
         { 
           backgroundColor: colors.surface, 
-          borderColor: isProfessional ? CultureTokens.gold + '40' : isCouncil ? CultureTokens.indigo + '40' : colors.borderLight,
-          boxShadow: Platform.OS === 'web' 
-            ? `0px 8px 20px ${isProfessional ? 'rgba(255,200,87,0.08)' : 'rgba(44,42,114,0.06)'}`
-            : '0px 2px 8px rgba(0,0,0,0.12)',
+          borderColor: isProfessional ? CultureTokens.gold + '60' : isCouncil ? CultureTokens.indigo + '60' : colors.borderLight,
+          ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
+            android: { elevation: 4 },
+            web: { boxShadow: isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)' } as any,
+          }),
         },
         (isCouncil || isProfessional) && { borderWidth: 1.5 },
         pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
@@ -411,8 +417,12 @@ function DirectoryEmptyState({
 export default function DirectoryScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const isDark = useIsDark();
   const { width, isDesktop, isTablet, hPad } = useLayout();
   const { state: onboardingState } = useOnboarding();
+  const { acknowledgement } = useLocations();
+  
+  const showAcknowledgement = ['Australia', 'New Zealand', 'Canada', 'AU', 'NZ', 'CA'].includes(onboardingState.country || 'Australia');
 
   const isDesktopWeb = isWeb && isDesktop;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -672,8 +682,19 @@ export default function DirectoryScreen() {
         <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
 
         {/* ── Content ── */}
-        <FlashList
-          data={filtered}
+        {isLoading ? (
+          <View style={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}>
+            <View style={{ flexDirection: useWebTwoColumnResults ? 'row' : 'column', flexWrap: 'wrap', marginHorizontal: useWebTwoColumnResults ? -7 : 0 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={useWebTwoColumnResults ? s.resultsGridItemWeb : { marginBottom: 14 }}>
+                  <EventCardSkeleton />
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <FlashList<any>
+            data={filtered}
           keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
           renderItem={({ item, index }) => (
             <Animated.View
@@ -697,8 +718,17 @@ export default function DirectoryScreen() {
               onReset={() => { setSelectedType('All'); setSearch(''); }}
             />
           }
-          // @ts-ignore
-          estimatedItemSize={100}
+          ListFooterComponent={
+            showAcknowledgement && !isLoading && filtered.length > 0 ? (
+              <View style={s.acknowledgementWrap}>
+                <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
+                <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
+                  {acknowledgement}
+                </Text>
+              </View>
+            ) : null
+          }
+          {...({ estimatedItemSize: 100 } as any)}
           numColumns={useWebTwoColumnResults ? 2 : 1}
           contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}
           showsVerticalScrollIndicator={false}
@@ -711,6 +741,7 @@ export default function DirectoryScreen() {
             />
           }
         />
+        )}
       </View>
     </ErrorBoundary>
   );
@@ -993,4 +1024,22 @@ const s = StyleSheet.create({
   featuredInfo: { position: 'absolute', bottom: 12, left: 12, right: 12 },
   featuredName: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   featuredTitle: { fontSize: 10, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
+
+  acknowledgementWrap: {
+    padding: 24,
+    marginTop: 40,
+    marginBottom: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderColor: 'rgba(150,150,150,0.15)',
+    gap: 12,
+  },
+  acknowledgementText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 400,
+  },
 });

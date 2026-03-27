@@ -7,8 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { useColors, useIsDark } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCouncil } from '@/hooks/useCouncil';
@@ -19,8 +19,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { FilterChipRow } from '@/components/FilterChip';
-import { Card } from '@/components/ui/Card';
-import { TextStyles } from '@/constants/typography';
+
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -58,7 +57,7 @@ function EventRow({
   isAuthenticated: boolean;
   isWeb: boolean;
 }) {
-  const isDark = useColorScheme() === 'dark';
+  const isDark = useIsDark();
   const safeDate = toSafeDateKey(event.date);
   const dayNum = safeDate ? new Date(`${safeDate}T00:00:00`).getDate() : null;
   const monthAbbr = safeDate ? MONTHS_SHORT[new Date(`${safeDate}T00:00:00`).getMonth()] : 'TBA';
@@ -84,9 +83,11 @@ function EventRow({
         {
           backgroundColor: colors.surface,
           borderColor: colors.borderLight,
-          boxShadow: isDark 
-            ? '0px 4px 12px rgba(0,0,0,0.45)' 
-            : '0px 4px 12px rgba(44,42,114,0.08)',
+          ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
+            android: { elevation: 2 },
+            web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' } as any,
+          }),
         },
         pressed && { opacity: 0.85 },
       ]}
@@ -250,7 +251,7 @@ const evRow = StyleSheet.create({
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const isDark = useColorScheme() === 'dark';
+  const isDark = useIsDark();
 
   const { isDesktop, isTablet, width } = useLayout();
   const isWeb = Platform.OS === 'web';
@@ -286,9 +287,9 @@ export default function CalendarScreen() {
 
   // rsvps, likes, and interests are backed by stub endpoints (return []).
   // Kept as typed empty-array queries until real endpoints land.
-  const rsvps: unknown[] = [];
-  const likes: unknown[] = [];
-  const interests: unknown[] = [];
+  const rsvps = useMemo<unknown[]>(() => [], []);
+  const likes = useMemo<unknown[]>(() => [], []);
+  const interests = useMemo<unknown[]>(() => [], []);
 
   const allEvents = useMemo(() => {
     const ids = new Set();
@@ -379,14 +380,7 @@ export default function CalendarScreen() {
     return set;
   }, [filteredEvents]);
 
-  const eventCountByDate = useMemo(() => {
-    const map: Record<string, number> = {};
-    filteredEvents.forEach((e) => {
-      const dateKey = toSafeDateKey(e.date);
-      if (dateKey) map[dateKey] = (map[dateKey] || 0) + 1;
-    });
-    return map;
-  }, [filteredEvents]);
+
 
   const selectedEvents = useMemo(() => {
     if (!selectedDate) return [];
@@ -596,9 +590,11 @@ export default function CalendarScreen() {
                   { 
                     backgroundColor: colors.surface, 
                     borderColor: colors.borderLight,
-                    boxShadow: isDark 
-                      ? '0px 8px 30px rgba(0,0,0,0.5)' 
-                      : '0px 8px 30px rgba(44,42,114,0.12)',
+                    ...Platform.select({
+                      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
+                      android: { elevation: 6 },
+                      web: { boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)' } as any,
+                    }),
                   },
                   isDesktopWeb && s.calCardCompact,
                 ]}
@@ -681,7 +677,7 @@ export default function CalendarScreen() {
                   <View style={s.sectionRow}>
                     <Text style={[s.sectionTitle, { color: colors.text }]}>
                       Events on{' '}
-                      {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-AU', {
+                      {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',
@@ -783,9 +779,11 @@ export default function CalendarScreen() {
                     {
                       backgroundColor: colors.surface,
                       borderColor: CultureTokens.indigo + '30',
-                      boxShadow: isDark 
-                        ? '0px 2px 8px rgba(0,0,0,0.3)' 
-                        : '0px 2px 8px rgba(44,42,114,0.04)',
+                      ...Platform.select({
+                        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+                        android: { elevation: 1 },
+                        web: { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } as any,
+                      }),
                     },
                   ]}
                 >
@@ -796,7 +794,7 @@ export default function CalendarScreen() {
                     <Text style={[s.civicTitle, { color: colors.text }]}>{reminder.title}</Text>
                     <Text style={[s.civicSub, { color: colors.textSecondary }]}>
                       {reminder.dateKey
-                        ? new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString('en-AU', {
+                        ? new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString(undefined, {
                             weekday: 'long',
                             day: 'numeric',
                             month: 'short',

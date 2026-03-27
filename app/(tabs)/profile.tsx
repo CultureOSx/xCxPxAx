@@ -41,7 +41,7 @@ function initials(name: string): string {
 }
 function memberDate(d?: string | Date | null): string {
   if (!d) return '';
-  return new Date(d).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
 const TIER_CFG: Record<string, { color: string; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
@@ -103,10 +103,12 @@ const sh = StyleSheet.create({
 
 function ProfileAvatar({ user, displayName, size = 100 }: { user: Partial<User>; displayName: string; size?: number }) {
   const hasPhoto = !!user.avatarUrl;
+  const isElite = (user.membership?.tier && user.membership.tier !== 'free') || user.isVerified;
+  
   return (
     <View style={{ position: 'relative', marginBottom: 14 }}>
       <LinearGradient
-        colors={[CultureTokens.teal, CultureTokens.indigo, CultureTokens.coral]}
+        colors={isElite ? [CultureTokens.gold, '#F4A100'] : [CultureTokens.teal, CultureTokens.indigo]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={{ width: size + 6, height: size + 6, borderRadius: (size + 6) / 2, padding: 3, alignItems: 'center', justifyContent: 'center' }}
       >
@@ -249,8 +251,8 @@ export default function ProfileScreen() {
         >
           {/* ── HERO ──────────────────────────────────────────────────── */}
           <View style={[hero.container, { paddingTop: topInset + 12 }]}>
-            <LinearGradient
-              colors={['#0B0B14', CultureTokens.indigo + '50', '#1B0F2E']}
+          <LinearGradient
+              colors={[colors.background, CultureTokens.indigo + '40', '#1B0F2E']}
               start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
@@ -808,7 +810,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, 
       backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 8, 
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%',
-      boxShadow: '0px 4px 12px rgba(0,0,0,0.2)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
+        android: { elevation: 4 },
+        web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' } as any,
+      }),
     },
     statsAccentLine: { position: 'absolute', top: 0, left: 24, right: 24, height: 1.5, opacity: 0.5 },
     statItem: { flex: 1, alignItems: 'center' },
@@ -820,14 +826,22 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
     row: { flexDirection: 'row', gap: 10 },
     btn: { 
       flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
-      boxShadow: '0px 2px 4px rgba(0,0,0,0.05)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+        android: { elevation: 2 },
+        web: { boxShadow: '0 2px 4px rgba(0,0,0,0.05)' } as any,
+      }),
     },
     label: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
   }),
   tier: StyleSheet.create({
     card: { 
       borderRadius: CardTokens.radius, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden',
-      boxShadow: isDark ? '0px 4px 12px rgba(0,0,0,0.3)' : '0px 4px 12px rgba(0,0,0,0.04)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+        android: { elevation: 3 },
+        web: { boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.04)' } as any,
+      }),
     },
     left: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
     iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -840,7 +854,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
     wrap: {},
     card: { 
       padding: 16, borderRadius: 16, borderWidth: 1, 
-      boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.25)' : '0px 2px 8px rgba(0,0,0,0.03)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+        android: { elevation: 2 },
+        web: { boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.03)' } as any,
+      }),
     },
     bioText: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
   }),
@@ -848,7 +866,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     chip: { 
       flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
-      boxShadow: isDark ? '0px 2px 6px rgba(0,0,0,0.2)' : '0px 2px 6px rgba(0,0,0,0.03)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+        android: { elevation: 1 },
+        web: { boxShadow: isDark ? '0 2px 6px rgba(0,0,0,0.2)' : '0 2px 6px rgba(0,0,0,0.03)' } as any,
+      }),
     },
     chipLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   }),
@@ -856,7 +878,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
     scroll: { gap: 12, paddingVertical: 4 },
     card: { 
       width: 160, padding: 14, borderRadius: 20, borderWidth: 1, overflow: 'hidden',
-      boxShadow: '0px 4px 10px rgba(0,0,0,0.06)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+        android: { elevation: 3 },
+        web: { boxShadow: '0 4px 10px rgba(0,0,0,0.06)' } as any,
+      }),
     },
     cardGrad: { ...StyleSheet.absoluteFillObject, opacity: 0.1 },
     icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
@@ -867,7 +893,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
   cpid: StyleSheet.create({
     card: { 
       padding: 24, borderRadius: 28, overflow: 'hidden', position: 'relative',
-      boxShadow: isDark ? '0px 12px 32px rgba(0,0,0,0.6)' : '0px 12px 32px rgba(44,42,114,0.12)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24 },
+        android: { elevation: 8 },
+        web: { boxShadow: isDark ? '0 12px 32px rgba(0,0,0,0.6)' : '0 12px 32px rgba(44,42,114,0.12)' } as any,
+      }),
     },
     accentLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
@@ -905,7 +935,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     card: { 
       flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: '45%', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, overflow: 'hidden',
-      boxShadow: '0px 2px 6px rgba(0,0,0,0.03)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+        android: { elevation: 1 },
+        web: { boxShadow: '0 2px 6px rgba(0,0,0,0.03)' } as any,
+      }),
     },
     strip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
     iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
@@ -914,7 +948,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
   det: StyleSheet.create({
     card: { 
       borderRadius: 20, borderWidth: 1, padding: 4,
-      boxShadow: '0px 2px 8px rgba(0,0,0,0.03)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 },
+        android: { elevation: 2 },
+        web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' } as any,
+      }),
     },
     row: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
     iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -926,7 +964,11 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
   set: StyleSheet.create({
     card: { 
       borderRadius: 20, borderWidth: 1, padding: 4,
-      boxShadow: '0px 4px 12px rgba(0,0,0,0.04)'
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+        android: { elevation: 3 },
+        web: { boxShadow: '0 4px 12px rgba(0,0,0,0.04)' } as any,
+      }),
     },
     row: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 },
     iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

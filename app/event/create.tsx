@@ -95,7 +95,14 @@ function SuccessScreen({
         >
           View Event
         </Button>
-        <Button variant="outline" size="lg" fullWidth leftIcon="share-social-outline" onPress={handleShare}>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          fullWidth 
+          leftIcon="share-social-outline" 
+          onPress={handleShare}
+          style={{ borderColor: colors.borderLight }}
+        >
           Share Event
         </Button>
         <Button variant="ghost" size="md" fullWidth onPress={onCreateAnother}>

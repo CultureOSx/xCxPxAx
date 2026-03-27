@@ -4,6 +4,8 @@ import { ActivityIndicator, StyleSheet, Text, View, Platform, Pressable } from '
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { WidgetSpotlightCard } from '@/components/widgets/WidgetSpotlightCard';
 import { WidgetNearbyEventsCard } from '@/components/widgets/WidgetNearbyEventsCard';
@@ -80,7 +82,10 @@ function WidgetsDashboardContent() {
             </Text>
           </View>
           <Pressable 
-            onPress={() => refetch()}
+            onPress={() => {
+              if(Platform.OS !== 'web') Haptics.selectionAsync();
+              refetch();
+            }}
             style={({ pressed }) => [styles.refreshBtn, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="refresh" size={20} color="#FFFFFF" />
@@ -94,9 +99,10 @@ function WidgetsDashboardContent() {
         contentContainerStyle={styles.screenContent}
       >
         {isLoading ? (
-          <View style={styles.loading}>
-            <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={styles.loadingText}>Syncing snapshots…</Text>
+          <View style={{ gap: 16 }}>
+            <Skeleton width="100%" height={240} borderRadius={24} />
+            <Skeleton width="100%" height={160} borderRadius={24} />
+            <Skeleton width="100%" height={180} borderRadius={24} />
           </View>
         ) : (
           <View style={styles.dashboardGrid}>
@@ -238,6 +244,16 @@ const getStyles = (colors: any, insets: any) =>
       borderStyle: 'dashed',
       alignItems: 'center',
       justifyContent: 'center',
+      ...Platform.select({
+        web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+        },
+        android: { elevation: 2 }
+      })
     },
     emptyText: {
       color: colors.textTertiary,

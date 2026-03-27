@@ -9,18 +9,24 @@
  * City names here match what the events API expects as the `city` filter value.
  */
 
-export const AUSTRALIAN_STATES = [
-  { label: 'New South Wales',              value: 'NSW', emoji: '🏙️' },
-  { label: 'Victoria',                     value: 'VIC', emoji: '🎭' },
-  { label: 'Queensland',                   value: 'QLD', emoji: '🌞' },
-  { label: 'Western Australia',            value: 'WA',  emoji: '🌊' },
-  { label: 'South Australia',              value: 'SA',  emoji: '🍷' },
-  { label: 'Tasmania',                     value: 'TAS', emoji: '🏔️' },
-  { label: 'Australian Capital Territory', value: 'ACT', emoji: '🏛️' },
-  { label: 'Northern Territory',           value: 'NT',  emoji: '🦘' },
+export const GLOBAL_REGIONS = [
+  { label: 'New South Wales',              value: 'NSW', emoji: '🏙️', country: 'Australia' },
+  { label: 'Victoria',                     value: 'VIC', emoji: '🎭', country: 'Australia' },
+  { label: 'Queensland',                   value: 'QLD', emoji: '🌞', country: 'Australia' },
+  { label: 'Western Australia',            value: 'WA',  emoji: '🌊', country: 'Australia' },
+  { label: 'South Australia',              value: 'SA',  emoji: '🍷', country: 'Australia' },
+  { label: 'Tasmania',                     value: 'TAS', emoji: '🏔️', country: 'Australia' },
+  { label: 'Australian Capital Territory', value: 'ACT', emoji: '🏛️', country: 'Australia' },
+  { label: 'Northern Territory',           value: 'NT',  emoji: '🦘', country: 'Australia' },
+  
+  // Phase 3 Global Expansion
+  { label: 'New Zealand',                  value: 'NZ',  emoji: '🇳🇿', country: 'New Zealand' },
+  { label: 'United Kingdom',               value: 'UK',  emoji: '🇬🇧', country: 'United Kingdom' },
+  { label: 'United Arab Emirates',         value: 'UAE', emoji: '🇦🇪', country: 'United Arab Emirates' },
+  { label: 'Canada',                       value: 'CA',  emoji: '🇨🇦', country: 'Canada' },
 ] as const;
 
-export type StateCode = (typeof AUSTRALIAN_STATES)[number]['value'];
+export type StateCode = (typeof GLOBAL_REGIONS)[number]['value'];
 
 /**
  * Cities and regional centres by state.
@@ -276,6 +282,18 @@ export const CITIES_BY_STATE: Record<StateCode, string[]> = {
     'Yulara',
     'Hermannsburg',
   ],
+
+  // ── New Zealand ──────────────────────────────────────────────────────────────
+  NZ: ['Auckland', 'Wellington', 'Christchurch', 'Hamilton', 'Tauranga', 'Queenstown'],
+
+  // ── United Kingdom ───────────────────────────────────────────────────────────
+  UK: ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Glasgow', 'Bristol'],
+
+  // ── United Arab Emirates ─────────────────────────────────────────────────────
+  UAE: ['Dubai', 'Abu Dhabi', 'Sharjah'],
+
+  // ── Canada ───────────────────────────────────────────────────────────────────
+  CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
 };
 
 /** Given a city name, return the state it belongs to (or undefined). */

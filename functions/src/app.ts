@@ -26,6 +26,7 @@ import { feedRouter } from './routes/feed';
 import { importRouter } from './routes/import';
 import { membershipRouter } from './routes/membership';
 import { citiesRouter } from './routes/cities';
+import { rewardsRouter } from './routes/rewards';
 
 
 
@@ -118,6 +119,7 @@ mount('/', updatesRouter);
 mount('/', feedRouter);
 mount('/', importRouter);
 mount('/', membershipRouter);
+mount('/', rewardsRouter);
 mount('/', citiesRouter);
 
 // Special handling for factory routers

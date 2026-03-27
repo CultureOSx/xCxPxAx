@@ -61,10 +61,13 @@ const styles = StyleSheet.create({
     backgroundColor: CP.surface, borderRadius: 16, padding: 16,
     overflow: 'hidden',
     ...Platform.select({
-      web: { boxShadow: '0px 2px 9px rgba(0,0,0,0.06)' },
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.3)' },
       default: {
-        shadowColor: CP.dark,
-        shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 }, 
+        shadowOpacity: 0.3, 
+        shadowRadius: 12, 
+        elevation: 4,
       },
     }),
   },

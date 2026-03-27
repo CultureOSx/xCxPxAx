@@ -306,7 +306,7 @@ export default function ContactDetailScreen() {
     .slice(0, 2)
     .toUpperCase();
 
-  const savedDate = new Date(contact.savedAt).toLocaleDateString('en-AU', {
+  const savedDate = new Date(contact.savedAt).toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

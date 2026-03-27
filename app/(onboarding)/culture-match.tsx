@@ -485,7 +485,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
 
   // Header
   headerBlock:  { alignItems: 'center', marginBottom: 28 },
-  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, boxShadow: '0px 4px 8px rgba(0,0,0,0.2)' },
   title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
   subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
 

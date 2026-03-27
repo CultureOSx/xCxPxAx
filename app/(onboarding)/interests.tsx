@@ -49,20 +49,21 @@ const CATEGORY_EMOJI: Record<string, string> = {
 // InterestChip — reused for both popular and category grids
 // ---------------------------------------------------------------------------
 function InterestChip({
-  interest, icon, isSelected, accentColor, onPress,
+  interest, icon, isSelected, accentColor, onPress, colors, styles,
 }: {
   interest: string;
   icon: string;
   isSelected: boolean;
   accentColor: string;
   onPress: () => void;
+  colors: ReturnType<typeof useColors>;
+  styles: ReturnType<typeof getStyles>;
 }) {
-  const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        s.chip,
+        styles.chip,
         isSelected
           ? { backgroundColor: accentColor, borderColor: 'transparent' }
           : {
@@ -80,7 +81,7 @@ function InterestChip({
         size={14}
         color={isSelected ? colors.background : accentColor}
       />
-      <Text style={[s.chipText, { color: isSelected ? colors.background : `${colors.text}CC` }]}>
+      <Text style={[styles.chipText, { color: isSelected ? colors.background : `${colors.text}CC` }]}>
         {interest}
       </Text>
       {isSelected && (
@@ -95,6 +96,7 @@ function InterestChip({
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
   const colors = useColors();
+  const s = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
@@ -261,7 +263,7 @@ export default function InterestsScreen() {
                 ]}
               />
             </View>
-            <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : 'rgba(255,255,255,0.45)' }]}>
+            <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : colors.textSecondary }]}>
               {isReady ? `${selected.length} selected ✓` : `${selected.length} / ${MIN_REQUIRED}`}
             </Text>
           </View>
@@ -282,6 +284,8 @@ export default function InterestsScreen() {
                     isSelected={selectedSet.has(interest)}
                     accentColor={accent}
                     onPress={() => toggle(interest)}
+                    colors={colors}
+                    styles={s}
                   />
                 );
               })}
@@ -363,6 +367,8 @@ export default function InterestsScreen() {
                           isSelected={selectedSet.has(interest)}
                           accentColor={accent}
                           onPress={() => toggle(interest)}
+                          colors={colors}
+                          styles={s}
                         />
                       );
                     })}
@@ -412,7 +418,7 @@ export default function InterestsScreen() {
 // ---------------------------------------------------------------------------
 // Styles
 // ---------------------------------------------------------------------------
-const s = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   root: { flex: 1 },
 
   orb: {
@@ -480,14 +486,14 @@ const s = StyleSheet.create({
   title: {
     fontSize: 36,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.textInverse,
     letterSpacing: -0.8,
     lineHeight: 44,
   },
   subtitle: {
     fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.45)',
+    color: colors.textSecondary,
     lineHeight: 22,
   },
 
@@ -586,7 +592,7 @@ const s = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.textInverse,
   },
   categoryCount: {
     fontSize: 12,

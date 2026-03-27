@@ -53,13 +53,9 @@ function DiscoverHeaderComponent({
       />
       <View style={styles.brandBlock}>
         <View style={styles.logoCircle}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <Image source={require('@/assets/images/icon.png')} style={styles.logoImg} />
+          <Image source={require('@/assets/images/icon.png')} style={styles.logoImg} contentFit="contain" />
         </View>
-        <BrandWordmark size="sm" withTagline light />
+        <BrandWordmark size="md" withTagline light />
       </View>
 
       <View style={styles.topBarSpacer} />
@@ -103,7 +99,7 @@ function DiscoverHeaderComponent({
                 <Text style={[styles.heroTitleDesktop, { color: colors.text }]}>{greeting}</Text>
                 <Text style={styles.heroTaglineDesktop}>Belong Anywhere</Text>
                 <Text style={[styles.heroSubtitleDesktop, { color: colors.textSecondary }]}>
-                  Explore festivals, communities, and events in {city}.
+                  {`Explore festivals, communities, and events in ${city}.`}
                 </Text>
             </View>
             <View style={styles.desktopActionsRight}>
@@ -143,25 +139,25 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    minHeight: 64,
-    backgroundColor: 'transparent',
+    minHeight: 88,
+    backgroundColor: '#0B0B14',
     zIndex: 100,
   },
   topBarGradient: { zIndex: -1 },
-  brandBlock: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brandBlock: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   logoCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 60,
+    height: 60,
+    borderRadius: 30, // Perfectly round half of 60
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  logoImg: { width: 28, height: 28, borderRadius: 14 },
+  logoImg: { width: '100%', height: '100%', borderRadius: 30 },
   brandTextBlock: { gap: 0 },
-  brandAppName: { ...TextStyles.headline, color: '#FFFFFF', lineHeight: 20 },
-  brandTagline: { ...TextStyles.caption, color: 'rgba(255, 255, 255, 0.9)', marginTop: 1 },
+  brandAppName: { ...TextStyles.headline, color: '#FFFFFF', lineHeight: 24 },
+  brandTagline: { ...TextStyles.caption, color: 'rgba(255, 255, 255, 0.9)', marginTop: 2 },
   topBarSpacer: { flex: 1 },
   topBarActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerIconBtn: {

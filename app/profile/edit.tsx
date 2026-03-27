@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
@@ -21,8 +21,10 @@ import { Button } from '@/components/ui/Button';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
+import { Skeleton } from '@/components/ui/Skeleton';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
 const BLUE   = CultureTokens.indigo;
@@ -77,25 +79,36 @@ const SOCIAL_FIELDS: {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SectionCard({ title, children, colors }: {
+function SectionCard({ title, children, colors, index = 0 }: {
   title: string;
   children: React.ReactNode;
   colors: ReturnType<typeof useColors>;
+  index?: number;
 }) {
   return (
-    <Card 
-      style={{ marginBottom: 16 }}
-      padding={0}
-    >
-      <View style={[sc.cardHeader, { borderBottomColor: colors.borderLight }]}>
-        <Text style={[TextStyles.labelSemibold, { color: colors.text, textTransform: 'uppercase', letterSpacing: 1 }]}>{title}</Text>
-      </View>
-      <View style={sc.cardBody}>{children}</View>
-    </Card>
+    <Animated.View entering={FadeInDown.delay(100 + index * 50).duration(400)}>
+      <Card 
+        style={sc.cardRoot}
+        padding={0}
+      >
+        <View style={[sc.cardHeader, { borderBottomColor: colors.borderLight }]}>
+          <Text style={[TextStyles.labelSemibold, { color: colors.textTertiary, textTransform: 'uppercase', letterSpacing: 1 }]}>{title}</Text>
+        </View>
+        <View style={sc.cardBody}>{children}</View>
+      </Card>
+    </Animated.View>
   );
 }
 
 const sc = StyleSheet.create({
+  cardRoot: { 
+    marginBottom: 16, 
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 20px rgba(0,0,0,0.06)' },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+      android: { elevation: 3 },
+    })
+  },
   cardHeader: { paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   cardBody:   { padding: 20, gap: 16 },
 });
@@ -114,6 +127,42 @@ const fr = StyleSheet.create({
   label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: '#8D8D8D', letterSpacing: 0.5, textTransform: 'uppercase' },
 });
 
+function ProfileEditSkeleton({ topInset, insets, colors, isDesktop }: { 
+  topInset: number; insets: any; colors: any; isDesktop: boolean 
+}) {
+  return (
+    <View style={[s.root, { backgroundColor: colors.background }]}>
+      <View style={[s.topBar, { paddingTop: topInset + 8, borderBottomColor: colors.borderLight }]}>
+        <Skeleton width={38} height={38} borderRadius={11} />
+        <Skeleton width={120} height={24} borderRadius={6} />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Skeleton width={38} height={38} borderRadius={11} />
+          <Skeleton width={68} height={38} borderRadius={11} />
+        </View>
+      </View>
+      
+      <ScrollView contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop, { paddingBottom: insets.bottom + 48 }]}>
+        <View style={s.heroWrap}>
+          <Skeleton width={118} height={118} borderRadius={59} style={s.avatarBtn} />
+          <Skeleton width={180} height={28} borderRadius={8} style={{ marginBottom: 8 }} />
+          <Skeleton width={140} height={16} borderRadius={4} />
+        </View>
+        
+        <View style={[s.body, isDesktop && s.bodyDesktop]}>
+          {[1, 2, 3].map(i => (
+            <Card key={i} style={{ marginBottom: 16 }} padding={20}>
+              <View style={{ gap: 20 }}>
+                <View style={{ gap: 8 }}><Skeleton width={100} height={12} /><Skeleton width="100%" height={52} borderRadius={14} /></View>
+                <View style={{ gap: 8 }}><Skeleton width={80} height={12} /><Skeleton width="100%" height={52} borderRadius={14} /></View>
+              </View>
+            </Card>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function EditProfileScreen() {
@@ -123,7 +172,7 @@ export default function EditProfileScreen() {
   const topInset      = Platform.OS === 'web' ? 0 : insets.top;
   const { userId }    = useAuth();
 
-  const { data: user } = useQuery<UserData>({
+  const { data: user, isLoading } = useQuery<UserData>({
     queryKey: ['/api/users/me', userId],
     enabled: !!userId,
     queryFn:  () => api.users.me() as Promise<UserData>,
@@ -178,6 +227,7 @@ export default function EditProfileScreen() {
       queryClient.invalidateQueries({ queryKey: ['/api/users/me', userId] });
       queryClient.invalidateQueries({ queryKey: ['api/auth/me'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Added for success
       Alert.alert('Saved', 'Your profile has been updated.');
       goBackOrReplace('/(tabs)');
     },
@@ -287,6 +337,10 @@ export default function EditProfileScreen() {
     { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, color: colors.text }
   ];
 
+  if (isLoading && !user) {
+    return <ProfileEditSkeleton topInset={topInset} insets={insets} colors={colors} isDesktop={isDesktop} />;
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -330,9 +384,9 @@ export default function EditProfileScreen() {
           contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop, { paddingBottom: insets.bottom + 48 }]}
         >
           {/* ── Avatar hero ─────────────────────────────────────────── */}
-          <View style={s.heroWrap}>
+          <Animated.View entering={FadeInUp.duration(500)} style={s.heroWrap}>
             <LinearGradient
-              colors={[BLUE, '#004EA8']}
+              colors={gradients.midnight as unknown as [string, string]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
@@ -375,13 +429,13 @@ export default function EditProfileScreen() {
             <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.6)' }]}>
               {Platform.OS === 'web' ? 'Tap to change · drag & drop' : 'Tap avatar to change photo'}
             </Text>
-          </View>
+          </Animated.View>
 
           {/* ── Form body ───────────────────────────────────────────── */}
           <View style={[s.body, isDesktop && s.bodyDesktop]}>
 
             {/* Personal Information */}
-            <SectionCard title="Personal Information" colors={colors}>
+            <SectionCard title="Personal Information" colors={colors} index={0}>
               <FieldRow label="Display Name *">
                 <TextInput
                   style={inputStyle}
@@ -436,7 +490,7 @@ export default function EditProfileScreen() {
             </SectionCard>
 
             {/* About Me — Languages & Cultural Background */}
-            <SectionCard title="About Me" colors={colors}>
+            <SectionCard title="About Me" colors={colors} index={1}>
               <FieldRow label="Languages (comma-separated)">
                 <TextInput
                   style={inputStyle}
@@ -460,7 +514,7 @@ export default function EditProfileScreen() {
             </SectionCard>
 
             {/* Privacy & Visibility */}
-            <SectionCard title="Privacy Settings" colors={colors}>
+            <SectionCard title="Privacy Settings" colors={colors} index={2}>
               <View style={[s.privacyRow, { borderBottomColor: colors.borderLight }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_600SemiBold' }]}>Make Profile Public</Text>
@@ -468,7 +522,10 @@ export default function EditProfileScreen() {
                 </View>
                 <Switch 
                   value={form.isPublicProfile} 
-                  onValueChange={v => setForm(p => ({ ...p, isPublicProfile: v }))}
+                  onValueChange={v => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setForm(p => ({ ...p, isPublicProfile: v }));
+                  }}
                   trackColor={{ true: BLUE }}
                 />
               </View>
@@ -479,14 +536,17 @@ export default function EditProfileScreen() {
                 </View>
                 <Switch 
                   value={form.showLocation} 
-                  onValueChange={v => setForm(p => ({ ...p, showLocation: v }))}
+                  onValueChange={v => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setForm(p => ({ ...p, showLocation: v }));
+                  }}
                   trackColor={{ true: BLUE }}
                 />
               </View>
             </SectionCard>
 
             {/* Location */}
-            <SectionCard title="Location" colors={colors}>
+            <SectionCard title="Location" colors={colors} index={3}>
               <View style={s.twoCol}>
                 <View style={{ flex: 1 }}>
                   <FieldRow label="City">
@@ -544,7 +604,7 @@ export default function EditProfileScreen() {
             </SectionCard>
 
             {/* Social Links */}
-            <SectionCard title="Social & Web" colors={colors}>
+            <SectionCard title="Social & Web" colors={colors} index={4}>
               {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => (
                 <View key={f} style={s.socialRow}>
                   <View style={[s.socialIcon, { backgroundColor: color + '18' }]}>
@@ -568,18 +628,20 @@ export default function EditProfileScreen() {
             </SectionCard>
 
             {/* Save button */}
-            <Button
-              variant="gradient"
-              gradientColors={[BLUE, '#004EA8']}
-              size="lg"
-              leftIcon="checkmark-circle"
-              onPress={handleSave}
-              loading={isBusy}
-              style={{ marginTop: 4 }}
-              labelStyle={TextStyles.headline}
-            >
-              Save Profile
-            </Button>
+            <Animated.View entering={FadeInDown.delay(400).duration(500)}>
+              <Button
+                variant="gradient"
+                gradientColors={gradients.culturepassBrand as unknown as [string, string]}
+                size="lg"
+                leftIcon="checkmark-circle"
+                onPress={handleSave}
+                loading={isBusy}
+                style={[s.saveBtn, { marginTop: 12 }]}
+                labelStyle={TextStyles.headline}
+              >
+                Save Profile
+              </Button>
+            </Animated.View>
 
           </View>
         </ScrollView>

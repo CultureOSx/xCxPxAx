@@ -45,11 +45,22 @@ export const ticketsService = {
   },
 
   async listForUser(userId: string): Promise<FirestoreTicket[]> {
-    const snap = await ticketsCol()
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as FirestoreTicket[];
+    try {
+      const snap = await ticketsCol()
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+      return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as FirestoreTicket[];
+    } catch (err: any) {
+      // Graceful fallback for missing composite indexes (common in new rollouts)
+      if (err?.message?.includes('index') || err?.code === 9) {
+        console.warn(`[ticketsService] Index missing for userId+createdAt. Falling back to in-memory sort for ${userId}.`);
+        const snap = await ticketsCol().where('userId', '==', userId).get();
+        const tickets = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as FirestoreTicket[];
+        return tickets.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      }
+      throw err;
+    }
   },
 
   async listAll(limit = 100): Promise<FirestoreTicket[]> {

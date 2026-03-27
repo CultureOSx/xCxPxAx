@@ -66,6 +66,9 @@ export interface FirestoreEvent {
   favoriteCount?: number;
   shareCount?: number;
   ticketSalesCount?: number;
+  ticketsSold?: number;
+  ticketClickCount?: number;
+  popularityScore?: number;
   sourceSystem?: string;
   searchTokens?: string[];
   metadata?: Record<string, any>;
@@ -122,67 +125,85 @@ export const eventsService = {
     if (filters.country) baseQuery = baseQuery.where('country', '==', filters.country);
     if (filters.category) baseQuery = baseQuery.where('category', '==', filters.category);
     if (filters.isFeatured !== undefined) baseQuery = baseQuery.where('isFeatured', '==', filters.isFeatured);
-    // Date inequalities and complex secondary filters are shifted safely to memory-level checks 
-    // to bypass Firestore's rigid Composite Index requirements while maintaining 0(n) speed.
 
     const isGeoQuery = filters.centerLat != null && filters.centerLng != null && filters.radiusInKm != null;
     let items: FirestoreEvent[] = [];
     let total = 0;
+    const { page, pageSize } = pagination;
 
     if (isGeoQuery) {
       const center: [number, number] = [filters.centerLat!, filters.centerLng!];
       const radiusInM = filters.radiusInKm! * 1000;
       const bounds = geofire.geohashQueryBounds(center, radiusInM);
       const promises = [];
-
-      for (const b of bounds) {
-        const q = baseQuery.orderBy('geoHash').startAt(b[0]).endAt(b[1]);
-        promises.push(q.get());
-      }
-      const snapshots = await Promise.all(promises);
       const matchingDocs: FirestoreEvent[] = [];
 
-      for (const snap of snapshots) {
-        for (const doc of snap.docs) {
-          const data = { ...doc.data(), id: doc.id } as FirestoreEvent;
-          
-          let matchesAdvanced = true;
-          if (filters.dateFrom && data.date < filters.dateFrom) matchesAdvanced = false;
-          if (filters.dateTo && data.date > filters.dateTo) matchesAdvanced = false;
-          if (filters.isFree !== undefined && data.isFree !== filters.isFree) matchesAdvanced = false;
-          if (filters.venue && data.venue !== filters.venue) matchesAdvanced = false;
-          if (filters.time && data.time !== filters.time) matchesAdvanced = false;
-
-          if (matchesAdvanced && data.latitude != null && data.longitude != null) {
-            const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
-            if (distanceInKm <= filters.radiusInKm!) {
-              matchingDocs.push(data);
+      try {
+        for (const b of bounds) {
+          const q = baseQuery.orderBy('geoHash').startAt(b[0]).endAt(b[1]);
+          promises.push(q.get());
+        }
+        const snapshots = await Promise.all(promises);
+        for (const snap of snapshots) {
+          for (const doc of snap.docs) {
+            matchingDocs.push({ ...doc.data(), id: doc.id } as FirestoreEvent);
+          }
+        }
+      } catch (err: any) {
+        if (err?.message?.includes('index') || err?.code === 9) {
+          console.warn('[eventsService] Index missing for status+geoHash. Falling back to multi-bound search without order.');
+          const fallbackPromises = [];
+          for (const b of bounds) {
+            const q = baseQuery.where('geoHash', '>=', b[0]).where('geoHash', '<=', b[1]);
+            fallbackPromises.push(q.get());
+          }
+          const snapshots = await Promise.all(fallbackPromises);
+          for (const snap of snapshots) {
+            for (const doc of snap.docs) {
+              matchingDocs.push({ ...doc.data(), id: doc.id } as FirestoreEvent);
             }
+          }
+        } else {
+          throw err;
+        }
+      }
+
+      const uniqueDocs = Array.from(new Map(matchingDocs.map(d => [d.id, d])).values());
+      let filteredDocs: FirestoreEvent[] = [];
+
+      for (const data of uniqueDocs) {
+        let matchesAdvanced = true;
+        if (filters.dateFrom && data.date < filters.dateFrom) matchesAdvanced = false;
+        if (filters.dateTo && data.date > filters.dateTo) matchesAdvanced = false;
+        if (filters.isFree !== undefined && data.isFree !== filters.isFree) matchesAdvanced = false;
+        if (filters.venue && data.venue !== filters.venue) matchesAdvanced = false;
+        if (filters.time && data.time !== filters.time) matchesAdvanced = false;
+
+        if (matchesAdvanced && data.latitude != null && data.longitude != null) {
+          const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
+          if (distanceInKm <= filters.radiusInKm!) {
+            filteredDocs.push(data);
           }
         }
       }
 
-      matchingDocs.sort((a, b) => a.date.localeCompare(b.date));
-      total = matchingDocs.length;
-      
-      const { page, pageSize } = pagination;
-      items = matchingDocs.slice((page - 1) * pageSize, page * pageSize);
+      filteredDocs.sort((a, b) => a.date.localeCompare(b.date));
+      total = filteredDocs.length;
+      const offset = (page - 1) * pageSize;
+      items = filteredDocs.slice(offset, offset + pageSize);
 
       return {
         items,
         total,
         page,
         pageSize,
-        hasNextPage: page * pageSize < total,
+        hasNextPage: offset + items.length < total,
       };
-    }
-
-      const { page, pageSize } = pagination;
-      
+    } else {
+      // Non-geo query: fetch all candidates and filter in memory for complex criteria
       const snap = await baseQuery.get();
       let memItems = snap.docs.map(doc => ({ ...doc.data() as FirestoreEvent, id: doc.id }));
 
-      // Memory filtering for unindexed complex metrics
       if (filters.dateFrom) memItems = memItems.filter(e => e.date >= filters.dateFrom!);
       if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
       if (filters.isFree !== undefined) memItems = memItems.filter(e => e.isFree === filters.isFree);
@@ -194,7 +215,7 @@ export const eventsService = {
 
       const offset = (page - 1) * pageSize;
       items = memItems.slice(offset, offset + pageSize);
-      
+
       return {
         items,
         total,
@@ -202,7 +223,8 @@ export const eventsService = {
         pageSize,
         hasNextPage: offset + items.length < total,
       };
-    },
+    }
+  },
 
   async create(data: Omit<FirestoreEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<FirestoreEvent> {
     const now = new Date().toISOString();

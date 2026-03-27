@@ -10,7 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,12 +21,12 @@ import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData } from '@/shared/schema';
 import { useColors } from '@/hooks/useColors';
-import { goBackOrReplace } from '@/lib/navigation';
-import { TextStyles } from '@/constants/typography';
+import { Skeleton } from '@/components/ui/Skeleton';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,12 +58,12 @@ interface EventsResponse {
 // ---------------------------------------------------------------------------
 
 function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  return new Date(dateStr).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
 function statusColor(status?: string, colors?: ReturnType<typeof useColors>): string {
@@ -116,11 +116,37 @@ function AnalyticsCard({
 // Main Dashboard
 // ---------------------------------------------------------------------------
 
-function OrganizerDashboardContent() {
+function DashboardSkeleton() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const { hPad } = useLayout();
+  const topPad = Platform.OS === 'web' ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ height: 180, backgroundColor: CultureTokens.indigo, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, padding: 20, paddingTop: topPad + 20 }}>
+        <Skeleton width={150} height={24} borderRadius={8} />
+        <Skeleton width={100} height={16} borderRadius={4} style={{ marginTop: 8 }} />
+      </View>
+      <View style={{ paddingHorizontal: hPad, marginTop: 20, gap: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <Skeleton width="48%" height={100} borderRadius={24} />
+          <Skeleton width="48%" height={100} borderRadius={24} />
+        </View>
+        <Skeleton width="100%" height={120} borderRadius={24} style={{ marginTop: 8 }} />
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} width="100%" height={80} borderRadius={20} style={{ marginTop: 8 }} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function OrganizerDashboardContent() {
+  const insets = useSafeAreaInsets();
+  const { hPad, isWeb } = useLayout();
   const { userId, user } = useAuth();
-  const { isOrganizer, isAdmin, isLoading: roleLoading } = useRole();
+  const { isOrganizer, isLoading: roleLoading } = useRole();
   const colors = useColors();
   const topPad = Platform.OS === 'web' ? 0 : insets.top;
   
@@ -168,29 +194,9 @@ function OrganizerDashboardContent() {
     },
   };
 
-  const publishMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      const res = await apiRequest('POST', `/api/events/${eventId}/publish`);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events', { organizerId: userId }] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    },
-    onError: (err: Error) => Alert.alert('Error', err.message),
-  });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      const res = await apiRequest('DELETE', `/api/events/${eventId}`);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events', { organizerId: userId }] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    },
-    onError: (err: Error) => Alert.alert('Error', err.message),
-  });
+
+
 
   const sortedEvents = [...events]
     .filter((e) => {
@@ -275,8 +281,8 @@ function OrganizerDashboardContent() {
               <Text style={[dashboardStyles.sectionTitle, { color: colors.text }]}>Heritage Playlist</Text>
               <Pressable 
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  Alert.alert('Content Studio', 'Opening playlist creator...');
+                  if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push('/dashboard/content-studio');
                 }} 
                 style={dashboardStyles.addSmallBtn}
               >
@@ -295,7 +301,10 @@ function OrganizerDashboardContent() {
                 <Animated.View key={item.id} entering={FadeInRight.delay(idx * 50)}>
                   <Pressable 
                     style={[dashboardStyles.contentRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                    onPress={() => Alert.alert('Edit Item', `Open editor for ${item.title}`)}
+                    onPress={() => {
+                      if(!isWeb) Haptics.selectionAsync();
+                      router.push('/dashboard/content-studio');
+                    }}
                   >
                     <View style={dashboardStyles.contentThumbWrap}>
                       <Ionicons name="musical-note" size={20} color={CultureTokens.indigo} style={dashboardStyles.contentThumbPlaceholder} />
@@ -348,7 +357,9 @@ function OrganizerDashboardContent() {
             </View>
 
             {isLoading ? (
-               <ActivityIndicator style={{ marginTop: 40 }} color={CultureTokens.indigo} />
+               <View style={{ gap: 12, marginTop: 20 }}>
+                 {[1, 2, 3, 4].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={20} />)}
+               </View>
              ) : sortedEvents.length === 0 ? (
                <View style={dashboardStyles.empty}>
                  <Ionicons name="calendar-outline" size={40} color={colors.textTertiary} />
@@ -409,7 +420,22 @@ const dashboardStyles = StyleSheet.create({
   
   performanceGrid: { gap: 16 },
   analyticsRow: { flexDirection: 'row', gap: 16 },
-  analyticsBox: { flex: 1, padding: 16, borderRadius: 24, borderWidth: 1 },
+  analyticsBox: { 
+    flex: 1, 
+    padding: 16, 
+    borderRadius: 24, 
+    borderWidth: 1,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.35)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   analyticsTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   analyticsIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.03)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 },
@@ -417,7 +443,25 @@ const dashboardStyles = StyleSheet.create({
   analyticsValue: { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
   analyticsLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
   
-  premiumBanner: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24, borderWidth: 1, gap: 16, marginTop: 8 },
+  premiumBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 20, 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    gap: 16, 
+    marginTop: 8,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 16px rgba(44,42,114,0.1)' },
+      ios: {
+        shadowColor: '#2C2A72',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+      },
+      android: { elevation: 4 }
+    })
+  },
   bannerIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: CultureTokens.gold + '15', alignItems: 'center', justifyContent: 'center' },
   bannerTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   bannerSub: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
@@ -433,7 +477,24 @@ const dashboardStyles = StyleSheet.create({
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
   filterBtnText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
   
-  eventRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+  eventRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16, 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    marginBottom: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   eventInfo: { flex: 1, gap: 2 },
   eventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
   eventMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
@@ -448,14 +509,52 @@ const dashboardStyles = StyleSheet.create({
   addSmallBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: CultureTokens.indigo + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   addSmallText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
   
-  contentRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12, gap: 12 },
+  contentRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 12, 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    marginBottom: 12, 
+    gap: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   contentThumbWrap: { width: 48, height: 48, borderRadius: 12, backgroundColor: CultureTokens.indigo + '10', alignItems: 'center', justifyContent: 'center' },
   contentThumbPlaceholder: { opacity: 0.5 },
   
   tipsCard: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 16, marginTop: 12 },
   tipsText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
 
-  fab: { position: 'absolute', bottom: 32, right: 24, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, overflow: 'hidden' },
+  fab: { 
+    position: 'absolute', 
+    bottom: 32, 
+    right: 24, 
+    width: 64, 
+    height: 64, 
+    borderRadius: 32, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 16px rgba(0,0,0,0.3)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+      },
+      android: { elevation: 8 }
+    }),
+    overflow: 'hidden' 
+  },
 });
 
 export default function OrganizerDashboard() {

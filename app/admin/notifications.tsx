@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -100,7 +102,23 @@ const np = StyleSheet.create({
   phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
   phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
   phoneLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 1.1 },
-  notifCard:  { width: '100%', borderRadius: 14, borderWidth: 1, padding: 14, gap: 5 },
+  notifCard:  { 
+    width: '100%', 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    padding: 14, 
+    gap: 5 ,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
   notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   notifApp:   { flex: 1, fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
@@ -135,7 +153,10 @@ function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label:
   return (
     <Pressable
       style={({ pressed }) => [ql.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }, pressed && { opacity: 0.75 }]}
-      onPress={onPress}
+      onPress={() => {
+        if(Platform.OS !== 'web') Haptics.selectionAsync();
+        onPress();
+      }}
       accessibilityRole="button"
     >
       <View style={[ql.iconWrap, { backgroundColor: accent + '18' }]}>
@@ -150,11 +171,51 @@ function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label:
   );
 }
 const ql = StyleSheet.create({
-  card:     { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12 },
+  card:     { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12, 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    paddingHorizontal: 14, 
+    paddingVertical: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   label:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
 });
+
+function NotificationsSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const { isDesktop, hPad } = useLayout();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ height: 100, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
+      <View style={{ padding: hPad, gap: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Skeleton width="48%" height={60} borderRadius={14} />
+          <Skeleton width="48%" height={60} borderRadius={14} />
+        </View>
+        <Skeleton width="100%" height={200} borderRadius={16} />
+        <Skeleton width="100%" height={250} borderRadius={16} />
+      </View>
+    </View>
+  );
+}
 
 // ─── Main screen ────────────────────────────────────────────────────────────
 export default function AdminNotificationsScreen() {
@@ -261,7 +322,7 @@ export default function AdminNotificationsScreen() {
   };
 
   if (roleLoading || (!canAccess && !roleLoading)) {
-    return <View style={[s.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /></View>;
+    return <NotificationsSkeleton />;
   }
 
   // Approval countdown
@@ -284,7 +345,10 @@ export default function AdminNotificationsScreen() {
       {/* Header */}
       <Animated.View entering={FadeInDown.duration(280)} style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider }]}>
         <Pressable
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+          onPress={() => {
+            if(Platform.OS !== 'web') Haptics.selectionAsync();
+            router.canGoBack() ? router.back() : router.replace('/(tabs)');
+          }}
           style={[s.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
           accessibilityRole="button" accessibilityLabel="Go back"
         >
@@ -710,7 +774,22 @@ const s = StyleSheet.create({
   previewCol:       { gap: 14, marginTop: 4 },
   previewColDesktop:{ flex: 2 },
 
-  card:             { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  card:             { 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    padding: 16, 
+    gap: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
   filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
@@ -730,7 +809,22 @@ const s = StyleSheet.create({
   row2Desktop:      { flexDirection: 'row' },
 
   // Approval
-  approvalBanner:   { borderRadius: 14, borderWidth: 1, padding: 14, gap: 10 },
+  approvalBanner:   { 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    padding: 14, 
+    gap: 10,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   approvalBannerTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
   approvalBannerSub:{ fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
@@ -758,7 +852,22 @@ const s = StyleSheet.create({
   sendBtnText:      { fontSize: 14, fontFamily: 'Poppins_700Bold' },
 
   // Results / stats
-  statsCard:        { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  statsCard:        { 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    padding: 16, 
+    gap: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   statsCardTitle:   { fontSize: 15, fontFamily: 'Poppins_700Bold' },
   statRow:          { flexDirection: 'row', gap: 10 },
   statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },

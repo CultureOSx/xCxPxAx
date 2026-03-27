@@ -160,16 +160,7 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
   chipActiveShadow: {
-    ...Platform.select({
-      web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.12)' },
-      default: {
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
-      },
-    }),
+    boxShadow: '0px 2px 6px rgba(0,0,0,0.12)',
   },
   chipActiveRing: {
     borderWidth: 2,

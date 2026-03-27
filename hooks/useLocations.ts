@@ -10,17 +10,18 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type AustralianState } from '@/lib/api';
-import { AUSTRALIAN_STATES, CITIES_BY_STATE } from '@/constants/locations';
+import { GLOBAL_REGIONS, CITIES_BY_STATE } from '@/constants/locations';
 
 // ---------------------------------------------------------------------------
 // Build the placeholder from the static constants file so picker is
 // immediately usable on first render / offline.
 // ---------------------------------------------------------------------------
-const STATIC_STATES: AustralianState[] = AUSTRALIAN_STATES.map((s) => ({
+const STATIC_STATES: any[] = GLOBAL_REGIONS.map((s) => ({
   name: s.label,
   code: s.value,
   emoji: s.emoji,
-  cities: CITIES_BY_STATE[s.value],
+  country: s.country,
+  cities: CITIES_BY_STATE[s.value] || [],
 }));
 
 // ---------------------------------------------------------------------------

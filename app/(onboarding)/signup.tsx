@@ -36,6 +36,8 @@ import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndic
 import { LinearGradient } from 'expo-linear-gradient';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
+import { captureEvent, identifyUser } from '@/lib/analytics';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 export default function SignUpScreen() {
   const colors = useColors();
@@ -113,6 +115,12 @@ export default function SignUpScreen() {
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);
       }
+      
+      const u = firebaseAuth.currentUser;
+      if (u) {
+        identifyUser(u.uid, { email: u.email, name: u.displayName, role });
+        captureEvent('Signup Success', { method: 'google', role });
+      }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as any);
     } catch (e: any) {
@@ -143,6 +151,13 @@ export default function SignUpScreen() {
         rawNonce: credential.authorizationCode ?? '',
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
+
+      const u = firebaseAuth.currentUser;
+      if (u) {
+        identifyUser(u.uid, { email: u.email, name: u.displayName, role });
+        captureEvent('Signup Success', { method: 'apple', role });
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as any);
     } catch (e: any) {
@@ -176,6 +191,9 @@ export default function SignUpScreen() {
       
       // Sync to backend DB
       await api.auth.register({ displayName: normalizedName, role });
+
+      identifyUser(credential.user.uid, { email: normalizedEmail, name: normalizedName, role });
+      captureEvent('Signup Success', { method: 'email', role });
 
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -261,7 +279,7 @@ export default function SignUpScreen() {
                 <View style={[styles.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
                   <Ionicons name="globe-outline" size={32} color={colors.textInverse} />
                 </View>
-                <Text style={[styles.brandLabel, { color: CultureTokens.indigo }]}>CulturePass.app</Text>
+                <BrandWordmark size="md" withTagline centered light />
               </View>
 
               <Text style={[styles.title, { color: colors.textInverse }]}>Create Account.</Text>

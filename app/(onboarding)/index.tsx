@@ -10,6 +10,8 @@ import { SocialButton } from '@/components/ui/SocialButton';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { BlurView } from 'expo-blur';
 import { useColors } from '@/hooks/useColors';
+import { Image } from 'expo-image';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 const FEATURES = [
   { icon: 'calendar' as const, color: CultureTokens.gold, bg: 'rgba(255, 140, 66, 0.15)', text: 'Discover cultural events near you' },
@@ -69,11 +71,14 @@ export default function WelcomeScreen() {
 
           <View style={[styles.cardContent, { padding: CardTokens.paddingLarge * 2 }]}>
             <View style={styles.headerBlock}>
-              <View style={[styles.logoContainer, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
-                <Ionicons name="earth" size={40} color={colors.textInverse} />
+              <View style={[styles.logoContainer, { backgroundColor: 'transparent', borderColor: 'transparent' }]}>
+                <Image 
+                  source={require('@/assets/images/culturepass-logo.png')} 
+                  style={{ width: 100, height: 100, borderRadius: 50 }} 
+                  contentFit="contain"
+                />
               </View>
-              <Text style={[styles.title, { color: colors.textInverse }]}>CulturePass</Text>
-              <Text style={styles.tagline}>Belong Anywhere</Text>
+              <BrandWordmark size="xl" withTagline centered light />
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                 Connecting global communities through events, culture, perks & shared identity. Powered by #CulturePass.
               </Text>
@@ -130,6 +135,8 @@ export default function WelcomeScreen() {
                 onPress={handleSkip} 
                 style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
                 hitSlop={12}
+                accessibilityLabel="Skip onboarding and explore as guest"
+                accessibilityRole="button"
               >
                 <Text style={[styles.skipText, { color: colors.textSecondary }]}>Skip and explore</Text>
                 <Ionicons name="arrow-forward" size={14} color={colors.textSecondary} />

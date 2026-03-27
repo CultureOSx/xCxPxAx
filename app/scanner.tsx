@@ -39,6 +39,8 @@ import {
 } from '@/components/scanner/utils';
 import { TicketResultCard } from '@/components/scanner/TicketResultCard';
 
+const isWeb = Platform.OS === 'web';
+
 export default function ScannerScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -188,10 +190,12 @@ export default function ScannerScreen() {
 
   const handleManualTicketScan = useCallback(() => {
     if (!ticketCode.trim()) { Alert.alert('Enter Code', 'Please enter a ticket code.'); return; }
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     doTicketScan(ticketCode);
   }, [ticketCode, doTicketScan]);
 
   const startTicketCamera = useCallback(async () => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const ok = await ensureCameraPermission();
     if (!ok) return;
     setTicketResult(null);
@@ -263,6 +267,7 @@ export default function ScannerScreen() {
   const handleCpManualScan = useCallback(async () => {
     const input = cpInput.trim();
     if (!input) { Alert.alert('Enter Data', 'Enter a CulturePass ID or paste QR data.'); return; }
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
     setIsLookingUp(true);
     const contact = parseCulturePassInput(input);
@@ -283,6 +288,7 @@ export default function ScannerScreen() {
   }, [cpInput, lookupCpid]);
 
   const startCpCamera = useCallback(async () => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const ok = await ensureCameraPermission();
     if (!ok) return;
     cpLastScanned.current = '';

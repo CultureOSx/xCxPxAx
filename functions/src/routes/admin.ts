@@ -349,6 +349,23 @@ adminRouter.post('/admin/algolia-backfill', requireRole('admin', 'platformAdmin'
 });
 
 // ---------------------------------------------------------------------------
+// GeoHash / Coordinates backfill (AU postcode-based best-effort)
+// ---------------------------------------------------------------------------
+adminRouter.post('/admin/geohash-backfill', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
+  try {
+    const { runGeohashBackfill } = await import('../jobs/geohashBackfill');
+    const forceGeoHash = req.body?.forceGeoHash === true;
+    const overwriteCoordinates = req.body?.overwriteCoordinates === true;
+    const limit = typeof req.body?.limit === 'number' ? req.body.limit : undefined;
+    const result = await runGeohashBackfill({ forceGeoHash, overwriteCoordinates, limit });
+    return res.json({ ok: true, ...result });
+  } catch (err: any) {
+    captureRouteError(err, 'POST /admin/geohash-backfill');
+    return res.status(500).json({ error: err?.message ?? 'Geo backfill failed' });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Discover curation
 // ---------------------------------------------------------------------------
 adminRouter.get('/admin/discover-curation', requireRole('admin', 'platformAdmin'), async (_req: Request, res: Response) => {

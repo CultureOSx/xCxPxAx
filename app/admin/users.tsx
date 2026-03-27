@@ -21,6 +21,7 @@ import { CultureTokens, gradients } from '@/constants/theme';
 import type { UserRole } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
 
@@ -84,7 +85,7 @@ function avatarColor(user: AdminUser): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function fmtRelative(iso?: string): string {
@@ -236,6 +237,16 @@ const ms = StyleSheet.create({
   sheet:        {
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     ...(isWeb ? { borderRadius: 20, width: 480, marginBottom: 40 } : {}),
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.45)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 32,
+      },
+      android: { elevation: 12 }
+    }),
     paddingTop: 8, paddingBottom: isWeb ? 24 : Platform.OS === 'ios' ? 36 : 20,
   },
   handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
@@ -267,7 +278,20 @@ function UserCard({ user, onEditRole, onToggleVerify, canEditRole, canVerify, in
 
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 240)).springify().damping(20)}>
-      <View style={[uc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+      <View style={[uc.card, { 
+        backgroundColor: colors.surface, 
+        borderColor: colors.borderLight,
+        ...Platform.select({
+          web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+          },
+          android: { elevation: 2 }
+        })
+      }]}>
         {/* Top row: avatar + info + role */}
         <View style={uc.topRow}>
           <UserAvatar user={user} size={46} />
@@ -497,11 +521,54 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
+  chip: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8, 
+    paddingHorizontal: 12, 
+    paddingVertical: 10, 
+    borderRadius: 14, 
+    borderWidth: 1,
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: { elevation: 1 }
+    })
+  },
   icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
 });
+
+function AdminUsersSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const { isDesktop, hPad } = useLayout();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ height: 100, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
+      <View style={{ padding: 16, gap: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {[1, 2, 3].map(i => <Skeleton key={i} width={100} height={60} borderRadius={14} />)}
+        </View>
+        <Skeleton width="100%" height={50} borderRadius={12} />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} width={80} height={34} borderRadius={20} />)}
+        </View>
+        <View style={{ marginTop: 10, gap: 12 }}>
+          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={16} />)}
+        </View>
+      </View>
+    </View>
+  );
+}
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const ALL = '__all__';
@@ -607,7 +674,7 @@ function AdminUsersContent() {
   const canAdmin     = role === 'admin' || role === 'platformAdmin';
 
   if (roleLoading) {
-    return <View style={[s.fill, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}><ActivityIndicator color={colors.primary} /></View>;
+    return <AdminUsersSkeleton />;
   }
 
   return (
@@ -750,13 +817,12 @@ function AdminUsersContent() {
           ItemSeparatorComponent={() =>
             isDesktop ? null : <View style={{ height: 8 }} />
           }
-          ListEmptyComponent={
-            isLoading ? (
-              <View style={s.emptyWrap}>
-                <ActivityIndicator color={colors.primary} size="large" />
-                <Text style={[s.emptyText, { color: colors.textSecondary }]}>Loading users…</Text>
-              </View>
-            ) : (
+        ListEmptyComponent={
+          isLoading ? (
+            <View style={{ gap: 12 }}>
+              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={16} />)}
+            </View>
+          ) : (
               <View style={s.emptyWrap}>
                 <Ionicons name="people-outline" size={44} color={colors.textTertiary} />
                 <Text style={[s.emptyTitle, { color: colors.text }]}>No users found</Text>

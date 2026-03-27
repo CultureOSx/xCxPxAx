@@ -807,8 +807,24 @@ const communities = {
   joined: () =>
     request<{ communityIds: string[] }>('GET', 'api/communities/joined'),
 
-  create: (data: { name: string; description?: string; communityCategory?: string; city?: string; country?: string; imageUrl?: string }) =>
-    request<{ community: Community }>('POST', 'api/communities', data).then(r => r.community),
+  create: (data: {
+    name: string;
+    description?: string;
+    communityCategory?: string;
+    city?: string;
+    country?: string;
+    imageUrl?: string;
+    nationalityId?: string;
+    cultureIds?: string[];
+    languageIds?: string[];
+    diasporaGroupIds?: string[];
+    website?: string;
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    telegram?: string;
+    joinMode?: 'open' | 'request' | 'invite';
+  }) => request<{ community: Community }>('POST', 'api/communities', data).then(r => r.community),
 };
 
 // ---------------------------------------------------------------------------

@@ -66,11 +66,11 @@ function timeAgo(iso: string): string {
   if (h < 24)  return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 30)  return `${d}d ago`;
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function fmtFull(iso: string): string {
-  return new Date(iso).toLocaleString('en-AU', {
+  return new Date(iso).toLocaleString(undefined, {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
   });

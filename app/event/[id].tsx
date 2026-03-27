@@ -30,15 +30,47 @@ import { Card } from '@/components/ui/Card';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
+import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
+import { Skeleton } from '@/components/ui/Skeleton';
+
 
 const isWeb = Platform.OS === 'web';
+
+function safeIcsFilenameBase(title: string): string {
+  const t = title.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').trim();
+  return (t || 'culturepass-event').slice(0, 80);
+}
+
+function promptRsvpLogin(redirectPath: string) {
+  if (isWeb && typeof window !== 'undefined') {
+    if (window.confirm('Please sign in to RSVP.\n\nOpen sign in?')) {
+      router.push(routeWithRedirect('/(onboarding)/login', redirectPath) as never);
+    }
+    return;
+  }
+  Alert.alert('Login required', 'Please sign in to RSVP.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', redirectPath) as never) },
+  ]);
+}
+
+function confirmRemoveRsvp(onRemove: () => void) {
+  if (isWeb && typeof window !== 'undefined') {
+    if (window.confirm('Remove yourself from the guest list?')) onRemove();
+    return;
+  }
+  Alert.alert('Remove RSVP?', 'You will no longer appear as going to this event.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Remove', style: 'destructive', onPress: onRemove },
+  ]);
+}
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return dateStr;
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function cityToCoordinates(city?: string): { latitude: number; longitude: number } | null {
@@ -97,6 +129,50 @@ interface TicketTier {
   available: number;
 }
 
+function EventDetailSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Skeleton width="100%" height={isDesktop ? 450 : 380 + topInset} borderRadius={isDesktop ? 32 : 0} style={isDesktop && { margin: 20, alignSelf: 'center', width: '90%' }} />
+        <View style={{ padding: 20, gap: 16 }}>
+          {/* Main Info Card Skeleton */}
+          <View style={{ 
+            backgroundColor: colors.surface, 
+            borderRadius: 16, 
+            padding: 20, 
+            marginVertical: 10,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+          }}>
+            <Skeleton width={120} height={20} borderRadius={10} />
+            <Skeleton width="80%" height={32} borderRadius={10} style={{ marginVertical: 12 }} />
+            <Skeleton width="150%" height={16} borderRadius={4} />
+          </View>
+          
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
+            <Skeleton width="48%" height={100} borderRadius={20} />
+            <Skeleton width="48%" height={100} borderRadius={20} />
+          </View>
+          
+          <Skeleton width="100%" height={120} borderRadius={20} style={{ marginTop: 12 }} />
+          
+          <View style={{ gap: 12, marginTop: 20 }}>
+            {[1, 2].map(i => (
+              <Skeleton key={i} width="100%" height={80} borderRadius={20} />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -111,11 +187,7 @@ export default function EventDetailScreen() {
   });
 
   if (isLoading) {
-    return (
-      <View style={s.loadingContainer}>
-        <ActivityIndicator size="large" color={CultureTokens.indigo} />
-      </View>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (isError || !event) {
@@ -239,15 +311,25 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
 
   const handleRsvp = useCallback((status: 'going' | 'maybe' | 'not_going') => {
     if (!userId) {
-      Alert.alert('Login required', 'Please sign in to RSVP.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
-      ]);
+      promptRsvpLogin(pathname);
       return;
     }
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     rsvpMutation.mutate(status);
   }, [userId, rsvpMutation, pathname]);
+
+  const handlePrimaryGoingPress = useCallback(() => {
+    if (!userId) {
+      promptRsvpLogin(pathname);
+      return;
+    }
+    if (!isWeb) Haptics.selectionAsync();
+    if (myRsvp === 'going') {
+      confirmRemoveRsvp(() => rsvpMutation.mutate('not_going'));
+      return;
+    }
+    rsvpMutation.mutate('going');
+  }, [userId, pathname, myRsvp, rsvpMutation]);
 
   // ── External Ticket Click Tracking ────────────────────────────────────────
   const handleExternalTicketPress = useCallback(async () => {
@@ -345,7 +427,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     const body = {
       userId, eventId: event.id, eventTitle: event.title, eventDate: event.date, eventTime: event.time,
       eventVenue: event.venue, tierName: ticketLabel, quantity: effectiveQty, totalPriceCents: totalPrice,
-      currency: "AUD", imageColor: (event as any).imageColor ?? CultureTokens.indigo,
+      currency: getCurrencyForCountry(event?.country), imageColor: (event as any).imageColor ?? CultureTokens.indigo,
     };
     if (totalPrice <= 0) { purchaseFreeTicket(body); return; }
     purchaseMutation.mutate(body);
@@ -398,6 +480,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   }, [event.attending, event.capacity]);
 
   const handleShare = useCallback(async () => {
+    if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const shareUrl = `https://culturepass.app/event/${event.id}`;
       const message = `${event.title}\n📅 ${formatDate(event.date)}\n📍 ${event.venue}\n\nJoin us on CulturePass: ${shareUrl}`;
@@ -473,125 +556,213 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     if (!calendarParams) { Alert.alert('Calendar unavailable', 'We could not parse this event date.'); return; }
     const { start, end, title, details, location } = calendarParams;
     const ics = buildICS(title, start, end, details, location);
+    if (isWeb && typeof document !== 'undefined') {
+      try {
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${safeIcsFilenameBase(title)}.ics`;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        Alert.alert('Error', 'Could not download the calendar file. Try Google or Outlook instead.');
+      }
+      setCalendarSheetVisible(false);
+      return;
+    }
     const uri = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
     Linking.openURL(uri).catch(() => Alert.alert('Error', 'Could not open Calendar. Try downloading the .ics file.'));
     setCalendarSheetVisible(false);
   }, [calendarParams]);
 
-  const BottomBarInner = ({ event: ev, colors: c, setCalendarSheetVisible: setCalSheet, openTicketModal: openModal }: any) => {
+  const openCalendarSheet = useCallback(() => {
+    if (!calendarParams) {
+      Alert.alert('Calendar unavailable', 'We could not parse this event date.');
+      return;
+    }
+    setCalendarSheetVisible(true);
+  }, [calendarParams]);
+
+  const BottomBarInner = ({
+    event: ev,
+    openTicketModal: openModal,
+  }: {
+    event: EventData;
+    openTicketModal: (tierIdx?: number) => void;
+  }) => {
+    const calendarBtn = (
+      <Pressable
+        onPress={openCalendarSheet}
+        style={({ pressed }) => [
+          s.iconActionBtn,
+          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+          pressed && { opacity: 0.7 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Add to calendar"
+      >
+        <Ionicons name="calendar-number-outline" size={22} color={colors.text} />
+      </Pressable>
+    );
+
     if (isFreeOrOpen) {
-      // RSVP mode for free/open events (Premium Glass Design)
+      const goingHeadline = Math.max(ev.rsvpGoing ?? 0, ev.attending ?? 0);
+      const pillMaybeActive = myRsvp === 'maybe';
+      const pillCantActive = myRsvp === 'not_going';
+
+      const onMaybe = () => {
+        if (!userId) {
+          promptRsvpLogin(pathname);
+          return;
+        }
+        if (!isWeb) Haptics.selectionAsync();
+        handleRsvp('maybe');
+      };
+      const onCant = () => {
+        if (!userId) {
+          promptRsvpLogin(pathname);
+          return;
+        }
+        if (!isWeb) Haptics.selectionAsync();
+        handleRsvp('not_going');
+      };
+
       return (
-        <>
-          <View style={s.bottomPriceSection}>
-            <Text style={s.bottomPriceLabel}>Free Entry</Text>
+        <View style={s.unifiedBarRow}>
+          <View style={[s.bottomPriceSection, s.unifiedBarStat]}>
+            <Text style={s.bottomPriceLabel}>Free</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="people-outline" size={14} color={CultureTokens.teal} />
-              <Text style={[s.bottomPriceValue, { color: CultureTokens.teal, fontSize: 18 }]}>
-                {ev.rsvpGoing || 0}
+              <Text style={[s.bottomPriceValue, { color: CultureTokens.teal, fontSize: 17 }]}>
+                {goingHeadline}
               </Text>
             </View>
           </View>
 
-          <View style={[s.bottomBtnGroup, { flex: 1, gap: 8 }]}>
-            {/* Main Action: Going */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            style={s.unifiedBarScroll}
+            contentContainerStyle={s.unifiedBarScrollContent}
+          >
             <Button
               variant={myRsvp === 'going' ? 'gradient' : 'primary'}
               size="md"
               leftIcon={myRsvp === 'going' ? 'checkmark-circle' : 'person-add-outline'}
-              onPress={() => handleRsvp('going')}
-              loading={rsvpMutation.isPending && myRsvp === 'going'}
-              style={{ flex: 3, borderRadius: 18, height: 52 }}
+              onPress={handlePrimaryGoingPress}
+              loading={rsvpMutation.isPending}
+              style={{ height: 52, minWidth: 108, borderRadius: 18, marginRight: 4 }}
               textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Interested
+              {myRsvp === 'going' ? "You're in" : 'Going'}
             </Button>
 
-            {/* Secondary: Calendar */}
             <Pressable
-              onPress={() => setCalSheet(true)}
+              onPress={onMaybe}
               style={({ pressed }) => [
-                s.iconActionBtn, 
-                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-                pressed && { opacity: 0.7 }
+                s.compactRsvpPill,
+                {
+                  backgroundColor: pillMaybeActive ? CultureTokens.gold + '22' : colors.backgroundSecondary,
+                  borderColor: pillMaybeActive ? CultureTokens.gold : colors.borderLight,
+                },
+                pressed && { opacity: 0.85 },
               ]}
-              accessibilityLabel="Calendar"
+              accessibilityRole="button"
+              accessibilityLabel="RSVP maybe"
+              accessibilityState={{ selected: pillMaybeActive }}
             >
-              <Ionicons name="calendar-number-outline" size={22} color={colors.text} />
+              <Text
+                style={[
+                  s.compactRsvpPillText,
+                  { color: pillMaybeActive ? CultureTokens.gold : colors.text },
+                ]}
+                numberOfLines={1}
+              >
+                Maybe
+              </Text>
             </Pressable>
 
-            {/* Tertiary: Options (Maybe/Not Going) */}
             <Pressable
-              onPress={() => {
-                // For simplicity, just toggle maybe if not set, or show alert
-                if (myRsvp === 'maybe') handleRsvp('not_going');
-                else handleRsvp('maybe');
-              }}
+              onPress={onCant}
               style={({ pressed }) => [
-                s.iconActionBtn, 
-                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-                pressed && { opacity: 0.7 }
+                s.compactRsvpPill,
+                {
+                  backgroundColor: pillCantActive ? colors.error + '22' : colors.backgroundSecondary,
+                  borderColor: pillCantActive ? colors.error : colors.borderLight,
+                },
+                pressed && { opacity: 0.85 },
               ]}
-              accessibilityLabel="More RSVP options"
+              accessibilityRole="button"
+              accessibilityLabel="RSVP cannot attend"
+              accessibilityState={{ selected: pillCantActive }}
             >
-              <Ionicons 
-                name={myRsvp === 'maybe' ? 'help-circle' : 'ellipsis-horizontal'} 
-                size={22} 
-                color={myRsvp === 'maybe' ? CultureTokens.gold : colors.text} 
-              />
+              <Text
+                style={[
+                  s.compactRsvpPillText,
+                  { color: pillCantActive ? colors.error : colors.text },
+                ]}
+                numberOfLines={1}
+              >
+                Can't go
+              </Text>
             </Pressable>
-          </View>
-        </>
+
+            {calendarBtn}
+          </ScrollView>
+        </View>
       );
     }
 
-    // Ticketed event mode
     const hasExternal = !!(ev.externalTicketUrl || ev.externalUrl);
     return (
-      <>
-        <View style={s.bottomPriceSection}>
-          <Text style={s.bottomPriceLabel}>Tickets from</Text>
-          <Text style={[s.bottomPriceValue, { fontSize: 24 }]}>{ev.priceLabel || 'TBA'}</Text>
+      <View style={s.unifiedBarRow}>
+        <View style={[s.bottomPriceSection, s.unifiedBarStat]}>
+          <Text style={s.bottomPriceLabel}>Tickets</Text>
+          <Text style={[s.bottomPriceValue, { fontSize: 20 }]} numberOfLines={1}>
+            {ev.priceLabel || 'TBA'}
+          </Text>
         </View>
-        <View style={[s.bottomBtnGroup, { flex: 1 }]}>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          style={s.unifiedBarScroll}
+          contentContainerStyle={s.unifiedBarScrollContent}
+        >
           {hasExternal ? (
             <Button
               variant="gradient"
-              size="lg"
+              size="md"
               leftIcon="ticket-outline"
               onPress={handleExternalTicketPress}
               accessibilityLabel="Buy tickets"
-              style={{ flex: 1, borderRadius: 20, height: 56 }}
+              style={{ height: 52, minWidth: 130, borderRadius: 18, marginRight: 4 }}
               textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Get Tickets
+              Get tickets
             </Button>
           ) : (
             <Button
               variant="gradient"
-              size="lg"
+              size="md"
               leftIcon="ticket"
               onPress={() => openModal()}
-              accessibilityLabel="Get tickets"
-              style={{ flex: 1, borderRadius: 20, height: 56 }}
+              accessibilityLabel="Reserve tickets"
+              style={{ height: 52, minWidth: 130, borderRadius: 18, marginRight: 4 }}
               textStyle={{ fontFamily: 'Poppins_700Bold' }}
             >
-              Reserve Spot
+              Reserve
             </Button>
           )}
-          
-          <Pressable
-            onPress={() => setCalSheet(true)}
-            style={({ pressed }) => [
-              s.iconActionBtn, 
-              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, height: 56, width: 56 },
-              pressed && { opacity: 0.7 }
-            ]}
-          >
-            <Ionicons name="calendar-outline" size={24} color={colors.text} />
-          </Pressable>
-        </View>
-      </>
+          {calendarBtn}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -626,7 +797,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                 )}
                 
                 <LinearGradient
-                  colors={['rgba(11,11,20,0.5)', 'transparent', 'rgba(11,11,20,0.9)']}
+                  colors={['rgba(11,11,20,0.5)', 'transparent', 'rgba(11,11,20,0.85)']}
                   style={StyleSheet.absoluteFill}
                 />
 
@@ -634,12 +805,15 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                   {/* Top Header Buttons */}
                   <View style={s.heroNav}>
                     <Pressable
-                      onPress={() => goBackOrReplace('/(tabs)')}
+                      onPress={() => {
+                        if(!isWeb) Haptics.selectionAsync();
+                        goBackOrReplace('/(tabs)');
+                      }}
                       style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                       accessibilityRole="button"
                       accessibilityLabel="Go back"
                     >
-                      <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                       <Ionicons name="chevron-back" size={24} color="white" />
                     </Pressable>
                     <View style={s.heroActions}>
@@ -649,16 +823,19 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                         accessibilityRole="button"
                         accessibilityLabel="Share"
                       >
-                        <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <Ionicons name="share-outline" size={20} color="white" />
                       </Pressable>
                       <Pressable
-                        onPress={handleSave}
+                        onPress={() => {
+                          if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          handleSave();
+                        }}
                         style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                         accessibilityRole="button"
                         accessibilityLabel="Save event"
                       >
-                        <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={20} color={saved ? CultureTokens.gold : 'white'} />
                       </Pressable>
                     </View>
@@ -733,8 +910,8 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                 </View>
               )}
 
-              <View style={s.infoGrid}>
-                <Card style={s.infoCard} padding={16}>
+              <View style={[s.infoGrid, isDesktop && s.infoGridDesktop]}>
+                <Card style={[s.infoCard, isDesktop && s.infoCardDesktopHalf]} padding={16}>
                   <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.indigo + '15' }]}>
                     <Ionicons name="calendar-outline" size={20} color={CultureTokens.indigo} />
                   </View>
@@ -747,7 +924,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
 
                 <Card 
                   onPress={openMap} 
-                  style={s.infoCard} 
+                  style={[s.infoCard, isDesktop && s.infoCardDesktopHalf]} 
                   padding={16}
                 >
                   <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.teal + '15' }]}>
@@ -764,21 +941,6 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                   <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                 </Card>
 
-                <Card
-                  onPress={() => { if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCalendarSheetVisible(true); }}
-                  style={s.infoCard}
-                  padding={16}
-                >
-                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.gold + '15' }]}>
-                    <Ionicons name="calendar-number-outline" size={20} color={CultureTokens.gold} />
-                  </View>
-                  <View style={[s.infoTextWrap, { flex: 1 }]}>
-                    <Text style={TextStyles.badgeCaps}>Calendar</Text>
-                    <Text style={[TextStyles.headline, { color: colors.text }]}>Add Reminders</Text>
-                    <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>Save this event date</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-                </Card>
               </View>
 
               {isPlus && (
@@ -830,7 +992,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                         </View>
                         <View style={s.tierRight}>
                           <Text style={[TextStyles.title3, { color: CultureTokens.gold }]}>
-                            {tier.priceCents === 0 ? "Free" : `$${(tier.priceCents / 100).toFixed(2)}`}
+                            {tier.priceCents === 0 ? "Free" : formatCurrency(tier.priceCents, event?.country)}
                           </Text>
                           <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                         </View>
@@ -870,11 +1032,11 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
         <View style={{ overflow: 'hidden', borderRadius: 24, marginHorizontal: 20 }}>
           {isWeb ? (
             <View style={[s.floatingBottomBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <BottomBarInner event={event} colors={colors} setCalendarSheetVisible={setCalendarSheetVisible} openTicketModal={openTicketModal} />
+              <BottomBarInner event={event} openTicketModal={openTicketModal} />
             </View>
           ) : (
             <BlurView intensity={30} tint="dark" style={[s.floatingBottomBar, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <BottomBarInner event={event} colors={colors} setCalendarSheetVisible={setCalendarSheetVisible} openTicketModal={openTicketModal} />
+              <BottomBarInner event={event} openTicketModal={openTicketModal} />
             </BlurView>
           )}
         </View>
@@ -942,7 +1104,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                            </View>
                          </View>
                          <Text style={[s.modalTierPrice, isSelected && { color: colors.primaryLight }]}>
-                            {tier.priceCents === 0 ? "Free" : `$${(tier.priceCents / 100).toFixed(2)}`}
+                            {tier.priceCents === 0 ? "Free" : formatCurrency(tier.priceCents, event?.country)}
                           </Text>
                         </Pressable>
                       );
@@ -982,18 +1144,18 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
               <View style={s.priceSummaryBox}>
                 <View style={s.pRow}>
                   <Text style={s.pRowLabel}>{effectiveQty}x {selectedTier?.name}</Text>
-                  <Text style={s.pRowVal}>${(rawTotal / 100).toFixed(2)}</Text>
+                  <Text style={s.pRowVal}>{formatCurrency(rawTotal, event?.country)}</Text>
                 </View>
                 {discountAmount > 0 && (
                   <View style={s.pRow}>
                     <Text style={[s.pRowLabel, { color: CultureTokens.teal }]}>{buyMode === "family" ? "Family" : "Group"} Discount</Text>
-                    <Text style={[s.pRowVal, { color: CultureTokens.teal }]}>-${(discountAmount / 100).toFixed(2)}</Text>
+                    <Text style={[s.pRowVal, { color: CultureTokens.teal }]}>-{formatCurrency(discountAmount, event?.country)}</Text>
                   </View>
                 )}
                 <View style={s.pDiv} />
                 <View style={s.pRow}>
                   <Text style={s.pTotalLabel}>Total</Text>
-                  <Text style={s.pTotalVal}>{totalPrice <= 0 ? "Free" : `A$${(totalPrice / 100).toFixed(2)}`}</Text>
+                  <Text style={s.pTotalVal}>{totalPrice <= 0 ? "Free" : formatCurrency(totalPrice, event?.country)}</Text>
                 </View>
               </View>
 
@@ -1004,7 +1166,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                 loading={purchaseMutation.isPending || paymentLoading}
                 onPress={handlePurchase}
               >
-                {totalPrice <= 0 ? "Get Free Ticket" : `Pay A$${(totalPrice / 100).toFixed(2)}`}
+                {totalPrice <= 0 ? "Get Free Ticket" : `Pay ${formatCurrency(totalPrice, event?.country)}`}
               </Button>
             </ScrollView>
           </View>
@@ -1102,9 +1264,16 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
     gap: 10,
     backgroundColor: colors.surface,
     borderColor: colors.borderLight,
-    boxShadow: isDark 
-      ? '0px 8px 24px rgba(0,0,0,0.5)' 
-      : '0px 8px 24px rgba(44,42,114,0.08)',
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px 8px 24px rgba(0,0,0,0.5)' : '0px 8px 24px rgba(44,42,114,0.08)' },
+      ios: { 
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: isDark ? 0.5 : 0.08,
+        shadowRadius: 24,
+      },
+      android: { elevation: 8 }
+    }),
   },
   heroBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
@@ -1130,9 +1299,20 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   countSep: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.borderLight, paddingBottom: 12 },
 
   infoGrid: { gap: 12, marginBottom: 20 },
+  infoGridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
+  infoCardDesktopHalf: { flex: 1, minWidth: 280 },
   infoCard: { 
     flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, gap: 16, backgroundColor: colors.surface, borderColor: colors.borderLight,
-    boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.4)' : '0px 2px 8px rgba(44,42,114,0.04)'
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.4)' : '0px 2px 8px rgba(44,42,114,0.04)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.4 : 0.04,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
   },
   infoIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
   infoTextWrap: { flex: 1, gap: 2 },
@@ -1158,7 +1338,16 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
 
   tierCard: { 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12, backgroundColor: colors.surface, borderColor: colors.borderLight,
-    boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.35)' : '0px 2px 8px rgba(44,42,114,0.04)'
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.35)' : '0px 2px 8px rgba(44,42,114,0.04)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.35 : 0.04,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
   },
   tierLeft: { gap: 2 },
   tierName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
@@ -1171,16 +1360,53 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
   floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
+  unifiedBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    gap: 10,
+  },
+  unifiedBarStat: { flexShrink: 0, maxWidth: 104 },
+  unifiedBarScroll: { flex: 1, minWidth: 0 },
+  unifiedBarScrollContent: {
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingVertical: 0,
+    paddingLeft: 4,
+  },
+  compactRsvpPill: {
+    height: 52,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxHeight: 52,
+  },
+  compactRsvpPillText: { fontSize: 13, fontFamily: 'Poppins_700Bold' },
+
   floatingBottomBar: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    justifyContent: 'space-between', 
+    justifyContent: 'flex-start', 
     paddingHorizontal: 16, 
     paddingVertical: 14, 
     gap: 12,
-    boxShadow: isDark 
-      ? '0px -4px 16px rgba(0,0,0,0.6)' 
-      : '0px -4px 16px rgba(44,42,114,0.1)',
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px -4px 16px rgba(0,0,0,0.6)' : '0px -4px 16px rgba(44,42,114,0.1)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: isDark ? 0.6 : 0.1,
+        shadowRadius: 16,
+      },
+      android: { elevation: 4 }
+    }),
   },
   bottomPriceSection: { minWidth: 90, gap: 2 },
   iconActionBtn: {

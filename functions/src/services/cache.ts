@@ -8,6 +8,7 @@ export interface CacheService {
   set<T>(key: string, value: T, ttlMs?: number): void;
   del(key: string): void;
   flush(): void;
+  flushPrefix(prefix: string): void;
 }
 
 /**
@@ -40,5 +41,13 @@ export class InMemoryTtlCache implements CacheService {
 
   flush(): void {
     this.store.clear();
+  }
+
+  flushPrefix(prefix: string): void {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) {
+        this.store.delete(key);
+      }
+    }
   }
 }

@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { User, Membership } from '@shared/schema';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 import UserProfileHero from '@/components/user/UserProfileHero';
 import UserProfileTier from '@/components/user/UserProfileTier';
@@ -65,6 +66,7 @@ export default function UserProfileScreen() {
   }, [displayName, user?.id, user?.culturePassId, user?.username]);
 
   const handleBack = useCallback(() => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -75,15 +77,25 @@ export default function UserProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={[CP.dark, '#1a0533', '#0a2a2a']}
-          style={[styles.hero, { paddingTop: topInset + 8, justifyContent: 'center', alignItems: 'center', minHeight: 340 }]}
-        >
-          <ActivityIndicator size="large" color={CP.teal} />
-          <Text style={{ color: CP.muted, marginTop: 12, fontFamily: 'Poppins_400Regular', fontSize: 13 }}>
-            Loading profile...
-          </Text>
-        </LinearGradient>
+        <View style={[styles.hero, { paddingTop: topInset + 8, minHeight: 400 }]}>
+          <View style={{ padding: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+              <Skeleton width={44} height={44} borderRadius={22} />
+              <Skeleton width={44} height={44} borderRadius={22} />
+            </View>
+            <Skeleton width={100} height={100} borderRadius={50} style={{ alignSelf: 'center', marginBottom: 20 }} />
+            <Skeleton width={180} height={32} borderRadius={8} style={{ alignSelf: 'center', marginBottom: 12 }} />
+            <Skeleton width={120} height={20} borderRadius={6} style={{ alignSelf: 'center', marginBottom: 30 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+              <Skeleton width={80} height={40} borderRadius={10} />
+              <Skeleton width={80} height={40} borderRadius={10} />
+            </View>
+          </View>
+        </View>
+        <View style={{ padding: 20, gap: 20 }}>
+          <Skeleton width="100%" height={120} borderRadius={16} />
+          <Skeleton width="100%" height={180} borderRadius={16} />
+        </View>
       </View>
     );
   }

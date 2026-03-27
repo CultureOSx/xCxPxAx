@@ -27,6 +27,7 @@ import { CardTokens, CultureTokens } from '@/constants/theme';
 import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
 
@@ -36,10 +37,10 @@ function formatDate(dateStr: string | null) {
   if (parts.length === 3) {
     const [y, m, d] = parts.map(Number);
     const date = new Date(y!, m! - 1, d);
-    return date.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 const QR_CACHE_PREFIX = '@culturepass_ticket_qr:';
@@ -138,6 +139,7 @@ export default function TicketDetailScreen() {
 
   const handleShare = useCallback(async () => {
     if (!ticket) return;
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const t = ticket as any;
     try {
       const shareUrl = `https://culturepass.app/tickets/${ticket.id}`;
@@ -151,6 +153,7 @@ export default function TicketDetailScreen() {
 
   const handlePrint = useCallback(() => {
     if (!ticket) return;
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/tickets/print/[id]',
       params: { id: ticket.id, layout: ticket.status === 'used' ? 'badge' : 'full', autoPrint: '1' },
@@ -194,9 +197,33 @@ export default function TicketDetailScreen() {
         <AppHeaderBar title="Ticket Details" backFallback="/tickets/index" topInset={topInset} />
         <View style={isDesktop && s.desktopShellWrapper}>
           <View style={isDesktop && s.desktopShell}>
-            <View style={s.loadingState}>
-              <ActivityIndicator color={CultureTokens.indigo} size="large" />
-              <Text style={s.loadingText}>Loading ticket...</Text>
+            <View style={{ paddingTop: 12, paddingHorizontal: CardTokens.padding + 4 }}>
+              <View style={[s.ticketContainer, { padding: 0, borderWidth: 1, borderColor: colors.borderLight }]}>
+                <Skeleton width="100%" height={120} borderRadius={0} />
+                <View style={[s.ticketNotchContainer, { zIndex: 10 }]}>
+                   <View style={[s.ticketNotchBackground, { backgroundColor: colors.background }]} />
+                   <View style={s.ticketNotch}>
+                     <View style={[s.notchCircle, s.notchLeft, { backgroundColor: colors.background, borderColor: colors.borderLight }]} />
+                     <View style={[s.notchLine, { borderColor: colors.borderLight }]} />
+                     <View style={[s.notchCircle, s.notchRight, { backgroundColor: colors.background, borderColor: colors.borderLight }]} />
+                   </View>
+                </View>
+                <View style={{ padding: CardTokens.paddingLarge + 4, gap: 16 }}>
+                  <Skeleton width="80%" height={28} borderRadius={8} style={{ marginBottom: 8 }} />
+                  <Skeleton width={120} height={24} borderRadius={10} />
+                  <View style={{ gap: 12, marginTop: 12 }}>
+                    <Skeleton width="60%" height={20} borderRadius={6} />
+                    <Skeleton width="50%" height={20} borderRadius={6} />
+                    <Skeleton width="70%" height={20} borderRadius={6} />
+                  </View>
+                  <View style={{ height: 1, backgroundColor: colors.borderLight, marginVertical: 4 }} />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Skeleton width={60} height={40} borderRadius={8} />
+                    <Skeleton width={60} height={40} borderRadius={8} />
+                    <Skeleton width={60} height={40} borderRadius={8} />
+                  </View>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -354,7 +381,7 @@ export default function TicketDetailScreen() {
                           <Text style={s.scannedText}>Checked In</Text>
                           {t.scannedAt && (
                             <Text style={s.scannedTime}> 
-                              {new Date(t.scannedAt).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                              {new Date(t.scannedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                           )}
                         </View>
@@ -459,7 +486,25 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   emptyTitle:         { fontSize: 17, fontFamily: 'Poppins_700Bold', marginTop: 8, color: colors.text },
   backLink:           { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 8, color: CultureTokens.indigo },
 
-  ticketContainer: { marginHorizontal: CardTokens.padding + 4, marginTop: 12, borderRadius: CardTokens.radiusLarge + 4, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  ticketContainer: { 
+    marginHorizontal: CardTokens.padding + 4, 
+    marginTop: 12, 
+    borderRadius: CardTokens.radiusLarge + 4, 
+    overflow: 'hidden', 
+    backgroundColor: colors.surface, 
+    borderWidth: 1, 
+    borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.5)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.5,
+        shadowRadius: 24,
+      },
+      android: { elevation: 12 }
+    })
+  },
   ticketTop:       { height: 120, justifyContent: 'center', position: 'relative' },
   ticketTopOverlay:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, zIndex: 1 },
   statusBadge:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },

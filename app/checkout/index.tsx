@@ -24,8 +24,11 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 import { useAuth } from '@/lib/auth';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { BlurView } from 'expo-blur';
 import Animated, { SlideInDown } from 'react-native-reanimated';
+import * as WebBrowser from 'expo-web-browser';
+import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
 
 const isWeb = Platform.OS === 'web';
 
@@ -81,11 +84,11 @@ export default function CheckoutPage() {
       }
       const session = await api.stripe.createCheckoutSession({
         eventId, eventTitle: event?.title, eventDate: event?.date,
-        tierName, quantity, totalPriceCents, currency: 'AUD',
+        tierName, quantity, totalPriceCents, currency: getCurrencyForCountry(event?.country),
       });
       if (session.checkoutUrl) {
         if (isWeb) window.location.href = session.checkoutUrl;
-        else router.replace(session.checkoutUrl as never);
+        else await WebBrowser.openBrowserAsync(session.checkoutUrl);
       }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Unknown error');
@@ -94,7 +97,39 @@ export default function CheckoutPage() {
     }
   };
 
-  if (eventLoading) return null;
+  if (eventLoading) {
+    return (
+      <View style={styles.screen}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        </Pressable>
+        <Animated.View
+          entering={SlideInDown.springify().damping(20)}
+          style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 }]}
+        >
+          <View style={styles.handle} />
+          <View style={styles.header}>
+            <Skeleton width={150} height={28} borderRadius={14} />
+            <View style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </View>
+          </View>
+          <View style={styles.content}>
+            <Skeleton width="100%" height={100} borderRadius={16} style={{ marginBottom: 24 }} />
+            <Skeleton width="100%" height={140} borderRadius={24} style={{ marginBottom: 24 }} />
+            <Skeleton width="100%" height={52} borderRadius={16} style={{ marginBottom: 32 }} />
+            <View style={styles.footer}>
+              <View style={[styles.row, { marginBottom: 24 }]}>
+                <Skeleton width={80} height={32} borderRadius={8} />
+                <Skeleton width={120} height={32} borderRadius={8} />
+              </View>
+              <Skeleton width="100%" height={60} borderRadius={20} />
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -148,7 +183,7 @@ export default function CheckoutPage() {
             <View style={styles.divider} />
             <View style={styles.row}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Subtotal</Text>
-              <Text style={[styles.value, { color: colors.text }]}>${(basePriceCents * quantity / 100).toFixed(2)}</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{formatCurrency(basePriceCents * quantity, event?.country)}</Text>
             </View>
           </Card>
 
@@ -167,7 +202,7 @@ export default function CheckoutPage() {
             <View style={styles.row}>
               <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
               <Text style={[styles.totalValue, { color: CultureTokens.gold }]}>
-                {totalPriceCents === 0 ? 'Free' : `$${(totalPriceCents / 100).toFixed(2)}`}
+                {totalPriceCents === 0 ? 'Free' : formatCurrency(totalPriceCents, event?.country)}
               </Text>
             </View>
             {discountApplied && (
@@ -198,7 +233,22 @@ export default function CheckoutPage() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { borderTopLeftRadius: 36, borderTopRightRadius: 36, height: '85%', overflow: 'hidden', ...shadows.large },
+  sheet: { 
+    borderTopLeftRadius: 36, 
+    borderTopRightRadius: 36, 
+    height: '85%', 
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0px -8px 32px rgba(0,0,0,0.4)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 32,
+      },
+      android: { elevation: 24 }
+    })
+  },
   handle: { width: 44, height: 5, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 3, alignSelf: 'center', marginTop: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingBottom: 16 },
   headerTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold' },

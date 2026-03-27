@@ -15,6 +15,11 @@ export interface FirestoreProfile {
   country?: string;
   category?: string;
   tags?: string[];
+  // Cultural identity (typed IDs; shared schema)
+  nationalityId?: string;
+  cultureIds?: string[];
+  languageIds?: string[];
+  diasporaGroupIds?: string[];
   isVerified?: boolean;
   memberCount?: number;
   followerCount?: number;
@@ -22,6 +27,14 @@ export interface FirestoreProfile {
   socialLinks?: Record<string, string>;
   contactEmail?: string;
   website?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  telegram?: string;
+  joinMode?: 'open' | 'request' | 'invite';
+  status?: 'draft' | 'published' | 'suspended';
+  handle?: string;
+  handleStatus?: 'pending' | 'approved' | 'rejected';
   viewCount?: number;
   metadata?: Record<string, any>;
   createdAt: string;

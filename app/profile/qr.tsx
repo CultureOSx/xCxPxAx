@@ -43,6 +43,8 @@ import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
+import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
+import { gradients } from '@/constants/theme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 // Fixed card dimensions for consistent look across iOS, Android, Web
@@ -137,7 +139,7 @@ export default function QRScreen() {
 
   const memberSince = useMemo(() => {
     if (!user?.createdAt) return '—';
-    return new Date(user.createdAt).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    return new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
   }, [user?.createdAt]);
 
   // Wallet pass URLs — fetched lazily only when user is loaded
@@ -178,7 +180,11 @@ export default function QRScreen() {
       title="Digital ID"
       message="Sign in to view and share your CulturePass Digital ID — your business card and conference badge."
     >
-    <View style={[s.root, { backgroundColor: colors.background }]}>
+    <View style={s.root}>
+      <LinearGradient
+        colors={gradients.midnight as unknown as [string, string]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <AppHeaderBar
         title="Digital ID"
         subtitle="CulturePass"
@@ -186,7 +192,10 @@ export default function QRScreen() {
         topInset={topInset}
         rightAction={{
           icon: 'scan-outline',
-          onPress: () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); },
+          onPress: () => { 
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/scanner'); 
+          },
           label: 'Scan a CulturePass',
         }}
       />
@@ -196,7 +205,7 @@ export default function QRScreen() {
         contentContainerStyle={[s.scroll, { paddingBottom: bottomInset + 40 }]}
       >
         {isLoading ? (
-          <View style={{ gap: 14, alignItems: 'center' }}>
+          <View style={{ gap: 14, alignItems: 'center', paddingTop: 20 }}>
             <Skeleton width={cardWidth} height={480} borderRadius={24} />
             <View style={{ flexDirection: 'row', gap: 10, width: cardWidth }}>
               <Skeleton width="32%" height={66} borderRadius={14} />
@@ -207,7 +216,7 @@ export default function QRScreen() {
         ) : (
           <>
             {/* ── THE PASS ────────────────────────────────────── */}
-            <View style={[s.cardShadow, { width: cardWidth }]}>
+            <Animated.View entering={FadeInDown.duration(800)} style={[s.cardShadow, { width: cardWidth }]}>
               <View style={s.card}>
 
                 {/* ── BLUE BODY ─────────────────────────────── */}
@@ -270,7 +279,7 @@ export default function QRScreen() {
                     {/* Name block */}
                     <View style={s.nameBlock}>
                       <Text style={s.nameText} numberOfLines={2}>{name}</Text>
-                      <Text style={s.handleText}>+{username}</Text>
+                      <Text style={s.handleText}>@{username}</Text>
                       {location ? (
                         <View style={s.locationRow}>
                           <Ionicons name="location" size={11} color={YELLOW + 'CC'} />
@@ -336,14 +345,14 @@ export default function QRScreen() {
                 </LinearGradient>
 
               </View>{/* card */}
-            </View>{/* cardShadow */}
+            </Animated.View>{/* cardShadow */}
 
             {/* ── ACTION BUTTONS ──────────────────────── */}
-            <View style={[s.actionsRow, { width: cardWidth }]}>
+            <Animated.View entering={FadeInUp.delay(300).duration(600)} style={[s.actionsRow, { width: cardWidth }]}>
               {([
                 { icon: 'share-outline',  label: 'Share',   color: BLUE,               onPress: handleShare },
                 { icon: copied ? 'checkmark' : 'copy-outline', label: copied ? 'Copied' : 'Copy ID', color: copied ? '#34C759' : YELLOW, onPress: handleCopy },
-                { icon: 'scan-outline',   label: 'Scan',    color: CultureTokens.coral, onPress: () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); } },
+                { icon: 'scan-outline',   label: 'Scan',    color: CultureTokens.coral, onPress: () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); } },
               ] as const).map((btn) => (
                 <Pressable
                   key={btn.label}
@@ -358,11 +367,11 @@ export default function QRScreen() {
                   <Text style={[s.actionLabel, { color: colors.textSecondary }]}>{btn.label}</Text>
                 </Pressable>
               ))}
-            </View>
+            </Animated.View>
 
             {/* ── ADD TO WALLET ───────────────────────── */}
             {(appleWallet?.url || googleWallet?.url) && (
-              <View style={[s.walletSection, { width: cardWidth }]}>
+              <Animated.View entering={FadeInUp.delay(500).duration(600)} style={[s.walletSection, { width: cardWidth }]}>
                 <Text style={[s.walletHeading, { color: colors.textTertiary }]}>ADD TO WALLET</Text>
 
                 {/* Apple Wallet */}
@@ -416,12 +425,12 @@ export default function QRScreen() {
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.40)" />
                   </Pressable>
                 )}
-              </View>
+              </Animated.View>
             )}
 
             {/* ── INTEREST TAGS ───────────────────────── */}
             {interests.length > 0 && (
-              <View style={[s.tagsSection, { width: cardWidth }]}>
+              <Animated.View entering={FadeInUp.delay(700).duration(600)} style={[s.tagsSection, { width: cardWidth }]}>
                 <Text style={[s.tagsHeading, { color: colors.textTertiary }]}>INTERESTS</Text>
                 <View style={s.tagsRow}>
                   {interests.map(interest => (
@@ -430,7 +439,7 @@ export default function QRScreen() {
                     </View>
                   ))}
                 </View>
-              </View>
+              </Animated.View>
             )}
           </>
         )}
@@ -446,17 +455,17 @@ const s = StyleSheet.create({
   root:        { flex: 1 },
 
   // Scroll
-  scroll: { alignItems: 'center', paddingTop: 24, gap: 18 },
+  scroll: { alignItems: 'center', paddingTop: 24, gap: 20 },
 
   // Card shell
   cardShadow: {
     borderRadius: 24,
     ...Platform.select({
-      web:     { boxShadow: '0px 20px 56px rgba(0,102,204,0.35), 0px 8px 24px rgba(0,0,0,0.12)' },
-      default: { shadowColor: BLUE, shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 32, elevation: 16 },
+      web:     { boxShadow: '0px 24px 64px rgba(0,102,204,0.4), 0px 8px 32px rgba(0,0,0,0.15)' },
+      default: { shadowColor: BLUE, shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.4, shadowRadius: 36, elevation: 20 },
     }),
   },
-  card: { borderRadius: 24, overflow: 'hidden' },
+  card: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
 
   // ── Blue body ──────────────────────────────────────────────────────────────
   cardBlue: { paddingBottom: 24, overflow: 'hidden' },
@@ -468,7 +477,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: 'rgba(255,180,180,0.7)',
+    borderColor: 'rgba(255,255,255,0.3)',
     backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -501,29 +510,29 @@ const s = StyleSheet.create({
   // Primary field
   primaryRow: {
     flexDirection: 'row', alignItems: 'center', gap: 18,
-    paddingHorizontal: 20, paddingTop: 22, paddingBottom: 18,
+    paddingHorizontal: 24, paddingTop: 26, paddingBottom: 22,
   },
-  avatar:       { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 18, borderWidth: 2.5, borderColor: YELLOW + '80' },
-  avatarFallback:{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: YELLOW + '60' },
+  avatar:       { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 20, borderWidth: 3, borderColor: 'rgba(255,180,0,0.4)' },
+  avatarFallback:{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: YELLOW + '60' },
   avatarInitials:{ fontSize: 24, fontFamily: 'Poppins_700Bold', color: BLUE_DARK },
-  nameBlock:    { flex: 1, gap: 3 },
-  nameText:     { fontSize: 27, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5, lineHeight: 32 },
-  handleText:   { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
-  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  locationText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.65)' },
+  nameBlock:    { flex: 1, gap: 4 },
+  nameText:     { fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5, lineHeight: 32 },
+  handleText:   { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
+  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, backgroundColor: 'rgba(0,0,0,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
+  locationText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.65)' },
 
   // Secondary fields
   fieldsRow: {
     flexDirection: 'row', alignItems: 'flex-start',
     marginHorizontal: 20, marginBottom: 20,
-    paddingVertical: 16, paddingHorizontal: 18,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 18, paddingHorizontal: 20,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
   },
-  fieldDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.12)', marginHorizontal: 14, alignSelf: 'center' },
+  fieldDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.12)', marginHorizontal: 16, alignSelf: 'center' },
 
-  // ── Perforation ────────────────────────────────────────────────────────────
+  // ── Perforation ───────────────────────────
   perfZone: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: BLUE_DARK,
@@ -539,71 +548,75 @@ const s = StyleSheet.create({
   perfNotchRight: { right: -14 },
   perfLine: {
     flex: 1,
-    marginHorizontal: 20,
+    marginHorizontal: 24,
     borderTopWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
 
-  // ── QR zone ────────────────────────────────────────────────────────────────
+  // ── QR zone ─────────────────────
   qrZone: {
     backgroundColor: CARD_WHITE,
     alignItems: 'center',
-    paddingVertical: 28, paddingHorizontal: 24,
-    paddingBottom: 28,
-    gap: 4,
+    paddingVertical: 32, paddingHorizontal: 28,
+    gap: 6,
   },
-  // Corner bracket accents (Apple-style)
-  cornerTL: { position: 'absolute', top: 14, left: 14, width: 16, height: 16, borderTopWidth: 2, borderLeftWidth: 2, borderRadius: 2 },
-  cornerTR: { position: 'absolute', top: 14, right: 14, width: 16, height: 16, borderTopWidth: 2, borderRightWidth: 2, borderRadius: 2 },
-  cornerBL: { position: 'absolute', bottom: 52, left: 14, width: 16, height: 16, borderBottomWidth: 2, borderLeftWidth: 2, borderRadius: 2 },
-  cornerBR: { position: 'absolute', bottom: 52, right: 14, width: 16, height: 16, borderBottomWidth: 2, borderRightWidth: 2, borderRadius: 2 },
-  qrHint: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(0,0,0,0.38)', letterSpacing: 0.4 },
-  passIdBelowQr: { alignItems: 'center', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', gap: 6 },
-  passIdBelowLabel: { fontSize: 9, fontFamily: 'Poppins_600SemiBold', color: 'rgba(0,0,0,0.4)', letterSpacing: 2.2, textTransform: 'uppercase' },
-  passIdBelowValue: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: BLUE_DARK, letterSpacing: 2.8 },
+  cornerTL: { position: 'absolute', top: 18, left: 18, width: 18, height: 18, borderTopWidth: 2, borderLeftWidth: 2, borderRadius: 4 },
+  cornerTR: { position: 'absolute', top: 18, right: 18, width: 18, height: 18, borderTopWidth: 2, borderRightWidth: 2, borderRadius: 4 },
+  cornerBL: { position: 'absolute', bottom: 56, left: 18, width: 18, height: 18, borderBottomWidth: 2, borderLeftWidth: 2, borderRadius: 4 },
+  cornerBR: { position: 'absolute', bottom: 56, right: 18, width: 18, height: 18, borderBottomWidth: 2, borderRightWidth: 2, borderRadius: 4 },
+  qrHint: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(0,0,0,0.4)', letterSpacing: 0.5, marginTop: 4 },
+  passIdBelowQr: { alignItems: 'center', marginTop: 18, paddingTop: 18, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', width: '100%', gap: 6 },
+  passIdBelowLabel: { fontSize: 9, fontFamily: 'Poppins_700Bold', color: 'rgba(0,0,0,0.45)', letterSpacing: 2.5, textTransform: 'uppercase' },
+  passIdBelowValue: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: BLUE_DARK, letterSpacing: 3 },
 
-  // ── Footer ─────────────────────────────────────────────────────────────────
+  // ── Footer ──────────────────────
   cardFooter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 20, paddingVertical: 16,
+    paddingHorizontal: 20, paddingVertical: 18,
   },
   verifiedRow:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
   verifiedBadge: { width: 24, height: 24, borderRadius: 8, backgroundColor: YELLOW, alignItems: 'center', justifyContent: 'center' },
-  verifiedText:  { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: 0.3 },
+  verifiedText:  { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: 0.5 },
 
-  // ── Action buttons ─────────────────────────────────────────────────────────
-  actionsRow: { flexDirection: 'row', gap: 12 },
+  // ── Action buttons ────────────────────────
+  actionsRow: { flexDirection: 'row', gap: 14 },
   actionBtn: {
-    flex: 1, alignItems: 'center', gap: 8,
-    paddingVertical: 16, borderRadius: 18,
-    borderWidth: 1,
-  },
-  actionIcon:  { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-
-  // ── Wallet buttons ─────────────────────────────────────────────────────────
-  walletSection:   { gap: 10 },
-  walletHeading:   { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 1.8 },
-  walletBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingVertical: 16, paddingHorizontal: 20,
-    borderRadius: 16, overflow: 'hidden',
+    flex: 1, alignItems: 'center', gap: 10,
+    paddingVertical: 18, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
     ...Platform.select({
-      web:     { boxShadow: '0px 4px 16px rgba(0,0,0,0.30)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.30, shadowRadius: 12, elevation: 8 },
+      web: { boxShadow: '0px 8px 24px rgba(0,0,0,0.2)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
+    }),
+  },
+  actionIcon:  { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' },
+
+  // ── Wallet buttons ────────────────────────
+  walletSection:   { gap: 12, marginTop: 10 },
+  walletHeading:   { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginLeft: 4 },
+  walletBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingVertical: 18, paddingHorizontal: 22,
+    borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    ...Platform.select({
+      web:     { boxShadow: '0px 12px 32px rgba(0,0,0,0.4)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
     }),
   },
   walletBtnApple:  {},
   walletBtnGoogle: {},
-  walletBtnText:   { flex: 1, gap: 1 },
-  walletBtnSub:    { fontSize: 10, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.60)', letterSpacing: 0.3 },
-  walletBtnTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.3 },
+  walletBtnText:   { flex: 1, gap: 2 },
+  walletBtnSub:    { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.65)', letterSpacing: 0.5 },
+  walletBtnTitle:  { fontSize: 18, fontFamily: 'Poppins_800ExtraBold', color: '#FFFFFF', letterSpacing: -0.3 },
 
-  // ── Interest tags ──────────────────────────────────────────────────────────
-  tagsSection: { gap: 10 },
-  tagsHeading: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 1.5 },
+  // ── Interest tags ─────────────────────────
+  tagsSection: { gap: 12, marginTop: 10 },
+  tagsHeading: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginLeft: 4 },
   tagsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tag:         { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  tagText:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  tag:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, backgroundColor: 'rgba(0,102,204,0.1)', borderColor: 'rgba(0,102,204,0.3)' },
+  tagText:     { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#fff' },
 });

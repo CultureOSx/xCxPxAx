@@ -12,6 +12,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { queryClient } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
 
@@ -59,6 +60,20 @@ function HandleCard({ item, onApprove, onReject }: {
           <Ionicons name="close" size={16} color={CultureTokens.coral} />
           <Text style={[styles.actionText, { color: CultureTokens.coral }]}>Reject</Text>
         </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function HandlesSkeleton() {
+  const colors = useColors();
+  const { hPad } = useLayout();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ padding: 16, gap: 12 }}>
+        {[1, 2, 3, 4, 5].map(i => (
+          <Skeleton key={i} width="100%" height={120} borderRadius={14} />
+        ))}
       </View>
     </View>
   );
@@ -135,7 +150,15 @@ function HandlesContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 12, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable 
+          style={styles.backBtn} 
+          onPress={() => {
+            if(!isWeb) Haptics.selectionAsync();
+            router.back();
+          }} 
+          accessibilityRole="button" 
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
@@ -146,7 +169,10 @@ function HandlesContent() {
         </View>
         <Pressable
           style={[styles.refreshBtn, { backgroundColor: colors.backgroundSecondary }]}
-          onPress={() => refetch()}
+          onPress={() => {
+            if(!isWeb) Haptics.selectionAsync();
+            refetch();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Refresh"
         >
@@ -155,9 +181,7 @@ function HandlesContent() {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={CultureTokens.indigo} />
-        </View>
+        <HandlesSkeleton />
       ) : handles.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="checkmark-circle-outline" size={52} color={CultureTokens.teal} />
@@ -204,7 +228,22 @@ const styles = StyleSheet.create({
   emptySub:     { fontSize: 13, fontFamily: 'Poppins_400Regular' },
   list:         { paddingTop: 16, gap: 10 },
 
-  card:         { borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
+  card:         { 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    padding: 14, 
+    gap: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   cardLeft:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
   typeIcon:     { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   handleText:   { fontSize: 15, fontFamily: 'Poppins_700Bold' },

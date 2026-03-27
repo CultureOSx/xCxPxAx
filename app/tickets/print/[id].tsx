@@ -25,7 +25,7 @@ function formatEventDate(dateStr?: string): string {
   if (!dateStr) return 'TBA';
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return dateStr;
-  return new Date(year, month - 1, day).toLocaleDateString('en-AU', {
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

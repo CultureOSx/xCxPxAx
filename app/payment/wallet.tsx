@@ -62,7 +62,7 @@ function formatEventDate(dateStr: string | null): string {
   if (!dateStr) return 'TBA';
   const d = new Date(dateStr);
   const isThisYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString('en-AU', {
+  return d.toLocaleDateString(undefined, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -418,7 +418,7 @@ export default function WalletScreen() {
                   <Text style={styles.membershipTier}>{tierConfig.label}</Text>
                   <View style={styles.membershipMetaRow}>
                     <Text style={styles.membershipMetaText}>
-                      Member since {memberSinceDate.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
+                      Member since {memberSinceDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
                     </Text>
                     <View style={[styles.cycleBadge, { borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'rgba(255,255,255,0.1)' }]}>
                       <Text style={[styles.cycleBadgeText, { color: '#FFFFFF' }]}>

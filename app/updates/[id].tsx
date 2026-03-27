@@ -10,6 +10,8 @@ import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
+import { Skeleton } from '@/components/ui/Skeleton';
+import * as Haptics from 'expo-haptics';
 
 const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; icon: string }> = {
   release:      { label: 'Release',      color: CultureTokens.indigo,  icon: 'rocket-outline' },
@@ -21,7 +23,7 @@ const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; ic
 function formatDate(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function UpdateDetailContent() {
@@ -46,8 +48,22 @@ function UpdateDetailContent() {
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
         </View>
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={CultureTokens.indigo} />
+        <View style={[styles.content, { paddingHorizontal: hPad }]}>
+          <View style={styles.metaRow}>
+            <Skeleton width={80} height={24} borderRadius={8} />
+            <Skeleton width={60} height={24} borderRadius={8} />
+          </View>
+          <Skeleton width="90%" height={32} borderRadius={8} style={{ marginBottom: 16 }} />
+          <Skeleton width="40%" height={16} borderRadius={4} style={{ marginBottom: 24 }} />
+          <View style={{ height: 1, backgroundColor: colors.borderLight, marginBottom: 24 }} />
+          <View style={{ gap: 12 }}>
+            <Skeleton width="100%" height={16} borderRadius={4} />
+            <Skeleton width="100%" height={16} borderRadius={4} />
+            <Skeleton width="95%" height={16} borderRadius={4} />
+            <Skeleton width="100%" height={16} borderRadius={4} />
+            <Skeleton width="100%" height={16} borderRadius={4} />
+            <Skeleton width="80%" height={16} borderRadius={4} />
+          </View>
         </View>
       </View>
     );
@@ -76,7 +92,15 @@ function UpdateDetailContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 12, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-        <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/updates/index')} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable 
+          style={styles.backBtn} 
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            goBackOrReplace('/updates/index');
+          }} 
+          accessibilityRole="button" 
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>What&apos;s New</Text>
@@ -130,7 +154,23 @@ export default function UpdateDetailScreen() {
 
 const styles = StyleSheet.create({
   container:    { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottomWidth: 1 },
+  header:       { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12, 
+    paddingBottom: 14, 
+    borderBottomWidth: 1,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.4)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 }
+    })
+  },
   backBtn:      { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
   headerTitle:  { flex: 1, fontSize: 18, fontFamily: 'Poppins_700Bold' },
   loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

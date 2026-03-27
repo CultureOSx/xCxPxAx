@@ -29,6 +29,11 @@ export interface Perk {
   endDate?: string;
   city?: string;
   country?: string;
+  lgaCode?: string;
+  councilId?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
   createdBy?: string;
   createdAt?: string;
 }
@@ -57,4 +62,6 @@ export interface PerkData {
   pointsCost?: number;
   usageLimit?: number;
   expiresAt?: string;
+  city?: string;
+  country?: string;
 }

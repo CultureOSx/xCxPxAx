@@ -18,7 +18,7 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const colors = useColors();
+
 
   useEffect(() => {
     if (visible && !permission?.granted) {

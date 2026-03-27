@@ -396,7 +396,7 @@ function ImportContent() {
                       <Text style={[s.sourceName, { color: colors.text }]}>{src.source}</Text>
                       <Text style={[s.sourceMeta, { color: colors.textTertiary }]}>
                         {src.count} events · last import{' '}
-                        {new Date(src.latest).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(src.latest).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                       </Text>
                     </View>
                     <View style={[s.sourceCount, { backgroundColor: CultureTokens.indigo + '12', borderColor: CultureTokens.indigo + '30' }]}>

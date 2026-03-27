@@ -12,6 +12,8 @@ import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Skeleton } from '@/components/ui/Skeleton';
+import * as Haptics from 'expo-haptics';
 
 // ─── Metric Card ─────────────────────────────────────────────────────────────
 function MetricCard({ icon, label, value, sub, accent, index = 0 }: {
@@ -122,7 +124,10 @@ function FinanceContent() {
       >
         <Animated.View entering={FadeInUp.duration(300)} style={[s.header, { paddingHorizontal: hPad }]}>
           <Pressable
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.canGoBack() ? router.back() : router.replace('/admin/dashboard');
+            }}
             style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
             accessibilityRole="button" accessibilityLabel="Go back"
           >
@@ -140,9 +145,23 @@ function FinanceContent() {
         contentContainerStyle={[s.scroll, { paddingHorizontal: hPad, paddingBottom: insets.bottom + 48 }]}
       >
         {isLoading ? (
-          <View style={s.loadingWrap}>
-            <ActivityIndicator color={CultureTokens.gold} size="large" />
-            <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading financials…</Text>
+          <View style={{ gap: 24 }}>
+            <View style={{ gap: 12 }}>
+              <Skeleton width={180} height={14} borderRadius={4} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Skeleton width="48%" height={120} borderRadius={16} />
+                <Skeleton width="48%" height={120} borderRadius={16} />
+              </View>
+              <Skeleton width="100%" height={160} borderRadius={16} style={{ marginTop: 12 }} />
+            </View>
+            <View style={{ gap: 12 }}>
+              <Skeleton width={120} height={14} borderRadius={4} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Skeleton width="48%" height={120} borderRadius={16} />
+                <Skeleton width="48%" height={120} borderRadius={16} />
+              </View>
+              <Skeleton width="100%" height={160} borderRadius={16} style={{ marginTop: 12 }} />
+            </View>
           </View>
         ) : (
           <>
@@ -222,7 +241,10 @@ function FinanceContent() {
 
               <Pressable
                 style={[s.stripeBtn, { backgroundColor: CultureTokens.indigo }]}
-                onPress={() => router.push('/legal/terms' as never)}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push('/legal/terms' as never);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Open Stripe Dashboard"
               >

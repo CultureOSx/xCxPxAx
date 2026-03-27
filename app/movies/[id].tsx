@@ -60,7 +60,16 @@ export default function MovieDetailScreen() {
     <ErrorBoundary>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button" accessibilityLabel="Go back">
+          <Pressable 
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              goBackOrReplace('/(tabs)');
+            }} 
+            style={styles.headerBtn} 
+            hitSlop={10} 
+            accessibilityRole="button" 
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Skeleton width="45%" height={18} borderRadius={8} />
@@ -97,7 +106,16 @@ export default function MovieDetailScreen() {
     <ErrorBoundary>
       <View style={[styles.container, { paddingTop: topInset }]}> 
         <View style={styles.header}>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button" accessibilityLabel="Go back">
+          <Pressable 
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              goBackOrReplace('/(tabs)');
+            }} 
+            style={styles.headerBtn} 
+            hitSlop={10} 
+            accessibilityRole="button" 
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>{movie.title}</Text>
@@ -261,6 +279,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.3)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: { elevation: 6 }
+    })
   },
   posterScore: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: 0.5 },
   infoSection: { padding: CardTokens.padding + 4, gap: 16 },
@@ -311,7 +339,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: CardTokens.radius,
     padding: CardTokens.padding,
     borderWidth: 1, 
-    borderColor: colors.borderLight 
+    borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 24px rgba(0,0,0,0.3)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+      },
+      android: { elevation: 8 }
+    })
   },
   cinemaIconBox: {
     width: 32,

@@ -48,7 +48,7 @@ export function formatNumber(n: number): string {
 
 export function formatMemberDate(d: string | Date | null | undefined): string {
   if (!d) return '';
-  return new Date(d).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
 export function getInitials(name: string): string {

@@ -43,6 +43,7 @@ export default function DiscoverScreen() {
     communityRailData,
     nearbyRailData,
     activityRailData,
+    forYouEvents,
     eventsLoading,
     communitiesLoading,
     activitiesLoading,
@@ -137,11 +138,11 @@ export default function DiscoverScreen() {
 
         <CityRail />
 
-        <ComingSoonRail
+        <EventRail
           title="For Your Culture"
           subtitle="Personalised events matching your heritage"
-          icon="heart"
-          accentColor={CultureTokens.coral}
+          data={forYouEvents.length > 0 ? forYouEvents : ['s1', 's2', 's3']}
+          isLoading={eventsLoading}
         />
 
         <ComingSoonRail

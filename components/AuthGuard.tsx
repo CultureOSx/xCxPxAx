@@ -6,6 +6,7 @@ import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -127,14 +128,14 @@ const styles = StyleSheet.create({
     height: 280,
     top: -60,
     right: -80,
-    backgroundColor: 'rgba(0,129,200,0.22)',
+    backgroundColor: CultureTokens.indigo + '38',
   },
   orbBottom: {
     width: 220,
     height: 220,
     bottom: '15%',
     left: -70,
-    backgroundColor: 'rgba(238,51,78,0.15)',
+    backgroundColor: CultureTokens.coral + '26',
   },
   backBtn: {
     paddingHorizontal: 20,
@@ -151,11 +152,11 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 28,
-    backgroundColor: 'rgba(0,129,200,0.25)',
+    backgroundColor: CultureTokens.indigo + '40',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(64,168,232,0.5)',
+    borderColor: CultureTokens.indigo + '80',
     marginBottom: 24,
     alignSelf: 'center',
   },

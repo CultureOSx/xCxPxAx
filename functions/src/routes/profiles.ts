@@ -62,13 +62,27 @@ profilesRouter.get('/communities', async (req, res) => {
 /** POST /api/communities — create a new community */
 profilesRouter.post('/communities', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { name, description, communityCategory, city, country, imageUrl } = req.body as {
+    const {
+      name, description, communityCategory, city, country, imageUrl,
+      nationalityId, cultureIds, languageIds, diasporaGroupIds,
+      website, instagram, facebook, twitter, telegram, joinMode,
+    } = req.body as {
       name?: string;
       description?: string;
       communityCategory?: string;
       city?: string;
       country?: string;
       imageUrl?: string;
+      nationalityId?: string;
+      cultureIds?: string[];
+      languageIds?: string[];
+      diasporaGroupIds?: string[];
+      website?: string;
+      instagram?: string;
+      facebook?: string;
+      twitter?: string;
+      telegram?: string;
+      joinMode?: 'open' | 'request' | 'invite';
     };
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -83,8 +97,20 @@ profilesRouter.post('/communities', requireAuth, async (req: Request, res: Respo
       city,
       country,
       imageUrl,
+      nationalityId,
+      cultureIds,
+      languageIds,
+      diasporaGroupIds,
+      website,
+      instagram,
+      facebook,
+      twitter,
+      telegram,
+      joinMode: joinMode || 'open',
       ownerId: req.user!.id,
       isVerified: false,
+      status: 'published', // default for user-created communities
+      handleStatus: 'pending',
     });
 
     return res.status(201).json({ community: result });

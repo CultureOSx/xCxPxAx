@@ -75,16 +75,18 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
 
   const selectCity = useCallback(async (city: string) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await updateLocation('Australia', city);
+    const countryObj = states.find(s => s.cities.includes(city));
+    const finalCountry = countryObj ? ((countryObj as any).country ?? 'Australia') : 'Australia';
+    await updateLocation(finalCountry, city);
     setVisible(false);
-  }, [updateLocation]);
+  }, [updateLocation, states]);
 
   const handleDetectLocation = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const r = await detect();
     if (r) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await updateLocation('Australia', r.city);
+      await updateLocation((r as any).country || 'Australia', r.city);
       setVisible(false);
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -109,7 +111,7 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
     : 'Select Location';
 
   return (
-    <>
+    <View style={styles.pickerRoot}>
       {variant === 'text' ? (
         <Pressable
           style={styles.textTrigger}
@@ -359,11 +361,18 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  /** Single root avoids Fragment + Modal flattening issues on react-native-web (stray text nodes in <View>). */
+  pickerRoot: {
+    ...Platform.select({
+      web: { alignSelf: 'center' as const },
+      default: { alignSelf: 'flex-start' as const },
+    }),
+  },
   iconTrigger: {
     width: 48,
     height: 48,

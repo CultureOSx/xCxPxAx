@@ -16,7 +16,9 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { queryClient } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Skeleton } from '@/components/ui/Skeleton';
 import * as Haptics from 'expo-haptics';
+import { Card } from '@/components/ui/Card';
 
 const isWeb = Platform.OS === 'web';
 
@@ -41,7 +43,7 @@ function timeAgo(iso: string): string {
   if (d === 1) return 'Yesterday';
   if (d < 7)   return `${d}d ago`;
   if (d < 30)  return `${Math.floor(d / 7)}w ago`;
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
 // ─── Stat Chip ────────────────────────────────────────────────────────────────
@@ -65,6 +67,32 @@ const sp = StyleSheet.create({
   val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
 });
+
+function ReportCardSkeleton() {
+  const colors = useColors();
+  return (
+    <Card style={{ marginBottom: 10 }} padding={14}>
+      <View style={{ gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Skeleton width={80} height={20} borderRadius={8} />
+          <Skeleton width={60} height={20} borderRadius={8} />
+          <View style={{ flex: 1 }} />
+          <Skeleton width={50} height={14} borderRadius={4} />
+        </View>
+        <View style={{ gap: 6 }}>
+          <Skeleton width={60} height={10} />
+          <Skeleton width="100%" height={18} />
+          <Skeleton width="90%" height={14} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Skeleton width={80} height={34} borderRadius={10} />
+          <Skeleton width={80} height={34} borderRadius={10} />
+          <Skeleton width={80} height={34} borderRadius={10} />
+        </View>
+      </View>
+    </Card>
+  );
+}
 
 // ─── Report Card ──────────────────────────────────────────────────────────────
 function ReportCard({ report, onResolve, onDismiss, index }: {
@@ -122,7 +150,10 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
             <View style={rc.actions}>
               <Pressable
                 style={[rc.actionBtn, { backgroundColor: '#22C55E18', borderColor: '#22C55E44' }]}
-                onPress={onResolve}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onResolve();
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Resolve report"
               >
@@ -131,7 +162,10 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
               </Pressable>
               <Pressable
                 style={[rc.actionBtn, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
-                onPress={onDismiss}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onDismiss();
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Dismiss report"
               >
@@ -140,7 +174,10 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
               </Pressable>
               <Pressable
                 style={[rc.actionBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
-                onPress={() => router.push(`/${report.targetType}/${report.targetId}` as never)}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push(`/${report.targetType}/${report.targetId}` as never);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="View content"
               >
@@ -219,7 +256,10 @@ function EventApprovalCard({ event, onApprove, index }: {
           <View style={ec.actions}>
             <Pressable
               style={[ec.approveBtn, { backgroundColor: CultureTokens.teal }]}
-              onPress={onApprove}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onApprove();
+              }}
               accessibilityRole="button"
               accessibilityLabel={`Approve ${event.title}`}
             >
@@ -228,7 +268,10 @@ function EventApprovalCard({ event, onApprove, index }: {
             </Pressable>
             <Pressable
               style={[ec.viewBtn, { borderColor: colors.borderLight }]}
-              onPress={() => router.push(`/event/${event.id}` as never)}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/event/${event.id}` as never);
+              }}
               accessibilityRole="button"
             >
               <Ionicons name="eye-outline" size={15} color={colors.textSecondary} />
@@ -414,9 +457,10 @@ function ModerationContent() {
             ) : null}
 
             {(tab === 'reports' ? reportsQuery.isLoading : eventsQuery.isLoading) ? (
-              <View style={s.loadingWrap}>
-                <ActivityIndicator color={CultureTokens.indigo} size="large" />
-                <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading…</Text>
+              <View style={{ gap: 10 }}>
+                <ReportCardSkeleton />
+                <ReportCardSkeleton />
+                <ReportCardSkeleton />
               </View>
             ) : null}
           </View>

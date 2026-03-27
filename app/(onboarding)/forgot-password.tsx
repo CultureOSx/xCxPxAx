@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { useColors } from '@/hooks/useColors';
 
 export default function ForgotPasswordScreen() {
@@ -114,19 +115,15 @@ export default function ForgotPasswordScreen() {
                   </View>
 
                   <View style={styles.block}>
-                    <Text style={[styles.label, { color: colors.textInverse }]}>Email Address</Text>
-                    <View style={[styles.inputWrap, { borderColor: colors.borderLight, backgroundColor: colors.overlay }]}>
-                      <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
-                      <TextInput
-                        style={[styles.input, { color: colors.textInverse }]}
-                        placeholder="you@example.com"
-                        placeholderTextColor={colors.textSecondary}
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                      />
-                    </View>
+                    <Input
+                      label="Email Address"
+                      placeholder="you@example.com"
+                      leftIcon="mail-outline"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                    />
                   </View>
 
                   <View style={styles.spacer} />

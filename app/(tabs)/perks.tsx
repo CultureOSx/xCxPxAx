@@ -1,5 +1,6 @@
 // app/(tabs)/perks.tsx
 import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -30,45 +31,103 @@ import { PerkCard } from '@/components/perks/PerkCard';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/lib/auth';
+import { api, type RewardsSummary } from '@/lib/api';
+import type { PerkData, Ticket } from '@/shared/schema';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+// Tier thresholds — keep aligned with functions/src/routes/rewards.ts
 
-const CULTURAL_QUESTS = [
-  {
-    id: 'q1',
-    title: 'Spice Routes',
-    task: 'Visit 3 Indian Restaurants',
-    progress: 1,
-    total: 3,
-    reward: 'Masala Explorer',
-    color: '#FF9933',
-    icon: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400',
-  },
-  {
-    id: 'q2',
-    title: 'Hallyu Wave',
-    task: 'Attend 2 Korean Art Events',
-    progress: 1,
-    total: 2,
-    reward: 'K-Star Token',
-    color: '#CD2E3A',
-    icon: 'sparkles',
-    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=400',
-  },
-  {
-    id: 'q3',
-    title: 'Indigenous Echoes',
-    task: 'Visit 1 Native Art Center',
-    progress: 0,
-    total: 1,
-    reward: 'Ancient Roots Seed',
-    // Gold is kept intentionally for this indigenous quest — cultural choice
-    color: CultureTokens.gold,
-    icon: 'leaf',
-    image: 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400',
-  },
-];
+const REWARDS_GOLD_AT = 500;
+const REWARDS_DIAMOND_AT = 2500;
+const TICKET_QUEST_GOAL = 5;
+const PERK_REDEEM_QUEST_GOAL = 3;
+
+type QuestCta = 'wallet' | 'tickets' | 'perks' | 'explore';
+
+type ActiveQuest = {
+  id: string;
+  title: string;
+  task: string;
+  progress: number;
+  total: number;
+  reward: string;
+  color: string;
+  icon: string;
+  image?: string;
+  cta: QuestCta;
+};
+
+function tierJourneyQuestProgress(rewards: RewardsSummary): { progress: number; total: number } {
+  const p = rewards.points;
+  if (rewards.tier === 'diamond') return { progress: 1, total: 1 };
+  if (rewards.tier === 'gold') {
+    const total = REWARDS_DIAMOND_AT - REWARDS_GOLD_AT;
+    const progress = Math.max(0, Math.min(total, p - REWARDS_GOLD_AT));
+    return { progress, total };
+  }
+  const total = REWARDS_GOLD_AT;
+  const progress = Math.max(0, Math.min(total, p));
+  return { progress, total };
+}
+
+function buildActiveQuests(
+  rewards: RewardsSummary,
+  tickets: Ticket[],
+  perks: PerkData[],
+  city: string | undefined,
+): ActiveQuest[] {
+  const { progress: tierProgress, total: tierTotal } = tierJourneyQuestProgress(rewards);
+
+  const ticketCount = tickets.filter((t) => t.status === 'confirmed' || t.status === 'used').length;
+  const ticketProgress = Math.min(ticketCount, TICKET_QUEST_GOAL);
+
+  const redeemed = rewards.perksRedeemed ?? 0;
+  const perkProgress = Math.min(redeemed, PERK_REDEEM_QUEST_GOAL);
+
+  const localPerks = city ? perks.filter((p) => !p.city || p.city === city) : perks;
+  const perkCover = localPerks.find((p) => p.coverUrl)?.coverUrl;
+
+  return [
+    {
+      id: 'rewards-tier',
+      title: 'Rewards trail',
+      task:
+        rewards.nextTierLabel != null
+          ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
+          : 'You are at the top rewards tier',
+      progress: tierProgress,
+      total: tierTotal,
+      reward: rewards.nextTierLabel ? `${rewards.nextTierLabel} tier` : 'Max tier',
+      color: CultureTokens.gold,
+      icon: 'trending-up',
+      cta: 'wallet',
+    },
+    {
+      id: 'event-tickets',
+      title: 'Culture calendar',
+      task: `Collect ${TICKET_QUEST_GOAL} active tickets to events you love`,
+      progress: ticketProgress,
+      total: TICKET_QUEST_GOAL,
+      reward: 'Ticket explorer',
+      color: CultureTokens.teal,
+      icon: 'ticket',
+      cta: 'tickets',
+    },
+    {
+      id: 'perk-redemptions',
+      title: 'Perk pioneer',
+      task: `Redeem ${PERK_REDEEM_QUEST_GOAL} member perks${city ? ` near ${city}` : ''}`,
+      progress: perkProgress,
+      total: PERK_REDEEM_QUEST_GOAL,
+      reward: 'Local insider',
+      color: CultureTokens.coral,
+      icon: 'gift',
+      image: perkCover,
+      cta: 'perks',
+    },
+  ];
+}
 
 const PERK_CATEGORIES = [
   { id: 'All',      label: 'All Perks', icon: 'gift-outline'      },
@@ -96,7 +155,7 @@ function FilterChip({
     backgroundColor: interpolateColor(
       bg.value, [0, 1],
       active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
         : [colors.surface, colors.surfaceElevated],
     ),
   }));
@@ -131,11 +190,11 @@ function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
 function PerkCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
   return (
     <View style={[pk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      <View style={[pk.image, { backgroundColor: colors.borderLight }]} />
+      <View style={[pk.image, { backgroundColor: colors.surfaceElevated }]} />
       <View style={pk.body}>
-        <View style={[pk.line, { width: '65%', backgroundColor: colors.borderLight }]} />
-        <View style={[pk.line, { width: '45%', backgroundColor: colors.borderLight, marginTop: 6 }]} />
-        <View style={[pk.pill, { backgroundColor: colors.borderLight, marginTop: 8 }]} />
+        <View style={[pk.line, { width: '65%', backgroundColor: colors.surfaceElevated }]} />
+        <View style={[pk.line, { width: '45%', backgroundColor: colors.surfaceElevated, marginTop: 6 }]} />
+        <View style={[pk.pill, { backgroundColor: colors.surfaceElevated, marginTop: 8 }]} />
       </View>
     </View>
   );
@@ -151,38 +210,23 @@ const pk = StyleSheet.create({
 
 // ─── Quest Card ───────────────────────────────────────────────────────────────
 
-function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
+function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () => void }) {
   const colors = useColors();
-  const [checkingIn, setCheckingIn] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const checkInTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCheckIn = () => {
-    if (checkInTimerRef.current) clearTimeout(checkInTimerRef.current);
-    setCheckingIn(true);
-    if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    checkInTimerRef.current = setTimeout(() => {
-      setCheckingIn(false);
-      setCompleted(true);
-    }, 1500);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (checkInTimerRef.current) clearTimeout(checkInTimerRef.current);
-    };
-  }, []);
-
-  const progressPct = (quest.progress / quest.total) * 100;
+  const safeTotal = Math.max(1, quest.total);
+  const progressPct = Math.min(100, (quest.progress / safeTotal) * 100);
+  const isComplete = quest.total > 0 && quest.progress >= quest.total;
 
   return (
     <Animated.View
       entering={!isWeb ? FadeInDown.duration(400).springify() : undefined}
       style={[qs.questCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
     >
-      {/* Left image strip */}
       <View style={qs.questImageStrip}>
-        <Image source={{ uri: quest.image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+        {quest.image ? (
+          <Image source={{ uri: quest.image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: quest.color + '33' }]} />
+        )}
         <LinearGradient
           colors={['transparent', quest.color + 'CC']}
           style={StyleSheet.absoluteFill}
@@ -194,9 +238,7 @@ function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
         </View>
       </View>
 
-      {/* Right content */}
       <View style={qs.questCardContent}>
-        {/* Reward badge — gold is intentional for quest rewards */}
         <View style={qs.questRewardBadge}>
           <Ionicons name="trophy" size={10} color={CultureTokens.gold} />
           <Text style={qs.questRewardText}>{quest.reward}</Text>
@@ -223,7 +265,7 @@ function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
           </Text>
         </View>
 
-        {completed ? (
+        {isComplete ? (
           <Animated.View
             entering={!isWeb ? SlideInDown.springify() : undefined}
             style={qs.completedRow}
@@ -247,19 +289,16 @@ function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
           </Animated.View>
         ) : (
           <Pressable
-            disabled={checkingIn}
-            onPress={handleCheckIn}
+            onPress={onContinue}
             style={({ pressed }) => [
               qs.checkInBtn,
               { backgroundColor: quest.color, opacity: pressed ? 0.85 : 1 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Check in at venue"
+            accessibilityLabel="Continue this quest"
           >
-            <Ionicons name="location" size={14} color="#fff" />
-            <Text style={qs.checkInText}>
-              {checkingIn ? 'Verifying…' : 'Check In'}
-            </Text>
+            <Ionicons name="arrow-forward" size={14} color="#fff" />
+            <Text style={qs.checkInText}>Continue</Text>
           </Pressable>
         )}
       </View>
@@ -268,7 +307,19 @@ function QuestCard({ quest }: { quest: (typeof CULTURAL_QUESTS)[number] }) {
 }
 
 const qs = StyleSheet.create({
-  questCard: { flexDirection: 'row', borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 14, height: 160, ...shadows.medium },
+  questCard: { 
+    flexDirection: 'row', 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    overflow: 'hidden', 
+    marginBottom: 14, 
+    height: 160,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
+      android: { elevation: 3 },
+      web: { boxShadow: '0 2px 12px rgba(0,0,0,0.06)' } as any,
+    }),
+  },
   questImageStrip: { width: 160, position: 'relative' },
   questIconOnImage: { position: 'absolute', top: 12, left: 12, width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   questCardContent: { flex: 1, padding: 14, justifyContent: 'space-between' },
@@ -291,8 +342,92 @@ const qs = StyleSheet.create({
 
 // ─── Explorer Badge ───────────────────────────────────────────────────────────
 
-function ExplorerBadge({ colors }: { colors: ReturnType<typeof useColors> }) {
-  const expProgress = 0.62;
+function ExplorerBadge({
+  colors,
+  signedIn,
+  loading,
+  rewards,
+  rewardsError,
+  onRetryRewards,
+}: {
+  colors: ReturnType<typeof useColors>;
+  signedIn: boolean;
+  loading: boolean;
+  rewards: RewardsSummary | undefined;
+  rewardsError: boolean;
+  onRetryRewards: () => void;
+}) {
+  if (!signedIn) {
+    return (
+      <Animated.View
+        entering={!isWeb ? FadeInDown.duration(350) : undefined}
+        style={[eb.explorerCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
+      >
+        <LinearGradient
+          colors={[CultureTokens.indigo + '18', 'transparent']}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={[eb.levelCircle, { backgroundColor: colors.surfaceElevated }]}>
+          <Ionicons name="person-circle-outline" size={28} color={CultureTokens.indigo} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+          <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>
+            Sign in to sync reward points and quests.
+          </Text>
+          <Pressable
+            onPress={() => {
+              if (!isWeb) Haptics.selectionAsync();
+              router.push({ pathname: '/(onboarding)/login', params: { redirectTo: '/(tabs)/perks' } });
+            }}
+            style={({ pressed }) => [eb.signInBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: CultureTokens.indigo }]}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to track rewards"
+          >
+            <Text style={eb.signInBtnText}>Sign in</Text>
+            <Ionicons name="arrow-forward" size={14} color="#fff" />
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={[eb.explorerCard, { backgroundColor: colors.surface, justifyContent: 'center', minHeight: 92 }]}>
+        <ActivityIndicator color={CultureTokens.indigo} />
+      </View>
+    );
+  }
+
+  if (rewardsError || !rewards) {
+    return (
+      <View style={[eb.explorerCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary, marginBottom: 10 }]}>
+          Rewards summary unavailable. Pull to refresh or try again.
+        </Text>
+        <Pressable
+          onPress={onRetryRewards}
+          style={({ pressed }) => [eb.signInBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: CultureTokens.indigo, marginTop: 0 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading rewards"
+        >
+          <Text style={eb.signInBtnText}>Retry</Text>
+          <Ionicons name="refresh" size={14} color="#fff" />
+        </Pressable>
+      </View>
+    );
+  }
+
+  const tierLevel = rewards.tier === 'silver' ? 1 : rewards.tier === 'gold' ? 2 : 3;
+  const expProgress = Math.min(1, Math.max(0, (rewards.progressPercent ?? 0) / 100));
+  const subtitle = rewards.nextTierLabel
+    ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
+    : 'Top rewards tier unlocked';
+
   return (
     <Animated.View
       entering={!isWeb ? FadeInDown.duration(350) : undefined}
@@ -305,12 +440,12 @@ function ExplorerBadge({ colors }: { colors: ReturnType<typeof useColors> }) {
         end={{ x: 1, y: 1 }}
       />
       <LinearGradient colors={[CultureTokens.gold, '#F4A100']} style={eb.levelCircle}>
-        <Text style={eb.levelText}>4</Text>
+        <Text style={eb.levelText}>{tierLevel}</Text>
         <Text style={eb.levelLabel}>LVL</Text>
       </LinearGradient>
       <View style={{ flex: 1 }}>
-        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
-        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>500 XP to next Explorer Token</Text>
+        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer · {rewards.tierLabel}</Text>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
         <View style={[eb.expBarTrack, { backgroundColor: colors.borderLight }]}>
           <LinearGradient
             colors={[CultureTokens.gold, '#F4A100']}
@@ -325,7 +460,20 @@ function ExplorerBadge({ colors }: { colors: ReturnType<typeof useColors> }) {
 }
 
 const eb = StyleSheet.create({
-  explorerCard: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 18, borderRadius: 24, marginBottom: 24, overflow: 'hidden', ...shadows.small },
+  explorerCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 16, 
+    padding: 18, 
+    borderRadius: 24, 
+    marginBottom: 24, 
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4 },
+      android: { elevation: 2 },
+      web: { boxShadow: '0 1px 6px rgba(0,0,0,0.04)' } as any,
+    }),
+  },
   levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   levelText: { color: '#fff', fontSize: 18, fontFamily: 'Poppins_800ExtraBold', lineHeight: 22 },
   levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
@@ -333,6 +481,18 @@ const eb = StyleSheet.create({
   explorerSub: { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 10, opacity: 0.8 },
   expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   expBarFill: { height: '100%', borderRadius: 3 },
+  signInBtn: {
+    marginTop: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  signInBtnText: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_700Bold' },
 });
 
 // ─── Membership Upgrade Banner ────────────────────────────────────────────────
@@ -370,7 +530,20 @@ function MembershipUpgradeBanner() {
 }
 
 const mb = StyleSheet.create({
-  banner: { borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, overflow: 'hidden', ...shadows.medium },
+  banner: { 
+    borderRadius: 20, 
+    padding: 18, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    gap: 12, 
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      android: { elevation: 4 },
+      web: { boxShadow: '0 4px 20px rgba(0,0,0,0.1)' } as any,
+    }),
+  },
   headline: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 2 },
   sub: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
   btn: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
@@ -384,6 +557,8 @@ export default function PerksTabScreen() {
   const insets = useSafeAreaInsets();
   const { hPad, isDesktop, isTablet } = useLayout();
   const { state } = useOnboarding();
+  const queryClient = useQueryClient();
+  const { userId, isAuthenticated } = useAuth();
 
   const topInset    = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 0 : insets.bottom;
@@ -392,6 +567,25 @@ export default function PerksTabScreen() {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const { data: perks = [], refetch, isRefetching, isLoading: perksLoading } = usePerks();
+
+  const { data: rewards, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
+    queryKey: ['rewards', userId],
+    queryFn: () => api.rewards.get(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: ['/api/tickets', userId],
+    queryFn: () => api.tickets.forUser(userId!),
+    enabled: !!userId,
+  });
+
+  const activeQuests = useMemo(() => {
+    if (!userId || !rewards) return [];
+    return buildActiveQuests(rewards, tickets, perks, state.city || undefined);
+  }, [userId, rewards, tickets, perks, state.city]);
+
+  const questsLoading = !!userId && (rewardsLoading || ticketsLoading);
 
   const filteredPerks = useMemo(() => {
     if (selectedCategory === 'All') return perks;
@@ -411,13 +605,33 @@ export default function PerksTabScreen() {
     setSelectedCategory('All');
   }, []);
 
-  const renderQuestItem = useCallback(({ item, index }: { item: typeof CULTURAL_QUESTS[number]; index: number }) => (
+  const handleQuestContinue = useCallback((quest: ActiveQuest) => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    switch (quest.cta) {
+      case 'wallet':
+        router.push('/payment/wallet');
+        break;
+      case 'tickets':
+        router.push('/tickets');
+        break;
+      case 'perks':
+        setViewMode('perks');
+        break;
+      case 'explore':
+        router.push('/(tabs)/explore');
+        break;
+      default:
+        break;
+    }
+  }, []);
+
+  const renderQuestItem = useCallback(({ item, index }: { item: ActiveQuest; index: number }) => (
     <Animated.View
       entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
     >
-      <QuestCard quest={item} />
+      <QuestCard quest={item} onContinue={() => handleQuestContinue(item)} />
     </Animated.View>
-  ), []);
+  ), [handleQuestContinue]);
 
   const renderPerkItem = useCallback(({ item, index }: { item: ReturnType<typeof usePerks>['data'] extends (infer T)[] | undefined ? T : never; index: number }) => (
     <Animated.View
@@ -430,7 +644,16 @@ export default function PerksTabScreen() {
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
-      <ExplorerBadge colors={colors} />
+      <ExplorerBadge
+        colors={colors}
+        signedIn={isAuthenticated && !!userId}
+        loading={!!userId && rewardsLoading}
+        rewards={rewards}
+        rewardsError={!!userId && rewardsError && !rewardsLoading}
+        onRetryRewards={() => {
+          if (userId) void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+        }}
+      />
 
       {/* View mode toggle */}
       <View style={[s.toggleWrap, { backgroundColor: colors.surface }]}>
@@ -517,12 +740,12 @@ export default function PerksTabScreen() {
         />
         <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>
           {viewMode === 'quests'
-            ? `${CULTURAL_QUESTS.length} Active Quests`
+            ? (!userId ? 'Sign in for quests' : `${activeQuests.length} active quests`)
             : `Member Perks · ${filteredPerks.length} available`}
         </Text>
       </View>
     </View>
-  ), [colors, hPad, viewMode, selectedCategory, filteredPerks.length, filtersActive, clearFilters]);
+  ), [colors, hPad, viewMode, selectedCategory, filteredPerks.length, filtersActive, clearFilters, userId, activeQuests.length, isAuthenticated, questsLoading, rewards, rewardsError, queryClient]);
 
   return (
     <ErrorBoundary>
@@ -547,7 +770,13 @@ export default function PerksTabScreen() {
           </View>
 
           <Pressable
-            onPress={() => refetch()}
+            onPress={() => {
+              void refetch();
+              if (userId) {
+                void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+                void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
+              }
+            }}
             style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Refresh perks"
@@ -562,19 +791,35 @@ export default function PerksTabScreen() {
         {/* ── Content shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
           {viewMode === 'quests' ? (
-            // Quests — single column list
             <FlatList
-              data={CULTURAL_QUESTS}
+              data={activeQuests}
               keyExtractor={(item) => item.id}
               renderItem={renderQuestItem}
               ListHeaderComponent={renderHeader}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: bottomInset + 120 }]}
+              ListEmptyComponent={
+                !userId ? (
+                  <View style={[s.emptyState, { paddingVertical: 48 }]}>
+                    <Text style={[s.emptyDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
+                      Create an account to track reward points, tickets, and perk redemptions.
+                    </Text>
+                  </View>
+                ) : questsLoading ? (
+                  <ActivityIndicator style={{ marginTop: 32 }} color={CultureTokens.indigo} />
+                ) : rewardsError ? (
+                  <View style={[s.emptyState, { paddingVertical: 48 }]}>
+                    <Text style={[s.emptyDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
+                      Could not load your quests. Check your connection and pull to refresh.
+                    </Text>
+                  </View>
+                ) : null
+              }
               ListFooterComponent={() => (
                 <View style={s.listFooter}>
                   <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                   <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
-                    {CULTURAL_QUESTS.length} active quests
+                    {!userId ? 'Sign in to sync progress' : `${activeQuests.length} active quests`}
                   </Text>
                   <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                 </View>

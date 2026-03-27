@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireRole, isOwnerOrAdmin } from '../middleware/auth';
+import { slidingWindowRateLimit } from '../middleware/rateLimit';
 import { moderationCheck } from '../middleware/moderation';
 import {
   eventsService,
@@ -178,7 +179,7 @@ export function createEventsRouter() {
   const router = Router();
 
   // ── GET /api/events ────────────────────────────────────────────────────────
-  router.get('/events', async (req: Request, res: Response) => {
+  router.get('/events', slidingWindowRateLimit(60000, 100), async (req: Request, res: Response) => {
     try {
       const city        = qstr(req.query.city).trim()        || undefined;
       const country     = qstr(req.query.country).trim()     || undefined;
@@ -236,7 +237,7 @@ export function createEventsRouter() {
 
   // ── GET /api/events/nearby ─────────────────────────────────────────────────
   // Required: lat, lng. Optional: radius (km, default 10), pageSize (default 20)
-  router.get('/events/nearby', async (req: Request, res: Response) => {
+  router.get('/events/nearby', slidingWindowRateLimit(60000, 100), async (req: Request, res: Response) => {
     const lat = parseFloat(qstr(req.query.lat));
     const lng = parseFloat(qstr(req.query.lng));
     const radius = parseFloat(qstr(req.query.radius) || '10');

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useLayout } from '@/hooks/useLayout';
 import SectionHeader from './SectionHeader';
 import EventCard from './EventCard';
@@ -36,7 +37,7 @@ function EventRailComponent({
       <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
-      <FlatList
+      <FlashList
         horizontal
         data={data}
         keyExtractor={(item) => (typeof item === 'string' ? item : item.id)}
@@ -52,15 +53,8 @@ function EventRailComponent({
         snapToInterval={snapInterval}
         snapToAlignment="start"
         decelerationRate="fast"
-        initialNumToRender={4}
-        maxToRenderPerBatch={4}
-        windowSize={5}
-        removeClippedSubviews
-        getItemLayout={(_, index) => ({
-          length: snapInterval,
-          offset: snapInterval * index,
-          index,
-        })}
+        // @ts-expect-error Types for FlashList are missing estimatedItemSize in this version
+        estimatedItemSize={snapInterval}
       />
     </View>
   );

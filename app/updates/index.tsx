@@ -22,7 +22,7 @@ const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; ic
 function formatDate(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function UpdateCard({ update }: { update: AppUpdate }) {

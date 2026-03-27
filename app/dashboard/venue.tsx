@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import type { EventData } from '@/shared/schema';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface VenueProfile {
@@ -38,7 +39,7 @@ interface VenueEvent extends EventData {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(d?: string) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function capacityPct(attending?: number, capacity?: number) {
@@ -60,7 +61,24 @@ function StatPill({ icon, value, label, accent }: { icon: string; value: string 
   );
 }
 const sp = StyleSheet.create({
-  pill:  { flex: 1, alignItems: 'center', gap: 4, borderRadius: 12, borderWidth: 1, padding: 12 },
+  pill:  { 
+    flex: 1, 
+    alignItems: 'center', 
+    gap: 4, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    padding: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 }
+    })
+  },
   icon:  { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   val:   { fontSize: 18, fontFamily: 'Poppins_700Bold' },
   lbl:   { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
@@ -119,6 +137,43 @@ const er = StyleSheet.create({
   badge:    { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   badgeText:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
 });
+
+function VenueDashboardSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: topInset }}>
+      <View style={{ height: 70, borderBottomWidth: 1, borderBottomColor: colors.borderLight, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 12 }}>
+        <Skeleton width={34} height={34} borderRadius={9} />
+        <View style={{ flex: 1, gap: 4 }}>
+          <Skeleton width="40%" height={20} borderRadius={6} />
+          <Skeleton width="30%" height={14} borderRadius={4} />
+        </View>
+        <Skeleton width={34} height={34} borderRadius={9} />
+      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ padding: 20, gap: 16 }}>
+          <Skeleton width="100%" height={200} borderRadius={12} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Skeleton width="31%" height={80} borderRadius={12} />
+            <Skeleton width="31%" height={80} borderRadius={12} />
+            <Skeleton width="31%" height={80} borderRadius={12} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+            <Skeleton width="31%" height={80} borderRadius={12} />
+            <Skeleton width="31%" height={80} borderRadius={12} />
+            <Skeleton width="31%" height={80} borderRadius={12} />
+          </View>
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {[1, 2, 3].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={12} />)}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 function VenueDashboardContent() {
@@ -189,9 +244,7 @@ function VenueDashboardContent() {
       </View>
 
       {venueLoading || eventsLoading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={CultureTokens.indigo} />
-        </View>
+        <VenueDashboardSkeleton />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
 
@@ -325,13 +378,46 @@ const vc = StyleSheet.create({
   sectionHeader: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 10 },
   card:        { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
 
-  venueCard:   { marginHorizontal: 20, marginTop: 20, borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+  venueCard:   { 
+    marginHorizontal: 20, 
+    marginTop: 20, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.15)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   venueImage:  { width: '100%', height: 120 },
   venueInfo:   { padding: 14 },
   venueName:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   venueMeta:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2 },
 
-  qBtn:        { flex: 1, alignItems: 'center', gap: 6, padding: 14, borderRadius: 12, borderWidth: 1 },
+  qBtn:        { 
+    flex: 1, 
+    alignItems: 'center', 
+    gap: 6, 
+    padding: 14, 
+    borderRadius: 12, 
+    borderWidth: 1,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   qBtnText:    { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
   ctaBtn:      { flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
 });

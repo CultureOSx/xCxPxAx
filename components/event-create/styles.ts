@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { CardTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
@@ -11,7 +11,22 @@ export const getStyles = (colors: ReturnType<typeof useColors>) =>
     successContent: { alignItems: 'center', gap: 10, width: '100%' },
     successTitle:  { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
     successSub:    { fontSize: 16, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 24 },
-    successImage:  { width: '100%', height: 180, borderRadius: 16, marginTop: 8 },
+    successImage:  { 
+      width: '100%', 
+      height: 180, 
+      borderRadius: 16, 
+      marginTop: 8,
+      ...Platform.select({
+        web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.3)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
+        },
+        android: { elevation: 4 }
+      })
+    },
     successActions: { width: '100%', gap: 12 },
     // Header / progress
     topBar:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 4 },
@@ -26,7 +41,22 @@ export const getStyles = (colors: ReturnType<typeof useColors>) =>
     // Scroll / card
     scroll:        { flexGrow: 1, paddingHorizontal: 16, paddingVertical: 24, paddingBottom: 60 },
     scrollDesktop: { paddingHorizontal: 0, maxWidth: 700, alignSelf: 'center' as const, width: '100%' },
-    card:          { borderRadius: CardTokens.radius, borderWidth: 1, padding: CardTokens.padding + 4, gap: 0 },
+    card:          { 
+      borderRadius: CardTokens.radius, 
+      borderWidth: 1, 
+      padding: CardTokens.padding + 4, 
+      gap: 0,
+      ...Platform.select({
+        web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.4)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.4,
+          shadowRadius: 32,
+        },
+        android: { elevation: 8 }
+      })
+    },
     cardDesktop:   { borderRadius: 20 },
     stepHeader:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
     stepIconWrap:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
@@ -80,13 +110,49 @@ export const getStyles = (colors: ReturnType<typeof useColors>) =>
     reviewImage:   { width: '100%', height: 160, borderRadius: 12, marginBottom: 16 },
     // Entry type
     entryTypeGrid: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-    entryCard:     { flex: 1, alignItems: 'center', padding: 20, borderRadius: 16, borderWidth: 2, gap: 8, position: 'relative' },
+    entryCard:     { 
+      flex: 1, 
+      alignItems: 'center', 
+      padding: 20, 
+      borderRadius: 16, 
+      borderWidth: 2, 
+      gap: 8, 
+      position: 'relative',
+      ...Platform.select({
+        web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.2)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+        },
+        android: { elevation: 2 }
+      })
+    },
     entryIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
     entryCardTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
     entryCardSub:  { fontSize: 12, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 16 },
     entryCheck:    { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
     // Tickets
-    tierRow:       { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 8, gap: 12 },
+    tierRow:       { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      borderWidth: 1, 
+      borderRadius: 12, 
+      padding: 14, 
+      marginBottom: 8, 
+      gap: 12,
+      ...Platform.select({
+        web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.1)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 }
+      })
+    },
     tierInfo:      { flex: 1 },
     tierName:      { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
     tierDetails:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2 },
@@ -104,7 +170,25 @@ export const getStyles = (colors: ReturnType<typeof useColors>) =>
     teamSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     teamSectionTitle: { flex: 1, fontSize: 15, fontFamily: 'Poppins_700Bold' },
     teamCount:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-    teamChip:      { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8, gap: 10 },
+    teamChip:      { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      borderWidth: 1, 
+      borderRadius: 12, 
+      padding: 12, 
+      marginBottom: 8, 
+      gap: 10,
+      ...Platform.select({
+        web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.1)' },
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: { elevation: 1 }
+      })
+    },
     teamChipIcon:  { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     teamChipName:  { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
     teamChipRole:  { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },

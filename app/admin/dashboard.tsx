@@ -1,6 +1,7 @@
 import {
-  View, Text, Pressable, StyleSheet, ActivityIndicator,
+  View, Text, Pressable, StyleSheet, ActivityIndicator, Platform, ScrollView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { queryClient } from '@/lib/query-client';
 import { goBackOrReplace } from '@/lib/navigation';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import type { DashboardNavItem } from '@/components/dashboard/DashboardShell';
@@ -43,7 +45,10 @@ function TapCard({ onPress, style, children }: {
   return (
     <Animated.View style={[anim, Array.isArray(style) ? style : (style ? [style] : undefined)]}>
       <Pressable
-        onPressIn={() => { scale.value = withSpring(0.94, { damping: 18 }); }}
+        onPressIn={() => { 
+          if(Platform.OS !== 'web') Haptics.selectionAsync();
+          scale.value = withSpring(0.94, { damping: 18 }); 
+        }}
         onPressOut={() => { scale.value = withSpring(1,    { damping: 18 }); }}
         onPress={onPress}
         style={{ flex: 1 }}
@@ -80,7 +85,23 @@ function QuickAction({ icon, label, accent, badge, onPress, width }: {
   );
 }
 const qa = StyleSheet.create({
-  card:     { alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, borderWidth: 1 },
+  card:     { 
+    alignItems: 'center', 
+    gap: 8, 
+    padding: 12, 
+    borderRadius: 16, 
+    borderWidth: 1,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   iconWrap: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   badge:    { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: CultureTokens.coral, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeText:{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#fff' },
@@ -115,7 +136,23 @@ function StatTile({ icon, label, value, accent, alert, width, index = 0 }: {
   );
 }
 const st = StyleSheet.create({
-  tile: { borderRadius: 14, borderWidth: 1, padding: 12, overflow: 'hidden', position: 'relative' },
+  tile: { 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    padding: 12, 
+    overflow: 'hidden', 
+    position: 'relative',
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: { elevation: 1 }
+    })
+  },
   icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   val:  { fontSize: 18, fontFamily: 'Poppins_700Bold', letterSpacing: -0.4 },
   lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium', marginTop: 1 },
@@ -155,7 +192,25 @@ function NavCard({ icon, label, sub, accent, badge, onPress, width, index = 0 }:
   );
 }
 const nc = StyleSheet.create({
-  card:    { borderRadius: 16, borderWidth: 1, padding: 14, gap: 8, overflow: 'hidden', position: 'relative', minHeight: 110 },
+  card:    { 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    padding: 14, 
+    gap: 8, 
+    overflow: 'hidden', 
+    position: 'relative', 
+    minHeight: 110,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   iconRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   icon:    { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   badge:   { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
@@ -202,10 +257,41 @@ function NavGrid({ children, gap }: { children: React.ReactNode; gap: number }) 
   );
 }
 
+function AdminDashboardSkeleton() {
+  const colors = useColors();
+  const { hPad, isDesktop, columnGap, columnWidth } = useLayout();
+  const topPad = Platform.OS === 'web' ? 0 : 20;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ height: 120, margin: 16, borderRadius: 18, backgroundColor: CultureTokens.indigo, opacity: 0.8 }} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 16, gap: 20 }}>
+          <View style={{ flexDirection: 'row', gap: columnGap }}>
+            {[1, 2, 3].map(i => <Skeleton key={i} width={columnWidth(isDesktop ? 6 : 3)} height={80} borderRadius={16} />)}
+          </View>
+          <View style={{ gap: 10 }}>
+            <Skeleton width={100} height={14} borderRadius={4} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: columnGap }}>
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} width={columnWidth(isDesktop ? 4 : 2)} height={70} borderRadius={14} />)}
+            </View>
+          </View>
+          <View style={{ gap: 10 }}>
+            <Skeleton width={120} height={14} borderRadius={4} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: columnGap }}>
+              {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} width={columnWidth(isDesktop ? 3 : 2)} height={110} borderRadius={16} />)}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 // ─── Main Content ─────────────────────────────────────────────────────────────
 function AdminDashboardContent() {
   const colors   = useColors();
-  const { isDesktop, columnGap, columnWidth, numColumnsWide } = useLayout();
+  const { isDesktop, columnGap, columnWidth, numColumnsWide, isWeb } = useLayout();
   const { user } = useAuth();
   const { isAdmin, role } = useRole();
   const pathname = usePathname();
@@ -351,9 +437,10 @@ function AdminDashboardContent() {
             actionLabel="Refresh"
           />
           {statsLoading ? (
-            <View style={s.loadingRow}>
-              <ActivityIndicator color={CultureTokens.indigo} />
-              <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading stats…</Text>
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: columnGap }}>
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} width={statW} height={70} borderRadius={14} />)}
+              </View>
             </View>
           ) : (
             <NavGrid gap={columnGap}>
@@ -533,13 +620,47 @@ const s = StyleSheet.create({
   loadingText:    { fontSize: 14, fontFamily: 'Poppins_400Regular' },
 
   // Attention banner
-  attentionCard:  { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, borderWidth: 1, padding: 14 },
+  attentionCard:  { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12, 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    padding: 14,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(255,94,91,0.15)' },
+      ios: {
+        shadowColor: CultureTokens.coral,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   attentionIcon:  { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   attentionTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   attentionSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
 
   // Import CTA
-  importCard:     { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, borderWidth: 1, padding: 16 },
+  importCard:     { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 14, 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    padding: 16,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(46,196,182,0.1)' },
+      ios: {
+        shadowColor: CultureTokens.teal,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
+  },
   importIcon:     { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   importTitle:    { fontSize: 15, fontFamily: 'Poppins_700Bold' },
   importSub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },

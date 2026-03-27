@@ -11,7 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
+import { CultureTokens, CardTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRole } from '@/hooks/useRole';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { liteClient } from 'algoliasearch/lite';
+import { getAlgoliaPublicConfig } from '@/lib/config';
 
-const APP_ID = process.env.EXPO_PUBLIC_ALGOLIA_APP_ID || '';
-const SEARCH_KEY = process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY || '';
+const { appId: APP_ID, searchKey: SEARCH_KEY } = getAlgoliaPublicConfig();
 
 // Initialize client only if keys are present
 const searchClient = (APP_ID && SEARCH_KEY) ? liteClient(APP_ID, SEARCH_KEY) : null;
@@ -10,12 +10,13 @@ const searchClient = (APP_ID && SEARCH_KEY) ? liteClient(APP_ID, SEARCH_KEY) : n
 export interface AlgoliaSearchParams {
   indexName: string;
   query: string;
+  country?: string;
   city?: string;
   council?: string;
   hitsPerPage?: number;
 }
 
-export function useAlgoliaSearch<T = any>({ indexName, query, city, council, hitsPerPage = 20 }: AlgoliaSearchParams) {
+export function useAlgoliaSearch<T = any>({ indexName, query, country, city, council, hitsPerPage = 20 }: AlgoliaSearchParams) {
   const [results, setResults] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -38,6 +39,7 @@ export function useAlgoliaSearch<T = any>({ indexName, query, city, council, hit
       try {
         // Build facet filters for geo-fencing searches dynamically
         const facetFilters: string[] = [];
+        if (country) facetFilters.push(`country:${country}`);
         if (city) facetFilters.push(`city:${city}`);
         if (council) facetFilters.push(`council:${council}`);
 
@@ -59,7 +61,7 @@ export function useAlgoliaSearch<T = any>({ indexName, query, city, council, hit
           }
         }
       } catch (err: any) {
-        console.error('[Algolia Hooks Error]', err);
+        if (__DEV__) console.error('[Algolia Hooks Error]', err);
         if (isMounted) setError(err);
       } finally {
         if (isMounted) setLoading(false);
@@ -72,7 +74,7 @@ export function useAlgoliaSearch<T = any>({ indexName, query, city, council, hit
       isMounted = false;
       clearTimeout(timeout);
     };
-  }, [query, city, council, indexName, hitsPerPage]);
+  }, [query, country, city, council, indexName, hitsPerPage]);
 
   return { results, loading, error, isConfigured: !!searchClient };
 }

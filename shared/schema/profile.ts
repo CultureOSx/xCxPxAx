@@ -102,6 +102,11 @@ export interface Profile {
 
   isSponsored?: boolean;
   sponsorTier?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  
+  // ── Content Studio ───────────────────────────────────────────────────────
+  heritagePlaylists?: { id: string; title: string; spotifyUrl: string; description?: string }[];
+  longFormPosts?: { id: string; title: string; content: string; publishedAt: string; coverImageUrl?: string }[];
+  
   ownerId?: string;
   createdAt?: string;
   updatedAt?: string;

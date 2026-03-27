@@ -39,7 +39,7 @@ async function backfillEvents(force: boolean): Promise<BackfillResult['events']>
   for (let i = 0; i < docs.length; i += BATCH) {
     const batch = docs.slice(i, i + BATCH);
 
-    await Promise.all(batch.map(async (doc) => {
+    await Promise.allSettled(batch.map(async (doc) => {
       const data = doc.data() as FirestoreEvent & { algoliaIndexedAt?: number; deletedAt?: string };
 
       // Skip soft-deleted events
@@ -81,7 +81,7 @@ async function backfillProfiles(force: boolean): Promise<BackfillResult['profile
   for (let i = 0; i < docs.length; i += BATCH) {
     const batch = docs.slice(i, i + BATCH);
 
-    await Promise.all(batch.map(async (doc) => {
+    await Promise.allSettled(batch.map(async (doc) => {
       const data = doc.data() as {
         algoliaIndexedAt?: number;
         name?: string;
@@ -129,10 +129,13 @@ export async function runAlgoliaBackfill(force = false): Promise<BackfillResult>
 
   const start = Date.now();
 
-  const [events, profiles] = await Promise.all([
+  const results = await Promise.allSettled([
     backfillEvents(force),
     backfillProfiles(force),
   ]);
+
+  const events = results[0].status === 'fulfilled' ? results[0].value : { indexed: 0, skipped: 0, failed: 0 };
+  const profiles = results[1].status === 'fulfilled' ? results[1].value : { indexed: 0, skipped: 0, failed: 0 };
 
   return { events, profiles, durationMs: Date.now() - start };
 }

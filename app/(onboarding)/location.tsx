@@ -166,10 +166,10 @@ export default function LocationScreen() {
                 <View style={[styles.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: CultureTokens.teal + '15' }]}>
                   <Ionicons name={step === 'state' ? "map" : "location"} size={36} color={CultureTokens.teal} />
                 </View>
-                <Text style={[styles.title, { color: '#FFFFFF' }]}>
+                <Text style={[styles.title, { color: colors.textInverse }]}>
                   {step === 'state' ? 'Where are you?' : 'Select your city'}
                 </Text>
-                <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.7)' }]}>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                   {step === 'state' 
                     ? 'Select your state to discover culture near you.' 
                     : 'Choose your home city for local recommendations.'}
@@ -186,6 +186,8 @@ export default function LocationScreen() {
                     ]}
                     onPress={handleDetectLocation}
                     disabled={isDetecting}
+                    accessibilityLabel={isDetecting ? 'Detecting location' : 'Use current location'}
+                    accessibilityRole="button"
                   >
                     {isDetecting ? (
                       <ActivityIndicator size="small" color={CultureTokens.gold} />
@@ -333,7 +335,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
 
   // Header
   headerBlock:  { alignItems: 'center', marginBottom: 28 },
-  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, boxShadow: '0px 4px 8px rgba(0,0,0,0.2)' },
   title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
   subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
 

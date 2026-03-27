@@ -44,6 +44,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { TextStyles } from '@/constants/typography';
 import { BackButton } from '@/components/ui/BackButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
 
@@ -420,6 +421,8 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
   };
 
   const isDark = useIsDark();
+  const pc = getPostStyles(colors);
+
   return (
     <Card 
       glass={!isDark} 
@@ -429,9 +432,16 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
         { 
           backgroundColor: colors.surface, 
           borderColor: colors.borderLight,
-          boxShadow: isDark 
-            ? '0px 4px 16px rgba(0,0,0,0.5)' 
-            : '0px 4px 16px rgba(44,42,114,0.08)',
+          ...Platform.select({
+            web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.6)' },
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.6,
+              shadowRadius: 24,
+            },
+            android: { elevation: 12 }
+          }),
         }
       ]}
     >
@@ -473,7 +483,7 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
   );
 }
 
-const pc = StyleSheet.create({
+const getPostStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   card:          { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
   header:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, paddingBottom: 10 },
   communityName: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
@@ -483,7 +493,7 @@ const pc = StyleSheet.create({
   badgeText:     { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
   moreBtn:       { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
 
-  eventImg:      { height: 220, position: 'relative', backgroundColor: '#1a1a2e' },
+  eventImg:      { height: 220, position: 'relative', backgroundColor: colors.surfaceElevated },
   freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.teal, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   eventInfo:     { padding: 14, gap: 6 },
@@ -506,7 +516,65 @@ const pc = StyleSheet.create({
   milestoneSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
 });
 
-// ─── Tab types ────────────────────────────────────────────────────────────────
+function CommunityDetailSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === "web" ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Skeleton width="100%" height={220} borderRadius={0} />
+        <View style={{ padding: 20, gap: 16 }}>
+          {/* Header Info Skeleton */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: -40 }}>
+            <Skeleton width={80} height={80} borderRadius={40} />
+            <View style={{ flex: 1, gap: 8 }}>
+              <Skeleton width="60%" height={24} borderRadius={8} />
+              <Skeleton width="40%" height={16} borderRadius={4} />
+            </View>
+          </View>
+          
+          {/* Join Button Skeleton */}
+          <Skeleton width="100%" height={56} borderRadius={20} style={{ marginTop: 12 }} />
+
+          {/* Tabs Skeleton */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+            <Skeleton width="23%" height={40} borderRadius={12} />
+            <Skeleton width="23%" height={40} borderRadius={12} />
+            <Skeleton width="23%" height={40} borderRadius={12} />
+            <Skeleton width="23%" height={40} borderRadius={12} />
+          </View>
+
+          {/* Feed Skeleton */}
+          <View style={{ marginTop: 20, gap: 24 }}>
+            {[1, 2].map(i => (
+              <View key={i} style={{ 
+                backgroundColor: colors.surface, 
+                borderRadius: 16, 
+                borderWidth: 1, 
+                borderColor: colors.borderLight,
+                overflow: 'hidden'
+              }}>
+                <View style={{ padding: 14, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <Skeleton width={40} height={40} borderRadius={20} />
+                  <Skeleton width="40%" height={16} borderRadius={4} />
+                </View>
+                <Skeleton width="100%" height={220} borderRadius={0} />
+                <View style={{ padding: 14, gap: 10 }}>
+                  <Skeleton width="80%" height={24} borderRadius={8} />
+                  <Skeleton width="60%" height={16} borderRadius={4} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+// ─── Top-level screen ─────────────────────────────────────────────────────────
 
 type TabKey = 'feed' | 'events' | 'about' | 'links';
 
@@ -534,11 +602,7 @@ export default function CommunityDetailScreen() {
   });
 
   if (isLoading) {
-    return (
-      <View style={[s.container, s.centerContent, { paddingTop: topInset }]}>
-        <ActivityIndicator size="large" color={CultureTokens.indigo} />
-      </View>
-    );
+    return <CommunityDetailSkeleton />;
   }
 
   if (isError || !dbCommunity) {
@@ -724,9 +788,18 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   style={({ pressed }) => [
                     s.eventCard,
                     {
-                      boxShadow: isDark 
-                        ? '0px 2px 8px rgba(0,0,0,0.35)' 
-                        : '0px 2px 8px rgba(44,42,114,0.04)',
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderLight,
+                      ...Platform.select({
+                        web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.45)' },
+                        ios: {
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.45,
+                          shadowRadius: 10,
+                        },
+                        android: { elevation: 4 }
+                      })
                     },
                     pressed && { opacity: 0.8, backgroundColor: colors.surfaceElevated },
                   ]}

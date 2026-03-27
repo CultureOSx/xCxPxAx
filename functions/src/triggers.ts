@@ -1,4 +1,5 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import * as geofire from 'geofire-common';
 import { db } from './admin';
 import { algoliaEventsIndex } from './services/algolia';
 import type { FirestoreEvent } from './services/firestore';
@@ -17,6 +18,16 @@ export const onEventWritten = onDocumentWritten('events/{eventId}', async (event
   const eventId = event.params.eventId;
 
   try {
+    // ── 0. Geohashing (Self-Healing for Proximity Search) ────────────────
+    if (after && after.status === 'published' && after.latitude != null && after.longitude != null) {
+      const computedHash = geofire.geohashForLocation([after.latitude, after.longitude]);
+      if (after.geoHash !== computedHash) {
+        console.log(`[onEventWritten] Updating geoHash for ${eventId}: ${computedHash}`);
+        await db.collection('events').doc(eventId).update({ geoHash: computedHash });
+        (after as any).geoHash = computedHash; // update in-memory for immediate sync
+      }
+    }
+
     // ── Deletion or Soft-Delete ─────────────────────────────────────────────
     if (!after || after.status === 'deleted') {
       const existingFeed = await db.collection('feed').where('referenceId', '==', eventId).get();

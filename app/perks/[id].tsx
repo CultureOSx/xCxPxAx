@@ -203,7 +203,7 @@ export default function PerkDetailScreen() {
               <View style={styles.section}>
                 <View style={styles.expiryRow}>
                     <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                    <Text style={[styles.expiryText, { color: colors.text }]}>Valid until {new Date(perk.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+                    <Text style={[styles.expiryText, { color: colors.text }]}>Valid until {new Date(perk.endDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
                 </View>
               </View>
             </>

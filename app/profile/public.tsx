@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import type { User, Membership } from '@shared/schema';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
+import { gradients } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { goBackOrReplace } from '@/lib/navigation';
 
@@ -108,7 +109,7 @@ export default function PublicProfileScreen() {
         bounces={false}
       >
         <LinearGradient
-          colors={[CP.dark, '#1a0533', '#0a2a2a']}
+          colors={gradients.midnight as unknown as [string, string]}
           style={[styles.hero, { paddingTop: topInset + 8 }]}
         >
           <View style={[styles.arcOuter, { pointerEvents: 'none' }]} />
@@ -119,7 +120,13 @@ export default function PublicProfileScreen() {
           </View>
 
           <View style={styles.heroNav}>
-            <Pressable style={styles.navBtn} onPress={() => goBackOrReplace('/(tabs)')}>
+            <Pressable 
+              style={styles.navBtn} 
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                goBackOrReplace('/(tabs)');
+              }}
+            >
               <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
             </Pressable>
             <Pressable style={styles.navBtn} onPress={handleShare}>

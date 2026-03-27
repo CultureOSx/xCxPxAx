@@ -2,6 +2,7 @@ import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
 import { Buffer } from "buffer";
 
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import Head from "expo-router/head";
 import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from 'posthog-react-native';
@@ -33,7 +34,7 @@ import { initializeWidgets } from "@/lib/widgets/register";
 import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
 
-import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from "@expo-google-fonts/poppins";
 // Web font loader for Expo web is automatically handled by @expo-google-fonts
 
 
@@ -326,6 +327,7 @@ function RootLayoutContent() {
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
+    Poppins_800ExtraBold,
     ...Ionicons.font,
   });
 
@@ -353,6 +355,29 @@ function RootLayoutContent() {
 
   return (
     <ErrorBoundary>
+      <Head>
+        <title>CulturePass — Discover Cultural Events & Communities</title>
+        <meta name="description" content="Discover cultural events, join diaspora communities, and find local gems. CulturePass connects you with vibrant experiences across Australia, NZ, UK, UAE, and Canada." />
+        <meta name="keywords" content="CulturePass, Cultural Events, Diaspora Communities, Australia, NZ, UK, UAE, Canada, Festivals, Community Hub" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://culturepass.app/" />
+        <meta property="og:title" content="CulturePass — Discover Cultural Events & Communities" />
+        <meta property="og:description" content="Explore cultural events and join diaspora communities. Your passport to local belonging." />
+        <meta property="og:image" content="https://culturepass.app/assets/images/social-preview.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://culturepass.app/" />
+        <meta property="twitter:title" content="CulturePass — Discover Cultural Events & Communities" />
+        <meta property="twitter:description" content="Explore cultural events and join diaspora communities. Your passport to local belonging." />
+        <meta property="twitter:image" content="https://culturepass.app/assets/images/social-preview.png" />
+
+        <meta name="theme-color" content="#0B0B14" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </Head>
       <SafeAreaProvider>
         {posthogClient ? (
           <PostHogProvider client={posthogClient}>

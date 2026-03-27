@@ -73,6 +73,7 @@ export default function SearchScreen() {
   useAlgoliaSearch({
     indexName: 'culturepass_events',
     query,
+    country: state.country,
     city: state.city,
   });
 

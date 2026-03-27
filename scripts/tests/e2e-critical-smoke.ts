@@ -24,11 +24,11 @@ async function waitForServer() {
 
 async function run() {
   const alreadyRunning = await isServerHealthy();
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const proc = alreadyRunning
     ? null
-    : spawn('npm', ['run', 'server:dev'], {
+    : spawn(npmCmd, ['run', 'server:dev'], {
         stdio: 'ignore',
-        shell: true,
         env: { ...process.env, PORT: serverPort },
       });
 

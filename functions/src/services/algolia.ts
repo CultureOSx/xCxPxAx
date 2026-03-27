@@ -37,6 +37,8 @@ export const algoliaEventsIndex = {
         suburb: eventData.suburb ?? '',
         isFree: eventData.isFree ?? false,
         entryType: eventData.isFree ? 'free' : 'ticketed',
+        isFeatured: eventData.isFeatured ?? false,
+        ageSuitability: eventData.ageSuitability ?? 'all',
 
         // Geo
         _geoloc,
@@ -51,7 +53,14 @@ export const algoliaEventsIndex = {
         attending: eventData.attending ?? 0,
 
         // Ranking signal — higher score surfaces better results
-        score: (eventData.viewCount ?? 0) + ((eventData.attending ?? 0) * 5),
+        score: Math.round(
+          (eventData.viewCount ?? 0) + 
+          ((eventData.attending ?? 0) * 10) +
+          ((eventData.ticketsSold ?? 0) * 20) +
+          ((eventData.ticketClickCount ?? 0) * 2) +
+          ((eventData.popularityScore ?? 0) * 15) +
+          (eventData.isFeatured ? 500 : 0)
+        ),
 
         // Idempotency marker — checked by backfill to skip already-indexed docs
         algoliaIndexedAt: Date.now(),

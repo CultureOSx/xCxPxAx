@@ -37,6 +37,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
+import { captureEvent, identifyUser } from '@/lib/analytics';
 
 export default function LoginScreen() {
   const colors = useColors();
@@ -139,6 +140,13 @@ export default function LoginScreen() {
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);
       }
+
+      const u = firebaseAuth.currentUser;
+      if (u) {
+        identifyUser(u.uid, { email: u.email, name: u.displayName });
+        captureEvent('Login Success', { method: 'google' });
+      }
+
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: unknown) {
@@ -167,6 +175,13 @@ export default function LoginScreen() {
         rawNonce: credential.authorizationCode ?? '',
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
+
+      const u = firebaseAuth.currentUser;
+      if (u) {
+        identifyUser(u.uid, { email: u.email, name: u.displayName });
+        captureEvent('Login Success', { method: 'apple' });
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: any) {
@@ -192,6 +207,13 @@ export default function LoginScreen() {
         await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       }
       await signInWithEmailAndPassword(firebaseAuth, email, password);
+
+      const u = firebaseAuth.currentUser;
+      if (u) {
+        identifyUser(u.uid, { email: u.email, name: u.displayName });
+        captureEvent('Login Success', { method: 'email' });
+      }
+
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: unknown) {
@@ -238,8 +260,7 @@ export default function LoginScreen() {
             <Ionicons name="close" size={28} color={colors.textInverse} />
           </Pressable>
           <View style={styles.mobileHeaderBrand}>
-            <Text style={styles.brandName}>CulturePass</Text>
-            <Text style={styles.brandTagline}>We Belong Anywhere</Text>
+            <BrandWordmark size="md" withTagline centered light />
           </View>
           {/* Spacer to keep brand centred */}
           <View style={{ width: 28 }} />

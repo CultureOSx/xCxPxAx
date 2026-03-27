@@ -86,11 +86,11 @@ function getDateLabel(dateStr?: string): string {
   const d = new Date(dateStr);
   const todayMs = new Date().setHours(0, 0, 0, 0);
   const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - todayMs) / 86_400_000);
-  if (diff < 0)  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  if (diff < 0)  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';
-  if (diff <= 6) return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  if (diff <= 6) return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 function useDebounced<T extends (...args: Parameters<T>) => void>(fn: T, ms = 600): T {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1602,11 +1602,13 @@ export default function CultureFeedScreen() {
         ) : (
           <FlashList
             data={listItems}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
+            numColumns={isDesktop ? 3 : 2}
+            masonry
+            optimizeItemArrangement
             renderItem={renderItem}
             ListHeaderComponent={renderListHeader}
-            // @ts-ignore
-            estimatedItemSize={400}
+            {...({ estimatedItemSize: 400 } as any)}
             contentContainerStyle={[
               sc.list,
               { paddingHorizontal: hPad, paddingBottom: bottomInset + 96 },

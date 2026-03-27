@@ -42,7 +42,16 @@ export default function ActivityDetailScreen() {
     <ErrorBoundary>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button" accessibilityLabel="Go back">
+          <Pressable 
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              goBackOrReplace('/(tabs)');
+            }} 
+            style={styles.headerBtn} 
+            hitSlop={10} 
+            accessibilityRole="button" 
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Skeleton width="45%" height={18} borderRadius={8} />
@@ -82,7 +91,15 @@ export default function ActivityDetailScreen() {
     <ErrorBoundary>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button">
+          <Pressable 
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              goBackOrReplace('/(tabs)');
+            }} 
+            style={styles.headerBtn} 
+            hitSlop={10} 
+            accessibilityRole="button"
+          >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>{act.name}</Text>
@@ -168,7 +185,7 @@ export default function ActivityDetailScreen() {
           <Pressable 
             style={styles.bookBtn} 
             onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert('Booking Confirmed!', `Your booking for ${act.name} has been confirmed.\n\nPrice: ${act.priceLabel}`);
             }}
           >
@@ -272,7 +289,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: CardTokens.radius,
     padding: CardTokens.padding,
     borderWidth: 1, 
-    borderColor: colors.borderLight 
+    borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 24px rgba(0,0,0,0.3)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+      },
+      android: { elevation: 8 }
+    })
   },
   locIconBox: {
     width: 36,
@@ -294,7 +321,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: CardTokens.radius,
     padding: CardTokens.padding,
     borderWidth: 1, 
-    borderColor: colors.borderLight 
+    borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.2)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 }
+    })
   },
   highlightText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 },
   

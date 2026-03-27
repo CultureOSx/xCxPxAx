@@ -161,7 +161,7 @@ export default function ShoppingDetailScreen() {
                       <View style={styles.discountBadge}>
                         <Text style={styles.discountText}>{deal.discount}</Text>
                       </View>
-                      <Text style={styles.dealValid}>Valid till {new Date(deal.validTill).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</Text>
+                      <Text style={styles.dealValid}>Valid till {new Date(deal.validTill).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</Text>
                     </View>
                   </View>
                 ))}

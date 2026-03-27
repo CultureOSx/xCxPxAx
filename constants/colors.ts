@@ -41,17 +41,8 @@ const createShadow = (
   elevation: number,
   color: string = "#000"
 ): any => {
-  if (Platform.OS === 'web') {
-    return {
-      boxShadow: `${width}px ${height}px ${radius}px rgba(0,0,0,${opacity})`,
-    };
-  }
   return {
-    shadowColor: color,
-    shadowOffset: { width, height },
-    shadowOpacity: opacity,
-    shadowRadius: radius,
-    elevation: elevation,
+    boxShadow: `${width}px ${height}px ${radius}px rgba(0, 0, 0, ${opacity})`,
   };
 };
 

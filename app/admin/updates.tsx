@@ -34,7 +34,7 @@ function slugify(text: string) {
 
 function formatDate(iso?: string) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function PostRow({ update, onPublish, onDelete }: {

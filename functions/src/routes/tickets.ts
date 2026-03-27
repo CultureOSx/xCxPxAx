@@ -5,6 +5,7 @@
 import { Router, type Request, type Response } from 'express';
 import { firestore } from 'firebase-admin';
 import { requireAuth, requireRole, isOwnerOrAdmin } from '../middleware/auth';
+import { slidingWindowRateLimit } from '../middleware/rateLimit';
 import {
   ticketsService,
   scanEventsService,
@@ -175,7 +176,7 @@ ticketsRouter.get('/tickets/:id/wallet/google', requireAuth, async (req: Request
 // ---------------------------------------------------------------------------
 // POST /api/tickets — purchase a ticket (Firestore atomic transaction)
 // ---------------------------------------------------------------------------
-ticketsRouter.post('/tickets', requireAuth, async (req: Request, res: Response) => {
+ticketsRouter.post('/tickets', requireAuth, slidingWindowRateLimit(60000, 20), async (req: Request, res: Response) => {
   if (!isFirestoreConfigured) {
     return res.status(503).json({ error: 'Ticket purchase requires a Firestore project — use the emulator or deploy to Firebase.' });
   }

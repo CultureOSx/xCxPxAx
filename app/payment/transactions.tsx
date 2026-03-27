@@ -23,7 +23,7 @@ function getTypeIcon(type: WalletTransaction['type']): string {
 function formatDate(dateStr: string) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 interface TxItemProps { item: WalletTransaction }

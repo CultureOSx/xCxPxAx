@@ -36,6 +36,8 @@ export interface RewardsSummary {
   nextTierLabel: string | null;
   pointsToNextTier: number;
   progressPercent: number;
+  /** Count of perks redeemed (server-computed from redemptions collection). */
+  perksRedeemed?: number;
 }
 
 export interface WalletSummary {

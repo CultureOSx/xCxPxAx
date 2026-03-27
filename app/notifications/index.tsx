@@ -49,7 +49,7 @@ function timeAgo(date: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days  = Math.floor(hours / 24);
   if (days < 7)  return `${days}d ago`;
-  return new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  return new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
 function groupByDate(notifications: AppNotification[]): { label: string; items: AppNotification[] }[] {
@@ -213,7 +213,10 @@ export default function NotificationsScreen() {
         {unreadCount > 0 ? (
           <Pressable
             style={({ pressed }) => [s.markAllBtn, pressed && { opacity: 0.7 }]}
-            onPress={() => { haptic(); markAllReadMutation.mutate(); }}
+            onPress={() => { 
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              markAllReadMutation.mutate(); 
+            }}
             accessibilityRole="button"
             accessibilityLabel="Mark all as read"
           >

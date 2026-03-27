@@ -35,7 +35,7 @@ function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return dateStr;
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export default function SavedScreen() {

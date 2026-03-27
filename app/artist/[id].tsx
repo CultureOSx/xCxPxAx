@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useQuery } from "@tanstack/react-query";
 import { CultureTokens } from "@/constants/theme";
 import SocialLinksBar from "@/components/SocialLinksBar";
@@ -29,6 +30,57 @@ import { useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/query-client";
 import * as ImagePicker from "expo-image-picker";
 import { captureEvent } from "@/lib/analytics";
+import { Skeleton } from "@/components/ui/Skeleton";
+
+function ArtistDetailSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === "web" ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Skeleton width="100%" height={280} borderRadius={0} />
+        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 16 }}>
+          {/* Info Card Skeleton */}
+          <View style={{ 
+            marginTop: -40, 
+            backgroundColor: colors.surface, 
+            borderRadius: 16, 
+            padding: 16, 
+            gap: 12,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+          }}>
+            <Skeleton width="40%" height={20} borderRadius={10} />
+            <Skeleton width="80%" height={36} borderRadius={10} />
+            <Skeleton width="50%" height={20} borderRadius={10} />
+          </View>
+
+          {/* Stats Skeleton */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Skeleton width="48%" height={80} borderRadius={16} />
+            <Skeleton width="48%" height={80} borderRadius={16} />
+          </View>
+
+          {/* Bio Skeleton */}
+          <View style={{ gap: 12, marginTop: 12 }}>
+            <Skeleton width="30%" height={24} borderRadius={8} />
+            <Skeleton width="100%" height={100} borderRadius={16} />
+          </View>
+
+          {/* Tags Skeleton */}
+          <View style={{ gap: 12, marginTop: 12 }}>
+            <Skeleton width="25%" height={24} borderRadius={8} />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[1, 2, 3].map(i => <Skeleton key={i} width={70} height={32} borderRadius={12} />)}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
 
 export default function ArtistDetailScreen() {
   const colors = useColors();
@@ -38,6 +90,7 @@ export default function ArtistDetailScreen() {
   const navigation = useNavigation();
   const topInset = Platform.OS === "web" ? 0 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
+  const isWeb = Platform.OS === "web";
 
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
@@ -87,7 +140,7 @@ export default function ArtistDetailScreen() {
   const canEdit = userId === (profile as any)?.userId || userId === (profile as any)?.creatorId || __DEV__;
 
   const handleShare = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const url = `https://culturepass.app/artist/${id}`;
       if (Platform.OS === "web") {
@@ -108,13 +161,7 @@ export default function ArtistDetailScreen() {
   }, [id, profile]);
 
   if (isLoading) {
-    return (
-      <ErrorBoundary>
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={CultureTokens.coral} />
-        </View>
-      </ErrorBoundary>
-    );
+    return <ArtistDetailSkeleton />;
   }
 
   if (!profile) {
@@ -178,16 +225,32 @@ export default function ArtistDetailScreen() {
             )}
 
             <LinearGradient
-              colors={['rgba(11,11,20,0.18)', 'rgba(11,11,20,0.55)']}
+              colors={['rgba(11,11,20,0.2)', 'rgba(11,11,20,0.8)']}
               style={StyleSheet.absoluteFill}
             />
 
             {/* Top buttons */}
             <View style={[styles.heroTopBar, { top: topInset + 12 }]}>
-              <View style={{ width: 44 }} /> 
-
-              <Pressable onPress={handleShare} style={styles.iconBtn}>
-                <Ionicons name="share-outline" size={22} color={colors.textInverse} />
+              <Pressable 
+                onPress={() => {
+                  if(Platform.OS !== 'web') Haptics.selectionAsync();
+                  goBack();
+                }} 
+                style={styles.iconBtn}
+              >
+                <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
+                <Ionicons name="chevron-back" size={24} color="white" />
+              </Pressable>
+              
+              <Pressable 
+                onPress={() => {
+                  if(Platform.OS !== 'web') Haptics.selectionAsync();
+                  handleShare();
+                }} 
+                style={styles.iconBtn}
+              >
+                <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
+                <Ionicons name="share-outline" size={22} color="white" />
               </Pressable>
             </View>
 
@@ -244,6 +307,7 @@ export default function ArtistDetailScreen() {
             {/* About */}
             {(profile.bio || profile.description) && (
               <View style={styles.section}>
+                <View style={styles.divider} />
                 <Text style={styles.sectionTitle}>About</Text>
                 <Text style={styles.bio}>
                   {profile.bio || profile.description}
@@ -295,7 +359,13 @@ function StatCard({
   const styles = getStyles(colors);
   const Wrapper: any = onPress ? Pressable : View;
   return (
-    <Wrapper style={styles.statCard} onPress={onPress}>
+    <Wrapper 
+      style={styles.statCard} 
+      onPress={() => {
+        if(onPress && Platform.OS !== 'web') Haptics.selectionAsync();
+        onPress?.();
+      }}
+    >
       <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={20} color={color} />
       </View>
@@ -367,6 +437,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: colors.surface,
     padding: 14,
     gap: 8,
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.6)' },
+      ios: { 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.6,
+        shadowRadius: 24,
+      },
+      android: { elevation: 12 }
+    }),
   },
 
   verifiedBadge: {
@@ -423,6 +503,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.45)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.45,
+        shadowRadius: 10,
+      },
+      android: { elevation: 4 }
+    })
   },
 
   statIconBox: {
@@ -530,5 +620,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     fontSize: 14,
     fontFamily: "Poppins_600SemiBold",
     color: CultureTokens.coral,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginVertical: 20,
+    opacity: 0.5,
   },
 });

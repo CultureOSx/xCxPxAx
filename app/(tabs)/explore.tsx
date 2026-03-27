@@ -12,7 +12,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useColors } from '@/hooks/useColors';
+import { useLocations } from '@/hooks/useLocations';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useEventsList } from '@/hooks/queries/useEvents';
 import { CultureTokens, CategoryColors } from '@/constants/theme';
@@ -22,6 +23,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/Button';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import type { EventData } from '@/shared/schema';
+import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 
 // ─── Category data ────────────────────────────────────────────────────────────
 
@@ -153,11 +155,13 @@ const ec = StyleSheet.create({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.1,
         shadowRadius: 12,
       },
-      android: { elevation: 4 },
-      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.08)' } as any,
+      android: { elevation: 3 },
+      web: { 
+        boxShadow: '0 4px 20px rgba(0,0,0,0.12)' 
+      } as any,
     }),
   },
   imgWrap: {
@@ -318,6 +322,7 @@ const cpill = StyleSheet.create({
 export default function ExploreScreen() {
   const { state } = useOnboarding();
   const colors = useColors();
+  const isDark = useIsDark();
   const params = useLocalSearchParams<{ focus?: string; source?: string; playlistId?: string; featuredArtistId?: string }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -379,6 +384,8 @@ export default function ExploreScreen() {
     : state.country || 'Australia';
 
   const activeCat = CATEGORIES.find((c) => c.id === activeId);
+  const { acknowledgement } = useLocations();
+  const showAcknowledgement = ['Australia', 'New Zealand', 'Canada', 'AU', 'NZ', 'CA'].includes(state.country || 'Australia');
 
   return (
     <ErrorBoundary>
@@ -389,7 +396,7 @@ export default function ExploreScreen() {
           {Platform.OS === 'ios' ? (
             <BlurView
               intensity={80}
-              tint={colors.background === '#0B0B14' ? 'dark' : 'light'}
+              tint={isDark ? 'dark' : 'light'}
               style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background + '80' }]}
             />
           ) : (
@@ -457,8 +464,7 @@ export default function ExploreScreen() {
             extraData={gridCols}
             keyExtractor={(item: EventData) => item.id}
             numColumns={gridCols}
-            // @ts-ignore - estimatedItemSize complains on this TS config
-            estimatedItemSize={250}
+            {...({ estimatedItemSize: 280 } as any)}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: hPad }}
             ListHeaderComponent={
@@ -565,9 +571,12 @@ export default function ExploreScreen() {
 
                 {/* Loading state */}
                 {isLoading && (
-                  <View style={s.loadingWrap}>
-                    <ActivityIndicator size="small" color={CultureTokens.indigo} />
-                    <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading events…</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -hPad, paddingHorizontal: hPad }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <View key={i} style={{ width: `${100 / gridCols}%`, padding: 7 }}>
+                        <EventCardSkeleton />
+                      </View>
+                    ))}
                   </View>
                 )}
 
@@ -624,6 +633,16 @@ export default function ExploreScreen() {
                  <ExploreEventCard event={item} index={index} />
               </View>
             )}
+            ListFooterComponent={
+              showAcknowledgement && !isLoading && filtered.length > 0 ? (
+                <View style={s.acknowledgementWrap}>
+                  <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
+                  <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
+                    {acknowledgement}
+                  </Text>
+                </View>
+              ) : null
+            }
           />
         </View>
       </View>
@@ -778,5 +797,22 @@ const s = StyleSheet.create({
   indigenousBannerSub: {
     fontFamily: 'Poppins_400Regular',
     fontSize: 13,
+  },
+  acknowledgementWrap: {
+    padding: 24,
+    marginTop: 40,
+    marginBottom: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderColor: 'rgba(150,150,150,0.15)',
+    gap: 12,
+  },
+  acknowledgementText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 400,
   },
 });

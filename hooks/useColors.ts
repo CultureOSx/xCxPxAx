@@ -28,9 +28,9 @@ import { light, dark } from '@/constants/colors';
 
 export function useColors(): ColorTheme {
   const scheme = useColorScheme();
-  // Web always uses light. Native defaults to dark unless the user has
-  // explicitly set their device to light mode.
-  if (Platform.OS === 'web') return light;
+  
+  // Return light theme only if explicitly set, otherwise default to dark 
+  // to maintain the premium "Night Festival" aesthetic across all platforms.
   return scheme === 'light' ? light : dark;
 }
 
@@ -56,8 +56,8 @@ export function useSchemeValue<T>(darkValue: T, lightValue: T): T {
   return isDark ? darkValue : lightValue;
 }
 
-/** Returns true when the dark theme is active (native non-light-mode). */
+/** Returns true when the dark theme is active. */
 export function useIsDark(): boolean {
   const scheme = useColorScheme();
-  return Platform.OS !== 'web' && scheme !== 'light';
+  return scheme !== 'light';
 }

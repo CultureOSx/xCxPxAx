@@ -23,7 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
 import { CultureTokens } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CommunityGridCard } from '@/components/community/CommunityGridCard';
@@ -63,7 +63,7 @@ function FilterChip({
     backgroundColor: interpolateColor(
       bg.value, [0, 1],
       active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
         : [colors.surface, colors.surfaceElevated],
     ),
   }));
@@ -98,11 +98,11 @@ function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
 function CommunityCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
   return (
     <View style={[sk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      <View style={[sk.image, { backgroundColor: colors.borderLight }]} />
+      <View style={[sk.image, { backgroundColor: colors.surfaceElevated }]} />
       <View style={sk.body}>
-        <View style={[sk.line, { width: '75%', backgroundColor: colors.borderLight }]} />
-        <View style={[sk.line, { width: '50%', backgroundColor: colors.borderLight, marginTop: 6 }]} />
-        <View style={[sk.pill, { backgroundColor: colors.borderLight, marginTop: 8 }]} />
+        <View style={[sk.line, { width: '75%', backgroundColor: colors.surfaceElevated }]} />
+        <View style={[sk.line, { width: '50%', backgroundColor: colors.surfaceElevated, marginTop: 6 }]} />
+        <View style={[sk.pill, { backgroundColor: colors.surfaceElevated, marginTop: 8 }]} />
       </View>
     </View>
   );
@@ -120,6 +120,7 @@ const sk = StyleSheet.create({
 
 export default function CommunitiesScreen() {
   const colors = useColors();
+  const isDark = useIsDark();
   const insets = useSafeAreaInsets();
   const { hPad, columnWidth, isDesktop } = useLayout();
   const { state: onboardingState } = useOnboarding();
@@ -509,6 +510,17 @@ const s = StyleSheet.create({
   resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
   resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
 
-  fab:            { position: 'absolute', right: 20, width: 52, height: 52, borderRadius: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 6 },
+  fab: { 
+    position: 'absolute', 
+    right: 20, 
+    width: 52, 
+    height: 52, 
+    borderRadius: 26, 
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+      android: { elevation: 6 },
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' } as any,
+    }),
+  },
   fabInner:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

@@ -24,6 +24,7 @@ import { apiRequest } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import type { EventData } from '@/shared/schema';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 // ─── Role label map ───────────────────────────────────────────────────────────
 const ROLE_LABEL: Record<string, string> = {
@@ -46,7 +47,7 @@ interface SponsoredEvent extends EventData {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function fmt(d?: string) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const TIER_COLOR: Record<string, string> = {
@@ -70,7 +71,25 @@ function MetricCard({ icon, value, label, accent }: { icon: string; value: strin
   );
 }
 const mc = StyleSheet.create({
-  card: { flex: 1, minWidth: 80, alignItems: 'center', gap: 4, borderRadius: 12, borderWidth: 1, padding: 12 },
+  card: { 
+    flex: 1, 
+    minWidth: 80, 
+    alignItems: 'center', 
+    gap: 4, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    padding: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 }
+    })
+  },
   icon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   val:  { fontSize: 17, fontFamily: 'Poppins_700Bold' },
   lbl:  { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
@@ -149,7 +168,23 @@ function SponsoredEventCard({ event }: { event: SponsoredEvent }) {
 }
 
 const evc = StyleSheet.create({
-  card:      { flexDirection: 'row', borderRadius: 12, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
+  card:      { 
+    flexDirection: 'row', 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    overflow: 'hidden', 
+    marginBottom: 12,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   tierBar:   { width: 4 },
   inner:     { flex: 1, padding: 14, gap: 10 },
   thumb:     { width: 52, height: 52, borderRadius: 9, overflow: 'hidden' },
@@ -180,12 +215,56 @@ function TierLegend() {
   );
 }
 const tl = StyleSheet.create({
-  wrap:   { borderRadius: 12, borderWidth: 1, padding: 14, gap: 8 },
+  wrap:   { 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    padding: 14, 
+    gap: 8,
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: { elevation: 1 }
+    })
+  },
   header: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 4 },
   row:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dot:    { width: 10, height: 10, borderRadius: 5 },
   label:  { fontSize: 13, fontFamily: 'Poppins_500Medium' },
 });
+
+function SponsorDashboardSkeleton() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: topInset }}>
+      <View style={{ height: 70, borderBottomWidth: 1, borderBottomColor: colors.borderLight, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 12 }}>
+        <Skeleton width={34} height={34} borderRadius={9} />
+        <View style={{ flex: 1, gap: 4 }}>
+          <Skeleton width="50%" height={20} borderRadius={6} />
+          <Skeleton width="40%" height={14} borderRadius={4} />
+        </View>
+        <Skeleton width={70} height={24} borderRadius={8} />
+      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ padding: 20, gap: 16 }}>
+          <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} width="31%" height={80} borderRadius={12} style={{ marginBottom: 10 }} />)}
+          </View>
+          <View style={{ marginTop: 20, gap: 12 }}>
+            {[1, 2, 3].map(i => <Skeleton key={i} width="100%" height={100} borderRadius={12} />)}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 function SponsorDashboardContent() {
@@ -242,9 +321,7 @@ function SponsorDashboardContent() {
       </View>
 
       {isLoading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={CultureTokens.indigo} />
-        </View>
+        <SponsorDashboardSkeleton />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
 
@@ -357,7 +434,21 @@ const sd = StyleSheet.create({
 
   section:      { paddingHorizontal: 20, marginTop: 24 },
   sectionHeader:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 12 },
-  card:         { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+  card:         { 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: { elevation: 1 }
+    })
+  },
   divider:      { height: 1 },
   toolRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   toolLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
