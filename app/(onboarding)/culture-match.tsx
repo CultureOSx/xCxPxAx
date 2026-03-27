@@ -1,6 +1,6 @@
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
-  TextInput, KeyboardAvoidingView, useWindowDimensions,
+  TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,22 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useCallback, useMemo, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
+import {
+  CultureTokens,
+  gradients,
+  CardTokens,
+  glass,
+  shadows,
+  FontFamily,
+  FontSize,
+  TextStyles,
+  Spacing,
+  IconSize,
+} from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import {
   ALL_NATIONALITIES,
@@ -46,10 +58,8 @@ const STEP_ICONS: Record<Step, keyof typeof Ionicons.glyphMap> = {
 
 export default function CultureMatchScreen() {
   const colors = useColors();
-  const styles = getStyles(colors);
+  const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
@@ -74,8 +84,6 @@ export default function CultureMatchScreen() {
   );
   const [selectedCultureIds, setSelectedCultureIds] = useState<string[]>(state.cultureIds ?? []);
   const [selectedLanguageIds, setSelectedLanguageIds] = useState<string[]>(state.languageIds ?? []);
-
-  // ── Derived data ──────────────────────────────────────────────────────────
 
   const filteredNationalities = useMemo(
     () => searchNationalities(nationalityQuery),
@@ -103,17 +111,13 @@ export default function CultureMatchScreen() {
     [selectedLanguageIds],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
   const haptic = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
 
   const pickNationality = useCallback((nat: Nationality) => {
     haptic();
     setSelectedNationality(nat);
     setNationalityId(nat.id);
-    // auto-advance
     setStep('culture');
-    // reset cultures since nationality changed
     setSelectedCultureIds([]);
   }, [setNationalityId]);
 
@@ -142,7 +146,7 @@ export default function CultureMatchScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace(routeWithRedirect('/(onboarding)/communities', redirectTo) as any);
+      router.replace(routeWithRedirect('/(onboarding)/communities', redirectTo) as string);
     }
   }, [step, redirectTo]);
 
@@ -150,21 +154,18 @@ export default function CultureMatchScreen() {
     if (step === 'nationality') { setStep('culture'); return; }
     if (step === 'culture') { setStep('language'); return; }
 
-    // Final step — persist & continue
     setCultureIds(selectedCultureIds);
     setLanguageIds(selectedLanguageIds);
 
-    // Derive diaspora groups from nationality
     const diasporaGroups = selectedNationality
       ? getDiasporaGroupsForNationality(selectedNationality.id).map((g) => g.id)
       : [];
     setDiasporaGroupIds(diasporaGroups);
 
-    // Keep legacy fields in sync for backward compat
     setEthnicityText(selectedNationality?.label ?? '');
     setLanguages(selectedLanguageObjects.map((l) => l.name));
 
-    router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as any);
+    router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as string);
   }, [step, selectedCultureIds, selectedLanguageIds, selectedNationality, selectedLanguageObjects, setCultureIds, setLanguageIds, setDiasporaGroupIds, setEthnicityText, setLanguages, redirectTo]);
 
   const stepIndex = step === 'nationality' ? 0 : step === 'culture' ? 1 : 2;
@@ -173,71 +174,72 @@ export default function CultureMatchScreen() {
     step === 'culture' ? selectedCultureIds.length > 0 :
     selectedLanguageIds.length > 0;
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[s.container, { backgroundColor: colors.background }]}>
       <LinearGradient
         colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradientBg}
+        style={s.gradientBg}
       />
 
       {Platform.OS === 'web' && (
         <>
-          <View style={[styles.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4, transform: [{ scale: 1.5 }] } as any]} />
-          <View style={[styles.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.gold, opacity: 0.25, transform: [{ scale: 1.2 }] } as any]} />
-          <View style={[styles.orb, { top: '30%', left: '10%', backgroundColor: CultureTokens.teal, opacity: 0.15, transform: [{ scale: 0.8 }] } as any]} />
+          <View style={[s.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4 }]} />
+          <View style={[s.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.gold, opacity: 0.25 }]} />
         </>
       )}
 
-      {/* Header row */}
       {!isDesktop ? (
-        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
+        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
           <Pressable onPress={goBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
-          <Text style={[styles.stepText, { color: colors.textSecondary }]}>3 of 4</Text>
+          <Text style={[s.stepText, { color: colors.textSecondary }]}>3 of 4</Text>
         </View>
       ) : (
-        <View style={styles.desktopBackRow}>
-          <Pressable onPress={goBack} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
-            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
-            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
+        <View style={s.desktopBackRow}>
+          <Pressable
+            onPress={goBack}
+            hitSlop={Spacing.sm}
+            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
+            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
         </View>
       )}
 
-      <KeyboardAvoidingView style={styles.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop, !isDesktop && { paddingTop: 20 }]}
+          contentContainerStyle={[s.scrollContent, isDesktop && s.scrollContentDesktop, !isDesktop && { paddingTop: 20 }]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: 32 }]}>
+          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView 
-                intensity={isDesktop ? 80 : 60} 
-                tint="dark" 
-                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} 
+              <BlurView
+                intensity={isDesktop ? 80 : 60}
+                tint="dark"
+                style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]}
               />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(20,20,35,0.85)', borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} />
+              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(20,20,35,0.85)', borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} />
             )}
 
-            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
-
+            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               {/* Step indicator dots */}
-              <View style={styles.dotRow}>
-                {(['nationality', 'culture', 'language'] as Step[]).map((s, i) => (
-                  <View 
-                    key={s} 
+              <View style={s.dotRow}>
+                {(['nationality', 'culture', 'language'] as Step[]).map((st, i) => (
+                  <View
+                    key={st}
                     style={[
-                      styles.dot, 
-                      i === stepIndex && styles.dotActive,
-                      i < stepIndex && { backgroundColor: CultureTokens.gold + '80' }
-                    ]} 
+                      s.dot,
+                      i === stepIndex && s.dotActive,
+                      i < stepIndex && { backgroundColor: `${CultureTokens.gold}80` },
+                    ]}
                   >
                     {i === stepIndex && (
                       <LinearGradient
@@ -251,36 +253,35 @@ export default function CultureMatchScreen() {
                 ))}
               </View>
 
-              {/* Icon + title */}
-              <View style={styles.headerBlock}>
-                <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+              <View style={s.headerBlock}>
+                <View style={[s.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
                   <Ionicons name={STEP_ICONS[step]} size={28} color={colors.textInverse} />
                 </View>
-                <Text style={[styles.title, { color: colors.textInverse }]}>{STEP_LABELS[step]}</Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLES[step]}</Text>
+                <Text style={[s.title, { color: colors.textInverse }]}>{STEP_LABELS[step]}</Text>
+                <Text style={[s.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLES[step]}</Text>
               </View>
 
-              {/* ── Step: Nationality ─────────────────────────────────── */}
+              {/* Nationality step */}
               {step === 'nationality' && (
                 <View>
                   <TextInput
                     value={nationalityQuery}
                     onChangeText={setNationalityQuery}
-                    placeholder="Search nationality…"
+                    placeholder="Search nationality..."
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
+                    style={[s.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
                     autoCapitalize="words"
                     returnKeyType="search"
                     accessibilityLabel="Search nationality"
                   />
-                  <View style={styles.chipGrid}>
+                  <View style={s.chipGrid}>
                     {filteredNationalities.map((nat) => {
                       const isSelected = selectedNationality?.id === nat.id;
                       return (
                         <Pressable
                           key={nat.id}
                           style={({ pressed }) => [
-                            styles.natChip,
+                            s.natChip,
                             { borderColor: isSelected ? CultureTokens.gold : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.gold}33` : colors.overlay },
                             pressed && { opacity: 0.75 },
                           ]}
@@ -289,9 +290,9 @@ export default function CultureMatchScreen() {
                           accessibilityLabel={nat.label}
                           accessibilityState={{ selected: isSelected }}
                         >
-                          <Text style={styles.natEmoji}>{nat.emoji}</Text>
-                          <Text style={[styles.natLabel, { color: colors.textInverse }]} numberOfLines={1}>{nat.label}</Text>
-                          {isSelected && <Ionicons name="checkmark-circle" size={14} color={CultureTokens.gold} style={styles.natCheck} />}
+                          <Text style={s.natEmoji}>{nat.emoji}</Text>
+                          <Text style={[s.natLabel, { color: colors.textInverse }]} numberOfLines={1}>{nat.label}</Text>
+                          {isSelected && <Ionicons name="checkmark-circle" size={FontSize.body2} color={CultureTokens.gold} style={s.natCheck} />}
                         </Pressable>
                       );
                     })}
@@ -299,15 +300,15 @@ export default function CultureMatchScreen() {
                 </View>
               )}
 
-              {/* ── Step: Culture ─────────────────────────────────────── */}
+              {/* Culture step */}
               {step === 'culture' && (
                 <View>
                   {selectedNationality && (
-                    <View style={[styles.selectedNatBadge, { borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}20` }]}>
-                      <Text style={styles.selectedNatEmoji}>{selectedNationality.emoji}</Text>
-                      <Text style={[styles.selectedNatLabel, { color: CultureTokens.gold }]}>{selectedNationality.label}</Text>
-                      <Pressable onPress={() => setStep('nationality')} hitSlop={8}>
-                        <Ionicons name="pencil-outline" size={14} color={CultureTokens.gold} />
+                    <View style={[s.selectedNatBadge, { borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}20` }]}>
+                      <Text style={s.selectedNatEmoji}>{selectedNationality.emoji}</Text>
+                      <Text style={[s.selectedNatLabel, { color: CultureTokens.gold }]}>{selectedNationality.label}</Text>
+                      <Pressable onPress={() => setStep('nationality')} hitSlop={Spacing.sm} accessibilityRole="button" accessibilityLabel="Change nationality">
+                        <Ionicons name="pencil-outline" size={FontSize.body2} color={CultureTokens.gold} />
                       </Pressable>
                     </View>
                   )}
@@ -316,22 +317,23 @@ export default function CultureMatchScreen() {
                     <TextInput
                       value={cultureQuery}
                       onChangeText={setCultureQuery}
-                      placeholder="Search cultures…"
+                      placeholder="Search cultures..."
                       placeholderTextColor={colors.textSecondary}
-                      style={[styles.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay, marginBottom: 16 }]}
+                      style={[s.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay, marginBottom: Spacing.md }]}
                       autoCapitalize="words"
                       returnKeyType="search"
+                      accessibilityLabel="Search cultures"
                     />
                   )}
 
-                  <View style={styles.chipGrid}>
+                  <View style={s.chipGrid}>
                     {filteredCultures.map((culture) => {
                       const isSelected = selectedCultureIds.includes(culture.id);
                       return (
                         <Pressable
                           key={culture.id}
                           style={({ pressed }) => [
-                            styles.cultureChip,
+                            s.cultureChip,
                             { borderColor: isSelected ? CultureTokens.gold : colors.borderLight, backgroundColor: isSelected ? `${CultureTokens.gold}33` : colors.overlay },
                             pressed && { opacity: 0.75 },
                           ]}
@@ -340,38 +342,37 @@ export default function CultureMatchScreen() {
                           accessibilityLabel={culture.label}
                           accessibilityState={{ checked: isSelected }}
                         >
-                          <Text style={styles.cultureEmoji}>{culture.emoji}</Text>
-                          <Text style={[styles.cultureLabel, { color: colors.textInverse }]}>{culture.label}</Text>
-                          {isSelected && <Ionicons name="checkmark" size={16} color={CultureTokens.gold} />}
+                          <Text style={s.cultureEmoji}>{culture.emoji}</Text>
+                          <Text style={[s.cultureLabel, { color: colors.textInverse }]}>{culture.label}</Text>
+                          {isSelected && <Ionicons name="checkmark" size={IconSize.sm} color={CultureTokens.gold} />}
                         </Pressable>
                       );
                     })}
                   </View>
 
                   {availableCultures.length === 0 && (
-                    <Text style={[styles.emptyNote, { color: colors.textSecondary }]}>
-                      No specific cultures listed — tap Continue to proceed.
+                    <Text style={[s.emptyNote, { color: colors.textSecondary }]}>
+                      No specific cultures listed -- tap Continue to proceed.
                     </Text>
                   )}
                 </View>
               )}
 
-              {/* ── Step: Language ────────────────────────────────────── */}
+              {/* Language step */}
               {step === 'language' && (
                 <View>
-                  {/* Selected chips */}
                   {selectedLanguageObjects.length > 0 && (
-                    <View style={styles.selectedLangWrap}>
+                    <View style={s.selectedLangWrap}>
                       {selectedLanguageObjects.map((lang) => (
                         <Pressable
                           key={lang.id}
-                          style={styles.selectedLangChip}
+                          style={s.selectedLangChip}
                           onPress={() => removeLanguage(lang.id)}
                           accessibilityRole="button"
                           accessibilityLabel={`Remove ${lang.name}`}
                         >
-                          <Text style={[styles.selectedLangText, { color: colors.textInverse }]}>{lang.name}</Text>
-                          <Ionicons name="close" size={14} color={colors.textInverse} />
+                          <Text style={[s.selectedLangText, { color: colors.textInverse }]}>{lang.name}</Text>
+                          <Ionicons name="close" size={FontSize.body2} color={colors.textInverse} />
                         </Pressable>
                       ))}
                     </View>
@@ -380,23 +381,24 @@ export default function CultureMatchScreen() {
                   <TextInput
                     value={languageQuery}
                     onChangeText={setLanguageQuery}
-                    placeholder="Search languages…"
+                    placeholder="Search languages..."
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
+                    style={[s.searchInput, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
                     autoCapitalize="words"
                     returnKeyType="search"
+                    accessibilityLabel="Search languages"
                   />
 
                   {languageQuery.trim().length < 2 && (
-                    <Text style={[styles.helper, { color: colors.textSecondary }]}>Popular languages shown. Type to search all.</Text>
+                    <Text style={[s.helper, { color: colors.textSecondary }]}>Popular languages shown. Type to search all.</Text>
                   )}
 
-                  <View style={styles.chipGrid}>
+                  <View style={s.chipGrid}>
                     {filteredLanguages.map((lang) => (
                       <Pressable
                         key={lang.id}
                         style={({ pressed }) => [
-                          styles.langChip,
+                          s.langChip,
                           { borderColor: colors.borderLight, backgroundColor: colors.overlay },
                           pressed && { opacity: 0.75 },
                         ]}
@@ -404,9 +406,9 @@ export default function CultureMatchScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={lang.name}
                       >
-                        <Text style={[styles.langLabel, { color: colors.textInverse }]}>{lang.name}</Text>
+                        <Text style={[s.langLabel, { color: colors.textInverse }]}>{lang.name}</Text>
                         {lang.nativeName && lang.nativeName !== lang.name && (
-                          <Text style={[styles.langNative, { color: colors.textSecondary }]}>{lang.nativeName}</Text>
+                          <Text style={[s.langNative, { color: colors.textSecondary }]}>{lang.nativeName}</Text>
                         )}
                       </Pressable>
                     ))}
@@ -414,45 +416,37 @@ export default function CultureMatchScreen() {
                 </View>
               )}
 
-              {/* ── Actions ───────────────────────────────────────────── */}
-              <View style={styles.actions}>
+              {/* Actions */}
+              <View style={s.actions}>
                 {step !== 'nationality' && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onPress={goBack}
-                    style={styles.skipBtn}
-                  >
+                  <Button variant="outline" size="lg" onPress={goBack} style={s.skipBtn}>
                     Back
                   </Button>
                 )}
-
                 <Button
                   variant="primary"
                   size="lg"
                   fullWidth={step === 'nationality'}
                   rightIcon={step === 'language' ? undefined : 'arrow-forward'}
-                  onPress={canProceed ? goNext : goNext}
-                  style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold, flex: step !== 'nationality' ? 1 : undefined }]}
+                  onPress={goNext}
+                  style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold, flex: step !== 'nationality' ? 1 : undefined }]}
                 >
                   {step === 'language' ? 'Continue' : 'Next'}
                 </Button>
               </View>
 
-              {/* Skip link */}
               <Pressable
                 onPress={() => {
                   if (step === 'nationality') setStep('culture');
                   else if (step === 'culture') setStep('language');
-                  else router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as any);
+                  else router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as string);
                 }}
-                style={styles.skipLink}
+                style={s.skipLink}
                 accessibilityRole="button"
                 accessibilityLabel="Skip this step"
               >
-                <Text style={[styles.skipLinkText, { color: colors.textSecondary }]}>Skip this step</Text>
+                <Text style={[s.skipLinkText, { color: colors.textSecondary }]}>Skip this step</Text>
               </Pressable>
-
             </View>
           </View>
         </ScrollView>
@@ -461,68 +455,89 @@ export default function CultureMatchScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+// ---------------------------------------------------------------------------
+// Styles -- static StyleSheet
+// ---------------------------------------------------------------------------
+const s = StyleSheet.create({
   container:            { flex: 1 },
   gradientBg:           { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb:                  { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  orb: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    ...Platform.select({
+      web: { filter: 'blur(50px)' } as Record<string, string>,
+      default: {},
+    }),
+  },
   keyboardAvoid:        { flex: 1 },
-  mobileHeader:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText:             { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1, textTransform: 'uppercase' },
-  desktopBackRow:       { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
-  desktopBackText:      { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  mobileHeader:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: Spacing.sm + 4 },
+  stepText:             { fontFamily: FontFamily.semibold, fontSize: FontSize.chip, letterSpacing: 1, textTransform: 'uppercase' },
+  desktopBackRow:       { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
+  desktopBackBtn:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderRadius: Spacing.lg, paddingHorizontal: Spacing.md, paddingVertical: 10, borderWidth: 1 },
+  desktopBackText:      { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   scrollContent:        { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
   formContainer:        { width: '100%', maxWidth: 580, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 640 },
   formBlur:             { borderWidth: 1 },
-  formContent:          { paddingTop: 40 },
+  formContent:          { paddingTop: Spacing.xxl },
 
-  // Step dots
-  dotRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
+  dotRow:       { flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm, marginBottom: Spacing.lg },
   dot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
   dotActive:    { width: 32 },
 
-  // Header
   headerBlock:  { alignItems: 'center', marginBottom: 28 },
-  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, boxShadow: '0px 4px 8px rgba(0,0,0,0.2)' },
-  title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
-  subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md, borderWidth: 1.5 },
+  title: {
+    ...TextStyles.display,
+    fontSize: 32,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    ...TextStyles.callout,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
 
-  // Search input
-  searchInput:  { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', marginBottom: 16 },
-  helper:       { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 12, opacity: 0.7 },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: CardTokens.radius,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.callout,
+    marginBottom: Spacing.md,
+  },
+  helper: { fontFamily: FontFamily.regular, fontSize: FontSize.caption, marginBottom: Spacing.sm + 4, opacity: 0.7 },
 
-  // Nationality chips
   chipGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  natChip:      { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '48%' },
-  natEmoji:     { fontSize: 20 },
-  natLabel:     { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },
-  natCheck:     { marginLeft: 4 },
+  natChip:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderRadius: Spacing.lg, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '48%' },
+  natEmoji:     { fontSize: FontSize.title2 },
+  natLabel:     { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, flex: 1 },
+  natCheck:     { marginLeft: Spacing.xs },
 
-  // Selected nationality badge
-  selectedNatBadge:  { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginBottom: 20 },
-  selectedNatEmoji:  { fontSize: 20 },
-  selectedNatLabel:  { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  selectedNatBadge:  { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderRadius: Spacing.lg, paddingHorizontal: Spacing.md, paddingVertical: 10, alignSelf: 'flex-start', marginBottom: 20 },
+  selectedNatEmoji:  { fontSize: FontSize.title2 },
+  selectedNatLabel:  { fontFamily: FontFamily.bold, fontSize: FontSize.callout },
 
-  // Culture chips
-  cultureChip:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 10 },
-  cultureEmoji: { fontSize: 18 },
-  cultureLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  emptyNote:    { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginVertical: 20 },
+  cultureChip:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderRadius: Spacing.lg, paddingHorizontal: 14, paddingVertical: 10 },
+  cultureEmoji: { fontSize: FontSize.title3 },
+  cultureLabel: { fontFamily: FontFamily.semibold, fontSize: FontSize.callout },
+  emptyNote:    { fontFamily: FontFamily.regular, fontSize: FontSize.callout, textAlign: 'center', marginVertical: 20 },
 
-  // Language selection
   selectedLangWrap:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  selectedLangChip:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}26`, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 8 },
-  selectedLangText:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  langChip:     { borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, gap: 4 },
-  langLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  langNative:   { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.7 },
+  selectedLangChip:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1.5, borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}26`, borderRadius: Spacing.lg, paddingHorizontal: 14, paddingVertical: Spacing.sm },
+  selectedLangText:   { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+  langChip:     { borderWidth: 1, borderRadius: CardTokens.radius, paddingHorizontal: 14, paddingVertical: 10, gap: Spacing.xs },
+  langLabel:    { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+  langNative:   { fontFamily: FontFamily.regular, fontSize: FontSize.caption, opacity: 0.7 },
 
-  // Actions
-  actions:      { flexDirection: 'row', gap: 12, marginTop: 32 },
-  skipBtn:      { flex: 0, minWidth: 100, borderRadius: 16 },
+  actions:      { flexDirection: 'row', gap: Spacing.sm + 4, marginTop: Spacing.xl },
+  skipBtn:      { flex: 0, minWidth: 100, borderRadius: CardTokens.radius },
   submitBtn:    { height: 60, borderRadius: 20 },
-  skipLink:     { alignItems: 'center', marginTop: 24, paddingVertical: 8 },
-  skipLinkText: { fontSize: 14, fontFamily: 'Poppins_500Medium', letterSpacing: 0.2 },
+  skipLink:     { alignItems: 'center', marginTop: Spacing.lg, paddingVertical: Spacing.sm },
+  skipLinkText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2, letterSpacing: 0.2 },
 });

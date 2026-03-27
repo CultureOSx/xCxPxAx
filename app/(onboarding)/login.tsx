@@ -7,13 +7,24 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
+import {
+  CultureTokens,
+  gradients,
+  CardTokens,
+  glass,
+  shadows,
+  FontFamily,
+  FontSize,
+  TextStyles,
+  Spacing,
+  IconSize,
+} from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { auth as firebaseAuth } from '@/lib/firebase';
@@ -39,12 +50,29 @@ import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
 import { captureEvent, identifyUser } from '@/lib/analytics';
 
+function handleFirebaseError(e: unknown, defaultMessage: string): string {
+  if (e instanceof FirebaseError) {
+    switch (e.code) {
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        return '';
+      default:
+        return e.message;
+    }
+  }
+  return defaultMessage;
+}
+
 export default function LoginScreen() {
   const colors = useColors();
-  const styles = getStyles(colors);
+  const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   const { state: onboardingState } = useOnboarding();
@@ -59,7 +87,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Smooth UI Validation reactivity
   const isValid = useMemo(() => {
     return email.trim().length > 0 && password.length >= 6;
   }, [email, password]);
@@ -87,28 +114,9 @@ export default function LoginScreen() {
     if (globalError) setGlobalError('');
   }, [emailError, passwordError, globalError]);
 
-  const handleFirebaseError = (e: unknown, defaultMessage: string) => {
-    if (e instanceof FirebaseError) {
-      switch (e.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          return 'Invalid email or password. Please try again.';
-        case 'auth/too-many-requests':
-          return 'Too many attempts. Please try again later.';
-        case 'auth/popup-closed-by-user':
-        case 'auth/cancelled-popup-request':
-          return ''; // Silent failure for user cancellations
-        default:
-          return e.message;
-      }
-    }
-    return defaultMessage;
-  };
-
   const postAuthRoute = async () => {
     if (!onboardingState.isComplete) {
-      router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as any);
+      router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
       return;
     }
     if (redirectTo) {
@@ -119,6 +127,14 @@ export default function LoginScreen() {
       router.back();
     } else {
       router.replace('/(tabs)');
+    }
+  };
+
+  const trackLogin = (method: string) => {
+    const u = firebaseAuth.currentUser;
+    if (u) {
+      identifyUser(u.uid, { email: u.email, name: u.displayName });
+      captureEvent('Login Success', { method });
     }
   };
 
@@ -140,13 +156,7 @@ export default function LoginScreen() {
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);
       }
-
-      const u = firebaseAuth.currentUser;
-      if (u) {
-        identifyUser(u.uid, { email: u.email, name: u.displayName });
-        captureEvent('Login Success', { method: 'google' });
-      }
-
+      trackLogin('google');
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: unknown) {
@@ -175,17 +185,12 @@ export default function LoginScreen() {
         rawNonce: credential.authorizationCode ?? '',
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
-
-      const u = firebaseAuth.currentUser;
-      if (u) {
-        identifyUser(u.uid, { email: u.email, name: u.displayName });
-        captureEvent('Login Success', { method: 'apple' });
-      }
-
+      trackLogin('apple');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
-    } catch (e: any) {
-      if (e?.code !== 'ERR_REQUEST_CANCELED') {
+    } catch (e: unknown) {
+      const err = e as Record<string, unknown>;
+      if (err?.code !== 'ERR_REQUEST_CANCELED') {
         const errorMsg = handleFirebaseError(e, 'Apple sign-in failed. Please try again.');
         if (errorMsg) setGlobalError(errorMsg);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -207,13 +212,7 @@ export default function LoginScreen() {
         await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       }
       await signInWithEmailAndPassword(firebaseAuth, email, password);
-
-      const u = firebaseAuth.currentUser;
-      if (u) {
-        identifyUser(u.uid, { email: u.email, name: u.displayName });
-        captureEvent('Login Success', { method: 'email' });
-      }
-
+      trackLogin('email');
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: unknown) {
@@ -226,91 +225,97 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[s.container, { backgroundColor: colors.background }]}>
       <LinearGradient
         colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradientBg}
+        style={s.gradientBg}
       />
-      
-      {Platform.OS === 'web' ? (
+
+      {Platform.OS === 'web' && (
         <>
-          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5 }]} />
+          <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3 }]} />
         </>
-      ) : null}
+      )}
 
       {isDesktop && (
-        <View style={styles.desktopBackRow}>
-          <Pressable 
-            onPress={() => router.replace('/(tabs)')} 
-            hitSlop={8} 
-            style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+        <View style={s.desktopBackRow}>
+          <Pressable
+            onPress={() => router.replace('/(tabs)')}
+            hitSlop={Spacing.sm}
+            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Discover"
           >
-            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
-            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
+            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
           </Pressable>
         </View>
       )}
 
       {!isDesktop && (
-        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} hitSlop={12}>
+        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={28} color={colors.textInverse} />
           </Pressable>
-          <View style={styles.mobileHeaderBrand}>
+          <View style={s.mobileHeaderBrand}>
             <BrandWordmark size="md" withTagline centered light />
           </View>
-          {/* Spacer to keep brand centred */}
           <View style={{ width: 28 }} />
         </View>
       )}
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoid} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        style={s.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
-          showsVerticalScrollIndicator={false} 
-          keyboardShouldPersistTaps="handled" 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
-            styles.scrollContent,
-            isDesktop && styles.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 }
+            s.scrollContent,
+            isDesktop && s.scrollContentDesktop,
+            !isDesktop && { paddingTop: 20 },
           ]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
+          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
-            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
-              <View style={styles.logoRow}>
-                <View style={[styles.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight, overflow: 'hidden' }]}>
+            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
+              <View style={s.logoRow}>
+                <View style={[s.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
                   <LinearGradient
                     colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
                     style={StyleSheet.absoluteFillObject}
                   />
-                  <Ionicons name="globe-outline" size={32} color="#FFFFFF" />
+                  <Ionicons name="globe-outline" size={IconSize.xl} color="#FFFFFF" />
                 </View>
                 <BrandWordmark size="lg" withTagline />
               </View>
 
-              <Text style={[styles.title, { color: colors.textInverse }]}>Welcome back.</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign in to continue your cultural journey.</Text>
+              <Text style={[s.title, { color: colors.textInverse }]}>Welcome back.</Text>
+              <Text style={[s.subtitle, { color: colors.textSecondary }]}>Sign in to continue your cultural journey.</Text>
 
               {globalError ? (
-                <View style={[styles.errorBanner, { backgroundColor: CultureTokens.coral + '20', borderColor: CultureTokens.coral + '50' }]}>
-                  <Ionicons name="alert-circle" size={20} color={CultureTokens.coral} />
-                  <Text style={[styles.globalErrorText, { color: CultureTokens.coral }]}>{globalError}</Text>
+                <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
+                  <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
+                  <Text style={[s.globalErrorText, { color: CultureTokens.coral }]}>{globalError}</Text>
                 </View>
               ) : null}
 
-              <View style={styles.form}>
-                <View style={styles.inputGroup}>
+              <View style={s.form}>
+                <View style={s.inputGroup}>
                   <Input
                     label="Email Address"
                     placeholder="name@culturepass.app"
@@ -324,11 +329,16 @@ export default function LoginScreen() {
                   />
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <View style={styles.passwordHeader}>
-                    <Text style={[styles.label, { color: colors.textInverse }]}>Password</Text>
-                    <Pressable hitSlop={12} onPress={() => router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as any)}>
-                      <Text style={[styles.forgotText, { color: CultureTokens.gold }]}>Forgot Password?</Text>
+                <View style={s.inputGroup}>
+                  <View style={s.passwordHeader}>
+                    <Text style={[s.label, { color: colors.textInverse }]}>Password</Text>
+                    <Pressable
+                      hitSlop={12}
+                      onPress={() => router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as string)}
+                      accessibilityRole="link"
+                      accessibilityLabel="Forgot password"
+                    >
+                      <Text style={[s.forgotText, { color: CultureTokens.gold }]}>Forgot Password?</Text>
                     </Pressable>
                   </View>
                   <Input
@@ -344,7 +354,7 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              <View style={styles.optionsRow}>
+              <View style={s.optionsRow}>
                 <Checkbox
                   checked={rememberMe}
                   onToggle={setRememberMe}
@@ -360,18 +370,18 @@ export default function LoginScreen() {
                 loading={loading}
                 disabled={!isValid || loading}
                 onPress={handleLogin}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Sign In
               </Button>
 
-              <View style={styles.socialDivider}>
-                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
-                <Text style={[styles.divText, { color: colors.textSecondary }]}>or</Text>
-                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
+              <View style={s.socialDivider}>
+                <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
+                <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
+                <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
               </View>
 
-              <View style={styles.socialRow}>
+              <View style={s.socialRow}>
                 <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
                 {Platform.OS === 'ios' ? (
                   <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
@@ -381,12 +391,14 @@ export default function LoginScreen() {
               </View>
 
               <Pressable
-                style={styles.switchRow}
-                onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as any)}
+                style={s.switchRow}
+                onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
                 hitSlop={12}
+                accessibilityRole="link"
+                accessibilityLabel="Sign up for an account"
               >
-                <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                  Don&apos;t have an account? <Text style={[styles.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
+                <Text style={[s.switchText, { color: colors.textSecondary }]}>
+                  Don&apos;t have an account? <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
                 </Text>
               </Pressable>
             </View>
@@ -397,42 +409,93 @@ export default function LoginScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+// ---------------------------------------------------------------------------
+// Styles — static StyleSheet
+// ---------------------------------------------------------------------------
+const s = StyleSheet.create({
   container: { flex: 1 },
   gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  orb: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    ...Platform.select({
+      web: { filter: 'blur(50px)' } as Record<string, string>,
+      default: {},
+    }),
+  },
   keyboardAvoid: { flex: 1 },
-  mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
+  mobileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: Spacing.sm + 4,
+  },
   mobileHeaderBrand: { alignItems: 'center', gap: 2 },
-  desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
+  desktopBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderRadius: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
   formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 520 },
   formBlur: { borderWidth: 1 },
-  formContent: { paddingTop: 40 },
+  formContent: { paddingTop: Spacing.xxl },
   logoRow: { alignItems: 'center', marginBottom: 28, gap: 6 },
-  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1 },
-  brandName:    { fontSize: 28, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo, letterSpacing: -0.5 },
-  brandTagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold, letterSpacing: 1.2 },
-  title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 36 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },
-  globalErrorText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  form: { gap: 20, marginBottom: 24 },
-  inputGroup: { gap: 8 },
+  logoCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  title: {
+    ...TextStyles.display,
+    fontSize: 34,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    ...TextStyles.callout,
+    textAlign: 'center',
+    marginBottom: 36,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: CardTokens.radius,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+  },
+  globalErrorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
+  form: { gap: 20, marginBottom: Spacing.lg },
+  inputGroup: { gap: Spacing.sm },
   passwordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  forgotText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  label: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+  forgotText: { fontFamily: FontFamily.semibold, fontSize: FontSize.chip },
   optionsRow: { marginBottom: 36 },
-  submitBtn: { height: 56, borderRadius: 16 },
-  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 28 },
+  submitBtn: { height: 56, borderRadius: CardTokens.radius },
+  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: 28 },
   divLine: { flex: 1, height: 1 },
-  divText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  socialRow: { flexDirection: 'row', gap: 16, marginBottom: 36 },
-  switchRow: { alignItems: 'center', paddingVertical: 8 },
-  switchText: { fontSize: 15, fontFamily: 'Poppins_400Regular' },
-  switchLink: { fontFamily: 'Poppins_700Bold' },
+  divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
+  socialRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: 36 },
+  switchRow: { alignItems: 'center', paddingVertical: Spacing.sm },
+  switchText: { fontFamily: FontFamily.regular, fontSize: FontSize.callout },
+  switchLink: { fontFamily: FontFamily.bold },
 });

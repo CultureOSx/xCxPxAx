@@ -7,7 +7,7 @@ import {
   ScrollView,
   Platform,
   Alert,
-  useWindowDimensions,
+  type DimensionValue,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,10 +25,19 @@ import { sanitizeInternalRedirect } from '@/lib/routes';
 import type { User } from '@/shared/schema';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients, shadows } from '@/constants/theme';
+import {
+  CultureTokens,
+  gradients,
+  shadows,
+  Spacing,
+  FontFamily,
+  FontSize,
+  TextStyles,
+  IconSize,
+} from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-
+import { useLayout } from '@/hooks/useLayout';
 
 const MIN_REQUIRED = 5;
 
@@ -46,24 +55,24 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// InterestChip — reused for both popular and category grids
+// InterestChip
 // ---------------------------------------------------------------------------
-function InterestChip({
-  interest, icon, isSelected, accentColor, onPress, colors, styles,
+const InterestChip = React.memo(function InterestChip({
+  interest, icon, isSelected, accentColor, onPress,
 }: {
   interest: string;
   icon: string;
   isSelected: boolean;
   accentColor: string;
   onPress: () => void;
-  colors: ReturnType<typeof useColors>;
-  styles: ReturnType<typeof getStyles>;
 }) {
+  const colors = useColors();
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.chip,
+        s.chip,
         isSelected
           ? { backgroundColor: accentColor, borderColor: 'transparent' }
           : {
@@ -77,29 +86,27 @@ function InterestChip({
       accessibilityState={{ checked: isSelected }}
     >
       <Ionicons
-        name={icon as never}
-        size={14}
+        name={icon as keyof typeof Ionicons.glyphMap}
+        size={FontSize.body2}
         color={isSelected ? colors.background : accentColor}
       />
-      <Text style={[styles.chipText, { color: isSelected ? colors.background : `${colors.text}CC` }]}>
+      <Text style={[s.chipText, { color: isSelected ? colors.background : `${colors.text}CC` }]}>
         {interest}
       </Text>
       {isSelected && (
-        <Ionicons name="checkmark" size={11} color={`${colors.background}A6`} />
+        <Ionicons name="checkmark" size={FontSize.micro} color={`${colors.background}A6`} />
       )}
     </Pressable>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main screen
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
   const colors = useColors();
-  const s = getStyles(colors);
+  const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const searchParams = useLocalSearchParams();
@@ -174,7 +181,6 @@ export default function InterestsScreen() {
         interestCategoryIds: selectedCategoryIds,
         languages: state.languages,
         ethnicityText: state.ethnicityText || undefined,
-        // Cultural Identity Layer
         culturalIdentity: {
           nationalityId: state.nationalityId || undefined,
           cultureIds: state.cultureIds.length > 0 ? state.cultureIds : undefined,
@@ -199,24 +205,24 @@ export default function InterestsScreen() {
   };
 
   const isReady = selected.length >= MIN_REQUIRED;
-  const progressFill = Math.min(1, selected.length / MIN_REQUIRED);
+  const progressPct = `${Math.min(1, selected.length / MIN_REQUIRED) * 100}%` as DimensionValue;
   const remaining = MIN_REQUIRED - selected.length;
 
   return (
     <View style={s.root}>
-      {/* Background */}
       <LinearGradient
         colors={gradients.culturepassBrand}
         style={StyleSheet.absoluteFillObject}
       />
       {Platform.OS === 'web' && (
         <>
-          <View style={[s.orb, { top: -80, right: -60, backgroundColor: CultureTokens.indigo }] as never} />
-          <View style={[s.orb, { bottom: 100, left: -80, backgroundColor: CultureTokens.gold, opacity: 0.25 }] as never} />
+          <View style={[s.orb, { top: -80, right: -60, backgroundColor: CultureTokens.indigo }]} />
+          <View style={[s.orb, { bottom: 100, left: -80, backgroundColor: CultureTokens.gold, opacity: 0.25 }]} />
         </>
       )}
+
       {/* Header */}
-      <View style={[s.header, { paddingTop: topInset + 14 }]}> 
+      <View style={[s.header, { paddingTop: topInset + 14 }]}>
         <Pressable
           onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')}
           style={s.backBtn}
@@ -224,13 +230,12 @@ export default function InterestsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
+          <Ionicons name="chevron-back" size={IconSize.lg} color={colors.textSecondary} />
         </Pressable>
         <Text style={[s.stepLabel, { color: colors.textSecondary }]}>STEP 4 OF 4</Text>
         <View style={s.backBtn} />
       </View>
 
-      {/* Scrollable content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -241,7 +246,6 @@ export default function InterestsScreen() {
         ]}
       >
         <View style={isDesktop ? s.desktopCard : undefined}>
-
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
@@ -252,30 +256,30 @@ export default function InterestsScreen() {
 
           {/* Progress bar */}
           <View style={s.progressBlock}>
-            <View style={[s.progressTrack, { backgroundColor: `${colors.textInverse}14` }]}>
+            <View style={[s.progressTrack, { backgroundColor: colors.borderLight }]}>
               <View
                 style={[
                   s.progressFill,
                   {
-                    width: `${progressFill * 100}%` as never,
+                    width: progressPct,
                     backgroundColor: isReady ? CultureTokens.teal : CultureTokens.gold,
                   },
                 ]}
               />
             </View>
             <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : colors.textSecondary }]}>
-              {isReady ? `${selected.length} selected ✓` : `${selected.length} / ${MIN_REQUIRED}`}
+              {isReady ? `${selected.length} selected` : `${selected.length} / ${MIN_REQUIRED}`}
             </Text>
           </View>
 
           {/* Popular picks */}
           <View style={s.section}>
-            <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>⚡  Popular near you</Text>
+            <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Popular near you</Text>
             <View style={s.chipWrap}>
               {popularInterestsSydney.map(interest => {
                 const cat = categoryByInterest.get(interest);
                 const accent = cat?.accentColor ?? CultureTokens.gold;
-                const icon = (interestIcons[interest] as string | undefined) ?? 'star';
+                const icon = interestIcons[interest] ?? 'star';
                 return (
                   <InterestChip
                     key={interest}
@@ -284,16 +288,13 @@ export default function InterestsScreen() {
                     isSelected={selectedSet.has(interest)}
                     accentColor={accent}
                     onPress={() => toggle(interest)}
-                    colors={colors}
-                    styles={s}
                   />
                 );
               })}
             </View>
           </View>
 
-          {/* Divider */}
-          <View style={s.divider} />
+          <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
 
           {/* Category accordions */}
           {interestCategories.map(category => {
@@ -305,23 +306,19 @@ export default function InterestsScreen() {
 
             return (
               <View key={category.id} style={s.categoryBlock}>
-
-                {/* Category header row */}
-                {/* Category header row */}
                 <View style={s.categoryHeader}>
                   <Pressable
-                    style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }, pressed && { opacity: 0.75 }]}
+                    style={({ pressed }) => [s.categoryHeaderPress, pressed && { opacity: 0.75 }]}
                     onPress={() => toggleSection(category.id)}
                     accessibilityRole="button"
                     accessibilityLabel={`${category.title}, ${countInCat} selected`}
                     accessibilityState={{ expanded: isOpen }}
                   >
-                    {/* Icon + title */}
                     <View style={[s.categoryIconWrap, { backgroundColor: `${accent}2A` }]}>
                       <Text style={s.categoryEmoji}>{emoji}</Text>
                     </View>
                     <View style={s.categoryTitleBlock}>
-                      <Text style={[s.categoryTitle, { color: colors.textInverse }]}>{category.title}</Text>
+                      <Text style={[s.categoryTitle, { color: colors.text }]}>{category.title}</Text>
                       {countInCat > 0 && (
                         <Text style={[s.categoryCount, { color: accent }]}>
                           {countInCat} selected
@@ -330,12 +327,11 @@ export default function InterestsScreen() {
                     </View>
                   </Pressable>
 
-                  {/* Select All / Clear */}
                   {isOpen && (
                     <Pressable
                       onPress={e => { e.stopPropagation?.(); toggleAll(category); }}
-                      style={[s.selectAllBtn, { backgroundColor: accent + '18', borderColor: accent + '35' }]}
-                      hitSlop={8}
+                      style={[s.selectAllBtn, { backgroundColor: `${accent}18`, borderColor: `${accent}35` }]}
+                      hitSlop={Spacing.sm}
                       accessibilityRole="button"
                       accessibilityLabel={allSelected ? `Clear all ${category.title}` : `Select all ${category.title}`}
                     >
@@ -345,20 +341,19 @@ export default function InterestsScreen() {
                     </Pressable>
                   )}
 
-                  <Pressable onPress={() => toggleSection(category.id)} hitSlop={10} style={{ paddingLeft: 12 }}>
-                      <Ionicons
-                        name={isOpen ? 'chevron-up' : 'chevron-down'}
-                        size={16}
-                        color={colors.textTertiary}
-                      />
+                  <Pressable onPress={() => toggleSection(category.id)} hitSlop={10} style={s.chevronBtn}>
+                    <Ionicons
+                      name={isOpen ? 'chevron-up' : 'chevron-down'}
+                      size={IconSize.sm}
+                      color={colors.textTertiary}
+                    />
                   </Pressable>
                 </View>
 
-                {/* Chips grid */}
                 {isOpen && (
                   <View style={s.chipWrap}>
                     {category.interests.map(interest => {
-                      const icon = (interestIcons[interest] as string | undefined) ?? 'star';
+                      const icon = interestIcons[interest] ?? 'star';
                       return (
                         <InterestChip
                           key={interest}
@@ -367,15 +362,13 @@ export default function InterestsScreen() {
                           isSelected={selectedSet.has(interest)}
                           accentColor={accent}
                           onPress={() => toggle(interest)}
-                          colors={colors}
-                          styles={s}
                         />
                       );
                     })}
                   </View>
                 )}
 
-                <View style={[s.categoryDivider, { backgroundColor: `${colors.textInverse}0D` }]} />
+                <View style={[s.categoryDivider, { backgroundColor: colors.borderLight }]} />
               </View>
             );
           })}
@@ -385,14 +378,13 @@ export default function InterestsScreen() {
       {/* Sticky bottom CTA */}
       <LinearGradient
         colors={['transparent', gradients.culturepassBrand[0]]}
-        style={[s.bottomFade, { pointerEvents: 'none' }]}
+        style={s.bottomFade}
+        pointerEvents="none"
       />
-      <View style={[s.bottomBar, { paddingBottom: bottomInset + 16 }]}>
+      <View style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}>
         {!isReady && (
           <Text style={[s.remainingText, { color: colors.textSecondary }]}>
-            {remaining === 1
-              ? '1 more interest to go'
-              : `${remaining} more interests to go`}
+            {remaining === 1 ? '1 more interest to go' : `${remaining} more interests to go`}
           </Text>
         )}
         <Button
@@ -408,7 +400,7 @@ export default function InterestsScreen() {
             shadows.large,
           ]}
         >
-          {isSubmitting ? 'Starting…' : isReady ? 'Start Exploring' : `Select ${MIN_REQUIRED - selected.length} more`}
+          {isSubmitting ? 'Starting...' : isReady ? 'Start Exploring' : `Select ${remaining} more`}
         </Button>
       </View>
     </View>
@@ -416,9 +408,9 @@ export default function InterestsScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// Styles
+// Styles — static StyleSheet (no per-render recreation)
 // ---------------------------------------------------------------------------
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const s = StyleSheet.create({
   root: { flex: 1 },
 
   orb: {
@@ -428,18 +420,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 160,
     opacity: 0.35,
     ...Platform.select({
-      web: { filter: 'blur(80px)' as never },
+      web: { filter: 'blur(80px)' } as Record<string, string>,
       default: {},
     }),
   },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 4,
+    paddingBottom: Spacing.xs,
   },
   backBtn: {
     width: 40,
@@ -450,17 +441,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   stepLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badgeCaps,
     letterSpacing: 1.8,
-    color: 'rgba(255,255,255,0.35)',
-    textTransform: 'uppercase',
   },
 
-  // Scroll
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: Spacing.sm + 4,
   },
   scrollContentDesktop: {
     maxWidth: 680,
@@ -468,36 +455,28 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     width: '100%',
   },
 
-  // Desktop card wrapper
   desktopCard: {
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 28,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
-    padding: 32,
-    marginTop: 8,
+    padding: Spacing.xl,
+    marginTop: Spacing.sm,
   },
 
-  // Title
   titleBlock: {
-    marginBottom: 24,
-    gap: 8,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
   },
   title: {
+    ...TextStyles.hero,
     fontSize: 36,
-    fontFamily: 'Poppins_700Bold',
-    color: colors.textInverse,
-    letterSpacing: -0.8,
     lineHeight: 44,
   },
   subtitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins_400Regular',
-    color: colors.textSecondary,
-    lineHeight: 22,
+    ...TextStyles.callout,
   },
 
-  // Progress
   progressBlock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -508,7 +487,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     flex: 1,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
   progressFill: {
@@ -516,39 +494,31 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 3,
   },
   progressLabel: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSize.chip,
     minWidth: 90,
     textAlign: 'right',
   },
 
-  // Sections
   section: {
-    marginBottom: 24,
+    marginBottom: Spacing.lg,
   },
   sectionLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
-    textTransform: 'uppercase',
+    ...TextStyles.badgeCaps,
     letterSpacing: 1.6,
-    color: 'rgba(255,255,255,0.35)',
     marginBottom: 14,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
 
-  // Chip grid
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 4,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
   },
-
-  // Chip
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -559,20 +529,25 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.chip,
   },
 
-  // Category accordion
   categoryBlock: {
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.sm + 4,
     paddingVertical: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.xs,
+  },
+  categoryHeaderPress: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm + 4,
   },
   categoryIconWrap: {
     width: 38,
@@ -583,61 +558,59 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     flexShrink: 0,
   },
   categoryEmoji: {
-    fontSize: 20,
+    fontSize: FontSize.title2,
   },
   categoryTitleBlock: {
     flex: 1,
     gap: 2,
   },
   categoryTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    color: colors.textInverse,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSize.body,
   },
   categoryCount: {
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.caption,
   },
   selectAllBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: Spacing.sm,
     borderWidth: 1,
   },
   selectAllText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.caption,
+  },
+  chevronBtn: {
+    paddingLeft: Spacing.sm + 4,
   },
   categoryDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     marginTop: 10,
-    marginBottom: 4,
-    marginHorizontal: 4,
+    marginBottom: Spacing.xs,
+    marginHorizontal: Spacing.xs,
   },
 
-  // Bottom bar
   bottomFade: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: 120,
-    pointerEvents: 'none',
   },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    gap: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm + 4,
+    gap: Spacing.sm,
   },
   remainingText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.35)',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.chip,
     textAlign: 'center',
   },
   ctaBtn: {

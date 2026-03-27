@@ -9,28 +9,37 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  useWindowDimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
 import { useLocations } from '@/hooks/useLocations';
 import { useNearestCity } from '@/hooks/useNearestCity';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
+import {
+  CultureTokens,
+  gradients,
+  CardTokens,
+  glass,
+  shadows,
+  Spacing,
+  FontFamily,
+  FontSize,
+  TextStyles,
+  IconSize,
+} from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 
 export default function LocationScreen() {
   const colors = useColors();
-  const styles = getStyles(colors);
+  const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
@@ -79,7 +88,6 @@ export default function LocationScreen() {
       }
     } else {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      
       if (detectStatus === 'denied') {
         Alert.alert('Location Permission Required', 'Please allow location access to detect your city automatically, or select it manually below.');
       } else if (detectStatus === 'unavailable') {
@@ -92,7 +100,7 @@ export default function LocationScreen() {
 
   const handleNext = () => {
     if (state.country && state.city) {
-      router.replace(routeWithRedirect('/(onboarding)/communities', redirectTo) as any);
+      router.replace(routeWithRedirect('/(onboarding)/communities', redirectTo) as string);
       return;
     }
     Alert.alert('Select Location', 'Please choose your state and city to continue.');
@@ -102,76 +110,85 @@ export default function LocationScreen() {
   const citiesToShow = pendingState ? (citiesByState[pendingState] ?? []) : [];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[s.container, { backgroundColor: colors.background }]}>
       <LinearGradient
         colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradientBg}
+        style={s.gradientBg}
       />
 
-      {/* Decorative Orbs */}
       {Platform.OS === 'web' && (
         <>
-          <View style={[styles.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4, transform: [{ scale: 1.5 }] } as any]} />
-          <View style={[styles.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.teal, opacity: 0.25, transform: [{ scale: 1.2 }] } as any]} />
-          <View style={[styles.orb, { top: '40%', left: '15%', backgroundColor: CultureTokens.gold, opacity: 0.15, transform: [{ scale: 0.8 }] } as any]} />
+          <View style={[s.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4 }]} />
+          <View style={[s.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.teal, opacity: 0.25 }]} />
         </>
       )}
 
       {isDesktop && (
-        <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as any)} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
-            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
-            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
+        <View style={s.desktopBackRow}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
+            hitSlop={Spacing.sm}
+            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
+            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
         </View>
       )}
 
       {!isDesktop && (
-        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
-          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as any))} hitSlop={12}>
+        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
-          <Text style={[styles.stepText, { color: colors.textSecondary }]}>1 of 4</Text>
+          <Text style={[s.stepText, { color: colors.textSecondary }]}>1 of 4</Text>
         </View>
       )}
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoid} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        style={s.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
-          showsVerticalScrollIndicator={false} 
-          keyboardShouldPersistTaps="handled" 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
-            styles.scrollContent,
-            isDesktop && styles.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 }
+            s.scrollContent,
+            isDesktop && s.scrollContentDesktop,
+            !isDesktop && { paddingTop: 20 },
           ]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: 32 }]}>
+          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView 
-                intensity={80} 
-                tint="dark" 
-                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} 
+              <BlurView
+                intensity={80}
+                tint="dark"
+                style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]}
               />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(20,20,35,0.9)', borderRadius: 32 }]} />
+              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(20,20,35,0.9)', borderRadius: 32 }]} />
             )}
 
-            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
-              <View style={styles.headerBlock}>
-                <View style={[styles.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: CultureTokens.teal + '15' }]}>
-                  <Ionicons name={step === 'state' ? "map" : "location"} size={36} color={CultureTokens.teal} />
+            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
+              <View style={s.headerBlock}>
+                <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}15` }]}>
+                  <Ionicons name={step === 'state' ? 'map' : 'location'} size={36} color={CultureTokens.teal} />
                 </View>
-                <Text style={[styles.title, { color: colors.textInverse }]}>
+                <Text style={[s.title, { color: colors.textInverse }]}>
                   {step === 'state' ? 'Where are you?' : 'Select your city'}
                 </Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  {step === 'state' 
-                    ? 'Select your state to discover culture near you.' 
+                <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+                  {step === 'state'
+                    ? 'Select your state to discover culture near you.'
                     : 'Choose your home city for local recommendations.'}
                 </Text>
               </View>
@@ -179,10 +196,10 @@ export default function LocationScreen() {
               {step === 'state' ? (
                 <View>
                   <Pressable
-                    style={({pressed}) => [
-                      styles.detectBtn,
+                    style={({ pressed }) => [
+                      s.detectBtn,
                       { backgroundColor: pressed ? `${CultureTokens.gold}33` : `${CultureTokens.gold}1A`, borderColor: `${CultureTokens.gold}80` },
-                      isDetecting && { opacity: 0.7 }
+                      isDetecting && { opacity: 0.7 },
                     ]}
                     onPress={handleDetectLocation}
                     disabled={isDetecting}
@@ -192,43 +209,45 @@ export default function LocationScreen() {
                     {isDetecting ? (
                       <ActivityIndicator size="small" color={CultureTokens.gold} />
                     ) : (
-                      <Ionicons name="navigate" size={18} color={CultureTokens.gold} />
+                      <Ionicons name="navigate" size={IconSize.md - 2} color={CultureTokens.gold} />
                     )}
-                    <Text style={[styles.detectBtnText, { color: CultureTokens.gold }]}>
-                      {isDetecting ? 'Detecting location…' : 'Use My Location'}
+                    <Text style={[s.detectBtnText, { color: CultureTokens.gold }]}>
+                      {isDetecting ? 'Detecting location...' : 'Use My Location'}
                     </Text>
                   </Pressable>
 
                   {locationsLoading && (
                     <ActivityIndicator size="large" color={CultureTokens.indigo} style={{ paddingVertical: 20 }} />
                   )}
-                  
+
                   {!!locationsError && (
-                    <View style={[styles.errorBanner, { backgroundColor: CultureTokens.coral + '20', borderColor: CultureTokens.coral + '50' }]}>
-                      <Ionicons name="alert-circle" size={20} color={CultureTokens.coral} />
-                      <Text style={[styles.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
+                    <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
+                      <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
+                      <Text style={[s.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
                     </View>
                   )}
 
-                  <View style={styles.grid}>
-                    {states.map((s) => (
+                  <View style={s.grid}>
+                    {states.map((st) => (
                       <Pressable
-                        key={s.code}
-                        style={({pressed}) => [
-                          styles.stateCard,
+                        key={st.code}
+                        style={({ pressed }) => [
+                          s.stateCard,
                           {
                             backgroundColor: pressed ? colors.primaryGlow : 'transparent',
                             borderColor: colors.borderLight,
                           },
                         ]}
-                        onPress={() => selectState(s.code)}
+                        onPress={() => selectState(st.code)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
                       >
-                        <Text style={styles.stateEmoji}>{s.emoji}</Text>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.stateName, { color: colors.textInverse }]}>{s.name}</Text>
-                          <Text style={[styles.cityCount, { color: colors.textSecondary }]}>{s.cities.length} cities</Text>
+                        <Text style={s.stateEmoji}>{st.emoji}</Text>
+                        <View style={s.stateInfo}>
+                          <Text style={[s.stateName, { color: colors.textInverse }]}>{st.name}</Text>
+                          <Text style={[s.cityCount, { color: colors.textSecondary }]}>{st.cities.length} cities</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                        <Ionicons name="chevron-forward" size={IconSize.md - 2} color={colors.textSecondary} />
                       </Pressable>
                     ))}
                   </View>
@@ -237,52 +256,50 @@ export default function LocationScreen() {
                 <View>
                   <Pressable
                     onPress={() => setStep('state')}
-                    style={({pressed}) => [
-                      styles.backToStateRow,
-                      { opacity: pressed ? 0.7 : 1 }
-                    ]}
+                    style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
                     hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to states"
                   >
-                    <Ionicons name="arrow-back" size={16} color={CultureTokens.gold} />
-                    <Text style={[styles.backToStateText, { color: CultureTokens.gold }]}>
-                      Back to states
-                    </Text>
+                    <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
+                    <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back to states</Text>
                   </Pressable>
 
-                  <View style={[styles.selectedStateRow, { borderColor: colors.borderLight }]}>
-                    <Text style={styles.stateEmojiLarge}>{pendingStateMeta?.emoji}</Text>
-                    <Text style={[styles.selectedStateText, { color: colors.textInverse }]}>
+                  <View style={[s.selectedStateRow, { borderColor: colors.borderLight }]}>
+                    <Text style={s.stateEmojiLarge}>{pendingStateMeta?.emoji}</Text>
+                    <Text style={[s.selectedStateText, { color: colors.textInverse }]}>
                       {pendingStateMeta?.name}
                     </Text>
                   </View>
 
-                  <View style={styles.cityGrid}>
+                  <View style={s.cityGrid}>
                     {citiesToShow.map((city) => {
                       const isActive = state.city === city;
                       return (
                         <Pressable
                           key={city}
-                          style={({pressed}) => [
-                            styles.cityCard,
+                          style={({ pressed }) => [
+                            s.cityCard,
                             {
-                              backgroundColor: isActive 
-                                ? CultureTokens.indigo 
+                              backgroundColor: isActive
+                                ? CultureTokens.indigo
                                 : pressed ? colors.primaryGlow : 'transparent',
                               borderColor: isActive ? 'transparent' : colors.borderLight,
                             },
                           ]}
                           onPress={() => selectCity(city)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isActive }}
+                          accessibilityLabel={city}
                         >
                           <Ionicons
                             name="location"
-                            size={18}
+                            size={IconSize.md - 2}
                             color={isActive ? colors.textInverse : colors.textSecondary}
                           />
-                          <Text style={[styles.cityName, { color: isActive ? colors.textInverse : colors.textInverse }]}>
-                            {city}
-                          </Text>
+                          <Text style={[s.cityName, { color: colors.textInverse }]}>{city}</Text>
                           {isActive && (
-                            <Ionicons name="checkmark-circle" size={18} color={colors.textInverse} />
+                            <Ionicons name="checkmark-circle" size={IconSize.md - 2} color={colors.textInverse} />
                           )}
                         </Pressable>
                       );
@@ -291,7 +308,7 @@ export default function LocationScreen() {
                 </View>
               )}
 
-              <View style={styles.spacer} />
+              <View style={s.spacer} />
 
               <Button
                 variant="primary"
@@ -300,7 +317,7 @@ export default function LocationScreen() {
                 rightIcon="arrow-forward"
                 disabled={!state.country || !state.city}
                 onPress={handleNext}
-                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
               >
                 Continue
               </Button>
@@ -312,63 +329,134 @@ export default function LocationScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+// ---------------------------------------------------------------------------
+// Styles — static StyleSheet
+// ---------------------------------------------------------------------------
+const s = StyleSheet.create({
   container: { flex: 1 },
   gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  orb: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    ...Platform.select({
+      web: { filter: 'blur(50px)' } as Record<string, string>,
+      default: {},
+    }),
+  },
   keyboardAvoid: { flex: 1 },
-  mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1, textTransform: 'uppercase' },
-  desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  mobileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: Spacing.sm + 4,
+  },
+  stepText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSize.chip,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
+  desktopBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderRadius: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
   formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 520 },
   formBlur: { borderWidth: 1 },
-  formContent: { paddingTop: 40 },
-  // Step dots? (Matching culture-match)
-  dotRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
-  dot:          { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
-  dotActive:    { width: 32, backgroundColor: CultureTokens.teal },
+  formContent: { paddingTop: Spacing.xxl },
 
-  // Header
-  headerBlock:  { alignItems: 'center', marginBottom: 28 },
-  iconWrapper:  { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5, boxShadow: '0px 4px 8px rgba(0,0,0,0.2)' },
-  title:        { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.8 },
-  subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+  headerBlock: { alignItems: 'center', marginBottom: 28 },
+  iconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
+  },
+  title: {
+    ...TextStyles.display,
+    fontSize: 32,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    ...TextStyles.callout,
+    textAlign: 'center',
+  },
 
-  // Search input
-  searchInput:  { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', marginBottom: 20 },
+  detectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: Spacing.md,
+    borderRadius: CardTokens.radius,
+    borderWidth: 1.5,
+    marginBottom: Spacing.lg,
+  },
+  detectBtnText: { fontFamily: FontFamily.bold, fontSize: FontSize.body2, letterSpacing: 1 },
 
-  // Detection
-  detectBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, borderRadius: 16, borderWidth: 1.5, marginBottom: 24 },
-  detectBtnText:{ fontSize: 14, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: CardTokens.radius,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+  },
+  errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  // Errors
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },
-  errorText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  
-  // List
-  listContent:  { paddingBottom: 20 },
-  grid: { gap: 12 },
-  stateCard: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: 16, padding: 18, borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, marginBottom: 8 },
+  grid: { gap: Spacing.sm + 4 },
+  stateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    borderRadius: CardTokens.radius,
+    padding: 18,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    marginBottom: Spacing.sm,
+  },
   stateEmoji: { fontSize: 28 },
-  stateName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', marginBottom: 2 },
-  cityCount: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
-  
+  stateInfo: { flex: 1 },
+  stateName: { fontFamily: FontFamily.semibold, fontSize: FontSize.body, marginBottom: 2 },
+  cityCount: { fontFamily: FontFamily.regular, fontSize: FontSize.chip },
+
   backToStateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20, alignSelf: 'flex-start' },
-  backToStateText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  selectedStateRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 24, paddingBottom: 20, borderBottomWidth: 1 },
+  backToStateText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+  selectedStateRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: Spacing.lg, paddingBottom: 20, borderBottomWidth: 1 },
   stateEmojiLarge: { fontSize: 36 },
-  selectedStateText: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  
+  selectedStateText: { fontFamily: FontFamily.bold, fontSize: 22 },
+
   cityGrid: { gap: 10 },
-  cityCard: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1 },
-  cityName: { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium' },
-  spacer: { height: 32 },
+  cityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: CardTokens.radius,
+    padding: Spacing.md,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+  },
+  cityName: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.callout },
+  spacer: { height: Spacing.xl },
   submitBtn: { height: 60, borderRadius: 20 },
-  
-  emptyText: { color: '#FFFFFF', textAlign: 'center', marginTop: 40, opacity: 0.5 },
 });
