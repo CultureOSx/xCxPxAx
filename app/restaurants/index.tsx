@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, CultureTokens } from '@/constants/theme';
 import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage';
 import { useMemo } from 'react';
+import type { RestaurantData } from '@/shared/schema';
 
 const restaurantCuisines: CategoryFilter[] = [
   { label: 'All', icon: 'restaurant', color: CultureTokens.indigo },
@@ -18,52 +19,33 @@ const restaurantCuisines: CategoryFilter[] = [
   { label: 'Japanese-Fusion', icon: 'fish', color: CultureTokens.coral },
 ];
 
-interface RestaurantData {
-  id: string;
-  name: string;
-  cuisine: string;
-  priceRange: string;
-  description: string;
-  imageUrl: string;
-  rating: number;
-  reviews: number;
-  isOpen: boolean;
-  isPromoted: boolean;
-  location: string;
-  features?: string[];
-  reservationAvailable?: boolean;
-  deliveryAvailable?: boolean;
-}
-
 export default function RestaurantsScreen() {
   const { state } = useOnboarding();
 
   const { data: restaurants = [], isLoading } = useQuery({
     queryKey: ['/api/restaurants', state.country, state.city],
-    queryFn: () => {
-      const params: Record<string, string> = {};
-      if (state.country) params['country'] = state.country;
-      if (state.city) params['city'] = state.city;
-      return api.restaurants.list(params);
-    },
+    queryFn: () => api.restaurants.list({
+      country: state.country || undefined,
+      city: state.city || undefined,
+    }),
   });
 
   const items: BrowseItem[] = useMemo(() => {
-    return (restaurants as unknown as RestaurantData[]).map((rest) => ({
+    return restaurants.map((rest: RestaurantData) => ({
       id: rest.id,
       title: rest.name,
       subtitle: `${rest.cuisine} | ${rest.priceRange}`,
       description: rest.description,
       imageUrl: rest.imageUrl,
       rating: rest.rating,
-      reviews: rest.reviews,
+      reviews: rest.reviewsCount,
       badge: rest.isOpen ? 'Open' : undefined,
       isPromoted: rest.isPromoted,
       cuisine: rest.cuisine,
-      location: rest.location,
-      features: rest.features || [],
-      reservationAvailable: rest.reservationAvailable || false,
-      deliveryAvailable: rest.deliveryAvailable || false,
+      location: rest.address,
+      features: rest.features ?? [],
+      reservationAvailable: rest.reservationAvailable ?? false,
+      deliveryAvailable: rest.deliveryAvailable ?? false,
     }));
   }, [restaurants]);
 

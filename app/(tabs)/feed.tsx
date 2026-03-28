@@ -152,26 +152,21 @@ export default function CultureFeedScreen() {
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
     : state.country || 'Australia';
 
+  // Reanimated crash isolation: use View instead of Reanimated.View, remove entering prop
   const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (item.kind === '_trending') {
       return (
-        <Reanimated.View
-          style={sc.itemWrapper}
-          entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
-        >
+        <View style={sc.itemWrapper}>
           <TrendingInterstitial city={item.city} colors={colors} />
-        </Reanimated.View>
+        </View>
       );
     }
     return (
-      <Reanimated.View
-        style={sc.itemWrapper}
-        entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
-      >
+      <View style={sc.itemWrapper}>
         <ErrorBoundary>
           <PostCard post={item} colorIdx={index} />
         </ErrorBoundary>
-      </Reanimated.View>
+      </View>
     );
   }, [colors]);
 

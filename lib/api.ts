@@ -905,8 +905,42 @@ function directoryNamespace<T = Profile>(basePath: string) {
   };
 }
 
-const restaurants = directoryNamespace('api/restaurants');
-const shopping    = directoryNamespace('api/shopping');
+const restaurants = {
+  list: (params?: { city?: string; country?: string; cuisine?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set('city', params.city);
+    if (params?.country) qs.set('country', params.country);
+    if (params?.cuisine) qs.set('cuisine', params.cuisine);
+    const q = qs.toString();
+    return request<import('@shared/schema').RestaurantData[]>('GET', `api/restaurants${q ? `?${q}` : ''}`);
+  },
+  get: (id: string) => request<import('@shared/schema').RestaurantData>('GET', `api/restaurants/${id}`),
+  create: (payload: import('@shared/schema').RestaurantInput) =>
+    request<import('@shared/schema').RestaurantData>('POST', 'api/restaurants', payload),
+  update: (id: string, payload: Partial<import('@shared/schema').RestaurantInput>) =>
+    request<import('@shared/schema').RestaurantData>('PUT', `api/restaurants/${id}`, payload),
+  remove: (id: string) => request<{ success: boolean }>('DELETE', `api/restaurants/${id}`),
+  setPromoted: (id: string, isPromoted: boolean) =>
+    request<import('@shared/schema').RestaurantData>('POST', `api/restaurants/${id}/promote`, { isPromoted }),
+};
+const shopping = {
+  list: (params?: { city?: string; country?: string; category?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set('city', params.city);
+    if (params?.country) qs.set('country', params.country);
+    if (params?.category) qs.set('category', params.category);
+    const q = qs.toString();
+    return request<import('@shared/schema').ShopData[]>('GET', `api/shopping${q ? `?${q}` : ''}`);
+  },
+  get: (id: string) => request<import('@shared/schema').ShopData>('GET', `api/shopping/${id}`),
+  create: (payload: import('@shared/schema').ShopInput) =>
+    request<import('@shared/schema').ShopData>('POST', 'api/shopping', payload),
+  update: (id: string, payload: Partial<import('@shared/schema').ShopInput>) =>
+    request<import('@shared/schema').ShopData>('PUT', `api/shopping/${id}`, payload),
+  remove: (id: string) => request<{ success: boolean }>('DELETE', `api/shopping/${id}`),
+  setPromoted: (id: string, isPromoted: boolean) =>
+    request<import('@shared/schema').ShopData>('POST', `api/shopping/${id}/promote`, { isPromoted }),
+};
 const movies      = directoryNamespace<import('@shared/schema').MovieData>('api/movies');
 const activities = {
   list: async (params?: { city?: string; country?: string; category?: string; ownerId?: string; promoted?: boolean }) => {

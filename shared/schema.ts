@@ -20,3 +20,5 @@ export * from './schema/update';
 export * from './schema/discover';
 export * from './schema/feedSection';
 export * from './schema/ingest';
+export * from './schema/shopping';
+export * from './schema/restaurant';

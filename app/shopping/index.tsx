@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage';
+import type { ShopData, ShopDeal } from '@/shared/schema';
 
 const shoppingCategories: CategoryFilter[] = [
   { label: 'All', icon: 'bag-handle', color: CultureTokens.indigo },
@@ -24,23 +25,21 @@ export default function ShoppingScreen() {
 
   const { data: stores = [], isLoading } = useQuery({
     queryKey: ['/api/shopping', state.country, state.city],
-    queryFn: () => {
-      const params: Record<string, string> = {};
-      if (state.country) params['country'] = state.country;
-      if (state.city) params['city'] = state.city;
-      return api.shopping.list(params);
-    },
+    queryFn: () => api.shopping.list({
+      country: state.country || undefined,
+      city: state.city || undefined,
+    }),
   });
 
   // Map API data to BrowseItem format
-  const items: BrowseItem[] = stores.map((store: any) => ({
+  const items: BrowseItem[] = stores.map((store: ShopData) => ({
     id: store.id,
     title: store.name,
     subtitle: store.category,
     description: store.description,
     imageUrl: store.imageUrl,
     rating: store.rating,
-    reviews: store.reviews,
+    reviews: store.reviewsCount,
     badge: store.isOpen ? 'Open' : undefined,
     isPromoted: store.isPromoted,
     meta: store.location,
@@ -57,12 +56,12 @@ export default function ShoppingScreen() {
   };
 
   const renderItemExtra = (item: BrowseItem) => {
-    const deals = item.deals as any[] | undefined;
+    const deals = item.deals as ShopDeal[] | undefined;
     if (!deals || deals.length === 0) return null;
 
     return (
       <View style={{ gap: 6 }}>
-        {deals.slice(0, 2).map((deal: any, i: number) => (
+        {deals.slice(0, 2).map((deal: ShopDeal, i: number) => (
           <View
             key={i}
             style={{

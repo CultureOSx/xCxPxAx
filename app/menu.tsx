@@ -1,251 +1,414 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Platform } from 'react-native';
+import {
+  View, Text, StyleSheet, Pressable, ScrollView, Platform,
+} from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 
-import { Stack } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
-import { TextStyles } from '@/constants/typography';
-import { CultureTokens, CardTokens } from '@/constants/theme';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRole } from '@/hooks/useRole';
-import { LinearGradient } from 'expo-linear-gradient';
+import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-interface MenuItem {
+const isWeb = Platform.OS === 'web';
+const isIOS = Platform.OS === 'ios';
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface MenuEntry {
   id: string;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: any;
+  route: string;
   color?: string;
+  badge?: string;
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
 }
 
-const MENU_ITEMS: MenuItem[] = [
-  { id: 'profile', label: 'My Identity', icon: 'person-circle-outline', route: '/(tabs)/profile', requiresAuth: true },
-  { id: 'tickets', label: 'Festival Tickets', icon: 'ticket-outline', route: '/tickets', requiresAuth: true, color: CultureTokens.gold },
-  { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet-outline', route: '/payment/wallet', requiresAuth: true, color: CultureTokens.teal },
-  { id: 'saved', label: 'Saved & Pinned', icon: 'bookmark-outline', route: '/saved', requiresAuth: true },
-  { id: 'submit', label: 'Creator Studio', icon: 'add-circle-outline', route: '/submit', requiresAuth: true, color: CultureTokens.coral },
-  { id: 'scanner', label: 'Gate Scan (Staff)', icon: 'qr-code-outline', route: '/scanner', requiresAuth: true, color: CultureTokens.indigo },
-  { id: 'communities', label: 'Directory', icon: 'grid-outline', route: '/(tabs)/directory' },
-  { id: 'help', label: 'Support & Help', icon: 'help-circle-outline', route: '/help' },
-  { id: 'settings', label: 'App Settings', icon: 'settings-outline', route: '/settings' },
-  { id: 'admin', label: 'Admin Terminal', icon: 'shield-checkmark-outline', route: '/admin/dashboard', requiresAdmin: true, color: CultureTokens.error },
+interface MenuSection {
+  title: string;
+  items: MenuEntry[];
+}
+
+// ── Data ───────────────────────────────────────────────────────────────────────
+
+const SECTIONS: MenuSection[] = [
+  {
+    title: 'My Account',
+    items: [
+      { id: 'profile', label: 'My Identity',       icon: 'person-circle-outline', route: '/(tabs)/profile',  requiresAuth: true },
+      { id: 'tickets', label: 'Festival Tickets',  icon: 'ticket-outline',        route: '/tickets',         requiresAuth: true, color: CultureTokens.gold },
+      { id: 'wallet',  label: 'Wallet & Rewards',  icon: 'wallet-outline',        route: '/payment/wallet',  requiresAuth: true, color: CultureTokens.teal },
+      { id: 'saved',   label: 'Saved & Pinned',    icon: 'bookmark-outline',      route: '/saved',           requiresAuth: true },
+    ],
+  },
+  {
+    title: 'Discover',
+    items: [
+      { id: 'events',    label: 'All Events',   icon: 'calendar-outline',    route: '/events' },
+      { id: 'directory', label: 'Directory',    icon: 'grid-outline',        route: '/(tabs)/directory' },
+      { id: 'community', label: 'Communities',  icon: 'people-outline',      route: '/(tabs)/community' },
+      { id: 'perks',     label: 'Perks',        icon: 'gift-outline',        route: '/(tabs)/perks',    color: CultureTokens.indigo },
+    ],
+  },
+  {
+    title: 'Tools',
+    items: [
+      { id: 'submit',  label: 'Creator Studio',  icon: 'add-circle-outline',      route: '/submit',    requiresAuth: true, color: CultureTokens.coral },
+      { id: 'scanner', label: 'Gate Scan',       icon: 'qr-code-outline',         route: '/scanner',   requiresAuth: true, color: CultureTokens.indigo },
+      { id: 'help',    label: 'Support & Help',  icon: 'help-circle-outline',     route: '/help' },
+      { id: 'settings',label: 'App Settings',    icon: 'settings-outline',        route: '/settings' },
+    ],
+  },
+  {
+    title: 'Admin',
+    items: [
+      { id: 'admin', label: 'Admin Terminal', icon: 'shield-checkmark-outline', route: '/admin/dashboard/index', requiresAdmin: true, color: CultureTokens.coral },
+    ],
+  },
 ];
 
+// ── Row component ──────────────────────────────────────────────────────────────
+
+function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof useColors> }) {
+  const accent = item.color ?? colors.text;
+  const handlePress = () => {
+    if (!isWeb) Haptics.selectionAsync();
+    router.push(item.route as any);
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        pressed && styles.rowPressed,
+      ]}
+    >
+      <View style={[styles.rowIcon, { backgroundColor: accent + '15' }]}>
+        <Ionicons name={item.icon} size={20} color={accent} />
+      </View>
+      <Text style={[styles.rowLabel, { color: colors.text }]}>{item.label}</Text>
+      {item.badge && (
+        <View style={[styles.badge, { backgroundColor: accent }]}>
+          <Text style={styles.badgeText}>{item.badge}</Text>
+        </View>
+      )}
+      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
+    </Pressable>
+  );
+}
+
+// ── Main screen ────────────────────────────────────────────────────────────────
+
 export default function MenuScreen() {
-  const insets = useSafeAreaInsets();
-  const colors = useColors();
-  const { isDesktop, contentWidth } = useLayout();
+  const insets      = useSafeAreaInsets();
+  const colors      = useColors();
+  const { isDesktop, contentWidth, hPad } = useLayout();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { isAdmin } = useRole();
 
-  const styles = useMemo(() => getStyles(colors), [colors]);
-
-  const haptic = () => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync();
-  };
-
-  const handleRoute = (route: string) => {
-    haptic();
-    router.push(route);
-  };
+  const visibleSections = useMemo<MenuSection[]>(() =>
+    SECTIONS
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (item.requiresAuth  && !isAuthenticated) return false;
+          if (item.requiresAdmin && !isAdmin)         return false;
+          return true;
+        }),
+      }))
+      .filter((section) => section.items.length > 0),
+    [isAuthenticated, isAdmin],
+  );
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
-    haptic();
+    if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     setIsLoggingOut(true);
     await logout();
     router.replace('/(onboarding)/login');
   };
 
-  const filteredItems = MENU_ITEMS.filter((item) => {
-    if (item.requiresAuth && !isAuthenticated) return false;
-    if (item.requiresAdmin && !isAdmin) return false;
-    return true;
-  });
-
   return (
     <ErrorBoundary>
-      <Stack.Screen 
-        options={{ 
-          title: 'Menu | CulturePass',
-          headerShown: false,
-        }} 
-      />
+      <Stack.Screen options={{ title: 'Menu | CulturePass', headerShown: false }} />
+
       <View style={[styles.root, { backgroundColor: colors.background }]}>
+
+        {/* ── Header gradient ── */}
         <LinearGradient
-          colors={[colors.background, colors.surface]}
-          style={StyleSheet.absoluteFillObject}
+          colors={[CultureTokens.indigo + 'CC', colors.background]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 0.6, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
         />
 
-        <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderLight }]}>
-          <View style={styles.headerInner}>
-            <Pressable onPress={() => { haptic(); router.back(); }} style={styles.closeBtn}>
-              <Ionicons name="close-circle-outline" size={28} color={colors.text} />
-            </Pressable>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Menu</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        {/* ── Top bar ── */}
+        <View style={[styles.topBar, { paddingTop: insets.top, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
+          <Text style={[styles.screenTitle, { color: colors.text }]}>Menu</Text>
+          <Pressable
+            onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.back(); }}
+            style={[styles.closeBtn, { backgroundColor: colors.surface + 'CC', borderColor: colors.borderLight }]}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+          >
+            <Ionicons name="close" size={20} color={colors.text} />
+          </Pressable>
         </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scroll,
-            isDesktop && { width: contentWidth, alignSelf: 'center' as any },
+            { paddingHorizontal: hPad, paddingBottom: insets.bottom + 48 },
+            isDesktop && { width: contentWidth, alignSelf: 'center' as const },
           ]}
         >
+          {/* ── Profile card ── */}
           {isAuthenticated && user ? (
-            <Pressable 
-              style={[styles.profileCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-              onPress={() => handleRoute('/(tabs)/profile')}
+            <Pressable
+              onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}
+              accessibilityRole="button"
+              accessibilityLabel="View profile"
+              style={({ pressed }) => [pressed && { opacity: 0.85 }]}
             >
-              <Image 
-                source={{ uri: user.avatarUrl || 'https://via.placeholder.com/100' }} 
-                style={styles.avatar} 
-                contentFit="cover" 
-              />
-              <View style={styles.profileText}>
-                <Text style={[styles.profileName, { color: colors.text }]}>{user.displayName || user.username}</Text>
-                <Text style={[styles.profileHandle, { color: colors.textSecondary }]}>@{user.handle || user.username}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              <LinearGradient
+                colors={[CultureTokens.indigo + '40', colors.surfaceElevated]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.profileCard, { borderColor: CultureTokens.indigo + '40' }]}
+              >
+                <Image
+                  source={{ uri: user.avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || user.username || 'U') + '&background=2C2A72&color=fff' }}
+                  style={styles.avatar}
+                  contentFit="cover"
+                />
+                <View style={styles.profileInfo}>
+                  <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
+                    {user.displayName || user.username}
+                  </Text>
+                  <Text style={[styles.profileHandle, { color: colors.textSecondary }]} numberOfLines={1}>
+                    @{user.handle || user.username}
+                  </Text>
+                  {user.subscriptionTier && user.subscriptionTier !== 'free' && (
+                    <View style={[styles.tierBadge, { backgroundColor: CultureTokens.gold + '25', borderColor: CultureTokens.gold + '60' }]}>
+                      <Ionicons name="star" size={10} color={CultureTokens.gold} />
+                      <Text style={[styles.tierText, { color: CultureTokens.gold }]}>
+                        {String(user.subscriptionTier).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </LinearGradient>
             </Pressable>
           ) : (
-            <Pressable 
-              style={[styles.profileCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-              onPress={() => handleRoute('/(onboarding)/login')}
+            <Pressable
+              onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.push('/(onboarding)/login'); }}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              style={({ pressed }) => [pressed && { opacity: 0.85 }]}
             >
-              <View style={[styles.avatar, { backgroundColor: colors.borderLight, alignItems: 'center', justifyContent: 'center' }]}>
-                <Ionicons name="person" size={24} color={colors.textSecondary} />
-              </View>
-              <View style={styles.profileText}>
-                <Text style={[styles.profileName, { color: colors.text }]}>Guest User</Text>
-                <Text style={[styles.profileHandle, { color: CultureTokens.indigo }]}>Tap to sign in or register</Text>
-              </View>
-              <Ionicons name="log-in-outline" size={24} color={colors.textSecondary} />
+              <LinearGradient
+                colors={[CultureTokens.indigo + '30', colors.surfaceElevated]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.profileCard, { borderColor: CultureTokens.indigo + '35' }]}
+              >
+                <View style={[styles.avatar, styles.guestAvatar, { backgroundColor: colors.borderLight }]}>
+                  <Ionicons name="person" size={24} color={colors.textSecondary} />
+                </View>
+                <View style={styles.profileInfo}>
+                  <Text style={[styles.profileName, { color: colors.text }]}>Guest</Text>
+                  <Text style={[styles.profileHandle, { color: CultureTokens.indigo }]}>Sign in or create account →</Text>
+                </View>
+                <Ionicons name="log-in-outline" size={22} color={CultureTokens.indigo} />
+              </LinearGradient>
             </Pressable>
           )}
 
-          <View style={styles.menuGrid}>
-            {filteredItems.map((item) => (
-              <Pressable
-                key={item.id}
-                onPress={() => handleRoute(item.route)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                  pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                <View style={[styles.menuIconBox, { backgroundColor: (item.color || colors.text) + '15' }]}>
-                  <Ionicons name={item.icon} size={22} color={item.color || colors.text} />
-                </View>
-                <Text style={[styles.menuItemText, { color: colors.text }]}>{item.label}</Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-              </Pressable>
-            ))}
-          </View>
+          {/* ── Sections ── */}
+          {visibleSections.map((section) => (
+            <View key={section.title} style={styles.section}>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+                {section.title.toUpperCase()}
+              </Text>
+              <View style={[styles.sectionCard, { borderColor: colors.borderLight }]}>
+                {section.items.map((item, idx) => (
+                  <React.Fragment key={item.id}>
+                    <MenuRow item={item} colors={colors} />
+                    {idx < section.items.length - 1 && (
+                      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+          ))}
 
+          {/* ── Logout ── */}
           {isAuthenticated && (
             <Pressable
               onPress={handleLogout}
-              style={[styles.logoutBtn, { borderColor: colors.borderLight }]}
               disabled={isLoggingOut}
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+              style={({ pressed }) => [
+                styles.logoutBtn,
+                { borderColor: colors.error + '40' },
+                pressed && { opacity: 0.7 },
+              ]}
             >
-              <Ionicons name="log-out-outline" size={20} color={colors.error} />
+              <Ionicons name="log-out-outline" size={18} color={colors.error} />
               <Text style={[styles.logoutText, { color: colors.error }]}>
-                {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                {isLoggingOut ? 'Signing out…' : 'Sign Out'}
               </Text>
             </Pressable>
           )}
 
+          {/* ── Footer ── */}
           <View style={styles.footer}>
             <Image source={require('@/assets/images/icon.png')} style={styles.footerLogo} />
-            <Text style={[styles.footerText, { color: colors.textTertiary }]}>CulturePass v1.0.0</Text>
+            <Text style={[styles.footerText, { color: colors.textTertiary }]}>
+              CulturePass · v1.0.0
+            </Text>
           </View>
-          <View style={{ height: insets.bottom + 40 }} />
         </ScrollView>
       </View>
     </ErrorBoundary>
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+// ── Styles ─────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
+
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerInner: {
-    height: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+  screenTitle: {
+    fontSize: 28,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.5,
   },
-  headerTitle: { ...TextStyles.title2 },
   closeBtn: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scroll: { padding: 16 },
+
+  scroll: { paddingTop: 20, gap: 0 },
+
+  /* Profile card */
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: CardTokens.radius,
+    borderRadius: 20,
     borderWidth: 1,
     marginBottom: 24,
+    gap: 14,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  profileText: { flex: 1, marginLeft: 16 },
-  profileName: { ...TextStyles.title3, marginBottom: 2 },
-  profileHandle: { ...TextStyles.callout },
-  menuGrid: { gap: 12, marginBottom: 32 },
-  menuItem: {
+  avatar: { width: 52, height: 52, borderRadius: 16 },
+  guestAvatar: { alignItems: 'center', justifyContent: 'center' },
+  profileInfo: { flex: 1, gap: 2 },
+  profileName: { fontSize: 16, fontFamily: 'Poppins_700Bold', letterSpacing: -0.2 },
+  profileHandle: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  tierBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: CardTokens.radius,
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
     borderWidth: 1,
+    marginTop: 4,
   },
-  menuIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  tierText: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
+
+  /* Sections */
+  section: { marginBottom: 20 },
+  sectionLabel: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  sectionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
+
+  /* Row */
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  rowPressed: { opacity: 0.65 },
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    flexShrink: 0,
   },
-  menuItemText: { flex: 1, ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold' },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  badgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#fff' },
+
+  /* Logout */
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: CardTokens.radius,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
     gap: 8,
-    marginBottom: 32,
+    marginBottom: 28,
   },
-  logoutText: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold' },
-  footer: { alignItems: 'center', gap: 8, opacity: 0.6 },
-  footerLogo: { width: 32, height: 32, borderRadius: 8, filter: 'grayscale(100%)' },
-  footerText: { ...TextStyles.caption },
+  logoutText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+
+  /* Footer */
+  footer: { alignItems: 'center', gap: 6, opacity: 0.5, marginBottom: 8 },
+  footerLogo: { width: 28, height: 28, borderRadius: 8 },
+  footerText: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
 });

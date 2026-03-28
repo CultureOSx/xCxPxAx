@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { ShopDeal } from '@/shared/schema';
 import { ButtonTokens, CardTokens, CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -149,7 +150,7 @@ export default function ShoppingDetailScreen() {
             {(store.deals?.length ?? 0) > 0 && (
               <View style={styles.dealsSection}>
                 <Text style={styles.subTitle}>Current Deals & Offers</Text>
-                {(store.deals ?? []).map((deal: any, i: number) => (
+                {(store.deals ?? []).map((deal: ShopDeal, i: number) => (
                   <View key={i} style={styles.dealCard}>
                     <View style={styles.dealHeader}>
                       <View style={styles.dealIconBox}>
