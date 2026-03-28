@@ -71,8 +71,15 @@ restaurantsRouter.delete('/restaurants/:id', requireAuth, requireRole('admin', '
 // Private: Set restaurant promoted status (admin only)
 restaurantsRouter.post('/restaurants/:id/promote', requireAuth, requireRole('admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const { isPromoted } = req.body as { isPromoted: boolean };
-    const item = await restaurantsService.setPromoted(String(req.params.id), Boolean(isPromoted));
+    let isPromoted = req.body?.isPromoted;
+    if (typeof isPromoted === 'string') {
+      if (isPromoted === 'true') isPromoted = true;
+      else if (isPromoted === 'false') isPromoted = false;
+    }
+    if (typeof isPromoted !== 'boolean') {
+      return res.status(400).json({ error: 'isPromoted required and must be a boolean' });
+    }
+    const item = await restaurantsService.setPromoted(String(req.params.id), isPromoted);
     if (!item) return res.status(404).json({ error: 'Restaurant not found' });
     res.json(item);
   } catch (err) {

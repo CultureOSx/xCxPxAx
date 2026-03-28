@@ -61,9 +61,9 @@ function EventRailComponent({
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  container:  { marginBottom: 36, paddingTop: 4 },
+  headerPad:  { paddingHorizontal: 20 },
+  scrollRail: { paddingHorizontal: 20, gap: 14, paddingRight: 32 },
 });
 
 export const EventRail = React.memo(EventRailComponent);

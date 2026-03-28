@@ -7,14 +7,7 @@ import {
   Platform, ActivityIndicator, RefreshControl, Modal,
   TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
 } from 'react-native';
-import Reanimated, {
-  FadeInDown,
-  useSharedValue as useReSharedValue,
-  useAnimatedStyle as useReAnimatedStyle,
-  withSpring as withReSpring,
-  withTiming as withReTiming,
-  interpolateColor as reInterpolateColor,
-} from 'react-native-reanimated';
+// Reanimated intentionally NOT imported — interpolateColor worklet crashes iOS (SIGABRT via worklets::UIScheduler)
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
@@ -139,7 +132,7 @@ const FILTER_TABS: { id: FeedFilter; label: string; icon: React.ComponentProps<t
   { id: 'communities', label: 'Communities',  icon: 'people' },
 ];
 
-// Inline animated chip for feed filter (follows events.tsx pattern)
+// Inline animated chip — uses RN Animated only (Reanimated interpolateColor crashes iOS)
 function FeedFilterChip({
   label, active, onPress, icon, count, colors,
 }: {
@@ -148,27 +141,28 @@ function FeedFilterChip({
   count?: number;
   colors: ReturnType<typeof useColors>;
 }) {
-  const scale = useReSharedValue(1);
-  const bg = useReSharedValue(0);
-  const animStyle = useReAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    backgroundColor: reInterpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
-        : [colors.surface, colors.surfaceElevated],
-    ),
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 40 }).start();
+  }, [scale]);
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 25 }).start();
+  }, [scale]);
+
+  const chipBg = active ? CultureTokens.indigo : colors.surface;
+  const chipBorder = active ? CultureTokens.indigo : colors.borderLight;
+
   return (
     <Pressable
-      onPressIn={() => { scale.value = withReSpring(0.92); bg.value = withReTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withReSpring(1);   bg.value = withReTiming(0, { duration: 100 }); }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
       accessibilityRole="tab"
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <Reanimated.View style={[ffc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+      <Animated.View style={[ffc.chip, { borderColor: chipBorder, backgroundColor: chipBg, transform: [{ scale }] }]}>
         <Ionicons name={icon} size={13} color={active ? '#fff' : colors.textTertiary} />
         <Text style={[ffc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
         {count != null && count > 0 && (
@@ -178,7 +172,7 @@ function FeedFilterChip({
             </Text>
           </View>
         )}
-      </Reanimated.View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -424,8 +418,8 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
 }
 
 const ti = StyleSheet.create({
-  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
-  iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: Platform.OS === 'web' ? 14 : 0, borderWidth: Platform.OS === 'web' ? 1 : 0, borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginTop: 2, marginBottom: 8, paddingHorizontal: 16 },
+  iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title:    { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
   sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 16 },
 });
@@ -781,34 +775,59 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
     } catch { /* user cancelled */ }
   }, [post]);
 
-  const likeColor = likeError ? CultureTokens.coral + '80' : liked ? CultureTokens.coral : colors.textSecondary;
+  const likeColor    = likeError ? CultureTokens.coral + '80' : liked ? '#E0245E' : colors.textSecondary;
+  const commentColor = colors.textSecondary;
+  const shareColor   = colors.textSecondary;
 
   return (
     <>
+      {/* Like count summary (Facebook style — shows above buttons if likes > 0) */}
+      {likeCount > 0 && (
+        <View style={[rxn.likeSummary, { borderTopColor: colors.borderLight }]}>
+          <Ionicons name="heart" size={14} color="#E0245E" />
+          <Text style={[rxn.likeSummaryText, { color: colors.textTertiary }]}>
+            {likeCount.toLocaleString()} {likeCount === 1 ? 'like' : 'likes'}
+            {commentCount > 0 ? `  ·  ${commentCount} comment${commentCount !== 1 ? 's' : ''}` : ''}
+          </Text>
+        </View>
+      )}
+
       <View style={[rxn.wrap, { borderTopColor: colors.borderLight }]}>
-        <Pressable style={rxn.btn} onPress={handleLike} accessibilityRole="button" accessibilityLabel={`Like — ${likeCount} likes`}>
+        {/* Like */}
+        <Pressable
+          style={rxn.btn}
+          onPress={handleLike}
+          accessibilityRole="button"
+          accessibilityLabel={`Like — ${likeCount} likes`}
+        >
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-            <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={likeColor} />
+            <Ionicons name={liked ? 'heart' : 'heart-outline'} size={21} color={likeColor} />
           </Animated.View>
-          {likeCount > 0 && (
-            <Text style={[rxn.count, { color: likeColor }]}>{likeCount}</Text>
-          )}
+          <Text style={[rxn.btnLabel, { color: likeColor, fontFamily: liked ? 'Poppins_700Bold' : 'Poppins_500Medium' }]}>
+            Like
+          </Text>
         </Pressable>
 
-        <View style={[rxn.divider, { backgroundColor: colors.borderLight }]} />
-
-        <Pressable style={rxn.btn} onPress={handleComment} accessibilityRole="button" accessibilityLabel={`Comment — ${commentCount} comments`}>
-          <Ionicons name="chatbubble-outline" size={19} color={colors.textSecondary} />
-          {commentCount > 0 && (
-            <Text style={[rxn.count, { color: colors.textSecondary }]}>{commentCount}</Text>
-          )}
+        {/* Comment */}
+        <Pressable
+          style={rxn.btn}
+          onPress={handleComment}
+          accessibilityRole="button"
+          accessibilityLabel={`Comment — ${commentCount} comments`}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color={commentColor} />
+          <Text style={[rxn.btnLabel, { color: commentColor }]}>Comment</Text>
         </Pressable>
 
-        <View style={[rxn.divider, { backgroundColor: colors.borderLight }]} />
-
-        <Pressable style={rxn.btn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
-          <Ionicons name="arrow-redo-outline" size={19} color={colors.textSecondary} />
-          <Text style={[rxn.label, { color: colors.textSecondary }]}>Share</Text>
+        {/* Share */}
+        <Pressable
+          style={rxn.btn}
+          onPress={handleShare}
+          accessibilityRole="button"
+          accessibilityLabel="Share"
+        >
+          <Ionicons name="share-social-outline" size={21} color={shareColor} />
+          <Text style={[rxn.btnLabel, { color: shareColor }]}>Share</Text>
         </Pressable>
       </View>
 
@@ -818,11 +837,11 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
 }
 
 const rxn = StyleSheet.create({
-  wrap:    { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  btn:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 11 },
-  count:   { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  label:   { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  divider: { width: StyleSheet.hairlineWidth, height: 20 },
+  likeSummary:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth },
+  likeSummaryText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
+  wrap:            { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
+  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13 },
+  btnLabel:        { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 });
 
 // ── Post card header ──────────────────────────────────────────────────────────
@@ -841,19 +860,19 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
 
   return (
     <View style={ph.row}>
-      <CommAvatar community={post.community} size={38} colorIdx={colorIdx} />
-      <View style={{ flex: 1, marginLeft: 10 }}>
+      <CommAvatar community={post.community} size={42} colorIdx={colorIdx} />
+      <View style={ph.info}>
         <View style={ph.nameRow}>
           <Text style={[ph.name, { color: colors.text }]} numberOfLines={1}>{post.community.name}</Text>
           {post.community.isVerified && (
-            <Ionicons name="checkmark-circle" size={13} color={CultureTokens.indigo} />
+            <Ionicons name="checkmark-circle" size={14} color={CultureTokens.indigo} />
           )}
         </View>
         <View style={ph.metaRow}>
           <Text style={[ph.time, { color: colors.textTertiary }]}>{timeAgo(post.createdAt)}</Text>
           {badge && (
             <>
-              <View style={[ph.dot, { backgroundColor: colors.textTertiary }]} />
+              <Text style={[ph.sep, { color: colors.textTertiary }]}>·</Text>
               <View style={[ph.pill, { backgroundColor: badge.color + '18' }]}>
                 <Ionicons name={badge.icon} size={9} color={badge.color} />
                 <Text style={[ph.pillText, { color: badge.color }]}>{badge.label}</Text>
@@ -862,7 +881,7 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
           )}
           {showMatch && (
             <>
-              <View style={[ph.dot, { backgroundColor: colors.textTertiary }]} />
+              <Text style={[ph.sep, { color: colors.textTertiary }]}>·</Text>
               <View style={[ph.pill, { backgroundColor: CultureTokens.indigo + '15' }]}>
                 <Ionicons name="sparkles" size={9} color={CultureTokens.indigo} />
                 <Text style={[ph.pillText, { color: CultureTokens.indigo }]} numberOfLines={1}>
@@ -874,28 +893,29 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
         </View>
       </View>
       <Pressable
-        style={[ph.moreBtn, { backgroundColor: colors.surfaceElevated }]}
         onPress={onMorePress}
-        hitSlop={8}
+        hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Post options"
+        style={ph.moreBtn}
       >
-        <Ionicons name="ellipsis-horizontal" size={15} color={colors.textTertiary} />
+        <Ionicons name="ellipsis-horizontal" size={18} color={colors.textTertiary} />
       </Pressable>
     </View>
   );
 }
 
 const ph = StyleSheet.create({
-  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
-  nameRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  name:     { fontSize: 14, fontFamily: 'Poppins_700Bold', flex: 1, lineHeight: 20 },
-  metaRow:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 },
-  time:     { fontSize: 11, fontFamily: 'Poppins_400Regular', lineHeight: 15 },
-  dot:      { width: 3, height: 3, borderRadius: 1.5 },
-  pill:     { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  pillText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', lineHeight: 14 },
-  moreBtn:  { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  row:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  info:    { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name:    { fontSize: 14, fontFamily: 'Poppins_700Bold', flex: 1, lineHeight: 20 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  time:    { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 16 },
+  sep:     { fontSize: 12, lineHeight: 16 },
+  pill:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  pillText:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', lineHeight: 14 },
+  moreBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });
 
 // ── Post card ─────────────────────────────────────────────────────────────────
@@ -987,9 +1007,23 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
             {/* Card body */}
             <View style={pcd.eventBody}>
               <Text style={[pcd.eventTitle, { color: colors.text }]} numberOfLines={2}>{ev.title}</Text>
-              <View style={[pcd.viewRow, { borderColor: accent + '50' }]}>
+              {/* Meta: date + time */}
+              <View style={pcd.eventMeta}>
+                <Ionicons name="calendar-outline" size={13} color={colors.textTertiary} />
+                <Text style={[pcd.eventMetaText, { color: colors.textTertiary }]}>
+                  {dateLabel}{ev.time ? ` at ${ev.time}` : ''}
+                </Text>
+                {ev.venue ? (
+                  <>
+                    <Text style={[pcd.eventMetaText, { color: colors.textTertiary }]}>·</Text>
+                    <Ionicons name="location-outline" size={13} color={colors.textTertiary} />
+                    <Text style={[pcd.eventMetaText, { color: colors.textTertiary }]} numberOfLines={1}>{ev.venue}</Text>
+                  </>
+                ) : null}
+              </View>
+              <View style={[pcd.viewRow, { borderColor: accent + '60', backgroundColor: accent + '10' }]}>
                 <Text style={[pcd.viewText, { color: accent }]}>View Event</Text>
-                <Ionicons name="chevron-forward" size={13} color={accent} />
+                <Ionicons name="arrow-forward" size={14} color={accent} />
               </View>
             </View>
           </Pressable>
@@ -1075,32 +1109,30 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
     }
   };
 
+  // Mobile: full-bleed borderless post. Desktop/web: card with shadow.
+  const isMobile = Platform.OS !== 'web';
+  const cardStyle = isMobile
+    ? {
+        backgroundColor: colors.surface,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+        marginBottom: 6,
+      }
+    : {
+        backgroundColor: colors.surface,
+        borderRadius: CardTokens.radius,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        marginBottom: 12,
+        overflow: 'hidden' as const,
+        ...(isDark
+          ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }
+          : { shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }),
+      };
+
   return (
     <>
-      <View style={[
-        pcd.card,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.borderLight,
-          ...(Platform.select({
-            web: {
-              boxShadow: isDark
-                ? '0px 4px 12px rgba(0,0,0,0.45)'
-                : '0px 4px 12px rgba(44,42,114,0.08)',
-            },
-            ios: {
-              shadowColor: isDark ? '#000' : '#2C2A72',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.25 : 0.12,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: isDark ? 8 : 4,
-              shadowColor: isDark ? '#000' : '#2C2A72',
-            },
-          }) || {}),
-        },
-      ]}>
+      <View style={[pcd.card, cardStyle]}>
         <PostCardHeader post={post} accent={accent} colors={colors} colorIdx={colorIdx} onMorePress={handleMorePress} />
         {renderContent()}
         <ReactionsBar post={post} colors={colors} />
@@ -1128,35 +1160,42 @@ PostCardInner.displayName = 'PostCard';
 const PostCard = React.memo(PostCardInner);
 
 const pcd = StyleSheet.create({
-  card:           { borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', marginBottom: 12, elevation: 3 },
-  // Event
-  eventImg:       { height: 248, position: 'relative', backgroundColor: '#111827' },
-  datePill:       { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
-  datePillText:   { fontSize: 11, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.95)', lineHeight: 15 },
-  pricePill:      { position: 'absolute', top: 12, right: 12, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  pricePillText:  { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 15 },
-  eventFooter:    { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, gap: 4 },
-  eventInfoRow:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  eventInfoText:  { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.88)', flex: 1, lineHeight: 17 },
-  eventBody:      { padding: 14, paddingTop: 12, gap: 8 },
-  eventTitle:     { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 25, letterSpacing: -0.2 },
-  viewRow:        { flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1 },
-  viewText:       { fontSize: 12, fontFamily: 'Poppins_700Bold', lineHeight: 17 },
-  // Announcement
-  postImg:        { height: 240, width: '100%', backgroundColor: '#111827' },
-  announcementBody:{ paddingHorizontal: 14, paddingVertical: 12 },
-  announcementText:{ fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24 },
-  readMore:       { fontSize: 14, fontFamily: 'Poppins_600SemiBold', marginTop: 4, lineHeight: 20 },
-  // Welcome
-  welcomeWrap:    { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, overflow: 'hidden' },
-  welcomeIconWrap:{ width: 50, height: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  // Base — mobile overrides applied inline in PostCardInner
+  card: { overflow: 'hidden' },
+
+  // ── Event ─────────────────────────────────────────────────────────────────
+  eventImg:     { height: Platform.OS === 'web' ? 260 : 320, position: 'relative', backgroundColor: '#0D0D14' },
+  datePill:     { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  datePillText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.95)', lineHeight: 15 },
+  pricePill:    { position: 'absolute', top: 14, right: 14, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  pricePillText:{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 15 },
+  eventFooter:  { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14, gap: 5 },
+  eventInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  eventInfoText:{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.9)', flex: 1, lineHeight: 18 },
+  eventBody:    { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4, gap: 10 },
+  eventTitle:   { fontSize: 19, fontFamily: 'Poppins_700Bold', lineHeight: 27, letterSpacing: -0.3 },
+  eventMeta:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventMetaText:{ fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
+  viewRow:      { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5, marginBottom: 4 },
+  viewText:     { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 18 },
+
+  // ── Announcement ──────────────────────────────────────────────────────────
+  postImg:         { height: 260, width: '100%', backgroundColor: '#0D0D14' },
+  announcementBody:{ paddingHorizontal: 16, paddingVertical: 14 },
+  announcementText:{ fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 26 },
+  readMore:        { fontSize: 14, fontFamily: 'Poppins_600SemiBold', marginTop: 6, lineHeight: 20 },
+
+  // ── Welcome ───────────────────────────────────────────────────────────────
+  welcomeWrap:    { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, overflow: 'hidden' },
+  welcomeIconWrap:{ width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   welcomeTitle:   { fontSize: 15, fontFamily: 'Poppins_700Bold', lineHeight: 22 },
-  welcomeSub:     { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18, marginTop: 2 },
-  // Milestone / Collection
-  milestoneWrap:  { flexDirection: 'row', alignItems: 'center', gap: 14, margin: 12, marginTop: 0, padding: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
-  milestoneIcon:  { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  milestoneTitle: { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 19 },
-  milestoneSub:   { fontSize: 11, fontFamily: 'Poppins_400Regular', lineHeight: 15 },
+  welcomeSub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginTop: 3 },
+
+  // ── Milestone / Collection ────────────────────────────────────────────────
+  milestoneWrap: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 14, marginBottom: 4, padding: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  milestoneIcon: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  milestoneTitle:{ fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
+  milestoneSub:  { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
 });
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
@@ -1360,6 +1399,7 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }) {
   return (
     <View>
+      {/* Stories / communities row */}
       {communities.length > 0 && (
         <StoriesBar
           communities={communities}
@@ -1369,11 +1409,15 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
           onCreatePost={onCreatePost}
         />
       )}
-      <View style={{ paddingHorizontal: hPad, paddingTop: 12, gap: 10 }}>
+
+      {/* Create post + guest banner */}
+      <View style={[flh.createWrap, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
         <CreatePostStub authUser={authUser} colors={colors} isAuthenticated={isAuthenticated} onPress={onCreatePost} city={city} />
         {!isAuthenticated && <GuestBanner colors={colors} />}
       </View>
-      <View style={[flh.divider, { paddingHorizontal: hPad }]}>
+
+      {/* Section header */}
+      <View style={[flh.divider, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
         <View style={[flh.divLine, { backgroundColor: colors.borderLight }]} />
         <View style={[flh.divPill, { backgroundColor: colors.surfaceElevated }]}>
           <Ionicons name="sparkles" size={10} color={CultureTokens.indigo} />
@@ -1386,10 +1430,11 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }
 
 const flh = StyleSheet.create({
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 14 },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth },
-  divPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  divText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: 14 },
+  createWrap: { gap: 10, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  divider:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  divLine:    { flex: 1, height: StyleSheet.hairlineWidth },
+  divPill:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  divText:    { fontSize: 10, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: 14 },
 });
 
 // ── Main screen ───────────────────────────────────────────────────────────────

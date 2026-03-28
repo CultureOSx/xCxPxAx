@@ -7,7 +7,9 @@ import { queryClient } from '@/lib/query-client';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
-import type { DiscoverCurationResponse, EventData, Community } from '@/shared/schema';
+import type { DiscoverCurationResponse, EventData, Community, RestaurantData, ShopData, MovieData, PerkData } from '@/shared/schema';
+import type { PreviewItem } from '@/components/Discover/PreviewRail';
+import { CultureTokens } from '@/constants/theme';
 
 export interface DiscoverFeed {
   trendingEvents?: EventData[];
@@ -147,6 +149,31 @@ export function useDiscoverData() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // --- Directory section queries ---
+  const { data: restaurantsRaw = [], isLoading: restaurantsLoading } = useQuery<RestaurantData[]>({
+    queryKey: ['/api/restaurants', state.city, state.country],
+    queryFn: () => api.restaurants.list({ city: state.city || undefined, country: state.country || undefined }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: moviesRaw = [], isLoading: moviesLoading } = useQuery<MovieData[]>({
+    queryKey: ['/api/movies', state.city, state.country],
+    queryFn: () => (api.movies as any).list({ city: state.city || undefined, country: state.country || undefined, pageSize: 8 }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: shoppingRaw = [], isLoading: shoppingLoading } = useQuery<ShopData[]>({
+    queryKey: ['/api/shopping', state.city, state.country],
+    queryFn: () => api.shopping.list({ city: state.city || undefined, country: state.country || undefined }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: perksRaw = [], isLoading: perksLoading } = useQuery<PerkData[]>({
+    queryKey: ['/api/perks', state.city, state.country],
+    queryFn: () => api.perks.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const { data: councilData } = useCouncil();
   const council = councilData?.council;
 
@@ -275,6 +302,59 @@ export function useDiscoverData() {
 
   const nearbyLoading = gpsLoading || eventsLoading;
 
+  // --- Preview rail mapped data ---
+  const restaurantPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
+    if (restaurantsLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
+    return restaurantsRaw.slice(0, 8).map((r) => ({
+      id: r.id,
+      imageUrl: r.imageUrl,
+      title: r.name,
+      subtitle: `${r.cuisine} · ${r.priceRange}`,
+      badge: r.isOpen ? 'Open' : undefined,
+      badgeColor: r.isOpen ? '#34C759' : undefined,
+      route: `/restaurants/${r.id}`,
+    }));
+  }, [restaurantsRaw, restaurantsLoading]);
+
+  const moviePreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
+    if (moviesLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
+    return moviesRaw.slice(0, 8).map((m) => ({
+      id: m.id,
+      imageUrl: m.posterUrl,
+      title: m.title,
+      subtitle: Array.isArray(m.genre) ? m.genre[0] : m.genre,
+      badge: m.rating,
+      badgeColor: '#1C1C1E',
+      route: `/movies/${m.id}`,
+    }));
+  }, [moviesRaw, moviesLoading]);
+
+  const shoppingPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
+    if (shoppingLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
+    return shoppingRaw.slice(0, 8).map((s) => ({
+      id: s.id,
+      imageUrl: s.imageUrl,
+      title: s.name,
+      subtitle: s.category,
+      badge: s.deliveryAvailable ? 'Delivery' : s.isOpen ? 'Open' : undefined,
+      badgeColor: s.deliveryAvailable ? CultureTokens.teal : '#34C759',
+      route: `/shopping/${s.id}`,
+    }));
+  }, [shoppingRaw, shoppingLoading]);
+
+  const perksPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
+    if (perksLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
+    return perksRaw.slice(0, 8).map((p) => ({
+      id: p.id,
+      imageUrl: p.coverUrl,
+      title: p.title,
+      subtitle: p.partnerName ?? p.categories?.[0],
+      badge: p.discountPercent ? `${p.discountPercent}% off` : p.perkType,
+      badgeColor: CultureTokens.indigo,
+      route: `/perks/${p.id}`,
+    }));
+  }, [perksRaw, perksLoading]);
+
   const popularRailData = useMemo((): (EventData | string)[] =>
     eventsLoading || discoverLoading ? ['s1', 's2', 's3', 's4'] : popularEvents,
     [eventsLoading, discoverLoading, popularEvents]
@@ -325,5 +405,14 @@ export function useDiscoverData() {
     state,
     isAuthenticated,
     userId,
+    // Directory preview rails
+    restaurantPreviewItems,
+    restaurantsLoading,
+    moviePreviewItems,
+    moviesLoading,
+    shoppingPreviewItems,
+    shoppingLoading,
+    perksPreviewItems,
+    perksLoading,
   };
 }

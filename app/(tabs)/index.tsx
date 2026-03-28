@@ -1,13 +1,15 @@
 import React from 'react';
-import { 
-  View, 
-  ScrollView, 
-  RefreshControl, 
+import {
+  View,
+  ScrollView,
+  RefreshControl,
   StyleSheet
 } from 'react-native';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
+import { CultureTokens } from '@/constants/theme';
 
 // Modular Components
 import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
@@ -21,13 +23,12 @@ import { CommunityRail } from '@/components/Discover/CommunityRail';
 import { ActivityRail } from '@/components/Discover/ActivityRail';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
-import { ComingSoonRail } from '@/components/Discover/ComingSoonRail';
-import { CultureTokens } from '@/constants/theme';
+import { PreviewRail } from '@/components/Discover/PreviewRail';
 
 export default function DiscoverScreen() {
   const colors = useColors();
   const { isDesktop, contentWidth } = useLayout();
-  
+
   const {
     currentTime,
     weatherSummary,
@@ -51,6 +52,15 @@ export default function DiscoverScreen() {
     discoverLoading,
     state,
     isAuthenticated,
+    // Directory preview rails
+    restaurantPreviewItems,
+    restaurantsLoading,
+    moviePreviewItems,
+    moviesLoading,
+    shoppingPreviewItems,
+    shoppingLoading,
+    perksPreviewItems,
+    perksLoading,
   } = useDiscoverData();
 
   return (
@@ -62,14 +72,15 @@ export default function DiscoverScreen() {
           isDesktop && { width: contentWidth, alignSelf: 'center' as const }
         ]}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={handleRefresh} 
-            tintColor={colors.primary} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
           />
         }
       >
-        <DiscoverHeader 
+        {/* ── Header: greeting + top bar ── */}
+        <DiscoverHeader
           currentTime={currentTime}
           weatherSummary={weatherSummary}
           city={state.city || 'Sydney'}
@@ -78,39 +89,47 @@ export default function DiscoverScreen() {
           onRefresh={handleRefresh}
         />
 
+        {/* ── Quick access links ── */}
         <SuperAppLinks />
 
+        {/* ── Hero carousel: featured events ── */}
         <HeroCarousel events={featuredEvents} />
 
+        {/* ── Featured artists ── */}
         <FeaturedArtistRail data={featuredArtists} />
 
+        {/* ── Heritage playlists ── */}
         <HeritagePlaylistRail data={heritagePlaylist} />
 
-        <IndigenousSpotlight 
+        {/* ── Indigenous spotlight ── */}
+        <IndigenousSpotlight
           land={land}
           organisations={indigenousOrganisations}
-          festivals={[]} // Add indigenous festivals when available
-          businesses={[]} // Add indigenous businesses when available
+          festivals={[]}
+          businesses={[]}
         />
 
-        <EventRail 
-          title="Happening Now" 
-          subtitle="Events occurring right now or starting shortly" 
-          data={nowBuckets.happeningNow} 
+        {/* ── Live & starting soon ── */}
+        <EventRail
+          title="Happening Now"
+          subtitle="Events occurring right now or starting shortly"
+          data={nowBuckets.happeningNow}
           isLive
         />
 
-        <EventRail 
-          title="Starting Soon" 
-          subtitle="Events starting in the next few hours" 
-          data={nowBuckets.startingSoon} 
+        <EventRail
+          title="Starting Soon"
+          subtitle="Events starting in the next few hours"
+          data={nowBuckets.startingSoon}
         />
 
+        {/* ── Popular & nearby events ── */}
         <EventRail
           title="Popular Near You"
           subtitle={`Trending events around ${state.city}`}
           data={popularRailData}
           isLoading={eventsLoading || discoverLoading}
+          onSeeAll={() => router.push('/events')}
         />
 
         <EventRail
@@ -118,8 +137,10 @@ export default function DiscoverScreen() {
           subtitle="Happening in your local community"
           data={nearbyRailData}
           isLoading={nearbyLoading}
+          onSeeAll={() => router.push('/events')}
         />
 
+        {/* ── Communities ── */}
         <CommunityRail
           title="Diaspora Communities"
           subtitle="Connect with your heritage"
@@ -127,6 +148,7 @@ export default function DiscoverScreen() {
           isLoading={communitiesLoading}
         />
 
+        {/* ── Activities ── */}
         <ActivityRail
           title="Culture & Exploration"
           subtitle="Workshops, tours, and cultural sites"
@@ -134,50 +156,59 @@ export default function DiscoverScreen() {
           isLoading={activitiesLoading}
         />
 
+        {/* ── Category & city browsing ── */}
         <CategoryRail />
-
         <CityRail />
 
+        {/* ── For You (personalised) ── */}
         <EventRail
           title="For Your Culture"
           subtitle="Personalised events matching your heritage"
           data={forYouEvents.length > 0 ? forYouEvents : ['s1', 's2', 's3']}
           isLoading={eventsLoading}
+          onSeeAll={() => router.push('/events')}
         />
 
-        <ComingSoonRail
+        {/* ── Restaurants ── */}
+        <PreviewRail
           title="Restaurants Near You"
           subtitle="Cultural dining in your neighbourhood"
-          icon="restaurant"
-          accentColor={CultureTokens.gold}
+          accentColor="#FF9500"
+          items={restaurantPreviewItems}
+          isLoading={restaurantsLoading}
+          seeAllRoute="/restaurants"
         />
 
-        <ComingSoonRail
+        {/* ── Movies ── */}
+        <PreviewRail
           title="Movies & Entertainment"
           subtitle="Cultural films, screenings and shows"
-          icon="film"
-          accentColor={CultureTokens.gold}
+          accentColor={CultureTokens.coral}
+          items={moviePreviewItems}
+          isLoading={moviesLoading}
+          seeAllRoute="/movies"
+          cardStyle="portrait"
         />
 
-        <ComingSoonRail
+        {/* ── Shopping ── */}
+        <PreviewRail
           title="Shopping & Markets"
           subtitle="Cultural goods, fashion and artisans"
-          icon="bag"
           accentColor={CultureTokens.teal}
+          items={shoppingPreviewItems}
+          isLoading={shoppingLoading}
+          seeAllRoute="/shopping"
+          cardStyle="landscape"
         />
 
-        <ComingSoonRail
+        {/* ── Perks ── */}
+        <PreviewRail
           title="Perks Near You"
           subtitle="Exclusive rewards at cultural venues"
-          icon="gift"
           accentColor={CultureTokens.indigo}
-        />
-
-        <ComingSoonRail
-          title="Trending Artists"
-          subtitle="Rising cultural artists in your city"
-          icon="musical-notes"
-          accentColor={CultureTokens.purple}
+          items={perksPreviewItems}
+          isLoading={perksLoading}
+          seeAllRoute="/(tabs)/perks"
         />
 
         <View style={styles.footerSpacer} />

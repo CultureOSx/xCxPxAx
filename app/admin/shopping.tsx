@@ -75,7 +75,7 @@ export default function AdminShoppingScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: stores = [], isLoading } = useQuery({
-    queryKey: ['/api/shopping/admin'],
+    queryKey: ['/api/shopping'],
     queryFn: () => api.shopping.list(),
     enabled: isAdmin,
   });
@@ -83,7 +83,6 @@ export default function AdminShoppingScreen() {
   const createMutation = useMutation({
     mutationFn: (payload: ShopInput) => api.shopping.create(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/shopping/admin'] });
       queryClient.invalidateQueries({ queryKey: ['/api/shopping'] });
       setForm(EMPTY_FORM);
       setEditingId(null);

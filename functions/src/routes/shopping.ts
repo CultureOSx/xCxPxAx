@@ -2,19 +2,21 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { shoppingService } from '../services/shopping';
 import { wrap, captureRouteError } from './utils';
+import { ShopInputSchema } from './validation';
+import { z } from 'zod';
 
 export const shoppingRouter = Router();
 
 // Public: List shops
 shoppingRouter.get('/shopping', wrap(async (req, res) => {
   try {
-    const { city, country, category, status } = req.query;
-    const items = await shoppingService.list({
-      city: city as string,
-      country: country as string,
-      category: category as string,
-      status: status as string,
-    });
+    // Normalize query params to string | undefined
+    const norm = (v: unknown) => Array.isArray(v) ? v[0] : v;
+    const city = norm(req.query.city) as string | undefined;
+    const country = norm(req.query.country) as string | undefined;
+    const category = norm(req.query.category) as string | undefined;
+    const status = norm(req.query.status) as string | undefined;
+    const items = await shoppingService.list({ city, country, category, status });
     res.json(items);
   } catch (err) {
     captureRouteError(err, 'GET /shopping');
@@ -37,7 +39,11 @@ shoppingRouter.get('/shopping/:id', wrap(async (req, res) => {
 // Private: Create shop (organizer or admin only)
 shoppingRouter.post('/shopping', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const item = await shoppingService.create(req.body);
+    const parse = ShopInputSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
+    }
+    const item = await shoppingService.create(parse.data);
     res.status(201).json(item);
   } catch (err) {
     captureRouteError(err, 'POST /shopping');
@@ -48,7 +54,11 @@ shoppingRouter.post('/shopping', requireAuth, requireRole('organizer', 'admin', 
 // Private: Update shop (organizer or admin only)
 shoppingRouter.put('/shopping/:id', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const item = await shoppingService.update(String(req.params.id), req.body);
+    const parse = ShopInputSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
+    }
+    const item = await shoppingService.update(String(req.params.id), parse.data);
     if (!item) return res.status(404).json({ error: 'Shop not found' });
     res.json(item);
   } catch (err) {
@@ -71,8 +81,15 @@ shoppingRouter.delete('/shopping/:id', requireAuth, requireRole('admin', 'platfo
 // Private: Set shop promoted status (admin only)
 shoppingRouter.post('/shopping/:id/promote', requireAuth, requireRole('admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const { isPromoted } = req.body as { isPromoted: boolean };
-    const item = await shoppingService.setPromoted(String(req.params.id), Boolean(isPromoted));
+    let isPromoted = req.body?.isPromoted;
+    if (typeof isPromoted === 'string') {
+      if (isPromoted === 'true') isPromoted = true;
+      else if (isPromoted === 'false') isPromoted = false;
+    }
+    if (typeof isPromoted !== 'boolean') {
+      return res.status(400).json({ error: 'isPromoted required and must be a boolean' });
+    }
+    const item = await shoppingService.setPromoted(String(req.params.id), isPromoted);
     if (!item) return res.status(404).json({ error: 'Shop not found' });
     res.json(item);
   } catch (err) {

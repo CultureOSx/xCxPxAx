@@ -120,11 +120,12 @@ interface TabItemProps {
   badgeCount?: number;
   avatarUrl?: string;
   initials?: string;
+  isGuest?: boolean;
   isDark: boolean;
   colors: ReturnType<typeof useColors>;
 }
 
-function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDark, colors }: TabItemProps) {
+function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isGuest, isDark, colors }: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
@@ -161,6 +162,19 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDa
             >
               {avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={tabItem.avatarImg} />
+              ) : isGuest ? (
+                <View
+                  style={[
+                    tabItem.avatarInner,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
+                  ]}
+                >
+                  <Ionicons
+                    name={isActive ? 'person-circle' : 'person-circle-outline'}
+                    size={22}
+                    color={iconColor}
+                  />
+                </View>
               ) : (
                 <View
                   style={[
@@ -169,7 +183,7 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isDa
                   ]}
                 >
                   <Text style={[tabItem.avatarInitials, { color: iconColor }]}>
-                    {initials ?? '?'}
+                    {initials}
                   </Text>
                 </View>
               )}
@@ -271,7 +285,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const colors = useColors();
   const isDark = useColorScheme() === 'dark';
   const { isDesktop } = useLayout();
-  const { user, userId } = useAuth();
+  const { user, userId, isAuthenticated } = useAuth();
 
   const { data: notifCount = 0 } = useQuery<number>({
     queryKey: ['notifications', 'unread-count', userId],
@@ -358,6 +372,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               badgeCount={isProfileTab ? notifCount : undefined}
               avatarUrl={isProfileTab ? (user as any)?.avatarUrl : undefined}
               initials={isProfileTab ? initials : undefined}
+              isGuest={isProfileTab ? !isAuthenticated : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',

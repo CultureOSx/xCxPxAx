@@ -152,21 +152,14 @@ export default function CultureFeedScreen() {
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
     : state.country || 'Australia';
 
-  // Reanimated crash isolation: use View instead of Reanimated.View, remove entering prop
   const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (item.kind === '_trending') {
-      return (
-        <View style={sc.itemWrapper}>
-          <TrendingInterstitial city={item.city} colors={colors} />
-        </View>
-      );
+      return <TrendingInterstitial city={item.city} colors={colors} />;
     }
     return (
-      <View style={sc.itemWrapper}>
-        <ErrorBoundary>
-          <PostCard post={item} colorIdx={index} />
-        </ErrorBoundary>
-      </View>
+      <ErrorBoundary>
+        <PostCard post={item} colorIdx={index} />
+      </ErrorBoundary>
     );
   }, [colors]);
 
@@ -249,7 +242,7 @@ export default function CultureFeedScreen() {
 
         {isLoading ? (
           <ScrollView
-            contentContainerStyle={{ paddingHorizontal: hPad, paddingTop: 12, paddingBottom: 80 }}
+            contentContainerStyle={{ paddingTop: 12, paddingBottom: 80 }}
             scrollEnabled={false}
           >
             {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} colors={colors} />)}
@@ -258,15 +251,13 @@ export default function CultureFeedScreen() {
           <FlashList
             data={listItems}
             keyExtractor={(item: any) => item.id}
-            numColumns={isDesktop ? 3 : 2}
-            masonry
-            optimizeItemArrangement
+            numColumns={isDesktop ? 2 : 1}
             renderItem={renderItem}
             ListHeaderComponent={renderListHeader}
-            {...({ estimatedItemSize: 400 } as any)}
+            {...({ estimatedItemSize: isDesktop ? 420 : 500 } as any)}
             contentContainerStyle={[
               sc.list,
-              { paddingHorizontal: hPad, paddingBottom: bottomInset + 96 },
+              { paddingHorizontal: isDesktop ? hPad : 0, paddingBottom: bottomInset + 96 },
               isDesktop && sc.listDesktop,
             ]}
             showsVerticalScrollIndicator={false}
@@ -279,7 +270,7 @@ export default function CultureFeedScreen() {
               />
             }
             ListEmptyComponent={
-              <View style={sc.empty}>
+              <View style={[sc.empty, { paddingHorizontal: hPad }]}>
                 <View style={[sc.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
                   <Ionicons name="chatbubbles-outline" size={32} color={colors.textTertiary} />
                 </View>
@@ -321,17 +312,16 @@ export default function CultureFeedScreen() {
 
 const sc = StyleSheet.create({
   root:         { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
-  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
-  headerRight:  { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  headerIconBtn:{ width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  title:        { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 28, letterSpacing: -0.4 },
+  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
+  locationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
+  headerRight:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  headerIconBtn:{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
   fetchBar:     { height: 2, backgroundColor: CultureTokens.indigo + '30' },
   fetchProgress:{ height: 2, width: '60%' },
-  list:         { paddingTop: 12 },
-  itemWrapper:  { marginBottom: 12, paddingHorizontal: 4 },
-  listDesktop:  { maxWidth: 800, width: '100%', alignSelf: 'center' as const },
+  list:         { paddingTop: 0 },
+  listDesktop:  { maxWidth: 860, width: '100%', alignSelf: 'center' as const },
   empty:        { alignItems: 'center', paddingVertical: 60, gap: 10 },
   emptyIcon:    { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 4 },
   emptyTitle:   { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
