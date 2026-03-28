@@ -160,7 +160,7 @@ function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label:
       accessibilityRole="button"
     >
       <View style={[ql.iconWrap, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon as never} size={18} color={accent} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[ql.label, { color: colors.text }]}>{label}</Text>
@@ -383,13 +383,13 @@ export default function AdminNotificationsScreen() {
               icon="people-outline" label="User Roles"
               sub="Manage roles & permissions"
               accent={colors.error}
-              onPress={() => router.push('/admin/users' as never)}
+              onPress={() => router.push('/admin/users')}
             />
             <QuickLink
               icon="document-text-outline" label="Audit Logs"
               sub="View send & dry-run history"
               accent={colors.info}
-              onPress={() => router.push('/admin/audit-logs' as never)}
+              onPress={() => router.push('/admin/audit-logs')}
             />
           </View>
 
@@ -445,7 +445,7 @@ export default function AdminNotificationsScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={opt.label}
                       >
-                        <Ionicons name={opt.icon as never} size={14}
+                        <Ionicons name={opt.icon as keyof typeof Ionicons.glyphMap} size={14}
                           color={active ? 'white' : colors.textSecondary} />
                         <Text style={[s.typeChipText, { color: active ? 'white' : colors.textSecondary }]}>
                           {opt.label}

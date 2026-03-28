@@ -52,7 +52,7 @@ export default function CommunityGuidelinesScreen() {
           />
           <Text style={[styles.title, { color: '#FFFFFF' }]}>Guidelines</Text>
           <Pressable
-            onPress={() => router.push('/menu' as any)}
+            onPress={() => router.push('/menu')}
             style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}
             accessibilityRole="button"
             accessibilityLabel="Menu"

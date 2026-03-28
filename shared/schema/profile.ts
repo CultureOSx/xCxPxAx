@@ -19,6 +19,8 @@ export interface Profile {
   city?: string;
   country?: string;
   location?: { lat: number; lng: number };
+  latitude?: number;
+  longitude?: number;
   geoHash?: string;
   status?: 'draft' | 'published' | 'suspended';
   visibility?: 'public' | 'private' | 'community_only';
@@ -52,6 +54,7 @@ export interface Profile {
   /** Cross-national diaspora group FKs */
   diasporaGroupIds?: string[];
   website?: string;
+  email?: string;
   contactEmail?: string;
   phone?: string;
   socialLinks?: SocialLinks;
@@ -108,6 +111,9 @@ export interface Profile {
   longFormPosts?: { id: string; title: string; content: string; publishedAt: string; coverImageUrl?: string }[];
   
   ownerId?: string;
+  creatorId?: string;
+  culturePassId?: string;
+  images?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

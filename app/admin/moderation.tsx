@@ -52,7 +52,7 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   return (
     <View style={[sp.chip, { backgroundColor: colors.surface, borderColor: color + '30' }]}>
       <View style={[sp.icon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon as never} size={14} color={color} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={14} color={color} />
       </View>
       <View>
         <Text style={[sp.val, { color: colors.text }]}>{value}</Text>
@@ -113,7 +113,7 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
           {/* Header */}
           <View style={rc.header}>
             <View style={[rc.typeBadge, { backgroundColor: meta.color + '18', borderColor: meta.color + '44' }]}>
-              <Ionicons name={meta.icon as never} size={12} color={meta.color} />
+              <Ionicons name={meta.icon as keyof typeof Ionicons.glyphMap} size={12} color={meta.color} />
               <Text style={[rc.typeBadgeText, { color: meta.color }]}>{meta.label}</Text>
             </View>
             <View style={[rc.statusBadge, {
@@ -176,7 +176,7 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
                 style={[rc.actionBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/${report.targetType}/${report.targetId}` as never);
+                  router.push(`/${report.targetType}/${report.targetId}`);
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="View content"
@@ -270,7 +270,7 @@ function EventApprovalCard({ event, onApprove, index }: {
               style={[ec.viewBtn, { borderColor: colors.borderLight }]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push(`/event/${event.id}` as never);
+                router.push(`/event/${event.id}`);
               }}
               accessibilityRole="button"
             >
@@ -428,7 +428,7 @@ function ModerationContent() {
                   onPress={() => setTab(t.key)}
                   accessibilityRole="button"
                 >
-                  <Ionicons name={t.icon as never} size={15} color={tab === t.key ? t.color : colors.textTertiary} />
+                  <Ionicons name={t.icon as keyof typeof Ionicons.glyphMap} size={15} color={tab === t.key ? t.color : colors.textTertiary} />
                   <Text style={[s.tabLabel, { color: tab === t.key ? t.color : colors.textTertiary }]}>{t.label}</Text>
                 </Pressable>
               ))}

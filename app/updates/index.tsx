@@ -38,14 +38,14 @@ function UpdateCard({ update }: { update: AppUpdate }) {
       ]}
       onPress={() => {
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push({ pathname: '/updates/[id]', params: { id: update.id } } as never);
+        router.push({ pathname: '/updates/[id]', params: { id: update.id } });
       }}
       accessibilityRole="button"
       accessibilityLabel={update.title}
     >
       <View style={styles.cardHeader}>
         <View style={[styles.catBadge, { backgroundColor: cat.color + '18' }]}>
-          <Ionicons name={cat.icon as never} size={12} color={cat.color} />
+          <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={12} color={cat.color} />
           <Text style={[styles.catText, { color: cat.color }]}>{cat.label}</Text>
         </View>
         {update.version && (

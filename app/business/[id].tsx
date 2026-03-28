@@ -73,7 +73,7 @@ export default function BusinessDetailScreen() {
             
             <View style={styles.heroBottom}>
               <View style={[styles.heroIconWrap, { backgroundColor: accentColor + '40', borderColor: accentColor + '80' }]}>
-                <Ionicons name={business.icon as any} size={32} color="#FFFFFF" />
+                <Ionicons name={(business.icon ?? 'business') as keyof typeof Ionicons.glyphMap} size={32} color="#FFFFFF" />
               </View>
               <View style={styles.heroNameRow}>
                 <Text style={styles.heroTitle}>{business.name}</Text>
@@ -150,10 +150,10 @@ export default function BusinessDetailScreen() {
           )}
 
           <View style={styles.section}>
-            {(business as any).cpid && (
+            {business.culturePassId && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                 <Ionicons name="finger-print-outline" size={16} color={CultureTokens.indigo} />
-                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: CultureTokens.indigo }}>{(business as any).cpid}</Text>
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: CultureTokens.indigo }}>{business.culturePassId}</Text>
               </View>
             )}
             <Text style={styles.sectionTitle}>About</Text>

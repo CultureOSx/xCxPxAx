@@ -87,7 +87,7 @@ export default function SettingsHelpScreen() {
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); opt.action(); }}
                 >
                   <View style={[styles.contactIcon, { backgroundColor: contactColor + '15' }]}> 
-                    <Ionicons name={opt.icon as never} size={20} color={contactColor} />
+                    <Ionicons name={opt.icon as keyof typeof Ionicons.glyphMap} size={20} color={contactColor} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.contactLabel, { color: colors.text }]}>{opt.label}</Text>

@@ -153,7 +153,7 @@ export default function PublicProfileScreen() {
             )}
 
             <Text style={styles.heroName}>{displayName}</Text>
-            <Text style={styles.heroHandle}>+{(user as any).handle ?? user.username}</Text>
+            <Text style={styles.heroHandle}>+{user.handle ?? user.username}</Text>
 
             <View style={styles.heroPills}>
               {user.role === 'admin' && (
@@ -173,11 +173,11 @@ export default function PublicProfileScreen() {
 
           <View style={styles.statsBar}>
             <LinearGradient colors={[CP.teal + '00', CP.teal, CP.teal + '00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.statsAccentLine} />
-            <StatItem value={(user as any).connectionsCount ?? 0} label="Connections" />
+            <StatItem value={user.connectionsCount ?? 0} label="Connections" />
             <View style={styles.statDivider} />
-            <StatItem value={(user as any).eventsAttended ?? 0} label="Events" />
+            <StatItem value={user.eventsAttended ?? 0} label="Events" />
             <View style={styles.statDivider} />
-            <StatItem value={(user as any).points ?? 0} label="Points" />
+            <StatItem value={user.behavioral?.claimedPerks ?? 0} label="Points" />
           </View>
         </LinearGradient>
 
@@ -186,7 +186,7 @@ export default function PublicProfileScreen() {
             colors={[tierConf.color + '1A', tierConf.color + '05']}
             style={[styles.tierBadge, { borderColor: tierConf.color + '40' }]}
           >
-            <Ionicons name={tierConf.icon as any} size={16} color={tierConf.color} />
+            <Ionicons name={tierConf.icon as keyof typeof Ionicons.glyphMap} size={16} color={tierConf.color} />
             <Text style={[styles.tierText, { color: tierConf.color }]}>{tierConf.label} Member</Text>
           </LinearGradient>
 
@@ -214,7 +214,7 @@ export default function PublicProfileScreen() {
               {activeSocials.map((s, i) => (
                 <SocialCard
                   key={s.key}
-                  icon={s.icon as any}
+                  icon={s.icon as keyof typeof Ionicons.glyphMap}
                   label={s.label}
                   color={s.color}
                   accentColor={ACCENT_COLORS[i % ACCENT_COLORS.length]}
@@ -309,7 +309,7 @@ export default function PublicProfileScreen() {
 
               <View style={styles.cpidFooter}>
                 <Text style={styles.cpidFooterText}>{displayName}</Text>
-                <Text style={styles.cpidFooterText}>+{(user as any).handle ?? user.username}</Text>
+                <Text style={styles.cpidFooterText}>+{user.handle ?? user.username}</Text>
               </View>
             </LinearGradient>
 

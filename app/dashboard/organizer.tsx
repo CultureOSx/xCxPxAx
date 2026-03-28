@@ -99,7 +99,7 @@ function AnalyticsCard({
     <View style={[dashboardStyles.analyticsBox, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
       <View style={dashboardStyles.analyticsTop}>
         <View style={[dashboardStyles.analyticsIcon, { backgroundColor: color + '15' }]}>
-          <Ionicons name={icon as any} size={18} color={color} />
+          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={color} />
         </View>
         <View style={dashboardStyles.trendRow}>
           <Ionicons name={trendUp ? 'arrow-up-circle' : 'arrow-down-circle'} size={14} color={trendUp ? '#34C759' : '#8E8E93'} />
@@ -187,8 +187,8 @@ function OrganizerDashboardContent() {
     },
     eventStats: {
       totalEvents: events.length,
-      publishedEvents: events.filter((e) => (e as any).status === 'published').length,
-      draftEvents: events.filter((e) => (e as any).status === 'draft').length,
+      publishedEvents: events.filter((e) => e.status === 'published').length,
+      draftEvents: events.filter((e) => e.status === 'draft').length,
       totalTicketsSold: events.reduce((sum, e) => sum + (e.attending ?? 0), 0),
       totalRevenueCents: events.reduce((sum, e) => sum + (e.priceCents ?? 0) * (e.attending ?? 0), 0),
     },
@@ -201,7 +201,7 @@ function OrganizerDashboardContent() {
   const sortedEvents = [...events]
     .filter((e) => {
       if (activeFilter === 'all') return true;
-      return (e as any).status === activeFilter;
+      return e.status === activeFilter;
     });
 
   return (
@@ -377,7 +377,7 @@ function OrganizerDashboardContent() {
                        <Text style={[dashboardStyles.eventMeta, { color: colors.textTertiary }]}>{formatDate(event.date)} • {event.venue}</Text>
                      </View>
                      <View style={dashboardStyles.eventRight}>
-                       <View style={[dashboardStyles.statusDot, { backgroundColor: statusColor((event as any).status) }]} />
+                       <View style={[dashboardStyles.statusDot, { backgroundColor: statusColor(event.status) }]} />
                        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                      </View>
                    </Pressable>

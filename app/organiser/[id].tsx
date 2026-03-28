@@ -105,7 +105,7 @@ export default function OrganiserProfilePage() {
                   glass={!isDark}
                   padding={16}
                   style={s.eventCard}
-                  onPress={() => router.push(`/event/${ev.id}` as never)}
+                  onPress={() => router.push(`/event/${ev.id}`)}
                 >
                   <Image source={{ uri: ev.imageUrl }} style={s.eventImage} contentFit="cover" />
                   <View style={s.eventInfo}>

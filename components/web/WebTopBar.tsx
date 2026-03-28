@@ -209,7 +209,7 @@ export function WebTopBar() {
                     router.push(item.route as any);
                   }}
                 >
-                  <Ionicons name={item.icon as any} size={20} color={colors.textSecondary} />
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.textSecondary} />
                   <Text style={[styles.menuNavItemText, { color: colors.text }]}>{item.label}</Text>
                 </Pressable>
               ))}
@@ -231,7 +231,7 @@ export function WebTopBar() {
                     router.push(item.route as any);
                   }}
                 >
-                  <Ionicons name={item.icon as any} size={20} color={colors.textSecondary} />
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.textSecondary} />
                   <Text style={[styles.menuNavItemText, { color: colors.text }]}>{item.label}</Text>
                 </Pressable>
               ))}

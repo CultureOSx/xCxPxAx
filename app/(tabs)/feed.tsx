@@ -287,7 +287,7 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
               style={st.item}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.selectionAsync();
-                router.push({ pathname: '/community/[id]', params: { id: comm.id } } as never);
+                router.push({ pathname: '/community/[id]', params: { id: comm.id } });
               }}
               accessibilityRole="button"
               accessibilityLabel={comm.name}
@@ -409,7 +409,7 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
   return (
     <Pressable
       style={[ti.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-      onPress={() => router.push('/events' as any)}
+      onPress={() => router.push('/events')}
       accessibilityRole="button"
       accessibilityLabel="Browse trending events"
     >
@@ -582,7 +582,10 @@ function CommentsSheet({ visible, onClose, post, colors }: {
       await addComment(pid, pcol, {
         authorId: user.id,
         authorName: user.username || user.email || 'User',
-        authorAvatar: (user as any).avatar || (user as any).image || (user as any).photo || undefined,
+        authorAvatar: (user as unknown as Record<string, unknown>).avatar as string | undefined
+          || (user as unknown as Record<string, unknown>).image as string | undefined
+          || (user as unknown as Record<string, unknown>).photo as string | undefined
+          || undefined,
         body: body.trim(),
       });
       setBody('');
@@ -916,7 +919,7 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
     if (post.kind === 'event') {
       router.push({ pathname: '/event/[id]', params: { id: post.event.id } });
     } else {
-      router.push({ pathname: '/community/[id]', params: { id: post.community.id } } as never);
+      router.push({ pathname: '/community/[id]', params: { id: post.community.id } });
     }
   }, [post]);
 
@@ -1452,8 +1455,9 @@ export default function CultureFeedScreen() {
       if (item.kind === 'welcome') {
         return { id: item.id, kind: 'welcome', community: comm, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
       }
-      if ((item as any).kind === 'collection-highlight') {
-        return { id: item.id, kind: 'collection-highlight', community: comm, tokenName: (item as any).tokenName, tokenImage: (item as any).tokenImage, userName: (item as any).userName, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
+      if ((item as Record<string, unknown>).kind === 'collection-highlight') {
+        const ext = item as Record<string, unknown>;
+        return { id: item.id, kind: 'collection-highlight' as const, community: comm, tokenName: ext.tokenName as string, tokenImage: ext.tokenImage as string, userName: ext.userName as string, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
       }
       return { id: item.id, kind: 'announcement', community: comm, body: item.body ?? '', imageUrl: item.imageUrl ?? undefined, authorId: item.authorId, likesCount: item.likesCount, commentsCount: item.commentsCount, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
     });
@@ -1556,7 +1560,7 @@ export default function CultureFeedScreen() {
             <HeaderAvatar />
             <Pressable
               style={[sc.headerIconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
-              onPress={() => router.push('/search' as any)}
+              onPress={() => router.push('/search')}
               accessibilityRole="button"
               accessibilityLabel="Search"
             >
@@ -1640,7 +1644,7 @@ export default function CultureFeedScreen() {
                 </Text>
                 <Pressable
                   style={[sc.emptyCta, { backgroundColor: CultureTokens.indigo }]}
-                  onPress={() => router.push(activeFilter === 'events' ? '/events' : '/(tabs)/community' as any)}
+                  onPress={() => router.push(activeFilter === 'events' ? '/events' : '/(tabs)/community')}
                   accessibilityRole="button"
                 >
                   <Text style={sc.emptyCtaText}>

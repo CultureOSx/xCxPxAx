@@ -71,7 +71,7 @@ function QuickAction({ icon, label, accent, badge, onPress, width }: {
       <View style={[qa.card, { backgroundColor: colors.surface, borderColor: accent + '35' }]}>
         <View style={{ position: 'relative' }}>
           <View style={[qa.iconWrap, { backgroundColor: accent + '18' }]}>
-            <Ionicons name={icon as never} size={22} color={accent} />
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={22} color={accent} />
           </View>
           {badge && badge > 0 ? (
             <View style={qa.badge}>
@@ -122,7 +122,7 @@ function StatTile({ icon, label, value, accent, alert, width, index = 0 }: {
       <View style={[st.tile, { backgroundColor: colors.surface, borderColor: alert ? CultureTokens.coral + '50' : accent + '25' }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
           <View style={[st.icon, { backgroundColor: accent + '18' }]}>
-            <Ionicons name={icon as never} size={18} color={accent} />
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={accent} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[st.val, { color: alert ? CultureTokens.coral : colors.text }]}>{value}</Text>
@@ -173,7 +173,7 @@ function NavCard({ icon, label, sub, accent, badge, onPress, width, index = 0 }:
           {/* Icon + badge row */}
           <View style={nc.iconRow}>
             <View style={[nc.icon, { backgroundColor: accent + '18' }]}>
-              <Ionicons name={icon as never} size={20} color={accent} />
+              <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color={accent} />
             </View>
             {badge != null ? (
               <View style={[nc.badge, { backgroundColor: CultureTokens.coral }]}>
@@ -416,15 +416,15 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="QUICK ACTIONS" />
           <NavGrid gap={columnGap}>
-            <QuickAction width={qaW} icon="cloud-download-outline" label="Import Data"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/import' as never)} />
+            <QuickAction width={qaW} icon="cloud-download-outline" label="Import Data"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/import')} />
             <QuickAction width={qaW} icon="megaphone-outline"      label="Notifications"     accent={CultureTokens.gold} onPress={() => router.push('/admin/notifications')} />
             <QuickAction width={qaW} icon="people-outline"         label="Manage Users"      accent={CultureTokens.indigo}  onPress={() => router.push('/admin/users')} />
-            <QuickAction width={qaW} icon="add-circle-outline"     label="Create Event"      accent={CultureTokens.indigo}  onPress={() => router.push('/event/create' as never)} />
+            <QuickAction width={qaW} icon="add-circle-outline"     label="Create Event"      accent={CultureTokens.indigo}  onPress={() => router.push('/event/create')} />
             <QuickAction width={qaW} icon="at-outline"             label="Handles"           accent={pending > 0 ? CultureTokens.coral : CultureTokens.gold} badge={pending > 0 ? pending : undefined} onPress={() => router.push('/admin/handles')} />
             <QuickAction width={qaW} icon="list-outline"           label="Audit Logs"        accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
             <QuickAction width={qaW} icon="newspaper-outline"      label="Release Notes"     accent={CultureTokens.gold}    onPress={() => router.push('/admin/updates')} />
             {isSuperAdmin ? (
-              <QuickAction width={qaW} icon="sparkles-outline" label="Discover" accent={CultureTokens.coral} onPress={() => router.push('/admin/discover' as never)} />
+              <QuickAction width={qaW} icon="sparkles-outline" label="Discover" accent={CultureTokens.coral} onPress={() => router.push('/admin/discover')} />
             ) : null}
           </NavGrid>
         </View>
@@ -496,8 +496,8 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="CONTENT & MODERATION" count={3} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="flag-outline"            label="Flagged Content"       sub="Review user reports"        accent={CultureTokens.coral}   onPress={() => router.push('/admin/moderation' as never)} badge={stats?.pendingModerationCount && stats.pendingModerationCount > 0 ? stats.pendingModerationCount : undefined} />
-            <NavCard index={1} width={cardW} icon="calendar-number-outline" label="Event Approvals"        sub="Pending events"             accent={CultureTokens.gold} onPress={() => router.push('/admin/moderation' as never)} />
+            <NavCard index={0} width={cardW} icon="flag-outline"            label="Flagged Content"       sub="Review user reports"        accent={CultureTokens.coral}   onPress={() => router.push('/admin/moderation')} badge={stats?.pendingModerationCount && stats.pendingModerationCount > 0 ? stats.pendingModerationCount : undefined} />
+            <NavCard index={1} width={cardW} icon="calendar-number-outline" label="Event Approvals"        sub="Pending events"             accent={CultureTokens.gold} onPress={() => router.push('/admin/moderation')} />
             <NavCard index={2} width={cardW} icon="list-outline"            label="Audit Logs"             sub="Platform activity trail"    accent="#A78BFA"               onPress={() => router.push('/admin/audit-logs')} />
           </NavGrid>
         </View>
@@ -516,9 +516,9 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="FINANCE & PAYMENTS" count={3} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="card-outline"      label="Subscriptions"    sub="MRR, active members"      accent={CultureTokens.gold}    onPress={() => router.push('/admin/finance' as never)} />
-            <NavCard index={1} width={cardW} icon="receipt-outline"   label="Payouts & Refunds" sub="Stripe payouts & disputes" accent={CultureTokens.coral}   onPress={() => router.push('/admin/finance' as never)} />
-            <NavCard index={2} width={cardW} icon="bar-chart-outline" label="Revenue Reports"   sub="Daily/weekly breakdown"   accent={CultureTokens.teal}    onPress={() => router.push('/admin/finance' as never)} />
+            <NavCard index={0} width={cardW} icon="card-outline"      label="Subscriptions"    sub="MRR, active members"      accent={CultureTokens.gold}    onPress={() => router.push('/admin/finance')} />
+            <NavCard index={1} width={cardW} icon="receipt-outline"   label="Payouts & Refunds" sub="Stripe payouts & disputes" accent={CultureTokens.coral}   onPress={() => router.push('/admin/finance')} />
+            <NavCard index={2} width={cardW} icon="bar-chart-outline" label="Revenue Reports"   sub="Daily/weekly breakdown"   accent={CultureTokens.teal}    onPress={() => router.push('/admin/finance')} />
           </NavGrid>
         </View>
 
@@ -527,7 +527,7 @@ function AdminDashboardContent() {
           <SectionLabel label="DATA IMPORT" />
           <Pressable
             style={[s.importCard, { backgroundColor: colors.surface, borderColor: CultureTokens.teal + '40' }]}
-            onPress={() => router.push('/admin/import' as never)}
+            onPress={() => router.push('/admin/import')}
             accessibilityRole="button"
             accessibilityLabel="Go to data import"
           >
@@ -552,12 +552,12 @@ function AdminDashboardContent() {
             <View style={s.section}>
               <SectionLabel label="PLATFORM CONFIGURATION" count={6} />
               <NavGrid gap={columnGap}>
-                <NavCard index={0} width={cardW} icon="toggle-outline"    label="Feature Flags"    sub="Rollout % controls"       accent={CultureTokens.gold}    onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={1} width={cardW} icon="globe-outline"     label="City Management"  sub="Add supported cities"     accent={CultureTokens.teal}    onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={2} width={cardW} icon="key-outline"       label="API Keys"         sub="Stripe, Firebase, 3rd-party" accent="#A78BFA"            onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={3} width={cardW} icon="construct-outline" label="Platform Settings" sub="Config, rate limits"     accent={CultureTokens.coral}   onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={4} width={cardW} icon="server-outline"    label="Platform Health"  sub="API status & metrics"     accent={CultureTokens.gold} onPress={() => router.push('/admin/platform' as never)} />
-                <NavCard index={5} width={cardW} icon="sparkles-outline"  label="Discover Curation" sub="Featured artists & playlist rails" accent={CultureTokens.indigo} onPress={() => router.push('/admin/discover' as never)} />
+                <NavCard index={0} width={cardW} icon="toggle-outline"    label="Feature Flags"    sub="Rollout % controls"       accent={CultureTokens.gold}    onPress={() => router.push('/admin/platform')} />
+                <NavCard index={1} width={cardW} icon="globe-outline"     label="City Management"  sub="Add supported cities"     accent={CultureTokens.teal}    onPress={() => router.push('/admin/platform')} />
+                <NavCard index={2} width={cardW} icon="key-outline"       label="API Keys"         sub="Stripe, Firebase, 3rd-party" accent="#A78BFA"            onPress={() => router.push('/admin/platform')} />
+                <NavCard index={3} width={cardW} icon="construct-outline" label="Platform Settings" sub="Config, rate limits"     accent={CultureTokens.coral}   onPress={() => router.push('/admin/platform')} />
+                <NavCard index={4} width={cardW} icon="server-outline"    label="Platform Health"  sub="API status & metrics"     accent={CultureTokens.gold} onPress={() => router.push('/admin/platform')} />
+                <NavCard index={5} width={cardW} icon="sparkles-outline"  label="Discover Curation" sub="Featured artists & playlist rails" accent={CultureTokens.indigo} onPress={() => router.push('/admin/discover')} />
               </NavGrid>
             </View>
 
@@ -565,9 +565,9 @@ function AdminDashboardContent() {
             <View style={s.section}>
               <SectionLabel label="DATA & COMPLIANCE" count={3} />
               <NavGrid gap={columnGap}>
-                <NavCard index={0} width={cardW} icon="download-outline"      label="Data Export"     sub="Users, events, CSV"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/data-compliance' as never)} />
-                <NavCard index={1} width={cardW} icon="lock-closed-outline"   label="Privacy & GDPR"  sub="Deletion & consent logs"  accent={CultureTokens.coral}   onPress={() => router.push('/admin/data-compliance' as never)} />
-                <NavCard index={2} width={cardW} icon="document-text-outline" label="Terms & Policies" sub="Legal document links"     accent="#A78BFA"               onPress={() => router.push('/admin/data-compliance' as never)} />
+                <NavCard index={0} width={cardW} icon="download-outline"      label="Data Export"     sub="Users, events, CSV"       accent={CultureTokens.teal}    onPress={() => router.push('/admin/data-compliance')} />
+                <NavCard index={1} width={cardW} icon="lock-closed-outline"   label="Privacy & GDPR"  sub="Deletion & consent logs"  accent={CultureTokens.coral}   onPress={() => router.push('/admin/data-compliance')} />
+                <NavCard index={2} width={cardW} icon="document-text-outline" label="Terms & Policies" sub="Legal document links"     accent="#A78BFA"               onPress={() => router.push('/admin/data-compliance')} />
               </NavGrid>
             </View>
           </>
@@ -577,9 +577,9 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="OTHER DASHBOARDS" count={3} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="grid-outline"       label="Organizer"    sub="Events & tickets"           accent={CultureTokens.indigo}  onPress={() => router.push('/dashboard/organizer' as never)} />
-            <NavCard index={1} width={cardW} icon="storefront-outline" label="Venue"        sub="Analytics & hosting"        accent={CultureTokens.teal}    onPress={() => router.push('/dashboard/venue' as never)} />
-            <NavCard index={2} width={cardW} icon="ribbon-outline"     label="Sponsor"      sub="Sponsored events & reach"   accent={CultureTokens.gold}    onPress={() => router.push('/dashboard/sponsor' as never)} />
+            <NavCard index={0} width={cardW} icon="grid-outline"       label="Organizer"    sub="Events & tickets"           accent={CultureTokens.indigo}  onPress={() => router.push('/dashboard/organizer')} />
+            <NavCard index={1} width={cardW} icon="storefront-outline" label="Venue"        sub="Analytics & hosting"        accent={CultureTokens.teal}    onPress={() => router.push('/dashboard/venue')} />
+            <NavCard index={2} width={cardW} icon="ribbon-outline"     label="Sponsor"      sub="Sponsored events & reach"   accent={CultureTokens.gold}    onPress={() => router.push('/dashboard/sponsor')} />
           </NavGrid>
         </View>
 
@@ -587,10 +587,10 @@ function AdminDashboardContent() {
         <View style={s.section}>
           <SectionLabel label="OPS & TOOLS" count={4} />
           <NavGrid gap={columnGap}>
-            <NavCard index={0} width={cardW} icon="apps-outline"       label="Widgets"          sub="Home & lockscreen cards" accent={CultureTokens.gold} onPress={() => router.push('/dashboard/widgets' as never)} />
-            <NavCard index={1} width={cardW} icon="map-outline"        label="Discovery Map"    sub="Browse nearby culture"   accent={CultureTokens.teal}    onPress={() => router.push('/(tabs)/explore' as never)} />
-            <NavCard index={2} width={cardW} icon="business-outline"   label="Venues Directory" sub="All venues & hosts"      accent={CultureTokens.indigo}  onPress={() => router.push('/(tabs)/directory' as never)} />
-            <NavCard index={3} width={cardW} icon="bookmark-outline"   label="Saved Items"      sub="Bookmarks & wishlists"   accent={CultureTokens.gold}    onPress={() => router.push('/saved' as never)} />
+            <NavCard index={0} width={cardW} icon="apps-outline"       label="Widgets"          sub="Home & lockscreen cards" accent={CultureTokens.gold} onPress={() => router.push('/dashboard/widgets')} />
+            <NavCard index={1} width={cardW} icon="map-outline"        label="Discovery Map"    sub="Browse nearby culture"   accent={CultureTokens.teal}    onPress={() => router.push('/(tabs)/explore')} />
+            <NavCard index={2} width={cardW} icon="business-outline"   label="Venues Directory" sub="All venues & hosts"      accent={CultureTokens.indigo}  onPress={() => router.push('/(tabs)/directory')} />
+            <NavCard index={3} width={cardW} icon="bookmark-outline"   label="Saved Items"      sub="Bookmarks & wishlists"   accent={CultureTokens.gold}    onPress={() => router.push('/saved')} />
           </NavGrid>
         </View>
 

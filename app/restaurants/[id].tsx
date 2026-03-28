@@ -106,7 +106,7 @@ export default function RestaurantDetailScreen() {
           <View style={styles.infoSection}>
             <View style={styles.cpidRow}>
               <Ionicons name="finger-print-outline" size={15} color={CultureTokens.coral} />
-              <Text style={styles.cpidText}>CPID: {(rest as any).culturePassId || rest.id}</Text>
+              <Text style={styles.cpidText}>CPID: {rest.culturePassId || rest.id}</Text>
             </View>
             <Text style={styles.name}>{rest.name}</Text>
             <Text style={styles.cuisine}>{rest.cuisine} | {rest.priceRange} | {rest.reviewsCount ?? 0} reviews</Text>

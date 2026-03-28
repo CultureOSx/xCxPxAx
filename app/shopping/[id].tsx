@@ -104,7 +104,7 @@ export default function ShoppingDetailScreen() {
           <View style={styles.info}>
             <View style={styles.cpidRow}>
               <Ionicons name="finger-print-outline" size={15} color={CultureTokens.indigo} />
-              <Text style={styles.cpidText}>CPID: {(store as any).culturePassId || store.id}</Text>
+              <Text style={styles.cpidText}>CPID: {store.culturePassId || store.id}</Text>
             </View>
             <Text style={styles.name}>{store.name}</Text>
             <Text style={styles.cat}>{store.category}</Text>

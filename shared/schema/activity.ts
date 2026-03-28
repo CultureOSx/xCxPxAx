@@ -23,6 +23,7 @@ export interface ActivityData {
   status?: 'draft' | 'published' | 'archived';
   isPromoted?: boolean;
   isPopular?: boolean;
+  culturePassId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

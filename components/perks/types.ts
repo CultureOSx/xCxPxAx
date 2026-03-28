@@ -17,4 +17,7 @@ export interface Perk {
   status: string | null;
   startDate: string | null;
   endDate: string | null;
+  coverUrl?: string | null;
+  createdBy?: string | null;
+  priceTier?: 'free' | 'low' | 'medium' | 'high' | null;
 }

@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, webShadow } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -178,7 +178,7 @@ export default function ProfileDetailScreen() {
   const entityColor = CultureTokens.indigo; 
   const entityIcon = profile.entityType === 'user' ? 'person' : ENTITY_ICONS[profile.entityType] || 'person';
   const socialLinks = (profile.socialLinks || {}) as Record<string, string | undefined>;
-  const activeSocials = SOCIAL_ICONS.filter(s => socialLinks[s.key] || (profile as any)[s.key]);
+  const activeSocials = SOCIAL_ICONS.filter(s => socialLinks[s.key] || (profile as Record<string, unknown>)[s.key]);
   const tags = (profile.tags || []) as string[];
   
   const showLocation = isOwner || profile?.privacySettings?.locationVisible !== false;
@@ -246,7 +246,7 @@ export default function ProfileDetailScreen() {
               <Pressable 
                 onPress={async () => {
                   if (Platform.OS !== 'web') Haptics.impactAsync();
-                  const handle = (profile as any).handle;
+                  const handle = profile.handle;
                   const shareUrl = handle ? `https://culturepass.app/+${handle}` : `https://culturepass.app/profile/${id}`;
                   try {
                     if (Platform.OS === 'web' && navigator.share) {
@@ -299,7 +299,7 @@ export default function ProfileDetailScreen() {
             {activeSocials.length > 0 && (
               <View style={styles.socialsHeroRow}>
                 {activeSocials.map(social => {
-                  const link = socialLinks[social.key] || (profile as any)[social.key];
+                  const link = socialLinks[social.key] || String((profile as Record<string, unknown>)[social.key] ?? '');
                   if (!link) return null;
                   return (
                     <Pressable 
@@ -336,7 +336,7 @@ export default function ProfileDetailScreen() {
               <View style={[styles.cpidSmallChip, { backgroundColor: colors.backgroundSecondary }]}>
                 <Ionicons name="finger-print" size={14} color={accentColor} />
                 <Text style={[TextStyles.captionSemibold, { color: colors.textSecondary }]}>
-                   CPID: {(profile as any).culturePassId || profile.id}
+                   CPID: {profile.culturePassId || profile.id}
                 </Text>
               </View>
             </Card>
@@ -536,7 +536,7 @@ const getStyles = (colors: any, insets: any, isDesktop: boolean) => StyleSheet.c
     borderWidth: 1,
     borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.04)' } as any,
+      web: webShadow('0px 4px 12px rgba(0,0,0,0.04)'),
       default: { elevation: 2 },
     }),
   },

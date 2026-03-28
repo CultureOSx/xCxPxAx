@@ -359,7 +359,7 @@ export default function EditProfileScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable
-              onPress={() => router.push(`/profile/${userId}` as any)}
+              onPress={() => router.push(`/profile/${userId}`)}
               style={[s.topBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
               accessibilityLabel="Preview profile"
             >
@@ -608,7 +608,7 @@ export default function EditProfileScreen() {
               {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => (
                 <View key={f} style={s.socialRow}>
                   <View style={[s.socialIcon, { backgroundColor: color + '18' }]}>
-                    <Ionicons name={icon as never} size={18} color={color} />
+                    <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[fr.label, { marginBottom: 4 }]}>{label}</Text>

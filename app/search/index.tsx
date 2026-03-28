@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CultureTokens, gradients, HeaderTokens } from '@/constants/theme';
+import { useLayout } from '@/hooks/useLayout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAlgoliaSearch } from '@/hooks/useAlgolia';
 import { BlurView } from 'expo-blur';
@@ -44,15 +45,14 @@ export default function SearchScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const s = getStyles(colors);
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const { isDesktop } = useLayout();
 
   const openNotifications = useCallback(() => {
     if (isAuthenticated) {
-      router.push('/notifications' as never);
+      router.push('/notifications');
       return;
     }
-    router.push(routeWithRedirect('/(onboarding)/login', '/notifications') as never);
+    router.push(routeWithRedirect('/(onboarding)/login', '/notifications'));
   }, [isAuthenticated]);
 
   const [query, setQuery] = useState('');
@@ -179,7 +179,7 @@ export default function SearchScreen() {
       community: '/profile/[id]',
       person: '/profile/[id]',
     };
-    router.push({ pathname: routes[result.type] as never, params: { id: result.id } });
+    router.push({ pathname: routes[result.type], params: { id: result.id } });
   };
 
   return (
@@ -191,8 +191,8 @@ export default function SearchScreen() {
         />
         
         {/* Decorative Orbs */}
-        <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.3, filter: 'blur(80px)' } as any]} />
-        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.gold, opacity: 0.15, filter: 'blur(100px)' } as any]} />
+        <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.3 }, isWeb && { filter: 'blur(80px)' } as Record<string, unknown>]} />
+        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.gold, opacity: 0.15 }, isWeb && { filter: 'blur(100px)' } as Record<string, unknown>]} />
 
         {/* Top Bar — Location, Search, Notifications */}
         <LinearGradient
@@ -316,7 +316,7 @@ export default function SearchScreen() {
                           community: '/profile/[id]',
                           person: '/profile/[id]',
                         };
-                        router.push(routes[key] as never);
+                        router.push(routes[key]);
                       }}
                       style={s.categoryCard}
                       padding={16}
@@ -353,7 +353,7 @@ export default function SearchScreen() {
                         <Image source={{ uri: result.imageUrl }} style={s.resultImage} />
                       ) : (
                         <View style={[s.resultIconBox, { backgroundColor: result.color + '15' }]}>
-                          <Ionicons name={result.icon as never} size={24} color={result.color} />
+                          <Ionicons name={result.icon} size={24} color={result.color} />
                         </View>
                       )}
                       <View style={s.resultInfo}>
@@ -430,7 +430,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   categoryCard: { 
-    width: '31%' as never, 
+    width: '31%' as `${number}%`, 
     flexGrow: 1, 
     borderRadius: 24, 
     padding: 20, 

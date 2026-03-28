@@ -78,7 +78,7 @@ function SectionLabel({ label, icon, accent, colors }: { label: string; icon: st
         colors={[accent + '28', accent + '10']}
         style={card.sectionIconBg}
       >
-        <Ionicons name={icon as never} size={15} color={accent} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={15} color={accent} />
       </LinearGradient>
       <Text style={[card.sectionTitle, { color: colors.text }]}>{label}</Text>
     </View>
@@ -398,7 +398,7 @@ export default function SubmitScreen() {
           {/* Outer ring */}
           <View style={[s.successIconRing, { borderColor: conf.color + '30' }]}>
             <View style={[s.successIconWrap, { backgroundColor: conf.color + '15' }]}>
-              <Ionicons name={conf.icon as never} size={40} color={conf.color} />
+              <Ionicons name={conf.icon as keyof typeof Ionicons.glyphMap} size={40} color={conf.color} />
             </View>
           </View>
           <View style={[s.successCheckCircle, { backgroundColor: conf.color }]}>
@@ -467,7 +467,7 @@ export default function SubmitScreen() {
               <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
             <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
-              <Ionicons name={TYPE_CONFIG[activeTab].icon as never} size={14} color={accent} />
+              <Ionicons name={TYPE_CONFIG[activeTab].icon as keyof typeof Ionicons.glyphMap} size={14} color={accent} />
             </View>
           </LinearGradient>
 
@@ -530,7 +530,7 @@ export default function SubmitScreen() {
                           ? { width: 44, height: 44, backgroundColor: conf.color + '22' }
                           : { width: 36, height: 36, backgroundColor: conf.color + '18' },
                       ]}>
-                        <Ionicons name={conf.icon as never} size={isActive ? 22 : 18} color={conf.color} />
+                        <Ionicons name={conf.icon as keyof typeof Ionicons.glyphMap} size={isActive ? 22 : 18} color={conf.color} />
                       </View>
                       <Text style={[s.typeCardLabel, { color: isActive ? colors.primary : colors.textTertiary }]}>{conf.label}</Text>
                       <Text style={[s.typeCardDesc, { color: colors.textTertiary }]} numberOfLines={2}>
@@ -808,7 +808,7 @@ export default function SubmitScreen() {
                           onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); set('perkType', isActive ? '' : pt.key); }}
                           accessibilityRole="button" accessibilityLabel={pt.label}
                         >
-                          <Ionicons name={pt.icon as never} size={13} color={isActive ? '#fff' : accent} />
+                          <Ionicons name={pt.icon as keyof typeof Ionicons.glyphMap} size={13} color={isActive ? '#fff' : accent} />
                           <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{pt.label}</Text>
                         </Pressable>
                       );
@@ -1020,7 +1020,7 @@ export default function SubmitScreen() {
                 ] as const).map(({ field, icon, label, prefix }) => (
                   <Field key={field} label={label}>
                     <View style={[s.inputWithIcon, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                      <Ionicons name={icon as never} size={16} color={colors.textTertiary} />
+                      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={colors.textTertiary} />
                       <Text style={[s.inputPrefix, { color: colors.textTertiary }]}>{prefix}</Text>
                       <TextInput
                         style={[s.inputInner, { color: colors.text }]}

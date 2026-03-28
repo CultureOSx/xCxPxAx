@@ -96,7 +96,7 @@ export default function UpgradeScreen() {
     if (!userId) {
       Alert.alert('Login required', 'Please sign in to activate CulturePass+.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
       ]);
       return;
     }
@@ -222,7 +222,7 @@ export default function UpgradeScreen() {
             ].map((benefit) => (
               <View key={benefit.title} style={[s.benefitItem, { borderLeftColor: benefit.color }]}>
                 <View style={[s.benefitIconWrap, { backgroundColor: benefit.color + '15' }]}>
-                  <Ionicons name={benefit.icon as never} size={20} color={benefit.color} />
+                  <Ionicons name={benefit.icon as keyof typeof Ionicons.glyphMap} size={20} color={benefit.color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.benefitTitle}>{benefit.title}</Text>
@@ -245,7 +245,7 @@ export default function UpgradeScreen() {
           {/* CTA Section */}
           <View style={s.ctaSection}>
             <Button
-              onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any)}
+              onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname))}
               leftIcon="arrow-forward"
               style={{ width: '100%', marginBottom: 12 }}
             >
@@ -370,7 +370,7 @@ export default function UpgradeScreen() {
           {FEATURES.map((f, i) => (
             <View key={f.title} style={[s.compRow, i === FEATURES.length - 1 && { borderBottomWidth: 0 }]}>
               <View style={s.compFeature}>
-                <Ionicons name={f.icon as never} size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
+                <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.compFeatureTitle}>{f.title}</Text>
                   <Text style={s.compFeatureDesc}>{f.desc}</Text>
@@ -398,7 +398,7 @@ export default function UpgradeScreen() {
           ].map((h, i) => (
             <Animated.View entering={FadeInDown.delay(400 + i * 100)} key={h.title} style={s.highlightCard}>
               <View style={[s.highlightIcon, { backgroundColor: h.bg }]}>
-                <Ionicons name={h.icon as never} size={24} color={h.color} />
+                <Ionicons name={h.icon as keyof typeof Ionicons.glyphMap} size={24} color={h.color} />
               </View>
               <Text style={h.title === '2% Cashback' ? [s.highlightTitle, { color: CultureTokens.success }] : s.highlightTitle}>{h.title}</Text>
               <Text style={s.highlightDesc}>{h.desc}</Text>

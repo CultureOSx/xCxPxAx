@@ -113,7 +113,7 @@ function UpdateDetailContent() {
         {/* Meta row */}
         <View style={styles.metaRow}>
           <View style={[styles.catBadge, { backgroundColor: cat.color + '18' }]}>
-            <Ionicons name={cat.icon as never} size={13} color={cat.color} />
+            <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={13} color={cat.color} />
             <Text style={[styles.catText, { color: cat.color }]}>{cat.label}</Text>
           </View>
           {update.version && (

@@ -200,7 +200,7 @@ function RoleSheet({ user, assignable, onSelect, onClose, isPending }: {
                   accessibilityLabel={`Assign ${meta.label}`}
                 >
                   <View style={[ms.roleIcon, { backgroundColor: meta.color + '18' }]}>
-                    <Ionicons name={meta.icon as never} size={17} color={meta.color} />
+                    <Ionicons name={meta.icon as keyof typeof Ionicons.glyphMap} size={17} color={meta.color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[ms.roleLabel, { color: colors.text }]}>{meta.label}</Text>
@@ -511,7 +511,7 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   return (
     <View style={[sp.chip, { backgroundColor: colors.surface, borderColor: color + '30' }]}>
       <View style={[sp.icon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon as never} size={14} color={color} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={14} color={color} />
       </View>
       <View>
         <Text style={[sp.val, { color: colors.text }]}>{value}</Text>
@@ -703,10 +703,10 @@ function AdminUsersContent() {
           <Pressable onPress={() => refetch()} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Refresh">
             <Ionicons name="refresh" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
-          <Pressable onPress={() => router.push('/admin/notifications' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+          <Pressable onPress={() => router.push('/admin/notifications')} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Notifications">
             <Ionicons name="megaphone-outline" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
-          <Pressable onPress={() => router.push('/admin/audit-logs' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Audit logs">
+          <Pressable onPress={() => router.push('/admin/audit-logs')} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Audit logs">
             <Ionicons name="document-text-outline" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
         </Animated.View>
@@ -772,7 +772,7 @@ function AdminUsersContent() {
                       onPress={() => setRoleFilter(tab)}
                       accessibilityRole="button"
                     >
-                      {meta ? <Ionicons name={meta.icon as never} size={12} color={active ? '#fff' : color} /> : null}
+                      {meta ? <Ionicons name={meta.icon as keyof typeof Ionicons.glyphMap} size={12} color={active ? '#fff' : color} /> : null}
                       <Text style={[s.chipText, { color: active ? '#fff' : colors.textSecondary }]}>
                         {tab === ALL ? 'All' : meta!.label}
                       </Text>

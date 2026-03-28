@@ -82,7 +82,7 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   return (
     <View style={[sp.chip, { backgroundColor: colors.surface, borderColor: color + '30' }]}>
       <View style={[sp.icon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon as never} size={14} color={color} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={14} color={color} />
       </View>
       <View>
         <Text style={[sp.val, { color: colors.text }]}>{value}</Text>
@@ -124,7 +124,7 @@ function LogRow({ item, index }: { item: AdminAuditLog; index: number }) {
           {/* Top row */}
           <View style={lr.topRow}>
             <View style={[lr.badge, { backgroundColor: meta.color + '18', borderColor: meta.color + '44' }]}>
-              <Ionicons name={meta.icon as never} size={12} color={meta.color} />
+              <Ionicons name={meta.icon as keyof typeof Ionicons.glyphMap} size={12} color={meta.color} />
               <Text style={[lr.badgeText, { color: meta.color }]}>{meta.label}</Text>
             </View>
             {item.targetedCount > 0 ? (
@@ -311,10 +311,10 @@ function AuditLogsContent() {
           <Pressable onPress={handleExportCsv} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Export CSV">
             <Ionicons name="download-outline" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
-          <Pressable onPress={() => router.push('/admin/users' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Users">
+          <Pressable onPress={() => router.push('/admin/users')} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Users">
             <Ionicons name="people-outline" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
-          <Pressable onPress={() => router.push('/admin/notifications' as never)} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+          <Pressable onPress={() => router.push('/admin/notifications')} style={s.headerBtn} accessibilityRole="button" accessibilityLabel="Notifications">
             <Ionicons name="megaphone-outline" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
         </Animated.View>
@@ -354,7 +354,7 @@ function AuditLogsContent() {
                     onPress={() => setTab(ft.key)}
                     accessibilityRole="button"
                   >
-                    <Ionicons name={ft.icon as never} size={12} color={active ? '#fff' : colors.textSecondary} />
+                    <Ionicons name={ft.icon as keyof typeof Ionicons.glyphMap} size={12} color={active ? '#fff' : colors.textSecondary} />
                     <Text style={[s.chipText, { color: active ? '#fff' : colors.textSecondary }]}>{ft.label}</Text>
                     <View style={[s.chipCount, { backgroundColor: active ? 'rgba(255,255,255,0.22)' : colors.backgroundSecondary }]}>
                       <Text style={[s.chipCountText, { color: active ? '#fff' : colors.textTertiary }]}>{count}</Text>

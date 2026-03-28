@@ -69,7 +69,7 @@ export default function TicketDetailScreen() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace(routeWithRedirect('/(onboarding)/login', `/tickets/${id}`) as never);
+      router.replace(routeWithRedirect('/(onboarding)/login', `/tickets/${id}`));
     }
   }, [isAuthenticated, id]);
   
@@ -118,12 +118,11 @@ export default function TicketDetailScreen() {
 
   const handleCancel = useCallback(() => {
     if (!ticket) return;
-    const t = ticket as any;
-    const hasPayment = !!t.stripePaymentIntentId;
+    const hasPayment = !!ticket.stripePaymentIntentId;
     const title = hasPayment ? 'Cancel & Refund' : 'Cancel Ticket';
     const message = hasPayment
-      ? `Are you sure you want to cancel your ticket for "${t.eventTitle}"? A refund will be processed to your card.`
-      : `Are you sure you want to cancel your ticket for "${t.eventTitle}"?`;
+      ? `Are you sure you want to cancel your ticket for "${ticket.eventTitle}"? A refund will be processed to your card.`
+      : `Are you sure you want to cancel your ticket for "${ticket.eventTitle}"?`;
     Alert.alert(title, message, [
       { text: 'Keep Ticket', style: 'cancel' },
       {
@@ -140,12 +139,11 @@ export default function TicketDetailScreen() {
   const handleShare = useCallback(async () => {
     if (!ticket) return;
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const t = ticket as any;
     try {
       const shareUrl = `https://culturepass.app/tickets/${ticket.id}`;
       await Share.share({
-        title: t.eventTitle,
-        message: `I'm going to ${t.eventTitle}! 🎫\n${t.eventVenue ? `📍 ${t.eventVenue}` : ''}\n${t.eventDate ? `📅 ${formatDate(t.eventDate)}` : ''}\n\nTicket Code: ${ticket.ticketCode || 'N/A'}\n\nGet yours on CulturePass!\n\n${shareUrl}`,
+        title: ticket.eventTitle,
+        message: `I'm going to ${ticket.eventTitle}! 🎫\n${ticket.eventVenue ? `📍 ${ticket.eventVenue}` : ''}\n${ticket.eventDate ? `📅 ${formatDate(ticket.eventDate)}` : ''}\n\nTicket Code: ${ticket.ticketCode || 'N/A'}\n\nGet yours on CulturePass!\n\n${shareUrl}`,
         url: shareUrl,
       });
     } catch {}
@@ -162,10 +160,9 @@ export default function TicketDetailScreen() {
 
   const handleAddToWallet = useCallback(async (walletType: 'apple' | 'google') => {
     if (!ticket) return;
-    const t = ticket as any;
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const walletName = walletType === 'apple' ? 'Apple Wallet' : 'Google Wallet';
-    Alert.alert(`Add to ${walletName}`, `Your ticket for "${t.eventTitle}" will be added to ${walletName}.`, [
+    Alert.alert(`Add to ${walletName}`, `Your ticket for "${ticket.eventTitle}" will be added to ${walletName}.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Add',
@@ -252,7 +249,6 @@ export default function TicketDetailScreen() {
     );
   }
 
-  const t = ticket as any;
   const ticketStatus = ticket.status as string | null;
   const statusInfo =
     ticketStatus === 'confirmed' ? { color: CultureTokens.teal,      bg: CultureTokens.teal + '20',      label: 'Confirmed',      icon: 'checkmark-circle' as const } :
@@ -264,7 +260,7 @@ export default function TicketDetailScreen() {
 
   const isActive  = ticket.status === 'confirmed';
   const isScanned = ticket.status === 'used';
-  const bannerColor = t.imageColor || CultureTokens.indigo;
+  const bannerColor = ticket.imageColor || CultureTokens.indigo;
 
   return (
     <View style={s.container}>
@@ -301,43 +297,43 @@ export default function TicketDetailScreen() {
               </View>
 
               <View style={s.ticketBody}>
-                <Text style={s.eventTitle}>{t.eventTitle}</Text>
+                <Text style={s.eventTitle}>{ticket.eventTitle}</Text>
                 <View style={s.cpidRow}>
                   <Ionicons name="finger-print-outline" size={15} color={CultureTokens.indigo} />
-                  <Text style={s.cpidText}>CPID: {t.culturePassId || ticket.cpTicketId || ticket.id}</Text>
+                  <Text style={s.cpidText}>CPID: {ticket.culturePassId || ticket.cpTicketId || ticket.id}</Text>
                 </View>
 
                 <View style={s.infoGrid}>
-                  {t.eventDate && (
+                  {ticket.eventDate && (
                     <View style={s.infoItem}>
                       <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.indigo + '15' }]}>
                         <Ionicons name="calendar" size={16} color={CultureTokens.indigo} />
                       </View>
                       <View>
                         <Text style={s.infoLabel}>Date</Text>
-                        <Text style={s.infoValue}>{formatDate(t.eventDate)}</Text>
+                        <Text style={s.infoValue}>{formatDate(ticket.eventDate)}</Text>
                       </View>
                     </View>
                   )}
-                  {t.eventTime && (
+                  {ticket.eventTime && (
                     <View style={s.infoItem}>
                       <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.gold + '15' }]}>
                         <Ionicons name="time" size={16} color={CultureTokens.gold} />
                       </View>
                       <View>
                         <Text style={s.infoLabel}>Time</Text>
-                        <Text style={s.infoValue}>{t.eventTime}</Text>
+                        <Text style={s.infoValue}>{ticket.eventTime}</Text>
                       </View>
                     </View>
                   )}
-                  {t.eventVenue && (
+                  {ticket.eventVenue && (
                     <View style={s.infoItem}>
                       <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.teal + '15' }]}>
                         <Ionicons name="location" size={16} color={CultureTokens.teal} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.infoLabel}>Venue</Text>
-                        <Text style={s.infoValue} numberOfLines={2}>{t.eventVenue}</Text>
+                        <Text style={s.infoValue} numberOfLines={2}>{ticket.eventVenue}</Text>
                       </View>
                     </View>
                   )}
@@ -379,9 +375,9 @@ export default function TicketDetailScreen() {
                         <View style={s.scannedOverlay}>
                           <Ionicons name="checkmark-circle" size={48} color={colors.textSecondary} />
                           <Text style={s.scannedText}>Checked In</Text>
-                          {t.scannedAt && (
+                          {ticket.scannedAt && (
                             <Text style={s.scannedTime}> 
-                              {new Date(t.scannedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                              {new Date(ticket.scannedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                           )}
                         </View>

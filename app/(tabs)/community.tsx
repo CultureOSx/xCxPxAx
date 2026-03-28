@@ -13,8 +13,6 @@ import {
 } from 'react-native';
 import Animated, {
   FadeInDown, FadeInUp,
-  useSharedValue, useAnimatedStyle, withSpring,
-  interpolateColor, withTiming,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,10 +20,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, webShadow } from '@/constants/theme';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { CommunityGridCard } from '@/components/community/CommunityGridCard';
 import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewDrawer';
 import { useCommunities } from '@/hooks/queries/useCommunities';
@@ -48,46 +47,7 @@ const FALLBACK_CULTURE_IDS = ['indian', 'chinese', 'korean', 'nigerian', 'greek'
 
 const isWeb = Platform.OS === 'web';
 
-// ─── Inline animated FilterChip ───────────────────────────────────────────────
-
-function FilterChip({
-  label, active, onPress, icon,
-}: {
-  label: string; active: boolean; onPress: () => void; icon?: string;
-}) {
-  const colors = useColors();
-  const scale = useSharedValue(1);
-  const bg = useSharedValue(0);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
-        : [colors.surface, colors.surfaceElevated],
-    ),
-  }));
-  return (
-    <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
-      onPress={() => { if (!isWeb) Haptics.selectionAsync(); onPress(); }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-    >
-      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
-        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const fc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-});
+// FilterChip imported from @/components/ui/AnimatedFilterChip
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
   return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
@@ -311,7 +271,7 @@ export default function CommunitiesScreen() {
               accessibilityLabel="Category filters"
             >
               {CATEGORIES.map(cat => (
-                <FilterChip
+                <AnimatedFilterChip
                   key={cat.id}
                   label={cat.label}
                   active={selectedCategory === cat.id}
@@ -452,7 +412,7 @@ export default function CommunitiesScreen() {
           <Pressable
             onPress={() => {
               if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/submit?type=organisation' as never);
+              router.push('/submit?type=organisation');
             }}
             accessibilityRole="button"
             accessibilityLabel="Create a community"
@@ -519,7 +479,7 @@ const s = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
       android: { elevation: 6 },
-      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' } as any,
+      web: webShadow('0 4px 12px rgba(0,0,0,0.2)'),
     }),
   },
   fabInner:       { flex: 1, alignItems: 'center', justifyContent: 'center' },

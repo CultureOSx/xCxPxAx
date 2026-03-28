@@ -257,7 +257,7 @@ export default function QRScreen() {
                       </View>
                     </View>
                     <View style={s.tierPill}>
-                      <Ionicons name={tierConf.icon as never} size={10} color={YELLOW} />
+                      <Ionicons name={tierConf.icon as keyof typeof Ionicons.glyphMap} size={10} color={YELLOW} />
                       <Text style={s.tierText}>{tierConf.label.toUpperCase()}</Text>
                     </View>
                   </View>
@@ -362,7 +362,7 @@ export default function QRScreen() {
                   accessibilityLabel={btn.label}
                 >
                   <View style={[s.actionIcon, { backgroundColor: (btn.color as string) + '18' }]}>
-                    <Ionicons name={btn.icon as never} size={18} color={btn.color as string} />
+                    <Ionicons name={btn.icon as keyof typeof Ionicons.glyphMap} size={18} color={btn.color as string} />
                   </View>
                   <Text style={[s.actionLabel, { color: colors.textSecondary }]}>{btn.label}</Text>
                 </Pressable>

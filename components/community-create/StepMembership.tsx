@@ -38,7 +38,7 @@ export function StepMembership({ form, setField, colors, s, haptic }: Props) {
               ]}
             >
               <View style={[s.joinModeIcon, { backgroundColor: active ? CultureTokens.indigo : colors.borderLight }]}>
-                <Ionicons name={mode.icon as any} size={22} color={active ? '#fff' : colors.textSecondary} />
+                <Ionicons name={mode.icon as keyof typeof Ionicons.glyphMap} size={22} color={active ? '#fff' : colors.textSecondary} />
               </View>
               <View style={s.joinModeContent}>
                 <Text style={[s.joinModeTitle, { color: active ? colors.text : colors.textSecondary }]}>

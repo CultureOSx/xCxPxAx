@@ -193,7 +193,7 @@ function StatBox({ value, label, icon, styles: s }: StatBoxProps & { styles: Ret
   return (
     <View style={s.statBox}>
       <View style={[s.statIconWrap, { backgroundColor: CultureTokens.indigo + '15' }]}>
-        <Ionicons name={icon as never} size={20} color={CultureTokens.indigo} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color={CultureTokens.indigo} />
       </View>
       <Text style={s.statValue}>{value}</Text>
       <Text style={s.statLabel}>{label}</Text>
@@ -428,7 +428,7 @@ export default function WalletScreen() {
                   </View>
                 </View>
                 <View style={styles.membershipIconWrap}>
-                  <Ionicons name={tierConfig.icon as never} size={28} color="rgba(255,255,255,1)" />
+                  <Ionicons name={tierConfig.icon as keyof typeof Ionicons.glyphMap} size={28} color="rgba(255,255,255,1)" />
                 </View>
               </View>
 
@@ -493,7 +493,7 @@ export default function WalletScreen() {
           {(!membership || membership.tier === 'free') && (
             <Pressable
               style={({pressed}) => [styles.upgradePrompt, pressed && { opacity: 0.8 }]}
-              onPress={() => router.push({ pathname: '/membership/upgrade' } as any)}
+              onPress={() => router.push({ pathname: '/membership/upgrade' })}
             >
               <Ionicons name="star" size={18} color={CultureTokens.gold} />
               <Text style={styles.upgradePromptText}>

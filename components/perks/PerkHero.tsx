@@ -31,7 +31,7 @@ export function PerkHero({ perk, topInset, typeInfo, isIndigenous, onShare }: Pe
 
       <View style={styles.heroContent}>
         <View style={styles.heroIconWrap}>
-          <Ionicons name={isIndigenous ? 'earth' : typeInfo.icon as any} size={36} color="#FFF" />
+          <Ionicons name={isIndigenous ? 'earth' : typeInfo.icon as keyof typeof Ionicons.glyphMap} size={36} color="#FFF" />
         </View>
         <Text style={styles.heroValue}>{formatValue(perk)}</Text>
         <Text style={styles.heroLabel}>{typeInfo.label}</Text>

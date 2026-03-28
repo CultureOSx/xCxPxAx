@@ -75,7 +75,7 @@ export default function AboutScreen() {
                 return (
               <View key={feature.label} style={[styles.featureCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                 <View style={[styles.featureIcon, { backgroundColor: featureColor + '15' }]}> 
-                  <Ionicons name={feature.icon as never} size={24} color={featureColor} />
+                  <Ionicons name={feature.icon as keyof typeof Ionicons.glyphMap} size={24} color={featureColor} />
                 </View>
                 <Text style={[styles.featureLabel, { color: colors.text }]}>{feature.label}</Text>
                 <Text style={[styles.featureDesc, { color: colors.text }]}>{feature.desc}</Text>
@@ -100,7 +100,7 @@ export default function AboutScreen() {
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(link.url); }}
                 >
                   <View style={[styles.socialIcon, { backgroundColor: linkColor + '15' }]}> 
-                    <Ionicons name={link.icon as never} size={20} color={linkColor} />
+                    <Ionicons name={link.icon as keyof typeof Ionicons.glyphMap} size={20} color={linkColor} />
                   </View>
                   <Text style={[styles.socialLabel, { color: colors.text }]}>{link.label}</Text>
                   <Ionicons name="open-outline" size={16} color={colors.textSecondary} />

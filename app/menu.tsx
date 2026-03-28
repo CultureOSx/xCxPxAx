@@ -55,7 +55,7 @@ export default function MenuScreen() {
 
   const handleRoute = (route: string) => {
     haptic();
-    router.push(route as any);
+    router.push(route);
   };
 
   const handleLogout = async () => {

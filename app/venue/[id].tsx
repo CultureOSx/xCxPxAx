@@ -126,7 +126,7 @@ export default function VenueDetailScreen() {
     }
   }, [profile, id, uploadImage, deleteImage]);
 
-  const canEdit = userId === (profile as any)?.userId || userId === (profile as any)?.creatorId || __DEV__;
+  const canEdit = userId === profile?.ownerId || userId === profile?.creatorId || __DEV__;
 
   const handleShare = useCallback(async () => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -153,11 +153,11 @@ export default function VenueDetailScreen() {
   const openDirections = useCallback(() => {
     if (!profile) return;
     const locationText = [profile.address, profile.city, profile.country].filter(Boolean).join(', ');
-    const hasCoordinates = !!((profile as any).location?.lat && (profile as any).location?.lng) || !!((profile as any).latitude && (profile as any).longitude);
+    const hasCoordinates = !!(profile.location?.lat && profile.location?.lng) || !!(profile.latitude && profile.longitude);
 
     if (hasCoordinates) {
-      const lat = (profile as any).location?.lat || (profile as any).latitude;
-      const lng = (profile as any).location?.lng || (profile as any).longitude;
+      const lat = profile.location?.lat || profile.latitude;
+      const lng = profile.location?.lng || profile.longitude;
       Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`);
     } else if (locationText) {
       Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(locationText)}`);
@@ -184,7 +184,7 @@ export default function VenueDetailScreen() {
     );
   }
 
-  const heroImage = profile.coverImageUrl || profile.avatarUrl || ((profile as any).images && (profile as any).images.length > 0 ? (profile as any).images[0] : null);
+  const heroImage = profile.coverImageUrl || profile.avatarUrl || (profile.images && profile.images.length > 0 ? profile.images[0] : null);
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
 
   return (
@@ -279,7 +279,7 @@ export default function VenueDetailScreen() {
               ) : null}
               <View style={styles.cpidRow}>
                 <Ionicons name="finger-print" size={16} color={CultureTokens.indigo} />
-                <Text style={styles.cpidText}>CPID: {(profile as any).culturePassId ?? profile.id}</Text>
+                <Text style={styles.cpidText}>CPID: {profile.culturePassId ?? profile.id}</Text>
               </View>
             </Animated.View>
             <Animated.View entering={FadeInDown.delay(160).springify().damping(18)} style={styles.statsRow}>
@@ -360,18 +360,18 @@ export default function VenueDetailScreen() {
               </Animated.View>
             )}
 
-            {((profile as any).email || profile.contactEmail || profile.phone || profile.website) && (
+            {(profile.email || profile.contactEmail || profile.phone || profile.website) && (
               <Animated.View entering={FadeInDown.delay(370).springify().damping(18)} style={styles.section}>
                 <Text style={styles.sectionTitle}>Contact</Text>
-                {((profile as any).email || profile.contactEmail) && (
+                {(profile.email || profile.contactEmail) && (
                   <Pressable
                     style={styles.contactRow}
-                    onPress={() => Linking.openURL(`mailto:${(profile as any).email || profile.contactEmail}`)}
+                    onPress={() => Linking.openURL(`mailto:${profile.email || profile.contactEmail}`)}
                   >
                     <View style={styles.contactIconBox}>
                       <Ionicons name="mail" size={18} color={CultureTokens.indigo} />
                     </View>
-                    <Text style={styles.contactText}>{(profile as any).email || profile.contactEmail}</Text>
+                    <Text style={styles.contactText}>{profile.email || profile.contactEmail}</Text>
                   </Pressable>
                 )}
                 {profile.phone && (

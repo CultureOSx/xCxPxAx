@@ -337,7 +337,7 @@ export default function CreateCommunityScreen() {
             {/* Step header */}
             <View style={s.stepHeader}>
               <View style={[s.stepIconWrap, { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo + '30' }]}>
-                <Ionicons name={STEP_ICONS[step] as any} size={24} color={CultureTokens.indigo} />
+                <Ionicons name={STEP_ICONS[step] as keyof typeof Ionicons.glyphMap} size={24} color={CultureTokens.indigo} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[TextStyles.title2, { color: colors.text }]}>{STEP_TITLES[step]}</Text>

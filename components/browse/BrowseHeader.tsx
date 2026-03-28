@@ -31,7 +31,7 @@ export function BrowseHeader({ title, tagline, accentColor, accentIcon }: Browse
       </Pressable>
       <View style={styles.headerCenter}>
         <View style={[styles.headerIcon, { backgroundColor: accentColor + '15' }]}>
-          <Ionicons name={accentIcon as any} size={18} color={accentColor} />
+          <Ionicons name={accentIcon as keyof typeof Ionicons.glyphMap} size={18} color={accentColor} />
         </View>
         <View>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{title}</Text>

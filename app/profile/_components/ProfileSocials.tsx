@@ -25,7 +25,7 @@ export default function ProfileSocials({ activeSocials, socialLinks, entityColor
             if (url) Linking.openURL(url);
           }}
         >
-          <Ionicons name={s.icon as any} size={22} color={entityColor} />
+          <Ionicons name={s.icon as keyof typeof Ionicons.glyphMap} size={22} color={entityColor} />
         </Pressable>
       ))}
     </View>

@@ -35,7 +35,7 @@ function CategoryCard({ item, onPress }: CategoryCardProps) {
         {item.emoji ? (
           <Text style={{ fontSize: 24 }}>{item.emoji}</Text>
         ) : (
-          <Ionicons name={item.icon as any} size={24} color={accent} />
+          <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={24} color={accent} />
         )}
       </View>
       <Text style={[TextStyles.chip, styles.label, { color: colors.text }]} numberOfLines={1}>

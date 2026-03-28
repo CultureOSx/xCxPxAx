@@ -157,7 +157,7 @@ function WidgetsDashboardContent() {
               <Animated.View entering={FadeInDown.delay(400).springify().damping(18)}>
                 <WidgetIdentityQRCard 
                   displayName={user?.displayName ?? user?.username ?? 'CulturePass Member'} 
-                  culturePassId={(user as any)?.culturePassId ?? user?.id ?? 'CP-ID'} 
+                  culturePassId={user?.culturePassId ?? user?.id ?? 'CP-ID'} 
                   role={user?.role}
                 />
               </Animated.View>

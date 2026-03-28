@@ -37,8 +37,6 @@ const ROLE_LABEL: Record<string, string> = {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SponsoredEvent extends EventData {
-  status?: string;
-  attending?: number;
   ticketsSold?: number;
   revenueCents?: number;
   sponsorTier?: 'bronze' | 'silver' | 'gold' | 'platinum';
@@ -63,7 +61,7 @@ function MetricCard({ icon, value, label, accent }: { icon: string; value: strin
   return (
     <View style={[mc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
       <View style={[mc.icon, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon as never} size={16} color={accent} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={accent} />
       </View>
       <Text style={[mc.val, { color: colors.text }]}>{value}</Text>
       <Text style={[mc.lbl, { color: colors.textTertiary }]}>{label}</Text>
@@ -373,10 +371,10 @@ function SponsorDashboardContent() {
                 <View key={a.route}>
                   <Pressable
                     style={({ pressed }) => [sd.toolRow, { opacity: pressed ? 0.7 : 1 }]}
-                    onPress={() => router.push(a.route as never)}
+                    onPress={() => router.push(a.route)}
                     accessibilityRole="button"
                   >
-                    <Ionicons name={a.icon as never} size={18} color={CultureTokens.indigo} style={{ marginRight: 4 }} />
+                    <Ionicons name={a.icon as keyof typeof Ionicons.glyphMap} size={18} color={CultureTokens.indigo} style={{ marginRight: 4 }} />
                     <View style={{ flex: 1 }}>
                       <Text style={[sd.toolLabel, { color: colors.text }]}>{a.label}</Text>
                       <Text style={[sd.toolSub, { color: colors.textTertiary }]}>{a.sub}</Text>

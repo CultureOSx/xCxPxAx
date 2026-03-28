@@ -56,8 +56,8 @@ export default function PerkDetailScreen() {
 
     if (!result.canceled && result.assets?.[0]) {
       try {
-        if ((perk as any)?.coverUrl) {
-          await deleteImage('perks', perk!.id, (perk as any).coverUrl, 'coverUrl');
+        if (perk?.coverUrl) {
+          await deleteImage('perks', perk!.id, perk.coverUrl, 'coverUrl');
         }
         await uploadImage(result, 'perks', perk!.id, 'coverUrl');
         queryClient.invalidateQueries({ queryKey: ['/api/perks', id] });
@@ -67,7 +67,7 @@ export default function PerkDetailScreen() {
     }
   }, [perk, id, uploadImage, deleteImage]);
 
-  const canEdit = userId === (perk as any)?.createdBy || userId === (perk as any)?.providerId || __DEV__;
+  const canEdit = userId === perk?.createdBy || userId === perk?.providerId || __DEV__;
 
   const { data: membership } = useQuery<{ tier: string }>({
     queryKey: ['/api/membership', userId],
@@ -131,11 +131,11 @@ export default function PerkDetailScreen() {
   const handleRedeem = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!canRedeem && perk.isMembershipRequired) {
-      router.push({ pathname: '/membership/upgrade' } as any);
+      router.push({ pathname: '/membership/upgrade' });
       return;
     }
 
-    if ((perk as any).priceTier && (perk as any).priceTier !== 'free') {
+    if (perk.priceTier && perk.priceTier !== 'free') {
       try {
         const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
         const result = await createCheckoutSession({ perkId: perk.id });

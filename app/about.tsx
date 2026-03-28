@@ -144,7 +144,7 @@ const CultureChip = memo(function CultureChip({
   const handlePress = useCallback(() => {
     Haptics.selectionAsync();
     const slug = culture.label.replace(/[^\w\s]/gu, "").trim().replace(/\s+/g, "-").toLowerCase();
-    router.push(`/search?culture=${slug}` as any);
+    router.push(`/search?culture=${slug}`);
   }, [culture.label, router]);
 
   return (

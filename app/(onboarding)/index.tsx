@@ -31,8 +31,8 @@ export default function WelcomeScreen() {
   const { completeOnboarding } = useOnboarding();
   const pathname = usePathname();
 
-  const goToSignup = useCallback(() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any), [pathname]);
-  const goToLogin = useCallback(() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any), [pathname]);
+  const goToSignup = useCallback(() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } }), [pathname]);
+  const goToLogin = useCallback(() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } }), [pathname]);
   const goToLocationViaGoogle = useCallback(() => router.push('/(onboarding)/location'), []);
   const goToLocationViaApple = useCallback(() => router.push('/(onboarding)/location'), []);
 

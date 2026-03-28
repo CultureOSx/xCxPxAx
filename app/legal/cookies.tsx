@@ -53,7 +53,7 @@ export default function CookiesScreen() {
             <View key={i} style={styles.cookieCard}>
               <View style={styles.cookieHeader}>
                 <View style={[styles.cookieIcon, { backgroundColor: ct.color + '15' }]}>
-                  <Ionicons name={ct.icon as never} size={20} color={ct.color} />
+                  <Ionicons name={ct.icon as keyof typeof Ionicons.glyphMap} size={20} color={ct.color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cookieName}>{ct.name}</Text>

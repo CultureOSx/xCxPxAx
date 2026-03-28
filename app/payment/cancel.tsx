@@ -15,7 +15,7 @@ export default function PaymentCancelScreen() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/cancel') as never);
+      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/cancel'));
     }
   }, [isAuthenticated]);
   const styles = getStyles(colors);

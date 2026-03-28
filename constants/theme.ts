@@ -302,3 +302,17 @@ export const BorderTokens = {
   widthBold: 3,
   widthNormal: 1.5,
 };
+
+// ---------------------------------------------------------------------------
+// Platform-safe web box-shadow helper
+// ---------------------------------------------------------------------------
+// Usage in Platform.select:
+//   ...Platform.select({
+//     ios: { shadowColor: '#000', ... },
+//     android: { elevation: 3 },
+//     web: webShadow('0 4px 12px rgba(0,0,0,0.08)'),
+//   })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function webShadow(shadow: string): any {
+  return { boxShadow: shadow };
+}

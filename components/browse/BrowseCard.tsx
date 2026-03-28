@@ -53,7 +53,7 @@ export function BrowseCardComponent({
           <Image source={{ uri: item.imageUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={200} />
         ) : (
           <View style={[StyleSheet.absoluteFillObject, styles.cardImageFallback, { backgroundColor: colors.surfaceElevated, borderColor: accentColor + '35' }]}>
-            <Ionicons name={accentIcon as any} size={isGrid ? 32 : 28} color={accentColor} />
+            <Ionicons name={accentIcon as keyof typeof Ionicons.glyphMap} size={isGrid ? 32 : 28} color={accentColor} />
           </View>
         )}
         {isGrid && (

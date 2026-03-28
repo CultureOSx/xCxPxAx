@@ -42,6 +42,16 @@ export interface Ticket {
   refundStatus?: 'pending' | 'approved' | 'rejected' | 'completed';
   refundAmountCents?: number;
   refundedAt?: string;
+  eventTitle?: string;
+  eventName?: string;
+  date?: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventVenue?: string;
+  eventImageUrl?: string;
+  imageColor?: string;
+  culturePassId?: string;
+  scannedAt?: string;
   eventSnapshot?: {
     title: string;
     venue: string;

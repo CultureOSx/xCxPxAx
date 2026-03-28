@@ -177,11 +177,11 @@ export default function HelpScreen() {
                   style={({ pressed }) => [styles.quickCard, pressed && { opacity: 0.8 }]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push({ pathname: ql.route } as any);
+                    router.push({ pathname: ql.route });
                   }}
                 >
                   <View style={[styles.quickIcon, { backgroundColor: ql.color + '15' }]}>
-                    <Ionicons name={ql.icon as any} size={22} color={ql.color} />
+                    <Ionicons name={ql.icon as keyof typeof Ionicons.glyphMap} size={22} color={ql.color} />
                   </View>
                   <Text style={styles.quickLabel}>{ql.label}</Text>
                 </Pressable>
@@ -214,7 +214,7 @@ export default function HelpScreen() {
                   }}
                 >
                   <Ionicons
-                    name={cat.icon as any}
+                    name={cat.icon as keyof typeof Ionicons.glyphMap}
                     size={14}
                     color={activeCategory === cat.id ? 'black' : 'rgba(255,255,255,0.6)'}
                   />
@@ -239,7 +239,7 @@ export default function HelpScreen() {
             <View key={cat.id} style={styles.section}>
               <View style={styles.catHeader}>
                 <View style={[styles.catIcon, { backgroundColor: cat.color + '15' }]}>
-                  <Ionicons name={cat.icon as any} size={18} color={cat.color} />
+                  <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={18} color={cat.color} />
                 </View>
                 <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{cat.label}</Text>
                 <Text style={styles.catCount}>{cat.items.length}</Text>
@@ -285,7 +285,7 @@ export default function HelpScreen() {
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); opt.action(); }}
                 >
                   <View style={[styles.contactIcon, { backgroundColor: opt.color + '15' }]}>
-                    <Ionicons name={opt.icon as any} size={20} color={opt.color} />
+                    <Ionicons name={opt.icon as keyof typeof Ionicons.glyphMap} size={20} color={opt.color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.contactLabel}>{opt.label}</Text>
@@ -312,10 +312,10 @@ export default function HelpScreen() {
               <View key={item.label}>
                 <Pressable
                   style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: colors.surfaceElevated }]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push({ pathname: item.route } as any); }}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push({ pathname: item.route }); }}
                 >
                   <View style={[styles.contactIcon, { backgroundColor: item.color + '15' }]}>
-                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                    <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={item.color} />
                   </View>
                   <Text style={[styles.contactLabel, { flex: 1 }]}>{item.label}</Text>
                   <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />

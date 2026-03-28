@@ -20,7 +20,7 @@ export default function PaymentSuccessScreen() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/success') as never);
+      router.replace(routeWithRedirect('/(onboarding)/login', '/payment/success'));
       return;
     }
     if (Platform.OS !== 'web') {
@@ -39,8 +39,8 @@ export default function PaymentSuccessScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const eventTitle = (ticket as any)?.eventTitle ?? 'an event';
-    const eventDate  = (ticket as any)?.eventDate  ?? '';
+    const eventTitle = ticket?.eventTitle ?? 'an event';
+    const eventDate  = ticket?.eventDate  ?? '';
     const message = eventDate
       ? `I just got tickets to ${eventTitle} on ${eventDate} via CulturePass! 🎉`
       : `I just got tickets to ${eventTitle} via CulturePass! 🎉`;
@@ -67,17 +67,17 @@ export default function PaymentSuccessScreen() {
         {ticket ? (
           <>
             <Text style={[styles.eventTitle, { color: colors.text }]}>
-              {(ticket as any).eventTitle ?? 'Event'}
+              {ticket.eventTitle ?? 'Event'}
             </Text>
-            {(ticket as any).eventDate ? (
+            {ticket.eventDate ? (
               <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>
-                {(ticket as any).eventDate}
-                {(ticket as any).eventTime ? ` · ${(ticket as any).eventTime}` : ''}
+                {ticket.eventDate}
+                {ticket.eventTime ? ` · ${ticket.eventTime}` : ''}
               </Text>
             ) : null}
-            {(ticket as any).eventVenue ? (
+            {ticket.eventVenue ? (
               <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>
-                {(ticket as any).eventVenue}
+                {ticket.eventVenue}
               </Text>
             ) : null}
           </>

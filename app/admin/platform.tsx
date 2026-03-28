@@ -48,7 +48,7 @@ function FeatureFlagRow({ featureKey, enabled, index = 0 }: {
     <Animated.View entering={FadeInDown.delay(index * 35).duration(260)}>
       <View style={[ff.row, { borderBottomColor: colors.borderLight }]}>
         <View style={[ff.iconWrap, { backgroundColor: accent + '18' }]}>
-          <Ionicons name={meta.icon as never} size={16} color={accent} />
+          <Ionicons name={meta.icon as keyof typeof Ionicons.glyphMap} size={16} color={accent} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[ff.label, { color: colors.text }]}>{meta.label}</Text>
@@ -284,7 +284,7 @@ function PlatformContent() {
                 <Animated.View key={item.label} entering={FadeInDown.delay(i * 35).duration(250)}>
                   <View style={[s.keyRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                     <View style={[s.keyIcon, { backgroundColor: item.color + '18' }]}>
-                      <Ionicons name={item.icon as never} size={16} color={item.color} />
+                      <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={item.color} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.keyLabel, { color: colors.text }]}>{item.label}</Text>
@@ -318,7 +318,7 @@ function PlatformContent() {
                 <Animated.View key={item.label} entering={FadeInDown.delay(i * 35).duration(250)}>
                   <View style={[s.settingRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                     <View style={[s.keyIcon, { backgroundColor: item.color + '18' }]}>
-                      <Ionicons name={item.icon as never} size={16} color={item.color} />
+                      <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={item.color} />
                     </View>
                     <Text style={[s.keyLabel, { color: colors.text, flex: 1 }]}>{item.label}</Text>
                     <View style={[s.valuePill, { backgroundColor: item.color + '18', borderColor: item.color + '40' }]}>
@@ -348,7 +348,7 @@ function PlatformContent() {
                   <Animated.View key={item.service} entering={FadeInDown.delay(i * 30).duration(250)}>
                     <View style={[s.healthRow, { borderBottomColor: colors.borderLight }]}>
                       <View style={[s.healthIcon, { backgroundColor: item.color + '18' }]}>
-                        <Ionicons name={item.icon as never} size={14} color={item.color} />
+                        <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={14} color={item.color} />
                       </View>
                       <Text style={[s.healthLabel, { color: colors.text }]}>{item.service}</Text>
                       <View style={[s.healthDot, { backgroundColor: item.color }]} />

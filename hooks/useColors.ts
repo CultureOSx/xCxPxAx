@@ -29,8 +29,10 @@ import { light, dark } from '@/constants/colors';
 export function useColors(): ColorTheme {
   const scheme = useColorScheme();
   
-  // Return light theme only if explicitly set, otherwise default to dark 
-  // to maintain the premium "Night Festival" aesthetic across all platforms.
+  // Web: always light theme (white-first web surfaces per CLAUDE.md).
+  if (Platform.OS === 'web') return light;
+
+  // Native: default to dark (night festival aesthetic), respect explicit light.
   return scheme === 'light' ? light : dark;
 }
 
@@ -59,5 +61,6 @@ export function useSchemeValue<T>(darkValue: T, lightValue: T): T {
 /** Returns true when the dark theme is active. */
 export function useIsDark(): boolean {
   const scheme = useColorScheme();
+  if (Platform.OS === 'web') return false;
   return scheme !== 'light';
 }

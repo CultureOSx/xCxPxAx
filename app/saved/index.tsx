@@ -118,7 +118,7 @@ export default function SavedScreen() {
                     setActiveTab(tab.key);
                   }}
                 >
-                  <Ionicons name={isActive ? tab.icon : tab.icon + '-outline' as any} size={18} color={isActive ? CultureTokens.indigo : colors.textSecondary} />
+                  <Ionicons name={isActive ? tab.icon : tab.icon + '-outline' as keyof typeof Ionicons.glyphMap} size={18} color={isActive ? CultureTokens.indigo : colors.textSecondary} />
                   <Text style={[s.tabText, isActive ? { color: CultureTokens.indigo } : { color: colors.textSecondary }]}>{tab.label}</Text>
                   {tab.count > 0 && (
                     <View style={[

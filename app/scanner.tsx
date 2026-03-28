@@ -308,7 +308,7 @@ export default function ScannerScreen() {
     if (!cpContact) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!contactAlreadySaved) handleSaveContact();
-    router.push({ pathname: '/contacts/[cpid]' as never, params: { cpid: cpContact.cpid } });
+    router.push({ pathname: '/contacts/[cpid]', params: { cpid: cpContact.cpid } });
   }, [cpContact, contactAlreadySaved, handleSaveContact]);
 
   // Recomputes on every 1-second tick (setTimerTick causes re-render)
@@ -342,7 +342,7 @@ export default function ScannerScreen() {
               <Ionicons name="refresh-outline" size={16} color={CultureTokens.error} />
             </Pressable>
           ) : (
-            <Pressable style={s.headerBtn} onPress={() => router.push('/contacts' as never)} accessibilityRole="button" accessibilityLabel="View contacts">
+            <Pressable style={s.headerBtn} onPress={() => router.push('/contacts')} accessibilityRole="button" accessibilityLabel="View contacts">
               <Ionicons name="people-outline" size={16} color={colors.text} />
             </Pressable>
           )}
@@ -514,7 +514,7 @@ export default function ScannerScreen() {
                   return (
                     <View key={idx} style={[s.historyItem, { borderLeftColor: cfg.color }]}>
                       <View style={[s.historyIconWrap, { backgroundColor: cfg.bg }]}>
-                        <Ionicons name={cfg.icon as any} size={20} color={cfg.color} />
+                        <Ionicons name={cfg.icon as keyof typeof Ionicons.glyphMap} size={20} color={cfg.color} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.historyEventTitle} numberOfLines={1}>
@@ -659,7 +659,7 @@ export default function ScannerScreen() {
                   </View>
                   {cpContact.tier && (
                     <View style={[s.cpTierChip, { backgroundColor: (TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary) + '15' }]}>
-                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as never} size={13} color={TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary} />
+                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as keyof typeof Ionicons.glyphMap} size={13} color={TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary} />
                       <Text style={[s.cpTierText, { color: TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary }]}>
                         {TIER_DISPLAY[cpContact.tier]?.label ?? 'Free'}
                       </Text>
@@ -709,7 +709,7 @@ export default function ScannerScreen() {
                 <Text style={s.hintTitle}>Supported Formats</Text>
                 {hintItems.map(item => (
                   <View key={item.label} style={s.hintItem}>
-                    <Ionicons name={item.icon as never} size={18} color={item.color} />
+                    <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={18} color={item.color} />
                     <View style={{ flex: 1 }}>
                       <Text style={s.hintLabel}>{item.label}</Text>
                       <Text style={s.hintExample} numberOfLines={1}>{item.example}</Text>

@@ -137,7 +137,7 @@ export default function ArtistDetailScreen() {
     }
   }, [profile, id, uploadImage, deleteImage]);
 
-  const canEdit = userId === (profile as any)?.userId || userId === (profile as any)?.creatorId || __DEV__;
+  const canEdit = userId === profile?.ownerId || userId === profile?.creatorId || __DEV__;
 
   const handleShare = useCallback(async () => {
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -182,7 +182,7 @@ export default function ArtistDetailScreen() {
     );
   }
 
-  const heroImage = profile.coverImageUrl || ((profile as any).images && (profile as any).images.length > 0 ? (profile as any).images[0] : null) || profile.avatarUrl;
+  const heroImage = profile.coverImageUrl || (profile.images && profile.images.length > 0 ? profile.images[0] : null) || profile.avatarUrl;
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
 
   return (
@@ -272,7 +272,7 @@ export default function ArtistDetailScreen() {
               ) : null}
               <View style={styles.cpidChip}>
                 <Ionicons name="finger-print" size={16} color={CultureTokens.coral} />
-                <Text style={styles.cpidText}>CPID: {(profile as any).culturePassId ?? profile.id}</Text>
+                <Text style={styles.cpidText}>CPID: {profile.culturePassId ?? profile.id}</Text>
               </View>
             </View>
             {/* Stats */}
@@ -297,7 +297,7 @@ export default function ArtistDetailScreen() {
               ) : (
                 <StatCard
                   icon="star"
-                  value={(profile as any).rating ? (profile as any).rating.toFixed(1) : "—"}
+                  value={profile.rating ? profile.rating.toFixed(1) : "—"}
                   label="Rating"
                   color={CultureTokens.gold}
                 />

@@ -1,6 +1,6 @@
 import {
   View, Text, Pressable, ScrollView, Platform, Share, Modal, Alert,
-  ActivityIndicator, Linking, StyleSheet, useWindowDimensions
+  ActivityIndicator, Linking, StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, usePathname, Stack } from 'expo-router';
@@ -21,7 +21,8 @@ import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, webShadow, FontFamily, FontSize, Spacing } from '@/constants/theme';
+import { useLayout } from '@/hooks/useLayout';
 import { BlurView } from 'expo-blur';
 import type { EventData } from '@/shared/schema';
 import { routeWithRedirect } from '@/lib/routes';
@@ -44,13 +45,13 @@ function safeIcsFilenameBase(title: string): string {
 function promptRsvpLogin(redirectPath: string) {
   if (isWeb && typeof window !== 'undefined') {
     if (window.confirm('Please sign in to RSVP.\n\nOpen sign in?')) {
-      router.push(routeWithRedirect('/(onboarding)/login', redirectPath) as never);
+      router.push(routeWithRedirect('/(onboarding)/login', redirectPath));
     }
     return;
   }
   Alert.alert('Login required', 'Please sign in to RSVP.', [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', redirectPath) as never) },
+    { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', redirectPath)) },
   ]);
 }
 
@@ -132,8 +133,7 @@ interface TicketTier {
 function EventDetailSkeleton() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const { isDesktop } = useLayout();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   return (
@@ -234,8 +234,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   const s = getStyles(colors, isDark);
   const saved = isEventSaved(event.id);
   const pathname = usePathname();
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const { isDesktop } = useLayout();
   const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
 
@@ -257,7 +256,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
         }
         await uploadImage(result, 'events', event.id, 'imageUrl');
         // Hero image url is also kept in sync usually
-        await api.events.update(event.id, { heroImageUrl: result.assets[0].uri } as any); // just for local sync if needed, though hook updates DB
+        await api.events.update(event.id, { heroImageUrl: result.assets[0].uri });
         queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
       } catch (err) {
         Alert.alert('Upload Error', String(err));
@@ -265,7 +264,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     }
   }, [event.id, event.imageUrl, uploadImage, deleteImage]);
 
-  const canEdit = userId === event.organizerId || userId === (event as any).createdBy || __DEV__;
+  const canEdit = userId === event.organizerId || userId === event.createdBy || __DEV__;
 
   // Re-enabled localized distance mapping safely
   const distanceKm = useMemo(() => {
@@ -365,7 +364,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
             if (ticket.paymentStatus === "paid" || ticket.status === "confirmed") {
               if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert("Ticket Purchased!", "Your payment was successful.", [
-                { text: "View Ticket", onPress: () => router.push(`/tickets/${data.ticketId}` as never) },
+                { text: "View Ticket", onPress: () => router.push(`/tickets/${data.ticketId}`) },
                 { text: "OK" },
               ]);
             }
@@ -380,7 +379,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     onError: (error: Error) => Alert.alert("Purchase Failed", error.message),
   });
 
-  const eventTiers = (event as any).tiers as TicketTier[] | undefined;
+  const eventTiers = event.tiers;
   const selectedTier = useMemo(() => eventTiers?.[selectedTierIndex] || { priceCents: 0, available: 0, name: 'Standard' }, [eventTiers, selectedTierIndex]);
 
   // Family / group purchase constants
@@ -407,7 +406,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
       setTicketModalVisible(false);
       if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Ticket Confirmed!", "Your free ticket has been reserved.", [
-        { text: "View Ticket", onPress: () => router.push(`/tickets/${data.id}` as never) },
+        { text: "View Ticket", onPress: () => router.push(`/tickets/${data.id}`) },
         { text: "OK" },
       ]);
     } catch {
@@ -419,7 +418,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     if (!userId) {
       Alert.alert("Login required", "Please sign in to complete ticket purchase.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+        { text: "Sign in", onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
       ]);
       return;
     }
@@ -427,7 +426,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     const body = {
       userId, eventId: event.id, eventTitle: event.title, eventDate: event.date, eventTime: event.time,
       eventVenue: event.venue, tierName: ticketLabel, quantity: effectiveQty, totalPriceCents: totalPrice,
-      currency: getCurrencyForCountry(event?.country), imageColor: (event as any).imageColor ?? CultureTokens.indigo,
+      currency: getCurrencyForCountry(event?.country), imageColor: event.imageColor ?? CultureTokens.indigo,
     };
     if (totalPrice <= 0) { purchaseFreeTicket(body); return; }
     purchaseMutation.mutate(body);
@@ -524,7 +523,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     const start = toCalendarDate(event.date, event.time);
     // Try to use event.endTime if present, else add 2 hours to start
     let end: Date | null = null;
-    const endTime = (event as any).endTime as string | undefined;
+    const endTime = event.endTime;
     if (endTime) {
       end = toCalendarDate(event.date, endTime);
     } else if (start) {
@@ -865,10 +864,10 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                   <View style={[s.heroBadge, { backgroundColor: CultureTokens.gold }]}>
                     <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.communityId || 'General'}</Text>
                   </View>
-                  {(event as any).councilTag ? (
+                  {event.councilTag ? (
                     <View style={[s.heroBadge, { backgroundColor: colors.primarySoft }]}>
                       <Ionicons name="shield-checkmark" size={12} color={colors.primary} />
-                      <Text style={[TextStyles.badgeCaps, { color: colors.primary }]}>{(event as any).councilTag}</Text>
+                      <Text style={[TextStyles.badgeCaps, { color: colors.primary }]}>{event.councilTag}</Text>
                     </View>
                   ) : null}
                   <View style={[s.heroBadge, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight }]}>
@@ -934,7 +933,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                     <Text style={TextStyles.badgeCaps}>Venue</Text>
                     <Text style={[TextStyles.headline, { color: colors.text }]}>{event.venue || event.city}</Text>
                     <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {(event as any).address || event.city}
+                        {event.address || event.city}
                         {distanceKm !== null ? ` • ${distanceKm.toFixed(1)} km away` : ''}
                     </Text>
                   </View>
@@ -1077,7 +1076,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                     style={[s.buyModeBtn, buyMode === mode.key && { backgroundColor: colors.primarySoft, borderColor: CultureTokens.indigo }]}
                     onPress={() => { setBuyMode(mode.key); setQuantity(mode.key === "group" ? 6 : 1); if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
-                    <Ionicons name={mode.icon as never} size={18} color={buyMode === mode.key ? colors.primaryLight : colors.textTertiary} />
+                    <Ionicons name={mode.icon as keyof typeof Ionicons.glyphMap} size={18} color={buyMode === mode.key ? colors.primaryLight : colors.textTertiary} />
                     <Text style={[s.buyModeText, buyMode === mode.key && { color: colors.primaryLight, fontFamily: 'Poppins_600SemiBold' }]}>{mode.label}</Text>
                   </Pressable>
                 ))}

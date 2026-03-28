@@ -287,7 +287,7 @@ export default function TicketsScreen() {
                   When you book tickets for events or festivals, they will appear here.
                 </Text>
                 <Button
-                  onPress={() => router.push('/(tabs)/explore' as never)}
+                  onPress={() => router.push('/(tabs)/explore')}
                   variant="primary"
                   style={{ marginTop: 12, paddingHorizontal: 32 }}
                   leftIcon="search-outline"

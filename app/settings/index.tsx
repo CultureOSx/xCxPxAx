@@ -49,11 +49,11 @@ export default function AccountSettingsScreen() {
   const navigate = (route: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (route === '/(onboarding)/login' || route === '/(onboarding)/signup') {
-      router.push({ pathname: route, params: { redirectTo: pathname } } as any);
+      router.push({ pathname: route, params: { redirectTo: pathname } });
       return;
     }
     try {
-      router.push({ pathname: route } as any);
+      router.push({ pathname: route });
     } catch (error) {
       if (__DEV__) console.warn('[settings] navigation failed:', route, error);
       router.replace('/(tabs)');
@@ -282,7 +282,7 @@ export default function AccountSettingsScreen() {
                     onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); if (item.route) navigate(item.route); else item.action?.(); }}
                   >
                     <View style={[s.settingIcon, { backgroundColor: item.color + '15' }]}>
-                      <Ionicons name={item.icon as never} size={20} color={item.color} />
+                      <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={item.color} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.settingLabel}>{item.label}</Text>

@@ -27,7 +27,7 @@ function MetricCard({ icon, label, value, sub, accent, index = 0 }: {
       style={[mc.card, { backgroundColor: colors.surface, borderColor: accent + '30' }]}
     >
       <View style={[mc.iconWrap, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon as never} size={22} color={accent} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={22} color={accent} />
       </View>
       <Text style={[mc.value, { color: colors.text }]}>{value}</Text>
       <Text style={[mc.label, { color: colors.textTertiary }]}>{label}</Text>
@@ -54,7 +54,7 @@ function InfoRow({ icon, label, value, accent, index = 0 }: {
     <Animated.View entering={FadeInDown.delay(index * 40).duration(280)}>
       <View style={[ir.row, { borderBottomColor: colors.borderLight }]}>
         <View style={[ir.iconWrap, { backgroundColor: accent + '18' }]}>
-          <Ionicons name={icon as never} size={16} color={accent} />
+          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={accent} />
         </View>
         <Text style={[ir.label, { color: colors.textSecondary }]}>{label}</Text>
         <Text style={[ir.value, { color: colors.text }]}>{value}</Text>
@@ -243,7 +243,7 @@ function FinanceContent() {
                 style={[s.stripeBtn, { backgroundColor: CultureTokens.indigo }]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  router.push('/legal/terms' as never);
+                  router.push('/legal/terms');
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="Open Stripe Dashboard"

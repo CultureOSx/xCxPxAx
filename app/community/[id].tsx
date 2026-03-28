@@ -685,7 +685,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
     if (!isAuthenticated) {
       Alert.alert('Login required', 'Please sign in to join this community.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
       ]);
       return;
     }
@@ -1036,7 +1036,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   accessibilityLabel={link.title}
                 >
                   <View style={[s.linkIconWrap, { backgroundColor: color + '18' }]}>
-                    <Ionicons name={link.icon as never} size={20} color={color} />
+                    <Ionicons name={link.icon as keyof typeof Ionicons.glyphMap} size={20} color={color} />
                   </View>
                   <Text style={[s.linkTitle, { color: colors.text }]} numberOfLines={1}>{link.title}</Text>
                   <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -1105,7 +1105,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                   ) : community.iconEmoji ? (
                     <Text style={{ fontSize: 32 }}>{community.iconEmoji}</Text>
                   ) : (
-                    <Ionicons name={icon as never} size={30} color={colors.textInverse} />
+                    <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={30} color={colors.textInverse} />
                   )}
                   {canEdit && (
                     <Pressable 
@@ -1216,7 +1216,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     accessibilityState={{ selected: active }}
                   >
                     <Ionicons
-                      name={tab.icon as never}
+                      name={tab.icon as keyof typeof Ionicons.glyphMap}
                       size={18}
                       color={active ? color : colors.textTertiary}
                     />

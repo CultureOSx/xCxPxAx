@@ -140,7 +140,7 @@ function FilterChip({
       accessibilityState={{ selected: active }}
     >
       <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
+        {icon ? <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
         <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
       </Animated.View>
     </Pressable>

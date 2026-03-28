@@ -20,7 +20,7 @@ import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
-import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
+import { CultureTokens, CardTokens, gradients, FontFamily, FontSize, Spacing, IconSize, webShadow } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { useQueryClient } from '@tanstack/react-query';
@@ -172,7 +172,6 @@ export default function ProfileScreen() {
   const insets   = useSafeAreaInsets();
   const colors   = useColors();
   const isDark   = useIsDark();
-  const { root, hero, act, tier, sec, cul, prk, cpid, soc, det, set, sout, cmap } = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { isDesktop, hPad } = useLayout();
   const { userId, user: authUser, logout } = useAuth();
   const { state: onboarding } = useOnboarding();
@@ -225,11 +224,9 @@ export default function ProfileScreen() {
   const since       = memberDate(displayUser?.createdAt);
   const hasCultures = matchedCultures.length > 0;
 
-  const activeSocials = SOCIAL_DEFS.filter(s => {
-    const links = (displayUser as any)?.socialLinks;
-    return links && links[s.key];
-  });
-  const socialLinks = (displayUser as any)?.socialLinks ?? {};
+  const userSocialLinks = (displayUser as Record<string, unknown>)?.socialLinks as Record<string, string> | undefined;
+  const activeSocials = SOCIAL_DEFS.filter(s => userSocialLinks?.[s.key]);
+  const socialLinks = userSocialLinks ?? {};
 
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
@@ -265,7 +262,7 @@ export default function ProfileScreen() {
               {!isDesktop && (
                 <Pressable
                   style={({ pressed }) => [hero.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-                  onPress={() => router.push('/settings' as any)}
+                  onPress={() => router.push('/settings')}
                   accessibilityRole="button"
                   accessibilityLabel="Settings"
                 >
@@ -331,7 +328,7 @@ export default function ProfileScreen() {
                 <React.Fragment key={stat.label}>
                   <Pressable
                     style={hero.statItem}
-                    onPress={() => router.push(`/profile/edit` as any)}
+                    onPress={() => router.push('/profile/edit')}
                     accessibilityRole="button"
                   >
                     <Text style={hero.statNum}>{fmt(stat.value)}</Text>
@@ -349,7 +346,7 @@ export default function ProfileScreen() {
               style={[act.btn, { backgroundColor: CultureTokens.indigo }]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.selectionAsync();
-                router.push('/profile/edit' as any);
+                router.push('/profile/edit');
               }}
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
@@ -403,7 +400,7 @@ export default function ProfileScreen() {
                   style={[tier.upgradeBtn, { backgroundColor: CultureTokens.indigo }]}
                   onPress={() => {
                     if (Platform.OS !== 'web') Haptics.selectionAsync();
-                    router.push('/membership/upgrade' as any);
+                    router.push('/membership/upgrade');
                   }}
                   accessibilityRole="button"
                 >
@@ -455,7 +452,7 @@ export default function ProfileScreen() {
                 <SectionHeader
                   title="Your Perks"
                   action="View All"
-                  onAction={() => router.push('/(tabs)/perks' as any)}
+                  onAction={() => router.push('/(tabs)/perks')}
                   colors={colors}
                 />
               </View>
@@ -470,7 +467,7 @@ export default function ProfileScreen() {
                     style={[prk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.selectionAsync();
-                      router.push({ pathname: '/perks/[id]', params: { id: perk.id } } as never);
+                      router.push({ pathname: '/perks/[id]', params: { id: perk.id } });
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={perk.title}
@@ -483,9 +480,9 @@ export default function ProfileScreen() {
                       <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
                     </View>
                     <Text style={[prk.title, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
-                    {(perk as any).discount && (
+                    {'discount' in perk && (perk as unknown as { discount?: string }).discount && (
                       <View style={[prk.badge, { backgroundColor: CultureTokens.coral + '18' }]}>
-                        <Text style={[prk.badgeText, { color: CultureTokens.coral }]}>{(perk as any).discount}</Text>
+                        <Text style={[prk.badgeText, { color: CultureTokens.coral }]}>{(perk as unknown as { discount: string }).discount}</Text>
                       </View>
                     )}
                   </Pressable>
@@ -662,7 +659,7 @@ export default function ProfileScreen() {
                     style={set.row}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.selectionAsync();
-                      router.push(item.path as any);
+                      router.push(item.path);
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={item.label}
@@ -734,7 +731,7 @@ function CultureMapModal({ visible, onClose, cultures, colors, insets, cmap }: {
   cultures: { id: string; name: string; emoji: string; lat: number; lng: number; color: string }[];
   colors: ReturnType<typeof useColors>;
   insets: ReturnType<typeof useSafeAreaInsets>;
-  cmap: any;
+  cmap: Record<string, Record<string, unknown>>;
 }) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -785,210 +782,213 @@ function CultureMapModal({ visible, onClose, cultures, colors, insets, cmap }: {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => ({
-  root: StyleSheet.create({ wrap: { flex: 1 } }),
-  hero: StyleSheet.create({
-    container: { alignItems: 'center', paddingBottom: 28, overflow: 'hidden' },
-    arcOuter: {
-      position: 'absolute', top: -80, right: -80,
-      width: 220, height: 220, borderRadius: 110,
-      borderWidth: 28, borderColor: CultureTokens.teal + '10',
-    },
-    arcInner: {
-      position: 'absolute', top: -40, right: -40,
-      width: 130, height: 130, borderRadius: 65,
-      borderWidth: 18, borderColor: CultureTokens.indigo + '12',
-    },
-    nav: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingBottom: 20 },
-    navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-    name: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.4, textAlign: 'center' },
-    handle: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.55)', marginTop: 2, marginBottom: 14 },
-    culturePills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 20, paddingHorizontal: 20 },
-    culturePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 50 },
-    culturePillText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)', lineHeight: 15 },
-    statsBar: { 
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, 
-      backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: 8, 
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%',
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
-        android: { elevation: 4 },
-        web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' } as any,
-      }),
-    },
-    statsAccentLine: { position: 'absolute', top: 0, left: 24, right: 24, height: 1.5, opacity: 0.5 },
-    statItem: { flex: 1, alignItems: 'center' },
-    statNum: { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.5 },
-    statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2, letterSpacing: 0.3 },
-    statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
-  }),
-  act: StyleSheet.create({
-    row: { flexDirection: 'row', gap: 10 },
-    btn: { 
-      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-        android: { elevation: 2 },
-        web: { boxShadow: '0 2px 4px rgba(0,0,0,0.05)' } as any,
-      }),
-    },
-    label: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  }),
-  tier: StyleSheet.create({
-    card: { 
-      borderRadius: CardTokens.radius, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden',
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-        android: { elevation: 3 },
-        web: { boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.04)' } as any,
-      }),
-    },
-    left: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-    iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    label: { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
-    since: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 15 },
-    upgradeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-    upgradeTxt: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
-  }),
-  sec: StyleSheet.create({
-    wrap: {},
-    card: { 
-      padding: 16, borderRadius: 16, borderWidth: 1, 
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-        android: { elevation: 2 },
-        web: { boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.03)' } as any,
-      }),
-    },
-    bioText: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
-  }),
-  cul: StyleSheet.create({
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    chip: { 
-      flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-        android: { elevation: 1 },
-        web: { boxShadow: isDark ? '0 2px 6px rgba(0,0,0,0.2)' : '0 2px 6px rgba(0,0,0,0.03)' } as any,
-      }),
-    },
-    chipLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  }),
-  prk: StyleSheet.create({
-    scroll: { gap: 12, paddingVertical: 4 },
-    card: { 
-      width: 160, padding: 14, borderRadius: 20, borderWidth: 1, overflow: 'hidden',
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
-        android: { elevation: 3 },
-        web: { boxShadow: '0 4px 10px rgba(0,0,0,0.06)' } as any,
-      }),
-    },
-    cardGrad: { ...StyleSheet.absoluteFillObject, opacity: 0.1 },
-    icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-    title: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18, height: 36 },
-    badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginTop: 10 },
-    badgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
-  }),
-  cpid: StyleSheet.create({
-    card: { 
-      padding: 24, borderRadius: 28, overflow: 'hidden', position: 'relative',
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24 },
-        android: { elevation: 8 },
-        web: { boxShadow: isDark ? '0 12px 32px rgba(0,0,0,0.6)' : '0 12px 32px rgba(44,42,114,0.12)' } as any,
-      }),
-    },
-    accentLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2 },
-    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-    logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    logoIcon: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-    logoText: { color: '#fff', fontSize: 15, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
-    shieldBadge: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.1)' },
-    centerBlock: { alignItems: 'center', marginBottom: 32 },
-    cpidLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginBottom: 4 },
-    cpidValue: { color: '#fff', fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: 4 },
-    underline: { width: 120, height: 2, marginTop: 8 },
-    metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
-    metaItem: { gap: 4 },
-    metaLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
-    metaValue: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-    qrOverlay: {
-      position: 'absolute',
-      right: 20,
-      top: 60,
-      padding: 6,
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
-    },
-    qrPadding: {
-      padding: 2,
-      backgroundColor: '#FFFFFF',
-      borderRadius: 8,
-    },
-    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTopWidth: 1 },
-    footerText: { color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'Poppins_500Medium' },
-  }),
-  soc: StyleSheet.create({
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    card: { 
-      flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: '45%', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, overflow: 'hidden',
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-        android: { elevation: 1 },
-        web: { boxShadow: '0 2px 6px rgba(0,0,0,0.03)' } as any,
-      }),
-    },
-    strip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-    iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-    label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },
-  }),
-  det: StyleSheet.create({
-    card: { 
-      borderRadius: 20, borderWidth: 1, padding: 4,
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 },
-        android: { elevation: 2 },
-        web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' } as any,
-      }),
-    },
-    row: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
-    iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    text: { flex: 1, gap: 2 },
-    label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
-    value: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-    divider: { height: 1, marginHorizontal: 16 },
-  }),
-  set: StyleSheet.create({
-    card: { 
-      borderRadius: 20, borderWidth: 1, padding: 4,
-      ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
-        android: { elevation: 3 },
-        web: { boxShadow: '0 4px 12px rgba(0,0,0,0.04)' } as any,
-      }),
-    },
-    row: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 },
-    iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-    label: { fontSize: 15, fontFamily: 'Poppins_500Medium', flex: 1 },
-    divider: { height: 1, marginHorizontal: 14 },
-  }),
-  sout: StyleSheet.create({
-    btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed' },
-    label: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  }),
-  cmap: StyleSheet.create({
-    overlay: { flex: 1, justifyContent: 'flex-end' },
-    sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '90%', paddingBottom: 40 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 20 },
-    title: { fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
-    sub: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
-    closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 24, marginBottom: 24 },
-    chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
-    chipLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-    mapWrap: { flex: 1, borderRadius: 24, overflow: 'hidden', marginHorizontal: 24, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
-  })
+// ── Static styles — no per-render recreation ────────────────────────────────
+// For isDark-dependent web shadows, apply inline: isDark ? darkShadow : lightShadow
+
+const root = StyleSheet.create({ wrap: { flex: 1 } });
+
+const hero = StyleSheet.create({
+  container: { alignItems: 'center', paddingBottom: 28, overflow: 'hidden' },
+  arcOuter: {
+    position: 'absolute', top: -80, right: -80,
+    width: 220, height: 220, borderRadius: 110,
+    borderWidth: 28, borderColor: CultureTokens.teal + '10',
+  },
+  arcInner: {
+    position: 'absolute', top: -40, right: -40,
+    width: 130, height: 130, borderRadius: 65,
+    borderWidth: 18, borderColor: CultureTokens.indigo + '12',
+  },
+  nav: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingBottom: 20 },
+  navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  name: { fontSize: FontSize.title, fontFamily: FontFamily.bold, color: '#fff', letterSpacing: -0.4, textAlign: 'center' },
+  handle: { fontSize: FontSize.body2, fontFamily: FontFamily.regular, color: 'rgba(255,255,255,0.55)', marginTop: 2, marginBottom: 14 },
+  culturePills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 20, paddingHorizontal: 20 },
+  culturePill: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 50 },
+  culturePillText: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, color: 'rgba(255,255,255,0.85)', lineHeight: 15 },
+  statsBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: Spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
+      android: { elevation: 4 },
+      web: webShadow('0 4px 12px rgba(0,0,0,0.2)'),
+    }),
+  },
+  statsAccentLine: { position: 'absolute', top: 0, left: 24, right: 24, height: 1.5, opacity: 0.5 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statNum: { fontFamily: FontFamily.bold, fontSize: 22, color: '#fff', letterSpacing: -0.5 },
+  statLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.micro, color: 'rgba(255,255,255,0.5)', marginTop: 2, letterSpacing: 0.3 },
+  statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
+});
+
+const act = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 10 },
+  btn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+      android: { elevation: 2 },
+      web: webShadow('0 2px 4px rgba(0,0,0,0.05)'),
+    }),
+  },
+  label: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold, lineHeight: 18 },
+});
+
+const tier = StyleSheet.create({
+  card: {
+    borderRadius: CardTokens.radius, borderWidth: 1, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 4, overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      android: { elevation: 3 },
+      web: webShadow('0 4px 12px rgba(0,0,0,0.08)'),
+    }),
+  },
+  left: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 4 },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: FontSize.body2, fontFamily: FontFamily.bold, lineHeight: 20 },
+  since: { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: 1, lineHeight: 15 },
+  upgradeBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: 14, paddingVertical: Spacing.sm, borderRadius: 20 },
+  upgradeTxt: { fontSize: FontSize.caption, fontFamily: FontFamily.bold, color: '#fff', lineHeight: 17 },
+});
+
+const sec = StyleSheet.create({
+  wrap: {},
+  card: {
+    padding: Spacing.md, borderRadius: Spacing.md, borderWidth: 1,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+      android: { elevation: 2 },
+      web: webShadow('0 2px 8px rgba(0,0,0,0.06)'),
+    }),
+  },
+  bioText: { fontSize: FontSize.callout, fontFamily: FontFamily.regular, lineHeight: 22 },
+});
+
+const cul = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+      android: { elevation: 1 },
+      web: webShadow('0 2px 6px rgba(0,0,0,0.06)'),
+    }),
+  },
+  chipLabel: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold },
+});
+
+const prk = StyleSheet.create({
+  scroll: { gap: Spacing.sm + 4, paddingVertical: Spacing.xs },
+  card: {
+    width: 160, padding: 14, borderRadius: 20, borderWidth: 1, overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+      android: { elevation: 3 },
+      web: webShadow('0 4px 10px rgba(0,0,0,0.06)'),
+    }),
+  },
+  cardGrad: { ...StyleSheet.absoluteFillObject, opacity: 0.1 },
+  icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm + 4 },
+  title: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold, lineHeight: 18, height: 36 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: 6, marginTop: 10 },
+  badgeText: { fontSize: FontSize.micro, fontFamily: FontFamily.bold },
+});
+
+const cpid = StyleSheet.create({
+  card: {
+    padding: Spacing.lg, borderRadius: 28, overflow: 'hidden', position: 'relative',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24 },
+      android: { elevation: 8 },
+      web: webShadow('0 12px 32px rgba(0,0,0,0.2)'),
+    }),
+  },
+  accentLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  logoIcon: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  logoText: { color: '#fff', fontSize: FontSize.callout, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
+  shieldBadge: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.1)' },
+  centerBlock: { alignItems: 'center', marginBottom: Spacing.xl },
+  cpidLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: FontFamily.bold, letterSpacing: 2, marginBottom: Spacing.xs },
+  cpidValue: { color: '#fff', fontSize: FontSize.title, fontFamily: FontFamily.bold, letterSpacing: 4 },
+  underline: { width: 120, height: 2, marginTop: Spacing.sm },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.lg },
+  metaItem: { gap: Spacing.xs },
+  metaLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: FontFamily.bold, letterSpacing: 1 },
+  metaValue: { color: '#fff', fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
+  qrOverlay: {
+    position: 'absolute', right: 20, top: 60, padding: 6,
+    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  qrPadding: { padding: 2, backgroundColor: '#FFFFFF', borderRadius: Spacing.sm },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: Spacing.md, borderTopWidth: 1 },
+  footerText: { color: 'rgba(255,255,255,0.3)', fontSize: FontSize.micro, fontFamily: FontFamily.medium },
+});
+
+const soc = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  card: {
+    flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: '45%', gap: 10, padding: Spacing.sm + 4, borderRadius: Spacing.md, borderWidth: 1, overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+      android: { elevation: 1 },
+      web: webShadow('0 2px 6px rgba(0,0,0,0.03)'),
+    }),
+  },
+  strip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, flex: 1 },
+});
+
+const det = StyleSheet.create({
+  card: {
+    borderRadius: 20, borderWidth: 1, padding: Spacing.xs,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 },
+      android: { elevation: 2 },
+      web: webShadow('0 2px 8px rgba(0,0,0,0.03)'),
+    }),
+  },
+  row: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: 14 },
+  iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1, gap: 2 },
+  label: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold, textTransform: 'uppercase', letterSpacing: 0.8 },
+  value: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold },
+  divider: { height: 1, marginHorizontal: Spacing.md },
+});
+
+const set = StyleSheet.create({
+  card: {
+    borderRadius: 20, borderWidth: 1, padding: Spacing.xs,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
+      android: { elevation: 3 },
+      web: webShadow('0 4px 12px rgba(0,0,0,0.04)'),
+    }),
+  },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 },
+  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: FontSize.callout, fontFamily: FontFamily.medium, flex: 1 },
+  divider: { height: 1, marginHorizontal: 14 },
+});
+
+const sout = StyleSheet.create({
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 14, borderRadius: Spacing.md, borderWidth: 1, borderStyle: 'dashed' },
+  label: { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
+});
+
+const cmap = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '90%', paddingBottom: Spacing.xxl },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 20 },
+  title: { fontSize: FontSize.title, fontFamily: FontFamily.bold, letterSpacing: -0.5 },
+  sub: { fontSize: FontSize.body2, fontFamily: FontFamily.regular },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.sm + 4, paddingVertical: Spacing.sm, borderRadius: 12, borderWidth: 1 },
+  chipLabel: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
+  mapWrap: { flex: 1, borderRadius: Spacing.lg, overflow: 'hidden', marginHorizontal: Spacing.lg, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
 });

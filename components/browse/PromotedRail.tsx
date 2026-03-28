@@ -50,7 +50,7 @@ function PromotedRailComponent({ title, items, accentColor, accentIcon, onItemPr
               <Image source={{ uri: item.imageUrl }} style={styles.promoImage} contentFit="cover" transition={200} />
             ) : (
               <View style={[styles.promoImage, styles.promoImageFallback, { backgroundColor: colors.surfaceElevated, borderColor: accentColor + '55' }]}>
-                <Ionicons name={accentIcon as any} size={32} color={accentColor} />
+                <Ionicons name={accentIcon as keyof typeof Ionicons.glyphMap} size={32} color={accentColor} />
               </View>
             )}
             <View style={styles.promoInfo}>

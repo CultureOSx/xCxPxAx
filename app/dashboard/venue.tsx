@@ -30,8 +30,6 @@ interface VenueProfile {
 }
 
 interface VenueEvent extends EventData {
-  status?: string;
-  attending?: number;
   ticketsSold?: number;
   revenueCents?: number;
 }
@@ -53,7 +51,7 @@ function StatPill({ icon, value, label, accent }: { icon: string; value: string 
   return (
     <View style={[sp.pill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
       <View style={[sp.icon, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon as never} size={16} color={accent} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={accent} />
       </View>
       <Text style={[sp.val, { color: colors.text }]}>{value}</Text>
       <Text style={[sp.lbl, { color: colors.textTertiary }]}>{label}</Text>
@@ -295,10 +293,10 @@ function VenueDashboardContent() {
                 <Pressable
                   key={a.label}
                   style={({ pressed }) => [vc.qBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, opacity: pressed ? 0.7 : 1 }]}
-                  onPress={() => router.push(a.route as never)}
+                  onPress={() => router.push(a.route)}
                   accessibilityRole="button"
                 >
-                  <Ionicons name={a.icon as never} size={20} color={a.color} />
+                  <Ionicons name={a.icon as keyof typeof Ionicons.glyphMap} size={20} color={a.color} />
                   <Text style={[vc.qBtnText, { color: colors.textSecondary }]}>{a.label}</Text>
                 </Pressable>
               ))}

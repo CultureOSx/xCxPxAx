@@ -77,6 +77,8 @@ export interface User {
   };
   followersCount?: number;
   followingCount?: number;
+  connectionsCount?: number;
+  eventsAttended?: number;
   likesCount?: number;
   createdAt: string;
   updatedAt?: string;

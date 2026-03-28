@@ -103,7 +103,7 @@ function NotifRow({
 
         {/* Icon */}
         <View style={[s.iconWrap, { backgroundColor: typeInfo.color + '18' }]}>
-          <Ionicons name={typeInfo.icon as any} size={22} color={typeInfo.color} />
+          <Ionicons name={typeInfo.icon as keyof typeof Ionicons.glyphMap} size={22} color={typeInfo.color} />
         </View>
 
         {/* Content */}

@@ -13,8 +13,6 @@ import {
 } from 'react-native';
 import Animated, {
   FadeInDown, FadeInUp, SlideInDown,
-  useSharedValue, useAnimatedStyle, withSpring,
-  interpolateColor, withTiming,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,11 +22,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens, shadows } from '@/constants/theme';
+import { CultureTokens, shadows, webShadow } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { PerkCard } from '@/components/perks/PerkCard';
 import { usePerks } from '@/hooks/queries/usePerks';
+import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
@@ -140,46 +139,7 @@ const PERK_CATEGORIES = [
 
 const isWeb = Platform.OS === 'web';
 
-// ─── Inline animated FilterChip ───────────────────────────────────────────────
-
-function FilterChip({
-  label, active, onPress, icon,
-}: {
-  label: string; active: boolean; onPress: () => void; icon?: string;
-}) {
-  const colors = useColors();
-  const scale = useSharedValue(1);
-  const bg = useSharedValue(0);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
-        : [colors.surface, colors.surfaceElevated],
-    ),
-  }));
-  return (
-    <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
-      onPress={() => { if (!isWeb) Haptics.selectionAsync(); onPress(); }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-    >
-      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
-        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const fc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-});
+// FilterChip imported from @/components/ui/AnimatedFilterChip
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
   return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
@@ -234,7 +194,7 @@ function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () =
           end={{ x: 1, y: 0 }}
         />
         <View style={[qs.questIconOnImage, { backgroundColor: quest.color }]}>
-          <Ionicons name={quest.icon as never} size={18} color="#fff" />
+          <Ionicons name={quest.icon as keyof typeof Ionicons.glyphMap} size={18} color="#fff" />
         </View>
       </View>
 
@@ -317,7 +277,7 @@ const qs = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
       android: { elevation: 3 },
-      web: { boxShadow: '0 2px 12px rgba(0,0,0,0.06)' } as any,
+      web: webShadow('0 2px 12px rgba(0,0,0,0.06)'),
     }),
   },
   questImageStrip: { width: 160, position: 'relative' },
@@ -471,7 +431,7 @@ const eb = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 2 },
-      web: { boxShadow: '0 1px 6px rgba(0,0,0,0.04)' } as any,
+      web: webShadow('0 1px 6px rgba(0,0,0,0.04)'),
     }),
   },
   levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
@@ -541,7 +501,7 @@ const mb = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
       android: { elevation: 4 },
-      web: { boxShadow: '0 4px 20px rgba(0,0,0,0.1)' } as any,
+      web: webShadow('0 4px 20px rgba(0,0,0,0.1)'),
     }),
   },
   headline: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 2 },
@@ -704,7 +664,7 @@ export default function PerksTabScreen() {
             accessibilityLabel="Perk category filters"
           >
             {PERK_CATEGORIES.map(cat => (
-              <FilterChip
+              <AnimatedFilterChip
                 key={cat.id}
                 label={cat.label}
                 active={selectedCategory === cat.id}

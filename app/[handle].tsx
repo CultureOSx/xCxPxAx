@@ -17,7 +17,7 @@ export default function HandleResolverScreen() {
 
   useEffect(() => {
     if (!handle) {
-      router.replace('/(tabs)' as never);
+      router.replace('/(tabs)');
       return;
     }
 
@@ -28,7 +28,7 @@ export default function HandleResolverScreen() {
         // Try user first
         const user = await api.users.getByHandle(handle).catch(() => null);
         if (!cancelled && user?.id) {
-          router.replace({ pathname: '/user/[id]', params: { id: user.id } } as never);
+          router.replace({ pathname: '/user/[id]', params: { id: user.id } });
           return;
         }
 
@@ -36,14 +36,14 @@ export default function HandleResolverScreen() {
         const profileResult = await api.profiles.list({ search: handle, pageSize: 1 }).catch(() => null);
         const profile = (profileResult as any)?.profiles?.[0] ?? (Array.isArray(profileResult) ? profileResult[0] : null);
         if (!cancelled && profile?.id) {
-          router.replace({ pathname: '/profile/[id]', params: { id: profile.id } } as never);
+          router.replace({ pathname: '/profile/[id]', params: { id: profile.id } });
           return;
         }
 
         // Not found — go home
-        if (!cancelled) router.replace('/(tabs)' as never);
+        if (!cancelled) router.replace('/(tabs)');
       } catch {
-        if (!cancelled) router.replace('/(tabs)' as never);
+        if (!cancelled) router.replace('/(tabs)');
       }
     }
 

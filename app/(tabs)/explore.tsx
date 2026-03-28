@@ -276,14 +276,14 @@ function CategoryPill({
           end={{ x: 1, y: 1 }}
           style={cpill.inner}
         >
-          <Ionicons name={cat.icon as any} size={15} color="#fff" />
+          <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={15} color="#fff" />
           <Text style={[cpill.label, { color: '#fff', fontFamily: 'Poppins_600SemiBold' }]}>
             {cat.label}
           </Text>
         </LinearGradient>
       ) : (
         <View style={[cpill.innerInactive, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-          <Ionicons name={cat.icon as any} size={15} color={cat.color} />
+          <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={15} color={cat.color} />
           <Text style={[cpill.label, { color: colors.textSecondary }]}>{cat.label}</Text>
         </View>
       )}

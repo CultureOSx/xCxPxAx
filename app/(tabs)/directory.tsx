@@ -12,7 +12,6 @@ import {
 import Animated, {
   FadeInDown, FadeInUp,
   useSharedValue, useAnimatedStyle, withSpring,
-  interpolateColor, withTiming,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,7 +20,7 @@ import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens, EntityTypeColors, shadows } from '@/constants/theme';
+import { CultureTokens, EntityTypeColors, shadows, webShadow } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -35,6 +34,7 @@ import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 // import { Typography } from '@/constants/typography'; // REMOVED: Typography consolidated into theme import above
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { isIndigenousProfile } from '@/lib/indigenous';
 import { formatPrice } from '@/lib/dateUtils';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -43,46 +43,7 @@ import { useLocations } from '@/hooks/useLocations';
 
 const isWeb = Platform.OS === 'web';
 
-// ─── Inline animated FilterChip ───────────────────────────────────────────────
-
-function FilterChip({
-  label, active, onPress, icon,
-}: {
-  label: string; active: boolean; onPress: () => void; icon?: string;
-}) {
-  const colors = useColors();
-  const scale = useSharedValue(1);
-  const bg = useSharedValue(0);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'CC']
-        : [colors.surface, colors.surfaceElevated],
-    ),
-  }));
-  return (
-    <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
-      onPress={() => { if (!isWeb) Haptics.selectionAsync(); onPress(); }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-    >
-      <Animated.View style={[dirfc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as never} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
-        <Text style={[dirfc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const dirfc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-});
+// FilterChip imported from @/components/ui/AnimatedFilterChip
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
   return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
@@ -174,7 +135,7 @@ function DirectoryEventCard({ event, isSaved, onSave, colors }: {
             ...Platform.select({
               ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
               android: { elevation: 2 },
-              web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' } as any,
+              web: webShadow('0 4px 12px rgba(0,0,0,0.06)'),
             }),
           },
           pressed && { opacity: 0.93 },
@@ -274,7 +235,7 @@ function DirectoryCard({ profile, colors }: { profile: Profile; colors: ReturnTy
           ...Platform.select({
             ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
             android: { elevation: 4 },
-            web: { boxShadow: isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)' } as any,
+            web: webShadow(isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)'),
           }),
         },
         (isCouncil || isProfessional) && { borderWidth: 1.5 },
@@ -303,7 +264,7 @@ function DirectoryCard({ profile, colors }: { profile: Profile; colors: ReturnTy
           />
         ) : (
           <View style={[s.profileIconBox, { backgroundColor: color + '18' }]}>
-            <Ionicons name={isCouncil ? 'shield-checkmark' : (icon as never)} size={26} color={color} />
+            <Ionicons name={isCouncil ? 'shield-checkmark' : (icon as keyof typeof Ionicons.glyphMap)} size={26} color={color} />
           </View>
         )}
 
@@ -391,7 +352,7 @@ function DirectoryEmptyState({
   return (
     <View style={s.emptyState}>
       <View style={[s.emptyIconBox, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-        <Ionicons name={icon as never} size={40} color={colors.textTertiary} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={40} color={colors.textTertiary} />
       </View>
       <Text style={[s.emptyTitle, { color: colors.text }]}>
         No {entityLabel.replace('🪃 ', '')} found{cityLabel}
@@ -653,7 +614,7 @@ export default function DirectoryScreen() {
             accessibilityLabel="Entity type filters"
           >
             {filterItems.map(filter => (
-              <FilterChip
+              <AnimatedFilterChip
                 key={filter.id}
                 label={typeof filter.label === 'string' ? filter.label : filter.id}
                 active={selectedType === filter.id}

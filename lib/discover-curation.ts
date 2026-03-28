@@ -59,7 +59,7 @@ export const FEATURED_ARTIST: FallbackArtistSeed[] = [
     subtitle: 'Tabla Maestro',
     meta: 'Classical Sessions',
     imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
-    accentColor: CultureTokens.saffron,
+    accentColor: CultureTokens.gold,
     focus: 'music',
   },
   {
@@ -90,7 +90,7 @@ export const HERITAGE_PLAYLIST: HeritagePlaylistItem[] = [
     culture: 'India',
     imageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=800&auto=format&fit=crop',
     typeLabel: 'Music',
-    accentColor: CultureTokens.saffron,
+    accentColor: CultureTokens.gold,
     focus: 'music',
     matchKeys: ['indian', 'hindi', 'punjabi', 'tamil', 'bengali', 'south_asian_diaspora'],
   },

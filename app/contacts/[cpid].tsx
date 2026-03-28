@@ -139,7 +139,7 @@ function InfoRow({
   const content = (
     <View style={rowStyles.container}>
       <View style={[rowStyles.iconWrap, { backgroundColor: finalColor === colors.text ? colors.backgroundSecondary : finalColor + '15' }]}>
-        <Ionicons name={icon as any} size={18} color={finalColor} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={finalColor} />
       </View>
       <View style={rowStyles.textWrap}>
         <Text style={rowStyles.label}>{label}</Text>
@@ -350,7 +350,7 @@ export default function ContactDetailScreen() {
               <Text style={styles.cpidText}>{contact.cpid}</Text>
             </View>
             <View style={[styles.tierChip, { backgroundColor: tier.color + '15', borderColor: tier.color + '30' }]}>
-              <Ionicons name={tier.icon as any} size={12} color={tier.color} />
+              <Ionicons name={tier.icon as keyof typeof Ionicons.glyphMap} size={12} color={tier.color} />
               <Text style={[styles.tierText, { color: tier.color }]}>{tier.label}</Text>
             </View>
           </View>

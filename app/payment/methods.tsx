@@ -154,7 +154,7 @@ export default function PaymentMethodsScreen() {
                 <View style={[s.cardWrap, { borderLeftColor: brandColor }]}>
                   <View style={s.cardTop}>
                     <View style={[s.brandIcon, { backgroundColor: brandColor + '15' }]}>
-                      <Ionicons name={getBrandIcon(method.brand) as never} size={22} color={brandColor} />
+                      <Ionicons name={getBrandIcon(method.brand) as keyof typeof Ionicons.glyphMap} size={22} color={brandColor} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.cardLabel}>{method.label}</Text>

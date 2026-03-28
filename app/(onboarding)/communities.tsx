@@ -68,7 +68,7 @@ export default function CommunitiesScreen() {
     }
 
     setCommunities(selected);
-    router.replace(routeWithRedirect('/(onboarding)/culture-match', redirectTo) as any);
+    router.replace(routeWithRedirect('/(onboarding)/culture-match', redirectTo));
   }, [selected, setCommunities, redirectTo]);
 
   return (
@@ -90,7 +90,7 @@ export default function CommunitiesScreen() {
 
       {isDesktop && (
         <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as any)} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
             <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
             <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
@@ -99,7 +99,7 @@ export default function CommunitiesScreen() {
 
       {!isDesktop && (
         <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
-          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as any))} hitSlop={12}>
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo)))} hitSlop={12}>
             <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>2 of 4</Text>
@@ -161,7 +161,7 @@ export default function CommunitiesScreen() {
                       accessibilityLabel={`Community: ${community}`}
                     >
                       <Ionicons 
-                        name={iconName as never} 
+                        name={iconName as keyof typeof Ionicons.glyphMap} 
                         size={18} 
                         color={isSelected ? colors.textInverse : colors.textSecondary} 
                       />

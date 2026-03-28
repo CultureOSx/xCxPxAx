@@ -45,7 +45,7 @@ export function StepBasics({ form, setField, colors, s, haptic }: Props) {
                 ]}
               >
                 <View style={[s.categoryIconWrap, { backgroundColor: active ? CultureTokens.indigo : colors.borderLight }]}>
-                  <Ionicons name={cat.icon as any} size={20} color={active ? '#fff' : colors.textSecondary} />
+                  <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={20} color={active ? '#fff' : colors.textSecondary} />
                 </View>
                 <Text style={[s.categoryLabel, { color: active ? colors.text : colors.textSecondary }]}>
                   {cat.label}

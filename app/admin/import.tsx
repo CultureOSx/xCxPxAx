@@ -225,7 +225,7 @@ function ImportContent() {
                   accessibilityLabel={`Use ${preset.name} preset`}
                 >
                   <View style={[s.presetIcon, { backgroundColor: preset.color + '18' }]}>
-                    <Ionicons name={preset.icon as never} size={20} color={preset.color} />
+                    <Ionicons name={preset.icon as keyof typeof Ionicons.glyphMap} size={20} color={preset.color} />
                   </View>
                   <Text style={[s.presetName, { color: colors.text }]}>{preset.name}</Text>
                   <Text style={[s.presetDesc, { color: colors.textTertiary }]} numberOfLines={2}>
@@ -440,7 +440,7 @@ function ImportContent() {
                 <View key={fmt.title}>
                   <View style={s.formatRow}>
                     <View style={[s.formatIcon, { backgroundColor: fmt.color + '18' }]}>
-                      <Ionicons name={fmt.icon as never} size={18} color={fmt.color} />
+                      <Ionicons name={fmt.icon as keyof typeof Ionicons.glyphMap} size={18} color={fmt.color} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.formatTitle, { color: colors.text }]}>{fmt.title}</Text>

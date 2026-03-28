@@ -154,7 +154,7 @@ const statStyles = StyleSheet.create({
   number: {
     fontSize: 30,
     fontWeight: "700",
-    color: CultureTokens.saffron,
+    color: CultureTokens.gold,
     fontFamily: "Poppins_700Bold",
   },
   label: {
@@ -189,7 +189,7 @@ const CultureChip = memo(function CultureChip({ culture, styles, colors }: Cultu
     Haptics.selectionAsync();
     // Encode the label for URL-safe routing (e.g. "🇮🇳 Indian" -> "Indian")
     const slug = culture.label.replace(/[^\w\s]/gu, "").trim().replace(/\s+/g, "-").toLowerCase();
-    router.push(`/search?culture=${slug}` as any);
+    router.push(`/search?culture=${slug}`);
   }, [culture.label, router]);
 
   return (
@@ -238,14 +238,14 @@ const EventCard = memo(function EventCard({
       onPress={() => {
         Haptics.selectionAsync();
         const slug = event.title.toLowerCase().replace(/\s+/g, "-");
-        router.push(`/event/${slug}` as any);
+        router.push(`/event/${slug}`);
       }}
       accessibilityRole="button"
       accessibilityLabel={`View ${event.title} in ${event.city}`}
       android_ripple={{ color: "rgba(0,0,0,0.05)", borderless: false }}
     >
       <LinearGradient
-        colors={[CultureTokens.indigo, CultureTokens.saffron]}
+        colors={[CultureTokens.indigo, CultureTokens.gold]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.eventCardAccent}
@@ -318,7 +318,7 @@ export default function Get2KnowCulturePass() {
         colors={
           gradients.culturepassBrand ?? [
             CultureTokens.indigo,
-            CultureTokens.saffron,
+            CultureTokens.gold,
             CultureTokens.coral,
           ]
         }
@@ -483,7 +483,7 @@ export default function Get2KnowCulturePass() {
       <FadeInView delay={100}>
         <View style={styles.sectionCenter}>
           <View style={styles.sectionIconCircle}>
-            <Ionicons name="earth-outline" size={28} color={CultureTokens.saffron} />
+            <Ionicons name="earth-outline" size={28} color={CultureTokens.gold} />
           </View>
           <Text style={styles.sectionTitleCenter}>Explore Cultures Around the World</Text>
           <Text style={styles.sectionDesc}>
@@ -531,13 +531,13 @@ export default function Get2KnowCulturePass() {
 
           <View style={styles.solutionCard}>
             <LinearGradient
-              colors={[CultureTokens.indigo + "22", CultureTokens.saffron + "22"]}
+              colors={[CultureTokens.indigo + "22", CultureTokens.gold + "22"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.solutionGradientBg}
             />
             <View style={styles.solutionIconCircle}>
-              <Ionicons name="sparkles-outline" size={24} color={CultureTokens.saffron} />
+              <Ionicons name="sparkles-outline" size={24} color={CultureTokens.gold} />
             </View>
             <Text style={styles.solutionTitle}>CulturePass connects it all.</Text>
             <Text style={styles.solutionText}>

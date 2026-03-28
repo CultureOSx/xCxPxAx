@@ -40,7 +40,7 @@ function TransactionItem({ item, styles: s }: TxItemProps & { styles: ReturnType
   return (
     <View style={s.txCard}>
       <View style={[s.txIcon, { backgroundColor: amountColor + '15' }]}>
-        <Ionicons name={getTypeIcon(item.type) as never} size={22} color={amountColor} />
+        <Ionicons name={getTypeIcon(item.type) as keyof typeof Ionicons.glyphMap} size={22} color={amountColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.txDescription} numberOfLines={1}>
@@ -107,7 +107,7 @@ export default function TransactionsScreen() {
           </Text>
           <Pressable
             style={styles.signInBtn}
-            onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any)}
+            onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname))}
           >
             <Ionicons name="arrow-forward" size={18} color={colors.text} style={{ marginRight: 8 }} />
             <Text style={styles.signInBtnText}>Sign In Now</Text>

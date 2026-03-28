@@ -21,6 +21,7 @@ export interface MovieData {
   city: string;
   country: string;
   status: ContentStatus;
+  culturePassId?: string;
   createdAt: string;
   updatedAt: string;
 }

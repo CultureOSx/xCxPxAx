@@ -177,7 +177,7 @@ export default function DiscoverScreen() {
           title="Trending Artists"
           subtitle="Rising cultural artists in your city"
           icon="musical-notes"
-          accentColor="#A855F7"
+          accentColor={CultureTokens.purple}
         />
 
         <View style={styles.footerSpacer} />

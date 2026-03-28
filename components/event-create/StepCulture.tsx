@@ -212,7 +212,7 @@ export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageT
                 accessibilityLabel={opt.label}
                 accessibilityState={{ checked: isSelected }}
               >
-                <Ionicons name={opt.icon as any} size={14} color={isSelected ? CultureTokens.coral : colors.text} style={{ marginRight: 4 }} />
+                <Ionicons name={opt.icon as keyof typeof Ionicons.glyphMap} size={14} color={isSelected ? CultureTokens.coral : colors.text} style={{ marginRight: 4 }} />
                 <Text style={[
                   s.tagLabel,
                   { color: isSelected ? CultureTokens.coral : colors.text },

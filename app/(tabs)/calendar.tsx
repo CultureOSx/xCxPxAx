@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, webShadow } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCouncil } from '@/hooks/useCouncil';
@@ -86,7 +86,7 @@ function EventRow({
           ...Platform.select({
             ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
             android: { elevation: 2 },
-            web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' } as any,
+            web: webShadow('0 4px 12px rgba(0,0,0,0.06)'),
           }),
         },
         pressed && { opacity: 0.85 },
@@ -322,23 +322,23 @@ export default function CalendarScreen() {
       }
       case 'My Events':
         if (isAuthenticated) {
-          const rsvpIds = new Set((rsvps as any[]).map((r: any) => r.eventId));
+          const rsvpIds = new Set((rsvps as { eventId: string }[]).map((r) => r.eventId));
           events = events.filter((e) => rsvpIds.has(e.id));
         }
         break;
       case 'Tickets':
         if (isAuthenticated) {
-          const ticketIds = new Set((tickets as any[]).map((t: any) => t.eventId));
+          const ticketIds = new Set((tickets as { eventId: string }[]).map((t) => t.eventId));
           events = events.filter((e) => ticketIds.has(e.id));
         }
         break;
       case 'Council':
-        events = events.filter((e) => (e as any).councilId);
+        events = events.filter((e) => e.councilId);
         break;
       case 'Interests':
         if (isAuthenticated) {
-          const likeIds = new Set((likes as any[]).map((l: any) => l.eventId));
-          const interestTags = new Set((interests as any[]).map((i: any) => i.interestTag));
+          const likeIds = new Set((likes as { eventId: string }[]).map((l) => l.eventId));
+          const interestTags = new Set((interests as { interestTag: string }[]).map((i) => i.interestTag));
           events = events.filter(
             (e) =>
               likeIds.has(e.id) ||
@@ -350,7 +350,7 @@ export default function CalendarScreen() {
         events = events.filter((e) => {
           const cat = (e.category || '').toLowerCase();
           const target = activeChip.toLowerCase();
-          return cat === target || ((e as any).councilId && activeChip === 'Council');
+          return cat === target || (e.councilId && activeChip === 'Council');
         });
     }
     return events;
@@ -412,7 +412,7 @@ export default function CalendarScreen() {
         return (
           (e.category === 'council' ||
             e.category === 'civic' ||
-            (e as any).councilId) &&
+            e.councilId) &&
           dateObj.getMonth() === currentMonth &&
           dateObj.getFullYear() === currentYear
         );
@@ -593,7 +593,7 @@ export default function CalendarScreen() {
                     ...Platform.select({
                       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
                       android: { elevation: 6 },
-                      web: { boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)' } as any,
+                      web: webShadow(isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)'),
                     }),
                   },
                   isDesktopWeb && s.calCardCompact,
@@ -782,7 +782,7 @@ export default function CalendarScreen() {
                       ...Platform.select({
                         ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
                         android: { elevation: 1 },
-                        web: { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } as any,
+                        web: webShadow('0 2px 8px rgba(0,0,0,0.04)'),
                       }),
                     },
                   ]}

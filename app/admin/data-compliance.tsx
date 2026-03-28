@@ -50,7 +50,7 @@ function ExportButton({ label, icon, accent, onPress, loading }: {
       <View style={[eb.icon, { backgroundColor: accent + '18' }]}>
         {loading
           ? <ActivityIndicator size="small" color={accent} />
-          : <Ionicons name={icon as never} size={18} color={accent} />
+          : <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={accent} />
         }
       </View>
       <View style={{ flex: 1 }}>
@@ -79,12 +79,12 @@ function PolicyRow({ label, sub, icon, route, accent, index = 0 }: {
           backgroundColor: pressed ? colors.backgroundSecondary : 'transparent',
           borderBottomColor: colors.borderLight,
         }]}
-        onPress={() => router.push(route as never)}
+        onPress={() => router.push(route)}
         accessibilityRole="button"
         accessibilityLabel={label}
       >
         <View style={[pr.iconWrap, { backgroundColor: accent + '18' }]}>
-          <Ionicons name={icon as never} size={16} color={accent} />
+          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={accent} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[pr.label, { color: colors.text }]}>{label}</Text>
@@ -370,7 +370,7 @@ function DataComplianceContent() {
               <Animated.View key={item.label} entering={FadeInDown.delay(i * 40).duration(260)}>
                 <View style={[s.retentionRow, { borderBottomColor: colors.borderLight }]}>
                   <View style={[s.retentionIcon, { backgroundColor: item.color + '18' }]}>
-                    <Ionicons name={item.icon as never} size={15} color={item.color} />
+                    <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={15} color={item.color} />
                   </View>
                   <Text style={[s.retentionLabel, { color: colors.textSecondary }]}>{item.label}</Text>
                   <Text style={[s.retentionValue, { color: colors.text }]}>{item.value}</Text>

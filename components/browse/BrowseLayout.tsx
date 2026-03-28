@@ -66,7 +66,7 @@ export function BrowseLayout({
     return (
       <View style={styles.emptyWrap} accessibilityLiveRegion="polite">
         <View style={[styles.emptyIconBg, { backgroundColor: colors.surface }]}>
-          <Ionicons name={emptyIcon as any} size={48} color="rgba(255,255,255,0.4)" />
+          <Ionicons name={emptyIcon as keyof typeof Ionicons.glyphMap} size={48} color="rgba(255,255,255,0.4)" />
         </View>
         <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary }]}>
           {selectedCat !== 'All' ? `No ${title.toLowerCase()} in "${selectedCat}"` : emptyMessage}

@@ -44,9 +44,9 @@ export interface EventHostInfo {
 }
 
 export interface EventData {
-    lgaCode?: string;
-    councilId?: string;
   id: string;
+  lgaCode?: string;
+  councilId?: string;
   culturePassId?: string;
   title: string;
   description: string;
@@ -59,6 +59,7 @@ export interface EventData {
   category?: string;
   communityId?: string;
   organizerId?: string;
+  createdBy?: string;
   imageColor?: string;
   imageUrl?: string;
   thumbhash?: string;
@@ -71,6 +72,7 @@ export interface EventData {
   state?: string;
   city: string;
   council?: string;
+  councilTag?: string;
   suburb?: string;
   lat?: number;
   lng?: number;
@@ -96,6 +98,8 @@ export interface EventData {
   rsvpNotGoing?: number;
   /** The user's own RSVP status — populated on GET /events/:id when authenticated */
   myRsvp?: 'going' | 'maybe' | 'not_going' | null;
+  status?: 'draft' | 'published' | 'cancelled';
+  publishedAt?: string;
   deletedAt?: string | null;
   distanceKm?: number;
   createdAt?: string;

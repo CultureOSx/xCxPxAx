@@ -122,7 +122,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.info}>
             <View style={styles.cpidRow}>
               <Ionicons name="finger-print-outline" size={15} color={CultureTokens.teal} />
-              <Text style={styles.cpidText}>CPID: {(act as any).culturePassId || act.id}</Text>
+              <Text style={styles.cpidText}>CPID: {act.culturePassId || act.id}</Text>
             </View>
             <Text style={styles.name}>{act.name}</Text>
 

@@ -69,11 +69,11 @@ function WalletReadinessContent() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace(routeWithRedirect('/(onboarding)/login', '/dashboard/wallet-readiness') as never);
+      router.replace(routeWithRedirect('/(onboarding)/login', '/dashboard/wallet-readiness'));
       return;
     }
     if (isAuthenticated && !isAdmin) {
-      router.replace('/(tabs)' as never);
+      router.replace('/(tabs)');
     }
   }, [isAuthenticated, isAdmin]);
 

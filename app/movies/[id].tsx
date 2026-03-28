@@ -30,7 +30,7 @@ export default function MovieDetailScreen() {
     if (!isAuthenticated) {
       Alert.alert('Login required', 'Please sign in to buy tickets.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any) },
+        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
       ]);
       return;
     }
@@ -136,7 +136,7 @@ export default function MovieDetailScreen() {
           <View style={styles.infoSection}>
             <View style={styles.cpidRow}>
               <Ionicons name="finger-print-outline" size={15} color={CultureTokens.gold} />
-              <Text style={[TextStyles.labelSemibold, { color: CultureTokens.gold, fontSize: 11 }]}>CPID: {(movie as any).culturePassId || movie.id}</Text>
+              <Text style={[TextStyles.labelSemibold, { color: CultureTokens.gold, fontSize: 11 }]}>CPID: {(movie).culturePassId || movie.id}</Text>
             </View>
             <Text style={[TextStyles.display, { color: colors.text, letterSpacing: -0.5 }]}>{movie.title}</Text>
             <View style={styles.metaRow}>
