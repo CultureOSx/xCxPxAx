@@ -40,13 +40,21 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 
 global.Buffer = Buffer;
 
-// Suppress upstream React Native Web deprecation warning from @react-navigation/bottom-tabs
-// BottomTabBar passes `pointerEvents` as a prop (old RN pattern); RNW ≥0.19 expects style.pointerEvents.
-// Remove this block once the upstream library is patched.
-if (Platform.OS === 'web' && typeof console !== 'undefined') {
+// Suppress known noisy warnings that are not actionable.
+// Expo Router v5 treats every file in app/ as a route unless its basename starts with _.
+// Files inside _components/ directories trigger "missing default export" warnings on all
+// platforms — suppress them globally since these are helper modules, not screens.
+if (typeof console !== 'undefined') {
   const _warn = console.warn.bind(console);
   console.warn = (...args: unknown[]) => {
-    if (typeof args[0] === 'string' && args[0].includes('props.pointerEvents is deprecated')) return;
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    // Expo Router v5: _components/ helper files are not routes (all platforms)
+    if (msg.includes('_components') && msg.includes('missing the required default export')) return;
+    // React Native Web ≥0.19 deprecations (web only)
+    if (Platform.OS === 'web') {
+      if (msg.includes('props.pointerEvents is deprecated')) return;
+      if (msg.includes('"shadow') && msg.includes('style props are deprecated')) return;
+    }
     _warn(...args);
   };
 }

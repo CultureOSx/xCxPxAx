@@ -37,6 +37,7 @@ import {
   DirectoryEventCard,
   DirectoryCard,
   DirectoryEmptyState,
+  FeaturedRail,
   ENTITY_FILTERS,
   getDirectoryListingType,
   isWeb,
@@ -169,6 +170,11 @@ export default function DirectoryScreen() {
 
     return results;
   }, [selectedType, search, allItems]);
+
+  const featuredProfiles = useMemo(
+    () => nonCommunityProfiles.filter(p => p.isVerified).slice(0, 8),
+    [nonCommunityProfiles],
+  );
 
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = { All: allItems.length, event: allEvents.length };
@@ -340,7 +346,11 @@ export default function DirectoryScreen() {
               )}
             </Animated.View>
           )}
-          ListHeaderComponent={null}
+          ListHeaderComponent={
+            featuredProfiles.length > 0 ? (
+              <FeaturedRail profiles={featuredProfiles} colors={colors} />
+            ) : null
+          }
           ListEmptyComponent={
             <DirectoryEmptyState
               selectedType={selectedType}
