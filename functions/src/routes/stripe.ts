@@ -195,10 +195,9 @@ export function createStripeRouter() {
       await ticketsService.update(draft.id, { stripePaymentIntentId });
       return res.json({ checkoutUrl: session.url, ticketId: draft.id, sessionId: session.id, paymentIntentId: stripePaymentIntentId });
     } catch (err: unknown) {
-      const msg = (err as Error).message;
-      console.error('[stripe] checkout session error:', msg);
+      console.error('[stripe] checkout session error:', (err as Error).message);
       await db.collection('tickets').doc(draft.id).delete();
-      return res.status(500).json({ error: 'Failed to create checkout session', detail: msg });
+      return res.status(500).json({ error: 'Failed to create checkout session' });
     }
   });
 
@@ -229,9 +228,8 @@ export function createStripeRouter() {
         await walletsService.addTransaction(ticket.userId, { type: 'refund', amountCents: totalPriceCents, description: `Refund: ${eventTitle}` });
         return res.json({ ok: true, ticketId, refundId: refund.id });
       } catch (err: unknown) {
-        const msg = (err as Error).message;
-        console.error('[stripe] refund error:', msg);
-        return res.status(500).json({ error: 'Stripe refund failed', detail: msg });
+        console.error('[stripe] refund error:', (err as Error).message);
+        return res.status(500).json({ error: 'Stripe refund failed' });
       }
     }
 

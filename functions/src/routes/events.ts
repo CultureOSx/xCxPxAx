@@ -560,26 +560,34 @@ export function createEventsRouter() {
       const { FieldValue } = await import('firebase-admin/firestore');
       const rsvpRef  = db.collection('rsvps').doc(`${eventId}_${userId}`);
       const eventRef = db.collection('events').doc(eventId);
-
-      const prevSnap = await rsvpRef.get();
-      const prevStatus = prevSnap.exists ? (prevSnap.data() as any).status as string : null;
-
-      const now = nowIso();
-      await rsvpRef.set({ eventId, userId, status, updatedAt: now, createdAt: prevSnap.exists ? (prevSnap.data() as any).createdAt : now });
-
-      // Atomic counter updates — decrement old, increment new
-      const counterUpdate: Record<string, unknown> = {};
       const counterKey: Record<string, string> = { going: 'rsvpGoing', maybe: 'rsvpMaybe', not_going: 'rsvpNotGoing' };
+      const now = nowIso();
 
-      if (prevStatus && prevStatus !== status) {
-        counterUpdate[counterKey[prevStatus]] = FieldValue.increment(-1);
-      }
-      if (!prevStatus || prevStatus !== status) {
-        counterUpdate[counterKey[status!]] = FieldValue.increment(1);
-      }
-      if (Object.keys(counterUpdate).length > 0) {
-        await eventRef.update(counterUpdate);
-      }
+      // Transaction prevents race conditions where concurrent requests both read
+      // prevStatus = null and double-increment the same counter.
+      await db.runTransaction(async (txn) => {
+        const prevSnap = await txn.get(rsvpRef);
+        const prevStatus = prevSnap.exists ? (prevSnap.data() as any).status as string : null;
+
+        txn.set(rsvpRef, {
+          eventId,
+          userId,
+          status,
+          updatedAt: now,
+          createdAt: prevSnap.exists ? (prevSnap.data() as any).createdAt : now,
+        });
+
+        const counterUpdate: Record<string, unknown> = {};
+        if (prevStatus && prevStatus !== status) {
+          counterUpdate[counterKey[prevStatus]] = FieldValue.increment(-1);
+        }
+        if (!prevStatus || prevStatus !== status) {
+          counterUpdate[counterKey[status!]] = FieldValue.increment(1);
+        }
+        if (Object.keys(counterUpdate).length > 0) {
+          txn.update(eventRef, counterUpdate);
+        }
+      });
 
       return res.json({ status });
     } catch (err) {

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { db, isFirestoreConfigured, authAdmin } from '../admin';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { moderationCheck } from '../middleware/moderation';
 import { parseBody, nowIso,
   captureRouteError,
 } from './utils';
@@ -90,7 +91,7 @@ function isValidCollection(c: string): c is PostCollection {
 }
 
 /** POST /api/posts — create a community post */
-socialRouter.post('/posts', requireAuth, async (req: Request, res: Response) => {
+socialRouter.post('/posts', requireAuth, moderationCheck, async (req: Request, res: Response) => {
   const schema = z.object({
     communityId:   z.string().min(1),
     communityName: z.string().min(1),
@@ -207,7 +208,7 @@ socialRouter.get('/posts/:collection/:postId/comments', async (req: Request, res
 });
 
 /** POST /api/posts/:collection/:postId/comments */
-socialRouter.post('/posts/:collection/:postId/comments', requireAuth, async (req: Request, res: Response) => {
+socialRouter.post('/posts/:collection/:postId/comments', requireAuth, moderationCheck, async (req: Request, res: Response) => {
   const collection = String(req.params.collection);
   const postId     = String(req.params.postId);
   if (!isValidCollection(collection)) {

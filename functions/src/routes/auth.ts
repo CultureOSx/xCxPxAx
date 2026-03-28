@@ -6,9 +6,10 @@
  */
 
 import { Router, type Request, type Response } from 'express';
+import { z } from 'zod';
 import { db, authAdmin } from '../admin';
 import { requireAuth } from '../middleware/auth';
-import { nowIso, generateSecureId,
+import { nowIso, generateSecureId, parseBody,
   captureRouteError,
 } from './utils';
 
@@ -45,10 +46,26 @@ authRouter.get('/auth/me', requireAuth, authMeHandler);
 // POST /api/auth/register — create Firestore profile after Firebase Auth
 // account creation. Idempotent: returns existing profile if already created.
 // ---------------------------------------------------------------------------
+const registerSchema = z.object({
+  username:    z.string().min(2).max(30).regex(/^[a-zA-Z0-9_.-]+$/, 'Username may only contain letters, numbers, underscores, dots, and hyphens').optional(),
+  displayName: z.string().min(1).max(80).optional(),
+  city:        z.string().min(1).max(100).optional(),
+  state:       z.string().min(1).max(100).optional(),
+  postcode:    z.union([z.string().max(10), z.number()]).optional().nullable(),
+  country:     z.string().min(2).max(100).optional(),
+  role:        z.enum(['user', 'organizer']).optional(),
+});
+
 const authRegisterHandler = async (req: Request, res: Response) => {
   const uid = req.user!.id;
-  const { displayName, city, state, postcode, country, username } = req.body ?? {};
-  const requestedRole = ['user', 'organizer'].includes(req.body?.role) ? req.body.role : 'user';
+  let body: z.infer<typeof registerSchema>;
+  try {
+    body = parseBody(registerSchema, req.body ?? {});
+  } catch (err) {
+    return res.status(400).json({ error: err instanceof Error ? err.message : 'Invalid registration payload' });
+  }
+  const { displayName, city, state, postcode, country, username } = body;
+  const requestedRole = body.role ?? 'user';
   try {
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists) {

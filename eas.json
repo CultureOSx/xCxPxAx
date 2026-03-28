@@ -55,6 +55,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-b5f96.cloudfunctions.net/api/",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_live_51T247EH3h820CypODVSuLcflLvF55zNm0WKQ08WHJU6wbupGYk4U5wihmzoWUc1PgJiC2Bs3mextQnuXKJ8874Ym00OAyUPsIU",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
     }

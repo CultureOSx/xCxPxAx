@@ -200,20 +200,29 @@ export const eventsService = {
         hasNextPage: offset + items.length < total,
       };
     } else {
-      // Non-geo query: fetch all candidates and filter in memory for complex criteria
-      const snap = await baseQuery.get();
+      // Non-geo query: push date/isFree filters into Firestore, cap reads to prevent
+      // Cloud Functions timeout and excessive Firestore billing on large collections.
+      if (filters.isFree !== undefined) {
+        baseQuery = baseQuery.where('isFree', '==', filters.isFree);
+      }
+      // orderBy('date') enables range queries and consistent ordering.
+      // Requires a composite index for each combination of equality filters + date.
+      baseQuery = baseQuery.orderBy('date');
+      if (filters.dateFrom) baseQuery = baseQuery.where('date', '>=', filters.dateFrom);
+      if (filters.dateTo) baseQuery = baseQuery.where('date', '<=', filters.dateTo);
+
+      const offset = (page - 1) * pageSize;
+      // Hard cap: never read more than 1 000 docs in a single request.
+      // Once proper composite indexes + cursor tokens are added this can be tightened.
+      const FETCH_CAP = 1000;
+      const snap = await baseQuery.limit(FETCH_CAP).get();
       let memItems = snap.docs.map(doc => ({ ...doc.data() as FirestoreEvent, id: doc.id }));
 
-      if (filters.dateFrom) memItems = memItems.filter(e => e.date >= filters.dateFrom!);
-      if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
-      if (filters.isFree !== undefined) memItems = memItems.filter(e => e.isFree === filters.isFree);
+      // Remaining filters that can't be pushed to Firestore without extra indexes
       if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
       if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
 
-      memItems.sort((a, b) => a.date.localeCompare(b.date));
       total = memItems.length;
-
-      const offset = (page - 1) * pageSize;
       items = memItems.slice(offset, offset + pageSize);
 
       return {

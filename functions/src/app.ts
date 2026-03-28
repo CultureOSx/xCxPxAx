@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { authenticate } from './middleware/auth';
 
@@ -84,11 +85,30 @@ const corsOptions: cors.CorsOptions = {
 
 // --- Middleware ---
 app.disable('x-powered-by');
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Firebase Hosting rewrites
+  contentSecurityPolicy: false, // CSP is managed at the Hosting layer
+}));
 app.use(express.json({ limit: '2mb' }));
 // Apply CORS before all routes — cors() middleware handles OPTIONS preflight automatically
 app.use(cors(corsOptions));
 app.use(rateLimit({ windowMs: 60000, max: 200, message: 'Too many requests, please try again later.' }));
 app.use(authenticate);
+
+// ─── Request logging ──────────────────────────────────────────────────────────
+// Structured one-liner per request — visible in Firebase Cloud Logging.
+app.use((req, _res, next) => {
+  const uid = (req as Request & { user?: { id?: string } }).user?.id ?? '-';
+  console.log(JSON.stringify({
+    method: req.method,
+    path: req.path,
+    uid,
+    ip: req.ip,
+    ua: req.headers['user-agent']?.slice(0, 80) ?? '-',
+    t: new Date().toISOString(),
+  }));
+  next();
+});
 
 // --- Health Check ---
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

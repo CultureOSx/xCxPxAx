@@ -258,7 +258,7 @@ const search = {
     if (params.country) qs.set('country', params.country);
     if (params.page != null) qs.set('page', String(params.page));
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
-    return request<{ events: EventData[]; profiles: Profile[]; movies: any[]; users: any[] }>('GET', `api/search?${qs}`);
+    return request<{ events: EventData[]; profiles: Profile[]; movies: import('@shared/schema').MovieData[]; users: User[] }>('GET', `api/search?${qs}`);
   },
 
   suggest: (q: string) =>
@@ -272,9 +272,9 @@ const discover = {
     if (params?.city) qs.set('city', params.city);
     if (params?.country) qs.set('country', params.country);
     const q = qs.toString();
-    return request<any>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
+    return request<{ sections: import('@shared/schema').FeedSection[] }>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
   },
-  feedback: (payload: any) => request<{ ok: boolean }>('POST', 'api/discover/feedback', payload),
+  feedback: (payload: Record<string, unknown>) => request<{ ok: boolean }>('POST', 'api/discover/feedback', payload),
   curation: (params?: { city?: string; country?: string; cultureIds?: string[] }) => {
     const qs = new URLSearchParams();
     if (params?.city) qs.set('city', params.city);
@@ -338,6 +338,17 @@ export interface IndigenousBusiness {
   updatedAt?: string;
 }
 
+export interface IndigenousTraditionalLand {
+  id: string;
+  city: string;
+  country: string;
+  nationOrPeople: string;
+  languageGroup?: string;
+  description?: string;
+  sourceUrl?: string;
+  updatedAt?: string;
+}
+
 const culture = {
   suggest: (params: CultureSuggestParams) => {
     const qs = new URLSearchParams({ q: params.q });
@@ -352,8 +363,8 @@ const culture = {
     if (params?.featured) qs.set('featured', 'true');
     if (params?.limit != null) qs.set('limit', String(params.limit));
     const query = qs.toString();
-    const res = await request<any>('GET', `api/indigenous/organisations${query ? `?${query}` : ''}`);
-    return Array.isArray(res) ? res : res.organisations || [];
+    const res = await request<IndigenousOrganisation[] | { organisations: IndigenousOrganisation[] }>('GET', `api/indigenous/organisations${query ? `?${query}` : ''}`);
+    return Array.isArray(res) ? res : (res as { organisations: IndigenousOrganisation[] }).organisations || [];
   },
   indigenousFestivals: async (params?: {
     region?: IndigenousFestival['region'];
@@ -365,8 +376,8 @@ const culture = {
     if (params?.indigenousOnly) qs.set('indigenousOnly', 'true');
     if (params?.limit != null) qs.set('limit', String(params.limit));
     const query = qs.toString();
-    const res = await request<any>('GET', `api/indigenous/festivals${query ? `?${query}` : ''}`);
-    return Array.isArray(res) ? res : res.festivals || [];
+    const res = await request<IndigenousFestival[] | { festivals: IndigenousFestival[] }>('GET', `api/indigenous/festivals${query ? `?${query}` : ''}`);
+    return Array.isArray(res) ? res : (res as { festivals: IndigenousFestival[] }).festivals || [];
   },
   indigenousBusinesses: async (params?: {
     q?: string;
@@ -380,13 +391,13 @@ const culture = {
     if (params?.featured) qs.set('featured', 'true');
     if (params?.limit != null) qs.set('limit', String(params.limit));
     const query = qs.toString();
-    const res = await request<any>('GET', `api/indigenous/businesses${query ? `?${query}` : ''}`);
-    return Array.isArray(res) ? res : res.businesses || [];
+    const res = await request<IndigenousBusiness[] | { businesses: IndigenousBusiness[] }>('GET', `api/indigenous/businesses${query ? `?${query}` : ''}`);
+    return Array.isArray(res) ? res : (res as { businesses: IndigenousBusiness[] }).businesses || [];
   },
   indigenousTraditionalLands: async (city?: string) => {
     const qs = city ? `?city=${encodeURIComponent(city)}` : '';
-    const res = await request<any>('GET', `api/indigenous/traditional-lands${qs}`);
-    return Array.isArray(res) ? res : res.lands || [];
+    const res = await request<{ lands: IndigenousTraditionalLand[] } | IndigenousTraditionalLand[]>('GET', `api/indigenous/traditional-lands${qs}`);
+    return Array.isArray(res) ? res : (res as { lands: IndigenousTraditionalLand[] }).lands || [];
   },
 };
 
@@ -725,8 +736,8 @@ const rewards = {
 // ---------------------------------------------------------------------------
 const perks = {
   list: async () => {
-    const res = await request<any>('GET', 'api/perks');
-    return Array.isArray(res) ? res : res.perks || [];
+    const res = await request<PerkData[] | { perks: PerkData[] }>('GET', 'api/perks');
+    return Array.isArray(res) ? res : (res as { perks: PerkData[] }).perks || [];
   },
 
   get: (id: string) => request<PerkData>('GET', `api/perks/${id}`),
@@ -791,9 +802,9 @@ const communities = {
     if (params?.nationalityId) qs.set('nationalityId', params.nationalityId);
     if (params?.cultureId) qs.set('cultureId', params.cultureId);
     const q = qs.toString();
-    const res = await request<any>('GET', `api/communities${q ? `?${q}` : ''}`);
-    if (Array.isArray(res)) return res as Community[];
-    return (res?.communities ?? []) as Community[];
+    const res = await request<Community[] | { communities: Community[] }>('GET', `api/communities${q ? `?${q}` : ''}`);
+    if (Array.isArray(res)) return res;
+    return (res as { communities: Community[] }).communities ?? [];
   },
 
   get: (id: string) => request<Community>('GET', `api/communities/${id}`),
@@ -872,9 +883,9 @@ const activities = {
     if (params?.ownerId) qs.set('ownerId', params.ownerId);
     if (params?.promoted) qs.set('promoted', 'true');
     const q = qs.toString();
-    const res = await request<any>('GET', `api/activities${q ? `?${q}` : ''}`);
-    if (Array.isArray(res)) return res as ActivityData[];
-    return (res?.activities ?? []) as ActivityData[];
+    const res = await request<ActivityData[] | { activities: ActivityData[] }>('GET', `api/activities${q ? `?${q}` : ''}`);
+    if (Array.isArray(res)) return res;
+    return (res as { activities: ActivityData[] }).activities ?? [];
   },
   get: (id: string) => request<ActivityData>('GET', `api/activities/${id}`),
   create: (payload: ActivityInput) => request<ActivityData>('POST', 'api/activities', payload),
@@ -908,12 +919,12 @@ const council = {
     if (params?.page) qs.set('page', String(params.page));
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     const q = qs.toString();
-    const res = await request<any>('GET', `api/council/list${q ? `?${q}` : ''}`);
+    const res = await request<{ councils: CouncilData[]; hasNextPage?: boolean; totalCount?: number; source?: string } | CouncilData[]>('GET', `api/council/list${q ? `?${q}` : ''}`);
     return {
-      councils: Array.isArray(res?.councils) ? res.councils : (Array.isArray(res) ? res : []),
-      hasNextPage: !!res?.hasNextPage,
-      totalCount: res?.totalCount || 0,
-      source: res?.source
+      councils: Array.isArray(res) ? res : ((res as { councils: CouncilData[] }).councils ?? []),
+      hasNextPage: !!(res as { hasNextPage?: boolean }).hasNextPage,
+      totalCount: (res as { totalCount?: number }).totalCount ?? 0,
+      source: (res as { source?: string }).source,
     };
   },
   getSelected: () => request<{ council: CouncilData | null }>('GET', 'api/council/selected'),
@@ -926,14 +937,14 @@ const council = {
     if (params?.state) qs.set('state', params.state);
     if (params?.country) qs.set('country', params.country);
     const q = qs.toString();
-    const res = await request<any>('GET', `api/council/my${q ? `?${q}` : ''}`);
-    if (!res || !res.council) return null;
+    const res = await request<CouncilDashboard | null>('GET', `api/council/my${q ? `?${q}` : ''}`);
+    if (!res || !(res as CouncilDashboard).council) return null;
     return {
-      ...res,
-      events: Array.isArray(res.events) ? res.events : [],
-      preferences: Array.isArray(res.preferences) ? res.preferences : [],
-      alerts: Array.isArray(res.alerts) ? res.alerts : [],
-      representatives: Array.isArray(res.representatives) ? res.representatives : [],
+      ...res as CouncilDashboard,
+      events: Array.isArray((res as CouncilDashboard).events) ? (res as CouncilDashboard).events : [],
+      preferences: Array.isArray((res as CouncilDashboard).preferences) ? (res as CouncilDashboard).preferences : [],
+      alerts: Array.isArray((res as CouncilDashboard).alerts) ? (res as CouncilDashboard).alerts : [],
+      representatives: Array.isArray((res as CouncilDashboard).representatives) ? (res as CouncilDashboard).representatives : [],
     };
   },
   get: (id: string) => request<CouncilData>('GET', `api/council/${id}`),
