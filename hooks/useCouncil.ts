@@ -52,14 +52,14 @@ export function useCouncil() {
 
   const queryKey = ['/api/council/my', councilParams.city, councilParams.postcode] as const;
 
-  const { data, isLoading, isError, refetch } = useQuery<CouncilDashboard>({
+  const { data, isLoading, isError, refetch } = useQuery<CouncilDashboard | null>({
     queryKey,
     queryFn: () => api.council.my(councilParams),
     enabled: isAuthenticated && !!state.city,
   });
 
   const councilId = data?.council?.id;
-  const effectivePrefs = localPrefs.length > 0 ? localPrefs : (Array.isArray(data?.preferences) ? data.preferences : []);
+  const effectivePrefs = localPrefs.length > 0 ? localPrefs : (Array.isArray(data?.preferences) ? data!.preferences : []);
 
   const reload = async () => {
     await queryClient.invalidateQueries({ queryKey: ['/api/council/my'] });

@@ -343,6 +343,8 @@ export interface IndigenousTraditionalLand {
   city: string;
   country: string;
   nationOrPeople: string;
+  landName: string;
+  traditionalCustodians: string;
   languageGroup?: string;
   description?: string;
   sourceUrl?: string;
@@ -944,7 +946,6 @@ const council = {
       events: Array.isArray((res as CouncilDashboard).events) ? (res as CouncilDashboard).events : [],
       preferences: Array.isArray((res as CouncilDashboard).preferences) ? (res as CouncilDashboard).preferences : [],
       alerts: Array.isArray((res as CouncilDashboard).alerts) ? (res as CouncilDashboard).alerts : [],
-      representatives: Array.isArray((res as CouncilDashboard).representatives) ? (res as CouncilDashboard).representatives : [],
     };
   },
   get: (id: string) => request<CouncilData>('GET', `api/council/${id}`),

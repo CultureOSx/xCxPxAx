@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
-import { api, type ActivityData, type IndigenousOrganisation } from '@/lib/api';
+import { api, type ActivityData, type IndigenousOrganisation, type IndigenousTraditionalLand } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
@@ -131,7 +131,7 @@ export function useDiscoverData() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: traditionalLandsRaw } = useQuery<{ city: string, landName: string, traditionalCustodians: string }[]>({
+  const { data: traditionalLandsRaw } = useQuery<IndigenousTraditionalLand[]>({
     queryKey: ['/api/indigenous/traditional-lands'],
     queryFn: () => api.culture.indigenousTraditionalLands(),
     staleTime: Infinity,

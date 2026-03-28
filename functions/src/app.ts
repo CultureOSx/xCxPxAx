@@ -113,12 +113,23 @@ app.use((req, _res, next) => {
 // --- Health Check ---
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// ─── API Version header ───────────────────────────────────────────────────────
+app.use((_req, res, next) => { res.setHeader('X-Api-Version', '1'); next(); });
+
 // --- Routes ---
-// Mount major routers at both root and /api for compatibility between 
-// direct Cloud Function calls and Firebase Hosting rewrites.
+// Routes are mounted at:
+//   /             — direct Cloud Function invocation (legacy)
+//   /api/         — Firebase Hosting rewrite (current standard)
+//   /v1/          — versioned alias (forward-compatible)
+//   /api/v1/      — versioned alias via Hosting rewrite
+//
+// New clients should target /api/v1/*. Old clients at /api/* keep working.
+// When a breaking change is needed, mount the new router at /v2/ only.
 const mount = (path: string, router: any) => {
   app.use(path, router);
   app.use(`/api${path}`, router);
+  app.use(`/v1${path}`, router);
+  app.use(`/api/v1${path}`, router);
 };
 
 mount('/', authRouter);
@@ -146,10 +157,14 @@ mount('/', citiesRouter);
 const eventsRouter = createEventsRouter();
 app.use('/', eventsRouter);
 app.use('/api', eventsRouter);
+app.use('/v1', eventsRouter);
+app.use('/api/v1', eventsRouter);
 
 const indigenousRouter = createIndigenousRouter();
 app.use('/', indigenousRouter);
 app.use('/api', indigenousRouter);
+app.use('/v1', indigenousRouter);
+app.use('/api/v1', indigenousRouter);
 
 app.use(createStripeRouter());
 

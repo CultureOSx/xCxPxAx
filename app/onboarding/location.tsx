@@ -20,7 +20,7 @@ export default function LocationPickerScreen() {
 
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('Australia');
-  const [indigenousLand, setIndigenousLand] = useState<{name: string} | null>(null);
+  const [indigenousLand, setIndigenousLand] = useState<{name?: string; landName?: string; nationOrPeople?: string} | null>(null);
   const [loadingLand, setLoadingLand] = useState(false);
 
   // Auto-fetch indigenous land when city changes (debounce could be added, but simple for now)
