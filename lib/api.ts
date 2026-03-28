@@ -53,9 +53,12 @@ import type {
   UpdateCategory,
   DiscoverCurationResponse,
   DiscoverCurationConfig,
+  IngestSource,
+  IngestionJob,
+  IngestScheduleInterval,
 } from '@/shared/schema';
 
-export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog, AppUpdate, UpdateCategory } from '@/shared/schema';
+export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog, AppUpdate, UpdateCategory, IngestSource, IngestionJob, IngestScheduleInterval } from '@/shared/schema';
 
 // ---------------------------------------------------------------------------
 // Pending handle item — returned by admin handle approval endpoint
@@ -655,6 +658,35 @@ const admin = {
   importSources: () =>
     request<{ sources: { source: string; count: number; latest: string }[]; total: number }>('GET', 'api/admin/import/sources'),
 
+  // ── Ingest Source Management ─────────────────────────────────────────────
+  ingestSourcesList: () =>
+    request<{ sources: IngestSource[] }>('GET', 'api/admin/ingest/sources'),
+
+  ingestSourceCreate: (payload: { name: string; url: string; city?: string; country?: string; enabled?: boolean; scheduleInterval?: IngestScheduleInterval | null }) =>
+    request<{ ok: boolean; source: IngestSource }>('POST', 'api/admin/ingest/sources', payload),
+
+  ingestSourceUpdate: (id: string, payload: Partial<{ name: string; url: string; city: string; country: string; enabled: boolean; scheduleInterval: IngestScheduleInterval | null }>) =>
+    request<{ ok: boolean }>('PUT', `api/admin/ingest/sources/${id}`, payload),
+
+  ingestSourceDelete: (id: string) =>
+    request<{ ok: boolean }>('DELETE', `api/admin/ingest/sources/${id}`),
+
+  ingestSourceRun: (id: string) =>
+    request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string; jobId?: string }>('POST', `api/admin/ingest/sources/${id}/run`),
+
+  // ── Ingestion Job History ────────────────────────────────────────────────
+  ingestJobsList: (params?: { limit?: number; sourceId?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit != null) qs.set('limit', String(params.limit));
+    if (params?.sourceId) qs.set('sourceId', params.sourceId);
+    if (params?.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return request<{ jobs: IngestionJob[] }>('GET', `api/admin/ingest/jobs${q ? `?${q}` : ''}`);
+  },
+
+  ingestJobRetry: (id: string) =>
+    request<{ ok: boolean; imported: number; updated: number; skipped: number; jobId?: string }>('POST', `api/admin/ingest/jobs/${id}/retry`),
+
   /** List all updates (including drafts) — admin only */
   listUpdates: (params?: { category?: UpdateCategory; limit?: number; offset?: number }) => {
     const qs = new URLSearchParams();
@@ -1246,4 +1278,7 @@ export const api = {
   raw: request,
   /** Base URL — useful for constructing non-JSON endpoints (e.g. image URLs) */
   baseUrl: getApiUrl,
+  ingest: {
+    trigger: (url: string) => request<{ status: string; url: string }>('POST', 'api/ingest', { url }),
+  },
 };

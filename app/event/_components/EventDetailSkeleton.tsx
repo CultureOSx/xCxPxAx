@@ -25,7 +25,7 @@ export function EventDetailSkeleton() {
           }}>
             <Skeleton width={120} height={20} borderRadius={10} />
             <Skeleton width="80%" height={32} borderRadius={10} style={{ marginVertical: 12 }} />
-            <Skeleton width="150%" height={16} borderRadius={4} />
+            <Skeleton width="100%" height={16} borderRadius={4} />
           </View>
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>

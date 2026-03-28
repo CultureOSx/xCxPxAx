@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 
-const UID = 'qVo20q2nZsO9BbG6iwgKlWCVZaH3';
+const UID = '1VLiq1SEUzWNM7J2XScWn3UbFI52';
 
 if (!admin.apps.length) {
   admin.initializeApp({

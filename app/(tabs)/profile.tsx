@@ -76,11 +76,20 @@ export default function ProfileScreen() {
   const displayUser = (user || authUser) as Partial<User>;
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const name = displayUser?.displayName || displayUser?.username || 'a CulturePass member';
+    const name     = displayUser?.displayName || displayUser?.username || 'a CulturePass member';
+    const handle   = displayUser?.handle ?? displayUser?.username;
+    const shareUrl = handle
+      ? `https://culturepass.app/@${handle}`
+      : `https://culturepass.app/profile/${userId}`;
+    const message  = `Check out ${name}'s profile on CulturePass!\n\n${shareUrl}`;
     try {
-      await Share.share({ message: `Check out ${name}'s profile on CulturePass!` });
+      if (Platform.OS === 'web' && navigator.share) {
+        await navigator.share({ title: `${name} on CulturePass`, text: message, url: shareUrl });
+      } else {
+        await Share.share({ message, url: shareUrl });
+      }
     } catch { /* user cancelled */ }
-  }, [displayUser?.displayName, displayUser?.username]);
+  }, [displayUser?.displayName, displayUser?.username, displayUser?.handle, userId]);
 
   if (!userId) return <GuestProfileView topInset={insets.top} />;
   if (isLoading) return <ProfileSkeleton colors={colors} />;

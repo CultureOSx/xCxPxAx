@@ -63,6 +63,13 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Moderation', icon: 'eye-outline', iconActive: 'eye', route: '/admin/moderation', matchPrefix: true },
   { label: 'Audit Logs', icon: 'list-outline', iconActive: 'list', route: '/admin/audit-logs', matchPrefix: true },
   { label: 'Notify', icon: 'megaphone-outline', iconActive: 'megaphone', route: '/admin/notifications', matchPrefix: true },
+  { label: 'Import', icon: 'cloud-upload-outline', iconActive: 'cloud-upload', route: '/admin/import', matchPrefix: true },
+  { label: 'Finance', icon: 'card-outline', iconActive: 'card', route: '/admin/finance', matchPrefix: true },
+  { label: 'Compliance', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/admin/data-compliance', matchPrefix: true },
+  { label: 'Discover Curation', icon: 'sparkles-outline', iconActive: 'sparkles', route: '/admin/discover', matchPrefix: true },
+  { label: 'Handles', icon: 'at-outline', iconActive: 'at', route: '/admin/handles', matchPrefix: true },
+  { label: 'Platform', icon: 'settings-outline', iconActive: 'settings', route: '/admin/platform', matchPrefix: true },
+  { label: 'Updates', icon: 'newspaper-outline', iconActive: 'newspaper', route: '/admin/updates', matchPrefix: true },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
@@ -503,11 +510,155 @@ function SidebarItem({ item, active, isDark, onPress, colors }: any) {
   );
 }
 
-// SidebarProfileBlock - placeholder (replace with your full modal version if needed)
-function SidebarProfileBlock({ user, colors, isDark, border, mutedColor, onNavigate, onLogout }: any) {
-  const { s } = getSidebarStyles(colors);
-  // ... your full modal implementation here
-  return <View>{/* Your profile block */}</View>;
+function SidebarProfileBlock({
+  user,
+  colors,
+  isDark,
+  border,
+  mutedColor,
+  onNavigate,
+  onLogout,
+}: {
+  user: { id?: string; displayName?: string; username?: string; email?: string; photoURL?: string; role?: string };
+  colors: ReturnType<typeof useColors>;
+  isDark: boolean;
+  border: string;
+  mutedColor: string;
+  onNavigate: (route: string) => void;
+  onLogout: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const displayName = user.displayName ?? user.username ?? user.id?.slice(0, 8) ?? 'You';
+  const initials = displayName
+    .split(' ')
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase() ?? '')
+    .join('');
+  const roleBadge = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : null;
+
+  const PROFILE_ACTIONS = [
+    { key: 'profile', label: 'View Profile', icon: 'person-outline' as const, route: '/profile/edit' },
+    { key: 'qr', label: 'Digital ID', icon: 'qr-code-outline' as const, route: '/profile/qr' },
+    { key: 'wallet', label: 'Wallet', icon: 'wallet-outline' as const, route: '/payment/wallet' },
+    { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' as const, route: '/notifications' },
+    { key: 'settings', label: 'Settings', icon: 'settings-outline' as const, route: '/settings' },
+  ];
+
+  return (
+    <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
+      {/* Expanded quick links */}
+      {expanded && (
+        <View
+          style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: border,
+            marginBottom: 6,
+            overflow: 'hidden',
+          }}
+        >
+          {PROFILE_ACTIONS.map((action, index) => (
+            <Pressable
+              key={action.key}
+              style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+                {
+                  flexDirection: 'row' as const,
+                  alignItems: 'center' as const,
+                  gap: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
+                  borderTopColor: border,
+                  backgroundColor: pressed || hovered
+                    ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)')
+                    : 'transparent',
+                },
+              ]}
+              onPress={() => { setExpanded(false); onNavigate(action.route); }}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}
+            >
+              <Ionicons name={action.icon} size={16} color={colors.textSecondary} />
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 }} numberOfLines={1}>
+                {action.label}
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+              {
+                flexDirection: 'row' as const,
+                alignItems: 'center' as const,
+                gap: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: border,
+                backgroundColor: pressed || hovered
+                  ? (isDark ? 'rgba(255,80,80,0.10)' : 'rgba(255,80,80,0.07)')
+                  : 'transparent',
+              },
+            ]}
+            onPress={() => { setExpanded(false); onLogout(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
+            <Ionicons name="log-out-outline" size={16} color="#FF5E5B" />
+            <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FF5E5B', flex: 1 }}>
+              Sign Out
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Profile row button */}
+      <Pressable
+        style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+          {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            gap: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: expanded ? colors.primary + '60' : border,
+            backgroundColor: expanded
+              ? (isDark ? 'rgba(44,42,114,0.12)' : 'rgba(44,42,114,0.06)')
+              : pressed || hovered
+              ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
+              : 'transparent',
+          },
+        ]}
+        onPress={() => setExpanded((v) => !v)}
+        accessibilityRole="button"
+        accessibilityLabel="Account and profile"
+      >
+        <AvatarWithRing
+          avatarUrl={user.photoURL}
+          initials={initials || '?'}
+          size={32}
+          ringWidth={1.5}
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 17 }} numberOfLines={1}>
+            {displayName}
+          </Text>
+          {(user.email || roleBadge) ? (
+            <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 14 }} numberOfLines={1}>
+              {roleBadge ?? user.email}
+            </Text>
+          ) : null}
+        </View>
+        <Ionicons
+          name={expanded ? 'chevron-down' : 'chevron-up'}
+          size={14}
+          color={mutedColor}
+        />
+      </Pressable>
+    </View>
+  );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────

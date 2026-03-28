@@ -56,12 +56,16 @@ function formatDate(dateStr: string | null, options: Intl.DateTimeFormatOptions 
 
 async function handleShare(ticket: Ticket) {
   try {
-    const dateStr = ticket.eventDate ? formatDate(ticket.eventDate) : '';
-    const timeStr = ticket.eventTime ? ` at ${ticket.eventTime}` : '';
+    const dateStr  = ticket.eventDate ? formatDate(ticket.eventDate) : '';
+    const timeStr  = ticket.eventTime ? ` at ${ticket.eventTime}` : '';
     const venueStr = ticket.eventVenue ? `\nVenue: ${ticket.eventVenue}` : '';
+    const shareUrl = ticket.eventId
+      ? `https://culturepass.app/event/${ticket.eventId}`
+      : 'https://culturepass.app';
     await Share.share({
-      message: `Check out my ticket for ${ticket.eventTitle}!\n${dateStr}${timeStr}${venueStr}`,
-      title: ticket.eventTitle,
+      message: `Check out my ticket for ${ticket.eventTitle}!\n${dateStr}${timeStr}${venueStr}\n\n${shareUrl}`,
+      title:   ticket.eventTitle,
+      url:     shareUrl,
     });
   } catch {}
 }

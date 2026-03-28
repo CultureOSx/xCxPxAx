@@ -155,7 +155,8 @@ export default function CultureFeedScreen() {
   const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (item.kind === '_trending') {
       return (
-        <Reanimated.View 
+        <Reanimated.View
+          style={sc.itemWrapper}
           entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
         >
           <TrendingInterstitial city={item.city} colors={colors} />
@@ -163,7 +164,8 @@ export default function CultureFeedScreen() {
       );
     }
     return (
-      <Reanimated.View 
+      <Reanimated.View
+        style={sc.itemWrapper}
         entering={Platform.OS !== 'web' ? FadeInDown.delay(Math.min(index, 6) * 60).springify().damping(18) : undefined}
       >
         <ErrorBoundary>
@@ -332,7 +334,8 @@ const sc = StyleSheet.create({
   headerIconBtn:{ width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
   fetchBar:     { height: 2, backgroundColor: CultureTokens.indigo + '30' },
   fetchProgress:{ height: 2, width: '60%' },
-  list:         { paddingTop: 4 },
+  list:         { paddingTop: 12 },
+  itemWrapper:  { marginBottom: 12, paddingHorizontal: 4 },
   listDesktop:  { maxWidth: 800, width: '100%', alignSelf: 'center' as const },
   empty:        { alignItems: 'center', paddingVertical: 60, gap: 10 },
   emptyIcon:    { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 4 },

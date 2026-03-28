@@ -61,14 +61,40 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   countdownWrapper: { marginBottom: 20 },
   countdownEndedBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.borderLight,
-    boxShadow: '0px 2px 8px rgba(0,0,0,0.05)'
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.05)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.12 : 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: isDark ? 4 : 2,
+        shadowColor: isDark ? '#000' : '#2C2A72',
+      },
+    }),
   },
   countdownEndedText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   countdownRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderRadius: 20, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight,
-    boxShadow: isDark
-      ? '0px 4px 12px rgba(0,0,0,0.4)'
-      : '0px 4px 12px rgba(44,42,114,0.06)',
+    ...Platform.select({
+      web: {
+        boxShadow: isDark
+          ? '0px 4px 12px rgba(0,0,0,0.4)'
+          : '0px 4px 12px rgba(44,42,114,0.06)',
+      },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.18 : 0.08,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: isDark ? 6 : 3,
+        shadowColor: isDark ? '#000' : '#2C2A72',
+      },
+    }),
   },
   countBlock: { alignItems: 'center', minWidth: 44 },
   countNum: { fontSize: 24, fontFamily: 'Poppins_700Bold', lineHeight: 30, color: colors.text },
@@ -223,7 +249,21 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
 
   priceSummaryBox: {
     padding: 20, borderRadius: 24, borderWidth: 1, gap: 12, marginTop: 24, marginBottom: 24, backgroundColor: colors.surface, borderColor: colors.borderLight,
-    boxShadow: isDark ? '0px 4px 16px rgba(0,0,0,0.4)' : '0px 4px 12px rgba(44,42,114,0.06)'
+    ...Platform.select({
+      web: {
+        boxShadow: isDark ? '0px 4px 16px rgba(0,0,0,0.4)' : '0px 4px 12px rgba(44,42,114,0.06)',
+      },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.18 : 0.08,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: isDark ? 8 : 4,
+        shadowColor: isDark ? '#000' : '#2C2A72',
+      },
+    }),
   },
   pRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pRowLabel: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },

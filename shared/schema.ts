@@ -19,3 +19,4 @@ export * from './schema/council';
 export * from './schema/update';
 export * from './schema/discover';
 export * from './schema/feedSection';
+export * from './schema/ingest';

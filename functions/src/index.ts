@@ -14,4 +14,5 @@ export const api = functions.https.onRequest(app);
 
 export * from './triggers';
 export * from './scraper/sydneyWhatsOn';
+export * from './scraper/ingestScheduler';
 export * from './payments/stripeCheckout';

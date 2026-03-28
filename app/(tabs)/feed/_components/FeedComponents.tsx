@@ -1,4 +1,4 @@
-// app/(tabs)/feed.tsx — Culture Feed
+// app/(tabs)/feed/_components/FeedComponents.tsx — Feed components
 import React, {
   useState, useMemo, useCallback, useEffect, useRef,
 } from 'react';
@@ -58,17 +58,8 @@ const COUNTRY_FLAG: Record<string, string> = {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type FeedFilter = 'for-you' | 'events' | 'communities';
 
-type FeedPost = (
-  | { id: string; kind: 'event';   event: EventData; community: Community; createdAt: string }
-  | { id: string; kind: 'announcement'; community: Community; body: string; authorId?: string; imageUrl?: string; likesCount?: number; commentsCount?: number; createdAt: string }
-  | { id: string; kind: 'welcome'; community: Community; createdAt: string }
-  | { id: string; kind: 'milestone'; community: Community; members: number; createdAt: string }
-  | { id: string; kind: 'collection-highlight'; community: Community; tokenName: string; tokenImage: string; userName: string; createdAt: string }
-) & { score?: number; matchReason?: string[] };
-
-type ListItem = FeedPost | { kind: '_trending'; id: string; city: string };
+import type { FeedFilter, FeedPost, ListItem } from './types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -773,11 +764,21 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
   }, []);
   const handleShare   = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const title   = post.kind === 'event' ? post.event.title : `${post.community.name} update`;
-    const message = post.kind === 'event'
-      ? `Check out "${post.event.title}" on CulturePass!`
-      : `Check out this update from ${post.community.name} on CulturePass!`;
-    try { await Share.share({ message, title }); } catch { /* user cancelled */ }
+    const isEvent  = post.kind === 'event';
+    const title    = isEvent ? post.event.title : `${post.community.name} update`;
+    const shareUrl = isEvent
+      ? `https://culturepass.app/event/${post.event.id}`
+      : `https://culturepass.app/community/${post.community.id}`;
+    const message  = isEvent
+      ? `Check out "${post.event.title}" on CulturePass!\n\n${shareUrl}`
+      : `Check out this update from ${post.community.name} on CulturePass!\n\n${shareUrl}`;
+    try {
+      if (Platform.OS === 'web' && navigator.share) {
+        await navigator.share({ title, text: message, url: shareUrl });
+      } else {
+        await Share.share({ title, message, url: shareUrl });
+      }
+    } catch { /* user cancelled */ }
   }, [post]);
 
   const likeColor = likeError ? CultureTokens.coral + '80' : liked ? CultureTokens.coral : colors.textSecondary;
@@ -1077,14 +1078,28 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
   return (
     <>
       <View style={[
-        pcd.card, 
-        { 
-          backgroundColor: colors.surface, 
+        pcd.card,
+        {
+          backgroundColor: colors.surface,
           borderColor: colors.borderLight,
-          boxShadow: isDark 
-            ? '0px 4px 12px rgba(0,0,0,0.45)' 
-            : '0px 4px 12px rgba(44,42,114,0.08)',
-        }
+          ...(Platform.select({
+            web: {
+              boxShadow: isDark
+                ? '0px 4px 12px rgba(0,0,0,0.45)'
+                : '0px 4px 12px rgba(44,42,114,0.08)',
+            },
+            ios: {
+              shadowColor: isDark ? '#000' : '#2C2A72',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.25 : 0.12,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: isDark ? 8 : 4,
+              shadowColor: isDark ? '#000' : '#2C2A72',
+            },
+          }) || {}),
+        },
       ]}>
         <PostCardHeader post={post} accent={accent} colors={colors} colorIdx={colorIdx} onMorePress={handleMorePress} />
         {renderContent()}

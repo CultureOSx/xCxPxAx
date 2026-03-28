@@ -263,7 +263,7 @@ function RootLayoutNav() {
       <Stack.Screen name="legal/guidelines" />
 
       <Stack.Screen name="admin/users" />
-      <Stack.Screen name="admin/dashboard" />
+      <Stack.Screen name="admin/dashboard/index" />
       <Stack.Screen name="admin/notifications" />
       <Stack.Screen name="admin/audit-logs" />
       <Stack.Screen name="admin/handles" />

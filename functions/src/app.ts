@@ -28,6 +28,7 @@ import { importRouter } from './routes/import';
 import { membershipRouter } from './routes/membership';
 import { citiesRouter } from './routes/cities';
 import { rewardsRouter } from './routes/rewards';
+import { ingestRouter } from './routes/ingest';
 
 
 
@@ -152,6 +153,8 @@ mount('/', importRouter);
 mount('/', membershipRouter);
 mount('/', rewardsRouter);
 mount('/', citiesRouter);
+mount('/', ingestRouter);
+app.use('/api/ingest', ingestRouter);
 
 // Special handling for factory routers
 const eventsRouter = createEventsRouter();
