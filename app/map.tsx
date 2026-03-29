@@ -352,7 +352,7 @@ export default function MapScreen() {
         <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column' }}>
           <View style={{ flex: isDesktop ? 1 : undefined }}>
             <WebCityList
-              cityGroups={allMapGroups as any}
+              cityGroups={allMapGroups}
               selectedCity={selectedCity}
               onSelectCity={setSelectedCity}
               onEventPress={onEventPress}
@@ -372,7 +372,7 @@ export default function MapScreen() {
           {isDesktop && (
              <View style={{ flex: 1.5, borderLeftWidth: 1, borderLeftColor: colors.borderLight }}>
                 <NativeMapView
-                  cityGroups={allMapGroups as any}
+                  cityGroups={allMapGroups}
                   groupEntries={groupEntries}
                   preferredCity={state.city || null}
                   selectedCity={selectedCity}
@@ -390,7 +390,7 @@ export default function MapScreen() {
         </View>
       ) : (
         <NativeMapView
-          cityGroups={allMapGroups as any}
+          cityGroups={allMapGroups}
           groupEntries={groupEntries}
           preferredCity={state.city || null}
           selectedCity={selectedCity}

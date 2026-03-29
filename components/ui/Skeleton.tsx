@@ -6,8 +6,11 @@
  *   <Skeleton width={200} height={16} />
  */
 
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, Easing, StyleSheet, Platform, useWindowDimensions, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, useWindowDimensions, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
+import Reanimated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 
@@ -26,26 +29,23 @@ export function Skeleton({
 }: SkeletonProps) {
   const colors = useColors();
   const { width: screenWidth } = useWindowDimensions();
-  const shimmer = useRef(new Animated.Value(0)).current;
+  const sweep = Math.max(screenWidth, 400);
+  const shimmer = useSharedValue(-sweep);
 
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(shimmer, {
-        toValue: 1,
-        duration: 1200,
-        easing: Easing.linear,
-        useNativeDriver: Platform.OS !== 'web',
-      })
-    ).start();
-  }, [shimmer]);
+    shimmer.value = -sweep;
+    shimmer.value = withRepeat(
+      withTiming(sweep, { duration: 1200, easing: Easing.linear }),
+      -1,
+      false,
+    );
+    // shimmer is a stable shared value reference — intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sweep]);
 
-  // Sweep the full screen width so the shimmer is visible on any screen size
-  // (desktop, tablet, mobile). The View clips overflow so it never exceeds bounds.
-  const sweep = Math.max(screenWidth, 400);
-  const translateX = shimmer.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-sweep, sweep],
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmer.value }],
+  }));
 
   const baseColor = colors.surface ?? '#E5E7EB';
   const shimmerLight = colors.surfaceElevated ?? '#F3F4F6';
@@ -58,14 +58,14 @@ export function Skeleton({
         style,
       ]}
     >
-      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}>
+      <Reanimated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
         <LinearGradient
           colors={[baseColor + '00', shimmerLight, baseColor + '00']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
         />
-      </Animated.View>
+      </Reanimated.View>
     </View>
   );
 }

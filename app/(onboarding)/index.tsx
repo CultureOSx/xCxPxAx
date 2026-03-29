@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import { useCallback } from 'react';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -86,12 +87,16 @@ export default function WelcomeScreen() {
 
             <View style={styles.featureList}>
               {FEATURES.map((f, i) => (
-                <View key={i} style={[styles.featureRow, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.borderLight }]}>
+                <Reanimated.View
+                  key={i}
+                  entering={FadeInDown.delay(i * 100).springify().damping(18)}
+                  style={[styles.featureRow, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.borderLight }]}
+                >
                   <View style={[styles.featureIcon, { backgroundColor: f.bg }]}>
                     <Ionicons name={f.icon} size={20} color={f.color} />
                   </View>
                   <Text style={[styles.featureText, { color: colors.textInverse }]}>{f.text}</Text>
-                </View>
+                </Reanimated.View>
               ))}
             </View>
 
