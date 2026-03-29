@@ -61,9 +61,9 @@ export default function ShoppingScreen() {
 
     return (
       <View style={{ gap: 6 }}>
-        {deals.slice(0, 2).map((deal: ShopDeal, i: number) => (
+        {deals.slice(0, 2).map((deal: ShopDeal) => (
           <View
-            key={i}
+            key={deal.id}
             style={{
               flexDirection: 'row',
               alignItems: 'center',

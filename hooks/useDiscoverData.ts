@@ -74,7 +74,17 @@ export function useDiscoverData() {
     let cancelled = false;
     fetchWeather(coords.lat, coords.lon)
       .then(w => {
-        if (!cancelled) setWeatherSummary(`${Math.round(w.temperature)}°C ${w.weathercode === 0 ? 'Clear' : ''}`);
+        if (!cancelled) {
+          const condition =
+            w.weathercode === 0 ? 'Clear' :
+            w.weathercode <= 3  ? 'Partly Cloudy' :
+            w.weathercode <= 49 ? 'Foggy' :
+            w.weathercode <= 67 ? 'Rainy' :
+            w.weathercode <= 77 ? 'Snowy' :
+            w.weathercode <= 82 ? 'Showers' :
+            'Stormy';
+          setWeatherSummary(`${Math.round(w.temperature)}°C ${condition}`);
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) setWeatherSummary('');

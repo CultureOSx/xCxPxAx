@@ -4,7 +4,8 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, CultureTokens } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage';
 import { useMemo } from 'react';
 import type { RestaurantData } from '@/shared/schema';
@@ -20,6 +21,7 @@ const restaurantCuisines: CategoryFilter[] = [
 ];
 
 export default function RestaurantsScreen() {
+  const colors = useColors();
   const { state } = useOnboarding();
 
   const { data: restaurants = [], isLoading } = useQuery({
@@ -63,28 +65,28 @@ export default function RestaurantsScreen() {
         {item.features && item.features.length > 0 && (
           <View style={styles.featureRow}>
             {item.features.slice(0, 3).map((f: string) => (
-              <View key={f} style={styles.featurePill}>
-                <Text style={styles.featureText}>{f}</Text>
+              <View key={f} style={[styles.featurePill, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[styles.featureText, { color: colors.textSecondary }]}>{f}</Text>
               </View>
             ))}
           </View>
         )}
         <View style={styles.cardFooter}>
           <View style={styles.locRow}>
-            <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
-            <Text style={styles.locText}>{item.location}</Text>
+            <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+            <Text style={[styles.locText, { color: colors.textSecondary }]}>{item.location}</Text>
           </View>
           <View style={styles.actionRow}>
             {item.reservationAvailable && (
               <View style={styles.actionPill}>
-                <Ionicons name="calendar-outline" size={12} color={Colors.secondary} />
-                <Text style={styles.actionText}>Reserve</Text>
+                <Ionicons name="calendar-outline" size={12} color={CultureTokens.indigo} />
+                <Text style={[styles.actionText, { color: CultureTokens.indigo }]}>Reserve</Text>
               </View>
             )}
             {item.deliveryAvailable && (
               <View style={styles.actionPill}>
-                <Ionicons name="bicycle-outline" size={12} color={Colors.primary} />
-                <Text style={[styles.actionText, { color: Colors.primary }]}>Delivery</Text>
+                <Ionicons name="bicycle-outline" size={12} color={CultureTokens.teal} />
+                <Text style={[styles.actionText, { color: CultureTokens.teal }]}>Delivery</Text>
               </View>
             )}
           </View>
@@ -113,53 +115,14 @@ export default function RestaurantsScreen() {
 }
 
 const styles = StyleSheet.create({
-  itemExtra: {
-    gap: 8,
-    marginTop: 4,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  featurePill: {
-    backgroundColor: Colors.backgroundSecondary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  featureText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
-    color: Colors.textSecondary,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  locRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-    color: Colors.secondary,
-  },
+  itemExtra:  { gap: 8, marginTop: 4 },
+  featureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  featurePill:{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  featureText:{ fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  locRow:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locText:    { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  actionRow:  { flexDirection: 'row', gap: 8 },
+  actionPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 });

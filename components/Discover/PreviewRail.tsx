@@ -22,7 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CardTokens } from '@/constants/theme';
+import { CardTokens, webShadow } from '@/constants/theme';
 import SectionHeader from './SectionHeader';
 
 export interface PreviewItem {
@@ -75,7 +75,7 @@ function PreviewCard({
 }) {
   const handlePress = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (item.route) router.push(item.route as any);
+    if (item.route) router.push(item.route as `/${string}`);
   };
 
   const isPortrait = cardStyle === 'portrait';
@@ -171,7 +171,7 @@ function PreviewRailComponent({
           title={title}
           subtitle={subtitle}
           accentColor={accentColor}
-          onSeeAll={seeAllRoute ? () => router.push(seeAllRoute as any) : undefined}
+          onSeeAll={seeAllRoute ? () => router.push(seeAllRoute as `/${string}`) : undefined}
         />
       </View>
 
@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6 },
       android: { elevation: 3 },
+      web:     webShadow('0 4px 12px rgba(0,0,0,0.08)'),
     }),
   },
   cardPortrait:  { width: PORTRAIT_W,  height: PORTRAIT_H  },
