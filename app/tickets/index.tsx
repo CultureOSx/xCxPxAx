@@ -23,7 +23,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { AuthGuard } from '@/components/AuthGuard';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { TextStyles } from '@/constants/typography';
+import { TextStyles } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -171,15 +171,29 @@ function TicketCardInner({ ticket, onCancel }: TicketCardProps) {
       {isActive && (
         <View style={[styles.actionBar, { borderTopColor: colors.borderLight, backgroundColor: colors.backgroundSecondary + '40' }]}>
           <View style={styles.actionIcons}>
-            <Pressable style={styles.iconButton} onPress={() => handleShare(ticket)}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => handleShare(ticket)}
+              accessibilityRole="button"
+              accessibilityLabel="Share ticket"
+            >
               <Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
             </Pressable>
-            <Pressable style={styles.iconButton} onPress={() => Alert.alert('Saved to Wallet')}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => Alert.alert('Saved to Wallet')}
+              accessibilityRole="button"
+              accessibilityLabel="Save to wallet"
+            >
               <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
 
-          <Pressable onPress={() => onCancel(ticket)}>
+          <Pressable
+            onPress={() => onCancel(ticket)}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel ticket"
+          >
             <Text style={[TextStyles.labelSemibold, { color: CultureTokens.coral }]}>Cancel Ticket</Text>
           </Pressable>
         </View>

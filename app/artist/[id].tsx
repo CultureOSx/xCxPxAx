@@ -231,23 +231,27 @@ export default function ArtistDetailScreen() {
 
             {/* Top buttons */}
             <View style={[styles.heroTopBar, { top: topInset + 12 }]}>
-              <Pressable 
+              <Pressable
                 onPress={() => {
                   if(Platform.OS !== 'web') Haptics.selectionAsync();
                   goBack();
-                }} 
+                }}
                 style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
               >
                 <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="chevron-back" size={24} color="white" />
               </Pressable>
-              
-              <Pressable 
+
+              <Pressable
                 onPress={() => {
                   if(Platform.OS !== 'web') Haptics.selectionAsync();
                   handleShare();
-                }} 
+                }}
                 style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`Share ${profile.name}`}
               >
                 <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="share-outline" size={22} color="white" />

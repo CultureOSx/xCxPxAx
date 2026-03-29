@@ -224,7 +224,7 @@ export const light: ColorTheme = {
 
   text: "#1B0F2E",
   textSecondary: "#4A4A4A",
-  textTertiary: "#8D8D8D",
+  textTertiary: "#767676", // AA compliant on #FFFFFF (4.54:1 — was #8D8D8D at 3.29:1, failed AA)
   textInverse: "#FFFFFF",
 
   card: "#FFFFFF",
@@ -232,7 +232,7 @@ export const light: ColorTheme = {
 
   tabBar: "rgba(255,255,255,0.98)",
   tabBarBorder: "rgba(230,211,179,0.5)",
-  tabIconDefault: "#8D8D8D",
+  tabIconDefault: "#767676", // AA compliant on #FFFFFF (4.54:1 — was #8D8D8D at 3.29:1, failed AA)
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,

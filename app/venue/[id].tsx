@@ -224,34 +224,40 @@ export default function VenueDetailScreen() {
               style={styles.heroGradient}
             />
             <View style={[styles.heroTopBar, { top: topInset + 12 }]}>
-              <Pressable 
+              <Pressable
                 onPress={() => {
                   if(Platform.OS !== 'web') Haptics.selectionAsync();
                   goBack();
-                }} 
+                }}
                 style={styles.heroBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
               >
                 <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="chevron-back" size={24} color="white" />
               </Pressable>
               <View style={{ flexDirection: "row", gap: 10 }}>
-                <Pressable 
+                <Pressable
                   onPress={() => {
                     if(Platform.OS !== 'web') Haptics.selectionAsync();
                     handleShare();
-                  }} 
+                  }}
                   style={styles.heroBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share venue"
                 >
                   <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                   <Ionicons name="share-outline" size={22} color="white" />
                 </Pressable>
                 {profile.address && (
-                  <Pressable 
+                  <Pressable
                     onPress={() => {
                       if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       openDirections();
-                    }} 
+                    }}
                     style={styles.heroBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Get directions"
                   >
                     <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                     <Ionicons name="navigate" size={22} color="white" />

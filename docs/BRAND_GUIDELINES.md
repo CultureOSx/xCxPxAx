@@ -1098,6 +1098,23 @@ This section defines what is explicitly forbidden. Treat each item as a linting 
 | Hardcoding dark/light hex and switching manually | Use `useColors()` — it returns the correct theme automatically |
 | `CultureTokens.gold` as a general "highlight" | Gold is reserved for status and premium membership only |
 
+#### Brand Colour Text Safety (WCAG Contrast)
+
+Brand accent colours pass contrast on **dark** backgrounds (native) but most fail on **light** (white) backgrounds (web). The table below is law — not a suggestion.
+
+| Colour | Token | On `#FFFFFF` (light/web) | On `#060C16` (dark/native) | Rule |
+|--------|-------|--------------------------|---------------------------|------|
+| Indigo | `CultureTokens.indigo` | ✅ 5.57:1 — safe as text | ❌ 3.51:1 — **icon/UI only**, not text | |
+| Coral | `CultureTokens.coral` | ❌ 3.00:1 — **decoration only** | ✅ 6.51:1 — safe as text | |
+| Gold | `CultureTokens.gold` | ❌ 1.54:1 — **background fill only; use white text on top** | ✅ 12.71:1 — safe as text | |
+| Teal | `CultureTokens.teal` | ❌ 2.17:1 — **decoration only** | ✅ 9.02:1 — safe as text | |
+| Success | `#34C759` | ❌ 2.22:1 — **icon only** | ✅ 8.82:1 — safe as text | |
+| Warning | `#FF9500` | ❌ 2.21:1 — **icon/badge only** | ✅ safe | |
+| Error | `#FF3B30` | ❌ 3.55:1 — large text only (≥18pt) | ✅ safe | |
+| `colors.textTertiary` | `#767676` (light) / `#8D8D8D` (dark) | ✅ 4.54:1 — AA for text | ✅ 5.95:1 — AA for text | Fixed 2026-03-29 |
+
+**Rule**: On web (light theme), use only `colors.text`, `colors.textSecondary`, `colors.textTertiary`, `CultureTokens.indigo`, or `sharedBase.secondary` (`#5856D6`) as text colours. All other brand colours must be used as backgrounds, borders, or icon fills — never as `color:` on body/caption/label text.
+
 ### Typography Anti-Patterns
 
 | Anti-Pattern | Correct Approach |

@@ -8,7 +8,6 @@ import {
   Alert,
   Pressable,
   TextInput,
-  TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -133,7 +132,12 @@ export default function CheckoutPage() {
 
   return (
     <View style={styles.screen}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      >
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
       </Pressable>
 
@@ -145,9 +149,14 @@ export default function CheckoutPage() {
 
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Confirm Order</Text>
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -164,6 +173,7 @@ export default function CheckoutPage() {
               source={{ uri: event?.heroImageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' }}
               style={styles.eventThumb}
               contentFit="cover"
+              accessibilityLabel="Event poster"
             />
             <View style={styles.eventText}>
               <Text style={[styles.eventTitle, { color: colors.text }]}>{event?.title}</Text>
@@ -194,6 +204,8 @@ export default function CheckoutPage() {
               placeholderTextColor={colors.textTertiary}
               value={promoCode}
               onChangeText={setPromoCode}
+              accessibilityLabel="Promo code"
+              autoCapitalize="characters"
             />
             <Button size="sm" variant="outline" onPress={handleApplyPromo} style={styles.promoBtn}>Apply</Button>
           </View>
