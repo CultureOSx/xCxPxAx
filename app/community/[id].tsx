@@ -41,7 +41,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
-import { TextStyles } from '@/constants/typography';
+import { TextStyles } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -435,7 +435,7 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
           ...Platform.select({
             web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.6)' },
             ios: {
-              shadowColor: '#000',
+              shadowColor: colors.text,
               shadowOffset: { width: 0, height: 12 },
               shadowOpacity: 0.6,
               shadowRadius: 24,
@@ -495,7 +495,7 @@ const getPostStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.creat
 
   eventImg:      { height: 220, position: 'relative', backgroundColor: colors.surfaceElevated },
   freePill:      { position: 'absolute', top: 10, left: 12, backgroundColor: CultureTokens.teal, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  freePillText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: colors.textInverse },
   eventInfo:     { padding: 14, gap: 6 },
   eventTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.3 },
   metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -793,7 +793,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                       ...Platform.select({
                         web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.45)' },
                         ios: {
-                          shadowColor: '#000',
+                          shadowColor: colors.text,
                           shadowOffset: { width: 0, height: 4 },
                           shadowOpacity: 0.45,
                           shadowRadius: 10,

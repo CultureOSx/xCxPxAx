@@ -56,12 +56,12 @@ All screens must follow **Token Integrity**, **Cultural Minimalism**, **Platform
 
 | File Path | Audit Date | Status | Notes / Violations |
 |-----------|------------|--------|--------------------|
-| `app/event/[id].tsx` | 2026-03-29 | ⚠️ | **MEDIUM**: `import { TextStyles } from '@/constants/typography'` (line 16) — must import from `@/constants/theme`. Two raw hex values for 3rd-party brand colours (Google Calendar `#4285F4`, Outlook `#0078D4`) at lines 1061–1062 — acceptable as brand colours but should be extracted to named constants. Single primary CTA (conditional `variant="primary"` on RSVP button only, line 517). ✅ `expo-image` used, ✅ `useColors()`, ✅ topInset correct. |
-| `app/venue/[id].tsx` | 2026-03-29 | ⚠️ | **MEDIUM**: `import { TextStyles } from '@/constants/typography'` (line 35) — must import from `@/constants/theme`. ✅ `Image` from `expo-image` (line 17). ✅ `CultureTokens` from `@/constants/theme` (line 22). ✅ `Platform.OS === 'web' ? 0` topInset (line 40/86). ✅ Teal accent used correctly for venue (directions button, address icon). ✅ Haptics, accessibility labels, `ErrorBoundary`. |
-| `app/artist/[id].tsx` | 2026-03-29 | ✅ | All imports from `@/constants/theme`. ✅ `expo-image` (line 16). ✅ `Platform.OS === 'web' ? 0` (line 38/91). ✅ Coral accent used correctly for artist CPID chip, back link. ✅ `captureEvent` analytics. ✅ `ErrorBoundary`. No raw hex violations. |
-| `app/community/[id].tsx` | 2026-03-29 | ⚠️ | **MEDIUM**: `import { TextStyles } from '@/constants/typography'` (line 44) — must import from `@/constants/theme`. Also raw hex `#000` in `shadowColor` (lines 438, 796) and `'#FFFFFF'` in `freePillText` (line 498) — replace with `colors.textInverse`. ✅ `accessibilityLabel`/`accessibilityRole` present (14 occurrences). |
-| `app/business/[id].tsx` | 2026-03-29 | ❌ | **CRITICAL**: Entire `StyleSheet.create()` uses hardcoded colours — `'#0B0B14'` (lines 229, 66, 245, 488), `'#FFFFFF'` (71, 76, 271, 313, 329, 366, 418), `rgba(255,255,255,...)` throughout, `rgba(11,11,20,...)` throughout. No `useColors()` hook used at all. Also inline `fontFamily`/`fontSize` instead of `TextStyles.*`. **Missing `useColors()` — the page ignores the theme system entirely.** Requires refactor before launch. |
-| `app/movies/[id].tsx` | 2026-03-29 | ⚠️ | **MEDIUM**: `import { TextStyles } from '@/constants/typography'` (line 17) — must use `@/constants/theme`. **HIGH**: Two raw brand hex values for external cinema partners — Hoyts `#D90429` (line 190), Event Cinemas `#0055A5` (line 198) — acceptable as third-party brand colours but should be extracted to named constants outside `StyleSheet`. ✅ `expo-image` (line 2). ✅ `useColors()`. ✅ `CultureTokens`/`ButtonTokens`/`CardTokens` from `@/constants/theme`. ✅ `accessibilityRole`/`accessibilityLabel` on all Pressables. ✅ Gold used correctly for movie accent. |
+| `app/event/[id].tsx` | 2026-03-29 | ✅ | ~~TextStyles sub-import~~ fixed → `@/constants/theme`. ~~`#4285F4`/`#0078D4`~~ extracted to `GOOGLE_BRAND_COLOR`/`OUTLOOK_BRAND_COLOR` constants. Single primary CTA. ✅ `expo-image`, `useColors()`, topInset correct. |
+| `app/venue/[id].tsx` | 2026-03-29 | ✅ | ~~TextStyles sub-import~~ fixed → `@/constants/theme`. Teal accent, `expo-image`, haptics, accessibility labels, `ErrorBoundary` all correct. |
+| `app/artist/[id].tsx` | 2026-03-29 | ✅ | No violations. Coral accent, analytics, all tokens correct. |
+| `app/community/[id].tsx` | 2026-03-29 | ✅ | ~~TextStyles sub-import~~ fixed → `@/constants/theme`. ~~`'#000'` shadowColor~~ → `colors.text`. ~~`'#FFFFFF'` freePillText~~ → `colors.textInverse`. |
+| `app/business/[id].tsx` | 2026-03-29 | ✅ | **Full refactor**: Added `useColors()`, converted `getStyles(colors)` pattern. All hardcoded hex (`#0B0B14`, `#FFFFFF`, `rgba(255,255,255,...)`) replaced with `colors.*` tokens. `rgba(139,69,19,...)` indigenous badge replaced with `CultureTokens.gold` tints. `accessibilityLabel` added to all Pressables. Typecheck passes. |
+| `app/movies/[id].tsx` | 2026-03-29 | ✅ | ~~TextStyles sub-import~~ fixed → `@/constants/theme`. ~~`#D90429`/`#0055A5`~~ extracted to `HOYTS_BRAND_COLOR`/`EVENT_CINEMAS_BRAND_COLOR` constants. Gold accent, `expo-image`, accessibility correct. |
 | `app/[handle].tsx` | — | ⏳ | Not audited |
 
 ---
@@ -163,15 +163,29 @@ The following greps were run across the full `app/` directory:
 ## Audit Summary
 
 **Total Screens Audited:** 23 / ~40
-**Fully Compliant (✅):** 16
-**Needs Attention (⚠️):** 5
-**Major Violations (❌):** 1 — `app/business/[id].tsx`
+**Fully Compliant (✅):** 21 (was 16 — 5 fixed 2026-03-29)
+**Needs Attention (⚠️):** 0
+**Major Violations (❌):** 0 (was 1 — fixed 2026-03-29)
 **Not Audited (⏳):** 17
 
-**Top Recurring Issues:**
-1. **`import { TextStyles } from '@/constants/typography'`** — appears in `event/[id]`, `venue/[id]`, `community/[id]`, `movies/[id]`. All should be `@/constants/theme`. Add ESLint rule.
-2. **`app/business/[id].tsx` has no `useColors()` hook** — entire stylesheet uses hardcoded dark theme hex values. Must be refactored before launch.
-3. **Third-party brand colours** (`#4285F4` Google, `#D90429` Hoyts, `#0055A5` Event Cinemas) — acceptable but must be extracted to named constants, not inline hex literals.
+**Fixes Applied 2026-03-29:**
+1. ✅ `TextStyles` sub-import fixed in `event/[id]`, `venue/[id]`, `community/[id]`, `movies/[id]` → `@/constants/theme`
+2. ✅ `business/[id].tsx` fully refactored — `useColors()` added, all hardcoded hex replaced with `colors.*` tokens
+3. ✅ Third-party brand colours extracted to named module-level constants in `event/[id]` and `movies/[id]`
+4. ✅ `community/[id].tsx` `shadowColor` + `freePillText` replaced with `colors.text` / `colors.textInverse`
+
+**Recommended ESLint Rule (add to `.eslintrc`):**
+```json
+"no-restricted-imports": ["error", {
+  "paths": [
+    { "name": "@/constants/colors", "message": "Import from @/constants/theme instead." },
+    { "name": "@/constants/typography", "message": "Import from @/constants/theme instead." },
+    { "name": "@/constants/spacing", "message": "Import from @/constants/theme instead." },
+    { "name": "@/constants/elevation", "message": "Import from @/constants/theme instead." },
+    { "name": "@/constants/animations", "message": "Import from @/constants/theme instead." }
+  ]
+}]
+```
 
 **Files Not Found (path mismatch — verify):**
 - `app/landing.tsx` — may be `app/landing/` or renamed

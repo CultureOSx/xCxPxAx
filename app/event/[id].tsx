@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
-import { TextStyles } from '@/constants/typography';
+import { TextStyles } from '@/constants/theme';
 import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -22,6 +22,10 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { calculateDistance } from '@shared/location/australian-postcodes';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens, webShadow, FontFamily, FontSize, Spacing } from '@/constants/theme';
+
+// Third-party brand colours — not part of the CulturePass token system
+const GOOGLE_BRAND_COLOR = '#4285F4';
+const OUTLOOK_BRAND_COLOR = '#0078D4';
 import { useLayout } from '@/hooks/useLayout';
 import { BlurView } from 'expo-blur';
 import type { EventData } from '@/shared/schema';
@@ -1058,8 +1062,8 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
             </View>
             <View style={{ padding: 16, gap: 10 }}>
               {[
-                { label: 'Google Calendar', sub: 'Open in Google Calendar', icon: 'logo-google' as const, color: '#4285F4', onPress: addToGoogleCalendar },
-                { label: 'Outlook Calendar', sub: 'Open in Outlook / Office 365', icon: 'mail' as const, color: '#0078D4', onPress: addToOutlook },
+                { label: 'Google Calendar', sub: 'Open in Google Calendar', icon: 'logo-google' as const, color: GOOGLE_BRAND_COLOR, onPress: addToGoogleCalendar },
+                { label: 'Outlook Calendar', sub: 'Open in Outlook / Office 365', icon: 'mail' as const, color: OUTLOOK_BRAND_COLOR, onPress: addToOutlook },
                 { label: 'Apple Calendar / iCal', sub: 'Download .ics file', icon: 'calendar' as const, color: CultureTokens.teal, onPress: addToAppleIcal },
               ].map((opt) => (
                 <Pressable

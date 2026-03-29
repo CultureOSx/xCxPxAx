@@ -32,7 +32,7 @@ import { queryClient } from "@/lib/query-client";
 import * as ImagePicker from "expo-image-picker";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
-import { TextStyles } from "@/constants/typography";
+import { TextStyles } from "@/constants/theme";
 
 function VenueDetailSkeleton() {
   const colors = useColors();

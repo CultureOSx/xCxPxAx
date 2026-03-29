@@ -9,12 +9,16 @@ import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import { useColors } from '@/hooks/useColors';
 import { ButtonTokens, CardTokens, CultureTokens } from '@/constants/theme';
+
+// Third-party cinema brand colours — not part of the CulturePass token system
+const HOYTS_BRAND_COLOR = '#D90429';
+const EVENT_CINEMAS_BRAND_COLOR = '#0055A5';
 import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { TextStyles } from '@/constants/typography';
+import { TextStyles } from '@/constants/theme';
 
 export default function MovieDetailScreen() {
   const colors = useColors();
@@ -187,7 +191,7 @@ export default function MovieDetailScreen() {
               <View style={styles.externalLinksSection}>
                 <Text style={[TextStyles.headline, { color: colors.text, marginBottom: 12 }]}>Buy Tickets Online</Text>
                 <Pressable 
-                  style={({pressed}) => [styles.externalBtn, { backgroundColor: '#D90429', opacity: pressed ? 0.8 : 1 }]} 
+                  style={({pressed}) => [styles.externalBtn, { backgroundColor: HOYTS_BRAND_COLOR, opacity: pressed ? 0.8 : 1 }]} 
                   onPress={() => handleTicketPress('https://www.hoyts.com.au/movies')} 
                   accessibilityRole="button"
                 > 
@@ -195,7 +199,7 @@ export default function MovieDetailScreen() {
                   <Text style={[TextStyles.headline, { color: '#FFF' }]}>Hoyts Cinemas</Text>
                 </Pressable>
                 <Pressable 
-                  style={({pressed}) => [styles.externalBtn, { backgroundColor: '#0055A5', opacity: pressed ? 0.8 : 1 }]} 
+                  style={({pressed}) => [styles.externalBtn, { backgroundColor: EVENT_CINEMAS_BRAND_COLOR, opacity: pressed ? 0.8 : 1 }]} 
                   onPress={() => handleTicketPress('https://www.eventcinemas.com.au/Movies')} 
                   accessibilityRole="button"
                 > 

@@ -9,8 +9,11 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useColors } from '@/hooks/useColors';
 
 export default function BusinessDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -21,13 +24,13 @@ export default function BusinessDetailScreen() {
     queryFn: () => api.businesses.get(id as string),
     enabled: !!id,
   });
-  
+
   const { data: councilData } = useQuery({
     queryKey: ['/api/council/my', business?.city, business?.country],
     queryFn: () => api.council.my({ city: business?.city, country: business?.country }),
     enabled: !!business,
   });
-  
+
   const council = councilData?.council;
   const isCouncilVerified = council?.verificationStatus === 'verified';
   const lgaCode = council?.lgaCode;
@@ -47,7 +50,12 @@ export default function BusinessDetailScreen() {
       <ErrorBoundary>
         <View style={[styles.container, { paddingTop: topInset, justifyContent: 'center', alignItems: 'center' }]}>
           <Text style={styles.errorText}>Business not found</Text>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={{ marginTop: 12, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 }}>
+          <Pressable
+            onPress={() => goBackOrReplace('/(tabs)')}
+            style={styles.backLinkBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Text style={styles.backLink}>Go Back</Text>
           </Pressable>
         </View>
@@ -63,17 +71,22 @@ export default function BusinessDetailScreen() {
       <View style={styles.container}>
         <View style={[styles.hero, { backgroundColor: accentColor, paddingTop: topInset }]}>
           <LinearGradient
-            colors={['rgba(11,11,20,0.18)', 'rgba(11,11,20,0.55)', '#0B0B14']}
-            locations={[0, 0.4, 1]}
+            colors={[colors.overlay, colors.background]}
+            locations={[0, 1]}
             style={styles.heroOverlay}
           >
-            <Pressable style={styles.backButton} onPress={() => goBackOrReplace('/(tabs)')}>
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Pressable
+              style={styles.backButton}
+              onPress={() => goBackOrReplace('/(tabs)')}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.textInverse} />
             </Pressable>
-            
+
             <View style={styles.heroBottom}>
               <View style={[styles.heroIconWrap, { backgroundColor: accentColor + '40', borderColor: accentColor + '80' }]}>
-                <Ionicons name={(business.icon ?? 'business') as keyof typeof Ionicons.glyphMap} size={32} color="#FFFFFF" />
+                <Ionicons name={(business.icon ?? 'business') as keyof typeof Ionicons.glyphMap} size={32} color={colors.textInverse} />
               </View>
               <View style={styles.heroNameRow}>
                 <Text style={styles.heroTitle}>{business.name}</Text>
@@ -84,7 +97,7 @@ export default function BusinessDetailScreen() {
                   </View>
                 )}
                 {business.isIndigenousOwned && (
-                  <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(139,69,19,0.2)', borderColor: 'rgba(139,69,19,0.4)' }]}>
+                  <View style={[styles.verifiedBadge, { backgroundColor: CultureTokens.gold + '20', borderColor: CultureTokens.gold + '40' }]}>
                     <Ionicons name="earth" size={16} color={CultureTokens.gold} />
                     <Text style={[styles.verifiedText, { color: CultureTokens.gold }]}>Indigenous Owned</Text>
                   </View>
@@ -153,7 +166,7 @@ export default function BusinessDetailScreen() {
             {business.culturePassId && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                 <Ionicons name="finger-print-outline" size={16} color={CultureTokens.indigo} />
-                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: CultureTokens.indigo }}>{business.culturePassId}</Text>
+                <Text style={styles.cpidText}>{business.culturePassId}</Text>
               </View>
             )}
             <Text style={styles.sectionTitle}>About</Text>
@@ -209,14 +222,18 @@ export default function BusinessDetailScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               Linking.openURL(`tel:${business.phone}`);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Call ${business.name}`}
           >
             <Ionicons name="call" size={20} color={CultureTokens.indigo} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.bookButton, { backgroundColor: accentColor }, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
             onPress={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
+            accessibilityRole="button"
+            accessibilityLabel={`Book service at ${business.name}`}
           >
-            <Ionicons name="calendar" size={20} color="#0B0B14" />
+            <Ionicons name="calendar" size={20} color={colors.background} />
             <Text style={styles.bookText}>Book Service</Text>
           </Pressable>
         </View>
@@ -225,11 +242,12 @@ export default function BusinessDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  errorText: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  backLink: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  errorText: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  backLinkBtn: { marginTop: 12, padding: 12, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight },
+  backLink: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.primary },
+
   hero: { height: 320 },
   heroOverlay: {
     flex: 1,
@@ -242,11 +260,11 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     marginTop: 12,
-    backgroundColor: 'rgba(11,11,20,0.78)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)'
+    borderColor: 'rgba(255,255,255,0.28)',
   },
   heroBottom: { gap: 10 },
   heroIconWrap: {
@@ -268,14 +286,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Poppins_700Bold',
     lineHeight: 34,
-    color: '#FFFFFF',
+    color: colors.textInverse,
     letterSpacing: -0.5,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(11,11,20,0.78)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -291,7 +309,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
     color: 'rgba(255,255,255,0.8)',
   },
-  
+
   ratingSection: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -300,25 +318,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight,
   },
   starsRow: { flexDirection: 'row', gap: 2 },
   ratingNum: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     marginLeft: 6,
   },
   reviewText: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
-  
+
   section: {
     paddingHorizontal: 20,
     marginTop: 28,
@@ -326,7 +344,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 14,
   },
   sectionDivider: {
@@ -342,18 +360,23 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.7)',
+    color: colors.textSecondary,
     lineHeight: 24,
   },
-  
+  cpidText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+    color: CultureTokens.indigo,
+  },
+
   indigenousBox: {
-    backgroundColor: 'rgba(255, 140, 66, 0.05)',
+    backgroundColor: CultureTokens.gold + '0D',
     borderRadius: 16,
     padding: 16,
     borderLeftWidth: 4,
     borderLeftColor: CultureTokens.gold,
     borderWidth: 1,
-    borderColor: 'rgba(255, 140, 66, 0.2)'
+    borderColor: CultureTokens.gold + '33',
   },
   indigenousIconBox: {
     width: 38,
@@ -363,9 +386,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  indigenousTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  indigenousSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  
+  indigenousTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text },
+  indigenousSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 2 },
+
   indigenousTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,10 +398,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: CultureTokens.gold + '30'
+    borderColor: CultureTokens.gold + '30',
   },
   indigenousTagText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold },
-  
+
   supplyNationTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -388,7 +411,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: CultureTokens.teal + '30'
+    borderColor: CultureTokens.teal + '30',
   },
   supplyNationTagText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.teal },
 
@@ -399,11 +422,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight,
   },
   serviceIconBg: {
     width: 36,
@@ -415,15 +438,15 @@ const styles = StyleSheet.create({
   serviceCardText: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: '#FFFFFF',
+    color: colors.text,
   },
-  
+
   contactCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight,
   },
   contactRow: {
     flexDirection: 'row',
@@ -441,15 +464,15 @@ const styles = StyleSheet.create({
   contactText: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: '#FFFFFF',
+    color: colors.text,
     flex: 1,
   },
   contactDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.divider,
     marginLeft: 68,
   },
-  
+
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -459,9 +482,9 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 20,
     paddingTop: 16,
-    backgroundColor: 'rgba(11,11,20,0.95)',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)'
+    borderTopColor: colors.border,
   },
   callButton: {
     width: 56,
@@ -485,6 +508,6 @@ const styles = StyleSheet.create({
   bookText: {
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
-    color: '#0B0B14'
+    color: colors.background,
   },
 });
