@@ -1,4 +1,43 @@
 // ---------------------------------------------------------------------------
+// Time formatting
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalises a time string to 12-hour AM/PM format.
+ *
+ * Handles:
+ *   "15:30"   → "3:30 PM"   (24-hour input)
+ *   "3:30 PM" → "3:30 PM"   (already 12-hour — pass through)
+ *   "00:00"   → "12:00 AM"  (midnight)
+ *   "12:00"   → "12:00 PM"  (noon)
+ *
+ * Returns the original string unchanged when it cannot be parsed.
+ */
+export function formatEventTime(timeStr: string | null | undefined): string {
+  if (!timeStr) return '';
+
+  // Already 12-hour format (e.g. "3:30 PM") — normalise case only
+  const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+  if (ampmMatch) {
+    const [, h, m, ampm] = ampmMatch;
+    return `${h}:${m} ${ampm.toUpperCase()}`;
+  }
+
+  // 24-hour format: HH:MM or H:MM
+  const h24Match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (h24Match) {
+    const hours = parseInt(h24Match[1], 10);
+    const mins  = h24Match[2];
+    if (hours === 0)  return `12:${mins} AM`;
+    if (hours < 12)  return `${hours}:${mins} AM`;
+    if (hours === 12) return `12:${mins} PM`;
+    return `${hours - 12}:${mins} PM`;
+  }
+
+  return timeStr; // unrecognised format — return unchanged
+}
+
+// ---------------------------------------------------------------------------
 // Locale helpers
 // ---------------------------------------------------------------------------
 
@@ -70,12 +109,12 @@ export function formatEventDateTime(date: string, time?: string, country?: strin
   });
 
   if (!time) return dateLabel;
-  return `${dateLabel} • ${time}`;
+  return `${dateLabel} • ${formatEventTime(time)}`;
 }
 
 export function formatEventDateTimeBadge(date: string, time?: string, country?: string): string {
   const day = toDate(date);
-  if (!day) return time ? `${date} • ${time}` : date;
+  if (!day) return time ? `${date} • ${formatEventTime(time)}` : date;
 
   const locale = getLocaleForCountry(country);
   const dateLabel = day.toLocaleDateString(locale, {
@@ -83,7 +122,7 @@ export function formatEventDateTimeBadge(date: string, time?: string, country?: 
     month: 'short',
   });
 
-  return time ? `${dateLabel} • ${time}` : dateLabel;
+  return time ? `${dateLabel} • ${formatEventTime(time)}` : dateLabel;
 }
 
 export function timeAgo(date: string | Date | null | undefined): string {

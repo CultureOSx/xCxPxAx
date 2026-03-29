@@ -18,6 +18,8 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
+import { DatePickerInput } from '@/components/ui/DatePickerInput';
+import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
@@ -57,6 +59,7 @@ interface UserData {
   } | null;
   languages?: string[] | null;
   ethnicityText?: string | null;
+  dateOfBirth?: string | null;
   privacySettings?: {
     profileVisible?: boolean;
     locationVisible?: boolean;
@@ -183,6 +186,7 @@ export default function EditProfileScreen() {
     city: '', state: '', postcode: '', country: 'Australia',
     website: '', instagram: '', twitter: '', tiktok: '', youtube: '', linkedin: '', facebook: '',
     languages: '', ethnicityText: '',
+    dateOfBirth: '',
     isPublicProfile: true, showLocation: true,
   });
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -207,6 +211,7 @@ export default function EditProfileScreen() {
         facebook:     user.socialLinks?.facebook  || '',
         languages:    (user.languages ?? []).join(', '),
         ethnicityText: user.ethnicityText || '',
+        dateOfBirth:   user.dateOfBirth || '',
         isPublicProfile: user.privacySettings?.profileVisible ?? true,
         showLocation: user.privacySettings?.locationVisible ?? true,
       });
@@ -320,6 +325,7 @@ export default function EditProfileScreen() {
       },
       languages:    form.languages.trim() ? form.languages.split(',').map(l => l.trim()).filter(Boolean) : [],
       ethnicityText: form.ethnicityText.trim() || null,
+      dateOfBirth:   form.dateOfBirth || null,
       privacySettings: {
         profileVisible: form.isPublicProfile,
         locationVisible: form.showLocation,
@@ -469,6 +475,16 @@ export default function EditProfileScreen() {
                   placeholderTextColor={colors.textTertiary}
                   keyboardType="phone-pad"
                   accessibilityLabel="Phone"
+                />
+              </FieldRow>
+
+              <FieldRow label="Date of Birth">
+                <DatePickerInput
+                  value={form.dateOfBirth}
+                  onChangeDate={(iso: ISODateString) => setForm(p => ({ ...p, dateOfBirth: iso }))}
+                  placeholder="Select your date of birth"
+                  maxDate={new Date().toISOString().slice(0, 10)}
+                  accessibilityLabel="Date of birth"
                 />
               </FieldRow>
 

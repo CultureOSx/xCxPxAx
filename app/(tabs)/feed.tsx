@@ -250,7 +250,7 @@ export default function CultureFeedScreen() {
         ) : (
           <FlashList
             data={listItems}
-            keyExtractor={(item: any) => item.id}
+            keyExtractor={(item) => (item as ListItem).id}
             numColumns={isDesktop ? 2 : 1}
             renderItem={renderItem}
             ListHeaderComponent={renderListHeader}

@@ -34,6 +34,17 @@ export const getStyles = (colors: any) => StyleSheet.create({
   cTR:              { top: 0, right: 0,    borderTopWidth: CORNER_W,    borderRightWidth: CORNER_W, borderColor: '#FFFFFF', borderTopRightRadius: 10 },
   cBL:              { bottom: 0, left: 0,  borderBottomWidth: CORNER_W, borderLeftWidth: CORNER_W,  borderColor: '#FFFFFF', borderBottomLeftRadius: 10 },
   cBR:              { bottom: 0, right: 0, borderBottomWidth: CORNER_W, borderRightWidth: CORNER_W, borderColor: '#FFFFFF', borderBottomRightRadius: 10 },
+  // Animated scan line — sits inside cameraFrame (200×200)
+  scanLine:         {
+    position: 'absolute', left: 8, right: 8, height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    ...Platform.select({ web: { boxShadow: '0 0 8px 2px rgba(255,255,255,0.7)' } } as Record<string, unknown>),
+  },
   cameraHint:       {
     position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center',
     color: 'rgba(255,255,255,0.85)', fontSize: 13, fontFamily: 'Poppins_500Medium',

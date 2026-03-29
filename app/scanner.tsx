@@ -10,7 +10,15 @@ import {
   ActivityIndicator,
   Vibration,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -320,6 +328,20 @@ export default function ScannerScreen() {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   })();
 
+  // Animated scanning line — sweeps top-to-bottom inside the camera frame
+  const scanLineY = useSharedValue(0);
+  const scanLineStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scanLineY.value }],
+  }));
+  useEffect(() => {
+    scanLineY.value = withRepeat(
+      withTiming(220, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const hintItems = useMemo(() => [
     { icon: 'finger-print',          color: CultureTokens.indigo,  label: 'CulturePass ID',  example: 'CP-123456' },
     { icon: 'code-slash',             color: CultureTokens.gold, label: 'JSON QR Data',    example: '{"type":"culturepass_id","cpid":"CP-..."}' },
@@ -421,6 +443,8 @@ export default function ScannerScreen() {
                   <View style={[s.cCorner, s.cTR]} />
                   <View style={[s.cCorner, s.cBL]} />
                   <View style={[s.cCorner, s.cBR]} />
+                  {/* Animated scan line */}
+                  <Animated.View style={[s.scanLine, scanLineStyle]} />
                 </View>
                 <Text style={s.cameraHint}>Point at a ticket QR code</Text>
               </View>
@@ -570,6 +594,8 @@ export default function ScannerScreen() {
                   <View style={[s.cCorner, s.cTR]} />
                   <View style={[s.cCorner, s.cBL]} />
                   <View style={[s.cCorner, s.cBR]} />
+                  {/* Animated scan line */}
+                  <Animated.View style={[s.scanLine, scanLineStyle]} />
                 </View>
                 <Text style={s.cameraHint}>Point at a CulturePass QR code</Text>
               </View>

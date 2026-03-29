@@ -35,6 +35,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
 import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
+import { formatEventTime } from '@/lib/dateUtils';
 import { routeWithRedirect } from '@/lib/routes';
 import { getStyles } from './_components/styles';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
@@ -785,7 +786,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                   <View style={s.infoTextWrap}>
                     <Text style={TextStyles.badgeCaps}>Date & Time</Text>
                     <Text style={[TextStyles.headline, { color: colors.text }]}>{formatDate(event.date)}</Text>
-                    <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>{event.time}</Text>
+                    <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>{formatEventTime(event.time)}</Text>
                   </View>
                 </Card>
 
