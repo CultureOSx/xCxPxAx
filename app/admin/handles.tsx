@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator , Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert , Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';

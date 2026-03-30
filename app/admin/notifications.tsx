@@ -347,7 +347,7 @@ export default function AdminNotificationsScreen() {
         <Pressable
           onPress={() => {
             if(Platform.OS !== 'web') Haptics.selectionAsync();
-            router.canGoBack() ? router.back() : router.replace('/(tabs)');
+            if (router.canGoBack()) { router.back(); } else { router.replace('/(tabs)'); }
           }}
           style={[s.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
           accessibilityRole="button" accessibilityLabel="Go back"

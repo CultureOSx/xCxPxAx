@@ -4,8 +4,7 @@ import type * as FirebaseFirestore from 'firebase-admin/firestore';
 import { db } from '../admin';
 import { requireRole } from '../middleware/auth';
 import { usersService } from '../services/users';
-import type { UserRole } from '../../../shared/schema';
-import {
+import type { UserRole ,
   DISCOVER_FOCUS_OPTIONS,
   HERITAGE_PLAYLIST_TYPES,
   type DiscoverCurationConfig,

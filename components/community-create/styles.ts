@@ -1,5 +1,5 @@
 import { StyleSheet, Platform } from 'react-native';
-import { CardTokens, CultureTokens } from '@/constants/theme';
+import { CardTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
 export const getStyles = (colors: ReturnType<typeof useColors>) =>

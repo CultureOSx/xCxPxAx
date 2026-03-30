@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -126,7 +126,7 @@ function FinanceContent() {
           <Pressable
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.canGoBack() ? router.back() : router.replace('/admin/dashboard');
+              if (router.canGoBack()) { router.back(); } else { router.replace('/admin/dashboard'); }
             }}
             style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
             accessibilityRole="button" accessibilityLabel="Go back"

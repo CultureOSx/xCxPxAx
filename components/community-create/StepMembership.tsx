@@ -3,7 +3,6 @@ import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CommunityFormData, JOIN_MODES } from './types';
 import { CommunityCreateStyles } from './styles';
-import { Field } from './Field';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 

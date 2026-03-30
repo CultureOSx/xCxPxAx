@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { ALL_NATIONALITIES, getCulturesForNationality, CULTURES, type Nationality } from '@/constants/cultures';
+import { ALL_NATIONALITIES, getCulturesForNationality } from '@/constants/cultures';
 import { COMMON_LANGUAGES } from '@/constants/languages';
 import { CommunityFormData } from './types';
 import { CommunityCreateStyles } from './styles';

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Modal,
   Platform,
+  Alert,
   TouchableOpacity,
   Pressable,
 } from 'react-native';
@@ -63,8 +64,6 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
         if (Platform.OS === 'web') {
           alert('Failed to join community. Please try again.');
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { Alert } = require('react-native');
           Alert.alert('Join failed', 'Failed to join community. Please try again.');
         }
       },

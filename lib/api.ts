@@ -549,12 +549,12 @@ const admin = {
     if (params?.role)           qs.set('role',   params.role);
     const q = qs.toString();
     return request<{
-      users: Array<{
+      users: {
         id: string; username?: string; displayName?: string; email?: string;
         role?: UserRole; avatarUrl?: string; city?: string; country?: string;
         handle?: string; handleStatus?: string; isSydneyVerified?: boolean;
         membershipTier?: string; createdAt?: string; lastActiveAt?: string;
-      }>;
+      }[];
       total: number; page: number; limit: number;
     }>('GET', `api/admin/users${q ? `?${q}` : ''}`);
   },
@@ -571,10 +571,10 @@ const admin = {
     if (params?.limit != null) qs.set('limit', String(params.limit));
     const q = qs.toString();
     return request<{
-      reports: Array<{
+      reports: {
         id: string; targetType: string; targetId: string; reason: string;
         details?: string; reporterUserId: string; status: string; createdAt: string;
-      }>;
+      }[];
       total: number;
     }>('GET', `api/admin/reports${q ? `?${q}` : ''}`);
   },
@@ -584,11 +584,11 @@ const admin = {
 
   pendingEvents: (limit = 50) =>
     request<{
-      events: Array<{
+      events: {
         id: string; title?: string; category?: string; city?: string; country?: string;
         date?: string; imageUrl?: string; organizerId?: string; createdAt?: string;
         isFree?: boolean; priceCents?: number;
-      }>;
+      }[];
       total: number;
     }>('GET', `api/admin/events/pending?limit=${limit}`),
 

@@ -14,7 +14,6 @@ import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { Image } from 'expo-image';
 import Svg, { Defs, Stop, Text as SvgText, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';           // ← Fixed: Added missing import
-import { QUICK_MENU_ITEMS } from '@/components/ProfileQuickMenu';
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 interface NavItem {
@@ -169,7 +168,7 @@ function SidebarGradientWordmark() {
 export function WebSidebar() {
   const pathname = usePathname();
   const colors = useColors();
-  const { s, r, ni } = getSidebarStyles(colors);
+  const { s, r } = getSidebarStyles(colors);
   const isDark = useIsDark();
   const { user, logout, isAuthenticated } = useAuth();
   const { isOrganizer, isAdmin, role } = useRole();
@@ -196,8 +195,6 @@ export function WebSidebar() {
   const border = colors.borderLight;
   const mutedColor = isDark ? 'rgba(232,244,255,0.35)' : 'rgba(0,22,40,0.32)';
   const myCouncil = councilData?.council;
-
-  const displayName = user?.displayName ?? user?.username ?? user?.id?.slice(0, 8) ?? 'You';
 
   // Clock
   useEffect(() => {

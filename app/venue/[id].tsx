@@ -31,14 +31,10 @@ import { useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/query-client";
 import * as ImagePicker from "expo-image-picker";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Card } from "@/components/ui/Card";
-import { TextStyles } from "@/constants/theme";
 
 function VenueDetailSkeleton() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? 0 : insets.top;
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -124,7 +120,7 @@ export default function VenueDetailScreen() {
         Alert.alert('Upload Error', String(err));
       }
     }
-  }, [profile, id, uploadImage, deleteImage]);
+  }, [profile, id, uploadImage, deleteImage, isWeb]);
 
   const canEdit = userId === profile?.ownerId || userId === profile?.creatorId || __DEV__;
 
@@ -148,7 +144,7 @@ export default function VenueDetailScreen() {
         });
       }
     } catch {}
-  }, [id, profile]);
+  }, [id, profile, isWeb]);
 
   const openDirections = useCallback(() => {
     if (!profile) return;

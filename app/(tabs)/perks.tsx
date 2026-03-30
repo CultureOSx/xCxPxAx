@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens, shadows, webShadow } from '@/constants/theme';
+import { CultureTokens, webShadow } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { PerkCard } from '@/components/perks/PerkCard';

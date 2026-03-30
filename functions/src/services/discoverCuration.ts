@@ -1,6 +1,5 @@
 import { db, isFirestoreConfigured } from '../admin';
-import type { Profile } from '../../../shared/schema';
-import {
+import type { Profile ,
   DEFAULT_DISCOVER_CURATION,
   type DiscoverArtistHighlight,
   type DiscoverCurationConfig,

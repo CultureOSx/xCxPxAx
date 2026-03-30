@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  Platform, Share, Linking,
+  Platform, Share, Linking, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -508,8 +508,6 @@ export default function ProfileScreen() {
                   if (Platform.OS === 'web') {
                     alert('Logout failed. Please try again.');
                   } else {
-                    // eslint-disable-next-line @typescript-eslint/no-var-requires
-                    const { Alert } = require('react-native');
                     Alert.alert('Logout failed', 'Please try again.');
                   }
                 }

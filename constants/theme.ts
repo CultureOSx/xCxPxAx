@@ -312,7 +312,7 @@ export const BorderTokens = {
 //     android: { elevation: 3 },
 //     web: webShadow('0 4px 12px rgba(0,0,0,0.08)'),
 //   })
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function webShadow(shadow: string): any {
   return { boxShadow: shadow };
 }

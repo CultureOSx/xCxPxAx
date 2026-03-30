@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet, Platform,
-  ActivityIndicator, Alert, ScrollView,
+  Alert, ScrollView,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

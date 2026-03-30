@@ -9,12 +9,11 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { Button } from '@/components/ui/Button';
-import { CultureTokens, LayoutRules, Spacing } from '@/constants/theme';
+import { CultureTokens, LayoutRules, Spacing , gradients } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { TextStyles } from '@/constants/typography';
 import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { gradients } from '@/constants/theme';
 
 
 interface SettingItem {

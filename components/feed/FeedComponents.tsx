@@ -1,42 +1,37 @@
 // app/(tabs)/feed/_components/FeedComponents.tsx — Feed components
 import React, {
-  useState, useMemo, useCallback, useEffect, useRef,
+  useState, useCallback, useEffect, useRef,
 } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  Platform, ActivityIndicator, RefreshControl, Modal,
+  Platform, ActivityIndicator, Modal,
   TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
 } from 'react-native';
 // Reanimated intentionally NOT imported — interpolateColor worklet crashes iOS (SIGABRT via worklets::UIScheduler)
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { feedKeys, communityKeys } from '@/hooks/queries/keys';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
-import { api } from '@/lib/api';
 import { getCommunityHeadline } from '@/lib/community';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
 import { Button } from '@/components/ui/Button';
 import * as ImagePicker from 'expo-image-picker';
 import { timeAgo } from '@/lib/dateUtils';
-import { uploadPostImage } from '@/lib/storage';
 import {
-  createCommunityPost, subscribeComments, subscribeCommentCount,
+  subscribeComments, subscribeCommentCount,
   addComment, toggleLike, subscribeLiked, subscribeLikeCount, reportPost,
   type FeedComment, type PostCollection,
 } from '@/lib/feedService';
-import type { EventData, Community } from '@/shared/schema';
+import type { Community } from '@/shared/schema';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+
+import type { FeedFilter, FeedPost, ListItem } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -48,11 +43,6 @@ const ACCENT = [
 const COUNTRY_FLAG: Record<string, string> = {
   Australia: '🇦🇺', 'New Zealand': '🇳🇿', UAE: '🇦🇪', UK: '🇬🇧', Canada: '🇨🇦',
 };
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-
-import type { FeedFilter, FeedPost, ListItem } from './types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

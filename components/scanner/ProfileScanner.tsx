@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { CultureTokens } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 
 interface ProfileScannerProps {

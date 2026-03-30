@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
-import { TextStyles } from '@/constants/theme';
+import { TextStyles , CultureTokens, webShadow, FontFamily, FontSize, Spacing } from '@/constants/theme';
 import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -21,11 +21,6 @@ import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { calculateDistance } from '@shared/location/australian-postcodes';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens, webShadow, FontFamily, FontSize, Spacing } from '@/constants/theme';
-
-// Third-party brand colours — not part of the CulturePass token system
-const GOOGLE_BRAND_COLOR = '#4285F4';
-const OUTLOOK_BRAND_COLOR = '#0078D4';
 import { useLayout } from '@/hooks/useLayout';
 import { BlurView } from 'expo-blur';
 import type { EventData } from '@/shared/schema';
@@ -41,6 +36,10 @@ import { getStyles } from './_components/styles';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
 import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, toICSTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
 import type { TicketTier } from './_components/types';
+
+// Third-party brand colours — not part of the CulturePass token system
+const GOOGLE_BRAND_COLOR = '#4285F4';
+const OUTLOOK_BRAND_COLOR = '#0078D4';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -576,7 +575,7 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
                 ]}
                 numberOfLines={1}
               >
-                Can't go
+                Can&apos;t go
               </Text>
             </Pressable>
 

@@ -21,9 +21,8 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients , TextStyles } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { TextStyles } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 

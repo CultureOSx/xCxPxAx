@@ -33,7 +33,7 @@ import {
 import type { Community, EventData } from '@/shared/schema';
 import { confirmAndReport } from '@/lib/reporting';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens, CardTokens } from '@/constants/theme';
+import { CultureTokens, CardTokens , TextStyles } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { formatEventDateTime } from '@/lib/dateUtils';
@@ -41,7 +41,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
-import { TextStyles } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Skeleton } from '@/components/ui/Skeleton';

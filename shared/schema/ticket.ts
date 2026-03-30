@@ -59,12 +59,12 @@ export interface Ticket {
   };
   source?: string;
   campaign?: string;
-  history: Array<{
+  history: {
     action: string;
     at: string;
     by?: string;
     note?: string;
-  }>;
+  }[];
   staffAuditTrail?: TicketAuditEntry[];
   createdAt: string;
   updatedAt?: string;

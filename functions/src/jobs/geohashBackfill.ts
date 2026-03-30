@@ -25,7 +25,7 @@ type GeoBackfillCounts = {
 
 export type GeoBackfillResult = GeoBackfillCounts & {
   durationMs: number;
-  sampleFailures: Array<{ id: string; reason: string }>;
+  sampleFailures: { id: string; reason: string }[];
 };
 
 function normalizeCountry(raw: unknown): string {
@@ -68,7 +68,7 @@ export async function runGeohashBackfill(params?: {
     missingLocationData: 0,
     nonAustralian: 0,
   };
-  const sampleFailures: Array<{ id: string; reason: string }> = [];
+  const sampleFailures: { id: string; reason: string }[] = [];
 
   const PAGE_SIZE = 300;
   let lastDocId: string | null = null;

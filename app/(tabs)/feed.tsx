@@ -6,7 +6,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import Reanimated, { FadeInDown } from 'react-native-reanimated';
+import Reanimated from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, Stack } from 'expo-router';

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  TextInput, Platform, ActivityIndicator
+  TextInput, Platform
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
