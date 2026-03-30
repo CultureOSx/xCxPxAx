@@ -45,6 +45,7 @@ function DiscoverHeaderComponent({
   }, [user?.displayName, user?.username]);
 
   const greeting = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+  const mobileMetaLabel = [currentTime, weatherSummary].filter(Boolean).join(' · ');
 
   const haptic = () => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
 
@@ -165,12 +166,14 @@ function DiscoverHeaderComponent({
           </Text>
           <Text style={styles.mobileTagline}>Belong Anywhere</Text>
           <View style={styles.mobileMetaRow}>
-            <LocationPicker variant="text" />
-            {(currentTime || weatherSummary) && (
-              <Text style={[styles.mobileMeta, { color: colors.textSecondary }]}>
-                {currentTime}{weatherSummary ? ` · ${weatherSummary}` : ''}
+            <View style={styles.mobileMetaLocationWrap}>
+              <LocationPicker variant="text" />
+            </View>
+            {mobileMetaLabel ? (
+              <Text style={[styles.mobileMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+                {mobileMetaLabel}
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
       )}
@@ -263,6 +266,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 6,
     flexWrap: 'wrap',
+  },
+  mobileMetaLocationWrap: {
+    flexShrink: 1,
   },
   mobileMeta: {
     fontSize: 12,

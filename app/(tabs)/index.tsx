@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
+  Text,
+  Pressable,
   ScrollView,
   RefreshControl,
   StyleSheet
@@ -10,6 +12,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { CultureTokens } from '@/constants/theme';
+import type { EventData, Community } from '@/shared/schema';
 
 // Modular Components
 import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
@@ -24,10 +27,16 @@ import { ActivityRail } from '@/components/Discover/ActivityRail';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
 import { PreviewRail } from '@/components/Discover/PreviewRail';
+import { isCultureKeralaHost } from '@/lib/domainHost';
 
 export default function DiscoverScreen() {
   const colors = useColors();
   const { isDesktop, contentWidth } = useLayout();
+  const [keralaDomain, setKeralaDomain] = useState(false);
+
+  useEffect(() => {
+    setKeralaDomain(isCultureKeralaHost());
+  }, []);
 
   const {
     currentTime,
@@ -46,6 +55,8 @@ export default function DiscoverScreen() {
     activityRailData,
     forYouEvents,
     eventsLoading,
+    allEvents,
+    allCommunities,
     communitiesLoading,
     activitiesLoading,
     nearbyLoading,
@@ -73,6 +84,66 @@ export default function DiscoverScreen() {
     refetchCuration,
     retryNearbyProbe,
   } = useDiscoverData();
+
+  const isKeralaEvent = (event: EventData) => {
+    const haystack = [
+      event.title,
+      event.description,
+      event.category,
+      event.city,
+      ...(event.tags ?? []),
+      ...(event.cultureTag ?? []),
+      ...(event.cultureTags ?? []),
+      ...(event.languageTags ?? []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return /kerala|malayali|malayalee|malayalam/.test(haystack);
+  };
+
+  const isKeralaCommunity = (community: Community) => {
+    const c = community as Community & {
+      cultureTags?: string[];
+      cultureIds?: string[];
+      languageIds?: string[];
+      languages?: string[];
+      description?: string;
+    };
+    const haystack = [
+      c.name,
+      c.description,
+      ...(c.cultureTags ?? []),
+      ...(c.cultureIds ?? []),
+      ...(c.languageIds ?? []),
+      ...(c.languages ?? []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return /kerala|malayali|malayalee|malayalam/.test(haystack);
+  };
+
+  const scopedEvents = keralaDomain ? allEvents.filter(isKeralaEvent) : allEvents;
+  const scopedCommunities = keralaDomain ? allCommunities.filter(isKeralaCommunity) : allCommunities;
+  const scopedFeaturedEvents = keralaDomain ? featuredEvents.filter(isKeralaEvent) : featuredEvents;
+  const scopedNearbyEvents = keralaDomain ? nearbyRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item)) : nearbyRailData;
+  const scopedPopularEvents = keralaDomain ? popularRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item)) : popularRailData;
+  const scopedForYouEvents = keralaDomain ? forYouEvents.filter(isKeralaEvent) : forYouEvents;
+  const scopedStartingSoon = keralaDomain ? startingSoonRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item)) : startingSoonRailData;
+  const scopedRestaurants = keralaDomain
+    ? restaurantPreviewItems.filter((item) =>
+        item === 'skeleton' ||
+        /kerala|malayali|malayalee|malayalam/i.test(`${item.title} ${item.subtitle ?? ''}`),
+      )
+    : restaurantPreviewItems;
+
+  const scopedMovies = keralaDomain
+    ? moviePreviewItems.filter((item) =>
+        item === 'skeleton' ||
+        /kerala|malayali|malayalee|malayalam/i.test(`${item.title} ${item.subtitle ?? ''}`),
+      )
+    : moviePreviewItems;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -103,8 +174,21 @@ export default function DiscoverScreen() {
         {/* ── Quick access links ── */}
         <SuperAppLinks />
 
+        {keralaDomain && (
+          <View style={[styles.keralaBanner, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Text style={[styles.keralaEyebrow, { color: CultureTokens.gold }]}>CultureKerala</Text>
+            <Text style={[styles.keralaTitle, { color: colors.text }]}>Kerala & Malayalee Communities Worldwide</Text>
+            <Text style={[styles.keralaSub, { color: colors.textSecondary }]}>
+              Discover Malayali events, organisations, businesses, and community stories in one place.
+            </Text>
+            <Pressable style={styles.keralaCta} onPress={() => router.push('/communities')}>
+              <Text style={styles.keralaCtaText}>Explore Kerala Communities</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* ── Hero carousel: featured events ── */}
-        <HeroCarousel events={featuredEvents} />
+        <HeroCarousel events={scopedFeaturedEvents} />
 
         {/* ── Featured artists ── */}
         <FeaturedArtistRail
@@ -130,11 +214,11 @@ export default function DiscoverScreen() {
           title="Starting Soon"
           subtitle="Grab your spot before they start"
           data={
-            (eventsLoading || discoverLoading) && startingSoonRailData.length === 0
+            (eventsLoading || discoverLoading) && scopedStartingSoon.length === 0
               ? ['ss1', 'ss2', 'ss3']
-              : startingSoonRailData
+              : scopedStartingSoon
           }
-          isLoading={(eventsLoading || discoverLoading) && startingSoonRailData.length === 0}
+          isLoading={(eventsLoading || discoverLoading) && scopedStartingSoon.length === 0}
           schedulingMode="live_and_countdown"
           errorMessage={eventsRailError}
           onRetry={() => void refetchEvents()}
@@ -144,7 +228,7 @@ export default function DiscoverScreen() {
         <EventRail
           title="Popular Near You"
           subtitle="Trending in your area"
-          data={popularRailData}
+          data={scopedPopularEvents}
           isLoading={eventsLoading || discoverLoading}
           onSeeAll={() => router.push('/events')}
           errorMessage={eventsRailError}
@@ -154,7 +238,7 @@ export default function DiscoverScreen() {
         <EventRail
           title="Events in Your Area"
           subtitle="Happening in your local community"
-          data={nearbyRailData}
+          data={scopedNearbyEvents}
           isLoading={nearbyLoading}
           onSeeAll={() => router.push('/events')}
           errorMessage={nearbyRailError}
@@ -167,8 +251,8 @@ export default function DiscoverScreen() {
         {/* ── Communities ── */}
         <CommunityRail
           title="Communities"
-          subtitle="Connect with your culture"
-          data={communityRailData}
+          subtitle={keralaDomain ? 'Malayalee groups and cultural circles' : 'Connect with your culture'}
+          data={communitiesLoading ? ['s1', 's2', 's3', 's4'] : scopedCommunities}
           isLoading={communitiesLoading}
           errorMessage={communitiesRailError}
           onRetry={() => void refetchCommunities()}
@@ -192,7 +276,7 @@ export default function DiscoverScreen() {
         <EventRail
           title="For Your Culture"
           subtitle="Personalised events matching your heritage"
-          data={eventsLoading && forYouEvents.length === 0 ? ['s1', 's2', 's3'] : forYouEvents}
+          data={eventsLoading && scopedForYouEvents.length === 0 ? ['s1', 's2', 's3'] : scopedForYouEvents}
           isLoading={eventsLoading}
           onSeeAll={() => router.push('/events')}
           errorMessage={eventsRailError}
@@ -204,7 +288,7 @@ export default function DiscoverScreen() {
           title="Restaurants Near You"
           subtitle="Cultural dining in your neighbourhood"
           accentColor="#FF9500"
-          items={restaurantPreviewItems}
+          items={scopedRestaurants}
           isLoading={restaurantsLoading}
           seeAllRoute="/restaurants"
         />
@@ -214,7 +298,7 @@ export default function DiscoverScreen() {
           title="Movies & Entertainment"
           subtitle="Cultural films, screenings and shows"
           accentColor={CultureTokens.coral}
-          items={moviePreviewItems}
+          items={scopedMovies}
           isLoading={moviesLoading}
           seeAllRoute="/movies"
           cardStyle="portrait"
@@ -251,4 +335,41 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
   footerSpacer: { height: 40 },
+  keralaBanner: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 6,
+  },
+  keralaEyebrow: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  keralaTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontFamily: 'Poppins_700Bold',
+  },
+  keralaSub: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: 'Poppins_400Regular',
+  },
+  keralaCta: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: CultureTokens.indigo,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  keralaCtaText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Poppins_700Bold',
+  },
 });

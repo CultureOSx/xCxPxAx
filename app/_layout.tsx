@@ -7,7 +7,7 @@ import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import {
   Platform,
@@ -33,6 +33,7 @@ import { useLayout } from "@/hooks/useLayout";
 import { initializeWidgets } from "@/lib/widgets/register";
 import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
+import { isCultureKeralaHost } from "@/lib/domainHost";
 
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from "@expo-google-fonts/poppins";
 // Web font loader for Expo web is automatically handled by @expo-google-fonts
@@ -356,32 +357,47 @@ function RootLayoutContent() {
     initializeWidgets();
   }, []);
 
+  const isWeb = Platform.OS === "web";
+  const [isKeralaDomain, setIsKeralaDomain] = useState(false);
+
+  useEffect(() => {
+    setIsKeralaDomain(isCultureKeralaHost());
+  }, []);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
-
-  const isWeb = Platform.OS === "web";
+  const siteUrl = isKeralaDomain ? 'https://culturekerala.com/' : 'https://culturepass.app/';
+  const siteTitle = isKeralaDomain
+    ? 'CultureKerala — Kerala & Malayalee Communities Worldwide'
+    : 'CulturePass — Discover Cultural Events & Communities';
+  const siteDescription = isKeralaDomain
+    ? 'Discover Kerala and Malayalee communities, events, businesses, and culture around the world.'
+    : 'Discover cultural events, join diaspora communities, and find local gems. CulturePass connects you with vibrant experiences across Australia, NZ, UK, UAE, and Canada.';
+  const siteKeywords = isKeralaDomain
+    ? 'CultureKerala, Kerala Communities, Malayalee, Malayalam, Kerala Events, Malayali Diaspora'
+    : 'CulturePass, Cultural Events, Diaspora Communities, Australia, NZ, UK, UAE, Canada, Festivals, Community Hub';
 
   return (
     <ErrorBoundary>
       <Head>
-        <title>CulturePass — Discover Cultural Events & Communities</title>
-        <meta name="description" content="Discover cultural events, join diaspora communities, and find local gems. CulturePass connects you with vibrant experiences across Australia, NZ, UK, UAE, and Canada." />
-        <meta name="keywords" content="CulturePass, Cultural Events, Diaspora Communities, Australia, NZ, UK, UAE, Canada, Festivals, Community Hub" />
+        <title>{siteTitle}</title>
+        <meta name="description" content={siteDescription} />
+        <meta name="keywords" content={siteKeywords} />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://culturepass.app/" />
-        <meta property="og:title" content="CulturePass — Discover Cultural Events & Communities" />
-        <meta property="og:description" content="Explore cultural events and join diaspora communities. Your passport to local belonging." />
-        <meta property="og:image" content="https://culturepass.app/assets/images/social-preview.png" />
+        <meta property="og:url" content={siteUrl} />
+        <meta property="og:title" content={siteTitle} />
+        <meta property="og:description" content={siteDescription} />
+        <meta property="og:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://culturepass.app/" />
-        <meta property="twitter:title" content="CulturePass — Discover Cultural Events & Communities" />
-        <meta property="twitter:description" content="Explore cultural events and join diaspora communities. Your passport to local belonging." />
-        <meta property="twitter:image" content="https://culturepass.app/assets/images/social-preview.png" />
+        <meta property="twitter:url" content={siteUrl} />
+        <meta property="twitter:title" content={siteTitle} />
+        <meta property="twitter:description" content={siteDescription} />
+        <meta property="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
 
         <meta name="theme-color" content="#0B0B14" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

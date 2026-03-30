@@ -37,6 +37,7 @@ export default function CultureFeedScreen() {
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
+  const isWeb       = Platform.OS === 'web';
   const colors      = useColors();
   const { isDesktop, hPad } = useLayout();
   const { state }   = useOnboarding();
@@ -124,17 +125,23 @@ export default function CultureFeedScreen() {
     return posts;
   }, [posts, activeFilter]);
 
+  const postCounts = useMemo(() => {
+    let eventCount = 0;
+    for (const post of posts) {
+      if (post.kind === 'event') eventCount += 1;
+    }
+    return { eventCount, commCount: posts.length - eventCount };
+  }, [posts]);
+
   // Build list items, injecting a trending interstitial at position 4
   const listItems = useMemo<ListItem[]>(() => {
     const items: ListItem[] = [...filteredPosts];
-    if (items.length >= 4) {
-      items.splice(4, 0, { kind: '_trending', id: 'trending-interstitial', city: state.city || '' });
+    const insertAt = isDesktop ? 5 : 4;
+    if (items.length >= insertAt) {
+      items.splice(insertAt, 0, { kind: '_trending', id: 'trending-interstitial', city: state.city || '' });
     }
     return items;
-  }, [filteredPosts, state.city]);
-
-  const eventCount = useMemo(() => posts.filter(p => p.kind === 'event').length, [posts]);
-  const commCount  = useMemo(() => posts.filter(p => p.kind !== 'event').length, [posts]);
+  }, [filteredPosts, state.city, isDesktop]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -163,7 +170,11 @@ export default function CultureFeedScreen() {
     );
   }, [colors]);
 
-  const renderListHeader = useCallback(() => (
+  const getItemType = useCallback((item: ListItem) => {
+    return item.kind === '_trending' ? 'trending' : item.kind;
+  }, []);
+
+  const listHeaderComponent = useMemo(() => (
     <FeedListHeader
       communities={communities}
       authUser={authUser ?? null}
@@ -227,8 +238,8 @@ export default function CultureFeedScreen() {
         <FeedFilterBar
           active={activeFilter}
           onChange={setActiveFilter}
-          eventCount={eventCount}
-          commCount={commCount}
+          eventCount={postCounts.eventCount}
+          commCount={postCounts.commCount}
           colors={colors}
           hPad={hPad}
         />
@@ -253,11 +264,15 @@ export default function CultureFeedScreen() {
             keyExtractor={(item) => (item as ListItem).id}
             numColumns={isDesktop ? 2 : 1}
             renderItem={renderItem}
-            ListHeaderComponent={renderListHeader}
+            getItemType={getItemType}
+            ListHeaderComponent={listHeaderComponent}
             {...({ estimatedItemSize: isDesktop ? 420 : 500 } as any)}
+            initialNumToRender={6}
+            drawDistance={1000}
+            removeClippedSubviews={Platform.OS !== 'web'}
             contentContainerStyle={[
               sc.list,
-              { paddingHorizontal: isDesktop ? hPad : 0, paddingBottom: bottomInset + 96 },
+              { paddingHorizontal: isDesktop || isWeb ? hPad : 0, paddingBottom: bottomInset + 96 },
               isDesktop && sc.listDesktop,
             ]}
             showsVerticalScrollIndicator={false}

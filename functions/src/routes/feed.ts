@@ -188,14 +188,20 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
     // 1. Fetch events, communities, and real community posts in parallel
     const [eventsResult, communitiesResult, communityPosts] = await Promise.all([
       eventsService.list(
-        { city: city || undefined, country: country || undefined, status: 'published' as any },
+        // Avoid composite index dependency for feed endpoint by querying published events only,
+        // then applying city/country filters in memory.
+        { status: 'published' as any },
         { page: 1, pageSize: 60 },
       ),
       profilesService.list({ entityType: 'community', city: city || undefined }),
       fetchCommunityPosts(40),
     ]);
 
-    const events      = eventsResult.items;
+    const events      = eventsResult.items.filter((event) => {
+      const cityOk = !city || (event.city ?? '').toLowerCase() === city.toLowerCase();
+      const countryOk = !country || (event.country ?? '').toLowerCase() === country.toLowerCase();
+      return cityOk && countryOk;
+    });
     const communities = communitiesResult;
 
     // 2. Resolve user context for personalised ranking

@@ -39,6 +39,7 @@ const ACCENT = [
   CultureTokens.indigo, CultureTokens.teal, CultureTokens.coral,
   CultureTokens.gold, CultureTokens.gold, '#7C3AED', '#059669',
 ];
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 const COUNTRY_FLAG: Record<string, string> = {
   Australia: '🇦🇺', 'New Zealand': '🇳🇿', UAE: '🇦🇪', UK: '🇬🇧', Canada: '🇨🇦',
@@ -134,10 +135,10 @@ function FeedFilterChip({
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 40 }).start();
+    Animated.spring(scale, { toValue: 0.93, useNativeDriver: USE_NATIVE_DRIVER, speed: 40 }).start();
   }, [scale]);
   const handlePressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 25 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: USE_NATIVE_DRIVER, speed: 25 }).start();
   }, [scale]);
 
   const chipBg = active ? CultureTokens.indigo : colors.surface;
@@ -728,8 +729,8 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
     setLikeCount((v) => Math.max(0, wasLiked ? v - 1 : v + 1));
     setLikeError(false);
     Animated.sequence([
-      Animated.spring(scaleAnim, { toValue: 1.5, useNativeDriver: true, speed: 40 }),
-      Animated.spring(scaleAnim, { toValue: 1,   useNativeDriver: true, speed: 25 }),
+      Animated.spring(scaleAnim, { toValue: 1.5, useNativeDriver: USE_NATIVE_DRIVER, speed: 40 }),
+      Animated.spring(scaleAnim, { toValue: 1,   useNativeDriver: USE_NATIVE_DRIVER, speed: 25 }),
     ]).start();
     try {
       await toggleLike(pid, pcol, user.id);
@@ -1147,7 +1148,48 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
 }
 
 PostCardInner.displayName = 'PostCard';
-const PostCard = React.memo(PostCardInner);
+const PostCard = React.memo(
+  PostCardInner,
+  (prev, next) => {
+    const a = prev.post;
+    const b = next.post;
+    if (prev.colorIdx !== next.colorIdx) return false;
+    if (a.id !== b.id || a.kind !== b.kind || a.createdAt !== b.createdAt) return false;
+
+    if (a.kind === 'event' && b.kind === 'event') {
+      return (
+        a.event.id === b.event.id &&
+        a.event.title === b.event.title &&
+        a.event.imageUrl === b.event.imageUrl &&
+        a.event.attending === b.event.attending &&
+        a.event.date === b.event.date &&
+        a.event.time === b.event.time
+      );
+    }
+    if (a.kind === 'announcement' && b.kind === 'announcement') {
+      return (
+        a.body === b.body &&
+        a.imageUrl === b.imageUrl &&
+        a.likesCount === b.likesCount &&
+        a.commentsCount === b.commentsCount
+      );
+    }
+    if (a.kind === 'milestone' && b.kind === 'milestone') {
+      return a.members === b.members && a.community.id === b.community.id;
+    }
+    if (a.kind === 'welcome' && b.kind === 'welcome') {
+      return a.community.id === b.community.id;
+    }
+    if (a.kind === 'collection-highlight' && b.kind === 'collection-highlight') {
+      return (
+        a.tokenName === b.tokenName &&
+        a.userName === b.userName &&
+        a.community.id === b.community.id
+      );
+    }
+    return false;
+  },
+);
 
 const pcd = StyleSheet.create({
   // Base — mobile overrides applied inline in PostCardInner
@@ -1172,7 +1214,7 @@ const pcd = StyleSheet.create({
   // ── Announcement ──────────────────────────────────────────────────────────
   postImg:         { height: 260, width: '100%', backgroundColor: '#0D0D14' },
   announcementBody:{ paddingHorizontal: 16, paddingVertical: 14 },
-  announcementText:{ fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 26 },
+  announcementText:{ fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 23, letterSpacing: 0.1 },
   readMore:        { fontSize: 14, fontFamily: 'Poppins_600SemiBold', marginTop: 6, lineHeight: 20 },
 
   // ── Welcome ───────────────────────────────────────────────────────────────
@@ -1194,8 +1236,8 @@ function SkeletonCard({ colors }: { colors: ReturnType<typeof useColors> }) {
   const anim = useRef(new Animated.Value(0.35)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(anim, { toValue: 0.9,  duration: 850, useNativeDriver: true }),
-      Animated.timing(anim, { toValue: 0.35, duration: 850, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0.9,  duration: 850, useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.timing(anim, { toValue: 0.35, duration: 850, useNativeDriver: USE_NATIVE_DRIVER }),
     ]));
     loop.start();
     return () => loop.stop();
