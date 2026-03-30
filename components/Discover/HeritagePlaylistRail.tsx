@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
+import { withAlpha } from '@/lib/withAlpha';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { captureEvent } from '@/lib/analytics';
@@ -166,7 +167,7 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
                       onPress={() => void openListenUrl(item.externalUrl!, item.id)}
                       style={({ pressed }) => [
                         styles.listenBtn,
-                        { backgroundColor: colors.backgroundSecondary, borderColor: item.accentColor + '55' },
+                        { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
                         pressed && { opacity: 0.85 },
                       ]}
                       accessibilityRole="button"

@@ -381,7 +381,11 @@ export default function SubmitScreen() {
         width: uploaded.width,
         height: uploaded.height,
       });
-    } catch {}
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[uploadAndAttach] Failed to upload and attach image', { imageUri, targetType, targetId, error: err });
+      }
+    }
   };
 
   const uploadCoverIfNeeded = async (): Promise<string | null> => {
@@ -394,7 +398,10 @@ export default function SubmitScreen() {
       formData.append('image', blob as unknown as Blob, 'upload.jpg');
       const uploaded = await api.uploads.image(formData);
       return uploaded.imageUrl;
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[uploadCoverIfNeeded] Failed to upload cover image', { imageUri, error: err });
+      }
       return null;
     }
   };
