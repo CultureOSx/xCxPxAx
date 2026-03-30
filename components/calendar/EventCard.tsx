@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';

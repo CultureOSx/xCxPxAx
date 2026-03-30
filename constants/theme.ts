@@ -313,6 +313,6 @@ export const BorderTokens = {
 //     web: webShadow('0 4px 12px rgba(0,0,0,0.08)'),
 //   })
  
-export function webShadow(shadow: string): any {
+export function webShadow(shadow: string): { boxShadow: string } {
   return { boxShadow: shadow };
 }
