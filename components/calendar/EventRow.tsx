@@ -48,8 +48,8 @@ export function EventRow({
           borderColor: colors.borderLight,
           ...Platform.select({
             ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
-            android: { elevation: 2 },
-            web: webShadow('0 4px 12px rgba(0,0,0,0.06)'),
+            android: { elevation: 2, shadowColor: '#000' },
+            web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
           }),
         },
         pressed && { opacity: 0.85 },

@@ -536,8 +536,9 @@ const getStyles = (colors: any, insets: any, isDesktop: boolean) => StyleSheet.c
     borderWidth: 1,
     borderColor: colors.borderLight,
     ...Platform.select({
-      web: webShadow('0px 4px 12px rgba(0,0,0,0.04)'),
-      default: { elevation: 2 },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
+      android: { elevation: 2, shadowColor: '#000' },
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.04)' },
     }),
   },
   statBox: { flex: 1, alignItems: 'center' },

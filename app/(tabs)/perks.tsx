@@ -276,8 +276,8 @@ const qs = StyleSheet.create({
     height: 160,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
-      android: { elevation: 3 },
-      web: webShadow('0 2px 12px rgba(0,0,0,0.06)'),
+      android: { elevation: 3, shadowColor: '#000' },
+      web: { boxShadow: '0 2px 12px rgba(0,0,0,0.06)' },
     }),
   },
   questImageStrip: { width: 160, position: 'relative' },
@@ -430,8 +430,8 @@ const eb = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4 },
-      android: { elevation: 2 },
-      web: webShadow('0 1px 6px rgba(0,0,0,0.04)'),
+      android: { elevation: 2, shadowColor: '#000' },
+      web: { boxShadow: '0 1px 6px rgba(0,0,0,0.04)' },
     }),
   },
   levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
@@ -500,8 +500,8 @@ const mb = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
-      android: { elevation: 4 },
-      web: webShadow('0 4px 20px rgba(0,0,0,0.1)'),
+      android: { elevation: 4, shadowColor: '#000' },
+      web: { boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
     }),
   },
   headline: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 2 },

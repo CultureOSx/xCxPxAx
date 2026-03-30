@@ -167,8 +167,8 @@ const fr = StyleSheet.create({
     backgroundColor: '#13131F',
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
-      android: { elevation: 5 },
-      web:     webShadow('0 6px 20px rgba(0,0,0,0.18)'),
+      android: { elevation: 5, shadowColor: '#000' },
+      web:     { boxShadow: '0 6px 20px rgba(0,0,0,0.18)' },
     }),
   },
   imgPlaceholder: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
@@ -232,8 +232,8 @@ export function DirectoryEventCard({
             borderColor: colors.borderLight,
             ...Platform.select({
               ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
-              android: { elevation: 2 },
-              web:     webShadow('0 4px 12px rgba(0,0,0,0.06)'),
+              android: { elevation: 2, shadowColor: '#000' },
+              web:     { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
             }),
           },
           pressed && { opacity: 0.93 },
@@ -360,8 +360,8 @@ export function DirectoryCard({
             : colors.borderLight,
           ...Platform.select({
             ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-            android: { elevation: 4 },
-            web:     webShadow(isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)'),
+            android: { elevation: 4, shadowColor: '#000' },
+            web:     { boxShadow: isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)' },
           }),
         },
         (isCouncil || isProfessional) && { borderWidth: 1.5 },

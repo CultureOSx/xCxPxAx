@@ -478,8 +478,8 @@ const s = StyleSheet.create({
     borderRadius: 26, 
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
-      android: { elevation: 6 },
-      web: webShadow('0 4px 12px rgba(0,0,0,0.2)'),
+      android: { elevation: 6, shadowColor: '#000' },
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' },
     }),
   },
   fabInner:       { flex: 1, alignItems: 'center', justifyContent: 'center' },

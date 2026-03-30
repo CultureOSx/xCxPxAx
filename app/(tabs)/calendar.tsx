@@ -39,6 +39,23 @@ export default function CalendarScreen() {
   const contentMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
   const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
 
+  // Platform shadow style for calendar card
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
+  const calCardShadow = Platform.select<any>({
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
+    android: { elevation: 6, shadowColor: '#000' },
+    web: webShadow(isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)')
+  });
+  // Platform shadow style for civic reminders
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
+  const civicRowShadow = Platform.select<any>({
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+    android: { elevation: 1, shadowColor: '#000' },
+    web: webShadow('0 2px 8px rgba(0,0,0,0.04)')
+  });
+
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -365,15 +382,8 @@ export default function CalendarScreen() {
               <View
                 style={[
                   s.calCard,
-                  { 
-                    backgroundColor: colors.surface, 
-                    borderColor: colors.borderLight,
-                    ...Platform.select({
-                      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
-                      android: { elevation: 6 },
-                      web: webShadow(isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)'),
-                    }),
-                  },
+                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                  calCardShadow,
                   isDesktopWeb && s.calCardCompact,
                 ]}
               >
@@ -554,15 +564,8 @@ export default function CalendarScreen() {
                   key={reminder.id}
                   style={[
                     s.civicRow,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: CultureTokens.indigo + '30',
-                      ...Platform.select({
-                        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-                        android: { elevation: 1 },
-                        web: webShadow('0 2px 8px rgba(0,0,0,0.04)'),
-                      }),
-                    },
+                    { backgroundColor: colors.surface, borderColor: CultureTokens.indigo + '30' },
+                    civicRowShadow,
                   ]}
                 >
                   <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
