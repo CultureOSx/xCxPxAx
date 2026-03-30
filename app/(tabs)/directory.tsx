@@ -43,7 +43,7 @@ import {
   isWeb,
   s,
   getTags,
-} from './directory/_components/DirectoryComponents';
+} from '@/components/directory/DirectoryComponents';
 
 // ─── DirectoryScreen ──────────────────────────────────────────────────────────
 

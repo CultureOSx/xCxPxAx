@@ -30,8 +30,8 @@ import type { EventData, Community } from '@/shared/schema';
 import {
   FeedFilterBar, SkeletonCard, FeedListHeader, PostCard,
   TrendingInterstitial, CreatePostModal, useAuthGate, COUNTRY_FLAG,
-} from './feed/_components/FeedComponents';
-import type { FeedFilter, FeedPost, ListItem } from './feed/_components/types';
+} from '@/components/feed/FeedComponents';
+import type { FeedFilter, FeedPost, ListItem } from '@/components/feed/types';
 
 export default function CultureFeedScreen() {
   const insets      = useSafeAreaInsets();

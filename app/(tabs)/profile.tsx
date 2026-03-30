@@ -32,13 +32,13 @@ import {
   ProfileAvatar,
   ProfileSkeleton,
   CultureMapModal,
-} from './profile/_components/ProfileComponents';
+} from '@/components/profile-tabs/ProfileComponents';
 import {
   fmt, memberDate, TIER_CFG, NAT_COORDS, SOCIAL_DEFS,
-} from './profile/_components/ProfileUtils';
+} from '@/components/profile-tabs/ProfileUtils';
 import {
   root, hero, act, tier, sec, cul, prk, cpid, soc, det, set, sout,
-} from './profile/_components/ProfileStyles';
+} from '@/components/profile-tabs/ProfileStyles';
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
