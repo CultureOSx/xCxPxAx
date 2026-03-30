@@ -42,7 +42,6 @@
     "update:production": "eas update --branch production"
   },
   "dependencies": {
-    "@bacons/apple-targets": "^4.0.6",
     "@expo-google-fonts/inter": "^0.4.1",
     "@expo-google-fonts/poppins": "^0.4.1",
     "@expo/ui": "^55.0.5",
@@ -117,6 +116,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@bacons/apple-targets": "^4.0.6",
     "@expo/ngrok": "^4.1.0",
     "@faker-js/faker": "^10.3.0",
     "@react-native-community/cli": "^20.1.2",
