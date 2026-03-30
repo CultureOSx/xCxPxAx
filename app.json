@@ -100,7 +100,12 @@
       "output": "static"
     },
     "plugins": [
-      ["expo-router", { "origin": "https://culturepass.app" }],
+      [
+        "expo-router",
+        {
+          "origin": "https://culturepass.app"
+        }
+      ],
       "expo-font",
       "expo-web-browser",
       "expo-apple-authentication",
@@ -150,13 +155,30 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": "https://culturepass.app"
+      },
       "eas": {
-        "projectId": "4bb2f141-de49-47d5-9212-e23e8c0b61d4",
+        "projectId": "57618e79-e51c-4891-9cf6-f357585d9c72",
         "build": {
           "experimental": {
             "ios": {
               "appExtensions": [
+                {
+                  "bundleIdentifier": "au.culturepass.app.widget",
+                  "targetName": "widget",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.spotlight",
+                  "targetName": "spotlight",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.smart-card",
+                  "targetName": "smartcard",
+                  "entitlements": {}
+                },
                 {
                   "bundleIdentifier": "au.culturepass.app.widget",
                   "targetName": "widget",
@@ -178,7 +200,7 @@
         }
       }
     },
-    "owner": "cultureos-org",
+    "owner": "cultureos",
     "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"

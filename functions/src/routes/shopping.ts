@@ -3,6 +3,7 @@ import { requireAuth, requireRole } from '../middleware/auth';
 import { shoppingService } from '../services/shopping';
 import { wrap, captureRouteError } from './utils';
 import { ShopInputSchema } from './validation';
+import type { ShopInput } from '../../../shared/schema';
 import { z } from 'zod';
 
 export const shoppingRouter = Router();
@@ -43,7 +44,7 @@ shoppingRouter.post('/shopping', requireAuth, requireRole('organizer', 'admin', 
     if (!parse.success) {
       return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
     }
-    const item = await shoppingService.create(parse.data);
+    const item = await shoppingService.create(parse.data as ShopInput);
     res.status(201).json(item);
   } catch (err) {
     captureRouteError(err, 'POST /shopping');
@@ -58,7 +59,7 @@ shoppingRouter.put('/shopping/:id', requireAuth, requireRole('organizer', 'admin
     if (!parse.success) {
       return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
     }
-    const item = await shoppingService.update(String(req.params.id), parse.data);
+    const item = await shoppingService.update(String(req.params.id), parse.data as Partial<ShopInput>);
     if (!item) return res.status(404).json({ error: 'Shop not found' });
     res.json(item);
   } catch (err) {

@@ -114,7 +114,6 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
           ) : (
             <Pressable
               onPress={() => handleCardPress(item)}
-              accessibilityRole="button"
               accessibilityLabel={`${item.title} by ${item.artist}. Opens matching culture in Explore.`}
               style={({ pressed }) => [
                 styles.card,
@@ -163,20 +162,42 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
                     <Text style={[styles.discoverHintText, { color: CultureTokens.teal }]}>Open discovery</Text>
                   </View>
                   {item.externalUrl ? (
-                    <Pressable
-                      onPress={() => void openListenUrl(item.externalUrl!, item.id)}
-                      style={({ pressed }) => [
-                        styles.listenBtn,
-                        { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
-                        pressed && { opacity: 0.85 },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Listen in Spotify or browser"
-                      hitSlop={8}
-                    >
-                      <Ionicons name="musical-notes" size={14} color={item.accentColor} />
-                      <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
-                    </Pressable>
+                    Platform.OS === 'web' ? (
+                      <View
+                        style={[
+                          styles.listenBtn,
+                          { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
+                        ]}
+                        accessibilityRole="link"
+                        accessibilityLabel="Listen in Spotify or browser"
+                        onStartShouldSetResponder={() => true}
+                        onResponderRelease={(event) => {
+                          event.stopPropagation?.();
+                          void openListenUrl(item.externalUrl!, item.id);
+                        }}
+                      >
+                        <Ionicons name="musical-notes" size={14} color={item.accentColor} />
+                        <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation?.();
+                          void openListenUrl(item.externalUrl!, item.id);
+                        }}
+                        style={({ pressed }) => [
+                          styles.listenBtn,
+                          { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Listen in Spotify or browser"
+                        hitSlop={8}
+                      >
+                        <Ionicons name="musical-notes" size={14} color={item.accentColor} />
+                        <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
+                      </Pressable>
+                    )
                   ) : null}
                 </View>
               </View>

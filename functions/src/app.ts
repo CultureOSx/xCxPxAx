@@ -63,6 +63,10 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'http://127.0.0.1:19006',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
+  // Local network development (Expo on LAN)
+  /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/,
 ];
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -77,7 +81,9 @@ const corsOptions: cors.CorsOptions = {
     if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: Origin '${origin}' not allowed`));
+      const err = new Error(`CORS: Origin '${origin}' not allowed`) as Error & { status?: number };
+      err.status = 403;
+      callback(err);
     }
   },
   credentials: true,

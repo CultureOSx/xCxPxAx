@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ContentStatus } from '../../shared/schema/common';
+
+const ContentStatusSchema = z.enum(['active', 'draft', 'archived', 'suspended']);
 
 export const ShopDealSchema = z.object({
   id: z.string().optional(),
@@ -41,5 +42,5 @@ export const ShopInputSchema = z.object({
   deals: z.array(ShopDealSchema).optional(),
   ownerId: z.string().optional(),
   culturePassId: z.string().optional(),
-  status: z.nativeEnum(ContentStatus).optional(),
+  status: ContentStatusSchema.optional(),
 });
