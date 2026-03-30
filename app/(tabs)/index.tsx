@@ -39,7 +39,7 @@ export default function DiscoverScreen() {
     heritagePlaylist,
     land,
     indigenousOrganisations,
-    nowBuckets,
+    startingSoonRailData,
     popularRailData,
     communityRailData,
     nearbyRailData,
@@ -61,6 +61,17 @@ export default function DiscoverScreen() {
     shoppingLoading,
     perksPreviewItems,
     perksLoading,
+    eventsRailError,
+    communitiesRailError,
+    activitiesRailError,
+    nearbyRailError,
+    curationRailError,
+    curationLoading,
+    refetchEvents,
+    refetchCommunities,
+    refetchActivities,
+    refetchCuration,
+    retryNearbyProbe,
   } = useDiscoverData();
 
   return (
@@ -96,10 +107,15 @@ export default function DiscoverScreen() {
         <HeroCarousel events={featuredEvents} />
 
         {/* ── Featured artists ── */}
-        <FeaturedArtistRail data={featuredArtists} />
+        <FeaturedArtistRail
+          data={featuredArtists}
+          isLoading={curationLoading}
+          errorMessage={curationRailError}
+          onRetry={() => void refetchCuration()}
+        />
 
         {/* ── Heritage playlists ── */}
-        <HeritagePlaylistRail data={heritagePlaylist} />
+        <HeritagePlaylistRail data={heritagePlaylist} isLoading={curationLoading} />
 
         {/* ── Indigenous spotlight ── */}
         <IndigenousSpotlight
@@ -109,27 +125,30 @@ export default function DiscoverScreen() {
           businesses={[]}
         />
 
-        {/* ── Live & starting soon ── */}
-        <EventRail
-          title="Happening Now"
-          subtitle="Events occurring right now or starting shortly"
-          data={nowBuckets.happeningNow}
-          isLive
-        />
-
+        {/* ── Starting soon (LIVE within window + countdown until start) ── */}
         <EventRail
           title="Starting Soon"
-          subtitle="Events starting in the next few hours"
-          data={nowBuckets.startingSoon}
+          subtitle="Grab your spot before they start"
+          data={
+            (eventsLoading || discoverLoading) && startingSoonRailData.length === 0
+              ? ['ss1', 'ss2', 'ss3']
+              : startingSoonRailData
+          }
+          isLoading={(eventsLoading || discoverLoading) && startingSoonRailData.length === 0}
+          schedulingMode="live_and_countdown"
+          errorMessage={eventsRailError}
+          onRetry={() => void refetchEvents()}
         />
 
         {/* ── Popular & nearby events ── */}
         <EventRail
           title="Popular Near You"
-          subtitle={`Trending events around ${state.city}`}
+          subtitle="Trending in your area"
           data={popularRailData}
           isLoading={eventsLoading || discoverLoading}
           onSeeAll={() => router.push('/events')}
+          errorMessage={eventsRailError}
+          onRetry={() => void refetchEvents()}
         />
 
         <EventRail
@@ -138,22 +157,31 @@ export default function DiscoverScreen() {
           data={nearbyRailData}
           isLoading={nearbyLoading}
           onSeeAll={() => router.push('/events')}
+          errorMessage={nearbyRailError}
+          onRetry={() => {
+            void refetchEvents();
+            void retryNearbyProbe();
+          }}
         />
 
         {/* ── Communities ── */}
         <CommunityRail
-          title="Diaspora Communities"
-          subtitle="Connect with your heritage"
+          title="Communities"
+          subtitle="Connect with your culture"
           data={communityRailData}
           isLoading={communitiesLoading}
+          errorMessage={communitiesRailError}
+          onRetry={() => void refetchCommunities()}
         />
 
         {/* ── Activities ── */}
         <ActivityRail
-          title="Culture & Exploration"
-          subtitle="Workshops, tours, and cultural sites"
+          title="Activities"
+          subtitle="Workshops and experiences"
           data={activityRailData}
           isLoading={activitiesLoading}
+          errorMessage={activitiesRailError}
+          onRetry={() => void refetchActivities()}
         />
 
         {/* ── Category & city browsing ── */}
@@ -164,9 +192,11 @@ export default function DiscoverScreen() {
         <EventRail
           title="For Your Culture"
           subtitle="Personalised events matching your heritage"
-          data={forYouEvents.length > 0 ? forYouEvents : ['s1', 's2', 's3']}
+          data={eventsLoading && forYouEvents.length === 0 ? ['s1', 's2', 's3'] : forYouEvents}
           isLoading={eventsLoading}
           onSeeAll={() => router.push('/events')}
+          errorMessage={eventsRailError}
+          onRetry={() => void refetchEvents()}
         />
 
         {/* ── Restaurants ── */}

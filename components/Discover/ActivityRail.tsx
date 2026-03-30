@@ -8,6 +8,7 @@ import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
 import SectionHeader from './SectionHeader';
+import { RailErrorBanner } from './RailErrorBanner';
 import type { ActivityData } from '@/lib/api';
 
 interface ActivityRailProps {
@@ -16,19 +17,26 @@ interface ActivityRailProps {
   data: (ActivityData | string)[];
   isLoading?: boolean;
   onSeeAll?: () => void;
+  errorMessage?: string | null;
+  onRetry?: () => void;
 }
 
-function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll }: ActivityRailProps) {
+function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll, errorMessage, onRetry }: ActivityRailProps) {
   const { isDesktop } = useLayout();
   const colors = useColors();
 
-  if (!isLoading && data.length === 0) return null;
+  const hasRealItems = data.some((item) => typeof item !== 'string');
+
+  if (!isLoading && !hasRealItems && !errorMessage) return null;
 
   return (
     <View style={styles.container}>
       <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
+      {errorMessage && !isLoading && !hasRealItems ? (
+        <RailErrorBanner message={errorMessage} onRetry={onRetry} />
+      ) : (
       <FlatList
         horizontal
         data={data}
@@ -75,14 +83,15 @@ function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll }: A
         windowSize={5}
         removeClippedSubviews
       />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
+  container: { marginBottom: 36 },
   headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  scrollRail: { paddingHorizontal: 20, gap: 22, paddingRight: 44 },
   activityTile: { 
     width: 200, 
     padding: 16, 

@@ -125,6 +125,55 @@ export function formatEventDateTimeBadge(date: string, time?: string, country?: 
   return time ? `${dateLabel} • ${formatEventTime(time)}` : dateLabel;
 }
 
+/** Discover “live” badge window after scheduled start (no endTime on most events). */
+export const DISCOVER_EVENT_LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Parses local start time from `YYYY-MM-DD` plus optional `HH:MM` or `h:mm am/pm`.
+ * Uses the device’s local timezone.
+ */
+export function parseEventStartMs(dateStr: string, timeStr?: string | null): number | null {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const t = timeStr?.trim();
+  if (t) {
+    const h24 = t.match(/^(\d{1,2}):(\d{2})$/);
+    if (h24) {
+      const hh = h24[1].padStart(2, '0');
+      const d = new Date(`${dateStr}T${hh}:${h24[2]}:00`);
+      if (!Number.isNaN(d.getTime())) return d.getTime();
+    }
+    const ampm = t.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+    if (ampm) {
+      let h = parseInt(ampm[1], 10);
+      const m = ampm[2];
+      const ap = ampm[3].toLowerCase();
+      if (ap === 'pm' && h !== 12) h += 12;
+      if (ap === 'am' && h === 12) h = 0;
+      const d = new Date(`${dateStr}T${String(h).padStart(2, '0')}:${m}:00`);
+      if (!Number.isNaN(d.getTime())) return d.getTime();
+    }
+  }
+  const d = new Date(`${dateStr}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d.getTime();
+}
+
+/**
+ * Human-readable countdown for “Starts in …” (e.g. `1h 05m`, `12:04`).
+ */
+export function formatStartsInCountdown(msUntilStart: number): string {
+  if (msUntilStart <= 0) return '0:00';
+  const totalSec = Math.ceil(msUntilStart / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+export function isEventInDiscoverLiveWindow(startMs: number, nowMs: number = Date.now()): boolean {
+  return startMs <= nowMs && nowMs < startMs + DISCOVER_EVENT_LIVE_WINDOW_MS;
+}
+
 export function timeAgo(date: string | Date | null | undefined): string {
   const from = toDate(date);
   if (!from) return 'just now';

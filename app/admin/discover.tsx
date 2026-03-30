@@ -451,7 +451,10 @@ function DiscoverAdminContent() {
               ) : null}
             </View>
 
-            <SectionLabel title="HERITAGE PLAYLIST" subtitle="These cards always route into Explore, so focus should match a real Explore category." />
+            <SectionLabel
+              title="HERITAGE PLAYLIST"
+              subtitle="Cards open Explore for matched cultural discovery. Optional Listen URL (Spotify, Apple Music, web) opens in the user’s browser or app."
+            />
             <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorRow}>
                 {config.heritagePlaylists.map((item, index) => (
@@ -525,6 +528,15 @@ function DiscoverAdminContent() {
                     placeholder="Image URL"
                     placeholderTextColor={colors.textTertiary}
                     autoCapitalize="none"
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
+                    value={selectedPlaylist.externalUrl || ''}
+                    onChangeText={(value) => updatePlaylist('externalUrl', value.trim() ? value.trim() : undefined)}
+                    placeholder="Listen URL (optional — Spotify / Apple Music / https)"
+                    placeholderTextColor={colors.textTertiary}
+                    autoCapitalize="none"
+                    keyboardType="url"
                   />
                   <TextInput
                     style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}

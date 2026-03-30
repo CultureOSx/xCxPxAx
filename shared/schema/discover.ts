@@ -42,6 +42,8 @@ export interface HeritagePlaylistEntry {
   typeLabel: HeritagePlaylistType;
   accentColor: string;
   focus: DiscoverFocus;
+  /** Optional Spotify / Apple Music / web audio URL — opens in system browser or app. */
+  externalUrl?: string;
   city?: string;
   country?: string;
   isLive?: boolean;
@@ -163,6 +165,7 @@ export const DEFAULT_DISCOVER_CURATION: DiscoverCurationConfig = {
       accentColor: '#FFC857',
       focus: 'heritage',
       active: true,
+      externalUrl: 'https://open.spotify.com/search/diaspora%20stories%20podcast',
     },
   ],
 };

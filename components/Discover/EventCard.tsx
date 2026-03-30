@@ -7,9 +7,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Colors, CultureTokens, SpringConfig } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { formatEventDateTimeBadge } from '@/lib/dateUtils';
+import {
+  DISCOVER_EVENT_LIVE_WINDOW_MS,
+  formatEventDateTimeBadge,
+  formatStartsInCountdown,
+  parseEventStartMs,
+} from '@/lib/dateUtils';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const RAIL_CARD_WIDTH = 248;
+const RAIL_IMAGE_HEIGHT = 152;
 
 function isFreePriceLabel(label: string | undefined): boolean {
   return Boolean(label && label.trim().toLowerCase() === 'free');
@@ -35,15 +43,76 @@ interface EventCardProps {
   isLive?: boolean;
   containerWidth?: number;
   containerHeight?: number;
+  /** `stacked` = image on top, text below (Discover rails). `overlay` = full-bleed hero (e.g. city grid). */
+  layout?: 'overlay' | 'stacked';
+  /**
+   * When `live_and_countdown` + stacked: show LIVE (within window after start) or a ticking “Starts in …” timer.
+   * Ignores `isLive` for badge logic.
+   */
+  schedulingMode?: 'default' | 'live_and_countdown';
 }
 
-function CardContent({
+function StackedLiveSoonSchedule({ event }: { event: EventCardProps['event'] }) {
+  const [, setTick] = React.useState(0);
+  const startMs = React.useMemo(() => parseEventStartMs(event.date, event.time), [event.date, event.time]);
+
+  React.useEffect(() => {
+    if (startMs == null) return;
+    const bump = () => setTick((x) => x + 1);
+    bump();
+    const left = startMs - Date.now();
+    const intervalMs = left > 3600000 ? 30000 : 1000;
+    const id = setInterval(bump, intervalMs);
+    return () => clearInterval(id);
+  }, [startMs, event.id]);
+
+  if (startMs == null) {
+    return (
+      <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.indigo }]}>
+        <Text style={styles.statusBadgeTextDark}>Starting soon</Text>
+      </View>
+    );
+  }
+
+  const now = Date.now();
+  const endLive = startMs + DISCOVER_EVENT_LIVE_WINDOW_MS;
+
+  if (now >= startMs && now < endLive) {
+    return (
+      <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.error }]}>
+        <View style={styles.pulseDot} />
+        <Text style={styles.statusBadgeTextDark}>LIVE</Text>
+      </View>
+    );
+  }
+
+  if (now < startMs) {
+    return (
+      <View
+        style={[
+          styles.countdownRow,
+          { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '33' },
+        ]}
+        accessibilityRole="timer"
+        accessibilityLabel={`Starts in ${formatStartsInCountdown(startMs - now)}`}
+      >
+        <Ionicons name="time-outline" size={16} color={CultureTokens.indigo} />
+        <Text style={[styles.countdownLabel, { color: CultureTokens.indigo }]} numberOfLines={1}>
+          Starts in {formatStartsInCountdown(startMs - now)}
+        </Text>
+      </View>
+    );
+  }
+
+  return null;
+}
+
+function OverlayCardContent({
   event,
   highlight,
   colors,
   isLive,
 }: Pick<EventCardProps, 'event' | 'highlight' | 'isLive'> & { colors: ReturnType<typeof useColors> }) {
-  // Logic for "Starting Next" if not live
   const now = new Date();
   const eventDate = new Date(event.date);
   const isToday = eventDate.toDateString() === now.toDateString();
@@ -65,7 +134,7 @@ function CardContent({
       <Text style={[styles.dateText, highlight && styles.dateHighlight]}>
         {formatEventDateTimeBadge(event.date, event.time)}
       </Text>
-      
+
       <Text style={[styles.titleText, highlight && styles.titleHighlight]} numberOfLines={2}>
         {event.title}
       </Text>
@@ -94,7 +163,114 @@ function CardContent({
   );
 }
 
-function EventCard({ event, highlight, index = 0, isLive, containerWidth, containerHeight }: EventCardProps) {
+function StackedCardContent({
+  event,
+  highlight,
+  colors,
+  isLive,
+  schedulingMode = 'default',
+}: Pick<EventCardProps, 'event' | 'highlight' | 'isLive' | 'schedulingMode'> & { colors: ReturnType<typeof useColors> }) {
+  const now = new Date();
+  const eventDate = new Date(event.date);
+  const isToday = eventDate.toDateString() === now.toDateString();
+  const isStartingNext = !isLive && isToday;
+
+  if (schedulingMode === 'live_and_countdown') {
+    return (
+      <View style={styles.stackedBody}>
+        <StackedLiveSoonSchedule event={event} />
+        <Text style={[styles.stackedDate, { color: CultureTokens.gold }]}>
+          {formatEventDateTimeBadge(event.date, event.time)}
+        </Text>
+        <Text
+          style={[styles.stackedTitle, { color: colors.text }, highlight && styles.stackedTitleHi]}
+          numberOfLines={2}
+        >
+          {event.title}
+        </Text>
+        <View style={styles.stackedMetaRow}>
+          <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+          <Text style={[styles.stackedLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+            {event.venue || event.city || ' '}
+          </Text>
+        </View>
+        {event.priceLabel ? (
+          <View
+            style={[
+              styles.stackedPricePill,
+              { borderColor: colors.border, backgroundColor: colors.backgroundSecondary },
+              isFreePriceLabel(event.priceLabel) && {
+                backgroundColor: CultureTokens.teal + '22',
+                borderColor: CultureTokens.teal + '55',
+              },
+            ]}
+          >
+            <Text style={[styles.stackedPriceText, { color: colors.text }]}>{event.priceLabel}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.stackedBody}>
+      {isLive ? (
+        <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.error }]}>
+          <View style={styles.pulseDot} />
+          <Text style={styles.statusBadgeTextDark}>now live</Text>
+        </View>
+      ) : isStartingNext ? (
+        <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.indigo }]}>
+          <Text style={styles.statusBadgeTextDark}>Starting next</Text>
+        </View>
+      ) : null}
+
+      <Text style={[styles.stackedDate, { color: CultureTokens.gold }]}>
+        {formatEventDateTimeBadge(event.date, event.time)}
+      </Text>
+
+      <Text
+        style={[styles.stackedTitle, { color: colors.text }, highlight && styles.stackedTitleHi]}
+        numberOfLines={2}
+      >
+        {event.title}
+      </Text>
+
+      <View style={styles.stackedMetaRow}>
+        <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+        <Text style={[styles.stackedLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+          {event.venue || event.city || ' '}
+        </Text>
+      </View>
+
+      {event.priceLabel ? (
+        <View
+          style={[
+            styles.stackedPricePill,
+            { borderColor: colors.border, backgroundColor: colors.backgroundSecondary },
+            isFreePriceLabel(event.priceLabel) && {
+              backgroundColor: CultureTokens.teal + '22',
+              borderColor: CultureTokens.teal + '55',
+            },
+          ]}
+        >
+          <Text style={[styles.stackedPriceText, { color: colors.text }]}>{event.priceLabel}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function EventCard({
+  event,
+  highlight,
+  index = 0,
+  isLive,
+  containerWidth,
+  containerHeight,
+  layout = 'overlay',
+  schedulingMode = 'default',
+}: EventCardProps) {
   const colors = useColors();
   const scale = useSharedValue(1);
 
@@ -102,10 +278,59 @@ function EventCard({ event, highlight, index = 0, isLive, containerWidth, contai
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => { scale.value = withSpring(0.97, SpringConfig.snappy); };
-  const handlePressOut = () => { scale.value = withSpring(1, SpringConfig.smooth); };
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, SpringConfig.snappy);
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, SpringConfig.smooth);
+  };
 
   const [isHovered, setIsHovered] = React.useState(false);
+
+  const cardWidth = containerWidth ?? (layout === 'stacked' ? RAIL_CARD_WIDTH : 240);
+
+  if (layout === 'stacked') {
+    return (
+      <View>
+        <AnimatedPressable
+          style={[
+            styles.stackedCard,
+            { width: cardWidth, backgroundColor: colors.surface },
+            highlight && styles.stackedHighlight,
+            animatedStyle,
+            Platform.OS === 'web' && { cursor: 'pointer' as const },
+            isHovered && Platform.OS === 'web' && {
+              transform: [{ scale: 1.02 }],
+              boxShadow: '0px 12px 28px rgba(0,0,0,0.14)',
+            },
+            Colors.shadows.medium,
+          ]}
+          onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          {...({
+            onHoverIn: () => setIsHovered(true),
+            onHoverOut: () => setIsHovered(false),
+          } as Record<string, unknown>)}
+          accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
+        >
+          <Image
+            source={event.imageUrl ? { uri: event.imageUrl } : undefined}
+            style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+            contentFit="cover"
+            transition={300}
+          />
+          <StackedCardContent
+            event={event}
+            highlight={highlight}
+            colors={colors}
+            isLive={isLive}
+            schedulingMode={schedulingMode}
+          />
+        </AnimatedPressable>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -117,14 +342,15 @@ function EventCard({ event, highlight, index = 0, isLive, containerWidth, contai
           containerHeight ? { height: containerHeight, minHeight: 280 } : null,
           highlight && styles.highlight,
           animatedStyle,
-          Platform.OS === 'web' && { 
-            cursor: 'pointer' as any,
+          Platform.OS === 'web' && {
+            cursor: 'pointer' as const,
             transition: 'all 0.3s ease',
           },
-          isHovered && Platform.OS === 'web' && { 
-            transform: [{ scale: 1.02 }],
-            boxShadow: '0px 12px 30px rgba(0,0,0,0.25)',
-          },
+          isHovered &&
+            Platform.OS === 'web' && {
+              transform: [{ scale: 1.02 }],
+              boxShadow: '0px 12px 30px rgba(0,0,0,0.25)',
+            },
           Colors.shadows.medium,
         ]}
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
@@ -133,11 +359,11 @@ function EventCard({ event, highlight, index = 0, isLive, containerWidth, contai
         {...({
           onHoverIn: () => setIsHovered(true),
           onHoverOut: () => setIsHovered(false),
-        } as any)}
-        accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date)}`}
+        } as Record<string, unknown>)}
+        accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
       >
         <Image
-          source={{ uri: event.imageUrl }}
+          source={event.imageUrl ? { uri: event.imageUrl } : undefined}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
           transition={300}
@@ -150,7 +376,7 @@ function EventCard({ event, highlight, index = 0, isLive, containerWidth, contai
         />
 
         <View style={styles.contentContainer}>
-          <CardContent event={event} highlight={highlight} colors={colors} isLive={isLive} />
+          <OverlayCardContent event={event} highlight={highlight} colors={colors} isLive={isLive} />
         </View>
       </AnimatedPressable>
     </View>
@@ -164,6 +390,102 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#000',
+  },
+  stackedCard: {
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginBottom: 2,
+  },
+  stackedHighlight: {
+    borderWidth: 2,
+    borderColor: CultureTokens.gold,
+  },
+  stackedImage: {
+    width: '100%',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+  },
+  stackedBody: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
+    alignItems: 'center',
+    gap: 6,
+  },
+  stackedDate: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+  },
+  stackedTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+  stackedTitleHi: {
+    fontSize: 17,
+    lineHeight: 22,
+  },
+  stackedMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    justifyContent: 'center',
+    maxWidth: '100%',
+  },
+  stackedLocation: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    flexShrink: 1,
+    textAlign: 'center',
+  },
+  stackedPricePill: {
+    marginTop: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  stackedPriceText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+  },
+  statusBadgeStacked: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginBottom: 2,
+  },
+  statusBadgeTextDark: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  countdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 4,
+    width: '100%',
+    maxWidth: '100%',
+  },
+  countdownLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 0.2,
+    flexShrink: 1,
   },
   highlight: {
     width: '100%',
@@ -255,12 +577,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
     color: '#FFF',
   },
-  glassBadgeBase: {
-    alignSelf: 'center',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
 });
 
-// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
 export default React.memo(EventCard);

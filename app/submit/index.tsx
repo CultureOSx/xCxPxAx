@@ -11,7 +11,8 @@ import { useColors } from '@/hooks/useColors';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient, getApiUrl, getAccessToken } from '@/lib/query-client';
+import { apiRequest, queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
@@ -23,20 +24,84 @@ import { getPostcodeData, getPostcodesByPlace } from '@shared/location/australia
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SubmitType = 'event' | 'organisation' | 'business' | 'artist' | 'perk';
+type SubmitType =
+  | 'event'
+  | 'festival'
+  | 'concert'
+  | 'workshop'
+  | 'movie'
+  | 'restaurant'
+  | 'shop'
+  | 'activity'
+  | 'professional'
+  | 'organisation'
+  | 'business'
+  | 'artist'
+  | 'perk';
 
 const TYPE_CONFIG: Record<SubmitType, { label: string; description: string; icon: string; color: string }> = {
-  event:        { label: 'Event',        description: 'Festivals, concerts & workshops', icon: 'calendar',     color: CultureTokens.gold },
-  organisation: { label: 'Organisation', description: 'Cultural groups & communities',   icon: 'people',       color: CultureTokens.teal    },
-  business:     { label: 'Business',     description: 'Shops, restaurants & services',   icon: 'business',     color: CultureTokens.indigo  },
-  artist:       { label: 'Artist',       description: 'Musicians, dancers & creatives',  icon: 'color-palette',color: CultureTokens.coral   },
-  perk:         { label: 'Perk',         description: 'Discounts & member benefits',     icon: 'gift',         color: CultureTokens.gold    },
+  event: { label: 'Event', description: 'Timed happenings & community gatherings', icon: 'calendar', color: CultureTokens.gold },
+  festival: { label: 'Festival', description: 'Multi-day festivals & celebrations', icon: 'color-filter', color: CultureTokens.gold },
+  concert: { label: 'Concert / show', description: 'Live music, theatre & performances', icon: 'musical-notes', color: CultureTokens.coral },
+  workshop: { label: 'Workshop / class', description: 'Classes, talks & skill sessions', icon: 'school', color: CultureTokens.teal },
+  movie: { label: 'Movie', description: 'Cinema listings & screenings', icon: 'film', color: CultureTokens.movie },
+  restaurant: { label: 'Dining', description: 'Restaurant & café listings', icon: 'restaurant', color: CultureTokens.teal },
+  shop: { label: 'Shopping', description: 'Retail & boutique listings', icon: 'bag-handle', color: CultureTokens.indigo },
+  activity: { label: 'Activity', description: 'Tours, experiences & cultural sites', icon: 'compass', color: CultureTokens.venue },
+  professional: { label: 'Professional', description: 'Practice & professional profile page', icon: 'briefcase', color: CultureTokens.indigo },
+  organisation: { label: 'Organisation', description: 'Cultural groups & communities', icon: 'people', color: CultureTokens.teal },
+  business: { label: 'Business', description: 'General business profile', icon: 'business', color: CultureTokens.indigo },
+  artist: { label: 'Artist', description: 'Musicians, dancers & creatives', icon: 'color-palette', color: CultureTokens.coral },
+  perk: { label: 'Perk', description: 'Discounts & member benefits', icon: 'gift', color: CultureTokens.gold },
 };
+
+const EVENT_LIKE: SubmitType[] = ['event', 'festival', 'concert', 'workshop'];
+const PROFILE_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
+const ORG_LISTING_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
+const TYPE_ORDER: SubmitType[] = [
+  'event', 'festival', 'concert', 'workshop', 'movie', 'restaurant', 'shop', 'activity',
+  'professional', 'organisation', 'business', 'artist', 'perk',
+];
+
+function isEventLike(tab: SubmitType): boolean {
+  return EVENT_LIKE.includes(tab);
+}
+
+function normalizeSubmitType(type?: string, variant?: string): SubmitType {
+  const t = (type || 'event').toLowerCase().trim();
+  const v = (variant || '').toLowerCase().trim();
+  if (t === 'event') {
+    if (v === 'festival') return 'festival';
+    if (v === 'concert' || v === 'music') return 'concert';
+    if (v === 'workshop' || v === 'class') return 'workshop';
+    return 'event';
+  }
+  if ((t === 'organisation' || t === 'org') && v === 'professional') return 'professional';
+  if (t === 'dining' || t === 'food') return 'restaurant';
+  if (t === 'retail' || t === 'shopping' || t === 'store') return 'shop';
+  if (t === 'cinema' || t === 'films') return 'movie';
+  const allowed = Object.keys(TYPE_CONFIG) as SubmitType[];
+  if (allowed.includes(t as SubmitType)) return t as SubmitType;
+  return 'event';
+}
+
+function resolveEventCategory(tab: SubmitType, formCategory: string): string {
+  if (tab === 'festival') return formCategory || 'Festival';
+  if (tab === 'concert') return formCategory || 'Music';
+  if (tab === 'workshop') return formCategory || 'Workshop';
+  return formCategory || 'Cultural';
+}
 
 const EVENT_CATEGORIES   = ['Cultural', 'Music', 'Dance', 'Festival', 'Workshop', 'Religious', 'Food', 'Sports'];
 const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
 const BIZ_CATEGORIES     = ['Restaurant', 'Retail', 'Services', 'Beauty', 'Tech', 'Grocery'];
 const ARTIST_GENRES      = ['Music', 'Dance', 'Visual Arts', 'Theatre', 'Film', 'Literature'];
+const ACTIVITY_CATEGORIES = ['Tour', 'Workshop', 'Cultural Site', 'Outdoor', 'Family', 'Food & drink'];
+const SHOP_CATEGORIES    = ['Fashion', 'Gifts', 'Books', 'Grocery', 'Electronics', 'Home', 'Beauty'];
+const CUISINE_OPTIONS    = ['Asian', 'Middle Eastern', 'European', 'African', 'Latin', 'Fusion', 'Cafe', 'Seafood', 'Vegetarian', 'General'];
+const MOVIE_GENRES       = ['Drama', 'Comedy', 'Documentary', 'Horror', 'Family', 'Arthouse', 'World cinema'];
+const PRICE_RANGE_OPTS   = ['$', '$$', '$$$', '$$$$'] as const;
+const LISTING_PLACEHOLDER_IMG = 'https://placehold.co/1200x800/e8e8f0/2C2A72?text=CulturePass';
 const PERK_TYPES = [
   { key: 'discount_percent', label: '% Discount',  icon: 'pricetag-outline'    },
   { key: 'discount_fixed',   label: '$ Discount',  icon: 'cash-outline'        },
@@ -55,6 +120,7 @@ const initialForm = {
   price: '', capacity: '', externalTicketUrl: '', communityId: '',
   hostName: '', hostEmail: '', hostPhone: '', sponsors: '',
   perkType: '', discountValue: '', providerName: '', perkCategory: '',
+  runtime: '', movieRating: 'M', director: '', language: 'English', priceRange: '$$',
 };
 
 type FormState = typeof initialForm;
@@ -131,14 +197,13 @@ export default function SubmitScreen() {
   const colors  = useColors();
   const { hPad, isDesktop } = useLayout();
   const { isAdmin, isOrganizer } = useRole();
-  const params  = useLocalSearchParams<{ type?: string }>();
+  const params  = useLocalSearchParams<{ type?: string; variant?: string }>();
 
-  // Pre-select type from URL param (e.g. /submit?type=organisation)
-  const initialType = ((): SubmitType => {
-    const t = params.type;
-    if (t && Object.keys(TYPE_CONFIG).includes(t)) return t as SubmitType;
-    return 'event';
-  })();
+  // Pre-select from URL, e.g. /submit?type=event&variant=festival or /submit?type=restaurant
+  const initialType = normalizeSubmitType(
+    typeof params.type === 'string' ? params.type : undefined,
+    typeof params.variant === 'string' ? params.variant : undefined,
+  );
 
   const [activeTab, setActiveTab]   = useState<SubmitType>(initialType);
   const [form, setForm]             = useState<FormState>({ ...initialForm });
@@ -149,7 +214,11 @@ export default function SubmitScreen() {
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
 
   const accent = TYPE_CONFIG[activeTab].color;
-  const visibleTypes = (Object.keys(TYPE_CONFIG) as SubmitType[]).filter(t => t !== 'perk' || isAdmin);
+  const visibleTypes = TYPE_ORDER.filter((t) => {
+    if (t === 'perk' && !isAdmin) return false;
+    if (['movie', 'restaurant', 'shop'].includes(t) && !isOrganizer && !isAdmin) return false;
+    return true;
+  });
 
   const set = useCallback((field: keyof FormState, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
@@ -221,7 +290,66 @@ export default function SubmitScreen() {
     onError: (err: Error) => setFieldErrors({ name: err.message }),
   });
 
-  const isPending = submitEventMutation.isPending || submitProfileMutation.isPending || submitPerkMutation.isPending;
+  const submitActivityMutation = useMutation({
+    mutationFn: (data: Parameters<typeof api.activities.create>[0]) => api.activities.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSubmittedType('activity');
+      setSubmitted(true);
+      setForm({ ...initialForm });
+      setImageUri(null);
+    },
+    onError: (err: Error) => setFieldErrors({ name: err.message }),
+  });
+
+  const submitRestaurantMutation = useMutation({
+    mutationFn: (data: import('@shared/schema').RestaurantInput) => api.restaurants.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/restaurants'] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSubmittedType('restaurant');
+      setSubmitted(true);
+      setForm({ ...initialForm });
+      setImageUri(null);
+    },
+    onError: (err: Error) => setFieldErrors({ name: err.message }),
+  });
+
+  const submitShopMutation = useMutation({
+    mutationFn: (data: import('@shared/schema').ShopInput) => api.shopping.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shopping'] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSubmittedType('shop');
+      setSubmitted(true);
+      setForm({ ...initialForm });
+      setImageUri(null);
+    },
+    onError: (err: Error) => setFieldErrors({ name: err.message }),
+  });
+
+  const submitMovieMutation = useMutation({
+    mutationFn: (data: import('@shared/schema').MovieInput) => api.movies.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/movies'] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSubmittedType('movie');
+      setSubmitted(true);
+      setForm({ ...initialForm });
+      setImageUri(null);
+    },
+    onError: (err: Error) => setFieldErrors({ name: err.message }),
+  });
+
+  const isPending =
+    submitEventMutation.isPending ||
+    submitProfileMutation.isPending ||
+    submitPerkMutation.isPending ||
+    submitActivityMutation.isPending ||
+    submitRestaurantMutation.isPending ||
+    submitShopMutation.isPending ||
+    submitMovieMutation.isPending;
 
   // ── Image upload ───────────────────────────────────────────────────────────
 
@@ -244,21 +372,31 @@ export default function SubmitScreen() {
       const blob = await blobRes.blob();
       const formData = new FormData();
       formData.append('image', blob as unknown as Blob, 'upload.jpg');
-      const base = getApiUrl();
-      const token = getAccessToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const uploadRes = await fetch(`${base}api/uploads/image`, {
-        method: 'POST', body: formData, headers,
-        credentials: typeof document !== 'undefined' ? 'omit' : undefined,
-      });
-      if (!uploadRes.ok) return;
-      const uploaded = await uploadRes.json() as Record<string, unknown>;
+      const uploaded = await api.uploads.image(formData);
       await apiRequest('POST', '/api/media/attach', {
-        targetType, targetId,
-        imageUrl: uploaded.imageUrl, thumbnailUrl: uploaded.thumbnailUrl,
-        width: uploaded.width, height: uploaded.height,
+        targetType,
+        targetId,
+        imageUrl: uploaded.imageUrl,
+        thumbnailUrl: uploaded.thumbnailUrl,
+        width: uploaded.width,
+        height: uploaded.height,
       });
     } catch {}
+  };
+
+  const uploadCoverIfNeeded = async (): Promise<string | null> => {
+    if (!imageUri) return null;
+    try {
+      const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
+      const blobRes = await fetch(processed.uri);
+      const blob = await blobRes.blob();
+      const formData = new FormData();
+      formData.append('image', blob as unknown as Blob, 'upload.jpg');
+      const uploaded = await api.uploads.image(formData);
+      return uploaded.imageUrl;
+    } catch {
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -295,12 +433,17 @@ export default function SubmitScreen() {
     return { city: resolved.place_name, state: resolved.state_code, country, postcode: resolved.postcode, latitude: resolved.latitude, longitude: resolved.longitude };
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errors: FieldErrors = {};
-    if (!form.name.trim()) errors.name = activeTab === 'event' ? 'Event title is required' : 'Name is required';
+    const nameLabel =
+      isEventLike(activeTab) ? 'Event title is required'
+        : activeTab === 'movie' ? 'Film title is required'
+        : activeTab === 'perk' ? 'Perk title is required'
+        : 'Name is required';
+    if (!form.name.trim()) errors.name = nameLabel;
     if (form.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) errors.contactEmail = 'Invalid email address';
     if (form.website && !/^https?:\/\/.+/.test(form.website)) errors.website = 'Must start with https://';
-    if (activeTab !== 'event' && activeTab !== 'perk' && !form.contactEmail.trim()) errors.contactEmail = 'Contact email is required';
+    if (PROFILE_TABS.includes(activeTab) && !form.contactEmail.trim()) errors.contactEmail = 'Contact email is required';
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -308,7 +451,7 @@ export default function SubmitScreen() {
     }
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (activeTab === 'event') {
+    if (isEventLike(activeTab)) {
       if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Date is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
@@ -325,7 +468,7 @@ export default function SubmitScreen() {
         country:     location.country,
         latitude:    location.latitude,
         longitude:   location.longitude,
-        category:    form.category || 'Cultural',
+        category:    resolveEventCategory(activeTab, form.category.trim()),
         contactEmail: form.contactEmail.trim() || null,
         priceCents:  isFree ? 0 : (form.price.trim() ? Math.round(Number(form.price.trim()) * 100) : 0),
         isFree:      isFree || !form.price.trim() || Number(form.price.trim()) <= 0,
@@ -352,11 +495,97 @@ export default function SubmitScreen() {
         isMembershipRequired: false,
         status: 'active',
       });
-    } else {
+    } else if (activeTab === 'activity') {
+      const location = deriveLocation();
+      if (!location) return;
+      const imageUrl = (await uploadCoverIfNeeded()) || undefined;
+      submitActivityMutation.mutate({
+        name: form.name.trim(),
+        description: form.description.trim() || '—',
+        category: form.category || 'Experience',
+        city: location.city,
+        country: location.country,
+        state: location.state,
+        postcode: location.postcode,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        location: form.venue.trim() || form.address.trim() || undefined,
+        imageUrl,
+        status: 'published',
+      });
+    } else if (activeTab === 'restaurant') {
+      if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
+      const location = deriveLocation();
+      if (!location) return;
+      const imageUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      submitRestaurantMutation.mutate({
+        name: form.name.trim(),
+        cuisine: form.category || 'General',
+        priceRange: (form.priceRange || '$$') as (typeof PRICE_RANGE_OPTS)[number],
+        description: form.description.trim() || '—',
+        imageUrl,
+        address: form.address.trim(),
+        city: location.city,
+        country: location.country,
+        rating: 0,
+        reviewsCount: 0,
+        isOpen: true,
+        isPromoted: false,
+        phone: form.phone.trim() || undefined,
+        website: form.website.trim() || undefined,
+        deals: [],
+        reservationAvailable: false,
+        deliveryAvailable: false,
+      });
+    } else if (activeTab === 'shop') {
+      if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
+      const location = deriveLocation();
+      if (!location) return;
+      const imageUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      submitShopMutation.mutate({
+        name: form.name.trim(),
+        category: form.category || 'General',
+        description: form.description.trim() || '—',
+        imageUrl,
+        address: form.address.trim(),
+        city: location.city,
+        country: location.country,
+        isOpen: true,
+        isPromoted: false,
+        deliveryAvailable: false,
+        rating: 0,
+        reviewsCount: 0,
+        phone: form.phone.trim() || undefined,
+        website: form.website.trim() || undefined,
+        deals: [],
+      });
+    } else if (activeTab === 'movie') {
+      if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Release date is required' })); return; }
+      const location = deriveLocation();
+      if (!location) return;
+      const posterUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      submitMovieMutation.mutate({
+        title: form.name.trim(),
+        description: form.description.trim() || '—',
+        language: form.language.trim() || 'English',
+        duration: form.runtime.trim() || '2h',
+        rating: form.movieRating.trim() || 'M',
+        posterUrl,
+        releaseDate: form.date.trim(),
+        genre: form.category ? [form.category] : ['Drama'],
+        cast: [],
+        director: form.director.trim() || '—',
+        showtimes: [],
+        imdbScore: 0,
+        isPromoted: false,
+        city: location.city,
+        country: location.country,
+      });
+    } else if (ORG_LISTING_TABS.includes(activeTab)) {
       const location = deriveLocation();
       if (!location) return;
       submitProfileMutation.mutate({
-        entityType:   activeTab,
+        entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
         description:  form.description.trim() || null,
         city:         location.city,
@@ -368,7 +597,7 @@ export default function SubmitScreen() {
         contactEmail: form.contactEmail.trim() || null,
         phone:        form.phone.trim() || null,
         website:      form.website.trim() || null,
-        category:     form.category || null,
+        category:     activeTab === 'professional' ? 'Professional' : (form.category || null),
         instagram:    form.instagram.trim() ? `https://instagram.com/${form.instagram.trim().replace(/^@/, '')}` : null,
         facebook:     form.facebook.trim() ? `https://facebook.com/${form.facebook.trim()}` : null,
         youtube:      form.youtube.trim() ? `https://youtube.com/@${form.youtube.trim().replace(/^@/, '')}` : null,
@@ -379,12 +608,24 @@ export default function SubmitScreen() {
     }
   };
 
-  const getCategoryOptions = () => {
-    if (activeTab === 'event')        return EVENT_CATEGORIES;
+  const getCategoryOptions = (): string[] => {
+    if (isEventLike(activeTab)) return EVENT_CATEGORIES;
     if (activeTab === 'organisation') return ORG_CATEGORIES;
-    if (activeTab === 'business')     return BIZ_CATEGORIES;
-    if (activeTab === 'artist')       return ARTIST_GENRES;
+    if (activeTab === 'professional') return [];
+    if (activeTab === 'business') return BIZ_CATEGORIES;
+    if (activeTab === 'artist') return ARTIST_GENRES;
+    if (activeTab === 'activity') return ACTIVITY_CATEGORIES;
+    if (activeTab === 'restaurant') return CUISINE_OPTIONS;
+    if (activeTab === 'shop') return SHOP_CATEGORIES;
+    if (activeTab === 'movie') return MOVIE_GENRES;
     return [];
+  };
+
+  const getCategorySectionLabel = (): string => {
+    if (activeTab === 'artist') return 'Genre';
+    if (activeTab === 'restaurant') return 'Cuisine';
+    if (activeTab === 'movie') return 'Genre';
+    return 'Category';
   };
 
   // ── Success screen ─────────────────────────────────────────────────────────
@@ -405,14 +646,18 @@ export default function SubmitScreen() {
             <Ionicons name="checkmark" size={14} color="#fff" />
           </View>
           <Text style={[s.successTitle, { color: colors.text }]}>
-            {submittedType === 'event' ? 'Event Submitted!'
-            : submittedType === 'perk' ? 'Perk Created!'
-            : 'Listing Submitted!'}
+            {isEventLike(submittedType)
+              ? 'Event Submitted!'
+              : submittedType === 'perk'
+                ? 'Perk Created!'
+                : `${TYPE_CONFIG[submittedType].label} submitted!`}
           </Text>
           <Text style={[s.successSub, { color: colors.textSecondary }]}>
             {submittedType === 'perk'
               ? 'Your perk is now active and available to members.'
-              : "Our team will review your submission within 2\u20133 business days. You'll receive an email once approved."}
+              : submittedType === 'activity'
+                ? 'Your activity is published. You can edit it later from the activities tool if needed.'
+                : "Our team will review your submission within 2\u20133 business days. You'll receive an email once approved."}
           </Text>
           <Pressable
             style={[s.successBtn, { backgroundColor: conf.color }]}
@@ -510,7 +755,12 @@ export default function SubmitScreen() {
                       onPress={() => {
                         if (Platform.OS !== 'web') Haptics.selectionAsync();
                         setActiveTab(type);
-                        setForm({ ...initialForm });
+                        const next = { ...initialForm };
+                        if (type === 'festival') next.category = 'Festival';
+                        else if (type === 'concert') next.category = 'Music';
+                        else if (type === 'workshop') next.category = 'Workshop';
+                        else if (type === 'professional') next.category = 'Professional';
+                        setForm(next);
                         setImageUri(null);
                         setFieldErrors({});
                         setIsFree(false);
@@ -542,16 +792,20 @@ export default function SubmitScreen() {
               </ScrollView>
             </View>
 
-            {/* Organizer notice for events */}
-            {activeTab === 'event' && !isOrganizer && (
+            {/* Organizer notice — events, movies, dining & shops */}
+            {(['movie', 'restaurant', 'shop'] as SubmitType[]).includes(activeTab) || isEventLike(activeTab) ? (
+              !isOrganizer && !isAdmin ? (
               <View style={[s.notice, { backgroundColor: colors.surface, marginHorizontal: hPad }]}>
                 <View style={[s.noticeStrip, { backgroundColor: colors.warning }]} />
                 <Ionicons name="information-circle-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
                 <Text style={[s.noticeText, { color: colors.textSecondary }]}>
-                  Only organizer or admin accounts can publish events. Your submission will be saved as a draft.
+                  {isEventLike(activeTab)
+                    ? 'Only organizer or admin accounts can create events. Request organizer access or sign in with an eligible account.'
+                    : 'Movies, dining, and shop listings require an organizer or admin account.'}
                 </Text>
               </View>
-            )}
+              ) : null
+            ) : null}
 
             {/* ── Cover Photo (standalone full-bleed section) ── */}
             {imageUri ? (
@@ -591,7 +845,12 @@ export default function SubmitScreen() {
               <SectionLabel colors={colors} accent={accent} icon="document-text-outline" label="Basic Information" />
 
               <Field
-                label={activeTab === 'event' ? 'Event Title' : activeTab === 'perk' ? 'Perk Title' : 'Name'}
+                label={
+                  isEventLike(activeTab) ? 'Event title'
+                    : activeTab === 'movie' ? 'Film title'
+                    : activeTab === 'perk' ? 'Perk title'
+                    : 'Name'
+                }
                 required
                 error={fieldErrors.name}
               >
@@ -604,10 +863,16 @@ export default function SubmitScreen() {
                   value={form.name}
                   onChangeText={v => set('name', v)}
                   placeholder={
-                    activeTab === 'event'        ? 'e.g. Diwali Festival 2026'  :
+                    activeTab === 'movie'        ? 'e.g. Road to Nation'        :
+                    activeTab === 'restaurant'   ? 'e.g. Carriageworks Kitchen' :
+                    activeTab === 'shop'        ? 'e.g. Heritage Bookshop'     :
+                    activeTab === 'activity'     ? 'e.g. Barangaroo walking tour' :
+                    isEventLike(activeTab)       ? 'e.g. Diwali Festival 2026'  :
                     activeTab === 'perk'         ? 'e.g. 20% off event tickets' :
                     activeTab === 'artist'       ? 'Artist or stage name'       :
-                    activeTab === 'business'     ? 'Business name'              : 'Organisation name'
+                    activeTab === 'business'     ? 'Business name'              :
+                    activeTab === 'professional' ? 'Practice or studio name'    :
+                    'Organisation name'
                   }
                   placeholderTextColor={colors.textTertiary}
                   returnKeyType="next"
@@ -627,7 +892,7 @@ export default function SubmitScreen() {
             </Card>
 
             {/* ── Event Details ── */}
-            {activeTab === 'event' && (
+            {isEventLike(activeTab) && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="calendar-outline" label="Event Details" />
 
@@ -741,7 +1006,7 @@ export default function SubmitScreen() {
             )}
 
             {/* ── Host & Sponsors (event only) ── */}
-            {activeTab === 'event' && (
+            {isEventLike(activeTab) && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="people-circle-outline" label="Host & Sponsors" />
 
@@ -782,6 +1047,75 @@ export default function SubmitScreen() {
                     value={form.sponsors} onChangeText={v => set('sponsors', v)}
                     placeholder="e.g. Brand A, Brand B, Brand C" placeholderTextColor={colors.textTertiary}
                     multiline numberOfLines={3} textAlignVertical="top"
+                  />
+                </Field>
+              </Card>
+            )}
+
+            {/* ── Movie / cinema listing ── */}
+            {activeTab === 'movie' && (
+              <Card colors={colors} hPad={hPad}>
+                <SectionLabel colors={colors} accent={accent} icon="film-outline" label="Film details" />
+                <View style={s.row}>
+                  <View style={{ flex: 1 }}>
+                    <Field label="Release date" required error={fieldErrors.date}>
+                      <TextInput
+                        style={[s.input, {
+                          backgroundColor: colors.background,
+                          borderColor: fieldErrors.date ? colors.error : colors.border,
+                          color: colors.text,
+                        }]}
+                        value={form.date}
+                        onChangeText={v => set('date', v)}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor={colors.textTertiary}
+                        keyboardType="numbers-and-punctuation"
+                      />
+                    </Field>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Field label="Runtime" hint="e.g. 2h 15m">
+                      <TextInput
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                        value={form.runtime}
+                        onChangeText={v => set('runtime', v)}
+                        placeholder="2h"
+                        placeholderTextColor={colors.textTertiary}
+                      />
+                    </Field>
+                  </View>
+                </View>
+                <View style={s.row}>
+                  <View style={{ flex: 1 }}>
+                    <Field label="Classification" hint="e.g. M, PG">
+                      <TextInput
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                        value={form.movieRating}
+                        onChangeText={v => set('movieRating', v)}
+                        placeholder="M"
+                        placeholderTextColor={colors.textTertiary}
+                      />
+                    </Field>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Field label="Primary language">
+                      <TextInput
+                        style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                        value={form.language}
+                        onChangeText={v => set('language', v)}
+                        placeholder="English"
+                        placeholderTextColor={colors.textTertiary}
+                      />
+                    </Field>
+                  </View>
+                </View>
+                <Field label="Director">
+                  <TextInput
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                    value={form.director}
+                    onChangeText={v => set('director', v)}
+                    placeholder="Director name"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </Field>
               </Card>
@@ -867,6 +1201,22 @@ export default function SubmitScreen() {
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="location-outline" label="Location" />
 
+                {(activeTab === 'restaurant' || activeTab === 'shop') && (
+                  <Field label="Street address" required error={fieldErrors.address}>
+                    <TextInput
+                      style={[s.input, {
+                        backgroundColor: colors.background,
+                        borderColor: fieldErrors.address ? colors.error : colors.border,
+                        color: colors.text,
+                      }]}
+                      value={form.address}
+                      onChangeText={v => set('address', v)}
+                      placeholder="Building & street"
+                      placeholderTextColor={colors.textTertiary}
+                    />
+                  </Field>
+                )}
+
                 <View style={s.row}>
                   <View style={{ flex: 2 }}>
                     <Field label="City" error={fieldErrors.city}>
@@ -924,12 +1274,42 @@ export default function SubmitScreen() {
               </Card>
             )}
 
+            {/* ── Activity: meeting point ── */}
+            {activeTab === 'activity' && (
+              <Card colors={colors} hPad={hPad}>
+                <SectionLabel colors={colors} accent={accent} icon="navigate-outline" label="Where it happens" />
+                <Field label="Venue or meeting point" hint="Optional — shown on your activity page">
+                  <TextInput
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                    value={form.venue}
+                    onChangeText={v => set('venue', v)}
+                    placeholder="e.g. Circular Quay Wharf 6"
+                    placeholderTextColor={colors.textTertiary}
+                  />
+                </Field>
+                <Field label="Street address" hint="Optional">
+                  <TextInput
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                    value={form.address}
+                    onChangeText={v => set('address', v)}
+                    placeholder="For maps & directions"
+                    placeholderTextColor={colors.textTertiary}
+                  />
+                </Field>
+              </Card>
+            )}
+
             {/* ── Contact Details ── */}
             {activeTab !== 'perk' && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="mail-outline" label="Contact Details" />
 
-                <Field label="Email" required={activeTab !== 'event'} error={fieldErrors.contactEmail}>
+                <Field
+                  label="Email"
+                  required={PROFILE_TABS.includes(activeTab)}
+                  hint={activeTab === 'activity' ? 'Optional for activities' : undefined}
+                  error={fieldErrors.contactEmail}
+                >
                   <TextInput
                     style={[s.input, {
                       backgroundColor: colors.background,
@@ -965,10 +1345,19 @@ export default function SubmitScreen() {
               </Card>
             )}
 
-            {/* ── Category / Genre ── */}
+            {/* ── Category / Genre / Cuisine ── */}
+            {activeTab === 'professional' && (
+              <Card colors={colors} hPad={hPad}>
+                <SectionLabel colors={colors} accent={accent} icon="briefcase-outline" label="Professional listing" />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 20 }}>
+                  This creates an organisation profile with category <Text style={{ fontFamily: 'Poppins_700Bold', color: colors.text }}>Professional</Text> — ideal for accountants, lawyers, cultural consultants, and other practices.
+                </Text>
+              </Card>
+            )}
+
             {activeTab !== 'perk' && getCategoryOptions().length > 0 && (
               <Card colors={colors} hPad={hPad}>
-                <SectionLabel colors={colors} accent={accent} icon="grid-outline" label={activeTab === 'artist' ? 'Genre' : 'Category'} />
+                <SectionLabel colors={colors} accent={accent} icon="grid-outline" label={getCategorySectionLabel()} />
                 <View style={s.chipGrid}>
                   {getCategoryOptions().map(cat => {
                     const isActive = form.category === cat;
@@ -989,6 +1378,35 @@ export default function SubmitScreen() {
                     );
                   })}
                 </View>
+                {activeTab === 'restaurant' && (
+                  <>
+                    <SectionLabel colors={colors} accent={accent} icon="cash-outline" label="Price range" />
+                    <View style={s.chipGrid}>
+                      {PRICE_RANGE_OPTS.map((tier) => {
+                        const isActive = form.priceRange === tier;
+                        return (
+                          <Pressable
+                            key={tier}
+                            style={[
+                              s.chip,
+                              isActive
+                                ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                                : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                            ]}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync();
+                              set('priceRange', tier);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Price range ${tier}`}
+                          >
+                            <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{tier}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </>
+                )}
               </Card>
             )}
 
@@ -1006,8 +1424,8 @@ export default function SubmitScreen() {
               </Card>
             )}
 
-            {/* ── Social Media (organisation, business, artist) ── */}
-            {activeTab !== 'event' && activeTab !== 'perk' && (
+            {/* ── Social Media (profiles) ── */}
+            {PROFILE_TABS.includes(activeTab) && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="share-social-outline" label="Social Media" />
                 {([
@@ -1037,7 +1455,7 @@ export default function SubmitScreen() {
             {/* ── Submit ── */}
             <View style={[s.submitWrap, { paddingHorizontal: hPad }]}>
               <Pressable
-                onPress={handleSubmit}
+                onPress={() => void handleSubmit()}
                 disabled={isPending}
                 accessibilityRole="button"
                 accessibilityLabel={`Submit ${TYPE_CONFIG[activeTab].label}`}
@@ -1063,7 +1481,9 @@ export default function SubmitScreen() {
                 <Text style={[s.submitNote, { color: colors.textTertiary }]}>
                   {activeTab === 'perk'
                     ? 'Your perk will be created and made available immediately.'
-                    : 'Reviewed within 2–3 business days'}
+                    : activeTab === 'activity'
+                      ? 'Activities go live after submission (subject to moderation).'
+                      : 'Reviewed within 2–3 business days'}
                 </Text>
               </View>
             </View>

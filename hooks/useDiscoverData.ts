@@ -10,6 +10,7 @@ import { calculateDistance, getPostcodesByPlace } from '@shared/location/austral
 import type { DiscoverCurationResponse, EventData, Community, RestaurantData, ShopData, MovieData, PerkData } from '@/shared/schema';
 import type { PreviewItem } from '@/components/Discover/PreviewRail';
 import { CultureTokens } from '@/constants/theme';
+import { isEventInDiscoverLiveWindow, parseEventStartMs } from '@/lib/dateUtils';
 
 export interface DiscoverFeed {
   trendingEvents?: EventData[];
@@ -98,7 +99,7 @@ export function useDiscoverData() {
   // --- Data Fetching ---
   const today = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
 
-  const { data: allEvents = [], isLoading: eventsLoading } = useQuery<EventData[]>({
+  const { data: allEvents = [], isLoading: eventsLoading, isError: eventsError, refetch: refetchEvents } = useQuery<EventData[]>({
     queryKey: ['/api/events', state.country, state.city, today],
     queryFn: async () => {
       const result = await api.events.list({
@@ -112,19 +113,19 @@ export function useDiscoverData() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: allCommunities = [], isLoading: communitiesLoading } = useQuery<Community[]>({
+  const { data: allCommunities = [], isLoading: communitiesLoading, isError: communitiesError, refetch: refetchCommunities } = useQuery<Community[]>({
     queryKey: ['/api/communities', state.city, state.country],
     queryFn: () => api.communities.list({ city: state.city || undefined, country: state.country || undefined }),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: allActivities = [], isLoading: activitiesLoading } = useQuery<ActivityData[]>({
+  const { data: allActivities = [], isLoading: activitiesLoading, isError: activitiesError, refetch: refetchActivities } = useQuery<ActivityData[]>({
     queryKey: ['/api/activities', state.country, state.city],
     queryFn: () => api.activities.list({ country: state.country || undefined, city: state.city || undefined }),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: discoverCuration } = useQuery<DiscoverCurationResponse>({
+  const { data: discoverCuration, isLoading: curationLoading, isError: curationError, refetch: refetchCuration } = useQuery<DiscoverCurationResponse>({
     queryKey: ['/api/discover/curation', state.city, state.country, state.cultureIds ?? []],
     queryFn: () => api.discover.curation({
       city: state.city || undefined,
@@ -187,7 +188,7 @@ export function useDiscoverData() {
   const { data: councilData } = useCouncil();
   const council = councilData?.council;
 
-  const { events: gpsEvents, isLoading: gpsLoading, trigger: triggerGps } = useNearbyEvents({ radiusKm: 15, pageSize: 20 });
+  const { events: gpsEvents, isLoading: gpsLoading, trigger: triggerGps, status: nearbyStatus, error: nearbyProbeError } = useNearbyEvents({ radiusKm: 15, pageSize: 20 });
   
   useEffect(() => {
     triggerGps();
@@ -278,6 +279,35 @@ export function useDiscoverData() {
     return { happeningNow, startingSoon, laterTonight };
   }, [allEvents, currentTime]);
 
+  /** Happening-now + starting-soon buckets merged, deduped; LIVE rows first, then by start time. */
+  const startingSoonRailData = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: EventData[] = [];
+    for (const e of nowBuckets.happeningNow) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      merged.push(e);
+    }
+    for (const e of nowBuckets.startingSoon) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      merged.push(e);
+    }
+    const now = Date.now();
+    merged.sort((a, b) => {
+      const ta = parseEventStartMs(a.date, a.time);
+      const tb = parseEventStartMs(b.date, b.time);
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      const aLive = isEventInDiscoverLiveWindow(ta, now);
+      const bLive = isEventInDiscoverLiveWindow(tb, now);
+      if (aLive !== bLive) return aLive ? -1 : 1;
+      return ta - tb;
+    });
+    return merged;
+  }, [nowBuckets, currentTime]);
+
   const featuredEvents = useMemo(() => {
     const featured = allEvents.filter(e => e.isFeatured);
     if (featured.length >= 3) return featured.slice(0, 5);
@@ -300,10 +330,13 @@ export function useDiscoverData() {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] }),
       queryClient.invalidateQueries({ queryKey: ['/api/communities'] }),
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] }),
-      refetch()
+      queryClient.invalidateQueries({ queryKey: ['/api/discover/curation'] }),
+      queryClient.invalidateQueries({ queryKey: ['/api/cities/featured'] }),
+      refetch(),
+      refetchCuration(),
     ]);
     setRefreshing(false);
-  }, [refetch]);
+  }, [refetch, refetchCuration]);
 
   const land = useMemo(() => 
     Array.isArray(traditionalLandsRaw) ? traditionalLandsRaw.find((l) => l.city === state.city) : undefined,
@@ -385,6 +418,34 @@ export function useDiscoverData() {
     [activitiesLoading, allActivities]
   );
 
+  const eventsRailError = useMemo(
+    () => (eventsError ? 'Could not load events. Check your connection and try again.' : null),
+    [eventsError],
+  );
+
+  const communitiesRailError = useMemo(
+    () => (communitiesError ? 'Could not load communities. Pull to refresh or try again.' : null),
+    [communitiesError],
+  );
+
+  const activitiesRailError = useMemo(
+    () => (activitiesError ? 'Could not load activities. Try again in a moment.' : null),
+    [activitiesError],
+  );
+
+  const nearbyRailError = useMemo(() => {
+    if (nearbyLoading || nearbyEvents.length > 0) return null;
+    if (eventsError) return 'Could not load local events.';
+    if (nearbyProbeError) return nearbyProbeError;
+    if (nearbyStatus === 'error') return 'Could not determine your location. Try again.';
+    return null;
+  }, [nearbyLoading, nearbyEvents.length, eventsError, nearbyProbeError, nearbyStatus]);
+
+  const curationRailError = useMemo(
+    () => (curationError ? 'Could not load featured artists. Try again.' : null),
+    [curationError],
+  );
+
   return {
     currentTime,
     weatherSummary,
@@ -404,6 +465,7 @@ export function useDiscoverData() {
     land,
     indigenousOrganisations,
     nowBuckets,
+    startingSoonRailData,
     popularRailData,
     communityRailData,
     nearbyRailData,
@@ -424,5 +486,20 @@ export function useDiscoverData() {
     shoppingLoading,
     perksPreviewItems,
     perksLoading,
+    eventsError,
+    communitiesError,
+    activitiesError,
+    curationError,
+    curationLoading,
+    refetchEvents,
+    refetchCommunities,
+    refetchActivities,
+    refetchCuration,
+    retryNearbyProbe: triggerGps,
+    eventsRailError,
+    communitiesRailError,
+    activitiesRailError,
+    nearbyRailError,
+    curationRailError,
   };
 }

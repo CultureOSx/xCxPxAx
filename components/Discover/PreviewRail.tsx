@@ -14,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  type ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: CardTokens.radius,
     borderWidth: 1,
     overflow: 'hidden',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6 },
       android: { elevation: 3 },
       web:     webShadow('0 4px 12px rgba(0,0,0,0.08)'),

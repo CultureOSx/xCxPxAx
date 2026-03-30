@@ -4,11 +4,8 @@ import type * as FirebaseFirestore from 'firebase-admin/firestore';
 import { db } from '../admin';
 import { requireRole } from '../middleware/auth';
 import { usersService } from '../services/users';
-import type { UserRole ,
-  DISCOVER_FOCUS_OPTIONS,
-  HERITAGE_PLAYLIST_TYPES,
-  type DiscoverCurationConfig,
-} from '../../../shared/schema';
+import type { UserRole, DiscoverCurationConfig } from '../../../shared/schema';
+import { DISCOVER_FOCUS_OPTIONS, HERITAGE_PLAYLIST_TYPES } from '../../../shared/schema';
 import { getDiscoverCurationConfig, updateDiscoverCurationConfig } from '../services/discoverCuration';
 import { z } from 'zod';
 
@@ -38,6 +35,10 @@ const heritagePlaylistSchema = z.object({
   typeLabel: z.enum(HERITAGE_PLAYLIST_TYPES),
   accentColor: z.string().min(1),
   focus: z.enum(DISCOVER_FOCUS_OPTIONS),
+  externalUrl: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : val),
+    z.string().url().optional(),
+  ),
   city: z.string().min(1).optional(),
   country: z.string().min(1).optional(),
   isLive: z.boolean().optional(),

@@ -23,12 +23,12 @@ export function cityGradient(countryCode: string): [string, string] {
 }
 
 export function useFeaturedCities() {
-  const { data: cities = [], isLoading } = useQuery<FeaturedCityData[]>({
+  const { data: cities = [], isLoading, isError, refetch } = useQuery<FeaturedCityData[]>({
     queryKey: ['/api/cities/featured'],
     queryFn: () => api.cities.featured(),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 
-  return { cities, isLoading };
+  return { cities, isLoading, isError, refetch };
 }

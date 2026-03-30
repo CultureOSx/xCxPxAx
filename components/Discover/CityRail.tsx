@@ -16,6 +16,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
 import SectionHeader from './SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { RailErrorBanner } from './RailErrorBanner';
 import { useFeaturedCities, cityGradient, type FeaturedCityData } from '@/hooks/useFeaturedCities';
 
 // ---------------------------------------------------------------------------
@@ -93,7 +94,7 @@ function CityCardSkeleton({ width }: { width: number }) {
 function CityRailComponent() {
   const { isDesktop, hPad } = useLayout();
   const { width: screenWidth } = useWindowDimensions();
-  const { cities, isLoading } = useFeaturedCities();
+  const { cities, isLoading, isError, refetch: refetchCities } = useFeaturedCities();
 
   const isNative = Platform.OS !== 'web';
 
@@ -114,10 +115,15 @@ function CityRailComponent() {
     return (
       <View style={s.container}>
         <View style={[s.headerPad, { paddingHorizontal: hPad }]}>
-          <SectionHeader title="Explore Cities" onSeeAll={() => {}} />
+          <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
         </View>
 
-        {isLoading ? (
+        {isError && !isLoading && cities.length === 0 ? (
+          <RailErrorBanner
+            message="Could not load cities. Try again."
+            onRetry={() => void refetchCities()}
+          />
+        ) : isLoading ? (
           <View style={[s.grid, { paddingHorizontal: hPad }]}>
             {skeletonData.map((k) => (
               <CityCardSkeleton key={k} width={cardWidth} />
@@ -142,10 +148,12 @@ function CityRailComponent() {
   return (
     <View style={s.container}>
       <View style={[s.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
-        <SectionHeader title="Explore Cities" onSeeAll={() => {}} />
+        <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
       </View>
 
-      {isLoading ? (
+      {isError && !isLoading && cities.length === 0 ? (
+        <RailErrorBanner message="Could not load cities. Try again." onRetry={() => void refetchCities()} />
+      ) : isLoading ? (
         <View style={s.webSkeletonRow}>
           {skeletonData.map((k) => (
             <CityCardSkeleton key={k} width={cardWidth} />

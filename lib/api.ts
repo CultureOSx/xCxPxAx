@@ -11,7 +11,7 @@
  *   const events = await api.events.list({ city: 'Sydney', page: 1 });
  */
 
-import { apiRequest, getApiUrl } from './query-client';
+import { apiRequest, apiRequestMultipart, getApiUrl } from './query-client';
 import type {
   EventData,
   User,
@@ -941,7 +941,18 @@ const shopping = {
   setPromoted: (id: string, isPromoted: boolean) =>
     request<import('@shared/schema').ShopData>('POST', `api/shopping/${id}/promote`, { isPromoted }),
 };
-const movies      = directoryNamespace<import('@shared/schema').MovieData>('api/movies');
+const movies = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? new URLSearchParams(params).toString() : '';
+    return request<import('@shared/schema').MovieData[]>('GET', `api/movies${qs ? `?${qs}` : ''}`);
+  },
+  get: (id: string) => request<import('@shared/schema').MovieData>('GET', `api/movies/${id}`),
+  create: (payload: import('@shared/schema').MovieInput) =>
+    request<import('@shared/schema').MovieData>('POST', 'api/movies', payload),
+  update: (id: string, payload: Partial<import('@shared/schema').MovieInput>) =>
+    request<import('@shared/schema').MovieData>('PUT', `api/movies/${id}`, payload),
+  remove: (id: string) => request<{ success: boolean }>('DELETE', `api/movies/${id}`),
+};
 const activities = {
   list: async (params?: { city?: string; country?: string; category?: string; ownerId?: string; promoted?: boolean }) => {
     const qs = new URLSearchParams();
@@ -1271,10 +1282,37 @@ const cpid = {
 };
 
 // ---------------------------------------------------------------------------
+// Uploads (multipart / FormData — not JSON)
+// ---------------------------------------------------------------------------
+export interface ImageUploadResponse {
+  imageUrl: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+}
+
+const uploads = {
+  image: async (formData: FormData): Promise<ImageUploadResponse> => {
+    try {
+      const res = await apiRequestMultipart('POST', 'api/uploads/image', formData);
+      return parseJson<ImageUploadResponse>(res);
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      if (err instanceof Error) {
+        const match = err.message.match(/^(\d{3}):\s*(.*)/s);
+        if (match) throw new ApiError(parseInt(match[1], 10), match[2]);
+      }
+      throw new ApiError(0, err instanceof Error ? err.message : 'Network error');
+    }
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Named export — single surface for all API calls
 // ---------------------------------------------------------------------------
 export const api = {
   auth,
+  uploads,
   events,
   tickets,
   stripe: stripeApi,

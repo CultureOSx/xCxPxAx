@@ -15,6 +15,7 @@ import { TextStyles } from '@/constants/typography';
 
 export const QUICK_MENU_ITEMS = [
   { key: 'edit', label: 'Edit Profile', icon: 'create-outline', route: '/profile/edit' },
+  { key: 'create', label: 'Create listing', icon: 'add-circle-outline', route: '/submit' },
   { key: 'tickets', label: 'My Tickets', icon: 'ticket-outline', route: '/tickets/index' },
   { key: 'wallet', label: 'Wallet', icon: 'wallet-outline', route: '/payment/wallet' },
   { key: 'saved', label: 'Saved', icon: 'bookmark-outline', route: '/saved' },

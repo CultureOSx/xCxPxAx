@@ -116,7 +116,7 @@ export function buildApiUrl(route: string): string {
   return new URL(normalizedRoute, baseUrl).toString();
 }
 
-async function throwIfResNotOk(res: Response): Promise<void> {
+export async function throwIfResNotOk(res: Response): Promise<void> {
   if (res.ok) return;
 
   let errorText = res.statusText;
@@ -202,6 +202,73 @@ export async function apiRequest(
       }
     } catch {
       // Refresh failed — fall through to throwIfResNotOk which will throw 401.
+    }
+  }
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
+/**
+ * Multipart upload (e.g. images). Does not set Content-Type — the runtime sets the boundary.
+ * Uses the same auth + 401 refresh behaviour as apiRequest.
+ */
+export async function apiRequestMultipart(
+  method: 'POST' | 'PUT',
+  route: string,
+  formData: FormData,
+  options: Omit<RequestInit, 'method' | 'body'> = {},
+  _isRetry = false
+): Promise<Response> {
+  const url = new URL(buildApiUrl(route));
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+  if (_accessToken) {
+    headers.Authorization = `Bearer ${_accessToken}`;
+  }
+
+  const { signal: callerSignal, ...safeOptions } = options as RequestInit & { signal?: AbortSignal | null };
+  const credentials = Platform.OS === 'web' ? 'omit' : safeOptions.credentials;
+
+  let signal = callerSignal ?? undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  if (!signal) {
+    const timeoutCapableAbortSignal =
+      typeof AbortSignal !== 'undefined'
+      && typeof (AbortSignal as typeof AbortSignal & { timeout?: (ms: number) => AbortSignal }).timeout === 'function';
+
+    if (timeoutCapableAbortSignal) {
+      signal = (AbortSignal as typeof AbortSignal & { timeout: (ms: number) => AbortSignal }).timeout(API_TIMEOUT_MS);
+    } else {
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      signal = controller.signal;
+    }
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      ...safeOptions,
+      method,
+      headers,
+      body: formData,
+      credentials,
+      signal,
+    } as Parameters<typeof fetch>[1]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+
+  if (res.status === 401 && !_isRetry && _tokenRefresher) {
+    try {
+      const newToken = await _tokenRefresher();
+      if (newToken) {
+        return apiRequestMultipart(method, route, formData, options, true);
+      }
+    } catch {
+      // fall through
     }
   }
 

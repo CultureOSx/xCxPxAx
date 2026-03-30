@@ -3,7 +3,6 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
@@ -11,14 +10,38 @@ import { useLayout } from '@/hooks/useLayout';
 import { captureEvent } from '@/lib/analytics';
 import type { DiscoverArtistHighlight } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
+import { RailErrorBanner } from './RailErrorBanner';
+import { Skeleton } from '@/components/ui/Skeleton';
 
-const DEFAULT_SNAP_INTERVAL = 212;
+const CARD_WIDTH = 230;
+const IMAGE_HEIGHT = 142;
+const ITEM_GAP = 20;
+const SNAP = CARD_WIDTH + ITEM_GAP;
+const SKELETON_KEYS = ['a1', 'a2', 'a3', 'a4'] as const;
 
 interface FeaturedArtistRailProps {
   data: DiscoverArtistHighlight[];
+  isLoading?: boolean;
+  errorMessage?: string | null;
+  onRetry?: () => void;
 }
 
-function FeaturedArtistRailComponent({ data }: FeaturedArtistRailProps) {
+function FeaturedArtistSkeletonCard() {
+  const colors = useColors();
+  return (
+    <View style={[styles.card, { width: CARD_WIDTH, backgroundColor: colors.surface }]}>
+      <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
+      <View style={styles.skeletonBody}>
+        <Skeleton width="88%" height={15} borderRadius={6} />
+        <Skeleton width="58%" height={13} borderRadius={6} />
+        <Skeleton width="100%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
+        <Skeleton width={90} height={14} borderRadius={6} style={{ marginTop: 10 }} />
+      </View>
+    </View>
+  );
+}
+
+function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }: FeaturedArtistRailProps) {
   const colors = useColors();
   const { isDesktop } = useLayout();
   const lastImpressionKey = useRef<string>('');
@@ -34,7 +57,21 @@ function FeaturedArtistRailComponent({ data }: FeaturedArtistRailProps) {
     });
   }, [data]);
 
-  if (data.length === 0) return null;
+  if (errorMessage && !isLoading && data.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+          <SectionHeader
+            title="Featured Artists"
+            subtitle="Creators shaping the sound and spirit of your city"
+          />
+        </View>
+        <RailErrorBanner message={errorMessage} onRetry={onRetry} />
+      </View>
+    );
+  }
+
+  if (!isLoading && data.length === 0) return null;
 
   const handlePress = (item: DiscoverArtistHighlight) => {
     if (Platform.OS !== 'web') {
@@ -64,126 +101,124 @@ function FeaturedArtistRailComponent({ data }: FeaturedArtistRailProps) {
     });
   };
 
+  const seeAllExplore = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    captureEvent('discover_featured_artists_see_all', { rail: 'featured_artists' });
+    router.push({
+      pathname: '/explore',
+      params: { focus: 'music', source: 'featured_artists_see_all' },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader
           title="Featured Artists"
           subtitle="Creators shaping the sound and spirit of your city"
+          onSeeAll={seeAllExplore}
         />
       </View>
-      <FlatList
+      <FlatList<DiscoverArtistHighlight | string>
         horizontal
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => handlePress(item)}
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${item.name}`}
-            style={({ pressed }) => [
-              styles.card,
-              pressed && { transform: [{ scale: 0.98 }], opacity: 0.95 },
-              Platform.OS === 'web' && { cursor: 'pointer' as const },
-            ]}
-          >
-            <Image
-              source={item.imageUrl ? { uri: item.imageUrl } : undefined}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-              transition={150}
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(11,11,20,0.8)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={[styles.accentBar, { backgroundColor: item.accentColor }]} />
-            <View style={[styles.ctaPill, { backgroundColor: CultureTokens.indigo }]}>
-              <Text style={styles.ctaLabel}>{item.ctaLabel}</Text>
-            </View>
-            <View style={styles.content}>
-              <Text style={styles.artistName} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.artistSubtitle} numberOfLines={1}>{item.subtitle}</Text>
-              <View style={styles.metaRow}>
-                <Ionicons name="sparkles" size={12} color={colors.textSecondary} />
-                <Text style={[styles.artistMeta, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {item.meta}
+        data={isLoading && data.length === 0 ? [...SKELETON_KEYS] : data}
+        keyExtractor={(item) => (typeof item === 'string' ? item : item.id)}
+        renderItem={({ item }) =>
+          typeof item === 'string' ? (
+            <FeaturedArtistSkeletonCard />
+          ) : (
+            <Pressable
+              onPress={() => handlePress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}. ${item.ctaLabel}`}
+              style={({ pressed }) => [
+                styles.card,
+                { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
+                pressed && { opacity: 0.92 },
+                Platform.OS === 'web' && { cursor: 'pointer' as const },
+                Colors.shadows.medium,
+              ]}
+            >
+              <View style={[styles.accentTopBar, { backgroundColor: item.accentColor }]} />
+              <Image
+                source={item.imageUrl ? { uri: item.imageUrl } : undefined}
+                style={[styles.cardImage, { height: IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+                contentFit="cover"
+                transition={200}
+              />
+              <View style={styles.cardBody}>
+                <Text style={[styles.artistName, { color: colors.text }]} numberOfLines={2}>
+                  {item.name}
                 </Text>
+                <Text style={[styles.artistSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.subtitle}
+                </Text>
+                <View style={styles.metaRow}>
+                  <Ionicons name="sparkles" size={13} color={CultureTokens.gold} />
+                  <Text style={[styles.artistMeta, { color: colors.textTertiary }]} numberOfLines={2}>
+                    {item.meta}
+                  </Text>
+                </View>
+                <View style={[styles.ctaRow, { borderTopColor: colors.borderLight }]}>
+                  <Text style={[styles.ctaText, { color: item.accentColor }]}>{item.ctaLabel}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={item.accentColor} />
+                </View>
               </View>
-            </View>
-          </Pressable>
-        )}
+            </Pressable>
+          )
+        }
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
-        snapToInterval={DEFAULT_SNAP_INTERVAL}
+        snapToInterval={SNAP}
         snapToAlignment="start"
         decelerationRate="fast"
         initialNumToRender={4}
-        maxToRenderPerBatch={4}
-        windowSize={5}
-        getItemLayout={(_, index) => ({
-          length: DEFAULT_SNAP_INTERVAL,
-          offset: DEFAULT_SNAP_INTERVAL * index,
-          index,
-        })}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
+  container: { marginBottom: 36, paddingTop: 2 },
   headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  scrollRail: { paddingHorizontal: 20, gap: ITEM_GAP, paddingRight: 44 },
   card: {
-    width: 196,
-    height: 248,
     borderRadius: CardTokens.radius,
     overflow: 'hidden',
-    justifyContent: 'flex-end',
-    backgroundColor: CultureTokens.indigo,
-    ...Colors.shadows.medium,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  accentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5,
+  accentTopBar: {
+    width: '100%',
+    height: 4,
   },
-  ctaPill: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  cardImage: {
+    width: '100%',
   },
-  ctaLabel: {
-    color: 'white',
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 14,
+  cardBody: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
+    gap: 5,
   },
-  content: {
-    padding: 16,
-    gap: 4,
+  skeletonBody: {
+    padding: 14,
+    gap: 8,
+    width: '100%',
   },
   artistName: {
-    color: 'white',
     fontSize: 17,
     fontFamily: 'Poppins_700Bold',
     lineHeight: 22,
+    letterSpacing: -0.2,
   },
   artistSubtitle: {
-    color: 'rgba(255,255,255,0.88)',
     fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Poppins_600SemiBold',
     lineHeight: 18,
   },
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
     marginTop: 4,
   },
@@ -191,7 +226,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    lineHeight: 16,
+    lineHeight: 17,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  ctaText: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 0.2,
   },
 });
 

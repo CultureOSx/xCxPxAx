@@ -1,23 +1,45 @@
-import React, { useEffect, useRef } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { FlatList, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { captureEvent } from '@/lib/analytics';
 import type { HeritagePlaylistEntry } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
 
-const DEFAULT_SNAP_INTERVAL = 248;
+const CARD_WIDTH = 236;
+const IMAGE_HEIGHT = 148;
+const ITEM_GAP = 22;
+const SNAP = CARD_WIDTH + ITEM_GAP;
+const SKELETON_KEYS = ['h1', 'h2', 'h3', 'h4'] as const;
 
 interface HeritagePlaylistRailProps {
   data: HeritagePlaylistEntry[];
+  isLoading?: boolean;
 }
 
-function HeritagePlaylistRailComponent({ data }: HeritagePlaylistRailProps) {
+function HeritageSkeletonCard() {
+  const colors = useColors();
+  return (
+    <View style={[styles.card, { width: CARD_WIDTH, backgroundColor: colors.surface }]}>
+      <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
+      <View style={styles.skeletonBody}>
+        <Skeleton width={72} height={22} borderRadius={8} />
+        <Skeleton width="92%" height={16} borderRadius={6} />
+        <Skeleton width="48%" height={13} borderRadius={6} />
+        <Skeleton width="70%" height={12} borderRadius={6} />
+      </View>
+    </View>
+  );
+}
+
+function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRailProps) {
+  const colors = useColors();
   const { isDesktop } = useLayout();
   const lastImpressionKey = useRef<string>('');
 
@@ -32,12 +54,21 @@ function HeritagePlaylistRailComponent({ data }: HeritagePlaylistRailProps) {
     });
   }, [data]);
 
-  if (data.length === 0) return null;
-
-  const handlePress = (item: HeritagePlaylistEntry) => {
-    if (Platform.OS !== 'web') {
-      Haptics.selectionAsync();
+  const openListenUrl = useCallback(async (url: string, itemId: string) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    captureEvent('discover_heritage_playlist_listen_external', { itemId });
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) await Linking.openURL(url);
+    } catch {
+      /* ignore */
     }
+  }, []);
+
+  if (!isLoading && data.length === 0) return null;
+
+  const handleCardPress = (item: HeritagePlaylistEntry) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
 
     captureEvent('discover_heritage_playlist_tap', {
       rail: 'heritage_playlist',
@@ -54,103 +85,140 @@ function HeritagePlaylistRailComponent({ data }: HeritagePlaylistRailProps) {
     });
   };
 
+  const seeAllExplore = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    captureEvent('discover_heritage_playlist_see_all', { rail: 'heritage_playlist' });
+    router.push({
+      pathname: '/explore',
+      params: { focus: 'heritage', source: 'heritage_playlist_see_all' },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader
           title="Heritage Playlist"
           subtitle="Curated listening that opens into matching cultural discovery"
+          onSeeAll={seeAllExplore}
         />
       </View>
-      <FlatList
+      <FlatList<HeritagePlaylistEntry | string>
         horizontal
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => handlePress(item)}
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${item.title}`}
-            style={({ pressed }) => [
-              styles.card,
-              pressed && { transform: [{ scale: 0.985 }], opacity: 0.95 },
-              Platform.OS === 'web' && { cursor: 'pointer' as const },
-            ]}
-          >
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-              transition={150}
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(11,11,20,0.88)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={[styles.accentBar, { backgroundColor: item.accentColor }]} />
-            <View style={styles.topRow}>
-              <View style={[styles.typePill, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-                <Text style={styles.typeLabel}>{item.typeLabel}</Text>
-              </View>
-              {item.isLive ? (
-                <View style={[styles.livePill, { backgroundColor: CultureTokens.coral }]}>
-                  <Ionicons name="radio" size={10} color="white" />
-                  <Text style={styles.liveLabel}>LIVE</Text>
+        data={isLoading && data.length === 0 ? [...SKELETON_KEYS] : data}
+        keyExtractor={(item) => (typeof item === 'string' ? item : item.id)}
+        renderItem={({ item }) =>
+          typeof item === 'string' ? (
+            <HeritageSkeletonCard />
+          ) : (
+            <Pressable
+              onPress={() => handleCardPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title} by ${item.artist}. Opens matching culture in Explore.`}
+              style={({ pressed }) => [
+                styles.card,
+                { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
+                pressed && { opacity: 0.92 },
+                Platform.OS === 'web' && { cursor: 'pointer' as const },
+                Colors.shadows.medium,
+              ]}
+            >
+              <View style={[styles.accentTopBar, { backgroundColor: item.accentColor }]} />
+              <View style={styles.imageWrap}>
+                <Image
+                  source={item.imageUrl ? { uri: item.imageUrl } : undefined}
+                  style={[styles.cardImage, { backgroundColor: colors.backgroundSecondary }]}
+                  contentFit="cover"
+                  transition={200}
+                />
+                <View style={styles.imageOverlayRow}>
+                  <View style={[styles.typePill, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                    <Text style={styles.typePillText}>{item.typeLabel}</Text>
+                  </View>
+                  {item.isLive ? (
+                    <View style={[styles.livePill, { backgroundColor: CultureTokens.coral }]}>
+                      <Ionicons name="radio" size={10} color="white" />
+                      <Text style={styles.livePillText}>LIVE</Text>
+                    </View>
+                  ) : null}
                 </View>
-              ) : null}
-            </View>
-            <View style={styles.playButton}>
-              <Ionicons name={item.isLive ? 'radio' : 'play'} size={18} color="white" />
-            </View>
-            <View style={styles.content}>
-              <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-              <Text style={styles.artist} numberOfLines={1}>{item.artist}</Text>
-              <Text style={styles.meta} numberOfLines={1}>{`${item.culture} listening`}</Text>
-            </View>
-          </Pressable>
-        )}
+                <View style={styles.playFab}>
+                  <Ionicons name={item.isLive ? 'radio' : 'play'} size={20} color="white" />
+                </View>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.artist, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.artist}
+                </Text>
+                <Text style={[styles.cultureLine, { color: colors.textTertiary }]} numberOfLines={1}>
+                  {item.culture} · tap for matching culture in Explore
+                </Text>
+                <View style={[styles.footerRow, { borderTopColor: colors.borderLight }]}>
+                  <View style={styles.discoverHint}>
+                    <Ionicons name="compass-outline" size={15} color={CultureTokens.teal} />
+                    <Text style={[styles.discoverHintText, { color: CultureTokens.teal }]}>Open discovery</Text>
+                  </View>
+                  {item.externalUrl ? (
+                    <Pressable
+                      onPress={() => void openListenUrl(item.externalUrl!, item.id)}
+                      style={({ pressed }) => [
+                        styles.listenBtn,
+                        { backgroundColor: colors.backgroundSecondary, borderColor: item.accentColor + '55' },
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Listen in Spotify or browser"
+                      hitSlop={8}
+                    >
+                      <Ionicons name="musical-notes" size={14} color={item.accentColor} />
+                      <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            </Pressable>
+          )
+        }
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
-        snapToInterval={DEFAULT_SNAP_INTERVAL}
+        snapToInterval={SNAP}
         snapToAlignment="start"
         decelerationRate="fast"
         initialNumToRender={4}
-        maxToRenderPerBatch={4}
-        windowSize={5}
-        getItemLayout={(_, index) => ({
-          length: DEFAULT_SNAP_INTERVAL,
-          offset: DEFAULT_SNAP_INTERVAL * index,
-          index,
-        })}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
+  container: { marginBottom: 36, paddingTop: 2 },
   headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  scrollRail: { paddingHorizontal: 20, gap: ITEM_GAP, paddingRight: 44 },
   card: {
-    width: 232,
-    height: 272,
     borderRadius: CardTokens.radius,
     overflow: 'hidden',
-    backgroundColor: CultureTokens.indigo,
-    ...Colors.shadows.medium,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  accentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 6,
+  accentTopBar: {
+    width: '100%',
+    height: 4,
   },
-  topRow: {
+  imageWrap: {
+    width: '100%',
+    height: IMAGE_HEIGHT,
+    position: 'relative',
+  },
+  cardImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  imageOverlayRow: {
     position: 'absolute',
-    top: 14,
-    left: 14,
-    right: 14,
+    top: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -158,63 +226,98 @@ const styles = StyleSheet.create({
   typePill: {
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
-  typeLabel: {
+  typePillText: {
     color: 'white',
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    lineHeight: 14,
+    letterSpacing: 0.4,
   },
   livePill: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
-  liveLabel: {
+  livePillText: {
     color: 'white',
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    lineHeight: 14,
   },
-  playButton: {
+  playFab: {
     position: 'absolute',
-    top: 110,
-    left: 18,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    bottom: 10,
+    right: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  content: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
+  cardBody: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
     gap: 4,
   },
+  skeletonBody: {
+    padding: 14,
+    gap: 8,
+  },
   title: {
-    color: 'white',
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Poppins_700Bold',
-    lineHeight: 24,
+    lineHeight: 22,
+    letterSpacing: -0.2,
   },
   artist: {
-    color: 'rgba(255,255,255,0.88)',
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
-    lineHeight: 18,
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+    lineHeight: 19,
   },
-  meta: {
-    color: 'rgba(255,255,255,0.68)',
-    fontSize: 12,
+  cultureLine: {
+    fontSize: 11,
     fontFamily: 'Poppins_400Regular',
     lineHeight: 16,
+    marginTop: 2,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  discoverHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  discoverHintText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_700Bold',
+  },
+  listenBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  listenLabel: {
+    fontSize: 12,
+    fontFamily: 'Poppins_700Bold',
   },
 });
 

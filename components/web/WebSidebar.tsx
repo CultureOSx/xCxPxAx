@@ -37,8 +37,12 @@ const LIBRARY_NAV: NavItem[] = [
   { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
   { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
   { label: 'All Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
+  { label: 'Movies', icon: 'film-outline', iconActive: 'film', route: '/movies', matchPrefix: true },
+  { label: 'Dining', icon: 'restaurant-outline', iconActive: 'restaurant', route: '/restaurants', matchPrefix: true },
+  { label: 'Activities', icon: 'compass-outline', iconActive: 'compass', route: '/activities', matchPrefix: true },
+  { label: 'Shopping', icon: 'bag-outline', iconActive: 'bag', route: '/shopping', matchPrefix: true },
   { label: 'Map', icon: 'map-outline', iconActive: 'map', route: '/map' },
-  { label: 'Directory', icon: 'storefront-outline', iconActive: 'storefront', route: '/(tabs)/directory', matchPrefix: true },
+  { label: 'Directory', icon: 'grid-outline', iconActive: 'grid', route: '/(tabs)/directory', matchPrefix: true },
 ];
 
 const ORGANIZER_NAV: NavItem[] = [

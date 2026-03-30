@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, type ViewStyle } from 'react-native';
 import { CultureTokens, CardTokens, FontFamily, FontSize, Spacing, webShadow } from '@/constants/theme';
 
 export const root = StyleSheet.create({ wrap: { flex: 1 } });
@@ -26,7 +26,7 @@ export const hero = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20,
     backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 22, paddingVertical: 18, paddingHorizontal: Spacing.sm,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden', width: '88%',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
       android: { elevation: 4 },
       web: webShadow('0 4px 12px rgba(0,0,0,0.2)'),
@@ -43,7 +43,7 @@ export const act = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   btn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 2 },
       web: webShadow('0 2px 4px rgba(0,0,0,0.05)'),
@@ -55,7 +55,7 @@ export const act = StyleSheet.create({
 export const tier = StyleSheet.create({
   card: {
     borderRadius: CardTokens.radius, borderWidth: 1, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 4, overflow: 'hidden',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
       android: { elevation: 3 },
       web: webShadow('0 4px 12px rgba(0,0,0,0.08)'),
@@ -73,7 +73,7 @@ export const sec = StyleSheet.create({
   wrap: {},
   card: {
     padding: Spacing.md, borderRadius: Spacing.md, borderWidth: 1,
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 2 },
       web: webShadow('0 2px 8px rgba(0,0,0,0.06)'),
@@ -86,7 +86,7 @@ export const cul = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 1 },
       web: webShadow('0 2px 6px rgba(0,0,0,0.06)'),
@@ -99,7 +99,7 @@ export const prk = StyleSheet.create({
   scroll: { gap: Spacing.sm + 4, paddingVertical: Spacing.xs },
   card: {
     width: 160, padding: 14, borderRadius: 20, borderWidth: 1, overflow: 'hidden',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
       android: { elevation: 3 },
       web: webShadow('0 4px 10px rgba(0,0,0,0.06)'),
@@ -115,7 +115,7 @@ export const prk = StyleSheet.create({
 export const cpid = StyleSheet.create({
   card: {
     padding: Spacing.lg, borderRadius: 28, overflow: 'hidden', position: 'relative',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24 },
       android: { elevation: 8 },
       web: webShadow('0 12px 32px rgba(0,0,0,0.2)'),
@@ -148,7 +148,7 @@ export const soc = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: {
     flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: '45%', gap: 10, padding: Spacing.sm + 4, borderRadius: Spacing.md, borderWidth: 1, overflow: 'hidden',
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 1 },
       web: webShadow('0 2px 6px rgba(0,0,0,0.03)'),
@@ -162,7 +162,7 @@ export const soc = StyleSheet.create({
 export const det = StyleSheet.create({
   card: {
     borderRadius: 20, borderWidth: 1, padding: Spacing.xs,
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 },
       android: { elevation: 2 },
       web: webShadow('0 2px 8px rgba(0,0,0,0.03)'),
@@ -179,7 +179,7 @@ export const det = StyleSheet.create({
 export const set = StyleSheet.create({
   card: {
     borderRadius: 20, borderWidth: 1, padding: Spacing.xs,
-    ...Platform.select({
+    ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10 },
       android: { elevation: 3 },
       web: webShadow('0 4px 12px rgba(0,0,0,0.04)'),

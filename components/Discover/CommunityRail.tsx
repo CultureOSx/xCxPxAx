@@ -4,9 +4,10 @@ import { useLayout } from '@/hooks/useLayout';
 import SectionHeader from './SectionHeader';
 import CommunityCard from './CommunityCard';
 import { CommunityCardSkeleton } from '@/components/CommunityCardSkeleton';
+import { RailErrorBanner } from './RailErrorBanner';
 import type { Community } from '@/shared/schema';
 
-const DEFAULT_SNAP_INTERVAL = 228;
+const DEFAULT_SNAP_INTERVAL = 236;
 
 interface CommunityRailProps {
   title: string;
@@ -15,6 +16,8 @@ interface CommunityRailProps {
   isLoading?: boolean;
   onSeeAll?: () => void;
   snapInterval?: number;
+  errorMessage?: string | null;
+  onRetry?: () => void;
 }
 
 function CommunityRailComponent({
@@ -24,16 +27,23 @@ function CommunityRailComponent({
   isLoading,
   onSeeAll,
   snapInterval = DEFAULT_SNAP_INTERVAL,
+  errorMessage,
+  onRetry,
 }: CommunityRailProps) {
   const { isDesktop } = useLayout();
 
-  if (!isLoading && data.length === 0) return null;
+  const hasRealItems = data.some((item) => typeof item !== 'string');
+
+  if (!isLoading && !hasRealItems && !errorMessage) return null;
 
   return (
     <View style={styles.container}>
       <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
+      {errorMessage && !isLoading && !hasRealItems ? (
+        <RailErrorBanner message={errorMessage} onRetry={onRetry} />
+      ) : (
       <FlatList
         horizontal
         data={data}
@@ -60,14 +70,15 @@ function CommunityRailComponent({
           index,
         })}
       />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
+  container: { marginBottom: 36 },
   headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  scrollRail: { paddingHorizontal: 20, gap: 22, paddingRight: 44 },
 });
 
 export const CommunityRail = React.memo(CommunityRailComponent);
