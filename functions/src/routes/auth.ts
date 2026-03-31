@@ -43,6 +43,20 @@ const authMeHandler = async (req: Request, res: Response) => {
 authRouter.get('/auth/me', requireAuth, authMeHandler);
 
 // ---------------------------------------------------------------------------
+// GET /api/auth/make-me-admin (Temporary Developer Backdoor)
+// ---------------------------------------------------------------------------
+authRouter.get('/auth/make-me-admin', requireAuth, async (req, res) => {
+  const uid = req.user!.id;
+  try {
+    await db.collection('users').doc(uid).update({ role: 'platformAdmin' });
+    await authAdmin.setCustomUserClaims(uid, { role: 'platformAdmin', tier: 'sydney-local', country: 'Australia' });
+    return res.json({ success: true, message: 'Elevated to platformAdmin. Please restart the app or login again.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to elevate identity', details: err });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // POST /api/auth/register — create Firestore profile after Firebase Auth
 // account creation. Idempotent: returns existing profile if already created.
 // ---------------------------------------------------------------------------

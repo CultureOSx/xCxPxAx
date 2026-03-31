@@ -129,6 +129,8 @@ async function request<T>(
 const auth = {
   me: () =>
     request<User>('GET', 'api/auth/me'),
+  makeMeAdmin: () =>
+    request<{ success: boolean; message: string }>('GET', 'api/auth/make-me-admin'),
   register: (payload: { displayName?: string; username?: string; city?: string; state?: string; postcode?: number; country?: string; role?: 'user' | 'organizer' }) =>
     request<User>('POST', 'api/auth/register', payload),
 };

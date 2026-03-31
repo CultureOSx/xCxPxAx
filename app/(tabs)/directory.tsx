@@ -14,7 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { GlassContainer } from 'expo-glass-effect';
+import { CultureTokens, gradients } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -222,14 +225,23 @@ export default function DirectoryScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { backgroundColor: colors.background }]}>
+      <View style={[s.container, { backgroundColor: isDark ? '#0A0A12' : '#F7F7F9' }]}>
+        <LinearGradient 
+          colors={isDark ? gradients.aurora : ['#E8F2FF', '#FFFFFF', '#FAF5FF']}
+          style={[StyleSheet.absoluteFill, { opacity: isDark ? 0.4 : 0.8 }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
 
         {/* ── Header ── */}
-        <Animated.View
-          entering={FadeInUp.duration(320).springify()}
-          style={[s.header, { paddingTop: topInset, paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
-        >
-          <View style={{ flex: 1 }}>
+        <Animated.View entering={FadeInUp.duration(320).springify()} style={{ zIndex: 10 }}>
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 40 : 80}
+            tint={isDark ? 'dark' : 'light'}
+            style={{ paddingTop: topInset, borderBottomColor: colors.borderLight, borderBottomWidth: StyleSheet.hairlineWidth }}
+          >
+            <View style={[s.header, { width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center', paddingHorizontal: hPad, borderBottomWidth: 0 }]}>
+              <View style={{ flex: 1 }}>
             <Text style={[s.title, { color: colors.text }]}>Directory</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="location" size={10} color={CultureTokens.indigo} />
@@ -277,7 +289,9 @@ export default function DirectoryScreen() {
             {refreshing
               ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
               : <Ionicons name="refresh" size={18} color={colors.text} />}
-          </Pressable>
+            </Pressable>
+            </View>
+          </BlurView>
         </Animated.View>
 
         {/* ── Filter rows ── */}
@@ -285,6 +299,7 @@ export default function DirectoryScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center' }}
             contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
             accessibilityRole="tablist"
             accessibilityLabel="Entity type filters"
@@ -321,67 +336,69 @@ export default function DirectoryScreen() {
         {/* ── Content ── */}
         {isLoading ? (
           <View style={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}>
-            <View style={{ flexDirection: useWebTwoColumnResults ? 'row' : 'column', flexWrap: 'wrap', marginHorizontal: useWebTwoColumnResults ? -7 : 0 }}>
+            <View style={{ flexDirection: useWebTwoColumnResults ? 'row' : 'column', flexWrap: 'wrap' }}>
               {Array.from({ length: 6 }).map((_, i) => (
-                <View key={i} style={useWebTwoColumnResults ? s.resultsGridItemWeb : { marginBottom: 14 }}>
+                <View key={i} style={useWebTwoColumnResults ? [s.resultsGridItemWeb, { width: '50%', paddingRight: i % 2 === 0 ? 14 : 0 }] : { marginBottom: 14 }}>
                   <EventCardSkeleton />
                 </View>
               ))}
             </View>
           </View>
         ) : (
-          <FlashList<any>
-            data={filtered}
-          keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
-          renderItem={({ item, index }) => (
-            <Animated.View
-              entering={Platform.OS !== 'web' ? FadeInDown.delay(index * 40).springify().damping(18) : undefined}
-              style={useWebTwoColumnResults ? s.resultsGridItemWeb : undefined}
-            >
-              {item._type === 'event' ? (
-                <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
-              ) : (
-                <DirectoryCard profile={item.data} colors={colors} />
+          <View style={{ flex: 1, width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center' }}>
+            <FlashList<any>
+              data={filtered}
+              keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
+              renderItem={({ item, index }) => (
+                <Animated.View
+                  entering={Platform.OS !== 'web' ? FadeInDown.delay(index * 40).springify().damping(18) : undefined}
+                  style={useWebTwoColumnResults ? [s.resultsGridItemWeb, { paddingRight: index % 2 === 0 ? 14 : 0 }] : undefined}
+                >
+                  {item._type === 'event' ? (
+                    <DirectoryEventCard event={item.data} isSaved={savedEventIds.has(item.data.id)} onSave={handleSaveEvent} colors={colors} />
+                  ) : (
+                    <DirectoryCard profile={item.data} colors={colors} />
+                  )}
+                </Animated.View>
               )}
-            </Animated.View>
-          )}
-          ListHeaderComponent={
-            featuredProfiles.length > 0 ? (
-              <FeaturedRail profiles={featuredProfiles} colors={colors} />
-            ) : null
-          }
-          ListEmptyComponent={
-            <DirectoryEmptyState
-              selectedType={selectedType}
-              city={onboardingState.city}
-              hasActiveFilters={hasActiveFilters}
-              colors={colors}
-              onReset={() => { setSelectedType('All'); setSearch(''); }}
+              ListHeaderComponent={
+                featuredProfiles.length > 0 ? (
+                  <FeaturedRail profiles={featuredProfiles} colors={colors} />
+                ) : null
+              }
+              ListEmptyComponent={
+                <DirectoryEmptyState
+                  selectedType={selectedType}
+                  city={onboardingState.city}
+                  hasActiveFilters={hasActiveFilters}
+                  colors={colors}
+                  onReset={() => { setSelectedType('All'); setSearch(''); }}
+                />
+              }
+              ListFooterComponent={
+                showAcknowledgement && !isLoading && filtered.length > 0 ? (
+                  <View style={s.acknowledgementWrap}>
+                    <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
+                    <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
+                      {acknowledgement}
+                    </Text>
+                  </View>
+                ) : null
+              }
+              {...({ estimatedItemSize: 100 } as any)}
+              numColumns={useWebTwoColumnResults ? 2 : 1}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={CultureTokens.indigo}
+                  colors={[CultureTokens.indigo]}
+                />
+              }
             />
-          }
-          ListFooterComponent={
-            showAcknowledgement && !isLoading && filtered.length > 0 ? (
-              <View style={s.acknowledgementWrap}>
-                <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
-                <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
-                  {acknowledgement}
-                </Text>
-              </View>
-            ) : null
-          }
-          {...({ estimatedItemSize: 100 } as any)}
-          numColumns={useWebTwoColumnResults ? 2 : 1}
-          contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={CultureTokens.indigo}
-              colors={[CultureTokens.indigo]}
-            />
-          }
-        />
+          </View>
         )}
       </View>
     </ErrorBoundary>

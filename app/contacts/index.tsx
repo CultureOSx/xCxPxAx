@@ -436,7 +436,7 @@ function SyncPermissionBanner({ onRequest }: { onRequest: () => void }) {
           Find Friends on CulturePass
         </Text>
         <Text style={[styles.permissionSub, { color: colors.textSecondary }]}>
-          Sync your phone contacts to discover who's already on CulturePass and invite those who aren't.
+          Sync your phone contacts to discover who&apos;s already on CulturePass and invite those who aren&apos;t.
         </Text>
         <View style={styles.permissionBullets}>
           {[
@@ -569,7 +569,7 @@ function DiscoverTab({ contacts, colors }: { contacts: SavedContact[]; colors: R
       <View style={styles.discoverSection}>
         <Text style={[styles.discoverSectionTitle, { color: colors.text }]}>Recommended for You</Text>
         <Text style={[styles.discoverSectionSub, { color: colors.textSecondary }]}>
-          Based on your contacts' activity
+          Based on your contacts&apos; activity
         </Text>
       </View>
 

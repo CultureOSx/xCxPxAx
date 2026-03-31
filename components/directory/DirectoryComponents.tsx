@@ -12,7 +12,7 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { router } from 'expo-router';
+import { GlassView } from 'expo-glass-effect';import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens, EntityTypeColors, webShadow } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
@@ -106,14 +106,15 @@ export function FeaturedRail({
             <Pressable
               key={p.id}
               onPress={() => router.push({ pathname: '/profile/[id]', params: { id: p.id } })}
-              style={({ pressed }) => [fr.card, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [fr.card, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
               accessibilityRole="button"
               accessibilityLabel={`View ${p.name} profile`}
             >
+              <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
               {p.imageUrl ? (
-                <Image source={{ uri: p.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                <Image source={{ uri: p.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
               ) : (
-                <View style={[fr.imgPlaceholder, { backgroundColor: color + '22' }]}>
+                <View style={[fr.imgPlaceholder, { backgroundColor: color + '33' }]}>
                   <Ionicons
                     name={(TYPE_ICONS[p.entityType] ?? 'business') as keyof typeof Ionicons.glyphMap}
                     size={30}
@@ -122,7 +123,7 @@ export function FeaturedRail({
                 </View>
               )}
               <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.80)']}
+                colors={['transparent', 'rgba(0,0,0,0.85)']}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0.3 }}
                 end={{ x: 0, y: 1 }}
@@ -164,7 +165,9 @@ const fr = StyleSheet.create({
     height: 156,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#13131F',
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.15)',
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
       android: { elevation: 5, shadowColor: '#000' },
@@ -181,7 +184,7 @@ const fr = StyleSheet.create({
   cardName: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
   cardType: {
     fontSize: 10, fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.65)', textTransform: 'capitalize', marginTop: 2,
+    color: 'rgba(255,255,255,0.8)', textTransform: 'capitalize', marginTop: 2,
   },
 });
 
@@ -227,27 +230,22 @@ export function DirectoryEventCard({
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
         style={({ pressed }) => [
           s.directoryCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.borderLight,
-            ...Platform.select({
-              ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
-              android: { elevation: 2, shadowColor: '#000' },
-              web:     { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
-            }),
-          },
-          pressed && { opacity: 0.93 },
+          pressed && { opacity: 0.93, transform: [{ scale: 0.99 }] },
         ]}
         accessibilityRole="link"
         accessibilityLabel={`View event: ${event.title}`}
       >
+        <GlassView 
+          glassEffectStyle="regular" 
+          style={[StyleSheet.absoluteFill, { borderColor: colors.borderLight, borderWidth: StyleSheet.hairlineWidth, backgroundColor: colors.surface + '80' }]} 
+        />
         <View style={s.eventCardInner}>
           {/* Left: image thumbnail with date overlay, or plain date block */}
           {hasImage ? (
             <View style={s.eventImgBlock}>
               <Image source={{ uri: event.imageUrl! }} style={StyleSheet.absoluteFill} contentFit="cover" />
               <LinearGradient
-                colors={['transparent', categoryColor + 'CC']}
+                colors={['transparent', categoryColor + 'E6']}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0.2 }}
                 end={{ x: 0, y: 1 }}
@@ -271,7 +269,7 @@ export function DirectoryEventCard({
           {/* Content */}
           <View style={s.eventCardContent}>
             {event.category ? (
-              <View style={[s.eventCatBadge, { backgroundColor: categoryColor + '1A' }]}>
+              <View style={[s.eventCatBadge, { backgroundColor: categoryColor + '1A', borderColor: categoryColor + '30', borderWidth: 1 }]}>
                 <Text style={[s.eventCatText, { color: categoryColor }]}>{event.category}</Text>
               </View>
             ) : null}
@@ -288,7 +286,7 @@ export function DirectoryEventCard({
             ) : null}
             <View style={s.eventCardFooter}>
               {priceLabel ? (
-                <View style={[s.eventPriceBadge, { backgroundColor: priceAccent + '20' }]}>
+                <View style={[s.eventPriceBadge, { backgroundColor: priceAccent + '1A', borderWidth: 1, borderColor: priceAccent + '30' }]}>
                   <Text style={[s.eventPriceText, { color: priceAccent }]}>{priceLabel}</Text>
                 </View>
               ) : null}
@@ -307,11 +305,13 @@ export function DirectoryEventCard({
         hitSlop={15}
       >
         <Animated.View style={animatedHeart}>
-          <Ionicons
-            name={isSaved ? 'heart' : 'heart-outline'}
-            size={18}
-            color={isSaved ? CultureTokens.coral : colors.textTertiary}
-          />
+          <GlassView glassEffectStyle="regular" style={s.heartGlassBox}>
+            <Ionicons
+              name={isSaved ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isSaved ? CultureTokens.coral : colors.text}
+            />
+          </GlassView>
         </Animated.View>
       </Pressable>
     </View>
@@ -351,30 +351,32 @@ export function DirectoryCard({
       onPress={handlePress}
       style={({ pressed }) => [
         s.directoryCard,
-        {
-          backgroundColor: colors.surface,
-          borderColor: isProfessional
-            ? CultureTokens.gold + '60'
-            : isCouncil
-            ? CultureTokens.indigo + '60'
-            : colors.borderLight,
-          ...Platform.select({
-            ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-            android: { elevation: 4, shadowColor: '#000' },
-            web:     { boxShadow: isProfessional ? '0 8px 24px rgba(255,200,87,0.12)' : '0 8px 20px rgba(0,0,0,0.08)' },
-          }),
-        },
-        (isCouncil || isProfessional) && { borderWidth: 1.5 },
+        (isCouncil || isProfessional) && { borderWidth: 0 },
         pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
       ]}
       accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
       accessibilityLabel={`View ${profile.name} profile`}
     >
+      <GlassView 
+        glassEffectStyle="regular"
+        style={[
+          StyleSheet.absoluteFill, 
+          { 
+            backgroundColor: colors.surface + '60',
+            borderWidth: (isCouncil || isProfessional) ? 1.5 : StyleSheet.hairlineWidth,
+            borderColor: isProfessional
+              ? CultureTokens.gold + '60'
+              : isCouncil
+              ? CultureTokens.indigo + '60'
+              : colors.borderLight,
+          }
+        ]} 
+      />
       {(isCouncil || isProfessional) && (
         <LinearGradient
           colors={isProfessional
-            ? [`${CultureTokens.gold}08`, 'transparent']
-            : [CultureTokens.indigo + '0A', 'transparent']}
+            ? [`${CultureTokens.gold}1A`, 'transparent']
+            : [CultureTokens.indigo + '1F', 'transparent']}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -389,9 +391,10 @@ export function DirectoryCard({
             style={s.profileAvatar}
             contentFit="cover"
             accessibilityLabel={`${profile.name} logo`}
+            transition={300}
           />
         ) : (
-          <View style={[s.profileIconBox, { backgroundColor: color + '18' }]}>
+          <View style={[s.profileIconBox, { backgroundColor: color + '15', borderWidth: 1, borderColor: color + '30' }]}>
             <Ionicons
               name={isCouncil ? 'shield-checkmark' : (icon as keyof typeof Ionicons.glyphMap)}
               size={28}
@@ -418,7 +421,7 @@ export function DirectoryCard({
 
           {/* Category badge + location on same row */}
           <View style={s.profileBadgeRow}>
-            <View style={[s.categoryBadge, { backgroundColor: accent + '18' }]}>
+            <View style={[s.categoryBadge, { backgroundColor: accent + '15', borderWidth: 1, borderColor: accent + '30' }]}>
               <Text style={[s.categoryBadgeText, { color: accent }]} numberOfLines={1}>
                 {profile.category ?? profile.entityType}
               </Text>
@@ -460,7 +463,7 @@ export function DirectoryCard({
             ) : tags.length > 0 ? (
               <View style={s.tagsRow}>
                 {tags.slice(0, 2).map(tag => (
-                  <View key={tag} style={[s.tagPill, { backgroundColor: colors.surfaceElevated }]}>
+                  <View key={tag} style={[s.tagPill, { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.borderLight }]}>
                     <Text style={[s.tagText, { color: colors.textSecondary }]}>{tag}</Text>
                   </View>
                 ))}
@@ -585,8 +588,8 @@ export const s = StyleSheet.create({
   list: { paddingTop: 14 },
 
   // ── Web 2-col grid ──
-  resultsGridWeb:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  resultsGridItemWeb: { width: '49%' },
+  resultsGridWeb:     { flexDirection: 'row', flexWrap: 'wrap' },
+  resultsGridItemWeb: { width: isWeb ? '100%' : '100%' },
 
   // ── Directory card (shared base) ──
   directoryCard: {
@@ -689,8 +692,16 @@ export const s = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    padding: 6,
     zIndex: 10,
+  },
+  heartGlassBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
 
   // ── Profile card ──
