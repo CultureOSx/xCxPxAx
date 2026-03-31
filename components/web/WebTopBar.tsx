@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { LocationPicker } from "@/components/LocationPicker";
 import { useLayout } from "@/hooks/useLayout";
 import { routeWithRedirect } from "@/lib/routes";
+import { BrandWordmark } from "../ui/BrandWordmark";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TabItem {
@@ -141,9 +142,8 @@ export function WebTopBar() {
           >
             <Ionicons name="globe-outline" size={18} color="#fff" />
           </LinearGradient>
-          <View>
-            <Text style={styles.appName}>CulturePass</Text>
-            <Text style={styles.tagLine}>We Belong Anywhere.</Text>
+          <View style={styles.appNameCol}>
+            <BrandWordmark size="sm" withTagline light />
           </View>
         </Pressable>
 
@@ -477,19 +477,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  appNameCol: {
+    marginLeft: 8,
+    marginTop: 2,
+    justifyContent: 'center',
+  },
   appName: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 21,
+    fontSize: 18,
+    fontFamily: 'Poppins_800ExtraBold',
+    letterSpacing: -0.4,
+    lineHeight: 22,
   },
   tagLine: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 10,
-    fontFamily: 'Poppins_500Medium',
-    letterSpacing: 0.3,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 9,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginTop: -1,
   },
   locationWrap: {
     marginLeft: 16,

@@ -6,7 +6,9 @@ import { requireRole } from '../middleware/auth';
 import { usersService } from '../services/users';
 import type { UserRole, DiscoverCurationConfig } from '../../../shared/schema';
 import { DISCOVER_FOCUS_OPTIONS, HERITAGE_PLAYLIST_TYPES } from '../../../shared/schema';
-import { getDiscoverCurationConfig, updateDiscoverCurationConfig } from '../services/discoverCuration';
+import { updateDiscoverCurationConfig, getDiscoverCurationConfig } from '../services/discoverCuration';
+import { systemConfigService } from '../services/systemConfig';
+import { taxonomyService } from '../services/taxonomy';
 import { z } from 'zod';
 
 export const adminRouter = Router();
@@ -415,5 +417,55 @@ adminRouter.get('/admin/finance/summary', requireRole('admin', 'platformAdmin'),
   } catch (err) {
     captureRouteError(err, 'GET /admin/finance/summary');
     return res.status(500).json({ error: 'Failed to fetch finance summary' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// System Config (Maintenance Mode, etc.)
+// ---------------------------------------------------------------------------
+adminRouter.get('/admin/config', requireRole('admin', 'platformAdmin'), async (_req: Request, res: Response) => {
+  try {
+    const config = await systemConfigService.getConfig();
+    return res.json({ config });
+  } catch (err) {
+    captureRouteError(err, 'GET /admin/config');
+    return res.status(500).json({ error: 'Failed to fetch system config' });
+  }
+});
+
+adminRouter.put('/admin/config', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
+  try {
+    const config = await systemConfigService.updateConfig(req.body, req.user!.id);
+    return res.json({ ok: true, config });
+  } catch (err) {
+    captureRouteError(err, 'PUT /admin/config');
+    return res.status(500).json({ error: 'Failed to update system config' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Taxonomy Manager
+// ---------------------------------------------------------------------------
+adminRouter.get('/admin/taxonomy', requireRole('admin', 'platformAdmin'), async (_req: Request, res: Response) => {
+  try {
+    const categories = await taxonomyService.getCategories();
+    return res.json({ categories });
+  } catch (err) {
+    captureRouteError(err, 'GET /admin/taxonomy');
+    return res.status(500).json({ error: 'Failed to fetch taxonomy' });
+  }
+});
+
+adminRouter.put('/admin/taxonomy/:categoryId', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params['categoryId'] as string;
+    const { tags } = req.body;
+    if (!Array.isArray(tags)) return res.status(400).json({ error: 'tags must be an array' });
+    
+    const category = await taxonomyService.updateCategory(categoryId, tags, req.user!.id);
+    return res.json({ ok: true, category });
+  } catch (err) {
+    captureRouteError(err, 'PUT /admin/taxonomy/:categoryId');
+    return res.status(500).json({ error: 'Failed to update taxonomy category' });
   }
 });

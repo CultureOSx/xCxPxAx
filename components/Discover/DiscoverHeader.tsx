@@ -65,7 +65,7 @@ function DiscoverHeaderComponent({
             contentFit="contain"
           />
         </View>
-        <BrandWordmark size="sm" withTagline={false} light />
+        <BrandWordmark size="sm" withTagline light />
       </Pressable>
 
       <View style={styles.flex1} />
@@ -139,7 +139,7 @@ function DiscoverHeaderComponent({
               {currentTime}{weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
             <Text style={[styles.desktopGreeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={styles.desktopTagline}>Belong Anywhere</Text>
+            <Text style={styles.desktopTagline}>BELONG ANYWHERE</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
@@ -164,7 +164,7 @@ function DiscoverHeaderComponent({
           <Text style={[styles.mobileGreeting, { color: colors.text }]} numberOfLines={1}>
             {greeting}
           </Text>
-          <Text style={styles.mobileTagline}>Belong Anywhere</Text>
+          <Text style={styles.mobileTagline}>BELONG ANYWHERE</Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
               <LocationPicker variant="text" />
@@ -254,11 +254,11 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   mobileTagline: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Poppins_700Bold',
-    color: CultureTokens.gold,
+    color: 'rgba(255,255,255,0.85)',
     textTransform: 'uppercase',
-    letterSpacing: 2.5,
+    letterSpacing: 1.4,
   },
   mobileMetaRow: {
     flexDirection: 'row',
@@ -290,11 +290,11 @@ const styles = StyleSheet.create({
   desktopTagline: {
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    color: CultureTokens.gold,
+    color: 'rgba(255,255,255,0.85)',
     textTransform: 'uppercase',
-    letterSpacing: 2.5,
+    letterSpacing: 1.6,
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   desktopSub: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
   desktopActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 24 },

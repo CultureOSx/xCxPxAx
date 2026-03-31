@@ -15,7 +15,7 @@ export interface FirestoreUser {
   bio?: string;
   website?: string;
   location?: string;
-  role: 'user' | 'organizer' | 'business' | 'sponsor' | 'cityAdmin' | 'platformAdmin' | 'moderator' | 'admin';
+  role: 'user' | 'organizer' | 'business' | 'sponsor' | 'cityAdmin' | 'platformAdmin' | 'moderator' | 'admin' | 'superAdmin';
   culturePassId: string;
   isSydneyVerified?: boolean;
   interests?: string[];
@@ -43,6 +43,12 @@ export interface FirestoreUser {
   deviceTokens?: string[];
   marketingOptIn?: boolean;
   dataProcessingConsent?: boolean;
+  calendarSettings?: {
+    autoAddTickets?: boolean;
+    showPersonalEvents?: boolean;
+    deviceConnected?: boolean;
+    lastSyncedAt?: string;
+  };
   metadata?: Record<string, any>; 
   
   createdAt: string;

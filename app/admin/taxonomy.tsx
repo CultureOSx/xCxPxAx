@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +7,13 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
+import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, gradients } from '@/constants/theme';
-import { interestCategories } from '@/constants/onboardingInterests';
+import { interestCategories as staticCategories } from '@/constants/onboardingInterests';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const isWeb = Platform.OS === 'web';
@@ -40,13 +42,80 @@ export default function AdminTaxonomyScreen() {
   const colors = useColors();
   const { hPad, columnWidth, columnGap, contentWidth, isDesktop } = useLayout();
   
-  const [activeCategory, setActiveCategory] = useState(interestCategories[0].id);
+  const { data: taxonomyData, isLoading, refetch } = useQuery({
+    queryKey: ['admin-taxonomy'],
+    queryFn: api.admin.getTaxonomy,
+  });
+
+  const categories = taxonomyData?.categories || staticCategories.map(c => ({ 
+    id: c.id, 
+    title: c.title, 
+    tags: c.interests, 
+    accentColor: c.accentColor,
+    updatedAt: new Date().toISOString()
+  }));
+
+  const [activeCategory, setActiveCategory] = useState(categories[0].id);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const currentCategory = interestCategories.find(c => c.id === activeCategory) || interestCategories[0];
-  const filteredInterests = currentCategory.interests.filter(i => 
+  const currentCategory = categories.find(c => c.id === activeCategory) || categories[0];
+  const filteredTags = (currentCategory.tags || []).filter(i => 
     i.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const mutation = useMutation({
+    mutationFn: ({ id, tags }: { id: string, tags: string[] }) => api.admin.updateTaxonomy(id, tags),
+    onSuccess: () => {
+      refetch();
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert('Taxonomy Error', err?.message || 'Failed to update tags');
+    }
+  });
+
+  const handleRemoveTag = (tag: string) => {
+    Alert.alert('Remove Tag', `Are you sure you want to remove "${tag}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Remove', 
+        style: 'destructive',
+        onPress: () => {
+          const newTags = currentCategory.tags.filter(t => t !== tag);
+          mutation.mutate({ id: currentCategory.id, tags: newTags });
+        }
+      }
+    ]);
+  };
+
+  const handleAddTag = () => {
+    if (isWeb) {
+      const tag = window.prompt('Enter new tag name:');
+      if (tag && tag.trim()) {
+        const newTags = [...currentCategory.tags, tag.trim()];
+        mutation.mutate({ id: currentCategory.id, tags: newTags });
+      }
+      return;
+    }
+
+    Alert.prompt(
+      'New Tag',
+      `Add a new tag to the ${currentCategory.title} category`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Add', 
+          onPress: (tag?: string) => {
+            if (tag && tag.trim()) {
+              const newTags = [...currentCategory.tags, tag.trim()];
+              mutation.mutate({ id: currentCategory.id, tags: newTags });
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
 
   return (
     <ErrorBoundary>
@@ -95,7 +164,7 @@ export default function AdminTaxonomyScreen() {
             showsHorizontalScrollIndicator={false} 
             contentContainerStyle={{ paddingHorizontal: hPad, paddingVertical: 12, gap: 8 }}
           >
-            {interestCategories.map(cat => (
+            {categories.map(cat => (
               <Pressable
                 key={cat.id}
                 onPress={() => {
@@ -104,8 +173,8 @@ export default function AdminTaxonomyScreen() {
                 }}
                 style={[
                   styles.tab, 
-                  { backgroundColor: activeCategory === cat.id ? cat.accentColor + '20' : 'transparent', 
-                    borderColor: activeCategory === cat.id ? cat.accentColor : colors.borderLight }
+                  { backgroundColor: activeCategory === cat.id ? (cat.accentColor || '#666') + '20' : 'transparent', 
+                    borderColor: activeCategory === cat.id ? (cat.accentColor || '#666') : colors.borderLight }
                 ]}
               >
                 <Text style={[
@@ -148,31 +217,40 @@ export default function AdminTaxonomyScreen() {
 
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              {currentCategory.title} — {filteredInterests.length} Tags
+              {currentCategory.title} — {filteredTags.length} Tags
             </Text>
           </View>
 
           <GlassView style={[styles.tagGridCard, { borderColor: colors.borderLight }]}>
-            <View style={styles.tagGrid}>
-              {filteredInterests.map((tag, i) => (
-                <Animated.View key={tag} entering={FadeInDown.delay(i * 10).duration(200)}>
-                  <TaxonomyTag 
-                    label={tag} 
-                    color={currentCategory.accentColor} 
-                    onRemove={() => {}} 
-                  />
-                </Animated.View>
-              ))}
-              <Pressable 
-                style={[styles.addTag, { borderColor: currentCategory.accentColor, borderStyle: 'dashed' }]}
-                onPress={() => {
-                  if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }}
-              >
-                <Ionicons name="add" size={16} color={currentCategory.accentColor} />
-                <Text style={[styles.addTagText, { color: currentCategory.accentColor }]}>Add Tag</Text>
-              </Pressable>
-            </View>
+            {isLoading ? (
+              <ActivityIndicator color={currentCategory.accentColor} style={{ padding: 20 }} />
+            ) : (
+              <View style={styles.tagGrid}>
+                {filteredTags.map((tag, i) => (
+                  <Animated.View key={tag} entering={FadeInDown.delay(i * 10).duration(200)}>
+                    <TaxonomyTag 
+                      label={tag} 
+                      color={currentCategory.accentColor || '#666'} 
+                      onRemove={() => handleRemoveTag(tag)} 
+                    />
+                  </Animated.View>
+                ))}
+                <Pressable 
+                  style={[styles.addTag, { borderColor: currentCategory.accentColor, borderStyle: 'dashed' }]}
+                  onPress={handleAddTag}
+                  disabled={mutation.isPending}
+                >
+                  {mutation.isPending ? (
+                    <ActivityIndicator size="small" color={currentCategory.accentColor} />
+                  ) : (
+                    <>
+                      <Ionicons name="add" size={16} color={currentCategory.accentColor} />
+                      <Text style={[styles.addTagText, { color: currentCategory.accentColor }]}>Add Tag</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
           </GlassView>
 
           {/* Info Box */}

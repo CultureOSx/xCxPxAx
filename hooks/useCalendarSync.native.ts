@@ -5,16 +5,18 @@
  * - Requests calendar read/write permissions (expo-calendar)
  * - Reads personal device calendar events (shown as busy blocks)
  * - Exports CulturePass events to device calendar
- * - Persists sync preferences via AsyncStorage
+ * - Persists sync preferences via Backend API
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
 import * as Calendar from 'expo-calendar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 
-const STORAGE_KEY = '@culturepass_calendar_prefs';
+// Defensive check: is the native module actually linked?
+const isCalendarLinked = !!Calendar && typeof Calendar.requestCalendarPermissionsAsync === 'function';
 
 export interface PersonalEvent {
   id: string;
@@ -38,56 +40,52 @@ const DEFAULT_PREFS: CalendarSyncPrefs = {
 };
 
 export function useCalendarSync() {
-  const [prefs, setPrefs] = useState<CalendarSyncPrefs>(DEFAULT_PREFS);
+  const queryClient = useQueryClient();
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Coordinate loading state for prefs and permissions
-  useEffect(() => {
-    let prefsDone = false;
-    let permsDone = false;
+  const { data: prefs = DEFAULT_PREFS, isLoading: isPrefsLoading } = useQuery({
+    queryKey: ['/api/calendar/settings'],
+    queryFn: async () => {
+      const settings = await api.calendar.getSettings();
+      return {
+        deviceConnected: settings.deviceConnected ?? DEFAULT_PREFS.deviceConnected,
+        showPersonalEvents: settings.showPersonalEvents ?? DEFAULT_PREFS.showPersonalEvents,
+        autoAddTickets: settings.autoAddTickets ?? DEFAULT_PREFS.autoAddTickets,
+      };
+    },
+  });
 
-    const checkDone = () => {
-      if (prefsDone && permsDone) setIsLoading(false);
-    };
+  const { mutateAsync: updateSettings, isPending: isSyncing } = useMutation({
+    mutationFn: (newPrefs: Partial<CalendarSyncPrefs>) => api.calendar.updateSettings(newPrefs),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['/api/calendar/settings'], updated);
+    },
+  });
 
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (raw) {
-          const saved = JSON.parse(raw) as Partial<CalendarSyncPrefs>;
-          setPrefs({ ...DEFAULT_PREFS, ...saved });
-        }
-      })
-      .catch(() => {/* ignore */})
-      .finally(() => {
-        prefsDone = true;
-        checkDone();
-      });
-
-    if (Platform.OS === 'web') {
-      permsDone = true;
-      checkDone();
-    } else {
-      Calendar.getCalendarPermissionsAsync()
-        .then(({ granted }) => setPermissionGranted(granted))
-        .catch(() => {/* ignore */})
-        .finally(() => {
-          permsDone = true;
-          checkDone();
-        });
-    }
+  const showAlertNoNative = useCallback(() => {
+    Alert.alert(
+      'Calendar Module Missing',
+      'The native Calendar module is not linked in this build. Please rebuild the dev client with npx expo run:ios.',
+    );
   }, []);
 
-  const savePrefs = useCallback(async (next: CalendarSyncPrefs) => {
-    setPrefs(next);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  // Check permissions on mount
+  useEffect(() => {
+    if (Platform.OS !== 'web' && isCalendarLinked) {
+      Calendar.getCalendarPermissionsAsync()
+        .then(({ granted }) => setPermissionGranted(granted))
+        .catch(() => {/* ignore */});
+    }
   }, []);
 
   /** Request read+write calendar permissions from the OS */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === 'web') return false;
+    if (!isCalendarLinked) {
+      showAlertNoNative();
+      return false;
+    }
     const { granted } = await Calendar.requestCalendarPermissionsAsync();
     setPermissionGranted(granted);
     if (!granted) {
@@ -101,26 +99,24 @@ export function useCalendarSync() {
       );
     }
     return granted;
-  }, []);
+  }, [showAlertNoNative]);
 
-  /** Connect device calendar: request permission + load events */
+  /** Connect device calendar: request permission + persist status */
   const connectDeviceCalendar = useCallback(async () => {
     const granted = await requestPermission();
     if (!granted) return;
-    const next = { ...prefs, deviceConnected: true };
-    await savePrefs(next);
-  }, [prefs, requestPermission, savePrefs]);
+    await updateSettings({ deviceConnected: true });
+  }, [requestPermission, updateSettings]);
 
   /** Disconnect device calendar */
   const disconnectDeviceCalendar = useCallback(async () => {
-    const next = { ...prefs, deviceConnected: false };
-    await savePrefs(next);
+    await updateSettings({ deviceConnected: false });
     setPersonalEvents([]);
-  }, [prefs, savePrefs]);
+  }, [updateSettings]);
 
   /** Fetch personal calendar events for a date range */
   const fetchPersonalEvents = useCallback(async (startDate: Date, endDate: Date) => {
-    if (Platform.OS === 'web' || !permissionGranted || !prefs.deviceConnected) return;
+    if (Platform.OS === 'web' || !isCalendarLinked || !permissionGranted || !prefs.deviceConnected) return;
     try {
       const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
       const calendarIds = calendars.map((c) => c.id);
@@ -144,7 +140,7 @@ export function useCalendarSync() {
   /** Export a single CulturePass event to the device calendar */
   const exportEventToCalendar = useCallback(async (event: EventData): Promise<boolean> => {
     if (Platform.OS === 'web') {
-      // Web: offer ICS download via data URI
+      // Web fallback: offer ICS download
       const ics = buildICS(event);
       const blob = new Blob([ics], { type: 'text/calendar' });
       const url = URL.createObjectURL(blob);
@@ -155,12 +151,15 @@ export function useCalendarSync() {
       URL.revokeObjectURL(url);
       return true;
     }
+    if (!isCalendarLinked) {
+      showAlertNoNative();
+      return false;
+    }
 
     const granted = permissionGranted || (await requestPermission());
     if (!granted) return false;
 
     try {
-      setIsSyncing(true);
       const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
       // Prefer the default calendar
       const writable = calendars.find(
@@ -193,21 +192,17 @@ export function useCalendarSync() {
     } catch {
       Alert.alert('Error', 'Could not add event to calendar. Please try again.');
       return false;
-    } finally {
-      setIsSyncing(false);
     }
   }, [permissionGranted, requestPermission]);
 
   /** Bulk export all ticket events to device calendar */
   const exportAllTickets = useCallback(async (events: EventData[]) => {
     if (!events.length) return;
-    setIsSyncing(true);
     let count = 0;
     for (const ev of events) {
       const ok = await exportEventToCalendar(ev);
       if (ok) count++;
     }
-    setIsSyncing(false);
     if (count > 0) {
       Alert.alert('Sync Complete', `${count} event${count !== 1 ? 's' : ''} added to your calendar.`);
     }
@@ -215,20 +210,21 @@ export function useCalendarSync() {
 
   /** Toggle showPersonalEvents preference */
   const setShowPersonalEvents = useCallback(async (val: boolean) => {
-    await savePrefs({ ...prefs, showPersonalEvents: val });
-  }, [prefs, savePrefs]);
+    await updateSettings({ showPersonalEvents: val });
+  }, [updateSettings]);
 
   /** Toggle autoAddTickets preference */
   const setAutoAddTickets = useCallback(async (val: boolean) => {
-    await savePrefs({ ...prefs, autoAddTickets: val });
-  }, [prefs, savePrefs]);
+    await updateSettings({ autoAddTickets: val });
+  }, [updateSettings]);
 
   return {
     prefs,
-    isLoading,
+    isLoading: isPrefsLoading,
     isSyncing,
     permissionGranted,
     personalEvents,
+    isCalendarLinked,
     connectDeviceCalendar,
     disconnectDeviceCalendar,
     fetchPersonalEvents,

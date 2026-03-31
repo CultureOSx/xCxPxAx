@@ -17,10 +17,10 @@ interface BrandWordmarkProps {
 }
 
 const SIZES = {
-  sm: { fontSize: 20, height: 28, taglineSize: 7,  gap: 1, width: 126 },
-  md: { fontSize: 28, height: 38, taglineSize: 10, gap: 1, width: 176 },
-  lg: { fontSize: 40, height: 54, taglineSize: 15, gap: 2, width: 252 },
-  xl: { fontSize: 52, height: 70, taglineSize: 19, gap: 4, width: 326 },
+  sm: { fontSize: 22, height: 32, taglineSize: 8.5, gap: 1, width: 140 },
+  md: { fontSize: 30, height: 40, taglineSize: 11,  gap: 1, width: 188 },
+  lg: { fontSize: 44, height: 56, taglineSize: 16,  gap: 2, width: 278 },
+  xl: { fontSize: 56, height: 74, taglineSize: 21,  gap: 4, width: 350 },
 };
 
 export function BrandWordmark({ 
@@ -33,9 +33,8 @@ export function BrandWordmark({
   
   // High-End Brand Gradient (Indigo -> Coral -> Gold)
   const colors = [
-    '#0066CC', // indigo
-    '#FFCC00', // gold
-    '#FF5E5B', // coral
+    CultureTokens.indigo,
+    CultureTokens.coral,
   ];
 
   const renderGradientText = () => {
@@ -47,18 +46,17 @@ export function BrandWordmark({
           <Defs>
             <SvgGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <Stop offset="0%" stopColor={colors[0]} />
-              <Stop offset="50%" stopColor={colors[1]} />
-              <Stop offset="100%" stopColor={colors[2]} />
+              <Stop offset="100%" stopColor={colors[1]} />
             </SvgGradient>
           </Defs>
           <SvgText
             fill="url(#brandGradient)"
             fontSize={fontSize}
-            fontFamily="Poppins_700Bold"
+            fontFamily="Poppins_800ExtraBold"
             x={centered ? "50%" : "0"}
             y={fontSize * 0.9}
             textAnchor={centered ? "middle" : "start"}
-            letterSpacing="-0.5"
+            letterSpacing="-0.65"
           >
             CulturePass
           </SvgText>
@@ -82,7 +80,7 @@ export function BrandWordmark({
                 styles.taglineChar, 
                 { 
                   fontSize: taglineSize, 
-                  color: light ? 'rgba(255,255,255,0.7)' : CultureTokens.gold,
+                  color: light ? 'rgba(255,255,255,0.92)' : CultureTokens.gold,
                 }
               ]}
             >
@@ -100,7 +98,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   taglineChar: {
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Poppins_700Bold',
     textTransform: 'uppercase',
+    letterSpacing: 1.5,
   },
 });

@@ -31,6 +31,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Contacts from 'expo-contacts';
 
+// Defensive check: is the native module actually linked?
+const isContactsLinked = Platform.OS !== 'web' && !!Contacts && typeof Contacts.getContactsAsync === 'function';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TIER_COLORS: Record<string, string> = {
@@ -677,6 +680,13 @@ export default function ContactsScreen() {
   }, []);
 
   const handleSyncPhoneContacts = useCallback(async () => {
+    if (!isContactsLinked) {
+      Alert.alert(
+        'Contacts Module Missing',
+        'Native contacts access is not linked in this build. Please rebuild the dev client with npx expo run:ios.',
+      );
+      return;
+    }
     setSyncing(true);
     try {
       const { status } = await Contacts.requestPermissionsAsync();

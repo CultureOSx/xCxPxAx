@@ -6,7 +6,10 @@
  * dependency, device-calendar features are no-ops, but ICS file export works.
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { Platform } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 
 export interface PersonalEvent {
@@ -33,7 +36,26 @@ const DEFAULT_PREFS: CalendarSyncPrefs = {
 const noop = async () => {};
 
 export function useCalendarSync() {
-  const [prefs] = useState<CalendarSyncPrefs>(DEFAULT_PREFS);
+  const queryClient = useQueryClient();
+
+  const { data: prefs = DEFAULT_PREFS, isLoading } = useQuery({
+    queryKey: ['/api/calendar/settings'],
+    queryFn: async () => {
+      const settings = await api.calendar.getSettings();
+      return {
+        deviceConnected: settings.deviceConnected ?? DEFAULT_PREFS.deviceConnected,
+        showPersonalEvents: settings.showPersonalEvents ?? DEFAULT_PREFS.showPersonalEvents,
+        autoAddTickets: settings.autoAddTickets ?? DEFAULT_PREFS.autoAddTickets,
+      };
+    },
+  });
+
+  const { mutateAsync: updateSettings, isPending: isSyncing } = useMutation({
+    mutationFn: (newPrefs: Partial<CalendarSyncPrefs>) => api.calendar.updateSettings(newPrefs),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['/api/calendar/settings'], updated);
+    },
+  });
 
   const exportEventToCalendar = useCallback(async (event: EventData): Promise<boolean> => {
     const ics = buildICS(event);
@@ -53,19 +75,47 @@ export function useCalendarSync() {
     }
   }, [exportEventToCalendar]);
 
+  const setShowPersonalEvents = async (val: boolean) => {
+    await updateSettings({ showPersonalEvents: val });
+  };
+
+  const setAutoAddTickets = async (val: boolean) => {
+    await updateSettings({ autoAddTickets: val });
+  };
+
+  const connectDeviceCalendar = async () => {
+    if (Platform.OS === 'web') {
+      await updateSettings({ deviceConnected: true });
+    } else {
+      // Native implementation would go here or in .native.ts
+      await noop();
+    }
+  };
+
+  const disconnectDeviceCalendar = async () => {
+    if (Platform.OS === 'web') {
+      await updateSettings({ deviceConnected: false });
+    } else {
+      await noop();
+    }
+  };
+
+  const fetchPersonalEvents = noop as (startDate: Date, endDate: Date) => Promise<void>;
+
   return {
     prefs,
-    isLoading: false,
-    isSyncing: false,
+    isLoading,
+    isSyncing,
     permissionGranted: false,
     personalEvents: [] as PersonalEvent[],
-    connectDeviceCalendar: noop,
-    disconnectDeviceCalendar: noop,
-    fetchPersonalEvents: noop as (startDate: Date, endDate: Date) => Promise<void>,
+    connectDeviceCalendar,
+    disconnectDeviceCalendar,
+    fetchPersonalEvents,
     exportEventToCalendar,
     exportAllTickets,
-    setShowPersonalEvents: noop as (val: boolean) => Promise<void>,
-    setAutoAddTickets: noop as (val: boolean) => Promise<void>,
+    setShowPersonalEvents,
+    setAutoAddTickets,
+    isCalendarLinked: true, // Always true on web as it doesn't use the native module
   };
 }
 

@@ -174,7 +174,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     marginBottom: 20, borderWidth: 1,
   },
   title: { fontSize: 36, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
-  tagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 2, textTransform: 'uppercase', color: CultureTokens.gold, marginTop: 4 },
   subtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 12, lineHeight: 22 },
 
   featureList: { gap: 12, marginBottom: 16 },

@@ -34,6 +34,13 @@ export interface CulturalIdentity {
 
 export type HandleStatus = 'pending' | 'approved' | 'rejected';
 
+export interface CalendarSettings {
+  autoAddTickets?: boolean;
+  showPersonalEvents?: boolean;
+  deviceConnected?: boolean;
+  lastSyncedAt?: string;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -63,6 +70,7 @@ export interface User {
   culturalIdentity?: CulturalIdentity;
   communities?: string[];
   interestCategoryIds?: string[];
+  calendarSettings?: CalendarSettings;
   preferences?: {
     priceSensitivity?: 'free' | 'low' | 'medium' | 'high';
     experienceTypes?: string[];

@@ -617,6 +617,19 @@ const admin = {
   },
   algoliaBackfill: (payload?: { force?: boolean }) => request<{ ok: boolean }>('POST', 'api/admin/algolia-backfill', payload),
   geohashBackfill: (payload?: { forceGeoHash?: boolean; overwriteCoordinates?: boolean }) => request<{ ok: boolean }>('POST', 'api/admin/geohash-backfill', payload),
+
+  getSystemConfig: () =>
+    request<{ config: { maintenanceMode: boolean; maintenanceMessage?: string; minAppVersion?: string; updatedAt: string } }>('GET', 'api/admin/config'),
+  
+  updateSystemConfig: (config: { maintenanceMode?: boolean; maintenanceMessage?: string; minAppVersion?: string }) =>
+    request<{ ok: boolean; config: any }>('PUT', 'api/admin/config', config),
+
+  getTaxonomy: () =>
+    request<{ categories: { id: string; title: string; tags: string[]; accentColor: string; updatedAt: string }[] }>('GET', 'api/admin/taxonomy'),
+
+  updateTaxonomy: (categoryId: string, tags: string[]) =>
+    request<{ ok: boolean; category: any }>('PUT', `api/admin/taxonomy/${categoryId}`, { tags }),
+
   auditLogsCsv: async (params?: { limit?: number; action?: string; actorId?: string; from?: string; to?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit != null) qs.set('limit', String(params.limit));
@@ -1333,6 +1346,13 @@ const uploads = {
   },
 };
 
+const calendar = {
+  getSettings: () =>
+    request<import('@/shared/schema/user').CalendarSettings>('GET', 'api/calendar/settings'),
+  updateSettings: (settings: Partial<import('@/shared/schema/user').CalendarSettings>) =>
+    request<import('@/shared/schema/user').CalendarSettings>('PUT', 'api/calendar/settings', settings),
+};
+
 // ---------------------------------------------------------------------------
 // Named export — single surface for all API calls
 // ---------------------------------------------------------------------------
@@ -1372,7 +1392,9 @@ export const api = {
   interests,
   updates,
   feed,
-  /** Raw request — use when a specific endpoint isn't covered above */
+  calendar,
+
+/** Raw request — use when a specific endpoint isn't covered above */
   raw: request,
   /** Base URL — useful for constructing non-JSON endpoints (e.g. image URLs) */
   baseUrl: getApiUrl,

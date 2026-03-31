@@ -15,6 +15,7 @@ import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 const isWeb = Platform.OS === 'web';
 
@@ -115,7 +116,25 @@ export default function SuperAdminCockpit() {
     }
   });
 
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  // Fetch current config
+  const { data: configData, refetch: refetchConfig } = useQuery({
+    queryKey: ['admin-config'],
+    queryFn: api.admin.getSystemConfig,
+    enabled: isSuperAdmin,
+  });
+
+  const maintenanceMode = configData?.config?.maintenanceMode ?? false;
+
+  const configMutation = useMutation({
+    mutationFn: (updates: { maintenanceMode?: boolean }) => api.admin.updateSystemConfig(updates),
+    onSuccess: () => {
+      refetchConfig();
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: any) => {
+      Alert.alert('Configuration Error', err?.message || 'Failed to update system config');
+    }
+  });
 
   const toggleMaintenanceMode = () => {
     Alert.alert(
@@ -129,8 +148,7 @@ export default function SuperAdminCockpit() {
           text: maintenanceMode ? 'Restore Access' : 'Engage Lockout', 
           style: maintenanceMode ? 'default' : 'destructive',
           onPress: () => {
-            setMaintenanceMode(!maintenanceMode);
-            if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+             configMutation.mutate({ maintenanceMode: !maintenanceMode });
           }
         }
       ]
@@ -163,7 +181,7 @@ export default function SuperAdminCockpit() {
             </GlassView>
             
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>SuperAdmin Cockpit</Text>
+              <BrandWordmark size="sm" withTagline={false} light />
               <Text style={[styles.headerSub, { color: CultureTokens.gold }]}>Root Control & System Oversight</Text>
             </View>
 

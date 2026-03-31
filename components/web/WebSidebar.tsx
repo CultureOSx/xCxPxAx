@@ -146,9 +146,9 @@ function AvatarWithRing({
 }
 
 // ─── Gradient Wordmark (Logo Name) ───────────────────────────────────────────
-const SIDEBAR_WORDMARK_W = 124;
-const SIDEBAR_WORDMARK_H = 24;
-const SIDEBAR_WORDMARK_FS = 19;
+const SIDEBAR_WORDMARK_W = 138;
+const SIDEBAR_WORDMARK_H = 26;
+const SIDEBAR_WORDMARK_FS = 21;
 
 function SidebarGradientWordmark() {
   const gradId = `cpwm_${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -157,9 +157,8 @@ function SidebarGradientWordmark() {
       <Svg height={SIDEBAR_WORDMARK_H} width={SIDEBAR_WORDMARK_W} viewBox={`0 0 ${SIDEBAR_WORDMARK_W} ${SIDEBAR_WORDMARK_H}`}>
         <Defs>
           <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#3b82f6" />
-            <Stop offset="50%" stopColor="#a855f7" />
-            <Stop offset="100%" stopColor="#ec4899" />
+            <Stop offset="0%" stopColor={CultureTokens.indigo} />
+            <Stop offset="100%" stopColor={CultureTokens.coral} />
           </SvgLinearGradient>
         </Defs>
         <SvgText
@@ -167,8 +166,8 @@ function SidebarGradientWordmark() {
           fontSize={SIDEBAR_WORDMARK_FS}
           fontFamily="Poppins_800ExtraBold"
           x={0}
-          y={SIDEBAR_WORDMARK_FS * 0.92}
-          letterSpacing={-0.85}
+          y={SIDEBAR_WORDMARK_FS * 0.9}
+          letterSpacing={-0.6}
         >
           CulturePass
         </SvgText>
@@ -334,7 +333,7 @@ export function WebSidebar() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.78}
               >
-                Belong anywhere
+                BELONG ANYWHERE
               </Text>
             </View>
           </View>
@@ -687,31 +686,32 @@ const getSidebarStyles = (colors: ColorTheme) => {
     brandHeaderGlow: { opacity: 0.07, backgroundColor: CultureTokens.indigo, borderBottomRightRadius: 120, top: -20, left: -20, right: '60%', bottom: '40%' },
     brandBlackCard: {
       alignSelf: 'stretch',
-      backgroundColor: '#0a0a0a',
+      backgroundColor: '#050508',
       borderRadius: 60,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.22)',
+      borderColor: 'rgba(255,255,255,0.18)',
       paddingVertical: 14,
-      paddingHorizontal: 12,
+      paddingHorizontal: 16,
       overflow: 'hidden',
       ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16 },
-        android: { elevation: 12 },
-        web: { boxShadow: '0 10px 30px rgba(0,0,0,0.4)' },
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 20 },
+        android: { elevation: 15 },
+        web: { boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.03)' },
       }),
     },
     brandBlackCardInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     logoIconRound: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', backgroundColor: '#050508', flexShrink: 0 },
-    brandTextCol: { flex: 1, minWidth: 0, gap: 4, justifyContent: 'center' },
-    brandNameGradientWrap: { alignSelf: 'flex-start', maxWidth: '100%' },
+    brandTextCol: { flex: 1, minWidth: 0, gap: 2, justifyContent: 'center' },
+    brandNameGradientWrap: { alignSelf: 'flex-start', maxWidth: '100%', marginBottom: -2 },
     brandTaglineOnDark: {
-      fontSize: 11,
-      fontFamily: 'Poppins_600SemiBold',
-      color: '#fde047',
-      letterSpacing: 0.65,
-      lineHeight: 13,
+      fontSize: 10,
+      fontFamily: 'Poppins_700Bold',
+      color: 'rgba(255,255,255,0.85)',
+      letterSpacing: 1.4,
+      lineHeight: 12,
       flexShrink: 1,
       textTransform: 'uppercase',
+      opacity: 0.9,
     },
     headerMetaStrip: {
       alignSelf: 'stretch',

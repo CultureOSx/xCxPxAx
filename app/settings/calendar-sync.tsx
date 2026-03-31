@@ -112,6 +112,7 @@ export default function CalendarSyncScreen() {
     setShowPersonalEvents,
     setAutoAddTickets,
     exportAllTickets,
+    isCalendarLinked,
   } = useCalendarSync();
 
   // Fetch user tickets to enable exporting!
@@ -138,6 +139,13 @@ export default function CalendarSyncScreen() {
         ],
       );
     } else {
+      if (!isCalendarLinked) {
+        Alert.alert(
+          'Calendar Module Missing',
+          'The native Calendar module is not linked in this build. Please rebuild the dev client with npx expo run:ios.',
+        );
+        return;
+      }
       await connectDeviceCalendar();
     }
   }, [prefs.deviceConnected, connectDeviceCalendar, disconnectDeviceCalendar, haptic]);
@@ -158,6 +166,14 @@ export default function CalendarSyncScreen() {
     haptic();
     if (tickets.length === 0) {
       Alert.alert('No Tickets', 'You do not have any active tickets to export.');
+      return;
+    }
+    
+    if (Platform.OS !== 'web' && !isCalendarLinked) {
+      Alert.alert(
+        'Calendar Module Missing',
+        'Native export is not available in this build. Please rebuild the dev client with npx expo run:ios.',
+      );
       return;
     }
     
