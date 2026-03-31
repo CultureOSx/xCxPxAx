@@ -45,3 +45,5 @@ export function EventDetailSkeleton() {
     </View>
   );
 }
+
+export default EventDetailSkeleton;

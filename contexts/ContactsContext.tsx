@@ -56,24 +56,25 @@ interface ContactsContextValue {
 }
 
 const CONTACTS_KEY = '@culturepass_saved_contacts';
-const PHONE_CONTACTS_KEY = '@culturepass_phone_contacts';
+const INVITED_CONTACTS_KEY = '@culturepass_invited_contacts';
 
 const ContactsContext = createContext<ContactsContextValue | null>(null);
 
 export function ContactsProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [phoneContacts, setPhoneContactsState] = useState<PhoneContact[]>([]);
+  const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem(CONTACTS_KEY),
-      AsyncStorage.getItem(PHONE_CONTACTS_KEY),
-    ]).then(([stored, storedPhone]) => {
+      AsyncStorage.getItem(INVITED_CONTACTS_KEY),
+    ]).then(([stored, storedInvited]) => {
       if (stored) {
         try { setContacts(JSON.parse(stored)); } catch {}
       }
-      if (storedPhone) {
-        try { setPhoneContactsState(JSON.parse(storedPhone)); } catch {}
+      if (storedInvited) {
+        try { setInvitedIds(new Set(JSON.parse(storedInvited))); } catch {}
       }
     });
   }, []);
@@ -125,18 +126,23 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setPhoneContacts = useCallback((updated: PhoneContact[]) => {
-    setPhoneContactsState(updated);
-    AsyncStorage.setItem(PHONE_CONTACTS_KEY, JSON.stringify(updated));
-  }, []);
+    // Map the invited state from the persisted invitedIds Set so re-syncing retains checkmarks
+    setPhoneContactsState(updated.map(c => ({
+      ...c,
+      invited: c.invited || invitedIds.has(c.id)
+    })));
+  }, [invitedIds]);
 
   const markInvited = useCallback((phoneContactId: string) => {
-    setPhoneContactsState(prev => {
-      const updated = prev.map(c =>
-        c.id === phoneContactId ? { ...c, invited: true } : c
-      );
-      AsyncStorage.setItem(PHONE_CONTACTS_KEY, JSON.stringify(updated));
-      return updated;
+    setInvitedIds(prev => {
+      const next = new Set(prev);
+      next.add(phoneContactId);
+      AsyncStorage.setItem(INVITED_CONTACTS_KEY, JSON.stringify(Array.from(next)));
+      return next;
     });
+    setPhoneContactsState(prev => prev.map(c =>
+      c.id === phoneContactId ? { ...c, invited: true } : c
+    ));
   }, []);
 
   const importedFromPhone = useMemo<Set<string>>(

@@ -201,7 +201,7 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
                 <Text
                   style={[styles.modalTitle, { color: colors.text }]}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
+                  aria-level={2}
                 >
                   {step === 'state' ? 'Select State' : 'Select City'}
                 </Text>

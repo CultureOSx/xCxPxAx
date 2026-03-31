@@ -326,3 +326,5 @@ const s = StyleSheet.create({
   jobRight:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 12 },
   retryBtn:     { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 });
+
+export default JobsTab;

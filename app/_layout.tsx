@@ -174,7 +174,8 @@ function AuthGuard() {
     // Others (like profile, perks, calendar) require login.
     const isProtected =
       protectedRoutes.includes(segments[0] as string) ||
-      (segments[0] === '(tabs)' && (segments[1] === 'profile' || segments[1] === 'perks' || segments[1] === 'calendar' || segments[1] === 'dashboard'));
+      (segments[0] === '(tabs)' && (segments[1] === 'profile' || segments[1] === 'perks' || segments[1] === 'calendar' || segments[1] === 'dashboard')) ||
+      (segments[0] === 'event' && segments[1] === 'create');
 
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const currentOnboardingScreen = segments[1] ?? 'index';

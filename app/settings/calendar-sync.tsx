@@ -94,6 +94,7 @@ export default function CalendarSyncScreen() {
     disconnectDeviceCalendar,
     setShowPersonalEvents,
     setAutoAddTickets,
+    exportAllTickets,
   } = useCalendarSync();
 
   const s = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
@@ -295,7 +296,8 @@ export default function CalendarSyncScreen() {
                       onPress: async () => {
                         try {
                           // Optionally show a loading indicator here if needed
-                          await exportAllTickets();
+                          await exportAllTickets([]);
+                          Alert.alert('Coming Soon', 'Ticket exports are currently being upgraded.');
                         } catch (err) {
                           Alert.alert('Export Failed', 'Could not export your tickets. Please try again.');
                         }

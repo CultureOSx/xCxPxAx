@@ -25,18 +25,8 @@ import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
-import {
-  ALL_NATIONALITIES,
-  getCulturesForNationality,
-  getDiasporaGroupsForNationality,
-  searchNationalities,
-  type Nationality,
-  type Culture,
-} from '@/constants/cultures';
-import { COMMON_LANGUAGES, searchLanguages, type Language } from '@/constants/languages';
-
-type Step = 'nationality' | 'culture' | 'language';
+import { type Step, useCultureMatch } from '@/hooks/useCultureMatch';
+import Animated, { FadeInDown, FadeInUp, FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 const STEP_LABELS: Record<Step, string> = {
   nationality: 'Where are you from?',
@@ -61,118 +51,29 @@ export default function CultureMatchScreen() {
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const searchParams = useLocalSearchParams();
-  const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
-
   const {
-    state,
-    setNationalityId,
-    setCultureIds,
-    setLanguageIds,
-    setDiasporaGroupIds,
-    setEthnicityText,
-    setLanguages,
-  } = useOnboarding();
-
-  const [step, setStep] = useState<Step>('nationality');
-  const [nationalityQuery, setNationalityQuery] = useState('');
-  const [cultureQuery, setCultureQuery] = useState('');
-  const [languageQuery, setLanguageQuery] = useState('');
-
-  const [selectedNationality, setSelectedNationality] = useState<Nationality | null>(
-    state.nationalityId ? (ALL_NATIONALITIES.find((n) => n.id === state.nationalityId) ?? null) : null,
-  );
-  const [selectedCultureIds, setSelectedCultureIds] = useState<string[]>(state.cultureIds ?? []);
-  const [selectedLanguageIds, setSelectedLanguageIds] = useState<string[]>(state.languageIds ?? []);
-
-  const filteredNationalities = useMemo(
-    () => searchNationalities(nationalityQuery),
-    [nationalityQuery],
-  );
-
-  const availableCultures = useMemo(
-    () => selectedNationality ? getCulturesForNationality(selectedNationality.id) : [],
-    [selectedNationality],
-  );
-
-  const filteredCultures = useMemo(() => {
-    const needle = cultureQuery.trim().toLowerCase();
-    if (!needle) return availableCultures;
-    return availableCultures.filter((c) => c.label.toLowerCase().includes(needle));
-  }, [availableCultures, cultureQuery]);
-
-  const filteredLanguages = useMemo(() => {
-    const pool = languageQuery.trim().length >= 2 ? searchLanguages(languageQuery) : COMMON_LANGUAGES;
-    return pool.filter((l) => !selectedLanguageIds.includes(l.id));
-  }, [languageQuery, selectedLanguageIds]);
-
-  const selectedLanguageObjects = useMemo(
-    () => selectedLanguageIds.map((id) => COMMON_LANGUAGES.find((l) => l.id === id) ?? searchLanguages(id)[0]).filter(Boolean) as Language[],
-    [selectedLanguageIds],
-  );
-
-  const haptic = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
-
-  const pickNationality = useCallback((nat: Nationality) => {
-    haptic();
-    setSelectedNationality(nat);
-    setNationalityId(nat.id);
-    setStep('culture');
-    setSelectedCultureIds([]);
-  }, [setNationalityId]);
-
-  const toggleCulture = useCallback((culture: Culture) => {
-    haptic();
-    setSelectedCultureIds((prev) =>
-      prev.includes(culture.id) ? prev.filter((id) => id !== culture.id) : [...prev, culture.id],
-    );
-  }, []);
-
-  const toggleLanguage = useCallback((lang: Language) => {
-    haptic();
-    setSelectedLanguageIds((prev) =>
-      prev.includes(lang.id) ? prev.filter((id) => id !== lang.id) : [...prev, lang.id],
-    );
-  }, []);
-
-  const removeLanguage = useCallback((langId: string) => {
-    haptic();
-    setSelectedLanguageIds((prev) => prev.filter((id) => id !== langId));
-  }, []);
-
-  const goBack = useCallback(() => {
-    if (step === 'culture') { setStep('nationality'); return; }
-    if (step === 'language') { setStep('culture'); return; }
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace(routeWithRedirect('/(onboarding)/communities', redirectTo) as string);
-    }
-  }, [step, redirectTo]);
-
-  const goNext = useCallback(() => {
-    if (step === 'nationality') { setStep('culture'); return; }
-    if (step === 'culture') { setStep('language'); return; }
-
-    setCultureIds(selectedCultureIds);
-    setLanguageIds(selectedLanguageIds);
-
-    const diasporaGroups = selectedNationality
-      ? getDiasporaGroupsForNationality(selectedNationality.id).map((g) => g.id)
-      : [];
-    setDiasporaGroupIds(diasporaGroups);
-
-    setEthnicityText(selectedNationality?.label ?? '');
-    setLanguages(selectedLanguageObjects.map((l) => l.name));
-
-    router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as string);
-  }, [step, selectedCultureIds, selectedLanguageIds, selectedNationality, selectedLanguageObjects, setCultureIds, setLanguageIds, setDiasporaGroupIds, setEthnicityText, setLanguages, redirectTo]);
-
-  const stepIndex = step === 'nationality' ? 0 : step === 'culture' ? 1 : 2;
-  const canProceed =
-    step === 'nationality' ? !!selectedNationality :
-    step === 'culture' ? selectedCultureIds.length > 0 :
-    selectedLanguageIds.length > 0;
+    step,
+    stepIndex,
+    canProceed,
+    nationalityQuery, setNationalityQuery,
+    cultureQuery, setCultureQuery,
+    languageQuery, setLanguageQuery,
+    selectedNationality,
+    selectedCultureIds,
+    selectedLanguageIds,
+    filteredNationalities,
+    availableCultures,
+    filteredCultures,
+    filteredLanguages,
+    selectedLanguageObjects,
+    pickNationality,
+    toggleCulture,
+    toggleLanguage,
+    removeLanguage,
+    goBack,
+    goNext,
+    skipStep
+  } = useCultureMatch();
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -218,7 +119,7 @@ export default function CultureMatchScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[s.scrollContent, isDesktop && s.scrollContentDesktop, !isDesktop && { paddingTop: 20 }]}
         >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
+          <Animated.View entering={FadeInUp.springify().damping(16).duration(600)} style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
               <BlurView
                 intensity={isDesktop ? 80 : 60}
@@ -263,7 +164,7 @@ export default function CultureMatchScreen() {
 
               {/* Nationality step */}
               {step === 'nationality' && (
-                <View>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
                   <TextInput
                     value={nationalityQuery}
                     onChangeText={setNationalityQuery}
@@ -297,17 +198,17 @@ export default function CultureMatchScreen() {
                       );
                     })}
                   </View>
-                </View>
+                </Animated.View>
               )}
 
               {/* Culture step */}
               {step === 'culture' && (
-                <View>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
                   {selectedNationality && (
                     <View style={[s.selectedNatBadge, { borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}20` }]}>
                       <Text style={s.selectedNatEmoji}>{selectedNationality.emoji}</Text>
                       <Text style={[s.selectedNatLabel, { color: CultureTokens.gold }]}>{selectedNationality.label}</Text>
-                      <Pressable onPress={() => setStep('nationality')} hitSlop={Spacing.sm} accessibilityRole="button" accessibilityLabel="Change nationality">
+                      <Pressable onPress={() => skipStep()} hitSlop={Spacing.sm} accessibilityRole="button" accessibilityLabel="Change nationality">
                         <Ionicons name="pencil-outline" size={FontSize.body2} color={CultureTokens.gold} />
                       </Pressable>
                     </View>
@@ -355,12 +256,12 @@ export default function CultureMatchScreen() {
                       No specific cultures listed -- tap Continue to proceed.
                     </Text>
                   )}
-                </View>
+                </Animated.View>
               )}
 
               {/* Language step */}
               {step === 'language' && (
-                <View>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
                   {selectedLanguageObjects.length > 0 && (
                     <View style={s.selectedLangWrap}>
                       {selectedLanguageObjects.map((lang) => (
@@ -413,7 +314,7 @@ export default function CultureMatchScreen() {
                       </Pressable>
                     ))}
                   </View>
-                </View>
+                </Animated.View>
               )}
 
               {/* Actions */}
@@ -435,20 +336,18 @@ export default function CultureMatchScreen() {
                 </Button>
               </View>
 
-              <Pressable
-                onPress={() => {
-                  if (step === 'nationality') setStep('culture');
-                  else if (step === 'culture') setStep('language');
-                  else router.push(routeWithRedirect('/(onboarding)/interests', redirectTo) as string);
-                }}
-                style={s.skipLink}
-                accessibilityRole="button"
-                accessibilityLabel="Skip this step"
-              >
-                <Text style={[s.skipLinkText, { color: colors.textSecondary }]}>Skip this step</Text>
-              </Pressable>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(250)}>
+                <Pressable
+                  onPress={skipStep}
+                  style={s.skipLink}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip this step"
+                >
+                  <Text style={[s.skipLinkText, { color: colors.textSecondary }]}>Skip this step</Text>
+                </Pressable>
+              </Animated.View>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

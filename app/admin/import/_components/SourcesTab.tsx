@@ -393,3 +393,5 @@ const s = StyleSheet.create({
   togglePill:  { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   toggleText:  { fontSize: 11, fontFamily: 'Poppins_700Bold' },
 });
+
+export default SourcesTab;

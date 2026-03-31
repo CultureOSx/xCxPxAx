@@ -14,13 +14,9 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import * as WebBrowser from 'expo-web-browser';
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/query-client';
-import { useAuth } from '@/lib/auth';
-import { api, type MembershipSummary } from '@/lib/api';
+
 import { useColors } from '@/hooks/useColors';
+import { useMembershipUpgrade } from '@/hooks/useMembershipUpgrade';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { routeWithRedirect } from '@/lib/routes';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -72,110 +68,22 @@ export default function UpgradeScreen() {
   const insets = useSafeAreaInsets();
   const webTop = 0;
   const pathname = usePathname();
-  const { userId, isAuthenticated } = useAuth();
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const [loading, setLoading] = useState(false);
 
-  const { data: membership, isLoading } = useQuery<MembershipSummary>({
-    queryKey: ['membership', userId],
-    queryFn: () => api.membership.get(userId!),
-    enabled: !!userId,
-  });
+  const {
+    isAuthenticated,
+    isMembershipLoading,
+    membership,
+    isPlus,
+    memberCount,
+    billingPeriod,
+    setBillingPeriod,
+    price,
+    perMonth,
+    loading,
+    executeSubscribe,
+    executeCancel,
+  } = useMembershipUpgrade();
 
-  const { data: memberCountData } = useQuery({
-    queryKey: ['membership-member-count'],
-    queryFn: () => api.membership.memberCount(),
-  });
-
-  const isPlus = membership?.tier === 'plus' && membership?.status === 'active';
-  const memberCount = memberCountData?.count ?? 0;
-  const price    = billingPeriod === 'yearly' ? '$69' : '$7.99';
-  const perMonth = billingPeriod === 'yearly' ? '$5.75' : '$7.99';
-
-  const handleSubscribe = useCallback(async () => {
-    if (!userId) {
-      Alert.alert('Login required', 'Please sign in to activate CulturePass+.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
-      ]);
-      return;
-    }
-    setLoading(true);
-    try {
-      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const data = await api.membership.subscribe({ billingPeriod });
-      if (data.alreadyActive) {
-        await queryClient.invalidateQueries({ queryKey: ['membership', userId] });
-        Alert.alert('Already Active', 'Your CulturePass+ membership is already active.');
-        return;
-      }
-      if (data.checkoutUrl) {
-        await WebBrowser.openBrowserAsync(data.checkoutUrl);
-        await queryClient.invalidateQueries({ queryKey: ['membership', userId] });
-        await queryClient.invalidateQueries({ queryKey: ['membership-member-count'] });
-
-        const pollForUpdate = async (retries = 0): Promise<void> => {
-          if (retries >= 8) return;
-          try {
-            const checkData = await api.membership.get(userId);
-            if (checkData?.tier === 'plus' && checkData?.status === 'active') {
-              await queryClient.invalidateQueries({ queryKey: ['membership', userId] });
-              if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert('Welcome to CulturePass+!', 'Your membership is now active. Enjoy early access, cashback rewards, and exclusive perks!');
-              return;
-            }
-          } catch {}
-          await new Promise(r => setTimeout(r, 2000));
-          return pollForUpdate(retries + 1);
-        };
-        await pollForUpdate();
-      } else if (data.devMode) {
-        await queryClient.invalidateQueries({ queryKey: ['membership', userId] });
-        if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Dev Mode', 'Membership upgraded to Plus (dev mode — no Stripe charge).');
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to start subscription';
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, billingPeriod, pathname]);
-
-  const handleCancel = useCallback(async () => {
-    if (!userId) return;
-    Alert.alert(
-      'Cancel Membership',
-      'Are you sure you want to cancel your CulturePass+ membership? Your subscription will be cancelled immediately and you will lose access to exclusive perks and cashback.',
-      [
-        { text: 'Keep Membership', style: 'cancel' },
-        {
-          text: 'Cancel Membership',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await api.membership.cancel();
-              await queryClient.invalidateQueries({ queryKey: ['membership', userId] });
-              await queryClient.invalidateQueries({ queryKey: ['membership-member-count'] });
-              queryClient.setQueryData(['membership', userId], {
-                tier: 'free', tierLabel: 'Free', status: 'inactive', expiresAt: null,
-                cashbackRate: 0, cashbackMultiplier: 1, earlyAccessHours: 0,
-                eventsAttended: membership?.eventsAttended ?? 0,
-              } satisfies MembershipSummary);
-              if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert('Membership Cancelled', 'Your CulturePass+ membership has been cancelled. You can re-subscribe anytime.');
-            } catch (e: unknown) {
-              const msg = e instanceof Error ? e.message : 'Failed to cancel';
-              Alert.alert('Error', msg);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  }, [userId, membership]);
 
   if (!isAuthenticated) {
     return (
@@ -265,22 +173,26 @@ export default function UpgradeScreen() {
     );
   }
 
-  if (isLoading && !membership) {
+  if (isMembershipLoading && !membership) {
     return <MembershipUpgradeSkeleton topInset={webTop} insets={insets} colors={colors} />;
   }
 
   return (
     <View style={[s.container, { paddingTop: insets.top + webTop }]}>
+      <LinearGradient
+        colors={gradients.midnight as unknown as [string, string]}
+        style={[StyleSheet.absoluteFillObject, { opacity: 0.6 }]}
+      />
       <View style={s.header}>
         <Pressable 
           onPress={() => goBackOrReplace('/(tabs)/profile')} 
           style={({ pressed }) => [s.backBtn, { transform: [{ scale: pressed ? 0.95 : 1 }], backgroundColor: colors.surface + '80' }]}
-          hitSlop={8}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
-          {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
+          {!isWeb && <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />}
         </Pressable>
-        <Text style={s.headerTitle}>CulturePass+</Text>
+        <Text style={s.headerTitle} numberOfLines={1} adjustsFontSizeToFit>CulturePass+</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -290,11 +202,7 @@ export default function UpgradeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero */}
-        <Animated.View entering={FadeInUp.duration(600)} style={s.heroSection}>
-          <LinearGradient
-            colors={gradients.midnight as unknown as [string, string]}
-            style={StyleSheet.absoluteFillObject}
-          />
+        <Animated.View entering={FadeInUp.springify().damping(16).stiffness(120).duration(600)} style={s.heroSection}>
           <View style={s.heroIconWrap}>
             <Ionicons name="globe" size={44} color={CultureTokens.gold} />
           </View>
@@ -306,7 +214,8 @@ export default function UpgradeScreen() {
         </Animated.View>
 
         {memberCount > 0 && (
-          <Animated.View entering={FadeInDown.delay(100)} style={s.socialProof}>
+          <Animated.View entering={FadeInDown.springify().damping(14).stiffness(110).delay(100)} style={s.socialProof}>
+            {!isWeb && <BlurView intensity={25} style={StyleSheet.absoluteFill} tint="dark" />}
             <Ionicons name="people" size={16} color={CultureTokens.gold} />
             <Text style={s.socialProofText}>
               Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
@@ -316,7 +225,7 @@ export default function UpgradeScreen() {
 
         {/* Billing toggle */}
         {!isPlus && (
-          <Animated.View entering={FadeInDown.delay(200)} style={s.pricingSection}>
+          <Animated.View entering={FadeInDown.springify().damping(15).stiffness(115).delay(200)} style={s.pricingSection}>
             <View style={s.toggleRow}>
               <Pressable
                 style={[s.toggleBtn, billingPeriod === 'monthly' && s.toggleActive]}
@@ -336,25 +245,26 @@ export default function UpgradeScreen() {
                 )}
               </Pressable>
             </View>
-            <LinearGradient
-              colors={[colors.surface, colors.surfaceElevated]}
-              style={s.priceCard}
-            >
-              <Text style={s.priceAmount}>{price}</Text>
+              <View style={[s.priceCard, { overflow: 'hidden' }]}>
+                {!isWeb && <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />}
+                <View style={s.priceCardInner}>
+                  <Text style={s.priceAmount} adjustsFontSizeToFit numberOfLines={1}>{price}</Text>
               <Text style={s.pricePeriod}>
                 {billingPeriod === 'yearly' ? 'PER YEAR' : 'PER MONTH'}
               </Text>
-              {billingPeriod === 'yearly' && (
-                <View style={s.breakdownBadge}>
-                  <Text style={s.priceBreakdown}>ONLY {perMonth} / MONTH</Text>
+                {billingPeriod === 'yearly' && (
+                  <View style={s.breakdownBadge}>
+                    <Text style={s.priceBreakdown}>ONLY {perMonth} / MONTH</Text>
+                  </View>
+                )}
                 </View>
-              )}
-            </LinearGradient>
+              </View>
           </Animated.View>
         )}
 
         {/* Feature comparison */}
-        <Animated.View entering={FadeInDown.delay(300)} style={s.comparisonSection}>
+        <Animated.View entering={FadeInDown.springify().damping(14).stiffness(100).delay(300)} style={[s.comparisonSection, { overflow: 'hidden' }]}>
+          {!isWeb && <BlurView intensity={25} style={StyleSheet.absoluteFill} tint="dark" />}
           <Text style={s.sectionTitle}>What&apos;s Included</Text>
           <View style={s.comparisonHeader}>
             <View style={{ flex: 1 }} />
@@ -396,7 +306,8 @@ export default function UpgradeScreen() {
             { bg: CultureTokens.gold + '15', color: CultureTokens.gold, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
             { bg: CultureTokens.coral + '15',   color: CultureTokens.coral,   icon: 'gift',  title: 'Exclusive Perks', desc: 'Access members-only deals and discounts from restaurants, shops, and cultural venues.' },
           ].map((h, i) => (
-            <Animated.View entering={FadeInDown.delay(400 + i * 100)} key={h.title} style={s.highlightCard}>
+            <Animated.View entering={FadeInDown.springify().damping(14).delay(400 + i * 100)} key={h.title} style={[s.highlightCard, { overflow: 'hidden' }]}>
+              {!isWeb && <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />}
               <View style={[s.highlightIcon, { backgroundColor: h.bg }]}>
                 <Ionicons name={h.icon as keyof typeof Ionicons.glyphMap} size={24} color={h.color} />
               </View>
@@ -408,7 +319,7 @@ export default function UpgradeScreen() {
 
         {/* Active / Subscribe CTA */}
         {isPlus ? (
-          <Animated.View entering={FadeInUp} style={s.activeSection}>
+          <Animated.View entering={FadeInUp.springify().damping(15)} style={s.activeSection}>
             <View style={s.activeBadge}>
               <Ionicons name="checkmark-circle" size={20} color={CultureTokens.success} />
               <Text style={s.activeText}>{"You're a CulturePass+ member"}</Text>
@@ -416,18 +327,18 @@ export default function UpgradeScreen() {
             <Text style={s.activeSubtext}>Thank you for being part of the CulturePass+ community.</Text>
             <Button
               variant="outline"
-              onPress={handleCancel}
+              onPress={executeCancel}
               loading={loading}
-              style={{ borderColor: CultureTokens.coral + '40' }}
+              style={{ borderColor: CultureTokens.coral + '40', borderWidth: 1 }}
               labelStyle={{ color: CultureTokens.coral }}
             >
               Cancel Membership
             </Button>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeInUp.delay(700)} style={s.ctaSection}>
+          <Animated.View entering={FadeInUp.springify().damping(18).stiffness(90).delay(700)} style={s.ctaSection}>
             <Button
-              onPress={handleSubscribe}
+              onPress={executeSubscribe}
               loading={loading}
               leftIcon="star"
               variant="gradient"
@@ -471,25 +382,26 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   toggleText:         { fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
   saveBadge:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8, backgroundColor: CultureTokens.teal },
   saveBadgeText:      { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'white' },
-  priceCard:          { alignItems: 'center', paddingVertical: 32, borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight, shadowColor: 'black', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 8 },
+  priceCard:          { borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight + '50', shadowColor: 'black', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 8, backgroundColor: isWeb ? colors.surface : 'transparent' },
+  priceCardInner:     { alignItems: 'center', paddingVertical: 32 },
   priceAmount:        { fontSize: 56, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold, letterSpacing: -1 },
   pricePeriod:        { fontSize: 13, fontFamily: 'Poppins_700Bold', marginTop: -4, color: colors.textTertiary, letterSpacing: 1 },
   breakdownBadge:     { marginTop: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: CultureTokens.gold + '15', borderWidth: 1, borderColor: CultureTokens.gold + '30' },
   priceBreakdown:     { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
   sectionTitle:       { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, color: colors.textTertiary, textAlign: 'center' },
   comparisonSection:  { 
-    marginTop: 32, marginBottom: 24, paddingHorizontal: 16, paddingVertical: 20, 
-    backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight,
+    marginTop: 32, marginBottom: 24, paddingVertical: 20, 
+    backgroundColor: isWeb ? colors.surface : colors.surface + '60', borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight + '50',
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
     }),
   },
-  comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingRight: 4 },
+  comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingRight: 4, paddingHorizontal: 16 },
   compColHeader:      { width: 60, alignItems: 'center', paddingVertical: 6 },
   compColPlus:        { width: 70, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: CultureTokens.gold, shadowColor: CultureTokens.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6 },
   compColLabel:       { fontSize: 12, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
-  compRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  compRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.borderLight + '50', paddingHorizontal: 16 },
   compFeature:        { flex: 1, flexDirection: 'row', alignItems: 'center' },
   compFeatureTitle:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   compFeatureDesc:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2, color: colors.textTertiary, lineHeight: 18 },
@@ -497,7 +409,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   compCheckPlus:      { width: 70 },
   highlightsSection:  { marginBottom: 32, gap: 12 },
   highlightCard:      { 
-    borderRadius: 20, padding: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight,
+    borderRadius: 20, padding: 20, backgroundColor: isWeb ? colors.surface : colors.surface + '60', borderWidth: 1, borderColor: colors.borderLight + '50',
     ...Platform.select({
       web: { boxShadow: '0px 4px 20px rgba(0,0,0,0.06)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 },

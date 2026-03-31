@@ -322,6 +322,7 @@ export default function CultureFeedScreen() {
             renderItem={renderItem}
             getItemType={getItemType}
             ListHeaderComponent={listHeaderComponent}
+            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
             {...({ estimatedItemSize: isDesktop ? 420 : 500 } as any)}
             initialNumToRender={6}
             drawDistance={1000}

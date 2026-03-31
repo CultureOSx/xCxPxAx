@@ -19,10 +19,10 @@ import {
   popularInterestsSydney,
   type InterestCategory,
 } from '@/constants/onboardingInterests';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { sanitizeInternalRedirect } from '@/lib/routes';
-import type { User } from '@/shared/schema';
+
+import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { useInterestsSelection } from '@/hooks/useInterestsSelection';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -109,104 +109,34 @@ export default function InterestsScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const searchParams = useLocalSearchParams();
-  const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
 
-  const { user } = useAuth();
-  const { state, setInterests: setSelectedInterests, completeOnboarding } = useOnboarding();
-
-  const [selected, setSelected] = useState<string[]>(state.interests || []);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(
-    Object.fromEntries(interestCategories.map(c => [c.id, INITIALLY_OPEN.has(c.id)]))
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const categoryByInterest = useMemo(() => {
-    const map = new Map<string, InterestCategory>();
-    for (const cat of interestCategories) {
-      for (const interest of cat.interests) map.set(interest, cat);
-    }
-    return map;
-  }, []);
-
-  const selectedSet = useMemo(() => new Set(selected), [selected]);
-
-  const toggle = (interest: string) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelected(prev =>
-      prev.includes(interest) ? prev.filter(i => i !== interest) : [...prev, interest]
-    );
-  };
-
-  const toggleAll = (category: InterestCategory) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const allSelected = category.interests.every(i => selectedSet.has(i));
-    if (allSelected) {
-      setSelected(prev => prev.filter(i => !category.interests.includes(i)));
-    } else {
-      setSelected(prev => [...new Set([...prev, ...category.interests])]);
-    }
-  };
-
-  const toggleSection = (categoryId: string) => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync();
-    setExpanded(prev => ({ ...prev, [categoryId]: !prev[categoryId] }));
-  };
+  const {
+    selected,
+    expanded,
+    isSubmitting,
+    selectedSet,
+    categoryByInterest,
+    isReady,
+    remaining,
+    MIN_REQUIRED,
+    toggle,
+    toggleAll,
+    toggleSection,
+    handleFinish: handleFinishHook
+  } = useInterestsSelection();
 
   const handleFinish = async () => {
-    if (selected.length < MIN_REQUIRED) {
+    if (!isReady) {
       Alert.alert('Select more interests', `Please select at least ${MIN_REQUIRED} interests to continue.`);
       return;
     }
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setSelectedInterests(selected);
-
-    if (user?.id) {
-      const selectedCategoryIds = [...new Set(
-        selected
-          .map(interest => categoryByInterest.get(interest)?.id)
-          .filter((id): id is string => Boolean(id)),
-      )];
-      const profilePayload: Partial<User> & {
-        languages?: string[];
-        ethnicityText?: string;
-        communities?: string[];
-        interestCategoryIds?: string[];
-      } = {
-        city: state.city || undefined,
-        country: state.country || undefined,
-        communities: state.communities,
-        interests: selected,
-        interestCategoryIds: selectedCategoryIds,
-        languages: state.languages,
-        ethnicityText: state.ethnicityText || undefined,
-        culturalIdentity: {
-          nationalityId: state.nationalityId || undefined,
-          cultureIds: state.cultureIds.length > 0 ? state.cultureIds : undefined,
-          languageIds: state.languageIds.length > 0 ? state.languageIds : undefined,
-          diasporaGroupIds: state.diasporaGroupIds.length > 0 ? state.diasporaGroupIds : undefined,
-        },
-      };
-      try { await api.users.update(user.id, profilePayload); } catch { /* non-fatal */ }
-    }
-
-    try {
-      await completeOnboarding();
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace(redirectTo ?? '/(tabs)');
-    } catch (error) {
-      if (__DEV__) console.warn('[onboarding] failed to complete onboarding:', error);
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    const res = await handleFinishHook();
+    if (res?.success === false) {
       Alert.alert('Could not finish onboarding', 'Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const isReady = selected.length >= MIN_REQUIRED;
   const progressPct = `${Math.min(1, selected.length / MIN_REQUIRED) * 100}%` as DimensionValue;
-  const remaining = MIN_REQUIRED - selected.length;
 
   return (
     <View style={s.root}>
@@ -245,7 +175,10 @@ export default function InterestsScreen() {
           { paddingBottom: bottomInset + 130 },
         ]}
       >
-        <View style={isDesktop ? s.desktopCard : undefined}>
+        <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
+          {Platform.OS === 'ios' && isDesktop && (
+            <BlurView intensity={25} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />
+          )}
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
@@ -255,7 +188,7 @@ export default function InterestsScreen() {
           </View>
 
           {/* Progress bar */}
-          <View style={s.progressBlock}>
+          <Animated.View entering={FadeInDown.springify().damping(15).delay(150)} style={s.progressBlock}>
             <View style={[s.progressTrack, { backgroundColor: colors.borderLight }]}>
               <View
                 style={[
@@ -270,10 +203,10 @@ export default function InterestsScreen() {
             <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : colors.textSecondary }]}>
               {isReady ? `${selected.length} selected` : `${selected.length} / ${MIN_REQUIRED}`}
             </Text>
-          </View>
+          </Animated.View>
 
           {/* Popular picks */}
-          <View style={s.section}>
+          <Animated.View entering={FadeInDown.springify().damping(15).delay(200)} style={s.section}>
             <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Popular near you</Text>
             <View style={s.chipWrap}>
               {popularInterestsSydney.map(interest => {
@@ -292,7 +225,7 @@ export default function InterestsScreen() {
                 );
               })}
             </View>
-          </View>
+          </Animated.View>
 
           <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
 
@@ -351,7 +284,7 @@ export default function InterestsScreen() {
                 </View>
 
                 {isOpen && (
-                  <View style={s.chipWrap}>
+                  <Animated.View entering={FadeInUp.springify().damping(18)} layout={Layout.springify().damping(16)} style={s.chipWrap}>
                     {category.interests.map(interest => {
                       const icon = interestIcons[interest] ?? 'star';
                       return (
@@ -365,14 +298,14 @@ export default function InterestsScreen() {
                         />
                       );
                     })}
-                  </View>
+                  </Animated.View>
                 )}
 
                 <View style={[s.categoryDivider, { backgroundColor: colors.borderLight }]} />
               </View>
             );
           })}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Sticky bottom CTA */}
@@ -381,7 +314,7 @@ export default function InterestsScreen() {
         style={s.bottomFade}
         pointerEvents="none"
       />
-      <View style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}>
+      <Animated.View entering={FadeInDown.springify().damping(20).delay(250)} style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}>
         {!isReady && (
           <Text style={[s.remainingText, { color: colors.textSecondary }]}>
             {remaining === 1 ? '1 more interest to go' : `${remaining} more interests to go`}
@@ -402,7 +335,7 @@ export default function InterestsScreen() {
         >
           {isSubmitting ? 'Starting...' : isReady ? 'Start Exploring' : `Select ${remaining} more`}
         </Button>
-      </View>
+      </Animated.View>
     </View>
   );
 }

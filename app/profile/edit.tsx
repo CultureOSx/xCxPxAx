@@ -272,13 +272,11 @@ export default function EditProfileScreen() {
   };
 
   // ── Web drag-and-drop ────────────────────────────────────────────────────
-  const handleDrop = (event: {
-    preventDefault: () => void;
-    nativeEvent?: { dataTransfer?: { files?: File[] } };
-  }) => {
+  const handleDrop = (event: any) => {
     if (Platform.OS !== 'web') return;
-    event.preventDefault();
-    const file = event?.nativeEvent?.dataTransfer?.files?.[0];
+    event.preventDefault?.();
+    const dt = event?.dataTransfer || event?.nativeEvent?.dataTransfer;
+    const file = dt?.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => { setAvatarUri(String(reader.result)); };

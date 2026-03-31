@@ -27,47 +27,15 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
-import { auth as firebaseAuth } from '@/lib/firebase';
-import { FirebaseError } from 'firebase/app';
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithCredential,
-  OAuthProvider,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-} from 'firebase/auth';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useLogin } from '@/hooks/useLogin';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
-import { captureEvent, identifyUser } from '@/lib/analytics';
-
-function handleFirebaseError(e: unknown, defaultMessage: string): string {
-  if (e instanceof FirebaseError) {
-    switch (e.code) {
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        return 'Invalid email or password. Please try again.';
-      case 'auth/too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'auth/popup-closed-by-user':
-      case 'auth/cancelled-popup-request':
-        return '';
-      default:
-        return e.message;
-    }
-  }
-  return defaultMessage;
-}
 
 export default function LoginScreen() {
   const colors = useColors();
@@ -75,159 +43,22 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
-  const { state: onboardingState } = useOnboarding();
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [globalError, setGlobalError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-
-  const isValid = useMemo(() => {
-    return email.trim().length > 0 && password.length >= 6;
-  }, [email, password]);
-
-  const validate = () => {
-    let valid = true;
-    if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) {
-      setEmailError('Please enter a valid email address.');
-      valid = false;
-    } else {
-      setEmailError('');
-    }
-    if (password.length > 0 && password.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
-      valid = false;
-    } else {
-      setPasswordError('');
-    }
-    return valid;
-  };
-
-  const clearErrors = useCallback(() => {
-    if (emailError) setEmailError('');
-    if (passwordError) setPasswordError('');
-    if (globalError) setGlobalError('');
-  }, [emailError, passwordError, globalError]);
-
-  const postAuthRoute = async () => {
-    if (!onboardingState.isComplete) {
-      router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
-      return;
-    }
-    if (redirectTo) {
-      router.replace(redirectTo);
-      return;
-    }
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
-  };
-
-  const trackLogin = (method: string) => {
-    const u = firebaseAuth.currentUser;
-    if (u) {
-      identifyUser(u.uid, { email: u.email, name: u.displayName });
-      captureEvent('Login Success', { method });
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    clearErrors();
-    try {
-      if (Platform.OS === 'web') {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(firebaseAuth, provider);
-      } else {
-        const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
-        GoogleSignin.configure({
-          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-        });
-        await GoogleSignin.hasPlayServices();
-        await GoogleSignin.signIn();
-        const tokens = await GoogleSignin.getTokens();
-        const credential = GoogleAuthProvider.credential(tokens.idToken);
-        await signInWithCredential(firebaseAuth, credential);
-      }
-      trackLogin('google');
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
-    } catch (e: unknown) {
-      const errorMsg = handleFirebaseError(e, 'Google sign-in failed. Please try again.');
-      if (errorMsg) setGlobalError(errorMsg);
-      if (Platform.OS !== 'web' && errorMsg) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    if (Platform.OS !== 'ios') return;
-    setLoading(true);
-    clearErrors();
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      const provider = new OAuthProvider('apple.com');
-      const firebaseCredential = provider.credential({
-        idToken: credential.identityToken ?? '',
-        rawNonce: credential.authorizationCode ?? '',
-      });
-      await signInWithCredential(firebaseAuth, firebaseCredential);
-      trackLogin('apple');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
-    } catch (e: unknown) {
-      const err = e as Record<string, unknown>;
-      if (err?.code !== 'ERR_REQUEST_CANCELED') {
-        const errorMsg = handleFirebaseError(e, 'Apple sign-in failed. Please try again.');
-        if (errorMsg) setGlobalError(errorMsg);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    clearErrors();
-    if (!validate()) {
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-    setLoading(true);
-    try {
-      if (Platform.OS === 'web') {
-        await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      }
-      await signInWithEmailAndPassword(firebaseAuth, email, password);
-      trackLogin('email');
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
-    } catch (e: unknown) {
-      const errorMsg = handleFirebaseError(e, 'Sign in failed. Please try again.');
-      if (errorMsg) setGlobalError(errorMsg);
-      if (Platform.OS !== 'web' && errorMsg) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email, setEmail,
+    password, setPassword,
+    emailError, passwordError, globalError,
+    loading, rememberMe, setRememberMe,
+    isValid, clearErrors,
+    handleGoogleSignIn, handleAppleSignIn, handleLogin
+  } = useLogin(redirectTo);
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradients.culturepassBrand}
+        colors={gradients.culturepassBrand as unknown as [string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={s.gradientBg}
@@ -285,7 +116,7 @@ export default function LoginScreen() {
             !isDesktop && { paddingTop: 20 },
           ]}
         >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
+          <Animated.View entering={FadeInUp.springify().damping(16).stiffness(120).duration(600)} style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
               <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
@@ -304,8 +135,8 @@ export default function LoginScreen() {
                 <BrandWordmark size="lg" withTagline />
               </View>
 
-              <Text style={[s.title, { color: colors.textInverse }]}>Welcome back.</Text>
-              <Text style={[s.subtitle, { color: colors.textSecondary }]}>Sign in to continue your cultural journey.</Text>
+              <Animated.Text entering={FadeInDown.springify().damping(15).delay(100)} style={[s.title, { color: colors.textInverse }]}>Welcome back.</Animated.Text>
+              <Animated.Text entering={FadeInDown.springify().damping(15).delay(150)} style={[s.subtitle, { color: colors.textSecondary }]}>Sign in to continue your cultural journey.</Animated.Text>
 
               {globalError ? (
                 <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
@@ -314,7 +145,7 @@ export default function LoginScreen() {
                 </View>
               ) : null}
 
-              <View style={s.form}>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(250)} style={s.form}>
                 <View style={s.inputGroup}>
                   <Input
                     label="Email Address"
@@ -352,57 +183,61 @@ export default function LoginScreen() {
                     error={passwordError}
                   />
                 </View>
-              </View>
+              </Animated.View>
 
-              <View style={s.optionsRow}>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(350)} style={s.optionsRow}>
                 <Checkbox
                   checked={rememberMe}
                   onToggle={setRememberMe}
                   label="Keep me signed in"
                 />
-              </View>
+              </Animated.View>
 
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                rightIcon="arrow-forward"
-                loading={loading}
-                disabled={!isValid || loading}
-                onPress={handleLogin}
-                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
-              >
-                Sign In
-              </Button>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(400)}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  rightIcon="arrow-forward"
+                  loading={loading}
+                  disabled={!isValid || loading}
+                  onPress={handleLogin}
+                  style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                >
+                  Sign In
+                </Button>
+              </Animated.View>
 
-              <View style={s.socialDivider}>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(450)} style={s.socialDivider}>
                 <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
                 <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
                 <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-              </View>
+              </Animated.View>
 
-              <View style={s.socialRow}>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(550)} style={s.socialRow}>
                 <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
                 {Platform.OS === 'ios' ? (
                   <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
                 ) : (
                   <SocialButton provider="apple" comingSoon disabled={loading} />
                 )}
-              </View>
+              </Animated.View>
 
-              <Pressable
-                style={s.switchRow}
-                onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
-                hitSlop={12}
-                accessibilityRole="link"
-                accessibilityLabel="Sign up for an account"
-              >
-                <Text style={[s.switchText, { color: colors.textSecondary }]}>
-                  Don&apos;t have an account? <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
-                </Text>
-              </Pressable>
+              <Animated.View entering={FadeInDown.springify().damping(16).delay(650)}>
+                <Pressable
+                  style={s.switchRow}
+                  onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
+                  hitSlop={12}
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign up for an account"
+                >
+                  <Text style={[s.switchText, { color: colors.textSecondary }]}>
+                    Don&apos;t have an account? <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
+                  </Text>
+                </Pressable>
+              </Animated.View>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

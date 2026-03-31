@@ -246,3 +246,5 @@ const s = StyleSheet.create({
   clearBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, borderWidth: 1, borderStyle: 'dashed' },
   clearBtnText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
 });
+
+export default AdHocTab;
