@@ -16,6 +16,12 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
       type: "sourceFile",
     };
   }
+  if (platform === "web" && moduleName === "react-native/Libraries/Core/Devtools/getDevServer") {
+    return {
+      filePath: path.resolve(__dirname, "lib/empty-module.js"),
+      type: "sourceFile",
+    };
+  }
   if (originalResolveRequest) {
     return originalResolveRequest(context, moduleName, platform);
   }
