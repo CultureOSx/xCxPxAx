@@ -35,13 +35,15 @@ import { routeWithRedirect } from '@/lib/routes';
 import { getStyles } from './_components/styles';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
 import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
+import { AdminToolbar } from '@/components/ui/AdminToolbar';
+import { useRole } from '@/hooks/useRole';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';
 const OUTLOOK_BRAND_COLOR = '#0078D4';
 
 export default function EventDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, adminMode } = useLocalSearchParams<{ id: string; adminMode?: string }>();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const isDark = useIsDark();
@@ -87,12 +89,12 @@ export default function EventDetailScreen() {
         {event.imageUrl && <meta property="og:image" content={event.imageUrl} />}
         <meta property="og:url" content={`https://culturepass.app/event/${event.id}`} />
         <meta name="twitter:card" content="summary_large_image" />
-      </Head><EventDetail event={event} insets={insets} />
+      </Head><EventDetail event={event} insets={insets} adminMode={adminMode === 'true'} />
     </ErrorBoundary>
   );
 }
 
-function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }) {
+function EventDetail({ event, insets, adminMode }: { event: EventData; insets: EdgeInsets; adminMode?: boolean }) {
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const { userId } = useAuth();
   const { state: onboardingState } = useOnboarding();
@@ -102,6 +104,8 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
   const saved = isEventSaved(event.id);
   const pathname = usePathname();
   const { isDesktop } = useLayout();
+  const { isAdmin, isSuperAdmin } = useRole();
+  const [showAdminTools, setShowAdminTools] = useState(adminMode && (isAdmin || isSuperAdmin));
   const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
 
@@ -298,6 +302,41 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
     if (totalPrice <= 0) { purchaseFreeTicket(body); return; }
     purchaseMutation.mutate(body);
   }, [userId, event, selectedTier, totalPrice, effectiveQty, buyMode, pathname, purchaseMutation, purchaseFreeTicket]);
+
+  // ── Admin Actions ────────────────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: () => api.events.remove(event.id),
+    onSuccess: () => {
+      if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Deleted', 'Event has been successfully removed.');
+      router.replace('/admin/events');
+    },
+    onError: (err) => Alert.alert('Error', `Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`),
+  });
+
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: (featured: boolean) => api.events.update(event.id, { isFeatured: featured }),
+    onSuccess: () => {
+      if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+    },
+  });
+
+  const handleAdminDelete = useCallback(() => {
+    Alert.alert(
+      'Delete Event',
+      'Are you absolutely sure? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+      ]
+    );
+  }, [deleteMutation]);
+
+  const handleAdminToggleFeatured = useCallback(() => {
+    toggleFeaturedMutation.mutate(!event.isFeatured);
+  }, [event.isFeatured, toggleFeaturedMutation]);
 
   const openTicketModal = useCallback((tierIdx?: number) => {
     setSelectedTierIndex(tierIdx ?? 0);
@@ -634,6 +673,14 @@ function EventDetail({ event, insets }: { event: EventData; insets: EdgeInsets }
 
   return (
     <View style={s.container}>
+      {showAdminTools && (
+        <AdminToolbar 
+          isFeatured={!!event.isFeatured}
+          onToggleFeatured={handleAdminToggleFeatured}
+          onDelete={handleAdminDelete}
+          onClose={() => setShowAdminTools(false)}
+        />
+      )}
       <View style={[s.shellWrapper, isDesktop && s.desktopShellWrapper]}>
         <View style={[s.shellInner, isDesktop && s.desktopShell]}>
           <ScrollView

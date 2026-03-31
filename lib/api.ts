@@ -205,6 +205,9 @@ const events = {
   /** Track a click on an external ticket link (no auth required) */
   trackTicketClick: (eventId: string) =>
     request<{ ok: boolean }>('POST', `api/events/${eventId}/ticket-click`),
+
+  remove: (id: string) =>
+    request<{ success: boolean }>('DELETE', `api/events/${id}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -784,6 +787,12 @@ const perks = {
     request<{ success: boolean; redemption?: Record<string, unknown> }>(
       'POST', `api/perks/${id}/redeem`
     ),
+
+  update: (id: string, data: Partial<PerkData>) =>
+    request<PerkData>('PUT', `api/perks/${id}`, data),
+
+  remove: (id: string) =>
+    request<{ success: boolean }>('DELETE', `api/perks/${id}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -874,6 +883,12 @@ const communities = {
     telegram?: string;
     joinMode?: 'open' | 'request' | 'invite';
   }) => request<{ community: Community }>('POST', 'api/communities', data).then(r => r.community),
+
+  update: (id: string, data: Partial<Community>) =>
+    request<Community>('PUT', `api/communities/${id}`, data),
+
+  remove: (id: string) =>
+    request<{ success: boolean }>('DELETE', `api/communities/${id}`),
 };
 
 // ---------------------------------------------------------------------------

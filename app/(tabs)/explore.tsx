@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import type { EventData } from '@/shared/schema';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
+import { CityRail } from '@/components/Discover/CityRail';
 
 // ─── Category data ────────────────────────────────────────────────────────────
 
@@ -507,6 +508,14 @@ export default function ExploreScreen() {
                       </View>
                     </View>
                   </LinearGradient>
+                )}
+
+
+                {/* ── City Rail ── */}
+                {activeId === 'all' && query === '' && (
+                  <View style={{ marginBottom: 8 }}>
+                    <CityRail />
+                  </View>
                 )}
 
                 {/* Featured horizontal rail */}
