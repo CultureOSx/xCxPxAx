@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import * as Haptics from 'expo-haptics';
@@ -139,7 +139,7 @@ export default function ContentStudioScreen() {
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: ColorTheme) => StyleSheet.create({
   container: { flex: 1 },
   // Header
   headerCard: { borderRadius: 20, padding: 16, overflow: 'hidden' },

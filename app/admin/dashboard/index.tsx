@@ -261,7 +261,7 @@ export default function AdminDashboard() {
             <React.Fragment key={tool.id}>
               <Pressable
                 onPress={() => router.push(tool.route as any)}
-                style={({ pressed, hovered }: any) => [
+                style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
                   styles.toolRow,
                   (pressed || hovered) && { backgroundColor: colors.primarySoft },
                 ]}

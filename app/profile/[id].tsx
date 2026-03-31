@@ -3,10 +3,10 @@ import { View, Text, Pressable, StyleSheet, Platform, ActivityIndicator, Linking
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, webShadow } from '@/constants/theme';
+import { CultureTokens, gradients, webShadow, type ColorTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -441,7 +441,7 @@ export default function ProfileDetailScreen() {
   );
 }
 
-const getStyles = (colors: any, insets: any, isDesktop: boolean) => StyleSheet.create({
+const getStyles = (colors: ColorTheme, insets: EdgeInsets, isDesktop: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   heroSection: {
     height: 320,

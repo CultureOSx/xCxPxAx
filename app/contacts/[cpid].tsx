@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
 import { useCallback } from 'react';
@@ -24,7 +24,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 // ─── Tier config ─────────────────────────────────────────────────────────────
 
-const getTierDisplay = (colors: any): Record<string, { label: string; color: string; icon: string }> => ({
+const getTierDisplay = (colors: ColorTheme): Record<string, { label: string; color: string; icon: string }> => ({
   free: { label: 'Standard', color: colors.textSecondary, icon: 'shield-outline' },
   plus: { label: 'Plus', color: CultureTokens.indigo, icon: 'star' },
   premium: { label: 'Premium', color: CultureTokens.gold, icon: 'diamond' },

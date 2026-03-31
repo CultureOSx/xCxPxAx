@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -23,7 +23,7 @@ import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -130,8 +130,8 @@ const fr = StyleSheet.create({
   label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: '#8D8D8D', letterSpacing: 0.5, textTransform: 'uppercase' },
 });
 
-function ProfileEditSkeleton({ topInset, insets, colors, isDesktop }: { 
-  topInset: number; insets: any; colors: any; isDesktop: boolean 
+function ProfileEditSkeleton({ topInset, insets, colors, isDesktop }: {
+  topInset: number; insets: EdgeInsets; colors: ColorTheme; isDesktop: boolean
 }) {
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>

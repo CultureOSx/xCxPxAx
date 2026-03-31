@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { useCouncil } from '@/hooks/useCouncil';
-import { Colors, CultureTokens, gradients } from '@/constants/theme';
+import { Colors, CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { routeWithRedirect } from '@/lib/routes';
@@ -663,7 +663,7 @@ function SidebarProfileBlock({
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const getSidebarStyles = (colors: any) => {
+const getSidebarStyles = (colors: ColorTheme) => {
   const s = StyleSheet.create({
     sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
 

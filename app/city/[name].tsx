@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import Animated, {
@@ -24,7 +24,7 @@ import Animated, {
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, type ColorTheme } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FilterChips from '@/components/ui/FilterChips';
@@ -289,7 +289,7 @@ export default function CityScreen() {
   );
 }
 
-const getStyles = (colors: any, insets: any, isDesktop: boolean, gridGap: number) =>
+const getStyles = (colors: ColorTheme, insets: EdgeInsets, isDesktop: boolean, gridGap: number) =>
   StyleSheet.create({
     root: { flex: 1 },
 

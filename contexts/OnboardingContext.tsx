@@ -57,26 +57,7 @@ const defaultState: OnboardingState = {
   subscriptionTier: 'free',
 };
 
-const defaultContextValue: OnboardingContextValue = {
-  state: defaultState,
-  isLoading: false,
-  setCountry: () => {},
-  setCity: () => {},
-  setCommunities: () => {},
-  setNationalityId: () => {},
-  setCultureIds: () => {},
-  setLanguageIds: () => {},
-  setDiasporaGroupIds: () => {},
-  setEthnicityText: () => {},
-  setLanguages: () => {},
-  setInterests: () => {},
-  setSubscriptionTier: () => {},
-  completeOnboarding: async () => {},
-  resetOnboarding: async () => {},
-  updateLocation: async () => {},
-};
-
-export const OnboardingContext = createContext<OnboardingContextValue>(defaultContextValue);
+export const OnboardingContext = createContext<OnboardingContextValue | undefined>(undefined);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(defaultState);
@@ -141,5 +122,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 }
 
 export function useOnboarding(): OnboardingContextValue {
-  return useContext(OnboardingContext);
+  const context = useContext(OnboardingContext);
+  if (!context) {
+    throw new Error('useOnboarding must be used within an OnboardingProvider');
+  }
+  return context;
 }

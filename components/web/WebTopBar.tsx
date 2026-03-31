@@ -99,7 +99,7 @@ export function WebTopBar() {
       <View style={styles.left}>
         {/* Avatar / Menu trigger */}
         <Pressable
-          style={({ pressed, hovered }: any) => [
+          style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
             styles.avatarBtn,
             hovered && styles.avatarBtnHovered,
             pressed && { opacity: 0.8 },
@@ -129,7 +129,7 @@ export function WebTopBar() {
 
         {/* Logo */}
         <Pressable
-          style={({ pressed }: any) => [styles.logoBlock, pressed && { opacity: 0.8 }]}
+          style={({ pressed }: { pressed: boolean; hovered?: boolean }) => [styles.logoBlock, pressed && { opacity: 0.8 }]}
           onPress={() => handleNav('/(tabs)')}
           accessibilityLabel="CulturePass Home"
         >
@@ -162,7 +162,7 @@ export function WebTopBar() {
           return (
             <Pressable
               key={label}
-              style={({ hovered }: any) => [styles.tab, hovered && styles.tabHovered]}
+              style={({ hovered }: { pressed: boolean; hovered?: boolean }) => [styles.tab, hovered && styles.tabHovered]}
               onPress={() => handleNav(route)}
               accessibilityLabel={label}
               accessibilityRole="link"
@@ -185,7 +185,7 @@ export function WebTopBar() {
       {/* ── Right: Action buttons ── */}
       <View style={styles.right}>
         <Pressable
-          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
+          style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Search"
           onPress={() => handleNav('/search')}
         >
@@ -193,7 +193,7 @@ export function WebTopBar() {
         </Pressable>
 
         <Pressable
-          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
+          style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Notifications"
           onPress={() => handleNav('/notifications')}
         >
@@ -201,7 +201,7 @@ export function WebTopBar() {
         </Pressable>
 
         <Pressable
-          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
+          style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Map"
           onPress={() => handleNav('/map')}
         >
@@ -210,7 +210,7 @@ export function WebTopBar() {
 
         {!isAuthenticated ? (
           <Pressable
-            style={({ pressed, hovered }: any) => [styles.signInBtn, hovered && styles.signInBtnHovered, pressed && { opacity: 0.88 }]}
+            style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [styles.signInBtn, hovered && styles.signInBtnHovered, pressed && { opacity: 0.88 }]}
             accessibilityLabel="Sign In"
             onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any)}
           >
@@ -225,7 +225,7 @@ export function WebTopBar() {
           </Pressable>
         ) : (
           <Pressable
-            style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
+            style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
             accessibilityLabel="Profile"
             onPress={() => handleNav('/(tabs)/profile')}
           >
@@ -335,7 +335,7 @@ export function WebTopBar() {
                     {section.items.map((item, idx) => (
                       <React.Fragment key={item.route}>
                         <Pressable
-                          style={({ pressed, hovered }: any) => [
+                          style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
                             styles.menuItem,
                             (pressed || hovered) && { backgroundColor: colors.primarySoft },
                           ]}
@@ -361,7 +361,7 @@ export function WebTopBar() {
 
               {isAuthenticated && (
                 <Pressable
-                  style={({ pressed }: any) => [
+                  style={({ pressed }: { pressed: boolean; hovered?: boolean }) => [
                     styles.menuLogoutBtn,
                     { borderColor: colors.error + '40' },
                     pressed && { opacity: 0.7 },

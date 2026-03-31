@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
 import { useColors } from "@/hooks/useColors";
-import { CultureTokens, Spacing, gradients } from "@/constants/theme";
+import { CultureTokens, Spacing, gradients, type ColorTheme } from "@/constants/theme";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ const EVENTS = [
 type CultureChipProps = {
   culture: { label: string; tint: string };
   styles: ReturnType<typeof getStyles>;
-  colors: any;
+  colors: ColorTheme;
 };
 
 type StatProps = {
@@ -224,7 +224,7 @@ const EventCard = memo(function EventCard({
 }: {
   event: (typeof EVENTS)[0];
   styles: ReturnType<typeof getStyles>;
-  colors: any;
+  colors: ColorTheme;
   cardWidth: number;
 }) {
   const router = useRouter();
@@ -695,7 +695,7 @@ export default function Get2KnowCulturePass() {
 
 /* ─── Styles ──────────────────────────────────────────────────────────────── */
 
-const getStyles = (colors: any) =>
+const getStyles = (colors: ColorTheme) =>
   StyleSheet.create({
     hero: {
       minHeight: 580,

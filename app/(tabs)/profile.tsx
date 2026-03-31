@@ -125,7 +125,7 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
         >
-          {/* ── HERO ──────────────────────────────────────────────────── */}
+          {/* ── HERO ─────────────────────────────────────── (full-width) */}
           <View style={[hero.container, { paddingTop: topInset + 12 }]}>
             <LinearGradient
               colors={[colors.background, CultureTokens.indigo + '40', '#1B0F2E']}
@@ -207,10 +207,13 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          {/* ── CONTENT (max-width centred on desktop) ────────────────── */}
+          <View style={isDesktop ? { maxWidth: 720, width: '100%', alignSelf: 'center' } : undefined}>
+
           {/* ── ACTION BUTTONS ────────────────────────────────────────── */}
           <View style={[act.row, { paddingHorizontal: hPad, marginTop: 16 }]}>
             <Pressable
-              style={[act.btn, { backgroundColor: CultureTokens.indigo }]}
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [act.btn, { backgroundColor: hovered ? CultureTokens.indigo + 'DD' : CultureTokens.indigo, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push('/profile/edit'); }}
               accessibilityRole="button" accessibilityLabel="Edit profile"
             >
@@ -218,20 +221,26 @@ export default function ProfileScreen() {
               <Text style={[act.label, { color: '#fff' }]}>Edit Profile</Text>
             </Pressable>
             <Pressable
-              style={[act.btn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                act.btn,
+                { backgroundColor: hovered ? CultureTokens.teal + '20' : CultureTokens.teal + '12', borderWidth: 1, borderColor: hovered ? CultureTokens.teal + '55' : CultureTokens.teal + '38', transform: [{ scale: pressed ? 0.97 : 1 }] },
+              ]}
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); setShowScanner(true); }}
               accessibilityRole="button" accessibilityLabel="Scan ID"
             >
-              <Ionicons name="scan-outline" size={15} color={colors.text} />
-              <Text style={[act.label, { color: colors.text }]}>Scan</Text>
+              <Ionicons name="scan-outline" size={15} color={CultureTokens.teal} />
+              <Text style={[act.label, { color: CultureTokens.teal }]}>Scan</Text>
             </Pressable>
             <Pressable
-              style={[act.btn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                act.btn,
+                { backgroundColor: hovered ? colors.surfaceElevated : colors.surface, borderWidth: 1, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.97 : 1 }] },
+              ]}
               onPress={handleShare}
               accessibilityRole="button" accessibilityLabel="Share profile"
             >
-              <Ionicons name="share-outline" size={15} color={colors.text} />
-              <Text style={[act.label, { color: colors.text }]}>Share</Text>
+              <Ionicons name="share-outline" size={15} color={colors.textSecondary} />
+              <Text style={[act.label, { color: colors.textSecondary }]}>Share</Text>
             </Pressable>
           </View>
 
@@ -282,9 +291,14 @@ export default function ProfileScreen() {
                 {matchedCultures.map((c, i) => (
                   <Animated.View
                     key={c.id}
-                    entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 80).springify() : undefined}
-                    style={[cul.chip, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                    entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 70).springify().damping(18).stiffness(110) : undefined}
+                    style={[cul.chip, { backgroundColor: colors.surface, borderColor: CultureTokens.teal + '28' }]}
                   >
+                    <LinearGradient
+                      colors={[CultureTokens.teal + '12', CultureTokens.indigo + '0A']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    />
                     <Text style={{ fontSize: 24 }}>{c.emoji}</Text>
                     <Text style={[cul.chipLabel, { color: colors.text }]}>{c.name}</Text>
                   </Animated.View>
@@ -471,20 +485,20 @@ export default function ProfileScreen() {
             <SectionHeader title="Settings" colors={colors} />
             <View style={[set.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               {[
-                { icon: 'person-outline' as const,        label: 'Edit Profile',   path: '/profile/edit'           },
-                { icon: 'notifications-outline' as const, label: 'Notifications',  path: '/settings/notifications' },
-                { icon: 'lock-closed-outline' as const,   label: 'Privacy',        path: '/settings/privacy'       },
-                { icon: 'help-circle-outline' as const,   label: 'Help & Support', path: '/help'                   },
+                { icon: 'person-outline' as const,        label: 'Edit Profile',   path: '/profile/edit',           accent: CultureTokens.indigo },
+                { icon: 'notifications-outline' as const, label: 'Notifications',  path: '/settings/notifications', accent: CultureTokens.teal   },
+                { icon: 'lock-closed-outline' as const,   label: 'Privacy',        path: '/settings/privacy',       accent: CultureTokens.coral  },
+                { icon: 'help-circle-outline' as const,   label: 'Help & Support', path: '/help',                   accent: CultureTokens.gold   },
               ].map((item, i, arr) => (
                 <React.Fragment key={item.path}>
                   <Pressable
-                    style={set.row}
+                    style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [set.row, { transform: [{ scale: pressed ? 0.99 : 1 }], ...(hovered && { backgroundColor: colors.surfaceElevated }) }]}
                     onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push(item.path); }}
                     accessibilityRole="button"
                     accessibilityLabel={item.label}
                   >
-                    <View style={[set.iconWrap, { backgroundColor: colors.surfaceElevated }]}>
-                      <Ionicons name={item.icon} size={18} color={colors.textSecondary} />
+                    <View style={[set.iconWrap, { backgroundColor: item.accent + '18' }]}>
+                      <Ionicons name={item.icon} size={18} color={item.accent} />
                     </View>
                     <Text style={[set.label, { color: colors.text }]}>{item.label}</Text>
                     <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
@@ -498,7 +512,7 @@ export default function ProfileScreen() {
           {/* ── SIGN OUT ─────────────────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 16 }]}>
             <Pressable
-              style={[sout.btn, { borderColor: CultureTokens.coral + '50' }]}
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [sout.btn, { borderColor: hovered ? CultureTokens.coral + '60' : CultureTokens.coral + '40', backgroundColor: pressed ? CultureTokens.coral + '16' : hovered ? CultureTokens.coral + '12' : CultureTokens.coral + '09', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               onPress={async () => {
                 if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                 try {
@@ -519,6 +533,7 @@ export default function ProfileScreen() {
               <Text style={[sout.label, { color: CultureTokens.coral }]}>Sign Out</Text>
             </Pressable>
           </View>
+          </View>{/* end desktop centering wrapper */}
         </ScrollView>
 
         {/* ── CULTURE MAP MODAL ─────────────────────────────────────── */}

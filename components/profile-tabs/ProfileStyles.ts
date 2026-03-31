@@ -42,7 +42,7 @@ export const hero = StyleSheet.create({
 export const act = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   btn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 12,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 14, overflow: 'hidden',
     ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 2 },
@@ -85,7 +85,7 @@ export const sec = StyleSheet.create({
 export const cul = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: 10, borderRadius: 14, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: 10, borderRadius: 14, borderWidth: 1, overflow: 'hidden',
     ...Platform.select<ViewStyle>({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
       android: { elevation: 1 },
@@ -192,6 +192,14 @@ export const set = StyleSheet.create({
 });
 
 export const sout = StyleSheet.create({
-  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 14, borderRadius: Spacing.md, borderWidth: 1, borderStyle: 'dashed' },
+  btn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    paddingVertical: 15, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select<ViewStyle>({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6 },
+      android: { elevation: 1 },
+      web: webShadow('0 2px 6px rgba(0,0,0,0.04)'),
+    }),
+  },
   label: { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
 });

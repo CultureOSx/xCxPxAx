@@ -18,9 +18,9 @@ import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 function WidgetsDashboardContent() {
   const colors = useColors();
@@ -184,7 +184,7 @@ export default function WidgetsDashboardScreen() {
   );
 }
 
-const getStyles = (colors: any, insets: any) =>
+const getStyles = (colors: ColorTheme, insets: EdgeInsets) =>
   StyleSheet.create({
     container: {
       flex: 1,

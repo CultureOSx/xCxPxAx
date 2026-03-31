@@ -11,13 +11,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { useColors } from '@/hooks/useColors';
 import { useMembershipUpgrade } from '@/hooks/useMembershipUpgrade';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { routeWithRedirect } from '@/lib/routes';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -37,7 +37,7 @@ const FEATURES = [
 
 const isWeb = Platform.OS === 'web';
 
-function MembershipUpgradeSkeleton({ topInset, insets, colors }: { topInset: number; insets: any; colors: any }) {
+function MembershipUpgradeSkeleton({ topInset, insets, colors }: { topInset: number; insets: EdgeInsets; colors: ColorTheme }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top + topInset }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>

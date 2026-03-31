@@ -116,7 +116,7 @@ function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof 
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={item.label}
-      style={({ pressed, hovered }: any) => [
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.row,
         { backgroundColor: colors.surface },
         (pressed || hovered) && { backgroundColor: colors.primarySoft },
@@ -161,7 +161,7 @@ function CollapsibleSection({
       <Pressable
         onPress={toggle}
         accessibilityRole="button"
-        style={({ pressed }: any) => [styles.sectionHeaderRow, pressed && { opacity: 0.7 }]}
+        style={({ pressed }: { pressed: boolean }) => [styles.sectionHeaderRow, pressed && { opacity: 0.7 }]}
       >
         <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
           {section.title.toUpperCase()}
