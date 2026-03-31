@@ -126,12 +126,15 @@
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.14",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~55.0.0",
+    "eslint-plugin-import": "^2.32.0",
     "express": "^5.2.1",
     "jest": "~30.3.0",
     "jest-environment-jsdom": "~30.3.0",
@@ -143,7 +146,8 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.58.0"
   },
   "overrides": {
     "@isaacs/brace-expansion": "5.0.1",

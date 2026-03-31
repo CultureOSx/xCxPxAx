@@ -1,25 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { contactsRepository, type SavedContact } from '@/repositories/ContactsRepository';
 
-export interface SavedContact {
-  cpid: string;
-  name: string;
-  username?: string;
-  tier?: string;
-  org?: string;
-  avatarUrl?: string;
-  city?: string;
-  country?: string;
-  bio?: string;
-  email?: string;
-  phone?: string;
-  savedAt: string;
-  userId?: string;
-  /** true if imported from phone contacts */
-  fromPhone?: boolean;
-  interests?: string[];
-  communities?: string[];
-}
+export type { SavedContact };
 
 export interface PhoneContact {
   /** expo-contacts id */
@@ -55,9 +37,6 @@ interface ContactsContextValue {
   importedFromPhone: Set<string>;
 }
 
-const CONTACTS_KEY = '@culturepass_saved_contacts';
-const INVITED_CONTACTS_KEY = '@culturepass_invited_contacts';
-
 const ContactsContext = createContext<ContactsContextValue | null>(null);
 
 export function ContactsProvider({ children }: { children: ReactNode }) {
@@ -67,20 +46,18 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     Promise.all([
-      AsyncStorage.getItem(CONTACTS_KEY),
-      AsyncStorage.getItem(INVITED_CONTACTS_KEY),
+      contactsRepository.getAllContacts(),
+      contactsRepository.getInvitedIds(),
     ]).then(([stored, storedInvited]) => {
-      if (stored) {
-        try { setContacts(JSON.parse(stored)); } catch {}
+      if (stored && stored.length > 0) {
+        setContacts(stored);
       }
-      if (storedInvited) {
-        try { setInvitedIds(new Set(JSON.parse(storedInvited))); } catch {}
-      }
+      setInvitedIds(storedInvited);
     });
   }, []);
 
   const persist = useCallback((updated: SavedContact[]) => {
-    AsyncStorage.setItem(CONTACTS_KEY, JSON.stringify(updated));
+    contactsRepository.saveAllContacts(updated).catch(() => {});
   }, []);
 
   const addContact = useCallback((contact: Omit<SavedContact, 'savedAt'>) => {
@@ -122,7 +99,7 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
 
   const clearContacts = useCallback(() => {
     setContacts([]);
-    AsyncStorage.removeItem(CONTACTS_KEY);
+    contactsRepository.clearAllContacts().catch(() => {});
   }, []);
 
   const setPhoneContacts = useCallback((updated: PhoneContact[]) => {
@@ -133,16 +110,17 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
     })));
   }, [invitedIds]);
 
-  const markInvited = useCallback((phoneContactId: string) => {
-    setInvitedIds(prev => {
-      const next = new Set(prev);
-      next.add(phoneContactId);
-      AsyncStorage.setItem(INVITED_CONTACTS_KEY, JSON.stringify(Array.from(next)));
-      return next;
-    });
+  const markInvited = useCallback(async (phoneContactId: string) => {
     setPhoneContactsState(prev => prev.map(c =>
       c.id === phoneContactId ? { ...c, invited: true } : c
     ));
+    setInvitedIds(prev => {
+      const next = new Set(prev);
+      next.add(phoneContactId);
+      return next;
+    });
+    // Fire and forget storage
+    contactsRepository.addInvitedId(phoneContactId).catch(() => {});
   }, []);
 
   const importedFromPhone = useMemo<Set<string>>(
