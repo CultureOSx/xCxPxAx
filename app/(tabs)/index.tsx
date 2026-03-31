@@ -10,6 +10,7 @@ import {
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { CultureTokens } from '@/constants/theme';
 import type { EventData, Community } from '@/shared/schema';
@@ -32,6 +33,7 @@ import { isCultureKeralaHost } from '@/lib/domainHost';
 export default function DiscoverScreen() {
   const colors = useColors();
   const { isDesktop, contentWidth } = useLayout();
+  const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
 
   useEffect(() => {
@@ -150,8 +152,8 @@ export default function DiscoverScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
-          styles.scrollContent,
-          isDesktop && { width: contentWidth, alignSelf: 'center' as const }
+          { paddingBottom: scrollBottomPad },
+          isDesktop && { width: contentWidth, alignSelf: 'center' as const },
         ]}
         refreshControl={
           <RefreshControl
@@ -181,9 +183,34 @@ export default function DiscoverScreen() {
             <Text style={[styles.keralaSub, { color: colors.textSecondary }]}>
               Discover Malayali events, organisations, businesses, and community stories in one place.
             </Text>
-            <Pressable style={styles.keralaCta} onPress={() => router.push('/communities')}>
-              <Text style={styles.keralaCtaText}>Explore Kerala Communities</Text>
-            </Pressable>
+            <View style={styles.keralaStatsRow}>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[styles.keralaStatValue, { color: colors.text }]}>
+                  {scopedCommunities.length}
+                </Text>
+                <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>communities</Text>
+              </View>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[styles.keralaStatValue, { color: colors.text }]}>
+                  {scopedEvents.length}
+                </Text>
+                <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>events</Text>
+              </View>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[styles.keralaStatValue, { color: colors.text }]}>
+                  {scopedRestaurants.filter((item) => item !== 'skeleton').length}
+                </Text>
+                <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>places</Text>
+              </View>
+            </View>
+            <View style={styles.keralaCtaRow}>
+              <Pressable style={styles.keralaCta} onPress={() => router.push('/communities')}>
+                <Text style={styles.keralaCtaText}>Explore Communities</Text>
+              </Pressable>
+              <Pressable style={styles.keralaGhostCta} onPress={() => router.push('/events')}>
+                <Text style={styles.keralaGhostCtaText}>View Events</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -325,7 +352,6 @@ export default function DiscoverScreen() {
           seeAllRoute="/(tabs)/perks"
         />
 
-        <View style={styles.footerSpacer} />
       </ScrollView>
     </View>
   );
@@ -333,8 +359,6 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 100 },
-  footerSpacer: { height: 40 },
   keralaBanner: {
     marginHorizontal: 20,
     marginBottom: 16,
@@ -359,9 +383,37 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontFamily: 'Poppins_400Regular',
   },
-  keralaCta: {
+  keralaStatsRow: {
+    marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  keralaStatChip: {
+    flex: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  keralaStatValue: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: 'Poppins_700Bold',
+  },
+  keralaStatLabel: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: 'Poppins_500Medium',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  keralaCtaRow: {
     marginTop: 4,
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  keralaCta: {
     backgroundColor: CultureTokens.indigo,
     borderRadius: 999,
     paddingHorizontal: 14,
@@ -369,6 +421,18 @@ const styles = StyleSheet.create({
   },
   keralaCtaText: {
     color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Poppins_700Bold',
+  },
+  keralaGhostCta: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: CultureTokens.indigo,
+  },
+  keralaGhostCtaText: {
+    color: CultureTokens.indigo,
     fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },

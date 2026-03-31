@@ -1154,6 +1154,7 @@ export type FeedItem = {
   communityImageUrl?: string | null;
   body?: string;
   imageUrl?: string | null;
+  postStyle?: 'standard' | 'story';
   authorId?: string;
   likesCount?: number;
   commentsCount?: number;
@@ -1186,7 +1187,13 @@ const feed = {
     }>('GET', `api/feed${qs.toString() ? `?${qs}` : ''}`);
   },
 
-  createPost: (payload: { communityId: string; communityName: string; body: string; imageUrl?: string }) =>
+  createPost: (payload: {
+    communityId: string;
+    communityName: string;
+    body: string;
+    imageUrl?: string;
+    postStyle?: 'standard' | 'story';
+  }) =>
     request<{ id: string; createdAt: string }>('POST', 'api/feed/posts', payload),
 
   deletePost: (postId: string) =>

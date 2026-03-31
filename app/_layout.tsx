@@ -7,7 +7,7 @@ import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from 'posthog-react-native';
 import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import {
   Platform,
@@ -207,6 +207,10 @@ function RootLayoutNav() {
       }}
     >
       <Stack.Screen name="landing" />
+      <Stack.Screen name="kerala" />
+      <Stack.Screen name="finder" />
+      <Stack.Screen name="hub" />
+      <Stack.Screen name="hubs" />
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
 
@@ -358,16 +362,13 @@ function RootLayoutContent() {
   }, []);
 
   const isWeb = Platform.OS === "web";
-  const [isKeralaDomain, setIsKeralaDomain] = useState(false);
-
-  useEffect(() => {
-    setIsKeralaDomain(isCultureKeralaHost());
-  }, []);
+  const isKeralaDomain = isCultureKeralaHost();
 
   if (!fontsLoaded && !fontError) {
     return null;
   }
-  const siteUrl = isKeralaDomain ? 'https://culturekerala.com/' : 'https://culturepass.app/';
+  const siteOrigin = isKeralaDomain ? 'https://culturekerala.com' : 'https://culturepass.app';
+  const siteUrl = `${siteOrigin}/`;
   const siteTitle = isKeralaDomain
     ? 'CultureKerala — Kerala & Malayalee Communities Worldwide'
     : 'CulturePass — Discover Cultural Events & Communities';
@@ -377,6 +378,25 @@ function RootLayoutContent() {
   const siteKeywords = isKeralaDomain
     ? 'CultureKerala, Kerala Communities, Malayalee, Malayalam, Kerala Events, Malayali Diaspora'
     : 'CulturePass, Cultural Events, Diaspora Communities, Australia, NZ, UK, UAE, Canada, Festivals, Community Hub';
+  const currentPath =
+    isWeb && typeof window !== 'undefined' && window.location.pathname
+      ? window.location.pathname
+      : '/';
+  const canonicalUrl = `${siteOrigin}${currentPath}`;
+  const keralaJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'CultureKerala',
+    url: 'https://culturekerala.com/',
+    description: 'Discover Kerala and Malayalee communities, events, businesses, and culture around the world.',
+    inLanguage: ['en', 'ml'],
+    keywords: ['Kerala', 'Malayalee', 'Malayalam', 'Kerala events', 'Kerala communities'],
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://culturekerala.com/search?query={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  };
 
   return (
     <ErrorBoundary>
@@ -384,6 +404,8 @@ function RootLayoutContent() {
         <title>{siteTitle}</title>
         <meta name="description" content={siteDescription} />
         <meta name="keywords" content={siteKeywords} />
+        <link rel="canonical" href={canonicalUrl} />
+        {isKeralaDomain && <meta name="robots" content="index,follow,max-image-preview:large" />}
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -398,6 +420,12 @@ function RootLayoutContent() {
         <meta property="twitter:title" content={siteTitle} />
         <meta property="twitter:description" content={siteDescription} />
         <meta property="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
+        {isKeralaDomain && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(keralaJsonLd) }}
+          />
+        )}
 
         <meta name="theme-color" content="#0B0B14" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

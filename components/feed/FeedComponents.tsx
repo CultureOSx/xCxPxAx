@@ -117,20 +117,21 @@ function UserAvatar({ name, avatarUrl, size = 34, colorIdx = 0 }: { name?: strin
 
 // ── Filter tabs ───────────────────────────────────────────────────────────────
 
-const FILTER_TABS: { id: FeedFilter; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { id: 'for-you',     label: 'For You',     icon: 'sparkles' },
-  { id: 'events',      label: 'Events',       icon: 'calendar' },
-  { id: 'communities', label: 'Communities',  icon: 'people' },
+const FILTER_TABS: { id: FeedFilter; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; hint: string }[] = [
+  { id: 'for-you', label: 'For You', icon: 'sparkles', hint: 'Show your full personalised mix of events and communities' },
+  { id: 'events', label: 'Events', icon: 'calendar', hint: 'Show only event cards from the feed' },
+  { id: 'communities', label: 'Communities', icon: 'people', hint: 'Show community updates, announcements, and milestones' },
 ];
 
 // Inline animated chip — uses RN Animated only (Reanimated interpolateColor crashes iOS)
 function FeedFilterChip({
-  label, active, onPress, icon, count, colors,
+  label, active, onPress, icon, count, colors, hint,
 }: {
   label: string; active: boolean; onPress: () => void;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   count?: number;
   colors: ReturnType<typeof useColors>;
+  hint: string;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -151,10 +152,13 @@ function FeedFilterChip({
       onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
       accessibilityRole="tab"
       accessibilityLabel={label}
+      accessibilityHint={hint}
       accessibilityState={{ selected: active }}
+      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+      android_ripple={Platform.OS === 'android' ? { color: (active ? 'rgba(255,255,255,0.2)' : CultureTokens.indigo + '18'), borderless: false } : undefined}
     >
       <Animated.View style={[ffc.chip, { borderColor: chipBorder, backgroundColor: chipBg, transform: [{ scale }] }]}>
-        <Ionicons name={icon} size={13} color={active ? '#fff' : colors.textTertiary} />
+        <Ionicons name={icon} size={14} color={active ? '#fff' : colors.textTertiary} accessible={false} />
         <Text style={[ffc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
         {count != null && count > 0 && (
           <View style={[ffc.badge, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : colors.surfaceElevated }]}>
@@ -169,7 +173,7 @@ function FeedFilterChip({
 }
 
 const ffc = StyleSheet.create({
-  chip:      { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
+  chip:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44, borderRadius: 18, borderWidth: 1 },
   text:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
   badge:     { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', lineHeight: 14 },
@@ -203,6 +207,7 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
               icon={tab.icon}
               count={count}
               colors={colors}
+              hint={tab.hint}
             />
           );
         })}
@@ -212,24 +217,35 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
 }
 
 const fb = StyleSheet.create({
-  wrap:  { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
-  scroll:{ flexDirection: 'row', gap: 7 },
+  wrap:  { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
+  scroll:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
 
 // ── Stories bar ───────────────────────────────────────────────────────────────
 
-function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePost }: {
+function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePost, canPostStoryStatus, onCreateStoryPost }: {
   communities: Community[];
   authUser: { displayName?: string | null; avatarUrl?: string | null } | null;
   colors: ReturnType<typeof useColors>;
   isAuthenticated: boolean;
   onCreatePost: () => void;
+  /** Organizer, business, or admin — story-style status composer */
+  canPostStoryStatus?: boolean;
+  onCreateStoryPost?: () => void;
 }) {
+  const showStoryRing = Boolean(isAuthenticated && canPostStoryStatus && onCreateStoryPost);
+
   return (
     <View style={[st.wrap, { borderBottomColor: colors.borderLight }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.scroll}>
         {/* Your story / sign in */}
-        <Pressable style={st.item} onPress={onCreatePost} accessibilityRole="button" accessibilityLabel={isAuthenticated ? 'Create post' : 'Sign in'}>
+        <Pressable
+          style={st.item}
+          onPress={onCreatePost}
+          accessibilityRole="button"
+          accessibilityLabel={isAuthenticated ? 'Create post' : 'Sign in to post'}
+          accessibilityHint={isAuthenticated ? 'Compose an update for your community' : 'Opens sign in so you can share'}
+        >
           <View style={st.ringWrap}>
             <LinearGradient
               colors={gradients.culturepassBrand as [string, string]}
@@ -253,6 +269,28 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
             {isAuthenticated ? 'Your Post' : 'Sign In'}
           </Text>
         </Pressable>
+
+        {showStoryRing && (
+          <Pressable
+            style={st.item}
+            onPress={onCreateStoryPost}
+            accessibilityRole="button"
+            accessibilityLabel="Create story status"
+            accessibilityHint="Share a short story-style update with a portrait photo"
+          >
+            <LinearGradient
+              colors={[CultureTokens.purple, CultureTokens.coral]}
+              style={st.ring}
+            >
+              <View style={[st.inner, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="albums-outline" size={24} color={CultureTokens.purple} />
+              </View>
+            </LinearGradient>
+            <Text style={[st.name, { color: colors.textSecondary }]} numberOfLines={1}>
+              Story
+            </Text>
+          </Pressable>
+        )}
 
         {/* Community stories */}
         {communities.slice(0, 14).map((comm, i) => {
@@ -350,6 +388,8 @@ function GuestBanner({ colors }: { colors: ReturnType<typeof useColors> }) {
       style={[gst.wrap, { borderColor: CultureTokens.indigo + '30' }]}
       onPress={() => router.push('/(onboarding)/login')}
       accessibilityRole="button"
+      accessibilityLabel="Join the conversation"
+      accessibilityHint="Sign in to like posts, comment, and share with your community"
     >
       <LinearGradient
         colors={[CultureTokens.indigo + '14', CultureTokens.teal + '0C']}
@@ -387,7 +427,8 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
       style={[ti.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
       onPress={() => router.push('/events')}
       accessibilityRole="button"
-      accessibilityLabel="Browse trending events"
+      accessibilityLabel={city ? `Trending events in ${city}` : 'Trending events near you'}
+      accessibilityHint="Opens the events browse screen"
     >
       <LinearGradient
         colors={[CultureTokens.gold + '12', CultureTokens.coral + '08']}
@@ -399,11 +440,11 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[ti.title, { color: colors.text }]}>
-          🔥 Trending{city ? ` in ${city}` : ' Near You'}
+          Trending{city ? ` in ${city}` : ' near you'}
         </Text>
         <Text style={[ti.sub, { color: colors.textSecondary }]}>Discover what&apos;s popular this week</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} accessible={false} />
     </Pressable>
   );
 }
@@ -831,7 +872,7 @@ const rxn = StyleSheet.create({
   likeSummary:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth },
   likeSummaryText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
   wrap:            { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13 },
+  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, minHeight: 44 },
   btnLabel:        { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 });
 
@@ -845,7 +886,9 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
   const badge = post.kind === 'event'
     ? { icon: 'calendar-outline' as const, label: 'Event',  color: CultureTokens.gold }
     : post.kind === 'announcement'
-      ? { icon: 'megaphone-outline' as const, label: 'Update', color: CultureTokens.teal }
+      ? post.postStyle === 'story'
+        ? { icon: 'aperture-outline' as const, label: 'Story', color: CultureTokens.purple }
+        : { icon: 'megaphone-outline' as const, label: 'Update', color: CultureTokens.teal }
       : null;
   const showMatch = isAuthenticated && (post.matchReason?.length ?? 0) > 0 && (post.score ?? 0) > 0.35;
 
@@ -1022,6 +1065,35 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
       }
 
       case 'announcement': {
+        if (post.postStyle === 'story') {
+          return (
+            <Pressable onPress={handlePress}>
+              {post.imageUrl ? (
+                <View style={pcd.storyFrame}>
+                  <Image
+                    source={{ uri: post.imageUrl }}
+                    style={pcd.storyImg}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.82)']}
+                    style={pcd.storyGradient}
+                    start={{ x: 0.5, y: 0.35 }}
+                  />
+                  <View style={pcd.storyCaption}>
+                    <Text style={pcd.storyCaptionText}>{post.body}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={[pcd.storyTextCard, { borderColor: accent + '35', backgroundColor: accent + '10' }]}>
+                  <Ionicons name="chatbox-ellipses-outline" size={26} color={accent} style={pcd.storyTextCardIcon} />
+                  <Text style={[pcd.storyTextCardBody, { color: colors.text }]}>{post.body}</Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        }
         const MAX_LINES = 4;
         return (
           <Pressable onPress={handlePress}>
@@ -1107,14 +1179,14 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
         backgroundColor: colors.surface,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
-        marginBottom: 6,
+        marginBottom: 16,
       }
     : {
         backgroundColor: colors.surface,
         borderRadius: CardTokens.radius,
         borderWidth: 1,
         borderColor: colors.borderLight,
-        marginBottom: 12,
+        marginBottom: 20,
         overflow: 'hidden' as const,
         ...(isDark
           ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }
@@ -1170,6 +1242,7 @@ const PostCard = React.memo(
       return (
         a.body === b.body &&
         a.imageUrl === b.imageUrl &&
+        a.postStyle === b.postStyle &&
         a.likesCount === b.likesCount &&
         a.commentsCount === b.commentsCount
       );
@@ -1213,6 +1286,14 @@ const pcd = StyleSheet.create({
 
   // ── Announcement ──────────────────────────────────────────────────────────
   postImg:         { height: 260, width: '100%', backgroundColor: '#0D0D14' },
+  storyFrame:      { width: '100%', aspectRatio: 9 / 16, maxHeight: 520, backgroundColor: '#0D0D14', position: 'relative' },
+  storyImg:        { ...StyleSheet.absoluteFillObject },
+  storyGradient:   { ...StyleSheet.absoluteFillObject },
+  storyCaption:    { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 18 },
+  storyCaptionText:{ fontSize: 16, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, color: '#fff' },
+  storyTextCard:   { marginHorizontal: 14, marginBottom: 12, padding: 18, borderRadius: 16, borderWidth: 1, alignItems: 'center' },
+  storyTextCardIcon: { marginBottom: 6 },
+  storyTextCardBody:{ fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 24, textAlign: 'center' },
   announcementBody:{ paddingHorizontal: 16, paddingVertical: 14 },
   announcementText:{ fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 23, letterSpacing: 0.1 },
   readMore:        { fontSize: 14, fontFamily: 'Poppins_600SemiBold', marginTop: 6, lineHeight: 20 },
@@ -1266,7 +1347,7 @@ function SkeletonCard({ colors }: { colors: ReturnType<typeof useColors> }) {
 }
 
 const sk = StyleSheet.create({
-  card:       { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
+  card:       { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 18 },
   header:     { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   avatar:     { width: 38, height: 38, borderRadius: 19 },
   image:      { height: 200 },
@@ -1279,10 +1360,17 @@ const sk = StyleSheet.create({
 
 // ── Create post modal ─────────────────────────────────────────────────────────
 
-function CreatePostModal({ visible, onClose, onSubmit, communities, colors }: {
+function CreatePostModal({ visible, onClose, onSubmit, communities, colors, mode = 'standard' }: {
   visible: boolean; onClose: () => void;
-  onSubmit: (communityId: string, communityName: string, body: string, imageUri?: string) => void;
+  onSubmit: (
+    communityId: string,
+    communityName: string,
+    body: string,
+    imageUri?: string,
+    postStyle?: 'standard' | 'story',
+  ) => void | Promise<void>;
   communities: Community[]; colors: ReturnType<typeof useColors>;
+  mode?: 'standard' | 'story';
 }) {
   const [body,         setBody]         = useState('');
   const [selectedComm, setSelectedComm] = useState<Community | null>(null);
@@ -1290,9 +1378,20 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors }: {
   const [submitting,   setSubmitting]   = useState(false);
   const [error,        setError]        = useState('');
 
+  const maxChars = mode === 'story' ? 280 : 500;
+
   useEffect(() => {
-    if (visible && communities.length > 0 && !selectedComm) setSelectedComm(communities[0]);
-  }, [visible, communities, selectedComm]);
+    if (!visible) return;
+    setBody('');
+    setImageUri(null);
+    setError('');
+  }, [visible, mode]);
+
+  useEffect(() => {
+    if (visible && communities.length > 0) {
+      setSelectedComm(communities[0]);
+    }
+  }, [visible, communities]);
 
   const handleClose = useCallback(() => {
     setBody(''); setImageUri(null); setError(''); onClose();
@@ -1303,27 +1402,38 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors }: {
     if (status !== 'granted') { setError('Library permission denied'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, aspect: [4, 3], quality: 0.8,
+      allowsEditing: true,
+      aspect: mode === 'story' ? [9, 16] : [4, 3],
+      quality: 0.8,
     });
     if (!result.canceled) setImageUri(result.assets[0].uri);
-  }, []);
+  }, [mode]);
 
   const handleSubmit = useCallback(async () => {
     if (!body.trim() || !selectedComm || submitting) return;
-    if (body.trim().length > 500) { setError('Post must be under 500 characters.'); return; }
+    if (body.trim().length > maxChars) {
+      setError(mode === 'story' ? `Story must be under ${maxChars} characters.` : 'Post must be under 500 characters.');
+      return;
+    }
     if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setSubmitting(true); setError('');
     try {
-      await onSubmit(selectedComm.id, selectedComm.name, body.trim(), imageUri || undefined);
+      await onSubmit(
+        selectedComm.id,
+        selectedComm.name,
+        body.trim(),
+        imageUri || undefined,
+        mode === 'story' ? 'story' : 'standard',
+      );
       setBody(''); setImageUri(null); onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to post.');
     } finally {
       setSubmitting(false);
     }
-  }, [body, selectedComm, submitting, onSubmit, onClose, imageUri]);
+  }, [body, selectedComm, submitting, onSubmit, onClose, imageUri, maxChars, mode]);
 
-  const remaining = 500 - body.length;
+  const remaining = maxChars - body.length;
   const canPost   = body.trim().length > 0 && selectedComm !== null;
 
   return (
@@ -1335,7 +1445,9 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors }: {
             <View style={[cpm.handle, { backgroundColor: colors.border }]} />
             <View style={[cpm.header, { borderBottomColor: colors.borderLight }]}>
               <Button variant="ghost" size="sm" onPress={handleClose}>Cancel</Button>
-              <Text style={[cpm.title, { color: colors.text }]}>Create Post</Text>
+              <Text style={[cpm.title, { color: colors.text }]}>
+                {mode === 'story' ? 'Story status' : 'Create Post'}
+              </Text>
               <Button variant="primary" size="sm" onPress={handleSubmit} disabled={!canPost} loading={submitting}>Post</Button>
             </View>
 
@@ -1361,18 +1473,22 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors }: {
 
             <TextInput
               style={[cpm.input, { color: colors.text }]}
-              placeholder={`Share something with ${selectedComm?.name ?? 'your community'}…`}
+              placeholder={
+                mode === 'story'
+                  ? `Short story for ${selectedComm?.name ?? 'your community'}…`
+                  : `Share something with ${selectedComm?.name ?? 'your community'}…`
+              }
               placeholderTextColor={colors.textTertiary}
               value={body}
               onChangeText={(t) => { setBody(t); setError(''); }}
               multiline
-              maxLength={500}
+              maxLength={maxChars}
               autoFocus
               textAlignVertical="top"
             />
 
             {imageUri && (
-              <View style={cpm.imgPreviewWrap}>
+              <View style={mode === 'story' ? cpm.imgPreviewWrapStory : cpm.imgPreviewWrap}>
                 <Image source={{ uri: imageUri }} style={cpm.imgPreview} contentFit="cover" />
                 <Pressable style={cpm.removeImg} onPress={() => setImageUri(null)}>
                   <Ionicons name="close-circle" size={24} color="#fff" />
@@ -1412,6 +1528,7 @@ const cpm = StyleSheet.create({
   chipText:    { fontSize: 12, fontFamily: 'Poppins_500Medium', lineHeight: 17 },
   input:       { minHeight: 120, paddingHorizontal: 18, paddingVertical: 12, fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
   imgPreviewWrap:{ marginHorizontal: 18, marginBottom: 12, height: 160, borderRadius: 14, overflow: 'hidden' },
+  imgPreviewWrapStory:{ marginHorizontal: 18, marginBottom: 12, height: 220, borderRadius: 14, overflow: 'hidden' },
   imgPreview:  { width: '100%', height: '100%' },
   removeImg:   { position: 'absolute', top: 8, right: 8 },
   toolbar:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
@@ -1424,10 +1541,12 @@ const cpm = StyleSheet.create({
 
 // ── Feed list header (stories + create post + guest banner + divider) ─────────
 
-function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, city, onCreatePost }: {
+function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, city, onCreatePost, canPostStoryStatus, onCreateStoryPost }: {
   communities: Community[]; authUser: { displayName?: string | null; avatarUrl?: string | null } | null;
   colors: ReturnType<typeof useColors>; isAuthenticated: boolean;
   hPad: number; city: string; onCreatePost: () => void;
+  canPostStoryStatus?: boolean;
+  onCreateStoryPost?: () => void;
 }) {
   return (
     <View>
@@ -1439,6 +1558,8 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
           colors={colors}
           isAuthenticated={isAuthenticated}
           onCreatePost={onCreatePost}
+          canPostStoryStatus={canPostStoryStatus}
+          onCreateStoryPost={onCreateStoryPost}
         />
       )}
 

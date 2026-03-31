@@ -1,9 +1,9 @@
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -59,6 +59,18 @@ export default function SearchScreen() {
   const [selectedType, setSelectedType] = useState<ResultType | 'all'>('all');
   const [searchFocused, setSearchFocused] = useState(false);
   const { state } = useOnboarding();
+  const routeParams = useLocalSearchParams<{ q?: string }>();
+
+  useEffect(() => {
+    const raw = routeParams.q;
+    const single = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof single !== 'string' || !single.trim()) return;
+    try {
+      setQuery(decodeURIComponent(single.trim()));
+    } catch {
+      setQuery(single.trim());
+    }
+  }, [routeParams.q]);
 
   const TYPE_CONFIG = useMemo((): Record<ResultType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> => ({
     event:      { label: 'Events',       icon: 'calendar',   color: CultureTokens.gold },

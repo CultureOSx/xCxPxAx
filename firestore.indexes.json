@@ -122,6 +122,25 @@
       ]
     },
     {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "country", "mode": "ASCENDING" },
+        { "fieldPath": "date", "mode": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "city", "mode": "ASCENDING" },
+        { "fieldPath": "country", "mode": "ASCENDING" },
+        { "fieldPath": "date", "mode": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "feed",
       "queryScope": "COLLECTION",
       "fields": [

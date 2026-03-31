@@ -12,7 +12,7 @@
  * - Hidden on desktop web (sidebar takes over)
  */
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   Platform,
   Animated,
   useColorScheme,
+  AccessibilityInfo,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SymbolView } from 'expo-symbols';
@@ -79,6 +80,14 @@ const TABS = [
     sfSymbol: 'person.crop.circle' as const,
     sfSymbolActive: 'person.crop.circle.fill' as const,
   },
+  {
+    name: 'perks',
+    label: 'Quests',
+    icon: 'gift-outline' as const,
+    iconActive: 'gift' as const,
+    sfSymbol: 'gift' as const,
+    sfSymbolActive: 'gift.fill' as const,
+  },
 ] as const;
 
 type TabConfig = (typeof TABS)[number];
@@ -113,6 +122,15 @@ const badge = StyleSheet.create({
 
 // ─── Individual tab item ──────────────────────────────────────────────────────
 
+const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
+  index: 'Open discovery home and featured rails',
+  feed: 'Open community feed and updates',
+  community: 'Browse cultural communities',
+  calendar: 'View your calendar and saved dates',
+  perks: 'Open quests, perks, and rewards',
+  profile: 'Open your profile and settings',
+};
+
 interface TabItemProps {
   tab: TabConfig;
   isActive: boolean;
@@ -123,16 +141,30 @@ interface TabItemProps {
   isGuest?: boolean;
   isDark: boolean;
   colors: ReturnType<typeof useColors>;
+  reduceMotion: boolean;
 }
 
-function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isGuest, isDark, colors }: TabItemProps) {
+function TabItem({
+  tab,
+  isActive,
+  onPress,
+  badgeCount,
+  avatarUrl,
+  initials,
+  isGuest,
+  isDark,
+  colors,
+  reduceMotion,
+}: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.84, duration: 65, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 5, tension: 300, useNativeDriver: true }),
-    ]).start();
+    if (!reduceMotion) {
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 0.92, duration: 90, useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, friction: 6, tension: 320, useNativeDriver: true }),
+      ]).start();
+    }
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync().catch(() => {});
     }
@@ -142,6 +174,8 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isGu
   const iconColor = isActive ? CultureTokens.indigo : colors.textTertiary;
   const labelColor = isActive ? CultureTokens.indigo : colors.textTertiary;
 
+  const hint = TAB_HINTS[tab.name];
+
   return (
     <Pressable
       onPress={handlePress}
@@ -149,6 +183,9 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isGu
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={tab.label}
+      accessibilityHint={hint}
+      hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
+      android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: false } : undefined}
     >
       <Animated.View style={[tabItem.inner, { transform: [{ scale }] }]}>
         {/* Icon */}
@@ -203,8 +240,14 @@ function TabItem({ tab, isActive, onPress, badgeCount, avatarUrl, initials, isGu
           )}
         </View>
 
-        {/* Label */}
-        <Text style={[tabItem.label, { color: labelColor }]} numberOfLines={1}>
+        {/* Label — min ~10px; allow scaling for Dynamic Type / accessibility */}
+        <Text
+          style={[tabItem.label, { color: labelColor }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          maxFontSizeMultiplier={1.35}
+        >
           {tab.label}
         </Text>
 
@@ -226,10 +269,11 @@ const tabItem = StyleSheet.create({
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    gap: 3,
-    minWidth: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 2,
+    gap: 4,
+    minWidth: 48,
+    minHeight: 48,
   },
   iconWrap: {
     alignItems: 'center',
@@ -264,9 +308,9 @@ const tabItem = StyleSheet.create({
   },
 
   label: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: 'Poppins_600SemiBold',
-    letterSpacing: 0.1,
+    letterSpacing: 0.15,
     textAlign: 'center',
   },
 
@@ -286,6 +330,34 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const isDark = useColorScheme() === 'dark';
   const { isDesktop } = useLayout();
   const { user, userId, isAuthenticated } = useAuth();
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let subscription: { remove?: () => void } | undefined;
+
+    void (async () => {
+      try {
+        const v = await AccessibilityInfo.isReduceMotionEnabled();
+        if (!cancelled) setReduceMotion(Boolean(v));
+      } catch {
+        /* unsupported platform */
+      }
+    })();
+
+    try {
+      subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+        setReduceMotion(enabled);
+      });
+    } catch {
+      /* older RN / web */
+    }
+
+    return () => {
+      cancelled = true;
+      subscription?.remove?.();
+    };
+  }, []);
 
   const { data: notifCount = 0 } = useQuery<number>({
     queryKey: ['notifications', 'unread-count', userId],
@@ -369,6 +441,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               isActive={isActive}
               isDark={isDark}
               colors={colors}
+              reduceMotion={reduceMotion}
               badgeCount={isProfileTab ? notifCount : undefined}
               avatarUrl={isProfileTab ? (user as any)?.avatarUrl : undefined}
               initials={isProfileTab ? initials : undefined}
@@ -402,11 +475,12 @@ const bar = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 64,
+    minHeight: 64,
     borderRadius: 28,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'visible',
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
     elevation: 14,
   },
   topLine: {

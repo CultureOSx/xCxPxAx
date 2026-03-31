@@ -3,23 +3,43 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
+export type SavedHubBookmark = {
+  id: string;
+  href: string;
+  slug: string;
+  state: string;
+  language: string;
+  title: string;
+  subtitle?: string;
+  savedAt: string;
+};
+
+export function hubBookmarkId(slug: string, state: string, language: string): string {
+  return `${slug}::${state.toUpperCase()}::${language.toLowerCase()}`;
+}
+
 interface SavedContextValue {
   savedEvents: string[];
   joinedCommunities: string[];
+  savedHubs: SavedHubBookmark[];
   toggleSaveEvent: (id: string) => void;
   toggleJoinCommunity: (id: string) => Promise<void>;
+  toggleSaveHub: (payload: Omit<SavedHubBookmark, 'id' | 'savedAt'>) => void;
   isEventSaved: (id: string) => boolean;
   isCommunityJoined: (id: string) => boolean;
+  isHubSaved: (slug: string, state: string, language: string) => boolean;
 }
 
 const SAVED_EVENTS_KEY = '@culturepass_saved_events';
 const JOINED_COMMUNITIES_KEY = '@culturepass_joined_communities';
+const SAVED_HUBS_KEY = '@culturepass_saved_hubs';
 
 const SavedContext = createContext<SavedContextValue | null>(null);
 
 export function SavedProvider({ children }: { children: ReactNode }) {
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [joinedCommunities, setJoinedCommunities] = useState<string[]>([]);
+  const [savedHubs, setSavedHubs] = useState<SavedHubBookmark[]>([]);
   const { isAuthenticated, userId } = useAuth();
   const didSyncFromApi = useRef(false);
 
@@ -28,9 +48,18 @@ export function SavedProvider({ children }: { children: ReactNode }) {
     Promise.all([
       AsyncStorage.getItem(SAVED_EVENTS_KEY),
       AsyncStorage.getItem(JOINED_COMMUNITIES_KEY),
-    ]).then(([events, communities]) => {
+      AsyncStorage.getItem(SAVED_HUBS_KEY),
+    ]).then(([events, communities, hubs]) => {
       if (events) setSavedEvents(JSON.parse(events));
       if (communities) setJoinedCommunities(JSON.parse(communities));
+      if (hubs) {
+        try {
+          const parsed = JSON.parse(hubs) as SavedHubBookmark[];
+          if (Array.isArray(parsed)) setSavedHubs(parsed);
+        } catch {
+          /* ignore corrupt */
+        }
+      }
     });
   }, []);
 
@@ -55,6 +84,25 @@ export function SavedProvider({ children }: { children: ReactNode }) {
     setSavedEvents(prev => {
       const next = prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id];
       AsyncStorage.setItem(SAVED_EVENTS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const toggleSaveHub = useCallback((payload: Omit<SavedHubBookmark, 'id' | 'savedAt'>) => {
+    const id = hubBookmarkId(payload.slug, payload.state, payload.language);
+    setSavedHubs((prev) => {
+      const exists = prev.some((h) => h.id === id);
+      const next = exists
+        ? prev.filter((h) => h.id !== id)
+        : [
+            ...prev,
+            {
+              ...payload,
+              id,
+              savedAt: new Date().toISOString(),
+            },
+          ];
+      AsyncStorage.setItem(SAVED_HUBS_KEY, JSON.stringify(next));
       return next;
     });
   }, []);
@@ -91,15 +139,36 @@ export function SavedProvider({ children }: { children: ReactNode }) {
 
   const isEventSaved = useCallback((id: string) => savedEvents.includes(id), [savedEvents]);
   const isCommunityJoined = useCallback((id: string) => joinedCommunities.includes(id), [joinedCommunities]);
+  const isHubSaved = useCallback(
+    (slug: string, state: string, language: string) =>
+      savedHubs.some((h) => h.id === hubBookmarkId(slug, state, language)),
+    [savedHubs],
+  );
 
-  const value = useMemo(() => ({
-    savedEvents,
-    joinedCommunities,
-    toggleSaveEvent,
-    toggleJoinCommunity,
-    isEventSaved,
-    isCommunityJoined,
-  }), [savedEvents, joinedCommunities, toggleSaveEvent, toggleJoinCommunity, isEventSaved, isCommunityJoined]);
+  const value = useMemo(
+    () => ({
+      savedEvents,
+      joinedCommunities,
+      savedHubs,
+      toggleSaveEvent,
+      toggleJoinCommunity,
+      toggleSaveHub,
+      isEventSaved,
+      isCommunityJoined,
+      isHubSaved,
+    }),
+    [
+      savedEvents,
+      joinedCommunities,
+      savedHubs,
+      toggleSaveEvent,
+      toggleJoinCommunity,
+      toggleSaveHub,
+      isEventSaved,
+      isCommunityJoined,
+      isHubSaved,
+    ],
+  );
 
   return (
     <SavedContext.Provider value={value}>

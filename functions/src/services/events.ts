@@ -200,25 +200,80 @@ export const eventsService = {
         hasNextPage: offset + items.length < total,
       };
     } else {
-      // Non-geo query: push date/isFree filters into Firestore, cap reads to prevent
-      // Cloud Functions timeout and excessive Firestore billing on large collections.
+      // Non-geo query: equality filters + optional date range + orderBy('date').
+      // Composite indexes must match; see firestore.indexes.json.
       if (filters.isFree !== undefined) {
         baseQuery = baseQuery.where('isFree', '==', filters.isFree);
       }
-      // orderBy('date') enables range queries and consistent ordering.
-      // Requires a composite index for each combination of equality filters + date.
-      baseQuery = baseQuery.orderBy('date');
       if (filters.dateFrom) baseQuery = baseQuery.where('date', '>=', filters.dateFrom);
       if (filters.dateTo) baseQuery = baseQuery.where('date', '<=', filters.dateTo);
+      baseQuery = baseQuery.orderBy('date');
 
       const offset = (page - 1) * pageSize;
-      // Hard cap: never read more than 1 000 docs in a single request.
-      // Once proper composite indexes + cursor tokens are added this can be tightened.
       const FETCH_CAP = 1000;
-      const snap = await baseQuery.limit(FETCH_CAP).get();
-      let memItems = snap.docs.map(doc => ({ ...doc.data() as FirestoreEvent, id: doc.id }));
 
-      // Remaining filters that can't be pushed to Firestore without extra indexes
+      const applyMemoryFilters = (raw: FirestoreEvent[]): FirestoreEvent[] => {
+        let memItems = raw;
+        if (filters.organizerId) memItems = memItems.filter(e => e.organizerId === filters.organizerId);
+        if (filters.communityId) memItems = memItems.filter(e => e.communityId === filters.communityId);
+        if (filters.city) memItems = memItems.filter(e => e.city === filters.city);
+        if (filters.country) memItems = memItems.filter(e => e.country === filters.country);
+        if (filters.category) memItems = memItems.filter(e => e.category === filters.category);
+        if (filters.eventType) memItems = memItems.filter(e => e.eventType === filters.eventType);
+        if (filters.isFeatured !== undefined) memItems = memItems.filter(e => e.isFeatured === filters.isFeatured);
+        if (filters.isFree !== undefined) memItems = memItems.filter(e => e.isFree === filters.isFree);
+        if (!filters.organizerId && !filters.status) {
+          memItems = memItems.filter(e => e.status === 'published');
+        } else if (filters.status) {
+          memItems = memItems.filter(e => e.status === filters.status);
+        }
+        if (filters.dateFrom) memItems = memItems.filter(e => e.date >= filters.dateFrom!);
+        if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
+        if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
+        if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
+        memItems.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        return memItems;
+      };
+
+      const fallbackListInMemory = async (): Promise<PaginatedResult<FirestoreEvent>> => {
+        let fq = eventsCol() as FirebaseFirestore.Query;
+        if (filters.organizerId) {
+          fq = fq.where('organizerId', '==', filters.organizerId);
+        } else if (filters.status) {
+          fq = fq.where('status', '==', filters.status);
+        } else {
+          fq = fq.where('status', '==', 'published');
+        }
+        const fbSnap = await fq.limit(FETCH_CAP).get();
+        let memItems = fbSnap.docs.map(doc => ({ ...doc.data() as FirestoreEvent, id: doc.id }));
+        memItems = applyMemoryFilters(memItems);
+        total = memItems.length;
+        items = memItems.slice(offset, offset + pageSize);
+        return {
+          items,
+          total,
+          page,
+          pageSize,
+          hasNextPage: offset + items.length < total,
+        };
+      };
+
+      let memItems: FirestoreEvent[];
+      try {
+        const snap = await baseQuery.limit(FETCH_CAP).get();
+        memItems = snap.docs.map(doc => ({ ...doc.data() as FirestoreEvent, id: doc.id }));
+      } catch (err: unknown) {
+        const code = (err as { code?: number | string })?.code;
+        const msg = String((err as Error)?.message ?? '');
+        const isIndexError =
+          code === 9 ||
+          code === 'failed-precondition' ||
+          msg.toLowerCase().includes('index');
+        if (!isIndexError) throw err;
+        console.warn('[eventsService] Composite index missing; using in-memory list fallback.', msg);
+        return fallbackListInMemory();
+      }
+
       if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
       if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
 

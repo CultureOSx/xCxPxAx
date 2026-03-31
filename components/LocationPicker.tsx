@@ -198,7 +198,11 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
                   color={colors.text}
                 />
               </Pressable>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                <Text
+                  style={[styles.modalTitle, { color: colors.text }]}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {step === 'state' ? 'Select State' : 'Select City'}
                 </Text>
                 <Text style={styles.modalFlag}>{countryFlag}</Text>

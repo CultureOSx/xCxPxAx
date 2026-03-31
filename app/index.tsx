@@ -1,7 +1,8 @@
 import { Redirect } from 'expo-router';
+import { isCultureKeralaHost } from '@/lib/domainHost';
 
-// Root entry point — all platforms open directly on the Discovery tab.
-// Guests can browse freely; protected features prompt sign-in inline.
+// Root entry point — Kerala domain lands on its dedicated hub page.
 export default function Index() {
-  return <Redirect href="/(tabs)" />;
+  const isKeralaDomain = isCultureKeralaHost();
+  return <Redirect href={isKeralaDomain ? '/kerala' : '/(tabs)'} />;
 }

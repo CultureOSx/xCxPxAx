@@ -15,6 +15,7 @@ import { captureRouteError } from './utils';
 import { eventsService, profilesService, usersService } from '../services/firestore';
 import { isFirestoreConfigured, db } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
+import type { UserRole } from '../../../shared/schema';
 import type { FirestoreEvent } from '../services/firestore';
 
 export const feedRouter = Router();
@@ -22,6 +23,8 @@ export const feedRouter = Router();
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+const STORY_POST_ROLES: UserRole[] = ['organizer', 'business', 'admin', 'platformAdmin'];
 
 interface CommunityPost {
   id: string;
@@ -32,6 +35,8 @@ interface CommunityPost {
   authorName: string;
   body: string;
   imageUrl?: string | null;
+  /** 'story' = tall story-style status (only org / business / admin may create). */
+  postStyle?: 'standard' | 'story';
   likesCount: number;
   commentsCount: number;
   createdAt: string;
@@ -60,6 +65,7 @@ type FeedItem = {
   communityImageUrl?: string | null;
   body?: string;
   imageUrl?: string | null;
+  postStyle?: 'standard' | 'story';
   authorId?: string;
   likesCount?: number;
   commentsCount?: number;
@@ -261,6 +267,7 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
         communityImageUrl: comm?.imageUrl ?? post.communityImageUrl ?? null,
         body:              post.body,
         imageUrl:          post.imageUrl ?? null,
+        postStyle:         post.postStyle === 'story' ? 'story' : undefined,
         authorId:          post.authorId,
         likesCount:        post.likesCount,
         commentsCount:     post.commentsCount,
@@ -291,7 +298,8 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 
 feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) => {
-  const { communityId, communityName, body, imageUrl } = req.body ?? {};
+  const { communityId, communityName, body, imageUrl, postStyle: rawStyle } = req.body ?? {};
+  const postStyle: 'standard' | 'story' = rawStyle === 'story' ? 'story' : 'standard';
 
   if (!communityId || typeof communityId !== 'string') {
     return res.status(400).json({ error: 'communityId is required' });
@@ -299,7 +307,15 @@ feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) 
   if (!body || typeof body !== 'string' || body.trim().length === 0) {
     return res.status(400).json({ error: 'body is required' });
   }
-  if (body.trim().length > 500) {
+  const trimmed = body.trim();
+  if (postStyle === 'story') {
+    if (!STORY_POST_ROLES.includes(req.user!.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (trimmed.length > 280) {
+      return res.status(400).json({ error: 'Story must be 280 characters or less' });
+    }
+  } else if (trimmed.length > 500) {
     return res.status(400).json({ error: 'body must be 500 characters or less' });
   }
 
@@ -313,8 +329,9 @@ feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) 
       communityImageUrl: null,
       authorId:          req.user!.id,
       authorName:        req.user!.username || req.user!.email || 'User',
-      body:              body.trim(),
+      body:              trimmed,
       imageUrl:          imageUrl ? String(imageUrl) : null,
+      postStyle:         postStyle === 'story' ? 'story' : undefined,
       likesCount:        0,
       commentsCount:     0,
       createdAt:         now,

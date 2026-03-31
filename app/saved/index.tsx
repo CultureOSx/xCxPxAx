@@ -29,7 +29,7 @@ import { BlurView } from 'expo-blur';
 
 const isWeb = Platform.OS === 'web';
 
-type TabKey = 'events' | 'communities';
+type TabKey = 'events' | 'communities' | 'hubs';
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -49,7 +49,7 @@ export default function SavedScreen() {
   const isDesktop = width >= 1024;
 
   const [activeTab, setActiveTab] = useState<TabKey>('events');
-  const { savedEvents, joinedCommunities, toggleSaveEvent, toggleJoinCommunity } = useSaved();
+  const { savedEvents, joinedCommunities, savedHubs, toggleSaveEvent, toggleJoinCommunity, toggleSaveHub } = useSaved();
 
   const { data: allEvents = [], isLoading: eventsLoading } = useQuery<EventData[]>({
     queryKey: ['events', 'list', 'saved'],
@@ -77,12 +77,17 @@ export default function SavedScreen() {
   );
 
   const tabs: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap; count: number }[] = [
-    { key: 'events',      label: 'Saved Events',  icon: 'bookmark', count: savedEventItems.length },
-    { key: 'communities', label: 'Communities',   icon: 'people',   count: joinedCommunityItems.length },
+    { key: 'events', label: 'Events', icon: 'bookmark', count: savedEventItems.length },
+    { key: 'communities', label: 'Communities', icon: 'people', count: joinedCommunityItems.length },
+    { key: 'hubs', label: 'Hubs', icon: 'compass-outline', count: savedHubs.length },
   ];
 
   return (
-    <AuthGuard icon="bookmark" title="My Saved" message="Sign in to save events and communities you love.">
+    <AuthGuard
+      icon="bookmark"
+      title="My Saved"
+      message="Sign in to save events, communities, and culture hub pages you want to revisit."
+    >
       <View style={[s.container, { paddingTop: topInset }]}>
         <LinearGradient
           colors={[CultureTokens.indigo + '26', 'transparent']}
@@ -102,42 +107,66 @@ export default function SavedScreen() {
             <View style={{ width: 44 }} />
           </View>
 
-          <View style={s.tabRow}>
-            {tabs.map(tab => {
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.tabRowScroll}
+          >
+            {tabs.map((tab) => {
               const isActive = activeTab === tab.key;
+              const outlineName = tab.icon.endsWith('-outline')
+                ? tab.icon
+                : (`${tab.icon}-outline` as keyof typeof Ionicons.glyphMap);
+              const resolvedIcon = (
+                isActive
+                  ? tab.icon
+                  : outlineName in Ionicons.glyphMap
+                    ? outlineName
+                    : tab.icon
+              ) as keyof typeof Ionicons.glyphMap;
               return (
                 <Pressable
                   key={tab.key}
                   style={({ pressed }) => [
-                    s.tab, 
-                    isActive ? { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '40' } : { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                    pressed && !isActive && { opacity: 0.8 }
+                    s.tab,
+                    isActive
+                      ? { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '40' }
+                      : { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                    pressed && !isActive && { opacity: 0.8 },
                   ]}
                   onPress={() => {
                     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setActiveTab(tab.key);
                   }}
                 >
-                  <Ionicons name={isActive ? tab.icon : tab.icon + '-outline' as keyof typeof Ionicons.glyphMap} size={18} color={isActive ? CultureTokens.indigo : colors.textSecondary} />
-                  <Text style={[s.tabText, isActive ? { color: CultureTokens.indigo } : { color: colors.textSecondary }]}>{tab.label}</Text>
-                  {tab.count > 0 && (
-                    <View style={[
-                      s.countBadge, 
-                      isActive ? { backgroundColor: CultureTokens.indigo } : { backgroundColor: colors.backgroundSecondary }
-                    ]}>
+                  <Ionicons
+                    name={resolvedIcon}
+                    size={18}
+                    color={isActive ? CultureTokens.indigo : colors.textSecondary}
+                  />
+                  <Text style={[s.tabText, isActive ? { color: CultureTokens.indigo } : { color: colors.textSecondary }]}>
+                    {tab.label}
+                  </Text>
+                  {tab.count > 0 ? (
+                    <View
+                      style={[
+                        s.countBadge,
+                        isActive ? { backgroundColor: CultureTokens.indigo } : { backgroundColor: colors.backgroundSecondary },
+                      ]}
+                    >
                       <Text style={[s.countText, { color: '#FFFFFF' }]}>{tab.count}</Text>
                     </View>
-                  )}
+                  ) : null}
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: bottomInset + 40 }}
           >
-            {isLoading ? (
+            {isLoading && activeTab !== 'hubs' ? (
               <View style={{ gap: 14 }}>
                 {[0, 1, 2].map((k) => (
                   <View key={k} style={[s.eventCard, { padding: 0, overflow: 'hidden' }]}>
@@ -211,6 +240,77 @@ export default function SavedScreen() {
                           <Ionicons name="bookmark" size={20} color={CultureTokens.indigo} />
                         </Pressable>
                       </View>
+                    </View>
+                  ))
+                )}
+              </>
+            )}
+
+            {activeTab === 'hubs' && (
+              <>
+                {savedHubs.length === 0 ? (
+                  <View style={s.emptyState}>
+                    <View style={[s.emptyIconWrap, { backgroundColor: CultureTokens.indigo + '10' }]}>
+                      <Ionicons name="compass-outline" size={48} color={CultureTokens.indigo} />
+                    </View>
+                    <Text style={s.emptyTitle}>No saved culture hubs yet</Text>
+                    <Text style={s.emptyDesc}>
+                      On any culture hub page, tap Save hub. Your state, language, and link are kept here for quick return.
+                    </Text>
+                    <Button
+                      variant="primary"
+                      onPress={() => router.push('/finder')}
+                      style={{ marginTop: 24, paddingHorizontal: 40 }}
+                    >
+                      Hub Finder
+                    </Button>
+                  </View>
+                ) : (
+                  savedHubs.map((hub) => (
+                    <View key={hub.id} style={s.hubCard}>
+                      <Pressable
+                        style={({ pressed }) => [s.hubCardMain, pressed && { opacity: 0.92 }]}
+                        onPress={() => {
+                          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          router.push(hub.href as Parameters<typeof router.push>[0]);
+                        }}
+                      >
+                        <View style={[s.hubIconWrap, { backgroundColor: CultureTokens.gold + '18' }]}>
+                          <Ionicons name="globe-outline" size={24} color={CultureTokens.indigo} />
+                        </View>
+                        <View style={s.hubInfo}>
+                          <Text style={s.hubTitle} numberOfLines={2}>
+                            {hub.title}
+                          </Text>
+                          {hub.subtitle ? (
+                            <Text style={s.hubSubtitle} numberOfLines={1}>
+                              {hub.subtitle}
+                            </Text>
+                          ) : null}
+                          <Text style={s.hubHref} numberOfLines={1}>
+                            {hub.href}
+                          </Text>
+                        </View>
+                      </Pressable>
+                      <Pressable
+                        hitSlop={12}
+                        style={({ pressed }) => [s.hubRemoveBtn, pressed && { opacity: 0.75 }]}
+                        onPress={() => {
+                          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          toggleSaveHub({
+                            href: hub.href,
+                            slug: hub.slug,
+                            state: hub.state,
+                            language: hub.language,
+                            title: hub.title,
+                            subtitle: hub.subtitle,
+                          });
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove saved hub ${hub.title}`}
+                      >
+                        <Ionicons name="bookmark" size={20} color={CultureTokens.indigo} />
+                      </Pressable>
                     </View>
                   ))
                 )}
@@ -356,8 +456,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   headerTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
   
-  tabRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 4, marginBottom: 8, zIndex: 10 },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1 },
+  tabRowScroll: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 4, marginBottom: 8, zIndex: 10, paddingRight: 28 },
+  tab: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1 },
   tabText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   countBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   countText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
@@ -402,4 +502,27 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   statDot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 2, backgroundColor: colors.textSecondary },
   
   leaveBtnFloating: { position: 'absolute', right: 14, top: '50%', marginTop: -20, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.borderLight },
+
+  hubCard: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderRadius: 16,
+    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
+  },
+  hubCardMain: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, paddingRight: 8 },
+  hubIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  hubInfo: { flex: 1, gap: 4, minWidth: 0 },
+  hubTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 22 },
+  hubSubtitle: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  hubHref: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: CultureTokens.indigo },
+  hubRemoveBtn: {
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CultureTokens.indigo + '12',
+  },
 });

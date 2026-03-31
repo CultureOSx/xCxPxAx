@@ -4,8 +4,9 @@ import { CustomTabBar } from '@/components/tabs/CustomTabBar';
 import { Ionicons } from '@expo/vector-icons';
 
 /**
- * Main Tab Layout — CulturePass v1.1
- * Updated 5-tab structure: Feed | Events | Community | Calendar | Profile
+ * Main Tab Layout — CulturePass
+ * Primary tabs: Discovery → Feed → Community → Calendar → Quests → Profile
+ * (Desktop web hides the bottom bar; WebSidebar handles nav.)
  */
 export default function TabsLayout() {
   return (

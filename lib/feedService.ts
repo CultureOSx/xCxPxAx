@@ -86,12 +86,14 @@ export async function createCommunityPost(payload: {
   communityName: string;
   body: string;
   imageUrl?: string;
+  postStyle?: 'standard' | 'story';
 }): Promise<void> {
   await api.feed.createPost({
     communityId:   payload.communityId,
     communityName: payload.communityName,
     body:          payload.body,
     imageUrl:      payload.imageUrl,
+    postStyle:     payload.postStyle,
   });
 }
 
