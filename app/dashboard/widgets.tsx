@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { ActivityIndicator, StyleSheet, Text, View, Platform, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Platform, Pressable } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';

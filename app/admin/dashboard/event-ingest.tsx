@@ -25,11 +25,11 @@ export default function EventIngestDashboard() {
   const handleRun = async (targetUrl: string) => {
     setLoading(true);
     try {
-      const res = await triggerIngest(targetUrl);
+      await triggerIngest(targetUrl);
       setHistory([{ url: targetUrl, status: 'Success' }, ...history]);
-    } catch (e) {
+    } catch (_e) {
       setHistory([{ url: targetUrl, status: 'Failed' }, ...history]);
-      Alert.alert('Ingest failed', String(e));
+      Alert.alert('Ingest failed', String(_e));
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function EventIngestDashboard() {
       try {
         await triggerIngest(u);
         setHistory(h => [{ url: u, status: 'Success' }, ...h]);
-      } catch (e) {
+      } catch {
         setHistory(h => [{ url: u, status: 'Failed' }, ...h]);
       }
     }

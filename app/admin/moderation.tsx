@@ -69,7 +69,6 @@ const sp = StyleSheet.create({
 });
 
 function ReportCardSkeleton() {
-  const colors = useColors();
   return (
     <Card style={{ marginBottom: 10 }} padding={14}>
       <View style={{ gap: 12 }}>

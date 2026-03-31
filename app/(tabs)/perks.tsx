@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens, webShadow } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { PerkCard } from '@/components/perks/PerkCard';
@@ -705,7 +705,7 @@ export default function PerksTabScreen() {
         </Text>
       </View>
     </View>
-  ), [colors, hPad, viewMode, selectedCategory, filteredPerks.length, filtersActive, clearFilters, userId, activeQuests.length, isAuthenticated, questsLoading, rewards, rewardsError, queryClient]);
+  ), [colors, hPad, viewMode, selectedCategory, filteredPerks.length, filtersActive, clearFilters, userId, activeQuests.length, isAuthenticated, rewards, rewardsLoading, rewardsError, queryClient]);
 
   return (
     <ErrorBoundary>

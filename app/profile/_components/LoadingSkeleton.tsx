@@ -1,7 +1,6 @@
 import { useColors } from '@/hooks/useColors';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CP } from '../_styles';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { gradients } from '@/constants/theme';
 

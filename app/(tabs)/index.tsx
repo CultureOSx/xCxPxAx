@@ -52,7 +52,6 @@ export default function DiscoverScreen() {
     indigenousOrganisations,
     startingSoonRailData,
     popularRailData,
-    communityRailData,
     nearbyRailData,
     activityRailData,
     forYouEvents,

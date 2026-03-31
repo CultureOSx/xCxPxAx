@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,7 +24,7 @@ import { Community } from '@/shared/schema';
 
 import { getStyles } from '@/components/community-create/styles';
 import {
-  CommunityFormData, CommunityStep,
+  CommunityFormData,
   defaultCommunityForm, ALL_COMMUNITY_STEPS, STEP_TITLES, STEP_ICONS, getStepSub,
 } from '@/components/community-create/types';
 

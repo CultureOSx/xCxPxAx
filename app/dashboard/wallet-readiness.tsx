@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View, Platform, ScrollView } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -43,7 +43,6 @@ function TapCard({ onPress, style, children }: {
 }
 
 function WalletReadinessSkeleton() {
-  const colors = useColors();
   const { columnWidth, isDesktop } = useLayout();
   return (
     <View style={{ gap: 20 }}>
@@ -64,7 +63,7 @@ function WalletReadinessContent() {
   const { isAuthenticated } = useAuth();
   const { isAdmin } = useRole();
   const colors = useColors();
-  const { isDesktop, columnWidth } = useLayout();
+  const { isDesktop } = useLayout();
   const styles = getStyles(colors);
 
   useEffect(() => {

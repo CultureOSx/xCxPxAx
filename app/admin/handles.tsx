@@ -67,7 +67,6 @@ function HandleCard({ item, onApprove, onReject }: {
 
 function HandlesSkeleton() {
   const colors = useColors();
-  const { hPad } = useLayout();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ padding: 16, gap: 12 }}>

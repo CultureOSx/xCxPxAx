@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 import { AdHocTab }   from './import/_components/AdHocTab';

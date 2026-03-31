@@ -34,8 +34,6 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 function ArtistDetailSkeleton() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? 0 : insets.top;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -158,7 +156,7 @@ export default function ArtistDetailScreen() {
         });
       }
     } catch {}
-  }, [id, profile]);
+  }, [id, profile, isWeb]);
 
   if (isLoading) {
     return <ArtistDetailSkeleton />;

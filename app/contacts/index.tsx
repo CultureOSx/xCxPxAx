@@ -16,25 +16,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, glass, gradients } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useContacts, SavedContact, PhoneContact } from '@/contexts/ContactsContext';
-import { useCallback, useState, useRef, useMemo } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAuth } from '@/lib/auth';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolate,
   FadeIn,
   FadeInDown,
-  SlideInDown,
 } from 'react-native-reanimated';
 import * as Contacts from 'expo-contacts';
 

@@ -46,13 +46,13 @@ export default function CalendarScreen() {
   const contentMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
   const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const calCardShadow = Platform.select<any>({
     ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
     android: { elevation: 6, shadowColor: '#000' },
     web: webShadow(isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)'),
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const civicRowShadow = Platform.select<any>({
     ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
     android: { elevation: 1, shadowColor: '#000' },

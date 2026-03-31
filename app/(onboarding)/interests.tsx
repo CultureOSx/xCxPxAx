@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,14 @@ import {
   Alert,
   type DimensionValue,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+
 import {
   interestCategories,
   interestIcons,
   popularInterestsSydney,
-  type InterestCategory,
 } from '@/constants/onboardingInterests';
 
 import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
@@ -35,13 +34,9 @@ import {
   TextStyles,
   IconSize,
 } from '@/constants/theme';
-import * as Haptics from 'expo-haptics';
+
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-
-const MIN_REQUIRED = 5;
-
-const INITIALLY_OPEN = new Set(['cultural', 'arts']);
 
 const CATEGORY_EMOJI: Record<string, string> = {
   cultural: '🎭',

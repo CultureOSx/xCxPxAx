@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -200,7 +199,7 @@ function NotificationsSkeleton() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const { isDesktop, hPad } = useLayout();
+  const { hPad } = useLayout();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

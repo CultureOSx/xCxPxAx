@@ -20,8 +20,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
-import { CultureTokens, webShadow } from '@/constants/theme';
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
@@ -80,7 +80,6 @@ const sk = StyleSheet.create({
 
 export default function CommunitiesScreen() {
   const colors = useColors();
-  const isDark = useIsDark();
   const insets = useSafeAreaInsets();
   const { hPad, columnWidth, isDesktop } = useLayout();
   const { state: onboardingState } = useOnboarding();

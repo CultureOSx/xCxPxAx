@@ -2,12 +2,8 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
   TextInput, KeyboardAvoidingView,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useCallback, useMemo, useState } from 'react';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
@@ -54,13 +50,11 @@ export default function CultureMatchScreen() {
   const {
     step,
     stepIndex,
-    canProceed,
     nationalityQuery, setNationalityQuery,
     cultureQuery, setCultureQuery,
     languageQuery, setLanguageQuery,
     selectedNationality,
     selectedCultureIds,
-    selectedLanguageIds,
     filteredNationalities,
     availableCultures,
     filteredCultures,

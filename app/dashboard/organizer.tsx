@@ -6,9 +6,7 @@ import {
   ScrollView,
   Pressable,
   Platform,
-  Alert,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,8 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
@@ -116,31 +114,6 @@ function AnalyticsCard({
 // Main Dashboard
 // ---------------------------------------------------------------------------
 
-function DashboardSkeleton() {
-  const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const { hPad } = useLayout();
-  const topPad = Platform.OS === 'web' ? 0 : insets.top;
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ height: 180, backgroundColor: CultureTokens.indigo, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, padding: 20, paddingTop: topPad + 20 }}>
-        <Skeleton width={150} height={24} borderRadius={8} />
-        <Skeleton width={100} height={16} borderRadius={4} style={{ marginTop: 8 }} />
-      </View>
-      <View style={{ paddingHorizontal: hPad, marginTop: 20, gap: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 16 }}>
-          <Skeleton width="48%" height={100} borderRadius={24} />
-          <Skeleton width="48%" height={100} borderRadius={24} />
-        </View>
-        <Skeleton width="100%" height={120} borderRadius={24} style={{ marginTop: 8 }} />
-        {[1, 2, 3].map(i => (
-          <Skeleton key={i} width="100%" height={80} borderRadius={20} style={{ marginTop: 8 }} />
-        ))}
-      </View>
-    </View>
-  );
-}
 
 function OrganizerDashboardContent() {
   const insets = useSafeAreaInsets();

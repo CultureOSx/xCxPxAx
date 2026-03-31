@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  ActivityIndicator,
   Share,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,7 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { User, Membership } from '@shared/schema';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 import UserProfileHero from '@/components/user/UserProfileHero';

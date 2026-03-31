@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { GlassView } from 'expo-glass-effect';import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CultureTokens, EntityTypeColors, webShadow } from '@/constants/theme';
+import { CultureTokens, EntityTypeColors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import type { Profile, EventData } from '@/shared/schema';

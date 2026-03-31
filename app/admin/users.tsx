@@ -549,7 +549,7 @@ function AdminUsersSkeleton() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const { isDesktop, hPad } = useLayout();
+  useLayout();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

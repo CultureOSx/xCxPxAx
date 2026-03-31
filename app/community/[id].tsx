@@ -517,8 +517,6 @@ const getPostStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.creat
 
 function CommunityDetailSkeleton() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? 0 : insets.top;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -636,7 +634,6 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const s = getStyles(colors);
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined = isCommunityJoined(community.id);
-  const isDark = useIsDark();
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;

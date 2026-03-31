@@ -2,28 +2,26 @@ import React, { useMemo, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform, LayoutAnimation, UIManager,
 } from 'react-native';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const isWeb = Platform.OS === 'web';
-const isIOS = Platform.OS === 'ios';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

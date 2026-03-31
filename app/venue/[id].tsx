@@ -34,7 +34,6 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 function VenueDetailSkeleton() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>

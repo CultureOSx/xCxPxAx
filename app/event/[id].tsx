@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
-import { TextStyles , CultureTokens, webShadow, FontFamily, FontSize, Spacing } from '@/constants/theme';
+import { TextStyles , CultureTokens } from '@/constants/theme';
 import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -34,8 +34,7 @@ import { formatEventTime } from '@/lib/dateUtils';
 import { routeWithRedirect } from '@/lib/routes';
 import { getStyles } from './_components/styles';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
-import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, toICSTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
-import type { TicketTier } from './_components/types';
+import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';

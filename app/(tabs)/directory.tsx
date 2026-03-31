@@ -11,12 +11,10 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { GlassContainer } from 'expo-glass-effect';
 import { CultureTokens, gradients } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo, useCallback } from 'react';

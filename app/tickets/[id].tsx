@@ -8,7 +8,6 @@ import {
   Alert,
   Share,
   Linking,
-  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';

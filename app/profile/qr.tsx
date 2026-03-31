@@ -43,7 +43,7 @@ import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
-import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 // Fixed card dimensions for consistent look across iOS, Android, Web

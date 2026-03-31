@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -13,7 +12,6 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function ContentStudioScreen() {
   const colors = useColors();
-  const { isDesktop } = useLayout();
   const styles = getStyles(colors);
   const [activeTab, setActiveTab] = useState<'playlists' | 'posts'>('playlists');
 

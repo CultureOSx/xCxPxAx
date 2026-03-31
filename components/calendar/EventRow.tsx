@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens, webShadow } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import type { EventData } from '@/shared/schema';
 import { toSafeDateKey, MONTHS_SHORT, formatPrice } from './utils';
 
