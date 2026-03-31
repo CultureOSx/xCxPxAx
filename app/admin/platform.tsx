@@ -23,7 +23,7 @@ const PHASE_META: Record<RolloutPhase, { label: string; color: string; descripti
   internal: { label: 'Internal',  color: CultureTokens.coral,   description: 'Team members only' },
   pilot:    { label: 'Pilot',     color: CultureTokens.gold, description: '~10% of users' },
   half:     { label: 'Half',      color: CultureTokens.teal,    description: '~50% of users' },
-  full:     { label: 'Full',      color: '#22C55E',              description: 'All users' },
+  full:     { label: 'Full',      color: CultureTokens.success,  description: 'All users' },
 };
 
 const FEATURE_KEYS = ['discovery', 'perks', 'council', 'calendar', 'scanner'] as const;
@@ -184,21 +184,21 @@ function PlatformContent() {
   return (
     <View style={[s.fill, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={[CultureTokens.gold + 'cc', CultureTokens.indigo] as [string, string]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingTop: topInset }}
+        colors={[CultureTokens.gold + '20', colors.background] as [string, string]}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+        style={{ paddingTop: topInset, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
       >
         <Animated.View entering={FadeInUp.duration(300)} style={[s.header, { paddingHorizontal: hPad }]}>
           <Pressable
             onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
-            style={({ pressed }) => [s.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, opacity: pressed ? 0.7 : 1 }]}
             accessibilityRole="button" accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle}>Platform Configuration</Text>
-            <Text style={s.headerSub}>Feature flags, cities & system settings</Text>
+            <Text style={[s.headerTitle, { color: colors.text }]}>Platform Configuration</Text>
+            <Text style={[s.headerSub, { color: colors.textSecondary }]}>Feature flags, cities & system settings</Text>
           </View>
           <View style={s.superBadge}>
             <Ionicons name="star" size={11} color={CultureTokens.gold} />
@@ -275,11 +275,9 @@ function PlatformContent() {
             <View style={s.section}>
               <SectionHeader label="API Keys & Webhooks" sub="Managed via environment variables" />
               {([
-                { label: 'Firebase API Key',     icon: 'flame-outline',         note: 'EXPO_PUBLIC_FIREBASE_API_KEY',    color: CultureTokens.gold },
                 { label: 'Google Maps Key',      icon: 'map-outline',           note: 'EXPO_PUBLIC_GOOGLE_MAPS_KEY',    color: '#4285F4' },
                 { label: 'Stripe Secret',        icon: 'card-outline',          note: 'STRIPE_SECRET_KEY (server only)', color: CultureTokens.teal },
                 { label: 'Stripe Webhook',       icon: 'link-outline',          note: 'STRIPE_WEBHOOK_SECRET',          color: CultureTokens.gold },
-                { label: 'Sentry DSN',           icon: 'bug-outline',           note: 'EXPO_PUBLIC_SENTRY_DSN',         color: CultureTokens.coral },
               ]).map((item, i) => (
                 <Animated.View key={item.label} entering={FadeInDown.delay(i * 35).duration(250)}>
                   <View style={[s.keyRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
@@ -340,10 +338,9 @@ function PlatformContent() {
                 {([
                   { service: 'Cloud Functions',  status: 'Operational', color: '#22C55E', icon: 'cloud-outline' },
                   { service: 'Firestore',         status: 'Operational', color: '#22C55E', icon: 'server-outline' },
-                  { service: 'Firebase Auth',     status: 'Operational', color: '#22C55E', icon: 'shield-checkmark-outline' },
-                  { service: 'Firebase Storage',  status: 'Operational', color: '#22C55E', icon: 'archive-outline' },
-                  { service: 'Stripe',            status: 'Operational', color: '#22C55E', icon: 'card-outline' },
-                  { service: 'Sentry',            status: 'Monitoring',  color: CultureTokens.gold, icon: 'bug-outline' },
+                  { service: 'Firebase Auth',     status: 'Operational', color: colors.success, icon: 'shield-checkmark-outline' },
+                  { service: 'Firebase Storage',  status: 'Operational', color: colors.success, icon: 'archive-outline' },
+                  { service: 'Stripe',            status: 'Operational', color: colors.success, icon: 'card-outline' },
                 ]).map((item, i) => (
                   <Animated.View key={item.service} entering={FadeInDown.delay(i * 30).duration(250)}>
                     <View style={[s.healthRow, { borderBottomColor: colors.borderLight }]}>
@@ -361,7 +358,7 @@ function PlatformContent() {
               <View style={[s.infoBox, { backgroundColor: CultureTokens.teal + '10', borderColor: CultureTokens.teal + '30', marginTop: 10 }]}>
                 <Ionicons name="information-circle-outline" size={16} color={CultureTokens.teal} />
                 <Text style={[s.infoText, { color: colors.textSecondary }]}>
-                  Status shown is indicative. For live metrics, error rates, and latency charts check Firebase Console and the Sentry Dashboard.
+                  Status shown is indicative. For live metrics, error rates, and latency charts check the Firebase Console.
                 </Text>
               </View>
             </View>
@@ -379,9 +376,9 @@ export default function AdminPlatformScreen() {
 const s = StyleSheet.create({
   fill:           { flex: 1 },
   header:         { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
-  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.2 },
-  headerSub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
-  backBtn:        { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', letterSpacing: -0.2 },
+  headerSub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  backBtn:        { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   superBadge:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, backgroundColor: 'rgba(255,200,87,0.25)', borderColor: CultureTokens.gold },
   superBadgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
   scroll:         { paddingTop: 20 },

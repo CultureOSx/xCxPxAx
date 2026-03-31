@@ -75,7 +75,7 @@ export default function SuperAdminCockpit() {
   const insets = useSafeAreaInsets();
   const topInset = isWeb ? 0 : insets.top;
   const colors = useColors();
-  const { isDesktop, hPad, contentWidth } = useLayout();
+  const { isDesktop, hPad, contentWidth, columnWidth, columnGap } = useLayout();
   const { isSuperAdmin, isLoading: roleLoading } = useRole();
 
   useEffect(() => {
@@ -158,12 +158,12 @@ export default function SuperAdminCockpit() {
                 style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
                 accessibilityRole="button" accessibilityLabel="Go back"
               >
-                <Ionicons name="chevron-back" size={20} color="#fff" />
+                <Ionicons name="chevron-back" size={20} color={colors.text} />
               </Pressable>
             </GlassView>
             
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.headerTitle}>SuperAdmin Cockpit</Text>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>SuperAdmin Cockpit</Text>
               <Text style={[styles.headerSub, { color: CultureTokens.gold }]}>Root Control & System Oversight</Text>
             </View>
 
@@ -191,35 +191,43 @@ export default function SuperAdminCockpit() {
           </View>
           
           <GlassContainer spacing={10}>
-            <View style={styles.grid}>
-              <CockpitCard 
-                delay={100} 
-                title="Registered Users" 
-                value={statsLoading ? '...' : (stats?.totalUsers?.toLocaleString() ?? 0)} 
-                icon="people" 
-                color={CultureTokens.indigo} 
-              />
-              <CockpitCard 
-                delay={150} 
-                title="Published Events" 
-                value={statsLoading ? '...' : (stats?.totalEvents?.toLocaleString() ?? 0)} 
-                icon="calendar" 
-                color={CultureTokens.gold} 
-              />
-              <CockpitCard 
-                delay={200} 
-                title="Active Councils" 
-                value={statsLoading ? '...' : (stats?.activeCouncils?.toLocaleString() ?? 0)} 
-                icon="business" 
-                color={CultureTokens.teal} 
-              />
-              <CockpitCard 
-                delay={250} 
-                title="Tickets Sold" 
-                value={statsLoading ? '...' : (stats?.totalTicketsSold?.toLocaleString() ?? 0)} 
-                icon="ticket" 
-                color={colors.primary} 
-              />
+            <View style={[styles.grid, { gap: columnGap }]}>
+              <View style={{ width: columnWidth(2) }}>
+                <CockpitCard 
+                  delay={100} 
+                  title="Registered Users" 
+                  value={statsLoading ? '...' : (stats?.totalUsers?.toLocaleString() ?? 0)} 
+                  icon="people" 
+                  color={CultureTokens.indigo} 
+                />
+              </View>
+              <View style={{ width: columnWidth(2) }}>
+                <CockpitCard 
+                  delay={150} 
+                  title="Published Events" 
+                  value={statsLoading ? '...' : (stats?.totalEvents?.toLocaleString() ?? 0)} 
+                  icon="calendar" 
+                  color={CultureTokens.gold} 
+                />
+              </View>
+              <View style={{ width: columnWidth(2) }}>
+                <CockpitCard 
+                  delay={200} 
+                  title="Active Councils" 
+                  value={statsLoading ? '...' : (stats?.activeCouncils?.toLocaleString() ?? 0)} 
+                  icon="business" 
+                  color={CultureTokens.teal} 
+                />
+              </View>
+              <View style={{ width: columnWidth(2) }}>
+                <CockpitCard 
+                  delay={250} 
+                  title="Tickets Sold" 
+                  value={statsLoading ? '...' : (stats?.totalTicketsSold?.toLocaleString() ?? 0)} 
+                  icon="ticket" 
+                  color={colors.primary} 
+                />
+              </View>
             </View>
           </GlassContainer>
 
@@ -228,41 +236,49 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>System Ops & Infrastructure</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={300}
-              title="Sync Algolia"
-              description="Firestore to Search indexes"
-              icon="logo-amplify"
-              color={CultureTokens.indigo}
-              onPress={() => algoliaMutation.mutate()}
-              pending={algoliaMutation.isPending}
-            />
-            <ActionItem
-              delay={320}
-              title="Align Geohashes"
-              description="AU postcode alignment"
-              icon="earth-outline"
-              color={CultureTokens.teal}
-              onPress={() => geoMutation.mutate()}
-              pending={geoMutation.isPending}
-            />
-            <ActionItem
-              delay={340}
-              title="Platform Settings"
-              description="Flags & configuration"
-              icon="settings-outline"
-              color={colors.primary}
-              onPress={() => router.push('/admin/platform')}
-            />
-            <ActionItem
-              delay={360}
-              title="Discover Curation"
-              description="Rail & spotlight curation"
-              icon="sparkles-outline"
-              color={CultureTokens.gold}
-              onPress={() => router.push('/admin/discover')}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={300}
+                title="Sync Algolia"
+                description="Firestore to Search indexes"
+                icon="logo-amplify"
+                color={CultureTokens.indigo}
+                onPress={() => algoliaMutation.mutate()}
+                pending={algoliaMutation.isPending}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={320}
+                title="Align Geohashes"
+                description="AU postcode alignment"
+                icon="earth-outline"
+                color={CultureTokens.teal}
+                onPress={() => geoMutation.mutate()}
+                pending={geoMutation.isPending}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={340}
+                title="Platform Settings"
+                description="Flags & configuration"
+                icon="settings-outline"
+                color={colors.primary}
+                onPress={() => router.push('/admin/platform')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={360}
+                title="Discover Curation"
+                description="Rail & spotlight curation"
+                icon="sparkles-outline"
+                color={CultureTokens.gold}
+                onPress={() => router.push('/admin/discover')}
+              />
+            </View>
           </View>
 
           {/* ── People & Governance ───────────────────────────────────────── */}
@@ -270,39 +286,47 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>People & Governance</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={380}
-              title="Manage Users"
-              description="Registry & role audits"
-              icon="people-outline"
-              color={CultureTokens.indigo}
-              onPress={() => router.push('/admin/users')}
-            />
-            <ActionItem
-              delay={400}
-              title="Handle Approvals"
-              description="Domain moderation"
-              icon="at-outline"
-              color={CultureTokens.purple}
-              onPress={() => router.push('/admin/handles')}
-            />
-            <ActionItem
-              delay={420}
-              title="Moderation"
-              description="Reports & flagging"
-              icon="eye-outline"
-              color={CultureTokens.coral}
-              onPress={() => router.push('/admin/moderation')}
-            />
-            <ActionItem
-              delay={440}
-              title="Compliance"
-              description="Data audits & GDPR"
-              icon="shield-checkmark-outline"
-              color={CultureTokens.teal}
-              onPress={() => router.push('/admin/data-compliance')}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={380}
+                title="Manage Users"
+                description="Registry & role audits"
+                icon="people-outline"
+                color={CultureTokens.indigo}
+                onPress={() => router.push('/admin/users')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={400}
+                title="Handle Approvals"
+                description="Domain moderation"
+                icon="at-outline"
+                color={CultureTokens.purple}
+                onPress={() => router.push('/admin/handles')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={420}
+                title="Moderation"
+                description="Reports & flagging"
+                icon="eye-outline"
+                color={CultureTokens.coral}
+                onPress={() => router.push('/admin/moderation')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={440}
+                title="Compliance"
+                description="Data audits & GDPR"
+                icon="shield-checkmark-outline"
+                color={CultureTokens.teal}
+                onPress={() => router.push('/admin/data-compliance')}
+              />
+            </View>
           </View>
 
           {/* ── Content Lifecycle (CRUD) ──────────────────────────────────── */}
@@ -310,63 +334,77 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Content Lifecycle (CRUD)</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={460}
-              title="Create Event"
-              description="Multi-step wizard"
-              icon="add-circle"
-              color={CultureTokens.gold}
-              onPress={() => router.push('/event/create')}
-            />
-            <ActionItem
-              delay={480}
-              title="Manage Events"
-              description="Master event list"
-              icon="calendar-outline"
-              color={CultureTokens.indigo}
-              onPress={() => router.push('/admin/events')}
-            />
-            <ActionItem
-              delay={500}
-              title="Profiles"
-              description="Artists & Venues"
-              icon="id-card-outline"
-              color={CultureTokens.teal}
-              onPress={() => router.push('/admin/profiles')}
-            />
-            <ActionItem
-              delay={520}
-              title="Communities"
-              description="Diaspora groups"
-              icon="people-circle-outline"
-              color={CultureTokens.indigo}
-              onPress={() => router.push('/admin/communities')}
-            />
-            <ActionItem
-              delay={540}
-              title="Taxonomy"
-              description="Cultural metadata tags"
-              icon="pricetags-outline"
-              color={CultureTokens.purple}
-              onPress={() => router.push('/admin/platform')}
-            />
-            <ActionItem
-              delay={560}
-              title="Updates"
-              description="Microblog entries"
-              icon="newspaper-outline"
-              color={CultureTokens.coral}
-              onPress={() => router.push('/admin/updates')}
-            />
-            <ActionItem
-              delay={580}
-              title="Locations"
-              description="Council data & GIS"
-              icon="location-outline"
-              color={CultureTokens.teal}
-              onPress={() => router.push('/admin/locations')}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={460}
+                title="Create Event"
+                description="Multi-step wizard"
+                icon="add-circle"
+                color={CultureTokens.gold}
+                onPress={() => router.push('/event/create')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={480}
+                title="Manage Events"
+                description="Master event list"
+                icon="calendar-outline"
+                color={CultureTokens.indigo}
+                onPress={() => router.push('/admin/events')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={500}
+                title="Profiles"
+                description="Artists & Venues"
+                icon="id-card-outline"
+                color={CultureTokens.teal}
+                onPress={() => router.push('/admin/profiles')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={520}
+                title="Communities"
+                description="Diaspora groups"
+                icon="people-circle-outline"
+                color={CultureTokens.indigo}
+                onPress={() => router.push('/admin/communities')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={540}
+                title="Taxonomy"
+                description="Cultural metadata tags"
+                icon="pricetags-outline"
+                color={CultureTokens.purple}
+                onPress={() => router.push('/admin/taxonomy')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={560}
+                title="Updates"
+                description="Microblog entries"
+                icon="newspaper-outline"
+                color={CultureTokens.coral}
+                onPress={() => router.push('/admin/updates')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={580}
+                title="Locations"
+                description="Council data & GIS"
+                icon="location-outline"
+                color={CultureTokens.teal}
+                onPress={() => router.push('/admin/locations')}
+              />
+            </View>
           </View>
 
           {/* ── Marketplace & Logistics ───────────────────────────────────── */}
@@ -374,47 +412,57 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Marketplace & Logistics</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={600}
-              title="Tickets"
-              description="Orders & bookings"
-              icon="ticket-outline"
-              color={CultureTokens.purple}
-              onPress={() => router.push('/admin/tickets')}
-            />
-            <ActionItem
-              delay={620}
-              title="Perks"
-              description="Benefit listings"
-              icon="gift-outline"
-              color={CultureTokens.coral}
-              onPress={() => router.push('/admin/perks')}
-            />
-            <ActionItem
-              delay={640}
-              title="Finance"
-              description="Stripe & subscriptions"
-              icon="card-outline"
-              color={CultureTokens.gold}
-              onPress={() => router.push('/admin/finance')}
-            />
-            <ActionItem
-              delay={660}
-              title="Shopping & Retail"
-              description="Manage stores & products"
-              icon="bag-handle-outline"
-              color={CultureTokens.teal}
-              onPress={() => router.push('/admin/shopping')}
-            />
-            <ActionItem
-              delay={680}
-              title="Ingestion"
-              description="Manual JSON/CSV imports"
-              icon="cloud-upload-outline"
-              color={CultureTokens.indigo}
-              onPress={() => router.push('/admin/import')}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={600}
+                title="Tickets"
+                description="Orders & bookings"
+                icon="ticket-outline"
+                color={CultureTokens.purple}
+                onPress={() => router.push('/admin/tickets')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={620}
+                title="Perks"
+                description="Benefit listings"
+                icon="gift-outline"
+                color={CultureTokens.coral}
+                onPress={() => router.push('/admin/perks')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={640}
+                title="Finance"
+                description="Stripe & subscriptions"
+                icon="card-outline"
+                color={CultureTokens.gold}
+                onPress={() => router.push('/admin/finance')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={660}
+                title="Shopping & Retail"
+                description="Manage stores & products"
+                icon="bag-handle-outline"
+                color={CultureTokens.teal}
+                onPress={() => router.push('/admin/shopping')}
+              />
+            </View>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={680}
+                title="Ingestion"
+                description="Manual JSON/CSV imports"
+                icon="cloud-upload-outline"
+                color={CultureTokens.indigo}
+                onPress={() => router.push('/admin/import')}
+              />
+            </View>
           </View>
 
           {/* ── Security ─────────────────────────────────────────────────── */}
@@ -422,15 +470,17 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Security</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={680}
-              title="Logs"
-              description="Unmodified audit trail"
-              icon="list-outline"
-              color={colors.primary}
-              onPress={() => router.push('/admin/audit-logs')}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={680}
+                title="Logs"
+                description="Unmodified audit trail"
+                icon="list-outline"
+                color={colors.primary}
+                onPress={() => router.push('/admin/audit-logs')}
+              />
+            </View>
           </View>
 
           {/* ── Danger Zone ────────────────────────────────────────────────── */}
@@ -438,16 +488,18 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: CultureTokens.coral }]}>Danger Zone</Text>
           </View>
           
-          <View style={styles.grid}>
-            <ActionItem
-              delay={700}
-              title={maintenanceMode ? "Restore" : "Lockout"}
-              description="Platform maintenance"
-              icon={maintenanceMode ? "lock-open-outline" : "lock-closed-outline"}
-              color={maintenanceMode ? CultureTokens.gold : CultureTokens.coral}
-              danger
-              onPress={toggleMaintenanceMode}
-            />
+          <View style={[styles.grid, { gap: columnGap }]}>
+            <View style={{ width: columnWidth(2) }}>
+              <ActionItem
+                delay={700}
+                title={maintenanceMode ? "Restore" : "Lockout"}
+                description="Platform maintenance"
+                icon={maintenanceMode ? "lock-open-outline" : "lock-closed-outline"}
+                color={maintenanceMode ? CultureTokens.gold : CultureTokens.coral}
+                danger
+                onPress={toggleMaintenanceMode}
+              />
+            </View>
           </View>
 
         </ScrollView>
@@ -479,7 +531,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    color: '#fff',
     letterSpacing: -0.5,
     marginBottom: -2,
   },
@@ -522,10 +573,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardWrapper: {
-    ...Platform.select({
-      web: { flexBasis: '48%' as any, flexShrink: 0 },
-      default: { width: '48%' }, 
-    }),
+    marginBottom: 0,
   },
   card: {
     flexDirection: 'row',
@@ -554,16 +602,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Poppins_500Medium',
   },
-  actionGroup: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
   actionGridItem: {
-    ...Platform.select({
-      web: { flexBasis: '48%' as any, flexShrink: 0 },
-      default: { width: '48%' }, 
-    }),
     marginBottom: 0,
   },
   actionCard: {
@@ -592,9 +631,5 @@ const styles = StyleSheet.create({
   actionDesc: {
     fontSize: 11,
     fontFamily: 'Poppins_400Regular',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 56, // Align with text
   },
 });
