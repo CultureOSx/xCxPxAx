@@ -149,24 +149,30 @@ export default function SuperAdminCockpit() {
         <LinearGradient
           colors={gradients.midnight as unknown as [string, string]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingTop: topInset, zIndex: 10 }}
+          style={{ paddingTop: topInset, zIndex: 10, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
         >
           <Animated.View entering={FadeInUp.duration(300)} style={[styles.header, { paddingHorizontal: hPad }]}>
-            <Pressable
-              onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
-              style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
-              accessibilityRole="button" accessibilityLabel="Go back"
-            >
-              <Ionicons name="chevron-back" size={20} color="#fff" />
-            </Pressable>
-            <View style={{ flex: 1 }}>
+            <GlassView style={styles.headerControlGlass}>
+              <Pressable
+                onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
+                style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+                accessibilityRole="button" accessibilityLabel="Go back"
+              >
+                <Ionicons name="chevron-back" size={20} color="#fff" />
+              </Pressable>
+            </GlassView>
+            
+            <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.headerTitle}>SuperAdmin Cockpit</Text>
-              <Text style={styles.headerSub}>Root Control & System Oversight</Text>
+              <Text style={[styles.headerSub, { color: CultureTokens.gold }]}>Root Control & System Oversight</Text>
             </View>
-            <View style={styles.badgeWrap}>
-              <Ionicons name="shield-checkmark" size={12} color="#fff" />
-              <Text style={styles.badgeText}>ROOT</Text>
-            </View>
+
+            <GlassView style={styles.headerControlGlass}>
+              <View style={styles.badgeWrap}>
+                <Ionicons name="shield-checkmark" size={12} color={CultureTokens.gold} />
+                <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>ROOT</Text>
+              </View>
+            </GlassView>
           </Animated.View>
         </LinearGradient>
 
@@ -395,6 +401,14 @@ export default function SuperAdminCockpit() {
             />
             <ActionItem
               delay={660}
+              title="Shopping & Retail"
+              description="Manage stores & products"
+              icon="bag-handle-outline"
+              color={CultureTokens.teal}
+              onPress={() => router.push('/admin/shopping')}
+            />
+            <ActionItem
+              delay={680}
               title="Ingestion"
               description="Manual JSON/CSV imports"
               icon="cloud-upload-outline"
@@ -445,47 +459,48 @@ export default function SuperAdminCockpit() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingBottom: 16,
-    paddingTop: 10,
+    gap: 8,
+  },
+  headerControlGlass: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    overflow: 'hidden',
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'Poppins_700Bold',
     color: '#fff',
     letterSpacing: -0.5,
+    marginBottom: -2,
   },
   headerSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+    opacity: 0.9,
   },
   badgeWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: CultureTokens.purple + '80',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: CultureTokens.purple,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
   },
   badgeText: {
-    color: '#fff',
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   content: {
     paddingTop: 24,
