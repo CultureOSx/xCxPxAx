@@ -291,7 +291,16 @@ export default function CalendarSyncScreen() {
                   'This will generate an ICS file with all your tickets and saved events.',
                   [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Export', onPress: () => router.push('/tickets') },
+                    { text: 'Export',
+                      onPress: async () => {
+                        try {
+                          // Optionally show a loading indicator here if needed
+                          await exportAllTickets();
+                        } catch (err) {
+                          Alert.alert('Export Failed', 'Could not export your tickets. Please try again.');
+                        }
+                      }
+                    },
                   ],
                 );
               }}

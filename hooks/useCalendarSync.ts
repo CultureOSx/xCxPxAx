@@ -44,8 +44,15 @@ export function useCalendarSync() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load persisted prefs on mount
+  // Coordinate loading state for prefs and permissions
   useEffect(() => {
+    let prefsDone = false;
+    let permsDone = false;
+
+    const checkDone = () => {
+      if (prefsDone && permsDone) setIsLoading(false);
+    };
+
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
         if (raw) {
@@ -54,18 +61,23 @@ export function useCalendarSync() {
         }
       })
       .catch(() => {/* ignore */})
-      .finally(() => setIsLoading(false));
-  }, []);
+      .finally(() => {
+        prefsDone = true;
+        checkDone();
+      });
 
-  // Check existing permission state on mount
-  useEffect(() => {
     if (Platform.OS === 'web') {
-      setIsLoading(false);
-      return;
+      permsDone = true;
+      checkDone();
+    } else {
+      Calendar.getCalendarPermissionsAsync()
+        .then(({ granted }) => setPermissionGranted(granted))
+        .catch(() => {/* ignore */})
+        .finally(() => {
+          permsDone = true;
+          checkDone();
+        });
     }
-    Calendar.getCalendarPermissionsAsync()
-      .then(({ granted }) => setPermissionGranted(granted))
-      .catch(() => {/* ignore */});
   }, []);
 
   const savePrefs = useCallback(async (next: CalendarSyncPrefs) => {
