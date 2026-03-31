@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Platform,
+  View, Text, StyleSheet, Pressable, ScrollView, Platform, LayoutAnimation, UIManager,
 } from 'react-native';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,14 +116,15 @@ function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof 
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={item.label}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: any) => [
         styles.row,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        { backgroundColor: colors.surface },
+        (pressed || hovered) && { backgroundColor: colors.primarySoft },
         pressed && styles.rowPressed,
       ]}
     >
-      <View style={[styles.rowIcon, { backgroundColor: accent + '15' }]}>
-        <Ionicons name={item.icon} size={20} color={accent} />
+      <View style={[styles.rowIcon, { backgroundColor: accent + '18' }]}>
+        <Ionicons name={item.icon} size={19} color={accent} />
       </View>
       <Text style={[styles.rowLabel, { color: colors.text }]}>{item.label}</Text>
       {item.badge && (
@@ -126,8 +132,59 @@ function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof 
           <Text style={styles.badgeText}>{item.badge}</Text>
         </View>
       )}
-      <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
+      <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
     </Pressable>
+  );
+}
+
+// ── Collapsible section ─────────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  section,
+  colors,
+  defaultCollapsed = false,
+}: {
+  section: MenuSection;
+  colors: ReturnType<typeof useColors>;
+  defaultCollapsed?: boolean;
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  const toggle = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCollapsed((v) => !v);
+    if (!isWeb) Haptics.selectionAsync();
+  }, []);
+
+  return (
+    <View style={styles.section}>
+      <Pressable
+        onPress={toggle}
+        accessibilityRole="button"
+        style={({ pressed }: any) => [styles.sectionHeaderRow, pressed && { opacity: 0.7 }]}
+      >
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+          {section.title.toUpperCase()}
+        </Text>
+        <Ionicons
+          name={collapsed ? 'chevron-down' : 'chevron-up'}
+          size={13}
+          color={colors.textTertiary}
+        />
+      </Pressable>
+      {!collapsed && (
+        <View style={[styles.sectionCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+          {section.items.map((item, idx) => (
+            <React.Fragment key={item.id}>
+              <MenuRow item={item} colors={colors} />
+              {idx < section.items.length - 1 && (
+                <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -264,21 +321,12 @@ export default function MenuScreen() {
 
           {/* ── Sections ── */}
           {visibleSections.map((section) => (
-            <View key={section.title} style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
-                {section.title.toUpperCase()}
-              </Text>
-              <View style={[styles.sectionCard, { borderColor: colors.borderLight }]}>
-                {section.items.map((item, idx) => (
-                  <React.Fragment key={item.id}>
-                    <MenuRow item={item} colors={colors} />
-                    {idx < section.items.length - 1 && (
-                      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </View>
-            </View>
+            <CollapsibleSection
+              key={section.title}
+              section={section}
+              colors={colors}
+              defaultCollapsed={section.title === 'Create & submit'}
+            />
           ))}
 
           {/* ── Logout ── */}
@@ -372,16 +420,21 @@ const styles = StyleSheet.create({
 
   /* Sections */
   section: { marginBottom: 20 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
   sectionLabel: {
     fontSize: 11,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: 1.2,
-    marginBottom: 8,
-    marginLeft: 4,
   },
   sectionCard: {
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
@@ -390,9 +443,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
   },
   rowPressed: { opacity: 0.65 },
   rowIcon: {

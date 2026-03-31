@@ -12,6 +12,56 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { useLayout } from "@/hooks/useLayout";
 import { routeWithRedirect } from "@/lib/routes";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface TabItem {
+  label: string;
+  route: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+const TAB_ROUTES: TabItem[] = [
+  { label: 'Discover',   route: '/(tabs)',            icon: 'compass-outline' },
+  { label: 'Calendar',   route: '/(tabs)/calendar',   icon: 'calendar-outline' },
+  { label: 'Community',  route: '/(tabs)/community',  icon: 'people-outline' },
+  { label: 'Perks',      route: '/(tabs)/perks',      icon: 'gift-outline' },
+];
+
+// Sidebar menu items shown on mobile/tablet top-bar menu modal
+const MENU_SECTIONS = [
+  {
+    heading: 'Browse',
+    items: [
+      { label: 'Discover',      icon: 'compass-outline',      route: '/(tabs)' },
+      { label: 'Explore',       icon: 'search-outline',        route: '/(tabs)/explore' },
+      { label: 'Calendar',      icon: 'calendar-outline',      route: '/(tabs)/calendar' },
+      { label: 'Communities',   icon: 'people-outline',        route: '/(tabs)/community' },
+      { label: 'Perks',         icon: 'gift-outline',          route: '/(tabs)/perks' },
+      { label: 'Map',           icon: 'map-outline',           route: '/map' },
+      { label: 'Saved',         icon: 'bookmark-outline',      route: '/saved' },
+      { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
+    ],
+  },
+  {
+    heading: 'Account',
+    items: [
+      { label: 'Profile',  icon: 'person-outline',   route: '/(tabs)/profile' },
+      { label: 'Tickets',  icon: 'ticket-outline',   route: '/tickets' },
+      { label: 'Wallet',   icon: 'wallet-outline',   route: '/payment/wallet' },
+      { label: 'Settings', icon: 'settings-outline', route: '/settings' },
+    ],
+  },
+  {
+    heading: 'Info',
+    items: [
+      { label: 'Help & Support',       icon: 'help-circle-outline',    route: '/help' },
+      { label: 'Terms & Privacy',      icon: 'document-text-outline',  route: '/legal/terms' },
+      { label: 'Community Guidelines', icon: 'shield-checkmark-outline', route: '/legal/guidelines' },
+      { label: 'About CulturePass',    icon: 'information-circle-outline', route: '/about' },
+    ],
+  },
+] as const;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export function WebTopBar() {
   const colors = useColors();
   const { isAuthenticated, user, logout } = useAuth();
@@ -22,43 +72,74 @@ export function WebTopBar() {
   const displayName = user?.displayName ?? user?.username ?? user?.id?.slice(0, 8) ?? 'You';
   const initials = displayName.trim().split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-  // Tab route mapping (Profile removed — access via sidebar avatar / profile page quick menu)
-  const tabRoutes = {
-    Discover: '/(tabs)',
-    Calendar: '/(tabs)/calendar',
-    Community: '/(tabs)/communities',
-    Perks: '/(tabs)/perks',
+  const isTabActive = (route: string) => {
+    const normalizedPath = pathname === '/' ? '/(tabs)' : pathname;
+    return normalizedPath === route || (route !== '/(tabs)' && normalizedPath.startsWith(route));
   };
+
+  const handleNav = (route: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(route as any);
+  };
+
   return (
     <View style={styles.container}>
-      {/* Left: Burger + Logo + Tagline + LocationPicker */}
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#0A0A1A', '#0D1033']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      {/* Subtle indigo glow at bottom edge */}
+      <View style={styles.bottomGlow} pointerEvents="none" />
+
+      {/* ── Left: Avatar/Menu + Logo + Location ── */}
       <View style={styles.left}>
+        {/* Avatar / Menu trigger */}
         <Pressable
-          style={[styles.iconBtn, { padding: 0, marginRight: 12 }]}
-          accessibilityLabel="Menu"
+          style={({ pressed, hovered }: any) => [
+            styles.avatarBtn,
+            hovered && styles.avatarBtnHovered,
+            pressed && { opacity: 0.8 },
+          ]}
+          accessibilityLabel={isAuthenticated ? 'Open profile menu' : 'Open menu'}
           onPress={() => setMenuVisible(true)}
         >
-          {isAuthenticated ? (
-            user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.headerAvatarImg} />
-            ) : (
-              <View style={styles.headerAvatarFallback}>
-                <LinearGradient colors={['#0066CC', '#FFCC00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-                <Text style={styles.headerAvatarText}>{initials}</Text>
-              </View>
-            )
-          ) : (
-            <Ionicons name="menu" size={32} color="#fff" />
+          {isAuthenticated && user?.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImg} />
+          ) : isAuthenticated ? (
+            <LinearGradient
+              colors={[CultureTokens.indigo, CultureTokens.teal]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : null}
+          {(!isAuthenticated || (!user?.avatarUrl)) && (
+            <View style={[StyleSheet.absoluteFill, styles.avatarInner]}>
+              {isAuthenticated
+                ? <Text style={styles.avatarInitials}>{initials}</Text>
+                : <Ionicons name="menu" size={20} color="rgba(255,255,255,0.9)" />
+              }
+            </View>
           )}
         </Pressable>
-        <Pressable style={styles.logoBlock} onPress={() => router.push('/(tabs)')} accessibilityLabel="Home">
+
+        {/* Logo */}
+        <Pressable
+          style={({ pressed }: any) => [styles.logoBlock, pressed && { opacity: 0.8 }]}
+          onPress={() => handleNav('/(tabs)')}
+          accessibilityLabel="CulturePass Home"
+        >
           <LinearGradient
             colors={[CultureTokens.indigo, CultureTokens.coral]}
             style={styles.logoBg}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
           >
-            <Ionicons name="globe-outline" size={22} color="#fff" />
+            <Ionicons name="globe-outline" size={18} color="#fff" />
           </LinearGradient>
           <View>
             <Text style={styles.appName}>CulturePass</Text>
@@ -66,193 +147,249 @@ export function WebTopBar() {
           </View>
         </Pressable>
 
+        {/* Location picker (desktop only) */}
         {isDesktop && (
-          <View style={{ marginLeft: 24 }}>
+          <View style={styles.locationWrap}>
             <LocationPicker />
           </View>
         )}
       </View>
-      
-      {/* Center: Navigation Tabs */}
-      <View style={styles.center}>
-        {Object.entries(tabRoutes).map(([tab, route]) => {
-          // Detect active state logically
-          const normalizedPath = pathname === '/' ? '/(tabs)' : pathname;
-          const isActive = normalizedPath === route || (route !== '/(tabs)' && normalizedPath.startsWith(route));
 
+      {/* ── Center: Navigation tabs ── */}
+      <View style={styles.center}>
+        {TAB_ROUTES.map(({ label, route, icon }) => {
+          const active = isTabActive(route);
           return (
             <Pressable
-              key={tab}
-              style={styles.tab}
-              onPress={() => router.push(route as any)}
-              accessibilityLabel={tab}
+              key={label}
+              style={({ hovered }: any) => [styles.tab, hovered && styles.tabHovered]}
+              onPress={() => handleNav(route)}
+              accessibilityLabel={label}
+              accessibilityRole="link"
             >
-              <Text style={[styles.tabText, isActive && { color: '#FFC857', fontFamily: 'Poppins_700Bold' }]}>{tab}</Text>
-              {isActive && <View style={styles.activeIndicator} />}
+              <Ionicons
+                name={active ? (icon.replace('-outline', '') as any) : icon}
+                size={15}
+                color={active ? CultureTokens.teal : 'rgba(255,255,255,0.55)'}
+                style={styles.tabIcon}
+              />
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                {label}
+              </Text>
+              {active && <View style={styles.activeUnderline} />}
             </Pressable>
           );
         })}
       </View>
-      
-      {/* Right: Search, Notification, Map, Sign Up */}
+
+      {/* ── Right: Action buttons ── */}
       <View style={styles.right}>
         <Pressable
-          style={styles.iconBtn}
+          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Search"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/search');
-          }}
+          onPress={() => handleNav('/search')}
         >
-          <Ionicons name="search" size={20} color={CultureTokens.indigo} />
+          <Ionicons name="search-outline" size={19} color="rgba(255,255,255,0.85)" />
         </Pressable>
+
         <Pressable
-          style={styles.iconBtn}
+          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Notifications"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/notifications');
-          }}
+          onPress={() => handleNav('/notifications')}
         >
-          <Ionicons name="notifications-outline" size={20} color={CultureTokens.indigo} />
+          <Ionicons name="notifications-outline" size={19} color="rgba(255,255,255,0.85)" />
         </Pressable>
+
         <Pressable
-          style={styles.iconBtn}
+          style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
           accessibilityLabel="Map"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/map');
-          }}
+          onPress={() => handleNav('/map')}
         >
-          <Ionicons name="map-outline" size={20} color={CultureTokens.teal} />
+          <Ionicons name="map-outline" size={19} color={CultureTokens.teal} />
         </Pressable>
-        {!isAuthenticated && (
+
+        {!isAuthenticated ? (
           <Pressable
-            style={styles.signUpBtn}
+            style={({ pressed, hovered }: any) => [styles.signInBtn, hovered && styles.signInBtnHovered, pressed && { opacity: 0.88 }]}
             accessibilityLabel="Sign In"
             onPress={() => router.push(routeWithRedirect('/(onboarding)/login', pathname) as any)}
           >
-            <Text style={styles.signUpText}>Sign In</Text>
+            <LinearGradient
+              colors={[CultureTokens.indigo, '#3D4FCC']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Ionicons name="person-outline" size={14} color="#fff" />
+            <Text style={styles.signInText}>Sign In</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={({ pressed, hovered }: any) => [styles.iconBtn, hovered && styles.iconBtnHovered, pressed && { opacity: 0.7 }]}
+            accessibilityLabel="Profile"
+            onPress={() => handleNav('/(tabs)/profile')}
+          >
+            <Ionicons name="person-circle-outline" size={22} color="rgba(255,255,255,0.85)" />
           </Pressable>
         )}
       </View>
 
-      {/* Side Menu Modal */}
-      <Modal transparent visible={menuVisible} onRequestClose={() => setMenuVisible(false)} animationType="fade">
-        <View style={[styles.menuOverlay, { backgroundColor: 'transparent' }]}>
-          <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)' }]} onPress={() => setMenuVisible(false)} />
-          <View style={[styles.menuContent, { backgroundColor: colors.surface }]}>
-            <View style={styles.menuHeader}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>CulturePass</Text>
-              <Pressable onPress={() => setMenuVisible(false)} hitSlop={12}>
-                <Ionicons name="close" size={26} color={colors.text} />
-              </Pressable>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-
-            {isAuthenticated ? (
-              <View style={[styles.menuUserSection, { borderBottomColor: colors.borderLight }]}>
-                {user?.avatarUrl ? (
-                  <Image source={{ uri: user.avatarUrl }} style={styles.menuAvatarImg} />
+      {/* ── Slide-in Menu Modal ── */}
+      <Modal
+        transparent
+        visible={menuVisible}
+        onRequestClose={() => setMenuVisible(false)}
+        animationType="none"
+      >
+        <View style={styles.menuOverlay}>
+          <Pressable
+            style={[StyleSheet.absoluteFill, styles.menuBackdrop]}
+            onPress={() => setMenuVisible(false)}
+          />
+          <View style={[styles.menuPanel, { backgroundColor: colors.surface }]}>
+            {/* Menu header */}
+            <LinearGradient
+              colors={['#0A0A1A', '#0D1033']}
+              style={styles.menuPanelHeader}
+            >
+              <View style={styles.menuPanelHeaderInner}>
+                {isAuthenticated ? (
+                  <Pressable
+                    style={styles.menuUserRow}
+                    onPress={() => { setMenuVisible(false); handleNav('/(tabs)/profile'); }}
+                  >
+                    <View style={styles.menuAvatarWrap}>
+                      {user?.avatarUrl ? (
+                        <Image source={{ uri: user.avatarUrl }} style={styles.menuAvatarImg} />
+                      ) : (
+                        <LinearGradient
+                          colors={[CultureTokens.indigo, CultureTokens.teal]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
+                      {!user?.avatarUrl && (
+                        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+                          <Text style={styles.menuAvatarInitials}>{initials}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.menuUserName} numberOfLines={1}>{displayName}</Text>
+                      <Text style={styles.menuUserEmail} numberOfLines={1}>{user?.email}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.5)" />
+                  </Pressable>
                 ) : (
-                  <View style={styles.menuAvatarFallback}>
-                    <LinearGradient colors={['#0066CC', '#FFCC00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-                    <Text style={styles.menuAvatarText}>{initials}</Text>
+                  <View style={{ gap: 12 }}>
+                    <View style={styles.menuLogoRow}>
+                      <LinearGradient
+                        colors={[CultureTokens.indigo, CultureTokens.coral]}
+                        style={styles.menuLogoBg}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                      >
+                        <Ionicons name="globe-outline" size={16} color="#fff" />
+                      </LinearGradient>
+                      <Text style={styles.menuLogoText}>CulturePass</Text>
+                    </View>
+                    <Pressable
+                      style={styles.menuSignInBtn}
+                      onPress={() => {
+                        setMenuVisible(false);
+                        router.push(routeWithRedirect('/(onboarding)/login', pathname) as any);
+                      }}
+                    >
+                      <LinearGradient
+                        colors={[CultureTokens.indigo, '#3D4FCC']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <Ionicons name="person-outline" size={16} color="#fff" />
+                      <Text style={styles.menuSignInText}>Sign In / Register</Text>
+                    </Pressable>
                   </View>
                 )}
-                <Text style={[styles.menuUserName, { color: colors.text }]} numberOfLines={1}>{displayName}</Text>
-                <Text style={[styles.menuUserEmail, { color: colors.textSecondary }]} numberOfLines={1}>{user?.email}</Text>
               </View>
-            ) : (
-              <View style={[styles.menuUserSection, { borderBottomColor: colors.borderLight }]}>
-                <Pressable
-                  style={styles.signInBtn}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    router.push(routeWithRedirect('/(onboarding)/login', pathname) as any);
-                  }}
-                >
-                  <LinearGradient colors={['#0066CC', '#FFCC00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-                  <Ionicons name="person-outline" size={18} color="#fff" />
-                  <Text style={styles.signInText}>Sign In / Profile</Text>
-                </Pressable>
+            </LinearGradient>
+
+            {/* Location picker on mobile */}
+            {!isDesktop && (
+              <View style={[styles.menuLocationWrap, { borderBottomColor: colors.borderLight }]}>
+                <LocationPicker />
               </View>
             )}
 
-            <View style={styles.menuNavGroup}>
-              {!isDesktop && (
-                <View style={{ marginBottom: 16 }}>
-                  <LocationPicker />
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.menuScrollContent}
+            >
+              {MENU_SECTIONS.map((section) => (
+                <View key={section.heading} style={styles.menuSection}>
+                  <Text style={[styles.menuSectionLabel, { color: colors.textTertiary }]}>
+                    {section.heading.toUpperCase()}
+                  </Text>
+                  <View style={[styles.menuSectionCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    {section.items.map((item, idx) => (
+                      <React.Fragment key={item.route}>
+                        <Pressable
+                          style={({ pressed, hovered }: any) => [
+                            styles.menuItem,
+                            (pressed || hovered) && { backgroundColor: colors.primarySoft },
+                          ]}
+                          onPress={() => {
+                            setMenuVisible(false);
+                            handleNav(item.route);
+                          }}
+                        >
+                          <View style={[styles.menuItemIcon, { backgroundColor: colors.borderLight }]}>
+                            <Ionicons name={item.icon as any} size={16} color={colors.textSecondary} />
+                          </View>
+                          <Text style={[styles.menuItemText, { color: colors.text }]}>{item.label}</Text>
+                          <Ionicons name="chevron-forward" size={13} color={colors.textTertiary} />
+                        </Pressable>
+                        {idx < section.items.length - 1 && (
+                          <View style={[styles.menuItemDivider, { backgroundColor: colors.divider }]} />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </View>
                 </View>
-              )}
-
-              {/* Top links */}
-              {[
-                { label: 'Discover', icon: 'compass-outline', route: '/(tabs)' },
-                { label: 'Explore', icon: 'search-outline', route: '/(tabs)/explore' },
-                { label: 'Calendar', icon: 'calendar-outline', route: '/(tabs)/calendar' },
-                { label: 'Communities', icon: 'people-outline', route: '/(tabs)/communities' },
-                { label: 'Perks', icon: 'gift-outline', route: '/(tabs)/perks' },
-                { label: 'Council', icon: 'business-outline', route: '/(tabs)/council' },
-                { label: 'Map', icon: 'map-outline', route: '/map' },
-                { label: 'Saved', icon: 'bookmark-outline', route: '/saved' },
-                { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
-                { label: 'Profile', icon: 'person-outline', route: '/(tabs)/profile' },
-                { label: 'Settings', icon: 'settings-outline', route: '/settings' },
-              ].map((item, idx) => (
-                <Pressable
-                  key={idx}
-                  style={[styles.menuNavItem]}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    router.push(item.route as any);
-                  }}
-                >
-                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.textSecondary} />
-                  <Text style={[styles.menuNavItemText, { color: colors.text }]}>{item.label}</Text>
-                </Pressable>
-              ))}
-
-              <View style={[styles.menuDivider, { backgroundColor: colors.borderLight }]} />
-
-              {[
-                { label: 'Help & Support', icon: 'help-buoy-outline', route: '/help' },
-                { label: 'Help Centre', icon: 'help-circle-outline', route: '/help' },
-                { label: 'Terms & Privacy', icon: 'document-text-outline', route: '/legal/terms' },
-                { label: 'Community Guidelines', icon: 'shield-checkmark-outline', route: '/legal/guidelines' },
-                { label: 'About CulturePass', icon: 'information-circle-outline', route: '/about' },
-              ].map((item, idx) => (
-                <Pressable
-                  key={`bottom-${idx}`}
-                  style={[styles.menuNavItem]}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    router.push(item.route as any);
-                  }}
-                >
-                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.textSecondary} />
-                  <Text style={[styles.menuNavItemText, { color: colors.text }]}>{item.label}</Text>
-                </Pressable>
               ))}
 
               {isAuthenticated && (
-                <>
-                  <View style={[styles.menuDivider, { backgroundColor: colors.borderLight }]} />
-                  <Pressable
-                    style={[styles.menuNavItem, { backgroundColor: CultureTokens.error + '10' }]}
-                    onPress={() => {
-                      setMenuVisible(false);
-                      logout();
-                    }}
-                  >
-                    <Ionicons name="log-out-outline" size={20} color={CultureTokens.error} />
-                    <Text style={[styles.menuNavItemText, { color: CultureTokens.error }]}>Sign Out</Text>
-                  </Pressable>
-                </>
+                <Pressable
+                  style={({ pressed }: any) => [
+                    styles.menuLogoutBtn,
+                    { borderColor: colors.error + '40' },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    logout();
+                  }}
+                >
+                  <Ionicons name="log-out-outline" size={17} color={colors.error} />
+                  <Text style={[styles.menuLogoutText, { color: colors.error }]}>Sign Out</Text>
+                </Pressable>
               )}
-            </View>
+
+              <View style={styles.menuFooter}>
+                <Text style={[styles.menuFooterText, { color: colors.textTertiary }]}>
+                  CulturePass · v1.0.0
+                </Text>
+              </View>
             </ScrollView>
+
+            <Pressable
+              style={[styles.menuCloseCorner, { borderColor: colors.borderLight }]}
+              onPress={() => setMenuVisible(false)}
+              accessibilityLabel="Close menu"
+            >
+              <Ionicons name="close" size={18} color={colors.text} />
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -260,246 +397,359 @@ export function WebTopBar() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0066CC',
-    borderBottomWidth: 2,
-    borderBottomColor: '#FFCC00',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    minHeight: 72,
-    gap: 12,
+    paddingVertical: 0,
+    paddingHorizontal: 24,
+    minHeight: 64,
+    gap: 8,
+    overflow: 'hidden',
     ...Platform.select({
-      web: { boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' },
+      web: {
+        boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(20px) saturate(1.5)',
+      },
       default: {
         shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 8,
-      },
-    }),
-  },
-  left: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  logoBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
-  },
-  appName: {
-    color: CultureTokens.indigo,
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: 1,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 32,
-  },
-  tagLine: {
-    color: CultureTokens.gold,
-    fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
-    letterSpacing: 0.7,
-  },
-  logoBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  center: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 24,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  tab: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    position: 'relative',
-  },
-  tabText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
-    letterSpacing: 1,
-    ...Platform.select({
-      web: { textShadow: '0px 1px 2px #000' },
-      default: {
-        textShadowColor: '#000',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-      },
-    }),
-  },
-  activeIndicator: {
-    height: 3,
-    backgroundColor: '#FFC857',
-    borderRadius: 2,
-    position: 'absolute',
-    bottom: -4,
-    left: 10,
-    right: 10,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  signUpBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#FFCC00',
-  },
-  signUpText: {
-    color: '#FFC857',
-    fontWeight: '700',
-    fontSize: 16,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: 1,
-    ...Platform.select({
-      web: { textShadow: '0px 1px 2px #22203A' },
-      default: {
-        textShadowColor: '#22203A',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-      },
-    }),
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  menuContent: {
-    width: 320,
-    height: '100%',
-    padding: 32,
-    ...Platform.select({
-      web: { boxShadow: '5px 0px 30px rgba(0,0,0,0.15)' },
-      default: {
-        shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 20,
-        shadowOffset: { width: 5, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 3 },
         elevation: 10,
       },
     }),
   },
-  menuHeader: {
+  bottomGlow: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: CultureTokens.indigo + '60',
+  },
+
+  // ── Left ──
+  left: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
+    gap: 10,
+    flexShrink: 0,
   },
-  menuTitle: {
-    fontSize: 22,
-    fontFamily: 'Poppins_700Bold',
-  },
-  menuUserSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-    borderBottomWidth: 1,
-    paddingBottom: 32,
-  },
-  menuAvatarImg: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    marginBottom: 16,
-  },
-  menuAvatarFallback: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  avatarBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  menuAvatarText: {
-    fontSize: 32,
+  avatarBtnHovered: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  avatarImg: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  avatarInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 13,
     fontFamily: 'Poppins_700Bold',
     color: '#fff',
   },
-  menuUserName: {
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 4,
+  logoBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  menuUserEmail: {
+  logoBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appName: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 21,
+  },
+  tagLine: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    fontFamily: 'Poppins_500Medium',
+    letterSpacing: 0.3,
+  },
+  locationWrap: {
+    marginLeft: 16,
+  },
+
+  // ── Center ──
+  center: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    position: 'relative',
+  },
+  tabHovered: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  tabIcon: {
+    opacity: 0.9,
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.55)',
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Poppins_500Medium',
+    letterSpacing: 0.1,
+  },
+  tabTextActive: {
+    color: CultureTokens.teal,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  activeUnderline: {
+    position: 'absolute',
+    bottom: 4,
+    left: 12,
+    right: 12,
+    height: 2,
+    backgroundColor: CultureTokens.teal,
+    borderRadius: 1,
+  },
+
+  // ── Right ──
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  iconBtnHovered: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   signInBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    width: '100%',
-    gap: 8,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
     overflow: 'hidden',
-    position: 'relative',
+    marginLeft: 4,
+  },
+  signInBtnHovered: {
+    opacity: 0.9,
   },
   signInText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.2,
   },
-  menuNavGroup: {
-    gap: 4,
+
+  // ── Menu Modal ──
+  menuOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
   },
-  menuNavItem: {
+  menuBackdrop: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  menuPanel: {
+    width: 320,
+    height: '100%',
+    ...Platform.select({
+      web: { boxShadow: '4px 0 32px rgba(0,0,0,0.3)' },
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        shadowOffset: { width: 4, height: 0 },
+        elevation: 12,
+      },
+    }),
+  },
+  menuPanelHeader: {
+    paddingBottom: 20,
+  },
+  menuPanelHeaderInner: {
+    padding: 20,
+    paddingTop: 24,
+  },
+  menuUserRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    gap: 12,
   },
-  menuNavItemText: {
-    fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
-  },
-  menuDivider: {
-    height: 1,
-    marginVertical: 8,
-  },
-  headerAvatarImg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  headerAvatarFallback: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  menuAvatarWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    flexShrink: 0,
+  },
+  menuAvatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  menuAvatarInitials: {
+    fontSize: 18,
+    fontFamily: 'Poppins_700Bold',
+    color: '#fff',
+  },
+  menuUserName: {
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#fff',
+  },
+  menuUserEmail: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 1,
+  },
+  menuLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  menuLogoBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatarText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_700Bold',
+  menuLogoText: {
     color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+  },
+  menuSignInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  menuSignInText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  menuLocationWrap: {
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  menuScrollContent: {
+    padding: 16,
+    gap: 16,
+    paddingBottom: 40,
+  },
+  menuSection: {
+    gap: 6,
+  },
+  menuSectionLabel: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.2,
+    marginLeft: 4,
+  },
+  menuSectionCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    gap: 12,
+  },
+  menuItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  menuItemText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+  },
+  menuItemDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 14,
+  },
+  menuLogoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  menuLogoutText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  menuFooter: {
+    alignItems: 'center',
+    paddingTop: 8,
+    opacity: 0.4,
+  },
+  menuFooterText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+  },
+  menuCloseCorner: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
 });

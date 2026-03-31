@@ -124,6 +124,13 @@
       ],
       "expo-notifications",
       [
+        "expo-calendar",
+        {
+          "calendarPermission": "CulturePass accesses your calendar to sync cultural events you're attending.",
+          "remindersPermission": "CulturePass uses Reminders to add event alerts to your schedule."
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "CulturePass uses the camera to scan event QR codes and update your profile photo."

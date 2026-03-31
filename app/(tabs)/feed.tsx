@@ -381,7 +381,7 @@ export default function CultureFeedScreen() {
                   {activeFilter === 'for-you' && (
                     <Pressable
                       style={[sc.emptyCtaSecondary, { borderColor: colors.border }]}
-                      onPress={() => router.push('/(tabs)/')}
+                      onPress={() => router.push('/(tabs)')}
                       accessibilityRole="button"
                       accessibilityLabel="Go to Discovery"
                       accessibilityHint="Opens the discovery home with featured rails"

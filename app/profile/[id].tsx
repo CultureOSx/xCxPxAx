@@ -347,7 +347,7 @@ export default function ProfileDetailScreen() {
                 title="Heritage Playlist"
                 onItemPress={(item) => {
                   if (Platform.OS !== 'web') Haptics.impactAsync();
-                  router.push('/(tabs)/discovery');
+                  router.push('/(tabs)');
                 }}
               />
             )}
