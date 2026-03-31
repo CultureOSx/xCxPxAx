@@ -15,6 +15,28 @@ export interface SavedContact {
   phone?: string;
   savedAt: string;
   userId?: string;
+  /** true if imported from phone contacts */
+  fromPhone?: boolean;
+  interests?: string[];
+  communities?: string[];
+}
+
+export interface PhoneContact {
+  /** expo-contacts id */
+  id: string;
+  name: string;
+  phoneNumbers?: string[];
+  emails?: string[];
+  /** matched CulturePass user — populated after server lookup */
+  matched?: {
+    cpid: string;
+    userId: string;
+    username?: string;
+    avatarUrl?: string;
+    tier?: string;
+    city?: string;
+  } | null;
+  invited?: boolean;
 }
 
 interface ContactsContextValue {
@@ -25,21 +47,33 @@ interface ContactsContextValue {
   getContact: (cpid: string) => SavedContact | undefined;
   updateContact: (cpid: string, updates: Partial<SavedContact>) => void;
   clearContacts: () => void;
+  /** Phone-synced contacts (raw from device) */
+  phoneContacts: PhoneContact[];
+  setPhoneContacts: (contacts: PhoneContact[]) => void;
+  markInvited: (phoneContactId: string) => void;
+  /** cpids of users already imported from phone */
+  importedFromPhone: Set<string>;
 }
 
 const CONTACTS_KEY = '@culturepass_saved_contacts';
+const PHONE_CONTACTS_KEY = '@culturepass_phone_contacts';
 
 const ContactsContext = createContext<ContactsContextValue | null>(null);
 
 export function ContactsProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<SavedContact[]>([]);
+  const [phoneContacts, setPhoneContactsState] = useState<PhoneContact[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(CONTACTS_KEY).then(stored => {
+    Promise.all([
+      AsyncStorage.getItem(CONTACTS_KEY),
+      AsyncStorage.getItem(PHONE_CONTACTS_KEY),
+    ]).then(([stored, storedPhone]) => {
       if (stored) {
-        try {
-          setContacts(JSON.parse(stored));
-        } catch {}
+        try { setContacts(JSON.parse(stored)); } catch {}
+      }
+      if (storedPhone) {
+        try { setPhoneContactsState(JSON.parse(storedPhone)); } catch {}
       }
     });
   }, []);
@@ -90,6 +124,26 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
     AsyncStorage.removeItem(CONTACTS_KEY);
   }, []);
 
+  const setPhoneContacts = useCallback((updated: PhoneContact[]) => {
+    setPhoneContactsState(updated);
+    AsyncStorage.setItem(PHONE_CONTACTS_KEY, JSON.stringify(updated));
+  }, []);
+
+  const markInvited = useCallback((phoneContactId: string) => {
+    setPhoneContactsState(prev => {
+      const updated = prev.map(c =>
+        c.id === phoneContactId ? { ...c, invited: true } : c
+      );
+      AsyncStorage.setItem(PHONE_CONTACTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const importedFromPhone = useMemo<Set<string>>(
+    () => new Set(contacts.filter(c => c.fromPhone).map(c => c.cpid)),
+    [contacts]
+  );
+
   const value = useMemo(() => ({
     contacts,
     addContact,
@@ -98,7 +152,15 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
     getContact,
     updateContact,
     clearContacts,
-  }), [contacts, addContact, removeContact, isContactSaved, getContact, updateContact, clearContacts]);
+    phoneContacts,
+    setPhoneContacts,
+    markInvited,
+    importedFromPhone,
+  }), [
+    contacts, addContact, removeContact, isContactSaved, getContact,
+    updateContact, clearContacts, phoneContacts, setPhoneContacts,
+    markInvited, importedFromPhone,
+  ]);
 
   return (
     <ContactsContext.Provider value={value}>

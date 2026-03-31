@@ -85,6 +85,7 @@ export default function AccountSettingsScreen() {
         { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.gold, route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,    route: '/settings/notifications' },
         { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: CultureTokens.teal,   route: '/settings/location' },
+        { icon: 'calendar-outline',      label: 'Calendar Sync',        sub: 'Apple, Google, Outlook & device',  color: CultureTokens.indigo, route: '/settings/calendar-sync' },
       ],
     },
     {

@@ -14,11 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
 import { useCallback } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 // ─── Tier config ─────────────────────────────────────────────────────────────
 
@@ -505,6 +507,89 @@ export default function ContactDetailScreen() {
             <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </Pressable>
         </View>
+
+        {/* ── Invite banner ── */}
+        <Animated.View entering={FadeInDown.delay(80).springify()} style={{ marginHorizontal: 20, marginTop: 24 }}>
+          <Pressable onPress={handleShare}>
+            <LinearGradient
+              colors={gradients.culturepassBrand}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.inviteBanner}
+            >
+              <View style={styles.inviteBannerInner}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inviteBannerTitle}>
+                    Invite {contact.name?.split(' ')[0] ?? 'this contact'}
+                  </Text>
+                  <Text style={styles.inviteBannerSub}>
+                    Share their CulturePass profile or send them an invite link
+                  </Text>
+                </View>
+                <View style={styles.inviteBannerIconWrap}>
+                  <Ionicons name="share-social" size={22} color="#fff" />
+                </View>
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+
+        {/* ── Similar communities / events ── */}
+        <Animated.View entering={FadeInDown.delay(140).springify()} style={{ marginHorizontal: 20, marginTop: 24 }}>
+          <Text style={[styles.recSectionTitle, { color: colors.text }]}>You Might Also Like</Text>
+          <Text style={[styles.recSectionSub, { color: colors.textSecondary }]}>
+            {contact.city ? `Communities and events in ${contact.city}` : 'Communities your contacts enjoy'}
+          </Text>
+        </Animated.View>
+
+        {[
+          {
+            delay: 160,
+            icon: 'people-circle-outline',
+            color: CultureTokens.indigo,
+            title: contact.city ? `${contact.city} Cultural Network` : 'Cultural Network',
+            sub: 'Community • Join with your contact',
+            tag: 'Community',
+            route: '/(tabs)/community',
+          },
+          {
+            delay: 200,
+            icon: 'calendar-outline',
+            color: CultureTokens.teal,
+            title: 'Upcoming Cultural Events',
+            sub: contact.city ? `Events near ${contact.city}` : 'Events near you',
+            tag: 'Events',
+            route: '/(tabs)',
+          },
+          {
+            delay: 240,
+            icon: 'compass-outline',
+            color: CultureTokens.coral,
+            title: 'Discover More Together',
+            sub: 'Explore the cultural directory',
+            tag: 'Explore',
+            route: '/(tabs)/explore',
+          },
+        ].map((item, idx) => (
+          <Animated.View key={item.route + idx} entering={FadeInDown.delay(item.delay).springify()}>
+            <Pressable
+              style={[styles.recCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(item.route as any); }}
+            >
+              <View style={[styles.recIcon, { backgroundColor: item.color + '15' }]}>
+                <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={22} color={item.color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.recTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
+                <Text style={[styles.recSub, { color: colors.textSecondary }]} numberOfLines={1}>{item.sub}</Text>
+              </View>
+              <View style={[styles.recTag, { backgroundColor: item.color + '12' }]}>
+                <Text style={[styles.recTagText, { color: item.color }]}>{item.tag}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+            </Pressable>
+          </Animated.View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -690,4 +775,36 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: CultureTokens.indigo,
   },
   backLinkText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
+
+  // Invite banner
+  inviteBanner: { borderRadius: 20, overflow: 'hidden' },
+  inviteBannerInner: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 },
+  inviteBannerTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  inviteBannerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4, lineHeight: 18 },
+  inviteBannerIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Recommendations
+  recSectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 4 },
+  recSectionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 12 },
+  recCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  recIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  recTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  recSub: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  recTag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  recTagText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
 });
