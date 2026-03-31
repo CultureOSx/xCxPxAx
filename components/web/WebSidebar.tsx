@@ -62,7 +62,12 @@ const SPONSOR_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Admin Hub', icon: 'shield-half-outline', iconActive: 'shield-half', route: '/admin/dashboard', matchPrefix: false },
+  { label: 'Events', icon: 'calendar-outline', iconActive: 'calendar', route: '/admin/events', matchPrefix: true },
   { label: 'Users', icon: 'people-outline', iconActive: 'people', route: '/admin/users', matchPrefix: true },
+  { label: 'Profiles', icon: 'id-card-outline', iconActive: 'id-card', route: '/admin/profiles', matchPrefix: true },
+  { label: 'Communities', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/admin/communities', matchPrefix: true },
+  { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/admin/perks', matchPrefix: true },
+  { label: 'Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/admin/tickets', matchPrefix: true },
   { label: 'Moderation', icon: 'eye-outline', iconActive: 'eye', route: '/admin/moderation', matchPrefix: true },
   { label: 'Audit Logs', icon: 'list-outline', iconActive: 'list', route: '/admin/audit-logs', matchPrefix: true },
   { label: 'Notify', icon: 'megaphone-outline', iconActive: 'megaphone', route: '/admin/notifications', matchPrefix: true },

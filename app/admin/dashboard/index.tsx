@@ -82,7 +82,12 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 const ADMIN_TOOLS: AdminTool[] = [
+  { id: 'events',     label: 'Events',            icon: 'calendar-outline',          route: '/admin/events',          color: CultureTokens.gold },
   { id: 'users',      label: 'Users',             icon: 'people-outline',            route: '/admin/users',           color: CultureTokens.indigo },
+  { id: 'profiles',   label: 'Profiles',          icon: 'id-card-outline',           route: '/admin/profiles',        color: CultureTokens.teal },
+  { id: 'communities',label: 'Communities',       icon: 'people-circle-outline',     route: '/admin/communities',     color: CultureTokens.indigo },
+  { id: 'perks',      label: 'Perks',             icon: 'gift-outline',              route: '/admin/perks',           color: CultureTokens.coral },
+  { id: 'tickets',    label: 'Tickets',           icon: 'ticket-outline',            route: '/admin/tickets',         color: CultureTokens.purple },
   { id: 'audit',      label: 'Audit Logs',         icon: 'list-outline',              route: '/admin/audit-logs' },
   { id: 'notify',     label: 'Notifications',      icon: 'megaphone-outline',         route: '/admin/notifications',   color: CultureTokens.coral },
   { id: 'finance',    label: 'Finance',            icon: 'card-outline',              route: '/admin/finance',         color: CultureTokens.teal },

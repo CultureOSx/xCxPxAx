@@ -265,6 +265,54 @@ export default function SuperAdminCockpit() {
             </GlassView>
           </Animated.View>
 
+          {/* CRUD Management Section */}
+          <Animated.View entering={FadeInDown.delay(500).springify()}>
+            <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Record Management (CRUD)</Text>
+            </View>
+            <GlassView style={[styles.actionGroup, { borderColor: colors.borderLight }]}>
+              <ActionItem
+                title="Manage Events"
+                description="List, edit, and moderate all platform events"
+                icon="calendar-outline"
+                color={CultureTokens.gold}
+                onPress={() => router.push('/admin/events')}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <ActionItem
+                title="Manage Communities"
+                description="Administer diaspora communities and groups"
+                icon="people-circle-outline"
+                color={CultureTokens.indigo}
+                onPress={() => router.push('/admin/communities')}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <ActionItem
+                title="Manage Profiles"
+                description="Entities, Artists, Venues, and Businesses"
+                icon="id-card-outline"
+                color={CultureTokens.teal}
+                onPress={() => router.push('/admin/profiles')}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <ActionItem
+                title="Manage Perks & Coupons"
+                description="Control member benefit listings and codes"
+                icon="gift-outline"
+                color={CultureTokens.coral}
+                onPress={() => router.push('/admin/perks')}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <ActionItem
+                title="Manage Tickets & Orders"
+                description="View global ticket sales and booking records"
+                icon="ticket-outline"
+                color={CultureTokens.purple}
+                onPress={() => router.push('/admin/tickets')}
+              />
+            </GlassView>
+          </Animated.View>
+
         </ScrollView>
       </View>
     </ErrorBoundary>
