@@ -612,6 +612,8 @@ const admin = {
     const q = qs.toString();
     return request<{ logs: AdminAuditLog[]; limit: number; count: number }>('GET', `api/admin/audit-logs${q ? `?${q}` : ''}`);
   },
+  algoliaBackfill: (payload?: { force?: boolean }) => request<{ ok: boolean }>('POST', 'api/admin/algolia-backfill', payload),
+  geohashBackfill: (payload?: { forceGeoHash?: boolean; overwriteCoordinates?: boolean }) => request<{ ok: boolean }>('POST', 'api/admin/geohash-backfill', payload),
   auditLogsCsv: async (params?: { limit?: number; action?: string; actorId?: string; from?: string; to?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit != null) qs.set('limit', String(params.limit));

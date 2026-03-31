@@ -53,6 +53,7 @@ const ROLE_META: Record<UserRole, { label: string; description: string; color: s
   moderator:     { label: 'Moderator',      description: 'Reviews content & reports',    color: '#5AC8FA',              icon: 'shield-outline' },
   admin:         { label: 'Admin',          description: 'Full platform access',         color: '#5856D6',              icon: 'key-outline' },
   platformAdmin: { label: 'Platform Admin', description: 'Super administrator',          color: CultureTokens.coral,    icon: 'star-outline' },
+  superAdmin:    { label: 'SuperAdmin',     description: 'Root platform owner',          color: CultureTokens.purple,   icon: 'rocket-outline' },
 };
 
 const ROLE_KEYS = Object.keys(ROLE_META) as UserRole[];

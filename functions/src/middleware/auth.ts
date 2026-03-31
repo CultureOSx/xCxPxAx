@@ -58,8 +58,11 @@ export const ROLE_RANK: Record<UserRole, number> = {
   cityAdmin: 2,
   moderator: 3,
   admin: 4,
-  platformAdmin: 5,
+  platformAdmin: 4,
+  superAdmin: 5,
 };
+
+const SUPER_ADMIN_IDS = ['1VLiq1SEUzWNM7J2XScWn3UbFI52'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -67,6 +70,7 @@ export const ROLE_RANK: Record<UserRole, number> = {
 
 /** Returns the user's numeric rank. */
 export function userRank(user: RequestUser): number {
+  if (SUPER_ADMIN_IDS.includes(user.id)) return ROLE_RANK['superAdmin'];
   return ROLE_RANK[user.role] ?? 0;
 }
 

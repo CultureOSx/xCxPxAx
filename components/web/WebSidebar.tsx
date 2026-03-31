@@ -75,6 +75,10 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Updates', icon: 'newspaper-outline', iconActive: 'newspaper', route: '/admin/updates', matchPrefix: true },
 ];
 
+const SUPERADMIN_NAV: NavItem[] = [
+  { label: 'Cockpit (Root)', icon: 'rocket-outline', iconActive: 'rocket', route: '/admin/cockpit', matchPrefix: true },
+];
+
 const BOTTOM_NAV: NavItem[] = [
   { label: 'Settings', icon: 'settings-outline', iconActive: 'settings', route: '/settings' },
   { label: 'Help', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
@@ -175,7 +179,7 @@ export function WebSidebar() {
   const { s, r } = getSidebarStyles(colors);
   const isDark = useIsDark();
   const { user, logout, isAuthenticated } = useAuth();
-  const { isOrganizer, isAdmin, role } = useRole();
+  const { isOrganizer, isAdmin, isSuperAdmin, role } = useRole();
   const isVenue = role === 'business';
   const isSponsor = role === 'sponsor';
   const { data: councilData } = useCouncil();
@@ -406,6 +410,7 @@ export function WebSidebar() {
         {isVenue && <NavSection label="Venue" mutedColor={mutedColor} colors={colors}>{VENUE_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
         {isSponsor && <NavSection label="Sponsor" mutedColor={mutedColor} colors={colors}>{SPONSOR_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
         {isAdmin && <NavSection label="Admin" mutedColor={mutedColor} colors={colors}>{ADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isSuperAdmin && <NavSection label="SuperAdmin" mutedColor={mutedColor} colors={colors}>{SUPERADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
       </ScrollView>
 
       {/* Council + Bottom Section (unchanged) */}

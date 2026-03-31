@@ -22,7 +22,10 @@ const ROLE_RANK: Record<UserRole, number> = {
   moderator: 3,
   admin: 4,
   platformAdmin: 4,
+  superAdmin: 5,
 };
+
+const SUPER_ADMIN_IDS = ['1VLiq1SEUzWNM7J2XScWn3UbFI52'];
 
 /**
  * Role-aware hook.
@@ -33,20 +36,27 @@ const ROLE_RANK: Record<UserRole, number> = {
  */
 export function useRole() {
   const { user, isAuthenticated, isLoading, isRestoring } = useAuth();
-  const role: UserRole = (user?.role as UserRole) ?? 'user';
+  
+  // Set role based on hardcoded ID list or existing user role
+  let role: UserRole = (user?.role as UserRole) ?? 'user';
+  if (user?.id && SUPER_ADMIN_IDS.includes(user.id)) {
+    role = 'superAdmin';
+  }
 
   return {
     role,
     isAuthenticated,
     isLoading: isLoading || isRestoring,
-    /** rank ≥ organizer (organizer, business, sponsor, cityAdmin, moderator, admin, platformAdmin) */
+    /** rank >= organizer */
     isOrganizer: isAuthenticated && ROLE_RANK[role] >= ROLE_RANK['organizer'],
-    /** rank ≥ cityAdmin */
+    /** rank >= cityAdmin */
     isCityAdmin: isAuthenticated && ROLE_RANK[role] >= ROLE_RANK['cityAdmin'],
-    /** rank ≥ moderator */
+    /** rank >= moderator */
     isModerator: isAuthenticated && ROLE_RANK[role] >= ROLE_RANK['moderator'],
-    /** rank ≥ admin */
+    /** rank >= admin */
     isAdmin: isAuthenticated && ROLE_RANK[role] >= ROLE_RANK['admin'],
+    /** exact super admin check */
+    isSuperAdmin: isAuthenticated && ROLE_RANK[role] >= ROLE_RANK['superAdmin'],
     /** exact role match — use for specific roles like 'business' */
     hasRole: (...roles: UserRole[]) => isAuthenticated && roles.includes(role),
     /** rank comparison — use for "at least" checks */

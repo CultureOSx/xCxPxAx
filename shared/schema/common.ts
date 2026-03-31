@@ -1,5 +1,5 @@
 export type MembershipTier = 'free' | 'plus' | 'elite' | 'pro' | 'premium' | 'vip';
-export type UserRole = 'user' | 'organizer' | 'business' | 'sponsor' | 'cityAdmin' | 'platformAdmin' | 'moderator' | 'admin';
+export type UserRole = 'user' | 'organizer' | 'business' | 'sponsor' | 'cityAdmin' | 'platformAdmin' | 'moderator' | 'admin' | 'superAdmin';
 export type EntityType = 'community' | 'business' | 'venue' | 'artist' | 'organisation';
 export type TicketStatus = 'confirmed' | 'used' | 'cancelled' | 'expired';
 export type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed';

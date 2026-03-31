@@ -34,6 +34,7 @@ interface MenuEntry {
   badge?: string;
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
+  requiresSuperAdmin?: boolean;
 }
 
 interface MenuSection {
@@ -96,6 +97,12 @@ const SECTIONS: MenuSection[] = [
     title: 'Admin',
     items: [
       { id: 'admin', label: 'Admin Terminal', icon: 'shield-checkmark-outline', route: '/admin/dashboard/index', requiresAdmin: true, color: CultureTokens.coral },
+    ],
+  },
+  {
+    title: 'SuperAdmin',
+    items: [
+      { id: 'cockpit', label: 'Cockpit (Root)', icon: 'rocket-outline', route: '/admin/cockpit', requiresSuperAdmin: true, color: CultureTokens.purple },
     ],
   },
 ];
@@ -194,7 +201,7 @@ export default function MenuScreen() {
   const { isDesktop, contentWidth, hPad } = useLayout();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { isAdmin } = useRole();
+  const { isAdmin, isSuperAdmin } = useRole();
 
   const visibleSections = useMemo<MenuSection[]>(() =>
     SECTIONS
@@ -203,11 +210,12 @@ export default function MenuScreen() {
         items: section.items.filter((item) => {
           if (item.requiresAuth  && !isAuthenticated) return false;
           if (item.requiresAdmin && !isAdmin)         return false;
+          if (item.requiresSuperAdmin && !isSuperAdmin) return false;
           return true;
         }),
       }))
       .filter((section) => section.items.length > 0),
-    [isAuthenticated, isAdmin],
+    [isAuthenticated, isAdmin, isSuperAdmin],
   );
 
   const handleLogout = async () => {
