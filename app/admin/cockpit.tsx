@@ -25,7 +25,7 @@ function CockpitCard({ title, value, icon, color, delay }: { title: string, valu
     <Animated.View entering={FadeInDown.delay(delay).springify().damping(20)} style={styles.cardWrapper}>
       <GlassView style={[styles.card, { borderColor: colors.borderLight }]}>
         <View style={[styles.cardIconWrap, { backgroundColor: color + '15' }]}>
-          <Ionicons name={icon} size={20} color={color} />
+          <Ionicons name={icon} size={18} color={color} />
         </View>
         <View style={styles.cardInfo}>
           <Text style={[styles.cardValue, { color: colors.text }]}>{value}</Text>
@@ -36,34 +36,38 @@ function CockpitCard({ title, value, icon, color, delay }: { title: string, valu
   );
 }
 
-// Action Item using Liquid Glass
-function ActionItem({ title, description, icon, color, danger, onPress, pending }: { title: string, description: string, icon: keyof typeof Ionicons.glyphMap, color: string, danger?: boolean, onPress: () => void, pending?: boolean }) {
+// Action Item using Liquid Glass (Tile version)
+function ActionItem({ title, description, icon, color, danger, onPress, pending, delay = 0 }: { title: string, description: string, icon: keyof typeof Ionicons.glyphMap, color: string, danger?: boolean, onPress: () => void, pending?: boolean, delay?: number }) {
   const colors = useColors();
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.actionItem,
-        pressed && { backgroundColor: danger ? color + '10' : colors.primarySoft },
-      ]}
-      onPress={() => {
-        if (!isWeb) Haptics.selectionAsync();
-        onPress();
-      }}
-      disabled={pending}
-    >
-      <View style={[styles.actionIconWrap, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.actionTitle, { color: danger ? color : colors.text }]}>{title}</Text>
-        <Text style={[styles.actionDesc, { color: colors.textTertiary }]}>{description}</Text>
-      </View>
-      {pending ? (
-        <ActivityIndicator size="small" color={color} />
-      ) : (
-        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-      )}
-    </Pressable>
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.actionGridItem}>
+      <GlassView style={[styles.actionCard, { borderColor: danger ? color + '40' : colors.borderLight }]}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionItem,
+            pressed && { backgroundColor: danger ? color + '10' : colors.primarySoft },
+          ]}
+          onPress={() => {
+            if (!isWeb) Haptics.selectionAsync();
+            onPress();
+          }}
+          disabled={pending}
+        >
+          <View style={[styles.actionIconWrap, { backgroundColor: color + '15' }]}>
+            <Ionicons name={icon} size={16} color={color} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.actionTitle, { color: danger ? color : colors.text }]}>{title}</Text>
+            <Text style={[styles.actionDesc, { color: colors.textTertiary }]} numberOfLines={1}>{description}</Text>
+          </View>
+          {pending ? (
+            <ActivityIndicator size="small" color={color} />
+          ) : (
+            <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+          )}
+        </Pressable>
+      </GlassView>
+    </Animated.View>
   );
 }
 
@@ -213,105 +217,224 @@ export default function SuperAdminCockpit() {
             </View>
           </GlassContainer>
 
-          {/* Core Actions */}
+          {/* ── System Ops & Infrastructure ──────────────────────────────── */}
           <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Agentic Ops & Syncing</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>System Ops & Infrastructure</Text>
           </View>
           
-          <Animated.View entering={FadeInDown.delay(300).springify()}>
-            <GlassView style={[styles.actionGroup, { borderColor: colors.borderLight }]}>
-              <ActionItem
-                title="Sync Algolia Databases"
-                description="Trigger manual sync from Firestore to all Algolia Search indexes"
-                icon="logo-amplify"
-                color={CultureTokens.indigo}
-                onPress={() => algoliaMutation.mutate()}
-                pending={algoliaMutation.isPending}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="Align Geohashes & Location"
-                description="Force AU postcode alignment and radius indexing globally"
-                icon="earth-outline"
-                color={CultureTokens.teal}
-                onPress={() => geoMutation.mutate()}
-                pending={geoMutation.isPending}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="View Full Audit Logs"
-                description="Access unmodified security and operation logs for platform"
-                icon="list-outline"
-                color={colors.primary}
-                onPress={() => router.push('/admin/audit-logs')}
-              />
-            </GlassView>
-          </Animated.View>
+          <View style={styles.grid}>
+            <ActionItem
+              delay={300}
+              title="Sync Algolia"
+              description="Firestore to Search indexes"
+              icon="logo-amplify"
+              color={CultureTokens.indigo}
+              onPress={() => algoliaMutation.mutate()}
+              pending={algoliaMutation.isPending}
+            />
+            <ActionItem
+              delay={320}
+              title="Align Geohashes"
+              description="AU postcode alignment"
+              icon="earth-outline"
+              color={CultureTokens.teal}
+              onPress={() => geoMutation.mutate()}
+              pending={geoMutation.isPending}
+            />
+            <ActionItem
+              delay={340}
+              title="Platform Settings"
+              description="Flags & configuration"
+              icon="settings-outline"
+              color={colors.primary}
+              onPress={() => router.push('/admin/platform')}
+            />
+            <ActionItem
+              delay={360}
+              title="Discover Curation"
+              description="Rail & spotlight curation"
+              icon="sparkles-outline"
+              color={CultureTokens.gold}
+              onPress={() => router.push('/admin/discover')}
+            />
+          </View>
 
-          {/* Danger Zone */}
-          <Animated.View entering={FadeInDown.delay(400).springify()}>
-            <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-              <Text style={[styles.sectionTitle, { color: CultureTokens.coral }]}>Danger Zone</Text>
-            </View>
-            <GlassView style={[styles.actionGroup, { borderColor: CultureTokens.coral + '40', borderWidth: 1 }]}>
-              <ActionItem
-                title={maintenanceMode ? "Restore Normal Operation" : "Engage Maintenance Mode"}
-                description="Locks out all non-admin sessions instantly"
-                icon={maintenanceMode ? "lock-open-outline" : "lock-closed-outline"}
-                color={maintenanceMode ? CultureTokens.gold : CultureTokens.coral}
-                danger
-                onPress={toggleMaintenanceMode}
-              />
-            </GlassView>
-          </Animated.View>
+          {/* ── People & Governance ───────────────────────────────────────── */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>People & Governance</Text>
+          </View>
+          
+          <View style={styles.grid}>
+            <ActionItem
+              delay={380}
+              title="Manage Users"
+              description="Registry & role audits"
+              icon="people-outline"
+              color={CultureTokens.indigo}
+              onPress={() => router.push('/admin/users')}
+            />
+            <ActionItem
+              delay={400}
+              title="Handle Approvals"
+              description="Domain moderation"
+              icon="at-outline"
+              color={CultureTokens.purple}
+              onPress={() => router.push('/admin/handles')}
+            />
+            <ActionItem
+              delay={420}
+              title="Moderation"
+              description="Reports & flagging"
+              icon="eye-outline"
+              color={CultureTokens.coral}
+              onPress={() => router.push('/admin/moderation')}
+            />
+            <ActionItem
+              delay={440}
+              title="Compliance"
+              description="Data audits & GDPR"
+              icon="shield-checkmark-outline"
+              color={CultureTokens.teal}
+              onPress={() => router.push('/admin/data-compliance')}
+            />
+          </View>
 
-          {/* CRUD Management Section */}
-          <Animated.View entering={FadeInDown.delay(500).springify()}>
-            <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-              <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Record Management (CRUD)</Text>
-            </View>
-            <GlassView style={[styles.actionGroup, { borderColor: colors.borderLight }]}>
-              <ActionItem
-                title="Manage Events"
-                description="List, edit, and moderate all platform events"
-                icon="calendar-outline"
-                color={CultureTokens.gold}
-                onPress={() => router.push('/admin/events')}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="Manage Communities"
-                description="Administer diaspora communities and groups"
-                icon="people-circle-outline"
-                color={CultureTokens.indigo}
-                onPress={() => router.push('/admin/communities')}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="Manage Profiles"
-                description="Entities, Artists, Venues, and Businesses"
-                icon="id-card-outline"
-                color={CultureTokens.teal}
-                onPress={() => router.push('/admin/profiles')}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="Manage Perks & Coupons"
-                description="Control member benefit listings and codes"
-                icon="gift-outline"
-                color={CultureTokens.coral}
-                onPress={() => router.push('/admin/perks')}
-              />
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
-              <ActionItem
-                title="Manage Tickets & Orders"
-                description="View global ticket sales and booking records"
-                icon="ticket-outline"
-                color={CultureTokens.purple}
-                onPress={() => router.push('/admin/tickets')}
-              />
-            </GlassView>
-          </Animated.View>
+          {/* ── Content Lifecycle (CRUD) ──────────────────────────────────── */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Content Lifecycle (CRUD)</Text>
+          </View>
+          
+          <View style={styles.grid}>
+            <ActionItem
+              delay={460}
+              title="Create Event"
+              description="Multi-step wizard"
+              icon="add-circle"
+              color={CultureTokens.gold}
+              onPress={() => router.push('/event/create')}
+            />
+            <ActionItem
+              delay={480}
+              title="Manage Events"
+              description="Master event list"
+              icon="calendar-outline"
+              color={CultureTokens.indigo}
+              onPress={() => router.push('/admin/events')}
+            />
+            <ActionItem
+              delay={500}
+              title="Profiles"
+              description="Artists & Venues"
+              icon="id-card-outline"
+              color={CultureTokens.teal}
+              onPress={() => router.push('/admin/profiles')}
+            />
+            <ActionItem
+              delay={520}
+              title="Communities"
+              description="Diaspora groups"
+              icon="people-circle-outline"
+              color={CultureTokens.indigo}
+              onPress={() => router.push('/admin/communities')}
+            />
+            <ActionItem
+              delay={540}
+              title="Taxonomy"
+              description="Cultural metadata tags"
+              icon="pricetags-outline"
+              color={CultureTokens.purple}
+              onPress={() => router.push('/admin/platform')}
+            />
+            <ActionItem
+              delay={560}
+              title="Updates"
+              description="Microblog entries"
+              icon="newspaper-outline"
+              color={CultureTokens.coral}
+              onPress={() => router.push('/admin/updates')}
+            />
+            <ActionItem
+              delay={580}
+              title="Locations"
+              description="Council data & GIS"
+              icon="location-outline"
+              color={CultureTokens.teal}
+              onPress={() => router.push('/admin/locations')}
+            />
+          </View>
+
+          {/* ── Marketplace & Logistics ───────────────────────────────────── */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Marketplace & Logistics</Text>
+          </View>
+          
+          <View style={styles.grid}>
+            <ActionItem
+              delay={600}
+              title="Tickets"
+              description="Orders & bookings"
+              icon="ticket-outline"
+              color={CultureTokens.purple}
+              onPress={() => router.push('/admin/tickets')}
+            />
+            <ActionItem
+              delay={620}
+              title="Perks"
+              description="Benefit listings"
+              icon="gift-outline"
+              color={CultureTokens.coral}
+              onPress={() => router.push('/admin/perks')}
+            />
+            <ActionItem
+              delay={640}
+              title="Finance"
+              description="Stripe & subscriptions"
+              icon="card-outline"
+              color={CultureTokens.gold}
+              onPress={() => router.push('/admin/finance')}
+            />
+            <ActionItem
+              delay={660}
+              title="Ingestion"
+              description="Manual JSON/CSV imports"
+              icon="cloud-upload-outline"
+              color={CultureTokens.indigo}
+              onPress={() => router.push('/admin/import')}
+            />
+          </View>
+
+          {/* ── Security ─────────────────────────────────────────────────── */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Security</Text>
+          </View>
+          
+          <View style={styles.grid}>
+            <ActionItem
+              delay={680}
+              title="Logs"
+              description="Unmodified audit trail"
+              icon="list-outline"
+              color={colors.primary}
+              onPress={() => router.push('/admin/audit-logs')}
+            />
+          </View>
+
+          {/* ── Danger Zone ────────────────────────────────────────────────── */}
+          <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+            <Text style={[styles.sectionTitle, { color: CultureTokens.coral }]}>Danger Zone</Text>
+          </View>
+          
+          <View style={styles.grid}>
+            <ActionItem
+              delay={700}
+              title={maintenanceMode ? "Restore" : "Lockout"}
+              description="Platform maintenance"
+              icon={maintenanceMode ? "lock-open-outline" : "lock-closed-outline"}
+              color={maintenanceMode ? CultureTokens.gold : CultureTokens.coral}
+              danger
+              onPress={toggleMaintenanceMode}
+            />
+          </View>
 
         </ScrollView>
       </View>
@@ -392,15 +515,15 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    gap: 14,
+    gap: 10,
   },
   cardIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -408,12 +531,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardValue: {
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: 'Poppins_700Bold',
-    marginBottom: 2,
+    marginBottom: 0,
   },
   cardTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Poppins_500Medium',
   },
   actionGroup: {
@@ -421,30 +544,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  actionGridItem: {
+    ...Platform.select({
+      web: { flexBasis: '48%' as any, flexShrink: 0 },
+      default: { width: '48%' }, 
+    }),
+    marginBottom: 0,
+  },
+  actionCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    gap: 14,
+    padding: 12,
+    gap: 12,
   },
   actionIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 2,
+    marginBottom: 0,
   },
   actionDesc: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Poppins_400Regular',
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 70, // Align with text
+    marginLeft: 56, // Align with text
   },
 });
