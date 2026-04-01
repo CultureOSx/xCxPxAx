@@ -19,8 +19,8 @@ on:
         required: true
         type: string
       binary_filename:
-        description: 'Filename to save (must match type, e.g. app-release.apk or App.ipa)'
-        required: true
+        description: 'Filename only (e.g. app-release.apk). Leave empty to use culturepass-scan.apk — no paths or .. segments.'
+        required: false
         default: 'culturepass-scan.apk'
         type: string
       wait_for_report:
@@ -47,17 +47,56 @@ jobs:
             exit 1
           fi
 
+      - name: Validate binary filename
+        id: binary
+        env:
+          RAW_INPUT: ${{ inputs.binary_filename }}
+        run: |
+          set -euo pipefail
+          # Optional input: empty/whitespace → documented default (required:false + default only pre-fills UI; empty submit still happens)
+          RAW="${RAW_INPUT:-}"
+          RAW="${RAW#"${RAW%%[![:space:]]*}"}"
+          RAW="${RAW%"${RAW##*[![:space:]]}"}"
+          if [ -z "$RAW" ]; then
+            RAW='culturepass-scan.apk'
+          fi
+          BASE="$(basename -- "$RAW")"
+          if [ "$BASE" != "$RAW" ]; then
+            echo "::error::binary_filename must be a single filename with no slashes (got: ${RAW_INPUT})"
+            exit 1
+          fi
+          case "$BASE" in
+            *..*|*[\\/]*)
+              echo "::error::binary_filename must not contain .. or path separators"
+              exit 1
+              ;;
+          esac
+          ext="${BASE##*.}"
+          ext_lc=$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')
+          if [ "$ext_lc" != apk ] && [ "$ext_lc" != aab ] && [ "$ext_lc" != ipa ]; then
+            echo "::error::binary_filename must end with .apk, .aab, or .ipa"
+            exit 1
+          fi
+          stem="${BASE%.*}"
+          if [ -z "$stem" ] || [[ ! "$stem" =~ ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$ ]]; then
+            echo "::error::binary_filename must use only letters, digits, ., _, - (no leading/trailing dots)"
+            exit 1
+          fi
+          echo "safe_name=$BASE" >> "$GITHUB_OUTPUT"
+          echo "Using artifact filename: $BASE"
+
       - name: Download app binary
         env:
           BINARY_URL: ${{ inputs.binary_url }}
-          BINARY_FILENAME: ${{ inputs.binary_filename }}
+          SAFE_NAME: ${{ steps.binary.outputs.safe_name }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          echo "Downloading to artifacts/${BINARY_FILENAME}"
-          curl -fSL "$BINARY_URL" -o "artifacts/${BINARY_FILENAME}"
-          test -s "artifacts/${BINARY_FILENAME}"
-          ls -la "artifacts/${BINARY_FILENAME}"
+          out="artifacts/${SAFE_NAME}"
+          echo "Downloading to $out"
+          curl -fSL "$BINARY_URL" -o "$out"
+          test -s "$out"
+          ls -la "$out"
 
       - name: Checks App Compliance Scan
         uses: google-checks/checks-app-scan-github-action@v1.0.3
@@ -65,5 +104,5 @@ jobs:
           account_id: ${{ secrets.CHECKS_ACCOUNT_ID }}
           app_id: ${{ secrets.CHECKS_APP_ID }}
           service_account_base64: ${{ secrets.CHECKS_SERVICE_ACCOUNT_BASE64 }}
-          binary_path: ./artifacts/${{ inputs.binary_filename }}
+          binary_path: ./artifacts/${{ steps.binary.outputs.safe_name }}
           wait_for_report: ${{ inputs.wait_for_report }}
