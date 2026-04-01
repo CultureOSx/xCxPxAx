@@ -451,8 +451,16 @@ const widgets = {
     const candidate = userTickets
       .filter((ticket) => ticket.status === 'confirmed' || ticket.status === 'reserved')
       .map((ticket) => {
-        const startsAt = ticket.eventSnapshot?.startAt ?? null;
-        return { ticket, startsAtMs: startsAt ? Date.parse(startsAt) : Number.POSITIVE_INFINITY };
+        const snapshotStart = ticket.eventSnapshot?.startAt ?? null;
+        const flatDate = ticket.eventDate ?? ticket.date;
+        const flatTime = (ticket.eventTime ?? '00:00').trim();
+        const fromFlat =
+          flatDate != null && flatDate.length > 0
+            ? `${flatDate.trim()}T${flatTime.length > 0 ? flatTime : '00:00'}:00`
+            : null;
+        const startsAt = snapshotStart ?? fromFlat;
+        const startsAtMs = startsAt ? Date.parse(startsAt) : Number.POSITIVE_INFINITY;
+        return { ticket, startsAtMs };
       })
       .filter((item) => Number.isFinite(item.startsAtMs) && item.startsAtMs >= now)
       .sort((a, b) => a.startsAtMs - b.startsAtMs)[0];

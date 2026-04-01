@@ -3,9 +3,10 @@ import { router, usePathname } from 'expo-router';
 import Head from 'expo-router/head';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
@@ -20,8 +21,13 @@ const HERO_TAGLINE = 'Celebrate Your Culture, Connect Your Community';
 const VALUE_RIBBON =
   'A dedicated home for cultural events — discover what matters, skip the noisy social feed.';
 
-const HOST_PITCH =
-  'CulturePass is a dedicated platform where your organization can post events tailored to cultural communities. Unlike social platforms, where events get lost in the noise, we help you target the right audience and foster deeper engagement. Plus, sharing events via WhatsApp or Facebook is seamless—except now, attendees come back to a space designed for them. You keep all your existing tools, but now you have a home for your cultural events.';
+/** Shown first — scannable on mobile. */
+const HOST_PITCH_SUMMARY =
+  'List cultural events where they are easy to find — not lost in a social feed. Reach the right audience, sell tickets, and give attendees one place to come back to.';
+
+/** Optional detail for organizers who want the full story. */
+const HOST_PITCH_EXTENDED =
+  ' Share the same links on WhatsApp or Facebook; CulturePass is the home base. You keep your existing tools — we add a dedicated venue for your program and deeper engagement.';
 
 const WEB_WELCOME_TITLE = 'CulturePass — Celebrate Your Culture, Connect Your Community';
 const WEB_WELCOME_DESCRIPTION =
@@ -51,6 +57,14 @@ export default function WelcomeScreen() {
   const goToLocationViaApple = useCallback(() => router.push('/(onboarding)/location'), []);
 
   const cardPad = CardTokens.paddingLarge * 2;
+  const [hostPitchExpanded, setHostPitchExpanded] = useState(false);
+
+  const toggleHostPitch = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
+    setHostPitchExpanded((v) => !v);
+  }, []);
 
   const handleSkip = useCallback(() => {
     completeOnboarding();
@@ -172,7 +186,21 @@ export default function WelcomeScreen() {
                 <Ionicons name="business-outline" size={20} color={CultureTokens.teal} />
                 <Text style={[styles.hostCalloutTitle, { color: colors.textInverse }]}>For organizers & hosts</Text>
               </View>
-              <Text style={[styles.hostCalloutBody, { color: colors.textSecondary }]}>{HOST_PITCH}</Text>
+              <Text style={[styles.hostCalloutBody, { color: colors.textSecondary }]}>
+                {HOST_PITCH_SUMMARY}
+                {hostPitchExpanded ? HOST_PITCH_EXTENDED : ''}
+              </Text>
+              <Pressable
+                onPress={toggleHostPitch}
+                accessibilityRole="button"
+                accessibilityLabel={hostPitchExpanded ? 'Show less about organizers' : 'Read more about organizers'}
+                style={styles.hostPitchToggle}
+                hitSlop={12}
+              >
+                <Text style={[styles.hostPitchToggleLabel, { color: CultureTokens.teal }]}>
+                  {hostPitchExpanded ? 'Show less' : 'Read more'}
+                </Text>
+              </Pressable>
             </View>
 
             <View style={styles.spacer} />
@@ -303,6 +331,15 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
     lineHeight: 21,
+  },
+  hostPitchToggle: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  hostPitchToggleLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
   },
   headerBlock: { alignItems: 'center', marginBottom: 28 },
   logoContainer: {

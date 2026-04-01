@@ -53,18 +53,19 @@ export function syncCultureWidgetSnapshots(payload: CultureWidgetSnapshotPayload
   });
 
   if (payload.upcomingTicket) {
-    const upcomingEvent = payload.upcomingTicket.event;
-    const fallbackDateLabel = payload.upcomingTicket.startsAt
-      ? formatEventDate(payload.upcomingTicket.startsAt.split('T')[0], payload.upcomingTicket.startsAt.split('T')[1]?.slice(0, 5))
+    const { ticket, event: upcomingEvent, startsAt } = payload.upcomingTicket;
+    const fallbackDateLabel = startsAt
+      ? formatEventDate(startsAt.split('T')[0], startsAt.split('T')[1]?.slice(0, 5))
       : 'Date TBA';
 
     widgets.CultureUpcomingTicketWidget.updateSnapshot({
-      eventTitle: upcomingEvent?.title ?? 'Upcoming event',
-      eventDate: upcomingEvent?.date ?? fallbackDateLabel,
-      eventTime: upcomingEvent?.time ?? undefined,
-      venue: upcomingEvent?.venue ?? 'Venue TBA',
-      ticketCode: payload.upcomingTicket.ticket.ticketCode,
-      status: payload.upcomingTicket.ticket.status,
+      eventTitle:
+        upcomingEvent?.title ?? ticket.eventTitle ?? ticket.eventName ?? 'Upcoming event',
+      eventDate: upcomingEvent?.date ?? ticket.eventDate ?? ticket.date ?? fallbackDateLabel,
+      eventTime: upcomingEvent?.time ?? ticket.eventTime ?? undefined,
+      venue: upcomingEvent?.venue ?? ticket.eventVenue ?? 'Venue TBA',
+      ticketCode: ticket.ticketCode,
+      status: ticket.status,
     });
   }
 }

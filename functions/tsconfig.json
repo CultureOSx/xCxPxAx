@@ -20,6 +20,5 @@
   "compileOnSave": true,
   "include": [
     "src"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }
