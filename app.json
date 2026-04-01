@@ -110,7 +110,7 @@
       "expo-web-browser",
       "expo-apple-authentication",
       [
-        "@react-native-google-signin/google-signin",
+        "@react-native-google-signin/google-signin/app.plugin.js",
         {
           "iosUrlScheme": "com.googleusercontent.apps.$(EXPO_PUBLIC_GOOGLE_REVERSED_CLIENT_ID)"
         }
@@ -171,21 +171,6 @@
           "experimental": {
             "ios": {
               "appExtensions": [
-                {
-                  "bundleIdentifier": "au.culturepass.app.widget",
-                  "targetName": "widget",
-                  "entitlements": {}
-                },
-                {
-                  "bundleIdentifier": "au.culturepass.app.spotlight",
-                  "targetName": "spotlight",
-                  "entitlements": {}
-                },
-                {
-                  "bundleIdentifier": "au.culturepass.app.smart-card",
-                  "targetName": "smartcard",
-                  "entitlements": {}
-                },
                 {
                   "bundleIdentifier": "au.culturepass.app.widget",
                   "targetName": "widget",

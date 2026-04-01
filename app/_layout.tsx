@@ -483,7 +483,7 @@ function RootLayoutContent() {
         <meta property="og:description" content={siteDescription} />
         <meta property="og:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
         <meta property="og:site_name" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
-        <meta property="og:locale" content={isKeralaDomain ? 'en_AU' : 'en_AU'} />
+        <meta property="og:locale" content={isKeralaDomain ? 'ml_IN' : 'en_AU'} />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
