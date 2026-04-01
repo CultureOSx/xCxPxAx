@@ -55,6 +55,12 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-b5f96.cloudfunctions.net/api/",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDjAJFTdTfkP63pjuQd7j41DNEKYAYYupw",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "culturepass-b5f96.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "culturepass-b5f96",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "culturepass-b5f96.appspot.com",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "476251116440",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:476251116440:web:d17db0b0419cb8915151ed",
         "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_live_51T247EH3h820CypODVSuLcflLvF55zNm0WKQ08WHJU6wbupGYk4U5wihmzoWUc1PgJiC2Bs3mextQnuXKJ8874Ym00OAyUPsIU",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }

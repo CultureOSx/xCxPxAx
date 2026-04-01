@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { queryClient } from '@/lib/query-client';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useColors } from '@/hooks/useColors';
@@ -86,13 +86,8 @@ export default function AdminPerksScreen() {
     enabled: isSuperAdmin || isAdmin,
   });
 
-  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
 
-  // Mutations
+  // Mutations (must be above any early return)
   const toggleStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'active' | 'draft' }) => api.perks.update(id, { status }),
     onSuccess: () => {
@@ -108,6 +103,12 @@ export default function AdminPerksScreen() {
       queryClient.invalidateQueries({ queryKey: ['admin-perks'] });
     },
   });
+
+  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleDelete = (perk: PerkData) => {
     Alert.alert(

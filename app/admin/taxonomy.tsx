@@ -40,7 +40,7 @@ export default function AdminTaxonomyScreen() {
   const insets = useSafeAreaInsets();
   const topInset = isWeb ? 0 : insets.top;
   const colors = useColors();
-  const { hPad, columnWidth, columnGap, contentWidth, isDesktop } = useLayout();
+  const { hPad, contentWidth, isDesktop } = useLayout();
   
   const { data: taxonomyData, isLoading, refetch } = useQuery({
     queryKey: ['admin-taxonomy'],

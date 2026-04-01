@@ -93,13 +93,8 @@ export default function AdminCommunitiesScreen() {
     enabled: isSuperAdmin || isAdmin,
   });
 
-  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
 
-  // Mutations
+  // Mutations (must be above any early return)
   const toggleModeMutation = useMutation({
     mutationFn: ({ id, mode }: { id: string; mode: 'open' | 'request' | 'invite' }) => 
       api.communities.update(id, { joinMode: mode }),
@@ -116,6 +111,12 @@ export default function AdminCommunitiesScreen() {
       queryClient.invalidateQueries({ queryKey: ['admin-communities'] });
     },
   });
+
+  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleDelete = (community: Community) => {
     Alert.alert(

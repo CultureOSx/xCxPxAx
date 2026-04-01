@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { queryClient } from '@/lib/query-client';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useColors } from '@/hooks/useColors';
@@ -105,15 +105,8 @@ export default function AdminEventsScreen() {
     enabled: isSuperAdmin || isAdmin,
   });
 
-  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
 
-  const events = data?.events ?? [];
-
-  // Mutations
+  // Mutations (must be above any early return)
   const toggleFeaturedMutation = useMutation({
     mutationFn: ({ id, featured }: { id: string; featured: boolean }) => api.events.update(id, { isFeatured: featured }),
     onSuccess: () => {
@@ -129,6 +122,14 @@ export default function AdminEventsScreen() {
       queryClient.invalidateQueries({ queryKey: ['admin-events'] });
     },
   });
+
+  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
+
+  const events = data?.events ?? [];
 
   const handleDelete = (event: EventData) => {
     Alert.alert(

@@ -148,7 +148,48 @@ export default function CalendarSyncScreen() {
       }
       await connectDeviceCalendar();
     }
-  }, [prefs.deviceConnected, connectDeviceCalendar, disconnectDeviceCalendar, haptic]);
+  }, [prefs.deviceConnected, connectDeviceCalendar, disconnectDeviceCalendar, haptic, isCalendarLinked]);
+
+    const handleExport = useCallback(async () => {
+      haptic();
+      if (tickets.length === 0) {
+        Alert.alert('No Tickets', 'You do not have any active tickets to export.');
+        return;
+      }
+      if (Platform.OS !== 'web' && !isCalendarLinked) {
+        Alert.alert(
+          'Calendar Module Missing',
+          'Native export is not available in this build. Please rebuild the dev client with npx expo run:ios.',
+        );
+        return;
+      }
+      Alert.alert(
+        'Export Calendar',
+        `This will export ${tickets.length} tickets to your calendar.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Export',
+            onPress: async () => {
+              try {
+                const exportableEvents = tickets.map(t => ({
+                  id: t.eventId,
+                  title: t.eventTitle,
+                  venue: t.eventVenue,
+                  address: '',
+                  city: '',
+                  date: new Date(t.eventDate || Date.now()),
+                  description: `Ticket Type: ${t.tierName || 'Standard'}`
+                } as unknown as EventData));
+                await exportAllTickets(exportableEvents);
+              } catch {
+                Alert.alert('Export Failed', 'Could not export your tickets.');
+              }
+            }
+          },
+        ]
+      );
+    }, [haptic, tickets, exportAllTickets, isCalendarLinked]);
 
   const handleProviderLink = useCallback((url: string, label: string) => {
     haptic();
@@ -162,52 +203,9 @@ export default function CalendarSyncScreen() {
     );
   }, [haptic]);
 
-  const handleExport = useCallback(async () => {
-    haptic();
-    if (tickets.length === 0) {
-      Alert.alert('No Tickets', 'You do not have any active tickets to export.');
-      return;
-    }
-    
-    if (Platform.OS !== 'web' && !isCalendarLinked) {
-      Alert.alert(
-        'Calendar Module Missing',
-        'Native export is not available in this build. Please rebuild the dev client with npx expo run:ios.',
-      );
-      return;
-    }
-    
-    Alert.alert(
-      'Export Calendar',
-      `This will export ${tickets.length} tickets to your calendar.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Export',
-          onPress: async () => {
-            try {
-              const exportableEvents = tickets.map(t => ({
-                id: t.eventId,
-                title: t.eventTitle,
-                venue: t.eventVenue,
-                address: '',
-                city: '',
-                date: new Date(t.eventDate || Date.now()),
-                description: `Ticket Type: ${t.tierName || 'Standard'}`
-              } as unknown as EventData));
-              await exportAllTickets(exportableEvents);
-            } catch {
-              Alert.alert('Export Failed', 'Could not export your tickets.');
-            }
-          }
-        },
-      ],
-    );
-  }, [haptic, tickets, exportAllTickets]);
-
   if (isLoading) {
     return (
-      <View style={[s.root, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[s.root, { justifyContent: 'center', alignItems: 'center' }]}> 
         <ActivityIndicator size="large" color={CultureTokens.indigo} />
       </View>
     );

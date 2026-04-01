@@ -1,10 +1,11 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
+const prettier = require('eslint-config-prettier');
 
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    ignores: ["dist/*", "node_modules/*", "ios/*", "android/*"],
     rules: {
       "no-restricted-imports": ["error", {
         "paths": [{
@@ -14,5 +15,6 @@ module.exports = defineConfig([
         }]
       }]
     }
-  }
+  },
+  prettier, // Must be last — disables ESLint rules that conflict with Prettier
 ]);

@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { queryClient } from '@/lib/query-client';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useColors } from '@/hooks/useColors';
@@ -79,13 +79,8 @@ export default function AdminTicketsScreen() {
     enabled: isSuperAdmin || isAdmin,
   });
 
-  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
 
-  // Mutations
+  // Mutations (must be above any early return)
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.tickets.cancel(id),
     onSuccess: () => {
@@ -94,6 +89,12 @@ export default function AdminTicketsScreen() {
     },
     onError: (err) => Alert.alert('Error', `Cancellation failed: ${err instanceof Error ? err.message : 'Unknown error'}`),
   });
+
+  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleCancel = (ticket: Ticket) => {
     Alert.alert(

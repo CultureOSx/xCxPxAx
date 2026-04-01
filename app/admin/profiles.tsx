@@ -91,13 +91,8 @@ export default function AdminProfilesScreen() {
     enabled: isSuperAdmin || isAdmin,
   });
 
-  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
 
-  // Mutations
+  // Mutations (must be above any early return)
   const verifyMutation = useMutation({
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) => 
       approve ? api.admin.approveHandle('profile', id) : api.admin.rejectHandle('profile', id, 'Status set to pending by admin'),
@@ -114,6 +109,12 @@ export default function AdminProfilesScreen() {
       queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
     },
   });
+
+  if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleDelete = (profile: Profile) => {
     Alert.alert(
