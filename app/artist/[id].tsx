@@ -11,6 +11,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import Head from "expo-router/head";
 import { useLocalSearchParams, router, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -183,8 +184,25 @@ export default function ArtistDetailScreen() {
   const heroImage = profile.coverImageUrl || (profile.images && profile.images.length > 0 ? profile.images[0] : null) || profile.avatarUrl;
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
 
+  const artistTitle = `${profile.name} | CulturePass`;
+  const artistDesc = profile.bio || profile.description || `Discover ${profile.name}${location ? ` based in ${location}` : ''} on CulturePass.`;
+  const artistUrl = `https://culturepass.app/artist/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{artistTitle}</title>
+        <meta name="description" content={artistDesc} />
+        <meta property="og:title" content={artistTitle} />
+        <meta property="og:description" content={artistDesc} />
+        <meta property="og:url" content={artistUrl} />
+        {heroImage && <meta property="og:image" content={heroImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={artistTitle} />
+        <meta name="twitter:description" content={artistDesc} />
+        {heroImage && <meta name="twitter:image" content={heroImage} />}
+        <link rel="canonical" href={artistUrl} />
+      </Head>
       <View style={styles.container}>
         <ScrollView
           contentContainerStyle={{ paddingBottom: bottomInset + 80 }}

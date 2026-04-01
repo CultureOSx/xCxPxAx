@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Share } from 'react-native';
 import { Image } from 'expo-image';
+import Head from 'expo-router/head';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,8 +79,25 @@ export default function ShoppingDetailScreen() {
     </ErrorBoundary>
   );
 
+  const storeTitle = `${store.name} | CulturePass`;
+  const storeDesc = store.description || `Shop at ${store.name}${store.city ? ` in ${store.city}` : ''} — discover cultural goods on CulturePass.`;
+  const storeUrl = `https://culturepass.app/shopping/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{storeTitle}</title>
+        <meta name="description" content={storeDesc} />
+        <meta property="og:title" content={storeTitle} />
+        <meta property="og:description" content={storeDesc} />
+        <meta property="og:url" content={storeUrl} />
+        {store.imageUrl && <meta property="og:image" content={store.imageUrl} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={storeTitle} />
+        <meta name="twitter:description" content={storeDesc} />
+        {store.imageUrl && <meta name="twitter:image" content={store.imageUrl} />}
+        <link rel="canonical" href={storeUrl} />
+      </Head>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button">

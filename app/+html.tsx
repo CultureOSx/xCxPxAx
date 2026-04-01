@@ -5,7 +5,7 @@ const siteUrl = 'https://culturepass.app';
 const siteTitle = 'CulturePass - Cultural Events and Communities';
 const siteDescription =
   'Discover cultural events, communities, and experiences near you across Australia and beyond with CulturePass.';
-const ogImageUrl = `${siteUrl}/favicon.png`;
+const ogImageUrl = `${siteUrl}/assets/images/social-preview.png`;
 
 const organizationJsonLd = {
   '@context': 'https://schema.org',

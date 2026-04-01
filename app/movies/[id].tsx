@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Share, Linking, Alert } from 'react-native';
 import { Image } from 'expo-image';
+import Head from 'expo-router/head';
 import { useLocalSearchParams, usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,8 +106,26 @@ export default function MovieDetailScreen() {
     </ErrorBoundary>
   );
 
+  const movieTitle = `${movie.title} | CulturePass`;
+  const movieDesc = movie.description || `Watch ${movie.title} — ${movie.genre?.join(', ') ?? ''}. Book tickets on CulturePass.`;
+  const movieUrl = `https://culturepass.app/movies/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{movieTitle}</title>
+        <meta name="description" content={movieDesc} />
+        <meta property="og:title" content={movieTitle} />
+        <meta property="og:description" content={movieDesc} />
+        <meta property="og:url" content={movieUrl} />
+        <meta property="og:type" content="video.movie" />
+        {movie.posterUrl && <meta property="og:image" content={movie.posterUrl} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={movieTitle} />
+        <meta name="twitter:description" content={movieDesc} />
+        {movie.posterUrl && <meta name="twitter:image" content={movie.posterUrl} />}
+        <link rel="canonical" href={movieUrl} />
+      </Head>
       <View style={[styles.container, { paddingTop: topInset }]}> 
         <View style={styles.header}>
           <Pressable 

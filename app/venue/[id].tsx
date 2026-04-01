@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Head from "expo-router/head";
 import { useLocalSearchParams, router, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -182,8 +183,25 @@ export default function VenueDetailScreen() {
   const heroImage = profile.coverImageUrl || profile.avatarUrl || (profile.images && profile.images.length > 0 ? profile.images[0] : null);
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
 
+  const venueTitle = `${profile.name} | CulturePass`;
+  const venueDesc = profile.bio || profile.description || `Discover ${profile.name}${location ? ` in ${location}` : ''} on CulturePass.`;
+  const venueUrl = `https://culturepass.app/venue/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{venueTitle}</title>
+        <meta name="description" content={venueDesc} />
+        <meta property="og:title" content={venueTitle} />
+        <meta property="og:description" content={venueDesc} />
+        <meta property="og:url" content={venueUrl} />
+        {heroImage && <meta property="og:image" content={heroImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={venueTitle} />
+        <meta name="twitter:description" content={venueDesc} />
+        {heroImage && <meta name="twitter:image" content={heroImage} />}
+        <link rel="canonical" href={venueUrl} />
+      </Head>
       <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}

@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, Linking, ActivityIndicator } from 'react-native';
+import Head from 'expo-router/head';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -153,8 +154,23 @@ export default function PerkDetailScreen() {
 
   const isIndigenous = perk.category === 'indigenous';
 
+  const perkTitle = `${perk.title} | CulturePass Perks`;
+  const perkDesc = perk.description || `Exclusive perk from ${perk.providerName ?? 'CulturePass'} — available to CulturePass members.`;
+  const perkUrl = `https://culturepass.app/perks/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{perkTitle}</title>
+        <meta name="description" content={perkDesc} />
+        <meta property="og:title" content={perkTitle} />
+        <meta property="og:description" content={perkDesc} />
+        <meta property="og:url" content={perkUrl} />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={perkTitle} />
+        <meta name="twitter:description" content={perkDesc} />
+        <link rel="canonical" href={perkUrl} />
+      </Head>
       <View style={styles.container}>
         <View style={{ position: 'relative' }}>
           <PerkHero

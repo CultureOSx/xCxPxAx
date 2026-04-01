@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "culturepass",
     "public": "dist",
     "ignore": [
       "firebase.json",

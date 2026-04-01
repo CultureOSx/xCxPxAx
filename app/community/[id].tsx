@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable, Platform,
-  ActivityIndicator, useWindowDimensions, Linking, Alert
+  ActivityIndicator, useWindowDimensions, Linking, Alert, Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import Head from 'expo-router/head';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -226,10 +227,14 @@ async function saveLikedPosts(liked: Record<string, boolean>): Promise<void> {
 
 function ReactionsBar({
   postId,
+  communityId,
+  communityName,
   initialLikes,
   colors,
 }: {
   postId: string;
+  communityId: string;
+  communityName: string;
   initialLikes: number;
   colors: ReturnType<typeof useColors>;
 }) {
@@ -266,7 +271,23 @@ function ReactionsBar({
         <Ionicons name="chatbubble-outline" size={17} color={colors.textSecondary} />
         <Text style={[rb.actionText, { color: colors.textSecondary }]}>{comments}</Text>
       </Pressable>
-      <Pressable style={rb.action} onPress={() => setShared(true)} accessibilityRole="button" accessibilityLabel="Share">
+      <Pressable
+        style={rb.action}
+        onPress={async () => {
+          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const url = `https://culturepass.app/community/${communityId}`;
+          try {
+            if (Platform.OS === 'web' && navigator.share) {
+              await navigator.share({ title: `${communityName} on CulturePass`, url });
+            } else {
+              await Share.share({ title: `${communityName} on CulturePass`, message: `Join the ${communityName} community on CulturePass!\n\n${url}`, url });
+            }
+            setShared(true);
+          } catch { /* user cancelled */ }
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Share"
+      >
         <Ionicons name="share-outline" size={18} color={shared ? CultureTokens.teal : colors.textSecondary} />
         <Text style={[rb.actionText, { color: shared ? CultureTokens.teal : colors.textSecondary }]}>Share</Text>
       </Pressable>
@@ -475,6 +496,8 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
 
       <ReactionsBar
         postId={post.id}
+        communityId={post.community.id}
+        communityName={post.community.name}
         initialLikes={post.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 50 + 2}
         colors={colors}
       />
@@ -614,8 +637,26 @@ export default function CommunityDetailScreen() {
     );
   }
 
+  const pageTitle = `${dbCommunity.name} | CulturePass Community`;
+  const pageDesc = dbCommunity.description || `Join the ${dbCommunity.name} community on CulturePass — connect with people who share your culture.`;
+  const pageUrl = `https://culturepass.app/community/${dbCommunity.id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="website" />
+        {dbCommunity.imageUrl && <meta property="og:image" content={dbCommunity.imageUrl} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        {dbCommunity.imageUrl && <meta name="twitter:image" content={dbCommunity.imageUrl} />}
+        <link rel="canonical" href={pageUrl} />
+      </Head>
       <DbCommunityView community={dbCommunity} topInset={topInset} bottomInset={bottomInset} />
     </ErrorBoundary>
   );

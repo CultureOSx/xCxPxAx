@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, Share } from 'react-native';
 import { Image } from 'expo-image';
+import Head from 'expo-router/head';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -79,8 +80,25 @@ export default function RestaurantDetailScreen() {
     </ErrorBoundary>
   );
 
+  const restTitle = `${rest.name} | CulturePass`;
+  const restDesc = rest.description || `Dine at ${rest.name}${rest.cuisine ? ` — ${rest.cuisine}` : ''}${rest.city ? ` in ${rest.city}` : ''} on CulturePass.`;
+  const restUrl = `https://culturepass.app/restaurants/${id}`;
+
   return (
     <ErrorBoundary>
+      <Head>
+        <title>{restTitle}</title>
+        <meta name="description" content={restDesc} />
+        <meta property="og:title" content={restTitle} />
+        <meta property="og:description" content={restDesc} />
+        <meta property="og:url" content={restUrl} />
+        {rest.imageUrl && <meta property="og:image" content={rest.imageUrl} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={restTitle} />
+        <meta name="twitter:description" content={restDesc} />
+        {rest.imageUrl && <meta name="twitter:image" content={rest.imageUrl} />}
+        <link rel="canonical" href={restUrl} />
+      </Head>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.headerBtn} hitSlop={10} accessibilityRole="button">
