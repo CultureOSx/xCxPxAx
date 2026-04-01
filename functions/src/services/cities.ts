@@ -125,12 +125,20 @@ export const citiesService = {
     const cached = cache.get<FeaturedCity[]>(FEATURED_KEY);
     if (cached) return cached;
 
-    const snap = await col()
-      .where('featured', '==', true)
-      .orderBy('order', 'asc')
-      .get();
+    let snap;
+    try {
+      snap = await col()
+        .where('featured', '==', true)
+        .orderBy('order', 'asc')
+        .get();
+    } catch {
+      // New Firebase projects often lack the composite index (featured + order). Fall back and sort in memory.
+      snap = await col().where('featured', '==', true).get();
+    }
 
-    const cities = snap.docs.map((d) => toCity(d.id, d.data() as Record<string, unknown>));
+    const cities = snap.docs
+      .map((d) => toCity(d.id, d.data() as Record<string, unknown>))
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     cache.set(FEATURED_KEY, cities);
     return cities;
   },

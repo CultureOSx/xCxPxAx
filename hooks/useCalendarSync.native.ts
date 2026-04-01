@@ -10,13 +10,27 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
-import * as Calendar from 'expo-calendar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 
-// Defensive check: is the native module actually linked?
-const isCalendarLinked = !!Calendar && typeof Calendar.requestCalendarPermissionsAsync === 'function';
+type ExpoCalendarNS = typeof import('expo-calendar');
+
+/** Static import would crash the bundle if ExpoCalendar isn’t in the dev client — require inside try/catch. */
+let ExpoCalendar: ExpoCalendarNS | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ExpoCalendar = require('expo-calendar') as ExpoCalendarNS;
+} catch {
+  if (__DEV__) {
+    console.warn(
+      '[CulturePass] expo-calendar native module missing. Rebuild the app: npx expo run:ios (or run:android).'
+    );
+  }
+}
+
+const isCalendarLinked =
+  ExpoCalendar != null && typeof ExpoCalendar.requestCalendarPermissionsAsync === 'function';
 
 export interface PersonalEvent {
   id: string;
@@ -72,8 +86,8 @@ export function useCalendarSync() {
 
   // Check permissions on mount
   useEffect(() => {
-    if (Platform.OS !== 'web' && isCalendarLinked) {
-      Calendar.getCalendarPermissionsAsync()
+    if (Platform.OS !== 'web' && isCalendarLinked && ExpoCalendar) {
+      ExpoCalendar.getCalendarPermissionsAsync()
         .then(({ granted }) => setPermissionGranted(granted))
         .catch(() => {/* ignore */});
     }
@@ -86,7 +100,7 @@ export function useCalendarSync() {
       showAlertNoNative();
       return false;
     }
-    const { granted } = await Calendar.requestCalendarPermissionsAsync();
+    const { granted } = await ExpoCalendar!.requestCalendarPermissionsAsync();
     setPermissionGranted(granted);
     if (!granted) {
       Alert.alert(
@@ -118,11 +132,11 @@ export function useCalendarSync() {
   const fetchPersonalEvents = useCallback(async (startDate: Date, endDate: Date) => {
     if (Platform.OS === 'web' || !isCalendarLinked || !permissionGranted || !prefs.deviceConnected) return;
     try {
-      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const calendars = await ExpoCalendar!.getCalendarsAsync(ExpoCalendar!.EntityTypes.EVENT);
       const calendarIds = calendars.map((c) => c.id);
       if (!calendarIds.length) return;
 
-      const raw = await Calendar.getEventsAsync(calendarIds, startDate, endDate);
+      const raw = await ExpoCalendar!.getEventsAsync(calendarIds, startDate, endDate);
       const mapped: PersonalEvent[] = raw.map((ev) => ({
         id: ev.id,
         title: ev.title ?? 'Busy',
@@ -160,7 +174,7 @@ export function useCalendarSync() {
     if (!granted) return false;
 
     try {
-      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const calendars = await ExpoCalendar!.getCalendarsAsync(ExpoCalendar!.EntityTypes.EVENT);
       // Prefer the default calendar
       const writable = calendars.find(
         (c) =>
@@ -176,7 +190,7 @@ export function useCalendarSync() {
       const startDate = parseEventDate(event);
       const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // default 2h duration
 
-      await Calendar.createEventAsync(writable.id, {
+      await ExpoCalendar!.createEventAsync(writable.id, {
         title: event.title ?? 'CulturePass Event',
         notes: event.description ?? '',
         location: [event.venue, event.address, event.city].filter(Boolean).join(', '),

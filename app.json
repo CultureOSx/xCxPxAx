@@ -88,9 +88,9 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "name": "CulturePass — Cultural Events & Communities",
+      "name": "CulturePass — Celebrate Your Culture, Connect Your Community",
       "shortName": "CulturePass",
-      "description": "Discover cultural events, join diaspora communities, and find local gems. CulturePass connects you with vibrant experiences across Australia, NZ, UK, UAE, and Canada.",
+      "description": "Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place.",
       "lang": "en-AU",
       "themeColor": "#0B0B14",
       "backgroundColor": "#0B0B14",

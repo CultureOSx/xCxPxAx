@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { api } from '@/lib/api';
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import type { EventData } from '@/shared/schema';
 
@@ -12,16 +13,28 @@ export function WidgetSync() {
   const today = new Date().toLocaleDateString('en-CA');
 
   // Discover Events (for Nearby & Spotlight)
+  // Must supply queryFn — default client queryFn joins queryKey with "/" which would call a non-existent path like /api/events/AU/Sydney/2026-04-01.
   const { data: events } = useQuery<EventData[]>({
-    queryKey: ['/api/events', onboarding.country, onboarding.city, today],
+    queryKey: ['widget-sync', 'events', onboarding.country, onboarding.city, today],
+    queryFn: async () => {
+      const result = await api.events.list({
+        country: onboarding.country || undefined,
+        city: onboarding.city || undefined,
+        pageSize: 50,
+        dateFrom: today,
+      });
+      return Array.isArray(result.events) ? result.events : [];
+    },
     enabled: !!onboarding.city,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Tickets (for Upcoming Ticket)
-  // The API returns flattened ticket + event fields in app/tickets/index.tsx
   const { data: tickets } = useQuery<any[]>({
-    queryKey: ['/api/tickets', user?.id],
+    queryKey: ['widget-sync', 'tickets', user?.id],
+    queryFn: () => api.tickets.forUser(user!.id),
     enabled: !!user?.id && isAuthenticated,
+    staleTime: 60 * 1000,
   });
 
   useEffect(() => {

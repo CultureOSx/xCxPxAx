@@ -29,10 +29,25 @@ import Animated, {
   FadeIn,
   FadeInDown,
 } from 'react-native-reanimated';
-import * as Contacts from 'expo-contacts';
 
-// Defensive check: is the native module actually linked?
-const isContactsLinked = Platform.OS !== 'web' && !!Contacts && typeof Contacts.getContactsAsync === 'function';
+type ExpoContactsNS = typeof import('expo-contacts');
+
+let ExpoContacts: ExpoContactsNS | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ExpoContacts = require('expo-contacts') as ExpoContactsNS;
+} catch {
+  if (__DEV__) {
+    console.warn(
+      '[CulturePass] expo-contacts native module missing. Rebuild: npx expo run:ios (or run:android).'
+    );
+  }
+}
+
+const isContactsLinked =
+  Platform.OS !== 'web' &&
+  ExpoContacts != null &&
+  typeof ExpoContacts.getContactsAsync === 'function';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -689,7 +704,7 @@ export default function ContactsScreen() {
     }
     setSyncing(true);
     try {
-      const { status } = await Contacts.requestPermissionsAsync();
+      const { status } = await ExpoContacts!.requestPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Permission Required',
@@ -703,8 +718,12 @@ export default function ContactsScreen() {
         return;
       }
 
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers, Contacts.Fields.Emails],
+      const { data } = await ExpoContacts!.getContactsAsync({
+        fields: [
+          ExpoContacts!.Fields.Name,
+          ExpoContacts!.Fields.PhoneNumbers,
+          ExpoContacts!.Fields.Emails,
+        ],
       });
 
       // Build phone contact list — simulate server match (in production: POST /api/contacts/match)

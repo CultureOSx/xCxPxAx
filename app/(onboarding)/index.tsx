@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { router, usePathname } from 'expo-router';
+import Head from 'expo-router/head';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,18 @@ import { BlurView } from 'expo-blur';
 import { useColors } from '@/hooks/useColors';
 import { Image } from 'expo-image';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
+
+const HERO_TAGLINE = 'Celebrate Your Culture, Connect Your Community';
+
+const VALUE_RIBBON =
+  'A dedicated home for cultural events — discover what matters, skip the noisy social feed.';
+
+const HOST_PITCH =
+  'CulturePass is a dedicated platform where your organization can post events tailored to cultural communities. Unlike social platforms, where events get lost in the noise, we help you target the right audience and foster deeper engagement. Plus, sharing events via WhatsApp or Facebook is seamless—except now, attendees come back to a space designed for them. You keep all your existing tools, but now you have a home for your cultural events.';
+
+const WEB_WELCOME_TITLE = 'CulturePass — Celebrate Your Culture, Connect Your Community';
+const WEB_WELCOME_DESCRIPTION =
+  'Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place.';
 
 const FEATURES = [
   { icon: 'calendar' as const, color: CultureTokens.gold, bg: 'rgba(255, 140, 66, 0.15)', text: 'Discover cultural events near you' },
@@ -36,6 +49,8 @@ export default function WelcomeScreen() {
   const goToLogin = useCallback(() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } }), [pathname]);
   const goToLocationViaGoogle = useCallback(() => router.push('/(onboarding)/location'), []);
   const goToLocationViaApple = useCallback(() => router.push('/(onboarding)/location'), []);
+
+  const cardPad = CardTokens.paddingLarge * 2;
 
   const handleSkip = useCallback(() => {
     completeOnboarding();
@@ -70,7 +85,32 @@ export default function WelcomeScreen() {
             <View style={[StyleSheet.absoluteFill, styles.cardBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
           )}
 
-          <View style={[styles.cardContent, { padding: CardTokens.paddingLarge * 2 }]}>
+          <View style={[styles.cardContent, { padding: cardPad }]}>
+            {Platform.OS === 'web' && (
+              <Head>
+                <title>{WEB_WELCOME_TITLE}</title>
+                <meta name="description" content={WEB_WELCOME_DESCRIPTION} />
+              </Head>
+            )}
+
+            <LinearGradient
+              colors={[CultureTokens.indigo, CultureTokens.coral]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[
+                styles.heroRibbon,
+                {
+                  marginHorizontal: -cardPad,
+                  marginTop: -cardPad,
+                  paddingHorizontal: cardPad,
+                  borderTopLeftRadius: CardTokens.radiusLarge,
+                  borderTopRightRadius: CardTokens.radiusLarge,
+                },
+              ]}
+            >
+              <Text style={styles.heroRibbonText}>{HERO_TAGLINE}</Text>
+            </LinearGradient>
+
             <View style={styles.headerBlock}>
               <View style={[styles.logoContainer, { backgroundColor: 'transparent', borderColor: 'transparent' }]}>
                 <Image 
@@ -79,10 +119,26 @@ export default function WelcomeScreen() {
                   contentFit="contain"
                 />
               </View>
-              <BrandWordmark size="xl" withTagline centered light />
+              <BrandWordmark size="xl" withTagline={false} centered light />
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Connecting global communities through events, culture, perks & shared identity. Powered by #CulturePass.
+                One trusted place for cultural discovery, tickets, and community — built for diaspora cities worldwide.
               </Text>
+            </View>
+
+            <View
+              style={[
+                styles.ideaRibbon,
+                {
+                  backgroundColor: 'rgba(255, 200, 87, 0.12)',
+                  borderColor: `${CultureTokens.gold}44`,
+                },
+              ]}
+              accessibilityRole="none"
+              accessibilityLabel={VALUE_RIBBON}
+            >
+              <View style={[styles.ideaRibbonAccent, { backgroundColor: CultureTokens.gold }]} />
+              <Ionicons name="sparkles-outline" size={22} color={CultureTokens.gold} style={styles.ideaRibbonIcon} />
+              <Text style={[styles.ideaRibbonText, { color: colors.textInverse }]}>{VALUE_RIBBON}</Text>
             </View>
 
             <View style={styles.featureList}>
@@ -98,6 +154,25 @@ export default function WelcomeScreen() {
                   <Text style={[styles.featureText, { color: colors.textInverse }]}>{f.text}</Text>
                 </Reanimated.View>
               ))}
+            </View>
+
+            <View
+              style={[
+                styles.hostCallout,
+                {
+                  backgroundColor: glass.overlay.backgroundColor,
+                  borderColor: colors.borderLight,
+                  borderLeftColor: CultureTokens.teal,
+                },
+              ]}
+              accessibilityRole="summary"
+              accessibilityLabel="For organizers and hosts"
+            >
+              <View style={styles.hostCalloutHeader}>
+                <Ionicons name="business-outline" size={20} color={CultureTokens.teal} />
+                <Text style={[styles.hostCalloutTitle, { color: colors.textInverse }]}>For organizers & hosts</Text>
+              </View>
+              <Text style={[styles.hostCalloutBody, { color: colors.textSecondary }]}>{HOST_PITCH}</Text>
             </View>
 
             <View style={styles.spacer} />
@@ -167,6 +242,68 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   cardBlur: { borderWidth: 1 },
   cardContent: { },
   
+  heroRibbon: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroRibbonText: {
+    fontSize: 15,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 22,
+    letterSpacing: 0.2,
+    maxWidth: 400,
+  },
+  ideaRibbon: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+    gap: 10,
+    overflow: 'hidden',
+  },
+  ideaRibbonAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  ideaRibbonIcon: { flexShrink: 0 },
+  ideaRibbonText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 20,
+  },
+  hostCallout: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    padding: 16,
+    marginBottom: 8,
+  },
+  hostCalloutHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  hostCalloutTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  hostCalloutBody: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 21,
+  },
   headerBlock: { alignItems: 'center', marginBottom: 28 },
   logoContainer: {
     width: 80, height: 80, borderRadius: 24,

@@ -11,12 +11,15 @@
     "target": "es2017",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": [
+        "../shared/*"
+      ]
     },
     "resolveJsonModule": true
   },
   "compileOnSave": true,
   "include": [
     "src"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -32,18 +32,22 @@ import {
   getFirebaseEmulatorHost,
 } from '@/lib/config';
 
-const firebaseConfig = getFirebaseWebConfig();
-
-// Validate that the config has real values before initialising Firebase.
-// getFirebaseWebConfig() no longer throws (so module import succeeds), but
-// we still want a clear error at init time if the config is incomplete.
 const missingKeys = getMissingFirebaseEnvKeys();
-if (missingKeys.length > 0 && !getApps().length) {
-  console.error(
-    '[CulturePass] Firebase cannot initialise: missing env vars: ' + missingKeys.join(', ') +
-    '. Auth, Firestore, and Storage will not work.'
-  );
+
+// Empty EXPO_PUBLIC_FIREBASE_* values produce firebaseConfig.apiKey === ''.
+// initializeApp() still runs, but getAuth() then throws auth/invalid-api-key — obscure on Expo web.
+if (missingKeys.length > 0) {
+  const emulatorNote = shouldUseFirebaseEmulators()
+    ? ' Emulator mode still needs the same Web app keys for initializeApp; only traffic is redirected to emulators.\n'
+    : '';
+  const hint =
+    emulatorNote +
+    'Copy .env.example to .env, paste your Web app config from Firebase Console → Project settings, ' +
+    'then stop and restart Expo (EXPO_PUBLIC_* are baked in at bundler startup).';
+  throw new Error(`[CulturePass] Firebase is not configured (missing: ${missingKeys.join(', ')}).\n${hint}`);
 }
+
+const firebaseConfig = getFirebaseWebConfig();
 
 // Guard against duplicate initialization in hot-reload / fast refresh
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);

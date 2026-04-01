@@ -300,8 +300,6 @@ function RootLayoutNav() {
   );
 }
 
-
-
 // ---------------------------------------------------------------------------
 // Responsive web shell — centres content on wide screens, phone frame on small
 // ---------------------------------------------------------------------------
@@ -370,17 +368,56 @@ function RootLayoutContent() {
   if (!fontsLoaded && !fontError) {
     return null;
   }
+
+  const appShell = (
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <DataSync />
+      <WidgetSync />
+      <AuthGuard />
+      {isWeb ? (
+        <WebShell>
+          <RootLayoutNav />
+        </WebShell>
+      ) : (
+        <KeyboardProvider>
+          <RootLayoutNav />
+        </KeyboardProvider>
+      )}
+    </GestureHandlerRootView>
+  );
+
+  const queryAppTree = (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: queryPersister }}
+    >
+      <OnboardingProvider>
+        <AuthProvider>
+          <SavedProvider>
+            <ContactsProvider>
+              {posthogClient ? (
+                <PostHogProvider client={posthogClient}>{appShell}</PostHogProvider>
+              ) : (
+                appShell
+              )}
+            </ContactsProvider>
+          </SavedProvider>
+        </AuthProvider>
+      </OnboardingProvider>
+    </PersistQueryClientProvider>
+  );
+
   const siteOrigin = isKeralaDomain ? 'https://culturekerala.com' : 'https://culturepass.app';
   const siteUrl = `${siteOrigin}/`;
   const siteTitle = isKeralaDomain
     ? 'CultureKerala — Kerala & Malayalee Communities Worldwide'
-    : 'CulturePass — Discover Cultural Events & Communities';
+    : 'CulturePass — Celebrate Your Culture, Connect Your Community';
   const siteDescription = isKeralaDomain
     ? 'Discover Kerala and Malayalee communities, events, businesses, and culture around the world.'
-    : 'Discover cultural events, join diaspora communities, and find local gems. CulturePass connects you with vibrant experiences across Australia, NZ, UK, UAE, and Canada.';
+    : 'Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place — Australia, NZ, UK, UAE, Canada.';
   const siteKeywords = isKeralaDomain
     ? 'CultureKerala, Kerala Communities, Malayalee, Malayalam, Kerala Events, Malayali Diaspora'
-    : 'CulturePass, Cultural Events, Diaspora Communities, Australia, NZ, UK, UAE, Canada, Festivals, Community Hub';
+    : 'CulturePass, cultural events, diaspora communities, event organizers, community events, festivals, tickets, Australia events, NZ events, UK events, UAE events, Canada events, cultural discovery, WhatsApp events';
   const currentPath =
     isWeb && typeof window !== 'undefined' && window.location.pathname
       ? window.location.pathname
@@ -401,6 +438,35 @@ function RootLayoutContent() {
     },
   };
 
+  const culturepassJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': `${siteOrigin}/#website`,
+        name: 'CulturePass',
+        alternateName: 'Celebrate Your Culture, Connect Your Community',
+        url: siteUrl,
+        description: siteDescription,
+        inLanguage: 'en-AU',
+        publisher: { '@id': `${siteOrigin}/#organization` },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${siteOrigin}/search?query={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': `${siteOrigin}/#organization`,
+        name: 'CulturePass',
+        url: siteUrl,
+        description: siteDescription,
+        slogan: 'Celebrate Your Culture, Connect Your Community',
+      },
+    ],
+  };
+
   return (
     <ErrorBoundary>
       <Head>
@@ -409,24 +475,33 @@ function RootLayoutContent() {
         <meta name="keywords" content={siteKeywords} />
         <link rel="canonical" href={canonicalUrl} />
         {isKeralaDomain && <meta name="robots" content="index,follow,max-image-preview:large" />}
-        
+
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl} />
         <meta property="og:title" content={siteTitle} />
         <meta property="og:description" content={siteDescription} />
         <meta property="og:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
+        <meta property="og:site_name" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
+        <meta property="og:locale" content={isKeralaDomain ? 'en_AU' : 'en_AU'} />
 
         {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content={siteUrl} />
-        <meta property="twitter:title" content={siteTitle} />
-        <meta property="twitter:description" content={siteDescription} />
-        <meta property="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
-        {isKeralaDomain && (
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={siteUrl} />
+        <meta name="twitter:title" content={siteTitle} />
+        <meta name="twitter:description" content={siteDescription} />
+        <meta name="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
+        <meta name="application-name" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
+        <meta name="apple-mobile-web-app-title" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
+        {isKeralaDomain ? (
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(keralaJsonLd) }}
+          />
+        ) : (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(culturepassJsonLd) }}
           />
         )}
 
@@ -434,74 +509,7 @@ function RootLayoutContent() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-      <SafeAreaProvider>
-        {posthogClient ? (
-          <PostHogProvider client={posthogClient}>
-            <PersistQueryClientProvider 
-              client={queryClient}
-              persistOptions={{ persister: queryPersister }}
-            >
-              <OnboardingProvider>
-                <AuthProvider>
-                  <SavedProvider>
-                    <ContactsProvider>
-                      <GestureHandlerRootView
-                        style={{ flex: 1 }}
-                        onLayout={onLayoutRootView}
-                      >
-                        {/* Syncs auth user city/country → OnboardingContext */}
-                        <DataSync />
-                        <WidgetSync />
-                        <AuthGuard />
-                        {isWeb ? (
-                          <WebShell>
-                            <RootLayoutNav />
-                          </WebShell>
-                        ) : (
-                          <KeyboardProvider>
-                            <RootLayoutNav />
-                          </KeyboardProvider>
-                        )}
-                      </GestureHandlerRootView>
-                    </ContactsProvider>
-                  </SavedProvider>
-                </AuthProvider>
-              </OnboardingProvider>
-            </PersistQueryClientProvider>
-          </PostHogProvider>
-        ) : (
-          <PersistQueryClientProvider 
-            client={queryClient}
-            persistOptions={{ persister: queryPersister }}
-          >
-            <OnboardingProvider>
-              <AuthProvider>
-                <SavedProvider>
-                  <ContactsProvider>
-                    <GestureHandlerRootView
-                      style={{ flex: 1 }}
-                      onLayout={onLayoutRootView}
-                    >
-                      {/* Syncs auth user city/country → OnboardingContext */}
-                      <DataSync />
-                      <AuthGuard />
-                      {isWeb ? (
-                        <WebShell>
-                          <RootLayoutNav />
-                        </WebShell>
-                      ) : (
-                        <KeyboardProvider>
-                          <RootLayoutNav />
-                        </KeyboardProvider>
-                      )}
-                    </GestureHandlerRootView>
-                  </ContactsProvider>
-                </SavedProvider>
-              </AuthProvider>
-            </OnboardingProvider>
-          </PersistQueryClientProvider>
-        )}
-      </SafeAreaProvider>
+      <SafeAreaProvider>{queryAppTree}</SafeAreaProvider>
     </ErrorBoundary>
   );
 }
