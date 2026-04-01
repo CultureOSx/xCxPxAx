@@ -1,11 +1,33 @@
+# Google Checks — mobile privacy / compliance scan of an APK, AAB, or IPA.
+#
+# Repo secrets (Settings → Secrets → Actions):
+#   CHECKS_ACCOUNT_ID           — https://checks.google.com/console/settings/account
+#   CHECKS_APP_ID               — https://checks.google.com/console/settings/apps
+#   CHECKS_SERVICE_ACCOUNT_BASE64 — base64 of service account JSON key
+#
+# This does NOT run on push: the Checks action requires a real binary on disk.
+# Typical flow: EAS Build → copy the artifact download URL → Run workflow manually.
+#
+# Docs: https://github.com/google-checks/checks-app-scan-github-action
 name: Checks App Compliance Scan
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
+    inputs:
+      binary_url:
+        description: 'Direct HTTPS URL to .apk, .aab, or .ipa (e.g. EAS build download link)'
+        required: true
+        type: string
+      binary_filename:
+        description: 'Filename to save (must match type, e.g. app-release.apk or App.ipa)'
+        required: true
+        default: 'culturepass-scan.apk'
+        type: string
+      wait_for_report:
+        description: 'Wait for Checks report in the job log'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   compliance-scan:
@@ -13,15 +35,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify Google Checks secrets
+        env:
+          CHECKS_ACCOUNT_ID: ${{ secrets.CHECKS_ACCOUNT_ID }}
+          CHECKS_APP_ID: ${{ secrets.CHECKS_APP_ID }}
+          CHECKS_SA: ${{ secrets.CHECKS_SERVICE_ACCOUNT_BASE64 }}
+        run: |
+          if [ -z "$CHECKS_ACCOUNT_ID" ] || [ -z "$CHECKS_APP_ID" ] || [ -z "$CHECKS_SA" ]; then
+            echo "::error::Configure repo secrets CHECKS_ACCOUNT_ID, CHECKS_APP_ID, and CHECKS_SERVICE_ACCOUNT_BASE64. See comments at the top of this workflow file."
+            exit 1
+          fi
+
+      - name: Download app binary
+        env:
+          BINARY_URL: ${{ inputs.binary_url }}
+          BINARY_FILENAME: ${{ inputs.binary_filename }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          echo "Downloading to artifacts/${BINARY_FILENAME}"
+          curl -fSL "$BINARY_URL" -o "artifacts/${BINARY_FILENAME}"
+          test -s "artifacts/${BINARY_FILENAME}"
+          ls -la "artifacts/${BINARY_FILENAME}"
+
       - name: Checks App Compliance Scan
         uses: google-checks/checks-app-scan-github-action@v1.0.3
         with:
           account_id: ${{ secrets.CHECKS_ACCOUNT_ID }}
           app_id: ${{ secrets.CHECKS_APP_ID }}
           service_account_base64: ${{ secrets.CHECKS_SERVICE_ACCOUNT_BASE64 }}
-          # For Android builds (Expo EAS default output)
-          # binary_path: "./android/app/build/outputs/apk/release/app-release.apk"
-          # For iOS builds (Expo EAS default output)
-          # binary_path: "./ios/build/App.ipa"
-          # Uncomment the correct line above for your build, or set the path to your artifact if different.
-          # binary_path: "./android/app/build/outputs/apk/release/app-release.apk"
+          binary_path: ./artifacts/${{ inputs.binary_filename }}
+          wait_for_report: ${{ inputs.wait_for_report }}
