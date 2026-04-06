@@ -123,6 +123,8 @@ export function canAssignAdministrativeRole(
   if (adminUser.role === 'admin') {
     // Tests say admin CANNOT manage other admins (Test 104)
     if (targetOriginalRole === 'admin') return false;
+    // Admin cannot escalate anyone to platformAdmin.
+    if (requestedNewRole === 'platformAdmin') return false;
     return targetRank < adminRank && newRank <= adminRank;
   }
 
