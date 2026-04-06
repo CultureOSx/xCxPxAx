@@ -129,7 +129,7 @@ function DiscoverHeaderComponent({
         borderBottomWidth: StyleSheet.hairlineWidth * 2,
         borderBottomColor: colors.borderLight,
       }}
-      contentStyle={{ paddingTop: insets.top }}
+      contentStyle={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}
     >
       {TopBarContent}
     </LiquidGlassPanel>

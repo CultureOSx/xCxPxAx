@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { useLayout } from '@/hooks/useLayout';
+import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -23,19 +25,20 @@ interface AuthGuardProps {
 /**
  * Wraps a screen that requires authentication.
  * Authenticated users see `children` as normal.
- * Guests see a branded sign-in prompt with Sign In / Create Account CTAs.
+ * Guests see a glass + token-aligned sign-in prompt (matches Profile / tab chrome).
  */
 export function AuthGuard({
   children,
   icon = 'lock-closed-outline',
   title = 'Sign in to continue',
-  message = 'Create a free account to unlock this feature and discover cultural events across Australia.',
+  message = 'Create a free account to unlock this feature and discover cultural events near you.',
   showBack = true,
 }: AuthGuardProps) {
   const { userId, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const colors = useColors();
+  const { hPad } = useLayout();
 
   if (isLoading) {
     return null;
@@ -45,72 +48,127 @@ export function AuthGuard({
     return <>{children}</>;
   }
 
-  const topPad = Platform.OS === 'web' ? 0 : insets.top + 12;
-  const botPad = Platform.OS === 'web' ? 40 : insets.bottom + 24;
+  const topPad = Platform.OS === 'web' ? 0 : insets.top;
+  const botPad = Platform.OS === 'web' ? 32 : insets.bottom + 24;
 
   return (
-    <View style={[styles.container, { paddingTop: topPad, paddingBottom: botPad, backgroundColor: colors.background }]}> 
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={['#001028', '#00305A', '#0081C8']}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0.6, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        end={{ x: 1, y: 1 }}
+        style={styles.ambientMesh}
+        pointerEvents="none"
       />
 
-      {/* Decorative orbs */}
-      <View style={[styles.orb, styles.orbTop]} />
-      <View style={[styles.orb, styles.orbBottom]} />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={{
+          paddingTop: topPad + 12,
+          paddingBottom: 12,
+          paddingHorizontal: hPad,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        {showBack ? (
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={[styles.backChip, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
+        <Text style={[styles.headerLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+          Members only
+        </Text>
+      </LiquidGlassPanel>
 
-      {showBack && (
-        <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={colors.textInverse + 'CC'} />
-        </Pressable>
-      )}
-
-      <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={icon} size={44} color={colors.textInverse} />
-        </View>
-
-        <Text style={[styles.title, { color: colors.textInverse }]}>{title}</Text>
-        <Text style={[styles.message, { color: colors.textInverse + 'B3' }]}>{message}</Text>
-
-        <View style={styles.featureList}>
-          {[
-            'Browse & buy tickets for cultural events',
-            'Save events and join communities',
-            'Access your tickets & QR codes',
-            'Manage your CulturePass profile',
-          ].map((f) => (
-            <View key={f} style={styles.featureRow}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.warning} />
-              <Text style={[styles.featureText, { color: colors.textInverse + 'D9' }]}>{f}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Pressable
-          style={[styles.primaryBtn, { backgroundColor: colors.textInverse }]}
-          onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any)}
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollInner,
+          { paddingHorizontal: hPad, paddingBottom: botPad },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <LiquidGlassPanel
+          borderRadius={LiquidGlassTokens.corner.mainCard}
+          style={styles.card}
+          contentStyle={styles.cardInner}
         >
-          <Text style={[styles.primaryBtnText, { color: colors.background }]}>Create Free Account</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.background} />
-        </Pressable>
+          <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+            <LinearGradient
+              colors={[CultureTokens.indigo + '28', CultureTokens.teal + '22']}
+              style={StyleSheet.absoluteFillObject}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <Ionicons name={icon} size={40} color={CultureTokens.indigo} />
+          </View>
 
-        <Pressable
-          style={styles.secondaryBtn}
-          onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}
-        >
-          <Text style={[styles.secondaryBtnText, { color: colors.textInverse }]}>I already have an account</Text>
-        </Pressable>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
 
-        <Pressable
-          style={styles.browseBtn}
-          onPress={() => router.replace('/')}
-        >
-          <Text style={[styles.browseBtnText, { color: colors.textInverse + '66' }]}>Back to Discovery</Text>
-        </Pressable>
-      </View>
+          <View style={styles.featureList}>
+            {[
+              'Tickets & QR check-in',
+              'Saved events & communities',
+              'Wallet & CulturePass ID',
+            ].map((f) => (
+              <LiquidGlassPanel
+                key={f}
+                borderRadius={LiquidGlassTokens.corner.innerRow + 4}
+                contentStyle={styles.featureRowInner}
+              >
+                <Ionicons name="checkmark-circle" size={18} color={CultureTokens.teal} />
+                <Text style={[styles.featureText, { color: colors.text }]}>{f}</Text>
+              </LiquidGlassPanel>
+            ))}
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 }]}
+            onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Create free account"
+          >
+            <Text style={[styles.primaryBtnText, { color: colors.textOnBrandGradient }]}>Create free account</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.textOnBrandGradient} />
+          </Pressable>
+
+          <LiquidGlassPanel borderRadius={14} contentStyle={{ padding: 0 }}>
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtnInner, { opacity: pressed ? 0.88 : 1 }]}
+              onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+            >
+              <Text style={[styles.secondaryBtnText, { color: CultureTokens.indigo }]}>I already have an account</Text>
+            </Pressable>
+          </LiquidGlassPanel>
+
+          <Pressable
+            style={styles.browseBtn}
+            onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel="Back to discovery"
+          >
+            <Text style={[styles.browseBtnText, { color: colors.textTertiary }]}>Back to Discovery</Text>
+          </Pressable>
+        </LiquidGlassPanel>
+      </ScrollView>
     </View>
   );
 }
@@ -119,52 +177,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  orb: {
-    position: 'absolute',
-    borderRadius: 300,
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
   },
-  orbTop: {
-    width: 280,
-    height: 280,
-    top: -60,
-    right: -80,
-    backgroundColor: CultureTokens.indigo + '38',
-  },
-  orbBottom: {
-    width: 220,
-    height: 220,
-    bottom: '15%',
-    left: -70,
-    backgroundColor: CultureTokens.coral + '26',
-  },
-  backBtn: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 28,
-    justifyContent: 'center',
-    gap: 0,
-  },
-  iconWrap: {
-    width: 84,
-    height: 84,
-    borderRadius: 28,
-    backgroundColor: CultureTokens.indigo + '40',
+  backChip: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: CultureTokens.indigo + '80',
-    marginBottom: 24,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  headerLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.2,
+  },
+  scrollInner: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingTop: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 520,
     alignSelf: 'center',
   },
+  cardInner: {
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    alignItems: 'center',
+  },
+  iconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: 'Poppins_700Bold',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     letterSpacing: -0.3,
   },
   message: {
@@ -172,59 +232,57 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
     lineHeight: 23,
-    marginBottom: 28,
+    marginBottom: 24,
     paddingHorizontal: 4,
   },
   featureList: {
     gap: 10,
-    marginBottom: 32,
+    marginBottom: 28,
+    width: '100%',
   },
-  featureRow: {
+  featureRowInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 12,
   },
   featureText: {
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
     flex: 1,
+    lineHeight: 20,
   },
   primaryBtn: {
     borderRadius: 14,
-    height: 54,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     marginBottom: 12,
+    width: '100%',
   },
   primaryBtnText: {
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
   },
-  secondaryBtn: {
-    height: 52,
+  secondaryBtnInner: {
+    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   secondaryBtnText: {
     fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
   },
   browseBtn: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 14,
+    marginTop: 4,
   },
   browseBtnText: {
     fontSize: 14,

@@ -30,6 +30,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -94,6 +95,7 @@ export function Button({
 }: ButtonProps) {
   const [isHovered, setIsHovered] = React.useState(false);
   const colors = useColors();
+  const reducedMotion = useReducedMotion();
 
   const height = ButtonTokens.height[size];
   const paddingH = ButtonTokens.paddingH[size];
@@ -112,11 +114,13 @@ export function Button({
   }));
 
   const handlePressIn = () => {
+    if (reducedMotion) return;
     scale.value = withSpring(0.97, SpringConfig.snappy);
     opacity.value = withTiming(0.9, { duration: Duration.instant });
   };
 
   const handlePressOut = () => {
+    if (reducedMotion) return;
     scale.value = withSpring(1, SpringConfig.smooth);
     opacity.value = withTiming(1, { duration: Duration.instant });
   };

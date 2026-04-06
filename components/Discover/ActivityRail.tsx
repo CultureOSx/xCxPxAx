@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
@@ -22,7 +22,7 @@ interface ActivityRailProps {
 }
 
 function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll, errorMessage, onRetry }: ActivityRailProps) {
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
   const colors = useColors();
 
   const hasRealItems = data.some((item) => typeof item !== 'string');
@@ -30,8 +30,8 @@ function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll, err
   if (!isLoading && !hasRealItems && !errorMessage) return null;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
       {errorMessage && !isLoading && !hasRealItems ? (
@@ -77,7 +77,7 @@ function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll, err
           )
         }
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+        contentContainerStyle={[scrollPadStyle, { gap: 22 }]}
         initialNumToRender={4}
         maxToRenderPerBatch={4}
         windowSize={5}
@@ -89,9 +89,7 @@ function ActivityRailComponent({ title, subtitle, data, isLoading, onSeeAll, err
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 36 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 22, paddingRight: 44 },
+  container: {},
   activityTile: { 
     width: 200, 
     padding: 16, 

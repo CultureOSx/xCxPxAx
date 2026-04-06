@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { gradients } from '@/constants/theme';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { goBackOrReplace } from '@/lib/navigation';
 
 import { getStyles } from '@/components/profile-public/styles';
@@ -46,10 +47,14 @@ export default function PublicProfileScreen() {
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const { data: user, isLoading } = useQuery<User>({
-    queryKey: ['/api/users/me', 'profile-public'],
-    queryFn: () => api.users.me(),
+  const { userId: authUserId, isRestoring } = useAuth();
+
+  const { data: user, isPending } = useQuery<User>({
+    queryKey: ['/api/auth/me', 'profile-public', authUserId],
+    queryFn: () => api.auth.me(),
+    enabled: Boolean(authUserId) && !isRestoring,
   });
+  const profileLoading = isRestoring || (Boolean(authUserId) && isPending && !user);
   const userId = user?.id;
 
   const { data: membership } = useQuery<Membership>({
@@ -87,7 +92,7 @@ export default function PublicProfileScreen() {
     if (url) Linking.openURL(url);
   }, [socialLinks]);
 
-  if (isLoading) return <LoadingSkeleton topInset={topInset} />;
+  if (profileLoading) return <LoadingSkeleton topInset={topInset} />;
 
   if (!user) {
     return (

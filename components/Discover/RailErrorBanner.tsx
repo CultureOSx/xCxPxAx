@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Button } from '@/components/ui/Button';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 
 interface RailErrorBannerProps {
   message: string;
@@ -11,9 +12,10 @@ interface RailErrorBannerProps {
 
 export function RailErrorBanner({ message, onRetry, retryLabel = 'Try again' }: RailErrorBannerProps) {
   const colors = useColors();
+  const { pad } = useDiscoverRailInsets();
 
   return (
-    <View style={styles.wrap} accessibilityRole="alert">
+    <View style={[styles.wrap, { paddingHorizontal: pad }]} accessibilityRole="alert">
       <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
       {onRetry ? (
         <Button variant="outline" size="sm" onPress={onRetry} accessibilityLabel={retryLabel}>
@@ -26,7 +28,6 @@ export function RailErrorBanner({ message, onRetry, retryLabel = 'Try again' }: 
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 20,
     paddingVertical: 12,
     alignItems: 'center',
     gap: 12,

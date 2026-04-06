@@ -14,6 +14,7 @@
 - Import from `constants/*.ts` files directly in screens — always import from `constants/theme`
 - Hardcode `topInset = Platform.OS === 'web' ? 67 : insets.top` — web inset is always `0`
 - Use raw `fetch()` — always use `api.*` from `lib/api.ts`
+- Rely on **`GET /api/users/me`** alone for the signed-in user — it returns **404** if `users/{uid}` is missing and does **not** create the doc. Load / refresh the current user with **`api.auth.me()`** (`GET /api/auth/me`), which materializes the profile on first hit
 - Import Firebase SDK directly in screens — use `lib/api.ts` and `lib/auth.tsx`
 - Create `StyleSheet` objects inside render functions — use module-level `StyleSheet.create()`
 - Use `console.log` in production — guard with `if (__DEV__)`
@@ -33,6 +34,7 @@
 - Wrap screens with async data in `<ErrorBoundary>`
 - Handle 401 with `ApiError.isUnauthorized()` → redirect to login
 - Use `useQuery` / `useMutation` (TanStack React Query) for all server state
+- Gate authenticated queries with **`!!userId && !isRestoring`** from `useAuth()` so web does not fetch with a stale `null` id or flash empty UI before Firebase restores the session
 - Use `useSafeAreaInsets()` for native insets; web top inset is always `0`
 - Use `Haptics.*` (expo-haptics) for tactile feedback — iOS/Android only
 - Use `Image` from `expo-image` (not `react-native`) for all images
@@ -114,7 +116,7 @@ const { numColumns, hPad, columnWidth } = useLayout();
 ```typescript
 import { CultureTokens } from '@/constants/theme';
 
-CultureTokens.indigo   // #2C2A72 — Culture Indigo — primary CTA, active states, brand
+CultureTokens.indigo   // #0066CC — CulturePass Blue (see `constants/colors.ts`; design docs may cite alternate legacy indigo)
 CultureTokens.coral    // #FF5E5B — Movement Coral — action energy, alerts
 CultureTokens.teal     // #2EC4B6 — Ocean Teal — free badges, live states, belonging
 CultureTokens.gold     // #FFC857 — Temple Gold — INDIGENOUS CONTENT ONLY
@@ -228,6 +230,16 @@ const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
 ---
 
+## Local web + Cloud Functions (CORS)
+
+Expo web (`http://localhost:8081`, other ports) calls the API on another origin (`https://us-central1-<project>.cloudfunctions.net`). Browsers **require** the API to return `Access-Control-Allow-Origin` for that host.
+
+- **Fix**: Cloud Functions Express CORS allowlist lives in `functions/src/app.ts` (`isAllowedOrigin`, `LOCAL_DEV_ORIGINS`, loopback regex). After changing it, **deploy functions**: `cd functions && npm run build && cd .. && firebase deploy --only functions`
+- If you still see CORS errors against production URL, the deployed build is likely **older than this repo** — redeploy `api`.
+- **Alternative for local API**: point `EXPO_PUBLIC_API_URL` at the emulator (`http://localhost:5001/<project>/us-central1/api/`) per `CLAUDE.md` (no cross-origin to cloudfunctions.net).
+
+---
+
 ## API & Data Fetching
 
 ```typescript
@@ -288,7 +300,14 @@ router.get('/resource/:id', requireAuth, async (req, res) => {
 
 ```typescript
 import { useAuth } from '@/lib/auth';
-const { isAuthenticated, userId, user, hasRole, logout } = useAuth();
+const {
+  isAuthenticated,
+  userId,
+  user,           // Session snapshot (may omit fields until server sync completes)
+  isRestoring,    // true until Firebase `onAuthStateChanged` finishes first resolution
+  hasRole,
+  logout,
+} = useAuth();
 
 // Role check
 if (!hasRole('organizer', 'admin')) return null;
@@ -301,6 +320,30 @@ user.isSydneyVerified · user.interests · user.communities
 
 Auth flow: Firebase Auth → `onAuthStateChanged` → `api.auth.me()` → `setAccessToken()`.
 Social sign-in: Google (web: popup, native: `@react-native-google-signin`), Apple (iOS only, required by App Store).
+
+### Current-user API (important)
+
+| Endpoint | Behaviour |
+|----------|-----------|
+| **`GET /api/auth/me`** (`api.auth.me()`) | **Preferred** for “who am I” + edit screens. Creates `users/{uid}` on first successful hit if missing. |
+| **`GET /api/users/me`** (`api.users.me()`) | Returns 404 if the Firestore user doc does not exist — do not rely on it alone after login. |
+
+### React Query pattern (profile & settings)
+
+```typescript
+const { userId, user: authUser, isRestoring } = useAuth();
+
+const { data, isPending, isError, refetch } = useQuery({
+  queryKey: ['/api/auth/me', 'screen-name', userId],
+  queryFn: () => api.auth.me(),
+  enabled: Boolean(userId) && !isRestoring,
+});
+
+// Optional: hydrate UI from `authUser` in a `useEffect` while `data` is still pending
+// so inputs are not blank on slow networks (see `app/profile/edit.tsx`).
+```
+
+`AuthGuard` already skips redirects while `isRestoring` is true — do not duplicate that guard inside every screen, but **do** gate fetches as above so queries do not run with `userId === null` on the first paint.
 
 ---
 

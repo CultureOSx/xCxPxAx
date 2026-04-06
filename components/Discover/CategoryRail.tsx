@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import SectionHeader from './SectionHeader';
 import CategoryCard from './CategoryCard';
 import { CategoryColors } from '@/constants/theme';
@@ -23,11 +23,11 @@ const browseCategories = [
 ] as const;
 
 function CategoryRailComponent() {
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader title="Browse Categories" onSeeAll={() => router.push('/events')} />
       </View>
       <FlatList
@@ -38,7 +38,7 @@ function CategoryRailComponent() {
           <CategoryCard item={item} onPress={() => router.push('/(tabs)/explore')} />
         )}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, { gap: 12 }, isDesktop && { paddingHorizontal: 0 }]}
+        contentContainerStyle={[scrollPadStyle, { gap: 12 }]}
         decelerationRate="fast"
         snapToInterval={CATEGORY_RAIL_SNAP_INTERVAL}
         snapToAlignment="start"
@@ -52,9 +52,7 @@ function CategoryRailComponent() {
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 32 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  container: {},
 });
 
 export const CategoryRail = React.memo(CategoryRailComponent);

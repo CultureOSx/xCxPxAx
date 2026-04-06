@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 import { LayoutRules, Spacing, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
@@ -26,6 +27,7 @@ export default function AboutScreen() {
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
+  const appVersion = Constants.expoConfig?.version ?? Constants.nativeApplicationVersion ?? 'dev';
   
 
   const resolveColor = (key: 'accent' | 'secondary' | 'warning' | 'info' | 'primary'): string => {
@@ -68,7 +70,28 @@ export default function AboutScreen() {
             <Ionicons name="globe" size={38} color={colors.textInverse} />
           </LinearGradient>
           <Text style={[styles.appName, { color: colors.text }]}>CulturePass</Text>
-          <Text style={[styles.version, { color: colors.textSecondary }]}>Version 1.0.0 · Australia</Text>
+          <Text style={[styles.version, { color: colors.textSecondary }]}>{`Version ${appVersion} · Australia`}</Text>
+        </View>
+
+        {/* Brand info */}
+        <View style={styles.section}>
+          <View style={[styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Text style={[styles.brandTitle, { color: colors.text }]}>Brand Info</Text>
+            <Text style={[styles.brandBody, { color: colors.textSecondary }]}>
+              CulturePass AU is a cultural lifestyle marketplace built for diaspora communities across Australia and beyond.
+            </Text>
+            <View style={styles.brandTagsRow}>
+              <View style={[styles.brandTag, { backgroundColor: colors.primarySoft }]}>
+                <Text style={[styles.brandTagText, { color: colors.primary }]}>B2B2C</Text>
+              </View>
+              <View style={[styles.brandTag, { backgroundColor: colors.secondary + '1A' }]}>
+                <Text style={[styles.brandTagText, { color: colors.secondary }]}>Diaspora-first</Text>
+              </View>
+              <View style={[styles.brandTag, { backgroundColor: colors.warning + '1A' }]}>
+                <Text style={[styles.brandTagText, { color: colors.warning }]}>Night Festival</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         {/* Mission */}
@@ -160,6 +183,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   missionCard:  { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1 },
   missionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
   missionText:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
+  brandCard:    { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1, gap: Spacing.sm },
+  brandTitle:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  brandBody:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
+  brandTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  brandTag:     { borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },
+  brandTagText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
 
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: LayoutRules.betweenCards },
   featureCard:  { width: '48%' as never, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMin, borderWidth: 1 },

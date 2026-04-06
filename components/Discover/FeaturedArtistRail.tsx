@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { captureEvent } from '@/lib/analytics';
 import type { DiscoverArtistHighlight } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
@@ -43,7 +43,7 @@ function FeaturedArtistSkeletonCard() {
 
 function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }: FeaturedArtistRailProps) {
   const colors = useColors();
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
   const lastImpressionKey = useRef<string>('');
 
   useEffect(() => {
@@ -59,8 +59,8 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
 
   if (errorMessage && !isLoading && data.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+      <View style={[styles.container, { marginBottom: vPad }]}>
+        <View style={headerPadStyle}>
           <SectionHeader
             title="Featured Artists"
             subtitle="Creators shaping the sound and spirit of your city"
@@ -111,8 +111,8 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader
           title="Featured Artists"
           subtitle="Creators shaping the sound and spirit of your city"
@@ -168,7 +168,7 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
           )
         }
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+        contentContainerStyle={[scrollPadStyle, { gap: ITEM_GAP }]}
         snapToInterval={SNAP}
         snapToAlignment="start"
         decelerationRate="fast"
@@ -179,9 +179,7 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 36, paddingTop: 2 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: ITEM_GAP, paddingRight: 44 },
+  container: { paddingTop: 2 },
   card: {
     borderRadius: CardTokens.radius,
     overflow: 'hidden',

@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -22,7 +23,8 @@ interface HeroCarouselProps {
 
 function HeroCarouselComponent({ events }: HeroCarouselProps) {
   const colors = useColors();
-  const { isDesktop, width } = useLayout();
+  const { isDesktop, width, vPad } = useLayout();
+  const { pad } = useDiscoverRailInsets();
   const styles = useMemo(() => getStyles(colors), [colors]);
   
   const heroCardWidth = isDesktop ? HERO_CARD_DESKTOP_WIDTH : width;
@@ -32,7 +34,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
     <View
       style={{
         width: heroCardWidth,
-        paddingHorizontal: isDesktop ? 0 : 20,
+        paddingHorizontal: isDesktop ? 0 : pad,
         marginRight: isDesktop && index < events.length - 1 ? 20 : 0,
       }}
     >
@@ -52,7 +54,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
           transition={200}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(11,11,20,0.3)', 'rgba(11,11,20,0.9)']}
+          colors={['transparent', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.88)']}
           style={StyleSheet.absoluteFillObject}
           locations={[0, 0.5, 1]}
         />
@@ -83,12 +85,12 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         </View>
       </Pressable>
     </View>
-  ), [events.length, heroCardWidth, isDesktop, styles]);
+  ), [events.length, heroCardWidth, isDesktop, pad, styles]);
 
   if (events.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={{ paddingHorizontal: isDesktop ? 0 : 20 }}>
+      <View style={[styles.container, { marginBottom: vPad }]}>
+        <View style={{ paddingHorizontal: isDesktop ? 0 : pad }}>
           <Skeleton height={420} borderRadius={16} />
         </View>
       </View>
@@ -96,7 +98,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
       <FlatList
         horizontal
         data={events}
@@ -122,7 +124,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
 }
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { marginBottom: 32 },
+  container: {},
   heroCard: { 
     height: 420, 
     borderRadius: 16, 

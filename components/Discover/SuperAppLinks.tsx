@@ -29,12 +29,12 @@ const APP_LINKS: AppLink[] = [
 
 export function SuperAppLinks() {
   const colors = useColors();
-  const { hPad } = useLayout();
+  const { hPad, vPad } = useLayout();
 
   return (
     <LiquidGlassPanel
       borderRadius={LiquidGlassTokens.corner.mainCard}
-      style={[styles.glassRail, { marginHorizontal: hPad }]}
+      style={[styles.glassRail, { marginHorizontal: hPad, marginBottom: Math.min(14, Math.round(vPad * 0.45)) }]}
       contentStyle={styles.glassRailInner}
     >
       <ScrollView
@@ -59,6 +59,7 @@ export function SuperAppLinks() {
                 backgroundColor: pressed ? `${link.color}28` : `${link.color}18`,
                 borderColor: `${link.color}44`,
               },
+              Platform.OS === 'web' && { cursor: 'pointer' as const },
             ]}
           >
             <Ionicons
@@ -76,7 +77,6 @@ export function SuperAppLinks() {
 
 const styles = StyleSheet.create({
   glassRail: {
-    marginBottom: 12,
     overflow: 'hidden',
   },
   glassRailInner: {

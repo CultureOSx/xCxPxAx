@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens, FontFamily, FontSize, LineHeight, LiquidGlassTokens } from '@/constants/theme';
@@ -32,7 +32,7 @@ function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeader
 
       {onSeeAll && (
         <Pressable
-          style={styles.seeAllBtn}
+          style={[styles.seeAllBtn, Platform.OS === 'web' && { cursor: 'pointer' as const }]}
           onPress={onSeeAll}
           hitSlop={12}
           accessibilityRole="button"

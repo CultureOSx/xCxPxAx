@@ -6,17 +6,17 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { FlashList } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useLocations } from '@/hooks/useLocations';
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useEventsList } from '@/hooks/queries/useEvents';
-import { CultureTokens, CategoryColors } from '@/constants/theme';
+import { CultureTokens, CategoryColors, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { captureEvent } from '@/lib/analytics';
 import { isIndigenousEvent } from '@/lib/indigenous';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -323,7 +323,6 @@ const cpill = StyleSheet.create({
 export default function ExploreScreen() {
   const { state } = useOnboarding();
   const colors = useColors();
-  const isDark = useIsDark();
   const params = useLocalSearchParams<{ focus?: string; source?: string; playlistId?: string; featuredArtistId?: string }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -391,46 +390,54 @@ export default function ExploreScreen() {
   return (
     <ErrorBoundary>
       <View style={[s.root, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, { opacity: 0.06 }]}
+          pointerEvents="none"
+        />
 
-        {/* ── Premium Glassmorphic Header ── */}
         <View style={{ paddingTop: topInset }}>
-          {Platform.OS === 'ios' ? (
-            <BlurView
-              intensity={80}
-              tint={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background + '80' }]}
-            />
-          ) : (
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background }]} />
-          )}
-
-          <View style={[s.header, { paddingHorizontal: hPad }]}>
-            <View style={s.headerTitles}>
-              <Text style={[s.headerTitle, { color: colors.text }]}>
-                {activeId === 'indigenous' ? '🪃 Indigenous' : 'Explore'}
-              </Text>
-              <Text style={[s.headerSub, { color: colors.textSecondary }]}>
-                {activeId === 'indigenous'
-                  ? 'First Nations culture and events in '
-                  : 'Discover what\u2019s happening in '}
-                <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>
-                  {locationLabel}
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={{
+              paddingHorizontal: hPad,
+              paddingTop: 16,
+              paddingBottom: 16,
+              gap: 14,
+            }}
+          >
+            <View style={s.header}>
+              <View style={s.headerTitles}>
+                <Text style={[s.headerTitle, { color: colors.text }]}>
+                  {activeId === 'indigenous' ? '🪃 Indigenous' : 'Explore'}
                 </Text>
-              </Text>
+                <Text style={[s.headerSub, { color: colors.textSecondary }]}>
+                  {activeId === 'indigenous'
+                    ? 'First Nations culture and events in '
+                    : 'Discover what\u2019s happening in '}
+                  <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>
+                    {locationLabel}
+                  </Text>
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/search')}
+                style={[s.searchIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                accessibilityRole="button"
+                accessibilityLabel="Search"
+              >
+                <Ionicons name="search" size={18} color={colors.text} />
+              </Pressable>
             </View>
-            <Pressable
-              onPress={() => router.push('/search')}
-              style={[s.searchIconBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-            >
-              <Ionicons name="search" size={18} color={colors.textSecondary} />
-            </Pressable>
-          </View>
 
-          {/* ── Search bar ── */}
-          <View style={[s.searchBarWrap, { paddingHorizontal: hPad }]}>
-            <View style={[s.searchBar, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+            <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
               <Ionicons name="search-outline" size={18} color={colors.textTertiary} />
               <TextInput
                 style={[s.searchInput, { color: colors.text }]}
@@ -452,9 +459,7 @@ export default function ExploreScreen() {
                 </Pressable>
               ) : null}
             </View>
-          </View>
-          
-          <View style={s.bottomBorder} />
+          </LiquidGlassPanel>
         </View>
 
         {/* ── Event Grid & Content ── */}
@@ -689,9 +694,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchBarWrap: {
-    paddingBottom: 16,
-  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -707,18 +709,12 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
     padding: 0,
   },
-  bottomBorder: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(150,150,150,0.15)',
-    width: '100%',
-  },
   catsWrap: {
     paddingVertical: 16,
-    marginHorizontal: -16, 
   },
   catsScroll: {
     gap: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
   },
   section: {
     marginTop: 12,

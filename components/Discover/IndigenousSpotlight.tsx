@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
@@ -23,14 +24,20 @@ interface IndigenousSpotlightProps {
 
 function IndigenousSpotlightComponent({ land, organisations, festivals, businesses }: IndigenousSpotlightProps) {
   const colors = useColors();
-  const { isDesktop } = useLayout();
+  const { isDesktop, vPad } = useLayout();
+  const { pad, scrollPadStyle, headerPadStyle } = useDiscoverRailInsets();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <View>
       {/* Land Acknowledgement Banner */}
       {land && (
-        <View style={[styles.landBanner, isDesktop && { marginHorizontal: 0 }]}>
+        <View
+          style={[
+            styles.landBanner,
+            { marginHorizontal: isDesktop ? 0 : pad, marginBottom: vPad },
+          ]}
+        >
           {(Platform.OS === 'ios' || isWeb) && (
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
           )}
@@ -50,10 +57,15 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
 
       {/* Organisations Rail */}
       {organisations.length > 0 && (
-        <View style={[styles.orgSection, isDesktop && { marginHorizontal: 0 }]}>
+        <View
+          style={[
+            styles.orgSection,
+            { marginHorizontal: isDesktop ? 0 : pad, marginBottom: vPad },
+          ]}
+        >
           <View style={styles.orgSectionHeader}>
             <View style={[styles.orgSectionIconWrap, { backgroundColor: colors.primaryGlow }]}>
-              <Text style={styles.boomerangIcon}>🪃</Text>
+              <Ionicons name="people-circle" size={26} color={CultureTokens.gold} />
             </View>
             <View>
               <Text style={styles.orgSectionTitle}>First Nations Organisations</Text>
@@ -65,7 +77,7 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
             data={organisations}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.orgRail}
+            contentContainerStyle={[scrollPadStyle, styles.orgRail]}
             renderItem={({ item }) => (
               <Card padding={16} radius={16} style={[styles.orgCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                 <View style={styles.orgCardTop}>
@@ -97,8 +109,8 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
 
       {/* Festivals Rail */}
       {festivals.length > 0 && (
-        <View style={{ marginBottom: 28 }}>
-          <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
+        <View style={{ marginBottom: vPad }}>
+          <View style={headerPadStyle}>
             <SectionHeader
               title="Indigenous Events & Festivals"
               subtitle="Celebrate living culture and Country-led stories"
@@ -110,12 +122,13 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
             data={festivals}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+            contentContainerStyle={[scrollPadStyle, styles.scrollRail]}
             renderItem={({ item }) => (
               <Card padding={16} radius={16} style={[styles.indigenousCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                 <View style={styles.indigenousCardHeader}>
                   <View style={styles.indigenousTagPill}>
-                    <Text style={styles.indigenousTagText}>🪃 Festival</Text>
+                    <Ionicons name="calendar-outline" size={12} color={CultureTokens.gold} />
+                    <Text style={styles.indigenousTagText}>Festival</Text>
                   </View>
                   {!!item.monthHint && (
                     <Text style={styles.indigenousMonth}>{item.monthHint}</Text>
@@ -134,8 +147,8 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
 
       {/* Business Rail */}
       {businesses.length > 0 && (
-        <View style={{ marginBottom: 28 }}>
-          <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
+        <View style={{ marginBottom: vPad }}>
+          <View style={headerPadStyle}>
             <SectionHeader
               title="Indigenous Business"
               subtitle="Support First Nations-owned local businesses"
@@ -147,12 +160,13 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
             data={businesses}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+            contentContainerStyle={[scrollPadStyle, styles.scrollRail]}
             renderItem={({ item }) => (
               <Card padding={16} radius={16} style={[styles.indigenousCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                 <View style={styles.indigenousCardHeader}>
                   <View style={styles.indigenousTagPill}>
-                    <Text style={styles.indigenousTagText}>🪃 Business</Text>
+                    <Ionicons name="storefront-outline" size={12} color={CultureTokens.gold} />
+                    <Text style={styles.indigenousTagText}>Business</Text>
                   </View>
                   <Text style={styles.indigenousMonth}>{item.category}</Text>
                 </View>
@@ -171,10 +185,8 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
 }
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  landBanner: { 
-    marginHorizontal: 20, 
-    marginBottom: 32, 
-    padding: 20, 
+  landBanner: {
+    padding: 20,
     borderRadius: 20, 
     overflow: 'hidden', 
     borderWidth: 1, 
@@ -184,13 +196,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   landBannerTitle: { ...TextStyles.headline, color: CultureTokens.gold },
   landBannerSub: { ...TextStyles.caption, color: colors.textSecondary, lineHeight: 18 },
   
-  orgSection: { marginBottom: 32, marginHorizontal: 20 },
+  orgSection: {},
   orgSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
   orgSectionIconWrap: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  boomerangIcon: { fontSize: 24 },
   orgSectionTitle: { ...TextStyles.title3, color: colors.text },
   orgSectionSub: { ...TextStyles.caption, color: colors.textSecondary, lineHeight: 18, marginTop: 2 },
-  orgRail: { paddingRight: 20, gap: 16 },
+  orgRail: { gap: 16 },
   orgCard: { width: 260, borderWidth: 1 },
   orgCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   orgName: { ...TextStyles.cardTitle, color: colors.text, flex: 1 },
@@ -202,11 +213,18 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   orgFocusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
   orgFocusText: { ...TextStyles.badge, color: colors.textSecondary },
 
-  sectionPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  scrollRail: { gap: 16 },
   indigenousCard: { width: 280, borderRadius: 20, borderWidth: 1, padding: 16 },
   indigenousCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  indigenousTagPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: CultureTokens.gold + '15' },
+  indigenousTagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: CultureTokens.gold + '15',
+  },
   indigenousTagText: { ...TextStyles.badgeCaps, color: CultureTokens.gold },
   indigenousMonth: { ...TextStyles.badge, color: colors.textTertiary },
   indigenousTitle: { ...TextStyles.title3, color: colors.text, marginBottom: 6 },

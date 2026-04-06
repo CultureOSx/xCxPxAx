@@ -10,7 +10,7 @@ import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-conte
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
@@ -173,12 +173,22 @@ export default function EditProfileScreen() {
   const insets        = useSafeAreaInsets();
   const { isDesktop } = useLayout();
   const topInset      = Platform.OS === 'web' ? 0 : insets.top;
-  const { userId }    = useAuth();
+  const { userId, user: authUser, isRestoring } = useAuth();
 
-  const { data: user, isLoading } = useQuery<UserData>({
-    queryKey: ['/api/users/me', userId],
-    enabled: !!userId,
-    queryFn:  () => api.users.me() as Promise<UserData>,
+  /**
+   * Use GET /api/auth/me (not /api/users/me): auth/me materializes `users/{uid}` on first hit.
+   * /api/users/me returns 404 when the Firestore doc is missing, which left this screen empty on web.
+   */
+  const {
+    data: user,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useQuery<UserData>({
+    queryKey: ['/api/auth/me', 'profile-edit', userId],
+    enabled: Boolean(userId) && !isRestoring,
+    queryFn: () => api.auth.me() as Promise<UserData>,
   });
 
   const [form, setForm] = useState({
@@ -219,6 +229,37 @@ export default function EditProfileScreen() {
     }
   }, [user]);
 
+  /** Hydrate from Firebase session immediately so the form is not blank while the query runs. */
+  useEffect(() => {
+    if (user || !authUser) return;
+    setForm((prev) => ({
+      ...prev,
+      displayName: authUser.displayName || prev.displayName,
+      email: authUser.email || prev.email,
+      phone: (authUser as UserData).phone || prev.phone,
+      bio: authUser.bio || prev.bio,
+      city: authUser.city || prev.city,
+      state: authUser.state || prev.state,
+      postcode: authUser.postcode != null ? String(authUser.postcode) : prev.postcode,
+      country: authUser.country || prev.country || 'Australia',
+      website: authUser.website || prev.website,
+      instagram: authUser.socialLinks?.instagram || prev.instagram,
+      twitter: authUser.socialLinks?.twitter || prev.twitter,
+      tiktok: authUser.socialLinks?.tiktok || prev.tiktok,
+      youtube: authUser.socialLinks?.youtube || prev.youtube,
+      linkedin: authUser.socialLinks?.linkedin || prev.linkedin,
+      facebook: authUser.socialLinks?.facebook || prev.facebook,
+      languages:
+        (authUser.languages?.length ?? 0) > 0
+          ? (authUser.languages ?? []).join(', ')
+          : prev.languages,
+      ethnicityText: authUser.ethnicityText || prev.ethnicityText,
+      isPublicProfile: authUser.privacySettings?.profileVisible ?? prev.isPublicProfile,
+      showLocation: authUser.privacySettings?.locationVisible ?? prev.showLocation,
+    }));
+    if (authUser.avatarUrl) setAvatarUri(authUser.avatarUrl);
+  }, [user, authUser]);
+
 
 
   // ── Save mutation ────────────────────────────────────────────────────────
@@ -229,8 +270,8 @@ export default function EditProfileScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me', userId] });
-      queryClient.invalidateQueries({ queryKey: ['api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Added for success
       Alert.alert('Saved', 'Your profile has been updated.');
@@ -341,8 +382,12 @@ export default function EditProfileScreen() {
     { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight, color: colors.text }
   ];
 
-  if (isLoading && !user) {
+  if (isRestoring || (Boolean(userId) && isPending && !user)) {
     return <ProfileEditSkeleton topInset={topInset} insets={insets} colors={colors} isDesktop={isDesktop} />;
+  }
+
+  if (!userId && !isRestoring) {
+    return null;
   }
 
   return (
@@ -387,6 +432,20 @@ export default function EditProfileScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop, { paddingBottom: insets.bottom + 48 }]}
         >
+          {isError ? (
+            <View
+              style={[s.loadError, { backgroundColor: colors.error + '14', borderColor: colors.error + '40' }]}
+              accessibilityRole="alert"
+            >
+              <Text style={[TextStyles.callout, { color: colors.text }]}>
+                {error instanceof ApiError ? error.message : 'Could not load your profile from the server.'}
+              </Text>
+              <Button variant="outline" size="sm" onPress={() => void refetch()} accessibilityLabel="Retry loading profile">
+                Retry
+              </Button>
+            </View>
+          ) : null}
+
           {/* ── Avatar hero ─────────────────────────────────────────── */}
           <Animated.View entering={FadeInUp.duration(500)} style={s.heroWrap}>
             <LinearGradient
@@ -691,6 +750,15 @@ const s = StyleSheet.create({
   // Scroll
   scroll:        { flexGrow: 1 },
   scrollDesktop: { paddingHorizontal: 0 },
+
+  loadError: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    gap: 10,
+  },
 
   // Hero
   heroWrap: {

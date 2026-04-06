@@ -19,7 +19,8 @@ import { apiRequest } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData } from '@/shared/schema';
 import { useColors } from '@/hooks/useColors';
@@ -179,42 +180,76 @@ function OrganizerDashboardContent() {
 
   return (
     <View style={[dashboardStyles.container, { backgroundColor: colors.background }]}>
-      {/* Premium Gradient Header */}
       <LinearGradient
-        colors={[CultureTokens.indigo, CultureTokens.coral]}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0.5 }}
-        style={[dashboardStyles.header, { paddingTop: topPad + 20 }]}
-      >
-        <View style={[dashboardStyles.headerContent, { paddingHorizontal: hPad }]}>
-          <View>
-            <Text style={dashboardStyles.greeting}>WELCOME BACK,</Text>
-            <Text style={dashboardStyles.userName}>{user?.displayName?.toUpperCase() || 'CREATOR'}</Text>
-          </View>
-          <Pressable 
-            onPress={() => router.push('/submit')}
-            style={dashboardStyles.createBtn}
-          >
-            <Ionicons name="add" size={24} color={CultureTokens.indigo} />
-          </Pressable>
-        </View>
+        end={{ x: 1, y: 1 }}
+        style={dashboardStyles.ambientMesh}
+        pointerEvents="none"
+      />
 
-        <View style={dashboardStyles.headerTabs}>
-          {([
-            { id: 'events', label: 'MANAGEMENT' },
-            { id: 'content', label: 'STUDIO' },
-            { id: 'performance', label: 'REACH' },
-          ] as const).map(tab => (
-            <Pressable 
-              key={tab.id}
-              onPress={() => setActiveTab(tab.id)}
-              style={[dashboardStyles.tab, activeTab === tab.id && dashboardStyles.tabActive]}
+      <View style={{ paddingTop: topPad }}>
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={{ paddingHorizontal: hPad, paddingTop: 16, paddingBottom: 14, gap: 14 }}
+        >
+          <View style={dashboardStyles.headerContent}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[dashboardStyles.greeting, { color: colors.textTertiary }]}>Welcome back</Text>
+              <Text style={[dashboardStyles.userName, { color: colors.text }]} numberOfLines={1}>
+                {user?.displayName || 'Creator'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => router.push('/submit')}
+              style={[
+                dashboardStyles.createBtn,
+                { backgroundColor: colors.primarySoft, borderColor: colors.borderLight, borderWidth: StyleSheet.hairlineWidth * 2 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Create event"
             >
-              <Text style={[dashboardStyles.tabText, activeTab === tab.id && dashboardStyles.tabTextActive]}>{tab.label}</Text>
+              <Ionicons name="add" size={24} color={CultureTokens.indigo} />
             </Pressable>
-          ))}
-        </View>
-      </LinearGradient>
+          </View>
+
+          <View style={[dashboardStyles.headerTabs, { backgroundColor: colors.primarySoft }]}>
+            {([
+              { id: 'events' as const, label: 'Events' },
+              { id: 'content' as const, label: 'Studio' },
+              { id: 'performance' as const, label: 'Reach' },
+            ]).map((tab) => {
+              const active = activeTab === tab.id;
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id)}
+                  style={[
+                    dashboardStyles.tab,
+                    active && { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '40' },
+                  ]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text
+                    style={[
+                      dashboardStyles.tabText,
+                      { color: active ? CultureTokens.indigo : colors.textSecondary },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </LiquidGlassPanel>
+      </View>
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: hPad, paddingVertical: 24, paddingBottom: 120 }}
@@ -380,16 +415,27 @@ function OrganizerDashboardContent() {
 
 const dashboardStyles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 0, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: 'hidden' },
-  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  greeting: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.6)', letterSpacing: 1 },
-  userName: { fontSize: 24, fontFamily: 'Poppins_800ExtraBold', color: '#FFFFFF', letterSpacing: -0.5 },
-  createBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  headerTabs: { flexDirection: 'row', paddingHorizontal: 20 },
-  tab: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 3, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: '#FFFFFF' },
-  tabText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 },
-  tabTextActive: { color: '#FFFFFF' },
+  ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
+  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  greeting: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4, textTransform: 'uppercase' },
+  userName: { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.4, marginTop: 4 },
+  createBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  headerTabs: {
+    flexDirection: 'row',
+    padding: 5,
+    borderRadius: 16,
+    gap: 6,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: 'transparent',
+  },
+  tabText: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 0.2 },
   
   performanceGrid: { gap: 16 },
   analyticsRow: { flexDirection: 'row', gap: 16 },

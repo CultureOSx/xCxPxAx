@@ -102,11 +102,11 @@ export default function QRScreen() {
   const cardWidth = Math.min(screenWidth - 32, CARD_WIDTH_FIXED);
   const qrSize    = Math.min(cardWidth - 64, QR_SIZE_FIXED);
 
-  const { userId: authUserId } = useAuth();
-  const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ['/api/users/me', 'profile-qr'],
-    queryFn: () => api.users.me(),
-    enabled: !!authUserId,
+  const { userId: authUserId, isRestoring } = useAuth();
+  const { data: user, isPending: userPending } = useQuery<User>({
+    queryKey: ['/api/auth/me', 'profile-qr', authUserId],
+    queryFn: () => api.auth.me(),
+    enabled: Boolean(authUserId) && !isRestoring,
   });
   const userId = user?.id ?? authUserId;
 
@@ -115,7 +115,9 @@ export default function QRScreen() {
     enabled: !!userId,
   });
 
-  const isLoading = userLoading || (!!userId && membershipLoading);
+  const userProfileLoading =
+    isRestoring || (Boolean(authUserId) && userPending && !user);
+  const isLoading = userProfileLoading || (!!userId && membershipLoading);
 
   const tier     = membership?.tier ?? 'free';
   const tierConf = TIER_CONFIG[tier] ?? TIER_CONFIG.free;

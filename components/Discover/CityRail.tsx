@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { TextStyles } from '@/constants/typography';
 import SectionHeader from './SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -92,7 +93,8 @@ function CityCardSkeleton({ width }: { width: number }) {
 // ---------------------------------------------------------------------------
 
 function CityRailComponent() {
-  const { isDesktop, hPad } = useLayout();
+  const { hPad, vPad } = useLayout();
+  const { headerPadStyle, scrollPadStyle } = useDiscoverRailInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { cities, isLoading, isError, refetch: refetchCities } = useFeaturedCities();
 
@@ -113,8 +115,8 @@ function CityRailComponent() {
   if (isNative) {
     // ── Native: 2-column grid (FlatList with numColumns) ──────────────────
     return (
-      <View style={s.container}>
-        <View style={[s.headerPad, { paddingHorizontal: hPad }]}>
+      <View style={[s.container, { marginBottom: vPad }]}>
+        <View style={headerPadStyle}>
           <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
         </View>
 
@@ -146,15 +148,15 @@ function CityRailComponent() {
 
   // ── Web: horizontal scroll rail (original behaviour, already good) ────────
   return (
-    <View style={s.container}>
-      <View style={[s.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[s.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
       </View>
 
       {isError && !isLoading && cities.length === 0 ? (
         <RailErrorBanner message="Could not load cities. Try again." onRetry={() => void refetchCities()} />
       ) : isLoading ? (
-        <View style={s.webSkeletonRow}>
+        <View style={[s.webSkeletonRow, scrollPadStyle]}>
           {skeletonData.map((k) => (
             <CityCardSkeleton key={k} width={cardWidth} />
           ))}
@@ -166,7 +168,7 @@ function CityRailComponent() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <CityCard city={item} width={cardWidth} />}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[s.webRail, isDesktop && { paddingHorizontal: 0 }]}
+          contentContainerStyle={[scrollPadStyle, { gap: 12 }]}
           snapToInterval={cardWidth + 12}
           snapToAlignment="start"
           decelerationRate="fast"
@@ -181,14 +183,12 @@ function CityRailComponent() {
 // ---------------------------------------------------------------------------
 
 const s = StyleSheet.create({
-  container:     { marginBottom: 32 },
-  headerPad:     { paddingHorizontal: 20 },
+  container:     {},
   // Native grid
   grid:          { gap: 12 },
   row:           { gap: 12, marginBottom: 12 },
   // Web rail
-  webRail:       { paddingHorizontal: 20, gap: 12, paddingRight: 40 },
-  webSkeletonRow:{ flexDirection: 'row', paddingHorizontal: 20, gap: 12 },
+  webSkeletonRow:{ flexDirection: 'row', gap: 12 },
   // Card
   card: {
     borderRadius: 16,

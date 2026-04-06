@@ -13,7 +13,8 @@ import { routeWithRedirect } from '@/lib/routes';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { Image } from 'expo-image';
 import Svg, { Defs, Stop, Text as SvgText, LinearGradient as SvgLinearGradient } from 'react-native-svg';
-import { Button } from '@/components/ui/Button';           // ← Fixed: Added missing import
+import Constants from 'expo-constants';
+import { Button } from '@/components/ui/Button';
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 interface NavItem {
@@ -242,6 +243,15 @@ export function WebSidebar() {
     now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }), [now]);
   const timeLabel = useMemo(() =>
     now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }), [now]);
+  const appVersionLabel = useMemo(() => {
+    const rawVersion = Constants.expoConfig?.version ?? Constants.nativeApplicationVersion ?? 'dev';
+    return `v${rawVersion} · CulturePass AU`;
+  }, []);
+  const brandMetaLine = useMemo(() => {
+    const city = user?.city?.trim();
+    if (city) return `${city} · Diaspora marketplace`;
+    return 'Australia · Diaspora marketplace';
+  }, [user?.city]);
 
   // Collapsed rail (unchanged)
   if (collapsed) {
@@ -377,6 +387,24 @@ export function WebSidebar() {
             <Ionicons name="chevron-back" size={19} color={CultureTokens.coral} />
           </Pressable>
         </View>
+
+        <View
+          style={[
+            s.brandInfoStrip,
+            {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,12,24,0.035)',
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <View style={[s.brandInfoPill, { backgroundColor: colors.primarySoft }]}>
+            <Ionicons name="sparkles-outline" size={11} color={colors.primary} />
+            <Text style={[s.brandInfoPillText, { color: colors.primary }]}>Brand</Text>
+          </View>
+          <Text style={[s.brandInfoText, { color: colors.textSecondary }]} numberOfLines={1}>
+            {brandMetaLine}
+          </Text>
+        </View>
       </View>
 
       <LinearGradient
@@ -465,7 +493,7 @@ export function WebSidebar() {
           </View>
         )}
 
-        <Text style={[s.versionText, { color: colors.textTertiary }]}>v2.0 · CulturePass AU</Text>
+        <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
       </View>
     </View>
   );
@@ -755,6 +783,33 @@ const getSidebarStyles = (colors: ColorTheme) => {
       flexShrink: 0,
     },
     gradientLine: { height: 1, marginTop: 4, marginBottom: 6 },
+    brandInfoStrip: {
+      alignSelf: 'stretch',
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      gap: 6,
+    },
+    brandInfoPill: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    brandInfoPillText: {
+      fontSize: 10,
+      fontFamily: 'Poppins_700Bold',
+      letterSpacing: 0.3,
+    },
+    brandInfoText: {
+      fontSize: 11,
+      fontFamily: 'Poppins_500Medium',
+      lineHeight: 14,
+    },
 
     ctaWrap: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 },
     ctaBtn: { borderRadius: 12, overflow: 'hidden' },

@@ -537,7 +537,7 @@ const webStyles = StyleSheet.create({
   },
   ambientMesh: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.055,
+    opacity: 0.038,
   },
   contentContainer: {
     flex: 1,

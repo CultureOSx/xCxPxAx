@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
 import { withAlpha } from '@/lib/withAlpha';
 import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { captureEvent } from '@/lib/analytics';
 import type { HeritagePlaylistEntry } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
@@ -41,7 +41,7 @@ function HeritageSkeletonCard() {
 
 function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRailProps) {
   const colors = useColors();
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
   const lastImpressionKey = useRef<string>('');
 
   useEffect(() => {
@@ -96,8 +96,8 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader
           title="Heritage Playlist"
           subtitle="Curated listening that opens into matching cultural discovery"
@@ -205,7 +205,7 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
           )
         }
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+        contentContainerStyle={[scrollPadStyle, { gap: ITEM_GAP }]}
         snapToInterval={SNAP}
         snapToAlignment="start"
         decelerationRate="fast"
@@ -216,9 +216,7 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 36, paddingTop: 2 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: ITEM_GAP, paddingRight: 44 },
+  container: { paddingTop: 2 },
   card: {
     borderRadius: CardTokens.radius,
     overflow: 'hidden',

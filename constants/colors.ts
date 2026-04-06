@@ -248,12 +248,12 @@ export const light: ColorTheme = {
 
 /**
  * Dark Theme Tokens
- * Kept for compatibility and explicitly opt-in experiences only.
+ * Native default — “Night Festival” + OLED-friendly base (ui-ux-pro-max: deep black,
+ * layered greys, brand accents; still CultureTokens-driven, not generic purple templates).
  *
  * Color hierarchy:
- *   Deep Space (#0B0B14) — primary background
- *   Midnight Plum (#1B0F2E) — secondary surfaces
- *   Rich Purple (#22203A) — card/component surfaces
+ *   True black / near-black — primary background (OLED power + contrast anchor)
+ *   Lifted navy surfaces — cards and chrome
  *   CulturePass Blue (#0066CC) — elevated/active surfaces and accents
  */
 export const dark: ColorTheme = {
@@ -266,29 +266,29 @@ export const dark: ColorTheme = {
   primaryGlow: "rgba(0, 102, 204, 0.25)",
   primarySoft: "rgba(0, 102, 204, 0.12)",
 
-  // Backgrounds - CulturePass Dark Palette (Navy Blue)
-  background: "#060C16",       // Deep Navy — primary background
-  backgroundSecondary: "#0A1628", // Dark Navy
+  // Backgrounds — OLED base + festival navy lift on surfaces
+  background: "#000000",
+  backgroundSecondary: "#0A0E14",
 
-  surface: "#0E2040",          // Navy — cards
+  surface: "#121826",
   surfaceElevated: CultureTokens.indigo, // CulturePass Blue — active surfaces
-  surfaceSecondary: "#003F80",
+  surfaceSecondary: "#0F2844",
 
-  border: "#0D2847",           // Navy border
-  borderLight: "#1A3D60",      // Light navy border for dividers
-  divider: "#0D2847",
+  border: "#1A2436",
+  borderLight: "#243045",
+  divider: "#1A2436",
 
-  text: "#FFFFFF",             // Primary text
-  textSecondary: "#C9C9D6",    // Secondary text
-  textTertiary: "#8D8D8D",     // Muted text
+  text: "#F4F4F5",
+  textSecondary: "#C9C9D6",
+  textTertiary: "#8D8D8D",
   textInverse: "#0B0B14",
   textOnBrandGradient: "#FFFFFF",
 
-  card: "#22203A",
-  cardBorder: "#2A2747",
+  card: "#151C2E",
+  cardBorder: "#243045",
 
-  tabBar: "rgba(11, 11, 20, 0.95)",
-  tabBarBorder: "rgba(42, 39, 71, 0.4)",
+  tabBar: "rgba(0, 0, 0, 0.94)",
+  tabBarBorder: "rgba(36, 48, 69, 0.55)",
   tabIconDefault: "#8D8D8D",
   tabIconSelected: CultureTokens.indigo,
 

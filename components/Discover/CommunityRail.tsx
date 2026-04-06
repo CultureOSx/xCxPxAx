@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import SectionHeader from './SectionHeader';
 import CommunityCard from './CommunityCard';
 import { CommunityCardSkeleton } from '@/components/CommunityCardSkeleton';
@@ -30,15 +30,15 @@ function CommunityRailComponent({
   errorMessage,
   onRetry,
 }: CommunityRailProps) {
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
 
   const hasRealItems = data.some((item) => typeof item !== 'string');
 
   if (!isLoading && !hasRealItems && !errorMessage) return null;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
       {errorMessage && !isLoading && !hasRealItems ? (
@@ -56,7 +56,7 @@ function CommunityRailComponent({
           )
         }
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+        contentContainerStyle={[scrollPadStyle, { gap: 22 }]}
         snapToInterval={snapInterval}
         snapToAlignment="start"
         decelerationRate="fast"
@@ -76,9 +76,7 @@ function CommunityRailComponent({
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 36 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, gap: 22, paddingRight: 44 },
+  container: {},
 });
 
 export const CommunityRail = React.memo(CommunityRailComponent);

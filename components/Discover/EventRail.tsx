@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import SectionHeader from './SectionHeader';
 import EventCard from './EventCard';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
@@ -38,15 +38,15 @@ function EventRailComponent({
   errorMessage,
   onRetry,
 }: EventRailProps) {
-  const { isDesktop } = useLayout();
+  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
 
   const hasRealItems = data.some((item) => typeof item !== 'string');
 
   if (!isLoading && !hasRealItems && !errorMessage) return null;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerPad, isDesktop && { paddingHorizontal: 0 }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={headerPadStyle}>
         <SectionHeader title={title} subtitle={subtitle} onSeeAll={onSeeAll} />
       </View>
       {errorMessage && !isLoading && !hasRealItems ? (
@@ -73,7 +73,7 @@ function EventRailComponent({
             )
           }
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]}
+          contentContainerStyle={scrollPadStyle}
           snapToInterval={RAIL_CARD_WIDTH + RAIL_ITEM_GAP}
           snapToAlignment="start"
           decelerationRate="fast"
@@ -86,9 +86,7 @@ function EventRailComponent({
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 36, paddingTop: 4 },
-  headerPad: { paddingHorizontal: 20 },
-  scrollRail: { paddingHorizontal: 20, paddingRight: 44 },
+  container: { paddingTop: 4 },
 });
 
 export const EventRail = React.memo(EventRailComponent);

@@ -37,31 +37,69 @@ export const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 // Explicit allowlist — credentials mode requires an origin function (not `true`)
-const LOCAL_DEV_PORTS = [8081, 8082, 8083, 8084, 8085, 19006, 3000, 5000, 5173];
+const LOCAL_DEV_PORTS = [8081, 8082, 8083, 8084, 8085, 19006, 19000, 3000, 5000, 5173, 4173];
 const LOCAL_DEV_HOSTS = ['localhost', '127.0.0.1'] as const;
 const LOCAL_DEV_ORIGINS = LOCAL_DEV_HOSTS.flatMap((host) =>
   LOCAL_DEV_PORTS.flatMap((port) => [`http://${host}:${port}`, `https://${host}:${port}`]),
 );
+
+/** Match browser Origin for loopback — any port (Expo web, Vite, etc.) */
+const LOCALHOST_ORIGIN_ONLY =
+  /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]):\d+$/;
 
 const CORS_EXTRA = (process.env.CORS_EXTRA_ORIGINS ?? '')
   .split(',')
   .map((s) => s.trim())
   .filter((s) => s.length > 0);
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getFirebaseProjectId(): string | null {
+  try {
+    const raw = process.env.FIREBASE_CONFIG;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { projectId?: string };
+    if (typeof parsed.projectId === 'string' && parsed.projectId.trim().length > 0) {
+      return parsed.projectId.trim();
+    }
+  } catch {
+    // no-op
+  }
+  return null;
+}
+
+const firebaseProjectId = getFirebaseProjectId();
+const firebaseHostingOrigins: RegExp[] = firebaseProjectId
+  ? [
+      new RegExp(`^https://${escapeRegExp(firebaseProjectId)}\\.web\\.app$`),
+      new RegExp(`^https://${escapeRegExp(firebaseProjectId)}\\.firebaseapp\\.com$`),
+      new RegExp(`^https://[\\w-]+--${escapeRegExp(firebaseProjectId)}\\.web\\.app$`), // Firebase preview channels
+    ]
+  : [
+      /^https:\/\/[\w-]+\.web\.app$/,
+      /^https:\/\/[\w-]+\.firebaseapp\.com$/,
+    ];
+
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Production
   'https://culturepass.app',
   'https://www.culturepass.app',
   /^https:\/\/[\w-]+\.culturepass\.app$/,          // preview/staging subdomains
+  'https://culturekerala.com',
+  'https://www.culturekerala.com',
+  /^https:\/\/[\w-]+\.culturekerala\.com$/,
   // EAS/Expo OTA
   /^https:\/\/[\w-]+\.expo\.dev$/,
   // Hosted previews (set CORS_EXTRA_ORIGINS for private URLs)
   /^https:\/\/[\w-]+\.vercel\.app$/,
   /^https:\/\/[\w-]+\.netlify\.app$/,
   /^https:\/\/[\w-]+\.ngrok(-free)?\.app$/,
+  ...firebaseHostingOrigins,
   // Local development (http + https — Expo / Vite may use TLS locally)
   ...LOCAL_DEV_ORIGINS,
-  // IPv6 loopback
+  // IPv6 loopback (also covered by isAllowedOrigin LOCALHOST_ORIGIN_ONLY check)
   /^https?:\/\/\[::1\]:\d+$/,
   // Local network development (Expo on LAN; optional https tunnels)
   /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
@@ -74,6 +112,7 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
 
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return true; // non-browser clients (Postman, React Native native)
+  if (LOCALHOST_ORIGIN_ONLY.test(origin)) return true;
   return ALLOWED_ORIGINS.some(allowed =>
     typeof allowed === 'string' ? allowed === origin : allowed.test(origin),
   );
@@ -242,8 +281,45 @@ app.use('/api/v1', indigenousRouter);
 
 app.use(createStripeRouter());
 
-// Default 404
-app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));
+// OPTIONS that did not match an earlier handler (should be rare) — respond 204 + CORS
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') {
+    next();
+    return;
+  }
+  const origin = req.headers.origin;
+  if (typeof origin === 'string' && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    const requestedHeaders = req.headers['access-control-request-headers'];
+    if (typeof requestedHeaders === 'string' && requestedHeaders.length > 0) {
+      res.setHeader('Access-Control-Allow-Headers', requestedHeaders);
+    } else {
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-Requested-With, Accept, Accept-Language, If-None-Match',
+      );
+    }
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Vary', 'Origin');
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
+// Default 404 — include CORS when Origin is allowlisted so the browser does not
+// report a misleading "No Access-Control-Allow-Origin" (e.g. stray OPTIONS).
+app.use((req, res) => {
+  const origin = req.headers.origin;
+  if (typeof origin === 'string' && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
+  res.status(404).json({ error: 'Not Found' });
+});
 
 // Error handler — never exposes internal details in production
 app.use((err: Error & { status?: number }, req: Request, res: Response, _next: NextFunction) => {

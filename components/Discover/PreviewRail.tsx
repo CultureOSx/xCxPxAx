@@ -23,6 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { CardTokens, webShadow } from '@/constants/theme';
 import SectionHeader from './SectionHeader';
 
@@ -154,7 +155,8 @@ function PreviewRailComponent({
   cardStyle = 'portrait',
 }: PreviewRailProps) {
   const colors = useColors();
-  const { hPad, isDesktop } = useLayout();
+  const { vPad } = useLayout();
+  const { headerPadStyle, pad, padEnd } = useDiscoverRailInsets();
 
   if (!isLoading && items.length === 0) return null;
 
@@ -166,8 +168,8 @@ function PreviewRailComponent({
     : { width: LANDSCAPE_W, height: LANDSCAPE_H };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerWrap, isDesktop && { paddingHorizontal: 0 }, { paddingHorizontal: hPad }]}>
+    <View style={[styles.container, { marginBottom: vPad }]}>
+      <View style={[styles.headerWrap, headerPadStyle]}>
         <SectionHeader
           title={title}
           subtitle={subtitle}
@@ -179,7 +181,7 @@ function PreviewRailComponent({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingHorizontal: hPad }]}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: pad, paddingRight: padEnd }]}
       >
         {displayItems.map((item, idx) =>
           item === 'skeleton' ? (
@@ -211,7 +213,7 @@ const LANDSCAPE_H = 130;
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:   { marginBottom: 32 },
+  container:   {},
   headerWrap:  { marginBottom: 14 },
   scroll:      { gap: 12, paddingRight: 20 },
 
