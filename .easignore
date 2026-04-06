@@ -46,7 +46,7 @@ eslint.config.js
 dataconnect
 
 # ── Scripts, docs, local dev files ───────────────────────────────────────────
-scripts
+# Note: scripts/ must be included — postinstall runs scripts/fix-metro-core.js
 docs
 *.md
 !README.md

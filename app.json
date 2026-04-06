@@ -157,7 +157,8 @@
             "targetSdkVersion": 35
           }
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": false,
