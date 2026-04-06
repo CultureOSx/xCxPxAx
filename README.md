@@ -15,12 +15,12 @@ CulturePass is a cross-platform Expo + React Native app for cultural discovery i
 ```
 Frontend (Expo + React Native)
 ├── app/              # File-based routing (Expo Router)
-├── components/       # Reusable UI components
+├── components/       # Reusable UI components (UI, Web, Tabs, etc.)
 ├── constants/        # Design tokens (colors, typography, spacing, animations)
 ├── contexts/         # Client state (auth, onboarding, saved, contacts)
 ├── hooks/            # Custom React hooks
 ├── lib/              # Auth, API client, feature flags, utilities
-└── shared/           # Shared TypeScript types (Drizzle schema)
+└── shared/           # Shared TypeScript types (Drizzle/Firestore schema)
 
 Backend (Firebase Functions + Express)
 ├── functions/src/            # Express API + middleware + services
@@ -67,8 +67,6 @@ export EXPO_PUBLIC_FIREBASE_EMULATOR_HOST=127.0.0.1
 ## Build and deploy
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for full deployment instructions.
-
-Publishing readiness checklist: [`docs/PUBLISHING_READINESS.md`](docs/PUBLISHING_READINESS.md).
 
 ### iOS App Store
 ```bash
@@ -121,6 +119,7 @@ firebase deploy --only hosting
 - Use `useColors()` and tokens from `constants/theme.ts`; never hardcode hex values in components.
 - Use `expo-image` for runtime image rendering.
 - Preserve canonical routes and legacy remaps together across Expo Router, native intent handling, and Firebase Hosting.
+- **Sentry is removed** — Use standard error handling and reporting flows.
 
 ## Design System
 
@@ -141,8 +140,6 @@ GitHub Actions runs on every push and PR:
 - **Unit tests** — validates services and middleware
 - **Web export** — verifies the web bundle compiles
 
-See `.github/workflows/quality-gate.yml` for the full pipeline.
-
 ## Documentation
 
 | Document | Description |
@@ -157,10 +154,11 @@ See `.github/workflows/quality-gate.yml` for the full pipeline.
 | [`PROJECT_ENHANCEMENT_PLAN.md`](docs/PROJECT_ENHANCEMENT_PLAN.md) | Roadmap |
 | [`RELEASE_NOTES.md`](docs/RELEASE_NOTES.md) | Version history |
 | [`MAINTENANCE.md`](docs/MAINTENANCE.md) | Ongoing maintenance and release guardrails |
+| [`DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md) | Core UI/UX laws and checklist |
 
 ## Tech Stack
 
-- **Frontend**: React 19, React Native 0.81, Expo 54, Expo Router 6
+- **Frontend**: React 19.2.0, React Native 0.83.4, Expo 55, Expo Router 5
 - **State**: TanStack Query 5, React Context
 - **UI**: Reanimated 4, Expo Linear Gradient, Expo Blur / Glass Effect
 - **Backend**: Firebase Cloud Functions (Express), Node.js 22, TypeScript 5.9
@@ -168,18 +166,6 @@ See `.github/workflows/quality-gate.yml` for the full pipeline.
 - **Payments**: Stripe
 - **Hosting**: Firebase Hosting (web), Firebase Functions (API), EAS (native builds)
 
-The target upgrade path documented by engineering is Expo SDK 55 and React Native 0.83.x. Keep docs and code aligned when that migration lands.
-
-## Notes for Replit to production migration
-
-Set environment variables in your deployment platform:
-
-- `EXPO_PUBLIC_API_URL` (recommended)
-- `EXPO_PUBLIC_DOMAIN` (legacy fallback)
-
-This lets the same codebase run cleanly across local dev, Replit, Firebase, and production infra.
-
 ## License
 
 Private — all rights reserved.
-# CulturePassApp

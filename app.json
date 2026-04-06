@@ -188,21 +188,6 @@
                   "bundleIdentifier": "au.culturepass.app.smart-card",
                   "targetName": "smartcard",
                   "entitlements": {}
-                },
-                {
-                  "bundleIdentifier": "au.culturepass.app.widget",
-                  "targetName": "widget",
-                  "entitlements": {}
-                },
-                {
-                  "bundleIdentifier": "au.culturepass.app.spotlight",
-                  "targetName": "spotlight",
-                  "entitlements": {}
-                },
-                {
-                  "bundleIdentifier": "au.culturepass.app.smart-card",
-                  "targetName": "smartcard",
-                  "entitlements": {}
                 }
               ]
             }
