@@ -66,7 +66,7 @@ export default function OrganiserProfilePage() {
         {/* Profile Header */}
         <View style={s.profileHeader}>
           <Image
-            source={{ uri: organiser.avatarUrl || 'https://via.placeholder.com/150' }}
+            source={organiser.avatarUrl ? { uri: organiser.avatarUrl } : null}
             style={s.avatar}
             contentFit="cover"
           />

@@ -3,6 +3,13 @@ const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
+// Remove the unrecognised `watcher.unstable_workerThreads` option that Expo's
+// default config injects but Metro doesn't recognise. Without this deletion
+// expo-doctor reports a validation warning on every run.
+if (config.watcher && 'unstable_workerThreads' in config.watcher) {
+  delete config.watcher.unstable_workerThreads;
+}
+
 // On web, replace react-native-reanimated with a safe no-op stub.
 // The real package's native initializer calls Object.values(null) in a browser
 // environment, crashing the entire app before any component renders.
