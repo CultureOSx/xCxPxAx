@@ -64,12 +64,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     route: '/admin/import',
   },
   {
-    id: 'algolia',
-    label: 'Reindex Search',
-    description: 'Sync Algolia indexes',
-    icon: 'search-outline',
-    color: CultureTokens.coral,
-    route: '/admin/platform',
+    id: 'geohash',
+    label: 'Geo backfill',
+    description: 'Align coordinates & geohashes',
+    icon: 'earth-outline',
+    color: CultureTokens.teal,
+    route: '/admin/cockpit',
   },
   {
     id: 'moderation',

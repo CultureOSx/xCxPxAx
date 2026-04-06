@@ -62,8 +62,22 @@ async function registerPushToken(userId: string): Promise<void> {
 
     if (finalStatus !== 'granted') return;
 
+    const extra = Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined;
+    const projectId =
+      (typeof process.env.EXPO_PUBLIC_EAS_PROJECT_ID === 'string' &&
+        process.env.EXPO_PUBLIC_EAS_PROJECT_ID.trim()) ||
+      extra?.eas?.projectId;
+    if (!projectId) {
+      if (__DEV__) {
+        console.warn(
+          '[push] Missing EAS project id — set EXPO_PUBLIC_EAS_PROJECT_ID or app.json extra.eas.projectId for Expo push tokens.'
+        );
+      }
+      return;
+    }
+
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+      projectId,
     });
 
     // Register with backend

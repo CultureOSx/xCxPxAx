@@ -74,6 +74,7 @@ google-play-service-account.json
 .env
 functions/.env
 functions/.env.*
+!functions/.env.example
 
 # Firebase project config (update .firebaserc with your new project ID)
 # .firebaserc is tracked — do NOT commit project IDs if open-sourcing

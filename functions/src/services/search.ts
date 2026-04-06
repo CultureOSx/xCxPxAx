@@ -2,52 +2,110 @@ import { db } from '../admin';
 import { eventsService } from './events';
 import { profilesService } from './profiles';
 
+export interface GlobalSearchFilters {
+  city?: string;
+  country?: string;
+  category?: string;
+  cultureTag?: string;
+  entryType?: string;
+}
+
 export interface GlobalSearchResult {
   events: any[];
   profiles: any[];
   movies: any[];
+  users: any[];
+}
+
+function matchesEntryTypeFilter(e: Record<string, unknown>, entryType: string | undefined): boolean {
+  if (!entryType) return true;
+  const isFreeLike =
+    e.isFree === true ||
+    e.entryType === 'free_open' ||
+    e.entryType === 'free';
+  if (entryType === 'free') return isFreeLike;
+  if (entryType === 'ticketed') return !isFreeLike;
+  return true;
 }
 
 export const searchService = {
-  async globalSearch(query: string, city?: string): Promise<GlobalSearchResult> {
+  /**
+   * Firestore-backed global search: bounded reads + in-memory match/filter.
+   * For scale, add composite indexes or a dedicated search engine later.
+   */
+  async globalSearch(
+    query: string,
+    filters: GlobalSearchFilters = {},
+    pageSize = 50,
+  ): Promise<GlobalSearchResult> {
     const q = query.toLowerCase();
-    
-    // In a production app, this would use Algolia or specialized indexes.
-    // For now, we fetch recent items and filter in memory to provide a "live" feel.
-    
+    const city = filters.city?.trim();
+    const country = filters.country?.trim();
+    const category = filters.category?.trim();
+    const cultureTag = filters.cultureTag?.trim().toLowerCase();
+    const entryType = filters.entryType?.trim();
+
     const [eventSnap, profileSnap, movieSnap] = await Promise.all([
       db.collection('events').where('status', '==', 'published').limit(200).get(),
       db.collection('profiles').limit(200).get(),
-      db.collection('movies').limit(100).get()
+      db.collection('movies').limit(100).get(),
     ]);
 
     const events = eventSnap.docs
-      .map(d => ({ id: d.id, ...d.data() } as any))
-      .filter(e => {
-        const matchesQuery = e.title.toLowerCase().includes(q) || e.description?.toLowerCase().includes(q);
-        const matchesCity = !city || e.city?.toLowerCase() === city.toLowerCase();
-        return matchesQuery && matchesCity;
+      .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
+      .filter((e) => {
+        const title = String(e.title ?? '').toLowerCase();
+        const desc = String(e.description ?? '').toLowerCase();
+        const matchesQuery = title.includes(q) || desc.includes(q);
+        const matchesCity = !city || String(e.city ?? '').toLowerCase() === city.toLowerCase();
+        const matchesCountry =
+          !country || String(e.country ?? '').toLowerCase() === country.toLowerCase();
+        const matchesCategory =
+          !category || String(e.category ?? '').toLowerCase() === category.toLowerCase();
+        const tags = Array.isArray(e.cultureTag) ? e.cultureTag : [];
+        const matchesCulture =
+          !cultureTag ||
+          tags.some((t: unknown) => String(t).toLowerCase() === cultureTag);
+        const matchesEntry = matchesEntryTypeFilter(e, entryType);
+        return (
+          matchesQuery &&
+          matchesCity &&
+          matchesCountry &&
+          matchesCategory &&
+          matchesCulture &&
+          matchesEntry
+        );
       });
 
     const profiles = profileSnap.docs
-      .map(d => ({ id: d.id, ...d.data() } as any))
-      .filter(p => {
-        const matchesQuery = p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q);
-        const matchesCity = !city || p.city?.toLowerCase() === city.toLowerCase();
-        return matchesQuery && matchesCity;
+      .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
+      .filter((p) => {
+        const name = String(p.name ?? '').toLowerCase();
+        const desc = String(p.description ?? '').toLowerCase();
+        const matchesQuery = name.includes(q) || desc.includes(q);
+        const matchesCity = !city || String(p.city ?? '').toLowerCase() === city.toLowerCase();
+        const matchesCountry =
+          !country || String(p.country ?? '').toLowerCase() === country.toLowerCase();
+        return matchesQuery && matchesCity && matchesCountry;
       });
 
     const movies = movieSnap.docs
-      .map(d => ({ id: d.id, ...d.data() } as any))
-      .filter(m => {
-        const matchesQuery = m.title.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q);
-        return matchesQuery;
+      .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
+      .filter((m) => {
+        const title = String(m.title ?? '').toLowerCase();
+        const desc = String(m.description ?? '').toLowerCase();
+        const matchesQuery = title.includes(q) || desc.includes(q);
+        const matchesCountry =
+          !country || String(m.country ?? '').toLowerCase() === country.toLowerCase();
+        return matchesQuery && matchesCountry;
       });
 
+    const cap = Math.min(50, Math.max(1, pageSize));
     return {
-      events: events.slice(0, 50),
-      profiles: profiles.slice(0, 50),
-      movies: movies.slice(0, 50)
+      events: events.slice(0, cap),
+      profiles: profiles.slice(0, cap),
+      movies: movies.slice(0, cap),
+      users: [],
     };
   },
 

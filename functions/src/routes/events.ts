@@ -20,7 +20,6 @@ import {
 import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation,
   captureRouteError,
 } from './utils';
-import { algoliaEventsIndex } from '../services/algolia';
 import { db } from '../admin';
 
 // ---------------------------------------------------------------------------
@@ -381,8 +380,6 @@ export function createEventsRouter() {
           councilId,
           status: 'draft',
         });
-        // Index in Algolia (fire-and-forget — don't block response)
-        algoliaEventsIndex.indexEvent(event).catch(() => {});
         return res.status(201).json(event);
       } catch (err) {
         captureRouteError(err, 'POST /api/events');
@@ -454,7 +451,6 @@ export function createEventsRouter() {
         ...(b.category  != null && { category:  String(b.category) }),
         ...(b.eventType != null && { eventType: String(b.eventType) }),
       });
-      if (updated) algoliaEventsIndex.indexEvent(updated).catch(() => {});
       return res.json(updated);
     } catch (err) {
       captureRouteError(err, 'PUT /api/events/:id');
@@ -471,7 +467,6 @@ export function createEventsRouter() {
         return res.status(403).json({ error: 'Forbidden: you do not own this event' });
       }
       await eventsService.softDelete(qparam(req.params.id));
-      algoliaEventsIndex.deleteEvent(qparam(req.params.id)).catch(() => {});
       return res.json({ success: true });
     } catch (err) {
       captureRouteError(err, 'DELETE /api/events/:id');
@@ -492,7 +487,6 @@ export function createEventsRouter() {
           return res.status(403).json({ error: 'Forbidden: you do not own this event' });
         }
         const published = await eventsService.publish(qparam(req.params.id));
-        if (published) algoliaEventsIndex.indexEvent(published).catch(() => {});
         return res.json(published);
       } catch (err) {
         captureRouteError(err, 'POST /api/events/:id/publish');

@@ -1,14 +1,12 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as geofire from 'geofire-common';
 import { db } from './admin';
-import { algoliaEventsIndex } from './services/algolia';
 import type { FirestoreEvent } from './services/firestore';
 
 /**
  * Trigger: onEventWritten
- * Maintains the 'feed' collection by automatically creating, updating, or 
+ * Maintains the 'feed' collection by automatically creating, updating, or
  * soft-deleting FeedItem documents whenever an event is modified.
- * Also syncs published events directly to Algolia for fast geo-discovery.
  */
 export const onEventWritten = onDocumentWritten('events/{eventId}', async (event) => {
   const change = event.data;
@@ -34,15 +32,11 @@ export const onEventWritten = onDocumentWritten('events/{eventId}', async (event
       const batch = db.batch();
       existingFeed.docs.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();
-      await algoliaEventsIndex.deleteEvent(eventId);
       return;
     }
 
     // Only sync published events
     if (after.status !== 'published') {
-      if (change.before.exists && change.before.data()?.status === 'published') {
-        await algoliaEventsIndex.deleteEvent(eventId);
-      }
       return;
     }
 
@@ -74,10 +68,6 @@ export const onEventWritten = onDocumentWritten('events/{eventId}', async (event
     }
 
     await feedItemRef.set(itemData, { merge: true });
-
-    // ── 2. Sync to Algolia ────────────────────────────────────────────────
-    const eventForAlgolia = after as FirestoreEvent;
-    await algoliaEventsIndex.indexEvent({ ...eventForAlgolia, id: eventId });
 
   } catch (err) {
     console.error('[onEventWritten] trigger error:', err);

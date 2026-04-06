@@ -336,21 +336,6 @@ adminRouter.get('/admin/events/pending', requireRole('admin', 'moderator', 'plat
 });
 
 // ---------------------------------------------------------------------------
-// Algolia backfill
-// ---------------------------------------------------------------------------
-adminRouter.post('/admin/algolia-backfill', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {
-  try {
-    const { runAlgoliaBackfill } = await import('../jobs/algoliaBackfill');
-    const force = req.body?.force === true;
-    const result = await runAlgoliaBackfill(force);
-    return res.json({ ok: true, ...result });
-  } catch (err: any) {
-    captureRouteError(err, 'POST /admin/algolia-backfill');
-    return res.status(500).json({ error: err?.message ?? 'Backfill failed' });
-  }
-});
-
-// ---------------------------------------------------------------------------
 // GeoHash / Coordinates backfill (AU postcode-based best-effort)
 // ---------------------------------------------------------------------------
 adminRouter.post('/admin/geohash-backfill', requireRole('admin', 'platformAdmin'), async (req: Request, res: Response) => {

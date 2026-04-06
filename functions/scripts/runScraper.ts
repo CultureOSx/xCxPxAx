@@ -11,7 +11,7 @@ async function runScraper() {
     }
     const html = await response.text();
     
-    // Extract Next.js data block holding the Algolia hits
+    // Extract Next.js data block holding embedded event hits
     const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
     if (!match) {
         throw new Error('Next.js __NEXT_DATA__ block not found in page HTML.');
@@ -21,7 +21,7 @@ async function runScraper() {
     const hits = jsonData?.props?.pageProps?.events?.hits;
     
     if (!hits || !Array.isArray(hits)) {
-        throw new Error('No Algolia hits found in the events payload.');
+        throw new Error('No event hits found in the scraped payload.');
     }
 
     console.log(`Found ${hits.length} culture events from What's On.`);

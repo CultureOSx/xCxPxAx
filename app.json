@@ -83,7 +83,9 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -166,11 +168,26 @@
         "origin": "https://culturepass.app"
       },
       "eas": {
-        "projectId": "57618e79-e51c-4891-9cf6-f357585d9c72",
+        "projectId": "01dab28f-0531-42aa-8f76-c3dc0e13216e",
         "build": {
           "experimental": {
             "ios": {
               "appExtensions": [
+                {
+                  "bundleIdentifier": "au.culturepass.app.widget",
+                  "targetName": "widget",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.spotlight",
+                  "targetName": "spotlight",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.smart-card",
+                  "targetName": "smartcard",
+                  "entitlements": {}
+                },
                 {
                   "bundleIdentifier": "au.culturepass.app.widget",
                   "targetName": "widget",
@@ -192,7 +209,7 @@
         }
       }
     },
-    "owner": "cultureos",
+    "owner": "cultureoss-organization",
     "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"

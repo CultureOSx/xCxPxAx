@@ -93,18 +93,6 @@ export default function SuperAdminCockpit() {
     refetchInterval: 30000,
   });
 
-  // Action Mutations
-  const algoliaMutation = useMutation({
-    mutationFn: () => api.admin.algoliaBackfill({ force: false }),
-    onSuccess: () => {
-      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Algolia sync triggered successfully.');
-    },
-    onError: (err: any) => {
-      Alert.alert('Algolia Sync Error', err?.message || 'Failed to sync');
-    }
-  });
-
   const geoMutation = useMutation({
     mutationFn: () => api.admin.geohashBackfill({ forceGeoHash: false, overwriteCoordinates: false }),
     onSuccess: () => {
@@ -258,17 +246,6 @@ export default function SuperAdminCockpit() {
             <View style={{ width: columnWidth(2) }}>
               <ActionItem
                 delay={300}
-                title="Sync Algolia"
-                description="Firestore to Search indexes"
-                icon="logo-amplify"
-                color={CultureTokens.indigo}
-                onPress={() => algoliaMutation.mutate()}
-                pending={algoliaMutation.isPending}
-              />
-            </View>
-            <View style={{ width: columnWidth(2) }}>
-              <ActionItem
-                delay={320}
                 title="Align Geohashes"
                 description="AU postcode alignment"
                 icon="earth-outline"
@@ -279,7 +256,7 @@ export default function SuperAdminCockpit() {
             </View>
             <View style={{ width: columnWidth(2) }}>
               <ActionItem
-                delay={340}
+                delay={320}
                 title="Platform Settings"
                 description="Flags & configuration"
                 icon="settings-outline"

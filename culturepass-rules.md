@@ -304,23 +304,9 @@ Social sign-in: Google (web: popup, native: `@react-native-google-signin`), Appl
 
 ---
 
-## Algolia Search
+## Search
 
-```typescript
-// Client
-import { useAlgoliaSearch } from '@/hooks/useAlgolia';
-const { results, isConfigured } = useAlgoliaSearch({
-  indexName: 'culturepass_events',
-  query, city, hitsPerPage: 20,
-});
-// isConfigured = false → falls back to /api/search
-
-// Server (Cloud Functions)
-import { algoliaEventsIndex, algoliaProfilesIndex } from '../services/algolia';
-await algoliaEventsIndex.indexEvent({ ...event, id });
-await algoliaEventsIndex.deleteEvent(eventId);
-await algoliaProfilesIndex.indexProfile({ id, name, entityType, city });
-```
+Use `api.search.query()` → `GET /api/search` (Firestore-backed on the server).
 
 ---
 
@@ -358,7 +344,7 @@ await algoliaProfilesIndex.indexProfile({ id, name, entityType, city });
 ## Security Checklist (before every commit)
 
 - [ ] No hardcoded secrets — `EXPO_PUBLIC_*` env vars only
-- [ ] `STRIPE_SECRET_KEY`, `ALGOLIA_ADMIN_KEY` never in `EXPO_PUBLIC_*`
+- [ ] `STRIPE_SECRET_KEY` and other server secrets never in `EXPO_PUBLIC_*`
 - [ ] User input validated with `zod` before sending to API
 - [ ] No `dangerouslySetInnerHTML`
 - [ ] `redirectTo` params only allow internal routes (`/` prefix, no `://`)

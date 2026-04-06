@@ -17,7 +17,7 @@ export const syncSydneyWhatsOn = onSchedule('every 12 hours', async (event) => {
     }
     const html = await response.text();
     
-    // Extract Next.js data block holding the Algolia hits
+    // Extract Next.js data block holding the site's embedded event hits
     const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
     if (!match) {
         throw new Error('Next.js __NEXT_DATA__ block not found in page HTML.');
@@ -27,7 +27,7 @@ export const syncSydneyWhatsOn = onSchedule('every 12 hours', async (event) => {
     const hits = jsonData?.props?.pageProps?.events?.hits;
     
     if (!hits || !Array.isArray(hits)) {
-        throw new Error('No Algolia hits found in the events payload.');
+        throw new Error('No event hits found in the scraped payload.');
     }
 
     logger.info(`Found ${hits.length} culture events from What's On.`);
@@ -91,7 +91,7 @@ export const syncSydneyWhatsOn = onSchedule('every 12 hours', async (event) => {
         updatedAt: new Date().toISOString(),
       };
 
-      // Merge creates or updates silently via Algolia objectID match
+      // Merge creates or updates silently when object IDs match
       batch.set(docRef, eventData, { merge: true });
       count++;
     }

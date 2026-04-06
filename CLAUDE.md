@@ -98,7 +98,7 @@ constants/
   animations.ts     durations + easing
 
 hooks/
-  useAlgolia.ts · useBrowseData.ts · useColors.ts · useCouncil.ts · useDiscoverData.ts
+  useBrowseData.ts · useColors.ts · useCouncil.ts · useDiscoverData.ts
   useImageUpload.ts · useLayout.ts · useLocationFilter.ts · useLocations.ts
   useNearbyEvents.ts · useNearestCity.ts · useProfile.ts · usePushNotifications.ts · useRole.ts
   queries/          useEvents.ts, useExplore.ts, usePerks.ts
@@ -122,23 +122,22 @@ shared/schema/      activity, admin, booking, checkin, council, discover, entiti
 functions/src/
   app.ts            Express app (~112 lines)
   index.ts          Cloud Functions entry (exports `api` + `onEventWritten` trigger)
-  triggers.ts       onEventWritten → feed collection + Algolia sync
+  triggers.ts       onEventWritten → feed collection sync
   middleware/       auth.ts (requireAuth, requireRole), moderation.ts
   routes/           22 route files — one per domain
-    admin.ts (POST /admin/algolia-backfill) · events.ts (GET /api/events/nearby)
-    search.ts (Algolia first, Firestore fallback) · feed.ts (7-signal ranking)
+    admin.ts · events.ts (GET /api/events/nearby)
+    search.ts (Firestore global search) · feed.ts (7-signal ranking)
     discovery.ts · auth.ts · tickets.ts · users.ts · profiles.ts · council.ts
     perks.ts · membership.ts · social.ts · stripe.ts · indigenous.ts
     locations.ts · activities.ts · movies.ts · updates.ts · misc.ts · import.ts · utils.ts
   services/
-    algolia.ts          algoliaEventsIndex · algoliaProfilesIndex
     discoverCuration.ts featured artists + heritage playlists
     firestore.ts        typed data service
     search.ts · cache.ts · rollout.ts · locations.ts
     (+ activities, events, misc, movies, notifications, perks, profiles,
        tickets, updates, users, wallets, walletPasses, appleWalletWebService, importer)
   jobs/
-    algoliaBackfill.ts  indexes all published events + profiles; checks algoliaIndexedAt
+    geohashBackfill.ts  AU postcode / coordinate backfill
   data/
     AllCouncilsList.csv  ~1000 AU council LGAs
 
@@ -168,16 +167,9 @@ const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
 ---
 
-## Algolia Search
+## Search
 
-| Index | Contents | Facets |
-|-------|----------|--------|
-| `culturepass_events` | Published events | `city`, `country`, `category`, `cultureTag[]`, `entryType` |
-| `culturepass_profiles` | Published profiles | `city`, `country`, `entityType`, `isVerified` |
-
-Algolia = primary. Firestore search = fallback when `EXPO_PUBLIC_ALGOLIA_APP_ID` is absent.
-
-Backfill: `POST /admin/algolia-backfill` (admin token required). `force: true` re-indexes all.
+`GET /api/search` uses Firestore-backed `searchService.globalSearch` (bounded reads + in-memory match). Query params: `q`, `city`, `country`, `category`, `cultureTag`, `entryType`, `pageSize`. Returns `events`, `profiles`, `movies`, `users` (users currently empty).
 
 ---
 
@@ -228,7 +220,6 @@ events/{eventId}
   status: 'draft' | 'published' | 'cancelled'
   lgaCode?, councilId?
   deletedAt, publishedAt, cpid, geoHash, latitude, longitude
-  algoliaIndexedAt?
 
 tickets/{ticketId}
   eventId, userId, status, paymentStatus
@@ -240,7 +231,6 @@ profiles/{profileId}
   name, description, imageUrl, city, country
   ownerId, isVerified, rating, lgaCode?
   socialLinks: { website, instagram, facebook, twitter }
-  algoliaIndexedAt?
 
 councils/{councilId}
   name, suburb, state, lgaCode, country
@@ -263,8 +253,6 @@ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 EXPO_PUBLIC_FIREBASE_APP_ID=
 EXPO_PUBLIC_API_URL=https://us-central1-culturepass-b5f96.cloudfunctions.net/api/
-EXPO_PUBLIC_ALGOLIA_APP_ID=        # ← PENDING: must be set before launch
-EXPO_PUBLIC_ALGOLIA_SEARCH_KEY=    # ← PENDING: must be set before launch
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
 EXPO_PUBLIC_GOOGLE_MAPS_KEY=
 
@@ -273,8 +261,6 @@ STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_MONTHLY_ID=price_...
 STRIPE_PRICE_YEARLY_ID=price_...
-ALGOLIA_APP_ID=                    # ← PENDING
-ALGOLIA_ADMIN_KEY=                 # ← PENDING
 ```
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
@@ -318,7 +304,6 @@ cd functions && npm run build && cd .. && firebase deploy --only functions
 
 ## Pending — Pre-Launch Blockers (April 15 target)
 
-- [ ] Set Algolia env vars in `.env`, `eas.json`, Cloud Functions config; run backfill
 - [ ] GeoHash backfill: geocode events missing `latitude`/`longitude`/`geoHash`
 - [ ] Council LGA auto-select from GPS on onboarding (`/api/councils/nearest`)
 

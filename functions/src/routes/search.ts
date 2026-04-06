@@ -2,7 +2,6 @@ import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
 import { searchService } from '../services/firestore';
 import { isFirestoreConfigured } from '../admin';
-import { searchClient, EVENTS_INDEX, PROFILES_INDEX } from '../services/algolia';
 
 export const searchRouter = Router();
 
@@ -10,10 +9,10 @@ export const searchRouter = Router();
  *
  * Query params:
  *   q          — search query (required)
- *   city       — facet filter
- *   country    — facet filter
- *   category   — facet filter (Music, Food, Art, etc.)
- *   cultureTag — facet filter (Tamil, Ghanaian, Filipino, etc.)
+ *   city       — filter
+ *   country    — filter
+ *   category   — filter (Music, Food, Art, etc.)
+ *   cultureTag — filter (Tamil, Ghanaian, Filipino, etc.)
  *   entryType  — "free" | "ticketed"
  *   pageSize   — max 50, default 20
  */
@@ -23,53 +22,28 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
   const country = String(req.query.country ?? '').trim();
   const category = String(req.query.category ?? '').trim();
   const cultureTag = String(req.query.cultureTag ?? '').trim();
-  const entryType = String(req.query.entryType ?? '').trim(); // "free" | "ticketed"
+  const entryType = String(req.query.entryType ?? '').trim();
   const pageSize = Math.min(50, Math.max(1, parseInt(String(req.query.pageSize ?? '20'), 10) || 20));
 
-  if (!query) return res.json({ events: [], profiles: [] });
-  if (!isFirestoreConfigured && !searchClient) return res.json({ events: [], profiles: [] });
-
-  if (searchClient) {
-    try {
-      // Build facet filter groups — items within a group are OR'd, groups are AND'd
-      const facetFilters: string[][] = [];
-      if (city) facetFilters.push([`city:${city}`]);
-      if (country) facetFilters.push([`country:${country}`]);
-      if (category) facetFilters.push([`category:${category}`]);
-      if (cultureTag) facetFilters.push([`cultureTag:${cultureTag}`]);
-      if (entryType === 'free') facetFilters.push([`entryType:free`]);
-      if (entryType === 'ticketed') facetFilters.push([`entryType:ticketed`]);
-
-      const [eventsResult, profilesResult] = await Promise.all([
-        searchClient.search({
-          requests: [{
-            indexName: EVENTS_INDEX,
-            query,
-            hitsPerPage: pageSize,
-            ...(facetFilters.length ? { facetFilters } : {}),
-          }],
-        }),
-        searchClient.search({
-          requests: [{
-            indexName: PROFILES_INDEX,
-            query,
-            hitsPerPage: Math.min(pageSize, 10),
-            ...(city ? { facetFilters: [[`city:${city}`]] } : {}),
-          }],
-        }),
-      ]);
-
-      const events = (eventsResult?.results?.[0] as any)?.hits ?? [];
-      const profiles = (profilesResult?.results?.[0] as any)?.hits ?? [];
-      return res.json({ events, profiles });
-    } catch (err) {
-      console.error('[GET /api/search] Algolia error, falling back to Firestore:', err);
-      // Fall through to Firestore fallback
-    }
+  if (!query) {
+    return res.json({ events: [], profiles: [], movies: [], users: [] });
+  }
+  if (!isFirestoreConfigured) {
+    return res.json({ events: [], profiles: [], movies: [], users: [] });
   }
 
   try {
-    const result = await searchService.globalSearch(query, city);
+    const result = await searchService.globalSearch(
+      query,
+      {
+        city: city || undefined,
+        country: country || undefined,
+        category: category || undefined,
+        cultureTag: cultureTag || undefined,
+        entryType: entryType || undefined,
+      },
+      pageSize,
+    );
     return res.json(result);
   } catch (err) {
     captureRouteError(err, 'GET /api/search');

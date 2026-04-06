@@ -12,7 +12,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CultureTokens, gradients, HeaderTokens } from '@/constants/theme';
 import { useLayout } from '@/hooks/useLayout';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAlgoliaSearch } from '@/hooks/useAlgolia';
 import { BlurView } from 'expo-blur';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -82,13 +81,6 @@ export default function SearchScreen() {
     person:     { label: 'People',       icon: 'person',     color: CultureTokens.coral },
   }), []);
 
-  useAlgoliaSearch({
-    indexName: 'culturepass_events',
-    query,
-    country: state.country,
-    city: state.city,
-  });
-
   const { data: searchData } = useQuery({
     queryKey: ['api/search', query, state.city, state.country],
     queryFn: () => api.search.query({ q: query, city: state.city || undefined, country: state.country || undefined }),
@@ -101,7 +93,7 @@ export default function SearchScreen() {
     
     const results: SearchResult[] = [];
     
-    // 1. Events from Local Search (or Algolia if you prefer)
+    // 1. Events from /api/search (Firestore-backed)
     const localEvents = Array.isArray(searchData?.events) ? searchData.events : [];
     localEvents.forEach((e: any) => {
       results.push({

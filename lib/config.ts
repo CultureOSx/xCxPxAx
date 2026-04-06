@@ -8,10 +8,6 @@ type RequiredFirebaseEnvKey =
   | 'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
   | 'EXPO_PUBLIC_FIREBASE_APP_ID';
 
-type RequiredAlgoliaPublicEnvKey =
-  | 'EXPO_PUBLIC_ALGOLIA_APP_ID'
-  | 'EXPO_PUBLIC_ALGOLIA_SEARCH_KEY';
-
 const REQUIRED_FIREBASE_KEYS: RequiredFirebaseEnvKey[] = [
   'EXPO_PUBLIC_FIREBASE_API_KEY',
   'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -19,11 +15,6 @@ const REQUIRED_FIREBASE_KEYS: RequiredFirebaseEnvKey[] = [
   'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET',
   'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
   'EXPO_PUBLIC_FIREBASE_APP_ID',
-];
-
-const REQUIRED_ALGOLIA_PUBLIC_KEYS: RequiredAlgoliaPublicEnvKey[] = [
-  'EXPO_PUBLIC_ALGOLIA_APP_ID',
-  'EXPO_PUBLIC_ALGOLIA_SEARCH_KEY',
 ];
 
 // No hardcoded fallback values — all config must come from EXPO_PUBLIC_* env vars
@@ -47,8 +38,6 @@ const ENV = {
   EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
   EXPO_PUBLIC_USE_FIREBASE_EMULATORS: process.env.EXPO_PUBLIC_USE_FIREBASE_EMULATORS,
   EXPO_PUBLIC_FIREBASE_EMULATOR_HOST: process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST,
-  EXPO_PUBLIC_ALGOLIA_APP_ID: process.env.EXPO_PUBLIC_ALGOLIA_APP_ID,
-  EXPO_PUBLIC_ALGOLIA_SEARCH_KEY: process.env.EXPO_PUBLIC_ALGOLIA_SEARCH_KEY,
 } as const;
 
 function getEnv(name: string): string | undefined {
@@ -74,10 +63,6 @@ export function getMissingFirebaseEnvKeys(): RequiredFirebaseEnvKey[] {
   return REQUIRED_FIREBASE_KEYS.filter((key) => !getEnv(key));
 }
 
-export function getMissingAlgoliaPublicEnvKeys(): RequiredAlgoliaPublicEnvKey[] {
-  return REQUIRED_ALGOLIA_PUBLIC_KEYS.filter((key) => !getEnv(key));
-}
-
 export function getFirebaseWebConfig() {
   const missing = getMissingFirebaseEnvKeys();
   if (missing.length > 0) {
@@ -96,29 +81,6 @@ export function getFirebaseWebConfig() {
     messagingSenderId: getEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') ?? '',
     appId: getEnv('EXPO_PUBLIC_FIREBASE_APP_ID') ?? '',
   };
-}
-
-export function getAlgoliaPublicConfig() {
-  return {
-    appId: getEnv('EXPO_PUBLIC_ALGOLIA_APP_ID') ?? '',
-    searchKey: getEnv('EXPO_PUBLIC_ALGOLIA_SEARCH_KEY') ?? '',
-  };
-}
-
-export function warnIfAlgoliaPublicMisconfigured(): void {
-  const missing = getMissingAlgoliaPublicEnvKeys();
-  if (missing.length === 0) return;
-  if (!__DEV__) return;
-
-  console.warn(
-    '[CulturePass] Algolia is not configured (missing: ' + missing.join(', ') + '). ' +
-    'Search may fall back to /api/search; Algolia-powered experiences may be disabled.'
-  );
-}
-
-export function isAlgoliaPublicConfigured(): boolean {
-  const { appId, searchKey } = getAlgoliaPublicConfig();
-  return !!(appId && searchKey);
 }
 
 export function shouldUseFirebaseEmulators(): boolean {

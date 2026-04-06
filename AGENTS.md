@@ -79,7 +79,6 @@ hooks/
   useLocations.ts       Location list management
   useNearestCity.ts     Geolocation → nearest supported city
   useNearbyEvents.ts    GPS-based proximity event discovery (calls /api/events/nearby)
-  useAlgolia.ts         Algolia search hook — useAlgoliaSearch({ indexName, query, city, council })
   usePushNotifications.ts  FCM token registration + notification handlers
 
 lib/
@@ -107,31 +106,26 @@ functions/src/
   app.ts                Express app — routes split across 19 route files (app.ts itself is ~112 lines)
   admin.ts              Firebase Admin SDK singleton
   index.ts              Cloud Functions entry point (exports `api` HTTP function + `onEventWritten` trigger)
-  triggers.ts           Firestore trigger: onEventWritten → syncs to feed collection + Algolia index
+  triggers.ts           Firestore trigger: onEventWritten → syncs to feed collection
   middleware/
     auth.ts             Firebase ID token verification + role guards (requireAuth, requireRole, etc.)
     moderation.ts       Content moderation (bad words, suspicious links, XSS, SQL injection)
   routes/               19 route files — one per domain
-    admin.ts            Admin routes incl. POST /admin/algolia-backfill
+    admin.ts            Admin routes (stats, config, geohash backfill, etc.)
     events.ts           Event CRUD + GET /api/events/nearby (geoHash proximity)
-    search.ts           GET /api/search — Algolia first, Firestore fallback
+    search.ts           GET /api/search — Firestore-backed global search
     feed.ts             GET /api/feed — multi-signal server-side ranking
     auth.ts, tickets.ts, users.ts, profiles.ts, council.ts, perks.ts,
     membership.ts, social.ts, stripe.ts, discovery.ts, indigenous.ts,
     locations.ts, activities.ts, movies.ts, updates.ts, misc.ts, import.ts
   services/
-    algolia.ts          Algolia index service:
-                          algoliaEventsIndex.indexEvent() / .deleteEvent()
-                          algoliaProfilesIndex.indexProfile() / .deleteProfile()
-                          exports: searchClient, EVENTS_INDEX, PROFILES_INDEX
     firestore.ts        Typed Firestore data service (usersService, eventsService, etc.)
-    search.ts           Weighted full-text + trigram Firestore search (fallback when Algolia absent)
+    search.ts           Firestore global search (bounded reads + in-memory match/filter)
     cache.ts            In-memory TTL cache (60s default)
     rollout.ts          Feature flag phased rollout
     locations.ts        Location and city management
   jobs/
-    algoliaBackfill.ts  One-time backfill: indexes all published events + profiles into Algolia.
-                        Checks algoliaIndexedAt to skip already-indexed docs. Exposed via admin route.
+    geohashBackfill.ts  Coordinate / geohash backfill (admin route)
   data/
     AllCouncilsList.csv Council/LGA seed data (32KB) — used for location picker, directory cards
     seed-events.json    Sample events
@@ -214,64 +208,9 @@ Use: `const topInset = Platform.OS === 'web' ? 0 : insets.top;`
 
 ---
 
-## Algolia Search
+## Search
 
-Algolia is the primary search engine. Firestore search is the fallback when Algolia credentials are absent.
-
-### Indices
-| Index | Contents | Facets |
-|-------|----------|--------|
-| `culturepass_events` | All published events | `city`, `country`, `category`, `cultureTag[]`, `entryType` (free/ticketed) |
-| `culturepass_profiles` | All published profiles | `city`, `country`, `entityType`, `isVerified` |
-
-### Client-side (React Native / Web)
-```typescript
-import { useAlgoliaSearch } from '@/hooks/useAlgolia';
-
-const { results, loading, isConfigured } = useAlgoliaSearch({
-  indexName: 'culturepass_events',
-  query,
-  city,          // facet filter
-  council,       // facet filter
-  hitsPerPage: 20,
-});
-// isConfigured = false when EXPO_PUBLIC_ALGOLIA_APP_ID is empty → use /api/search fallback
-```
-
-### Server-side (Cloud Functions)
-```typescript
-import { algoliaEventsIndex, algoliaProfilesIndex } from '../services/algolia';
-
-// Index on publish/update:
-await algoliaEventsIndex.indexEvent({ ...eventData, id: eventId });
-
-// Remove on soft-delete:
-await algoliaEventsIndex.deleteEvent(eventId);
-
-// Index a profile:
-await algoliaProfilesIndex.indexProfile({ id, name, entityType, city, ... });
-```
-
-### Backfill
-Run once after setting `ALGOLIA_APP_ID` + `ALGOLIA_ADMIN_KEY` in Cloud Functions config:
-```bash
-curl -X POST https://us-central1-culturepass-b5f96.cloudfunctions.net/api/admin/algolia-backfill \
-  -H "Authorization: Bearer <admin-token>" \
-  -H "Content-Type: application/json" \
-  -d '{"force": false}'
-# force: true → re-indexes everything, ignoring algoliaIndexedAt timestamp
-```
-
-### Env vars required
-```bash
-# Client (safe to bundle — search-only key)
-EXPO_PUBLIC_ALGOLIA_APP_ID=
-EXPO_PUBLIC_ALGOLIA_SEARCH_KEY=
-
-# Cloud Functions only — never in EXPO_PUBLIC_*
-ALGOLIA_APP_ID=
-ALGOLIA_ADMIN_KEY=
-```
+Use `api.search.query()` → `GET /api/search` (Firestore-backed). For heavy scale, a dedicated search index can be added later.
 
 ---
 
@@ -606,7 +545,7 @@ user.isSydneyVerified, user.interests, user.communities
 
 ## Security Guidelines
 
-- **Never** put `STRIPE_SECRET_KEY`, `ALGOLIA_ADMIN_KEY`, or other server secrets in `EXPO_PUBLIC_*` vars — they're bundled into the client
+- **Never** put `STRIPE_SECRET_KEY` or other server secrets in `EXPO_PUBLIC_*` vars — they're bundled into the client
 - **No hardcoded credentials** in `lib/config.ts` — all config via `EXPO_PUBLIC_*` env vars. Missing keys log a warning and Firebase fails gracefully on first use (correct behaviour — don't add fallbacks)
 - **Input validation**: use `zod` for all user-controlled input before sending to API
 - **XSS**: avoid `dangerouslySetInnerHTML` — use React Native `Text` which is XSS-safe
@@ -655,10 +594,6 @@ EXPO_PUBLIC_FIREBASE_APP_ID=
 # API base URL — MUST be set in eas.json build.production.env for production builds
 EXPO_PUBLIC_API_URL=https://us-central1-culturepass-b5f96.cloudfunctions.net/api/
 
-# Algolia (client — search-only key, safe to bundle)
-EXPO_PUBLIC_ALGOLIA_APP_ID=
-EXPO_PUBLIC_ALGOLIA_SEARCH_KEY=
-
 # Social Auth
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=     # Google Sign-In web client ID (for native OAuth)
 EXPO_PUBLIC_GOOGLE_MAPS_KEY=          # Google Maps API key (Android)
@@ -669,9 +604,6 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_MONTHLY_ID=price_...
 STRIPE_PRICE_YEARLY_ID=price_...
 
-# Algolia (Cloud Functions ONLY — admin key, never in Expo bundle)
-ALGOLIA_APP_ID=
-ALGOLIA_ADMIN_KEY=
 ```
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` under `build.*.env` for EAS builds.
@@ -773,7 +705,6 @@ events/{eventId}
   councilId?: string                        ← linked council record
   deletedAt (soft delete), publishedAt
   cpid (CP-EVT-xxx), geoHash, latitude, longitude
-  algoliaIndexedAt?: number                 ← set by backfill/trigger; used to skip re-index
 
 tickets/{ticketId}
   eventId, userId, status, paymentStatus
@@ -787,7 +718,6 @@ profiles/{profileId}
   ownerId, isVerified, rating
   lgaCode?: string                          ← council LGA for location services
   socialLinks: { website, instagram, facebook, twitter }
-  algoliaIndexedAt?: number                 ← set by backfill; used to skip re-index
 
 councils/{councilId}
   name, suburb, state, lgaCode, country
@@ -827,10 +757,8 @@ See `firestore.rules`:
 - [x] WCAG accessibility audit
 - [x] Hardcoded Firebase credentials removed from `lib/config.ts`
 - [x] `EXPO_PUBLIC_API_URL` added to `eas.json` production profile
-- [x] Sentry removed — package uninstalled, all imports/calls cleaned from app.ts, utils.ts, algolia.ts, triggers.ts
-- [x] Algolia service wired: events index + profiles index, Firestore trigger syncs on publish/update/delete
-- [x] Algolia backfill job (`functions/src/jobs/algoliaBackfill.ts`) + admin route `POST /admin/algolia-backfill`
-- [x] Search route upgraded: full facet support (city, country, category, cultureTag, entryType)
+- [x] Sentry removed — package uninstalled, all imports/calls cleaned from app.ts, utils.ts, triggers.ts
+- [x] Search route: Firestore global search with filters (city, country, category, cultureTag, entryType)
 - [x] GeoHash proximity endpoint `GET /api/events/nearby` — wired and tested
 
 ### Architecture (2026-03 Rebuild) ✅ Complete
@@ -845,7 +773,6 @@ See `firestore.rules`:
 - [x] Server-side feed ranking (`GET /api/feed`) — 7-signal weighted algorithm
 
 ### Pending — Pre-Launch (April 15 target)
-- [ ] **Algolia env vars**: set `EXPO_PUBLIC_ALGOLIA_APP_ID` + `EXPO_PUBLIC_ALGOLIA_SEARCH_KEY` in `.env` and `eas.json`; set `ALGOLIA_APP_ID` + `ALGOLIA_ADMIN_KEY` in Cloud Functions config; run backfill
 - [ ] **GeoHash backfill**: events missing `latitude`/`longitude`/`geoHash` need geocoding script
 - [ ] Council LGA auto-selection from user's city/GPS on onboarding (`/api/councils/nearest` + onboarding UI)
 

@@ -76,18 +76,31 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 }
 
 const corsOptions: cors.CorsOptions = {
+  // With credentials: true, browsers require Access-Control-Allow-Origin to echo the
+  // request Origin (not `*`). Reflect the string explicitly.
   origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      callback(null, true);
-    } else {
-      const err = new Error(`CORS: Origin '${origin}' not allowed`) as Error & { status?: number };
-      err.status = 403;
-      callback(err);
+    if (!origin) {
+      callback(null, false);
+      return;
     }
+    if (isAllowedOrigin(origin)) {
+      callback(null, origin);
+      return;
+    }
+    const err = new Error(`CORS: Origin '${origin}' not allowed`) as Error & { status?: number };
+    err.status = 403;
+    callback(err);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Accept-Language',
+    'If-None-Match',
+  ],
   maxAge: 86400, // preflight cache 24 h
 };
 
@@ -100,7 +113,16 @@ app.use(helmet({
 app.use(express.json({ limit: '2mb' }));
 // Apply CORS before all routes — cors() middleware handles OPTIONS preflight automatically
 app.use(cors(corsOptions));
-app.use(rateLimit({ windowMs: 60000, max: 200, message: 'Too many requests, please try again later.' }));
+// Do not count CORS preflight toward the limit — a burst of OPTIONS can otherwise
+// return 429 without CORS headers and the browser reports a misleading CORS failure.
+app.use(
+  rateLimit({
+    windowMs: 60000,
+    max: 200,
+    message: 'Too many requests, please try again later.',
+    skip: (req) => req.method === 'OPTIONS',
+  }),
+);
 app.use(authenticate);
 
 // ─── Request logging ──────────────────────────────────────────────────────────
