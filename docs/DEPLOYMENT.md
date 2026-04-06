@@ -15,11 +15,11 @@
 
 ## 1. Firebase Verification (Required Before Release)
 
-Project for this app: `culturepass-2e058`
+Project for this app: `culturepass-4f264`
 
 ```bash
 firebase projects:list
-firebase use culturepass-2e058
+firebase use culturepass-4f264
 ```
 
 Confirm in Firebase Console:
@@ -46,7 +46,7 @@ firebase deploy --only functions
 Verify API health:
 
 ```bash
-curl https://us-central1-culturepass-2e058.cloudfunctions.net/api/health
+curl https://us-central1-culturepass-4f264.cloudfunctions.net/api/health
 ```
 
 Expected: HTTP `200` with `{ "ok": true, ... }`.
@@ -58,8 +58,8 @@ Expected: HTTP `200` with `{ "ok": true, ... }`.
 1. Copy `.env.example` to `.env`.
 2. Fill all `EXPO_PUBLIC_FIREBASE_*` values from Firebase Console.
 3. Set API URL:
-- Production: `https://us-central1-culturepass-2e058.cloudfunctions.net/api/`
-- Emulator: `http://127.0.0.1:5001/culturepass-2e058/us-central1/api/`
+- Production: `https://us-central1-culturepass-4f264.cloudfunctions.net/api/`
+- Emulator: `http://127.0.0.1:5001/culturepass-4f264/us-central1/api/`
 
 For local Functions/Stripe testing, also set:
 - `STRIPE_SECRET_KEY`

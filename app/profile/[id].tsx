@@ -219,9 +219,10 @@ export default function ProfileDetailScreen() {
           <meta name="twitter:card" content="summary_large_image" />
         </Head>
 
-        <TabScreenShell 
-          contentMaxWidth={contentMaxWidth} 
+        <TabScreenShell
+          contentMaxWidth={contentMaxWidth}
           showsVerticalScrollIndicator={false}
+          ambientMesh
           contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
         >
           <View style={styles.heroSection}>

@@ -3,13 +3,15 @@ import {
   Platform, Linking, TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens, CategoryColors } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo } from 'react';
-import { AppHeaderBar } from '@/components/AppHeaderBar';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { goBackOrReplace } from '@/lib/navigation';
 
 const isWeb = Platform.OS === 'web';
 
@@ -91,7 +93,7 @@ const CONTACT_OPTIONS = [
   { icon: 'mail', label: 'Email Support', sub: 'support@culturepass.app', color: CultureTokens.indigo, action: () => Linking.openURL('mailto:support@culturepass.app') },
   { icon: 'call', label: 'Phone Support', sub: '1800 285 887 (Mon–Fri 9am–6pm AEST)', color: CultureTokens.success, action: () => Linking.openURL('tel:1800285887') },
   { icon: 'chatbubbles', label: 'Live Chat', sub: 'Available 9am–6pm AEST on weekdays', color: CultureTokens.teal, action: () => Linking.openURL('mailto:support@culturepass.app?subject=Live%20Chat%20Request&body=Hi%20CulturePass%20team%2C%20I%20need%20help%20with...') },
-  { icon: 'logo-twitter', label: 'Twitter / X', sub: '@CulturePassApp', color: '#1DA1F2', action: () => Linking.openURL('https://twitter.com/CulturePassApp') },
+  { icon: 'logo-twitter', label: 'Twitter / X', sub: '@CulturePassApp', color: CategoryColors.movies, action: () => Linking.openURL('https://twitter.com/CulturePassApp') },
 ];
 
 const QUICK_LINKS = [
@@ -127,9 +129,37 @@ export default function HelpScreen() {
 
   const totalResults = filteredCategories.reduce((n, c) => n + c.items.length, 0);
 
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+
   return (
-    <View style={styles.container}>
-      <AppHeaderBar title="Help & Support" backFallback="/(tabs)/profile" topInset={Platform.OS === 'web' ? 0 : insets.top} />
+    <View style={[styles.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={helpAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={styles.headerInner}
+      >
+        <Pressable
+          style={styles.headerBackBtn}
+          onPress={() => goBackOrReplace('/(tabs)/profile')}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
+        <View style={{ width: 40 }} />
+      </LiquidGlassPanel>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -137,18 +167,32 @@ export default function HelpScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Hero */}
-        <View style={styles.heroCard}>
+        <LinearGradient
+          colors={[colors.success, colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
           <View style={styles.heroIcon}>
-            <Ionicons name="help-buoy" size={40} color={CultureTokens.indigo} />
+            <Ionicons name="help-buoy" size={40} color={colors.textInverse} />
           </View>
           <Text style={styles.heroTitle}>How can we help?</Text>
           <Text style={styles.heroSub}>
             Find answers to common questions or reach out to our support team.
           </Text>
-        </View>
+        </LinearGradient>
 
         {/* Search */}
-        <View style={[styles.searchWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+        <View
+          style={[
+            styles.searchWrap,
+            {
+              backgroundColor: colors.primarySoft,
+              borderColor: colors.borderLight,
+              borderRadius: LiquidGlassTokens.corner.valueRibbon,
+            },
+          ]}
+        >
           <Ionicons name="search" size={20} color={colors.textTertiary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
@@ -195,6 +239,7 @@ export default function HelpScreen() {
           <View>
             <ScrollView
               horizontal
+              nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.pillsRow}
             >
@@ -216,7 +261,7 @@ export default function HelpScreen() {
                   <Ionicons
                     name={cat.icon as keyof typeof Ionicons.glyphMap}
                     size={14}
-                    color={activeCategory === cat.id ? 'black' : 'rgba(255,255,255,0.6)'}
+                    color={activeCategory === cat.id ? colors.textInverse : colors.textSecondary}
                   />
                   <Text style={[styles.pillText, activeCategory === cat.id && styles.pillTextActive]}>
                     {cat.label}
@@ -230,7 +275,7 @@ export default function HelpScreen() {
         {/* FAQ Sections */}
         {search.trim() && totalResults === 0 ? (
           <View style={styles.emptySearch}>
-            <Ionicons name="search" size={44} color="rgba(255,255,255,0.3)" />
+            <Ionicons name="search" size={44} color={colors.textTertiary} />
             <Text style={styles.emptyTitle}>No results for &ldquo;{search}&rdquo;</Text>
             <Text style={styles.emptySub}>Try different keywords or browse the categories above.</Text>
           </View>
@@ -261,7 +306,7 @@ export default function HelpScreen() {
                       <Ionicons
                         name={isOpen ? 'chevron-up' : 'chevron-down'}
                         size={20}
-                        color={isOpen ? cat.color : 'rgba(255,255,255,0.5)'}
+                        color={isOpen ? cat.color : colors.textSecondary}
                       />
                     </View>
                     {isOpen && (
@@ -341,51 +386,66 @@ export default function HelpScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const helpAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.07 },
+});
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 12,
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1 },
+
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: LayoutRules.screenHorizontalPadding,
+    paddingVertical: LayoutRules.iconTextGap,
   },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: colors.borderLight,
+  headerBackBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: LayoutRules.borderRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
 
   // Hero
   heroCard: {
-    marginHorizontal: 20, marginBottom: 20,
-    backgroundColor: CultureTokens.indigo, borderRadius: 24,
-    padding: 28, alignItems: 'center',
+    marginHorizontal: LayoutRules.screenHorizontalPadding,
+    marginBottom: LayoutRules.betweenCards + 4,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
     ...Platform.select({
-      web: { boxShadow: '0px 8px 24px rgba(44,42,114,0.3)' },
+      web: { boxShadow: '0px 8px 24px rgba(44,42,114,0.2)' },
       default: {
-        shadowColor: CultureTokens.indigo,
-        shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16,
-        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
       },
     }),
   },
   heroIcon: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: 'white' },
+  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.textInverse },
   heroSub: {
-    fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.9)',
+    fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.92)',
     textAlign: 'center', lineHeight: 24, paddingHorizontal: 12,
   },
 
   // Search
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginHorizontal: 20, marginBottom: 20,
-    borderRadius: 16,
-    paddingHorizontal: 18, paddingVertical: 16,
+    marginHorizontal: LayoutRules.screenHorizontalPadding,
+    marginBottom: LayoutRules.betweenCards + 4,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     borderWidth: 1,
   },
   searchInput: {
@@ -403,7 +463,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   quickLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, textAlign: 'center' },
 
   // Category pills
-  pillsRow: { paddingHorizontal: 20, paddingBottom: 12, gap: 10, flexDirection: 'row', marginBottom: 6 },
+  pillsRow: { paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingBottom: 12, gap: 10, flexDirection: 'row', marginBottom: 6 },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 10,
@@ -412,16 +472,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   pillActive: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
   pillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
-  pillTextActive: { color: colors.background },
+  pillTextActive: { color: colors.textInverse },
 
   // Section
-  section: { paddingHorizontal: 20, marginBottom: 28 },
+  section: { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: 28 },
   sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 14 },
   catHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   catIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   catCount: {
     marginLeft: 'auto', fontSize: 13, fontFamily: 'Poppins_600SemiBold',
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textTertiary,
   },
 
   // FAQ
@@ -488,6 +548,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   aboutCountries: {
     fontSize: 12, fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.4)', textAlign: 'center',
+    color: colors.textTertiary,
+    textAlign: 'center',
   },
 });

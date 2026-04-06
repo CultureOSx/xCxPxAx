@@ -12,8 +12,8 @@ import {
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,103 +78,100 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
   return (
     <Modal visible={!!profile} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, styles.androidOverlay]} />
-          )}
-        </Pressable>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]} onPress={onClose} />
 
         <Animated.View
           entering={Platform.OS !== 'web' ? SlideInDown.springify().damping(22) : undefined}
-          style={[
-            styles.sheet,
-            { backgroundColor: colors.background, paddingBottom: insets.bottom + 20 },
-          ]}
+          style={[styles.sheet, { backgroundColor: 'transparent' }]}
         >
-          <View style={styles.handle} />
+          <View style={styles.sheetClip}>
+            <LiquidGlassPanel
+              borderRadius={0}
+              bordered={false}
+              style={{ flex: 1 }}
+              contentStyle={{ paddingBottom: insets.bottom + 20 }}
+            >
+              <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <View style={styles.coverWrap}>
-            <Image
-              source={{ uri: profile.imageUrl ?? '' }}
-              style={styles.cover}
-              contentFit="cover"
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.6)']}
-              style={StyleSheet.absoluteFill}
-            />
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+              <View style={styles.coverWrap}>
+                <Image
+                  source={{ uri: profile.imageUrl ?? '' }}
+                  style={styles.cover}
+                  contentFit="cover"
+                />
+                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={StyleSheet.absoluteFill} />
+                <TouchableOpacity
+                  style={[styles.closeBtn, { backgroundColor: colors.overlay }]}
+                  onPress={onClose}
+                  accessibilityLabel="Close preview"
+                >
+                  <Ionicons name="close" size={24} color={colors.textOnBrandGradient} />
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={styles.titleRow}>
-                <Text style={[styles.name, { color: colors.text }]}>{profile.name}</Text>
-                {profile.isVerified && (
-                  <Ionicons name="checkmark-circle" size={20} color={CultureTokens.indigo} />
-                )}
-              </View>
-              <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                {getCommunityLabel(profile)} ·{' '}
-                {[profile.city, profile.country].filter(Boolean).join(', ') || 'Australia'}
-              </Text>
-            </View>
-
-            <View style={styles.statsRow}>
-              <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.statVal, { color: colors.text }]}>
-                  {memberCount > 0 ? memberCount.toLocaleString() : '—'}
-                </Text>
-                <Text style={[styles.statLab, { color: colors.textTertiary }]}>Members</Text>
-              </View>
-              <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.statVal, { color: colors.text }]}>
-                  {eventsCount > 0 ? eventsCount : '—'}
-                </Text>
-                <Text style={[styles.statLab, { color: colors.textTertiary }]}>Events</Text>
-              </View>
-              <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.statVal, { color: activity.color }]}>{activity.label}</Text>
-                <Text style={[styles.statLab, { color: colors.textTertiary }]}>Momentum</Text>
-              </View>
-            </View>
-
-            {signals.length > 1 && (
-              <View style={styles.signalRow}>
-                {signals.slice(1).map((signal) => (
-                  <View
-                    key={signal}
-                    style={[styles.signalChip, { backgroundColor: colors.backgroundSecondary }]}
-                  >
-                    <Text style={[styles.signalChipText, { color: colors.textSecondary }]}>
-                      {signal}
-                    </Text>
+              <View style={styles.content}>
+                <View style={styles.header}>
+                  <View style={styles.titleRow}>
+                    <Text style={[styles.name, { color: colors.text }]}>{profile.name}</Text>
+                    {profile.isVerified ? (
+                      <Ionicons name="checkmark-circle" size={20} color={CultureTokens.indigo} />
+                    ) : null}
                   </View>
-                ))}
-              </View>
-            )}
+                  <Text style={[styles.sub, { color: colors.textSecondary }]}>
+                    {getCommunityLabel(profile)} ·{' '}
+                    {[profile.city, profile.country].filter(Boolean).join(', ') || 'Australia'}
+                  </Text>
+                </View>
 
-            <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={3}>
-              {headline}
-            </Text>
+                <View style={styles.statsRow}>
+                  <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.statVal, { color: colors.text }]}>
+                      {memberCount > 0 ? memberCount.toLocaleString() : '—'}
+                    </Text>
+                    <Text style={[styles.statLab, { color: colors.textTertiary }]}>Members</Text>
+                  </View>
+                  <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.statVal, { color: colors.text }]}>
+                      {eventsCount > 0 ? eventsCount : '—'}
+                    </Text>
+                    <Text style={[styles.statLab, { color: colors.textTertiary }]}>Events</Text>
+                  </View>
+                  <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.statVal, { color: activity.color }]}>{activity.label}</Text>
+                    <Text style={[styles.statLab, { color: colors.textTertiary }]}>Momentum</Text>
+                  </View>
+                </View>
 
-            <View style={styles.actions}>
-              <Button style={[styles.joinBtn, { backgroundColor: accentColor }]} onPress={handleJoin}>
-                <Text style={styles.btnText}>Join Community</Text>
-              </Button>
-              <TouchableOpacity
-                style={[styles.profileBtn, { borderColor: colors.borderLight }]}
-                onPress={handleViewProfile}
-              >
-                <Text style={[styles.profileBtnText, { color: colors.text }]}>
-                  View Full Profile
+                {signals.length > 1 ? (
+                  <View style={styles.signalRow}>
+                    {signals.slice(1).map((signal) => (
+                      <View
+                        key={signal}
+                        style={[styles.signalChip, { backgroundColor: colors.backgroundSecondary }]}
+                      >
+                        <Text style={[styles.signalChipText, { color: colors.textSecondary }]}>{signal}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={3}>
+                  {headline}
                 </Text>
-              </TouchableOpacity>
-            </View>
+
+                <View style={styles.actions}>
+                  <Button style={[styles.joinBtn, { backgroundColor: accentColor }]} onPress={handleJoin}>
+                    <Text style={[styles.btnText, { color: colors.textOnBrandGradient }]}>Join Community</Text>
+                  </Button>
+                  <TouchableOpacity
+                    style={[styles.profileBtn, { borderColor: colors.borderLight }]}
+                    onPress={handleViewProfile}
+                  >
+                    <Text style={[styles.profileBtnText, { color: colors.text }]}>View Full Profile</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </LiquidGlassPanel>
           </View>
         </Animated.View>
       </View>
@@ -184,23 +181,24 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  androidOverlay: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
   sheet: {
+    ...shadows.large,
+  },
+  sheetClip: {
+    width: '100%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     overflow: 'hidden',
-    ...shadows.large,
+    maxHeight: '92%',
   },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: 'rgba(0,0,0,0.1)',
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 8,
+    opacity: 0.35,
   },
   coverWrap: { height: 180, position: 'relative' },
   cover: { width: '100%', height: '100%' },
@@ -211,7 +209,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -240,7 +237,7 @@ const styles = StyleSheet.create({
   },
   actions: { gap: 12 },
   joinBtn: { height: 56, borderRadius: 16, justifyContent: 'center' },
-  btnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 16 },
+  btnText: { fontFamily: 'Poppins_700Bold', fontSize: 16 },
   profileBtn: {
     height: 56,
     borderRadius: 16,

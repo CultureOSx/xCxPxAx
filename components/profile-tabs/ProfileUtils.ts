@@ -20,6 +20,7 @@ export function memberDate(d?: string | Date | null): string {
 export const TIER_CFG: Record<string, { color: string; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
   free:    { color: '#94A3B8',           label: 'Standard', icon: 'shield-outline' },
   plus:    { color: CultureTokens.teal,  label: 'Plus',     icon: 'star'           },
+  elite:   { color: CultureTokens.gold,  label: 'Elite',    icon: 'diamond'        },
   pro:     { color: '#7C3AED',           label: 'Pro',      icon: 'flash'          },
   premium: { color: CultureTokens.coral, label: 'Premium',  icon: 'diamond'        },
   vip:     { color: CultureTokens.gold,  label: 'VIP',      icon: 'trophy'         },

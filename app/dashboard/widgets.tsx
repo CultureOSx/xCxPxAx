@@ -93,9 +93,10 @@ function WidgetsDashboardContent() {
         </View>
       </LinearGradient>
 
-      <TabScreenShell 
-        contentMaxWidth={contentMaxWidth} 
-        horizontalPadding={16} 
+      <TabScreenShell
+        contentMaxWidth={contentMaxWidth}
+        horizontalPadding={16}
+        ambientMesh
         contentContainerStyle={styles.screenContent}
       >
         {isLoading ? (

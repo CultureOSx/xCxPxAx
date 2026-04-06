@@ -20,9 +20,9 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { PerkCard } from '@/components/perks/PerkCard';
@@ -655,7 +655,11 @@ export default function PerksTabScreen() {
 
       {/* Category filter chips — perks mode only */}
       {viewMode === 'perks' && (
-        <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
+        <LiquidGlassPanel
+          borderRadius={LiquidGlassTokens.corner.mainCard}
+          style={{ marginBottom: 16 }}
+          contentStyle={{ paddingTop: 4, paddingBottom: 8 }}
+        >
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -687,7 +691,7 @@ export default function PerksTabScreen() {
               </>
             )}
           </ScrollView>
-        </View>
+        </LiquidGlassPanel>
       )}
 
       {viewMode === 'perks' && <MembershipUpgradeBanner />}
@@ -710,42 +714,55 @@ export default function PerksTabScreen() {
   return (
     <ErrorBoundary>
       <View style={[s.screen, { backgroundColor: colors.background, paddingTop: topInset }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.ambientMesh}
+          pointerEvents="none"
+        />
 
-        {/* ── Header ── */}
-        <Animated.View
-          entering={FadeInUp.duration(320).springify()}
-          style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[s.headerTitle, { color: colors.text }]}>Perks & Rewards</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
-              <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                {locationLabel}
-                {!perksLoading && viewMode === 'perks' && filteredPerks.length > 0
-                  ? ` · ${filteredPerks.length} perks`
-                  : ''}
-              </Text>
-            </View>
-          </View>
-
-          <Pressable
-            onPress={() => {
-              void refetch();
-              if (userId) {
-                void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
-                void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
-              }
+        {/* ── Header (liquid glass) ── */}
+        <Animated.View entering={FadeInUp.duration(320).springify()}>
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
             }}
-            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh perks"
+            contentStyle={[s.header, { paddingHorizontal: hPad }]}
           >
-            {isRefetching
-              ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
-              : <Ionicons name="refresh" size={18} color={colors.text} />}
-            {Platform.OS === 'ios' && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
-          </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.headerTitle, { color: colors.text }]}>Perks & Rewards</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+                <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {locationLabel}
+                  {!perksLoading && viewMode === 'perks' && filteredPerks.length > 0
+                    ? ` · ${filteredPerks.length} perks`
+                    : ''}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => {
+                void refetch();
+                if (userId) {
+                  void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+                  void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
+                }
+              }}
+              style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh perks"
+            >
+              {isRefetching
+                ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                : <Ionicons name="refresh" size={18} color={colors.text} />}
+            </Pressable>
+          </LiquidGlassPanel>
         </Animated.View>
 
         {/* ── Content shell ── */}
@@ -861,9 +878,10 @@ export default function PerksTabScreen() {
 
 const s = StyleSheet.create({
   screen:         { flex: 1 },
+  ambientMesh:    { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
-  header:         { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
+  header:         { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
   headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
   headerSub:      { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 
@@ -872,7 +890,6 @@ const s = StyleSheet.create({
 
   headerSection:  { paddingTop: 24 },
 
-  filterBlock:    { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 4, paddingBottom: 8, marginBottom: 16 },
   filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
   clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
   clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },

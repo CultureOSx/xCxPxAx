@@ -5,14 +5,18 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
-  StyleSheet
+  StyleSheet,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
-import { CultureTokens } from '@/constants/theme';
+import { CategoryColors, CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { EventData, Community } from '@/shared/schema';
 
 // Modular Components
@@ -32,7 +36,7 @@ import { isCultureKeralaHost } from '@/lib/domainHost';
 
 export default function DiscoverScreen() {
   const colors = useColors();
-  const { isDesktop, contentWidth } = useLayout();
+  const { isDesktop, contentWidth, hPad } = useLayout();
   const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
 
@@ -146,9 +150,21 @@ export default function DiscoverScreen() {
       )
     : moviePreviewItems;
 
+  const keralaCtaPress = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.ambientMesh}
+        pointerEvents="none"
+      />
       <ScrollView
+        style={styles.scrollTransparent}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           { paddingBottom: scrollBottomPad },
@@ -175,27 +191,27 @@ export default function DiscoverScreen() {
         {/* ── Quick access links ── */}
         <SuperAppLinks />
 
-        {keralaDomain && (
-          <View style={[styles.keralaBanner, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+        {keralaDomain ? (
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.innerRow + 4}
+            style={{ marginHorizontal: hPad, marginBottom: 16 }}
+            contentStyle={{ padding: 14, gap: 6 }}
+          >
             <Text style={[styles.keralaEyebrow, { color: CultureTokens.gold }]}>CultureKerala</Text>
             <Text style={[styles.keralaTitle, { color: colors.text }]}>Kerala & Malayalee Communities Worldwide</Text>
             <Text style={[styles.keralaSub, { color: colors.textSecondary }]}>
               Discover Malayali events, organisations, businesses, and community stories in one place.
             </Text>
             <View style={styles.keralaStatsRow}>
-              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
-                <Text style={[styles.keralaStatValue, { color: colors.text }]}>
-                  {scopedCommunities.length}
-                </Text>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
+                <Text style={[styles.keralaStatValue, { color: colors.text }]}>{scopedCommunities.length}</Text>
                 <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>communities</Text>
               </View>
-              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
-                <Text style={[styles.keralaStatValue, { color: colors.text }]}>
-                  {scopedEvents.length}
-                </Text>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
+                <Text style={[styles.keralaStatValue, { color: colors.text }]}>{scopedEvents.length}</Text>
                 <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>events</Text>
               </View>
-              <View style={[styles.keralaStatChip, { backgroundColor: colors.surfaceElevated }]}>
+              <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
                 <Text style={[styles.keralaStatValue, { color: colors.text }]}>
                   {scopedRestaurants.filter((item) => item !== 'skeleton').length}
                 </Text>
@@ -203,15 +219,31 @@ export default function DiscoverScreen() {
               </View>
             </View>
             <View style={styles.keralaCtaRow}>
-              <Pressable style={styles.keralaCta} onPress={() => router.push('/communities')}>
-                <Text style={styles.keralaCtaText}>Explore Communities</Text>
+              <Pressable
+                style={[styles.keralaCta, { backgroundColor: CultureTokens.indigo }]}
+                onPress={() => {
+                  keralaCtaPress();
+                  router.push('/communities');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Explore Communities"
+              >
+                <Text style={[styles.keralaCtaText, { color: colors.textOnBrandGradient }]}>Explore Communities</Text>
               </Pressable>
-              <Pressable style={styles.keralaGhostCta} onPress={() => router.push('/events')}>
-                <Text style={styles.keralaGhostCtaText}>View Events</Text>
+              <Pressable
+                style={[styles.keralaGhostCta, { borderColor: colors.primary }]}
+                onPress={() => {
+                  keralaCtaPress();
+                  router.push('/events');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="View Events"
+              >
+                <Text style={[styles.keralaGhostCtaText, { color: colors.primary }]}>View Events</Text>
               </Pressable>
             </View>
-          </View>
-        )}
+          </LiquidGlassPanel>
+        ) : null}
 
         {/* ── Hero carousel: featured events ── */}
         <HeroCarousel events={scopedFeaturedEvents} />
@@ -313,7 +345,7 @@ export default function DiscoverScreen() {
         <PreviewRail
           title="Restaurants Near You"
           subtitle="Cultural dining in your neighbourhood"
-          accentColor="#FF9500"
+          accentColor={CategoryColors.food}
           items={scopedRestaurants}
           isLoading={restaurantsLoading}
           seeAllRoute="/restaurants"
@@ -358,14 +390,11 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  keralaBanner: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    gap: 6,
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.07,
   },
+  scrollTransparent: { flex: 1, backgroundColor: 'transparent' },
   keralaEyebrow: {
     fontSize: 11,
     fontFamily: 'Poppins_700Bold',
@@ -413,13 +442,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   keralaCta: {
-    backgroundColor: CultureTokens.indigo,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   keralaCtaText: {
-    color: '#fff',
     fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },
@@ -427,11 +454,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: CultureTokens.indigo,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
   keralaGhostCtaText: {
-    color: CultureTokens.indigo,
     fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },

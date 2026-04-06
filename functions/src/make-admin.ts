@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 
 // Initialize with default credentials
 admin.initializeApp({
-    projectId: 'culturepass-b5f96'
+    projectId: 'culturepass-4f264'
 });
 
 async function elevateAllUsers() {

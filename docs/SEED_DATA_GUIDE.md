@@ -178,11 +178,11 @@ const SEED_EVENTS = await loadEventsFromCSV('./data/events.csv');
 ### Manual Seed
 ```bash
 # Development (emulator)
-curl -X POST http://localhost:5001/culturepass-prod/us-central1/api/admin/seed \
+curl -X POST http://localhost:5001/culturepass-4f264/us-central1/api/admin/seed \
   -H "X-Seed-Secret: your-seed-secret"
 
 # Production
-curl -X POST https://us-central1-culturepass-prod.cloudfunctions.net/api/admin/seed \
+curl -X POST https://us-central1-culturepass-4f264.cloudfunctions.net/api/admin/seed \
   -H "X-Seed-Secret: your-seed-secret"
 ```
 

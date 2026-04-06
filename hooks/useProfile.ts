@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/query-client';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import type { User, Membership, Wallet, EventData } from '@shared/schema';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/lib/auth';
 
 /**
  * CulturePassAU Sydney Query Hooks v2.0
@@ -12,22 +13,33 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
  */
 
 export function useCurrentUser() {
-  const { data: user, isLoading, error, refetch } = useQuery<User>({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/auth/me');
-      return res.json();
+  const { userId: authUid } = useAuth();
+  const {
+    data: user,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+    isError,
+  } = useQuery<User>({
+    queryKey: ['currentUser', authUid],
+    queryFn: () => api.auth.me(),
+    enabled: !!authUid,
+    staleTime: 5 * 60 * 1000,
+    retry: (failureCount, err) => {
+      if (err instanceof ApiError && err.isUnauthorized) return false;
+      return failureCount < 2;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
   });
-  
-  return { 
-    user: user ?? null, 
-    userId: user?.id ?? null, 
-    isLoading, 
-    error, 
-    refetch 
+
+  return {
+    user: user ?? null,
+    userId: user?.id ?? authUid ?? null,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+    isError,
   };
 }
 

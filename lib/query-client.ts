@@ -5,7 +5,12 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { getExplicitApiUrl } from '@/lib/config';
+import {
+  getExplicitApiUrl,
+  getFirebaseEmulatorHost,
+  getFirebaseWebConfig,
+  shouldUseFirebaseEmulators,
+} from '@/lib/config';
 
 /**
  * CulturePassAU Sydney Query Client v2.0
@@ -37,12 +42,16 @@ function normalizeBaseUrl(url: string): string {
 }
 
 /**
- * Sydney-first API base URL resolution:
- * EXPO_PUBLIC_API_URL → explicit prod config
- * localhost:5050      → local dev
- * EXPO_PUBLIC_DOMAIN  → Replit/Vercel preview
- * window.location     → web fallback
+ * Base URL for the Functions-hosted HTTP API (Express `api` function).
+ * - Production / preview: EXPO_PUBLIC_API_URL or same-origin `/api` on hosted web
+ * - Local web: explicit URL, or Functions emulator (5001) when emulators enabled,
+ *   else legacy `server-dev.ts` on 5050
  */
+function localFunctionsEmulatorApiBase(host: string): string {
+  const projectId = getFirebaseWebConfig().projectId;
+  return normalizeBaseUrl(`http://${host}:5001/${projectId}/us-central1/api`);
+}
+
 export function getApiUrl(): string {
   const explicit = getExplicitApiUrl();
 
@@ -56,7 +65,22 @@ export function getApiUrl(): string {
     }
 
     if (explicit) return normalizeBaseUrl(explicit);
-    if (__DEV__) console.warn('[api] EXPO_PUBLIC_API_URL not set — falling back to http://localhost:5050. Set it in .env to use the Firebase emulator or production API.');
+
+    if (shouldUseFirebaseEmulators()) {
+      const host = getFirebaseEmulatorHost();
+      const base = localFunctionsEmulatorApiBase(host);
+      if (__DEV__) {
+        console.log('[api] Local web + emulators →', base);
+      }
+      return base;
+    }
+
+    if (__DEV__) {
+      console.warn(
+        '[api] EXPO_PUBLIC_API_URL not set on localhost — falling back to http://localhost:5050 (server-dev).',
+        'For Firebase emulator use EXPO_PUBLIC_USE_FIREBASE_EMULATORS=true, or set EXPO_PUBLIC_API_URL to production.',
+      );
+    }
     return normalizeBaseUrl('http://localhost:5050');
   }
 
@@ -67,6 +91,10 @@ export function getApiUrl(): string {
   if (Platform.OS !== 'web') {
     if (!__DEV__) {
       throw new Error('EXPO_PUBLIC_API_URL must be configured for production builds.');
+    }
+    if (shouldUseFirebaseEmulators()) {
+      const host = Platform.OS === 'android' ? '10.0.2.2' : getFirebaseEmulatorHost();
+      return localFunctionsEmulatorApiBase(host);
     }
     console.warn(`[api] EXPO_PUBLIC_API_URL not set — falling back to http://${EMULATOR_HOST}:5050. Set it in .env to use the Firebase emulator or production API.`);
     return normalizeBaseUrl(`http://${EMULATOR_HOST}:5050`);

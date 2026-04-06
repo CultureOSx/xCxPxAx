@@ -12,12 +12,12 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { Button } from '@/components/ui/Button';
-import { CultureTokens, LayoutRules, Spacing, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, LayoutRules, Spacing, gradients, type ColorTheme } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BackButton } from '@/components/ui/BackButton';
 import { TextStyles } from '@/constants/typography';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 interface SettingItem {
   icon: string;
@@ -49,7 +49,7 @@ export default function AccountSettingsScreen() {
     tierStr === 'premium' || tierStr === 'vip' || tierStr === 'elite' ? CultureTokens.gold :
     tierStr === 'pro'     ? CultureTokens.teal :
     tierStr === 'sydney-local' ? CultureTokens.success :
-    'rgba(255,255,255,0.6)';
+    colors.textTertiary;
 
   const pathname = usePathname();
   const navigate = (route: string) => {
@@ -184,33 +184,34 @@ export default function AccountSettingsScreen() {
   ];
 
   const sections = isAuthenticated ? AUTH_SECTIONS : GUEST_SECTIONS;
+  const reducedMotion = useReducedMotion();
 
   return (
     <View style={s.container}>
-      {/* ── Ambient gradient background ─────────────────────────── */}
       <LinearGradient
-        colors={
-          isDark
-            ? ['#07071A', '#0C0C1E', '#090912'] as [string, string, string]
-            : ['#F4F4FF', '#FAFBFF', '#F0F2FA'] as [string, string, string]
-        }
-        locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={settingsAmbient.mesh}
         pointerEvents="none"
       />
-      {/* Decorative top-right accent */}
-      <View style={s.bgBlob} pointerEvents="none" />
 
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-        <BackButton
-          fallback="/(tabs)"
-          style={s.backBtn}
-        />
-        <Text style={[TextStyles.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
-          Settings
-        </Text>
-        <View style={{ width: 38 }} />
+      <View style={{ paddingTop: insets.top }}>
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={s.headerGlassInner}
+        >
+          <BackButton fallback="/(tabs)" style={s.backBtnGlass} />
+          <Text style={[TextStyles.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
+            Settings
+          </Text>
+          <View style={{ width: 38 }} />
+        </LiquidGlassPanel>
       </View>
 
       <ScrollView
@@ -222,7 +223,7 @@ export default function AccountSettingsScreen() {
       >
         {/* ── Profile card / guest CTA ────────────────────────── */}
         {isAuthenticated && user ? (
-          <Animated.View entering={FadeInDown.springify().damping(18).stiffness(120)}>
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18).stiffness(120)}>
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
                 s.profileCard,
@@ -275,13 +276,11 @@ export default function AccountSettingsScreen() {
                   </View>
                 </View>
 
-                {/* Glass edit button */}
-                <View style={s.editBtn} pointerEvents="none">
-                  {Platform.OS === 'ios' && (
-                    <BlurView intensity={18} tint="dark" style={StyleSheet.absoluteFill} />
-                  )}
-                  <Ionicons name="create-outline" size={15} color="rgba(255,255,255,0.85)" />
-                  <Text style={s.editBtnText}>Edit</Text>
+                <View pointerEvents="none" style={s.editBtnGlass}>
+                  <LiquidGlassPanel borderRadius={14} bordered={false} contentStyle={s.editBtnInner}>
+                    <Ionicons name="create-outline" size={15} color={colors.textOnBrandGradient} />
+                    <Text style={[s.editBtnText, { color: colors.textOnBrandGradient }]}>Edit</Text>
+                  </LiquidGlassPanel>
                 </View>
               </View>
 
@@ -296,8 +295,12 @@ export default function AccountSettingsScreen() {
             </Pressable>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeInDown.springify().damping(18)}>
-            <View style={[s.guestCard, isDesktopWeb && s.webSection]}>
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}>
+            <LiquidGlassPanel
+              borderRadius={28}
+              style={[s.guestCardOuter, isDesktopWeb && s.webSection]}
+              contentStyle={s.guestCardInner}
+            >
               <View style={s.guestIconWrap}>
                 <LinearGradient
                   colors={[CultureTokens.indigo + '30', CultureTokens.teal + '10'] as [string, string]}
@@ -328,14 +331,14 @@ export default function AccountSettingsScreen() {
                   </Text>
                 </Text>
               </Pressable>
-            </View>
+            </LiquidGlassPanel>
           </Animated.View>
         )}
 
         {/* ── Settings sections ───────────────────────────────── */}
         {sections.map((section, idx) => (
           <Animated.View
-            entering={FadeInDown.delay(80 + idx * 55).springify().damping(18).stiffness(110)}
+            entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + idx * 55, 400)).springify().damping(18).stiffness(110)}
             key={section.title}
             style={[s.section, isDesktopWeb && s.webSection]}
           >
@@ -345,8 +348,7 @@ export default function AccountSettingsScreen() {
               <Text style={s.sectionTitle}>{section.title}</Text>
             </View>
 
-            {/* Glass card */}
-            <View style={s.sectionCard}>
+            <LiquidGlassPanel borderRadius={22} contentStyle={{ padding: 0 }}>
               {section.items.map((item, ii) => (
                 <View key={item.label}>
                   <Pressable
@@ -386,14 +388,14 @@ export default function AccountSettingsScreen() {
                   {ii < section.items.length - 1 && <View style={s.divider} />}
                 </View>
               ))}
-            </View>
+            </LiquidGlassPanel>
           </Animated.View>
         ))}
 
         {/* ── Sign out ─────────────────────────────────────────── */}
         {isAuthenticated && (
           <Animated.View
-            entering={FadeInDown.delay(80 + sections.length * 55).springify().damping(18)}
+            entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + sections.length * 55, 450)).springify().damping(18)}
             style={[s.section, isDesktopWeb && s.webSection, { marginBottom: 20 }]}
           >
             <Pressable
@@ -426,26 +428,21 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
 
-    bgBlob: {
-      position: 'absolute', top: -100, right: -80,
-      width: 300, height: 300, borderRadius: 150,
-      backgroundColor: CultureTokens.indigo + '06',
-    },
-
-    // Header
-    header: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    headerGlassInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       paddingHorizontal: LayoutRules.screenHorizontalPadding,
       paddingBottom: 10,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-      backgroundColor: isDark ? 'rgba(7,7,26,0.85)' : 'rgba(245,245,255,0.88)',
+      paddingTop: 6,
     },
-    backBtn: {
-      width: 38, height: 38, borderRadius: 11,
-      alignItems: 'center', justifyContent: 'center',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-      borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight,
+    backBtnGlass: {
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
     },
 
     // Profile card
@@ -484,7 +481,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
     avatarInner: {
       width: 76, height: 76, borderRadius: 38,
       overflow: 'hidden',
-      backgroundColor: '#0A0A18',
+      backgroundColor: colors.backgroundSecondary,
       alignItems: 'center', justifyContent: 'center',
     },
     avatar: { width: 76, height: 76 },
@@ -492,10 +489,10 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       width: 76, height: 76, borderRadius: 38,
       alignItems: 'center', justifyContent: 'center',
     },
-    avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#fff' },
+    avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.textOnBrandGradient },
 
-    profileName:  { fontSize: 19, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.3 },
-    profileEmail: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.55)' },
+    profileName:  { fontSize: 19, fontFamily: 'Poppins_700Bold', color: colors.textOnBrandGradient, letterSpacing: -0.3 },
+    profileEmail: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textOnBrandGradient, opacity: 0.55 },
     tierBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
       alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4,
@@ -503,14 +500,15 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
     },
     tierText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
 
-    editBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 5,
-      borderRadius: 14, paddingHorizontal: 12, height: 36,
-      overflow: 'hidden',
-      backgroundColor: 'rgba(255,255,255,0.1)',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
+    editBtnGlass: { alignSelf: 'flex-start' },
+    editBtnInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 12,
+      height: 36,
     },
-    editBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+    editBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
     locationRow: {
       flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14,
@@ -519,24 +517,17 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderRadius: 10, alignSelf: 'flex-start',
       borderWidth: 1, borderColor: 'rgba(46,196,182,0.22)',
     },
-    locationText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.75)' },
+    locationText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textOnBrandGradient, opacity: 0.75 },
 
-    // Guest card
-    guestCard: {
+    guestCardOuter: {
       marginHorizontal: LayoutRules.screenHorizontalPadding,
       marginBottom: 24,
-      borderRadius: 28,
-      padding: 32,
-      alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(18,18,36,0.85)' : colors.surface,
-      borderWidth: 1,
-      borderStyle: 'dashed',
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : colors.borderLight,
       ...Platform.select({
         web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' },
         default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 4 },
       }),
     },
+    guestCardInner: { padding: 32, alignItems: 'center' },
     guestIconWrap: {
       width: 96, height: 96, borderRadius: 48,
       alignItems: 'center', justifyContent: 'center',
@@ -562,29 +553,6 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       fontSize: 11, fontFamily: 'Poppins_700Bold',
       color: colors.textTertiary,
       textTransform: 'uppercase', letterSpacing: 1.6,
-    },
-
-    // Glass section card
-    sectionCard: {
-      borderRadius: 22,
-      overflow: 'hidden',
-      backgroundColor: isDark ? 'rgba(20,20,38,0.88)' : 'rgba(255,255,255,0.94)',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-      ...Platform.select({
-        web: {
-          boxShadow: isDark
-            ? '0px 4px 24px rgba(0,0,0,0.3)'
-            : '0px 2px 16px rgba(0,0,0,0.06)',
-        },
-        default: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.22 : 0.07,
-          shadowRadius: 14,
-          elevation: 3,
-        },
-      }),
     },
 
     settingRow: {
@@ -623,3 +591,10 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
 
     webSection: { maxWidth: 800, width: '100%', alignSelf: 'center' },
   });
+
+const settingsAmbient = StyleSheet.create({
+  mesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.07,
+  },
+});

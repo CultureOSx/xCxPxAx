@@ -9,7 +9,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
-import { BlurView } from 'expo-blur';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +21,7 @@ import { routeWithRedirect } from '@/lib/routes';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 
 const FEATURES = [
   { icon: 'cash-outline',             title: '2% Cashback',         desc: 'On every ticket purchase, credited to your wallet', free: false, plus: true },
@@ -35,6 +35,29 @@ const FEATURES = [
 ];
 
 const isWeb = Platform.OS === 'web';
+
+function GlassBackButton({ onPress, colors }: { onPress: () => void; colors: ColorTheme }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        { width: 40, height: 40, borderRadius: 12, overflow: 'hidden', transform: [{ scale: pressed ? 0.95 : 1 }] },
+      ]}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+    >
+      <LiquidGlassPanel
+        borderRadius={12}
+        bordered={false}
+        style={StyleSheet.absoluteFill}
+        contentStyle={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="chevron-back" size={22} color={colors.text} />
+      </LiquidGlassPanel>
+    </Pressable>
+  );
+}
 
 function MembershipUpgradeSkeleton({ topInset, insets, colors }: { topInset: number; insets: EdgeInsets; colors: ColorTheme }) {
   return (
@@ -83,20 +106,14 @@ export default function UpgradeScreen() {
     executeCancel,
   } = useMembershipUpgrade();
 
+  const reducedMotion = useReducedMotion();
 
   if (!isAuthenticated) {
     return (
       <View style={[s.container, { paddingTop: insets.top + webTop }]}>
         {/* Header with back button */}
         <View style={s.header}>
-          <Pressable 
-            onPress={() => goBackOrReplace('/(tabs)/profile')} 
-            style={({ pressed }) => [s.backBtn, { transform: [{ scale: pressed ? 0.95 : 1 }], backgroundColor: colors.surface + '80' }]}
-            hitSlop={8}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-            {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
-          </Pressable>
+          <GlassBackButton onPress={() => goBackOrReplace('/(tabs)/profile')} colors={colors} />
           <Text style={s.headerTitle}>CulturePass+</Text>
           <View style={{ width: 44 }} />
         </View>
@@ -141,11 +158,18 @@ export default function UpgradeScreen() {
 
           {/* Social proof */}
           {memberCount > 0 && (
-            <View style={s.socialProof}>
-              <Ionicons name="people" size={16} color={CultureTokens.gold} />
-              <Text style={s.socialProofText}>
-                Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
-              </Text>
+            <View style={s.socialProofOuter}>
+              <LiquidGlassPanel
+                borderRadius={99}
+                bordered={false}
+                style={s.socialProofGlass}
+                contentStyle={s.socialProofInner}
+              >
+                <Ionicons name="people" size={16} color={CultureTokens.gold} />
+                <Text style={s.socialProofText}>
+                  Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
+                </Text>
+              </LiquidGlassPanel>
             </View>
           )}
 
@@ -182,15 +206,15 @@ export default function UpgradeScreen() {
         colors={gradients.midnight as unknown as [string, string]}
         style={[StyleSheet.absoluteFillObject, { opacity: 0.6 }]}
       />
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}
+        pointerEvents="none"
+      />
       <View style={s.header}>
-        <Pressable 
-          onPress={() => goBackOrReplace('/(tabs)/profile')} 
-          style={({ pressed }) => [s.backBtn, { transform: [{ scale: pressed ? 0.95 : 1 }], backgroundColor: colors.surface + '80' }]}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-          {!isWeb && <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />}
-        </Pressable>
+        <GlassBackButton onPress={() => goBackOrReplace('/(tabs)/profile')} colors={colors} />
         <Text style={s.headerTitle} numberOfLines={1} adjustsFontSizeToFit>CulturePass+</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -201,7 +225,10 @@ export default function UpgradeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero */}
-        <Animated.View entering={FadeInUp.springify().damping(16).stiffness(120).duration(600)} style={s.heroSection}>
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeInUp.springify().damping(16).stiffness(120).duration(600)}
+          style={s.heroSection}
+        >
           <View style={s.heroIconWrap}>
             <Ionicons name="globe" size={44} color={CultureTokens.gold} />
           </View>
@@ -213,18 +240,30 @@ export default function UpgradeScreen() {
         </Animated.View>
 
         {memberCount > 0 && (
-          <Animated.View entering={FadeInDown.springify().damping(14).stiffness(110).delay(100)} style={s.socialProof}>
-            {!isWeb && <BlurView intensity={25} style={StyleSheet.absoluteFill} tint="dark" />}
-            <Ionicons name="people" size={16} color={CultureTokens.gold} />
-            <Text style={s.socialProofText}>
-              Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
-            </Text>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInDown.springify().damping(14).stiffness(110).delay(100)}
+            style={s.socialProofOuter}
+          >
+            <LiquidGlassPanel
+              borderRadius={99}
+              bordered={false}
+              style={s.socialProofGlass}
+              contentStyle={s.socialProofInner}
+            >
+              <Ionicons name="people" size={16} color={CultureTokens.gold} />
+              <Text style={s.socialProofText}>
+                Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
+              </Text>
+            </LiquidGlassPanel>
           </Animated.View>
         )}
 
         {/* Billing toggle */}
         {!isPlus && (
-          <Animated.View entering={FadeInDown.springify().damping(15).stiffness(115).delay(200)} style={s.pricingSection}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInDown.springify().damping(15).stiffness(115).delay(200)}
+            style={s.pricingSection}
+          >
             <View style={s.toggleRow}>
               <Pressable
                 style={[s.toggleBtn, billingPeriod === 'monthly' && s.toggleActive]}
@@ -244,26 +283,36 @@ export default function UpgradeScreen() {
                 )}
               </Pressable>
             </View>
-              <View style={[s.priceCard, { overflow: 'hidden' }]}>
-                {!isWeb && <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />}
-                <View style={s.priceCardInner}>
-                  <Text style={s.priceAmount} adjustsFontSizeToFit numberOfLines={1}>{price}</Text>
-              <Text style={s.pricePeriod}>
-                {billingPeriod === 'yearly' ? 'PER YEAR' : 'PER MONTH'}
-              </Text>
+              <LiquidGlassPanel
+                borderRadius={24}
+                bordered={false}
+                style={[s.priceCard, { borderWidth: 1, borderColor: colors.borderLight + '50' }]}
+                contentStyle={s.priceCardInner}
+              >
+                <Text style={s.priceAmount} adjustsFontSizeToFit numberOfLines={1}>{price}</Text>
+                <Text style={s.pricePeriod}>
+                  {billingPeriod === 'yearly' ? 'PER YEAR' : 'PER MONTH'}
+                </Text>
                 {billingPeriod === 'yearly' && (
                   <View style={s.breakdownBadge}>
                     <Text style={s.priceBreakdown}>ONLY {perMonth} / MONTH</Text>
                   </View>
                 )}
-                </View>
-              </View>
+              </LiquidGlassPanel>
           </Animated.View>
         )}
 
         {/* Feature comparison */}
-        <Animated.View entering={FadeInDown.springify().damping(14).stiffness(100).delay(300)} style={[s.comparisonSection, { overflow: 'hidden' }]}>
-          {!isWeb && <BlurView intensity={25} style={StyleSheet.absoluteFill} tint="dark" />}
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeInDown.springify().damping(14).stiffness(100).delay(300)}
+          style={s.comparisonSectionOuter}
+        >
+          <LiquidGlassPanel
+            borderRadius={24}
+            bordered={false}
+            style={[s.comparisonSectionGlass, { borderWidth: 1, borderColor: colors.borderLight + '50' }]}
+            contentStyle={s.comparisonSectionInner}
+          >
           <Text style={s.sectionTitle}>What&apos;s Included</Text>
           <View style={s.comparisonHeader}>
             <View style={{ flex: 1 }} />
@@ -296,6 +345,7 @@ export default function UpgradeScreen() {
               </View>
             </View>
           ))}
+          </LiquidGlassPanel>
         </Animated.View>
 
         {/* Highlights */}
@@ -305,20 +355,30 @@ export default function UpgradeScreen() {
             { bg: CultureTokens.gold + '15', color: CultureTokens.gold, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
             { bg: CultureTokens.coral + '15',   color: CultureTokens.coral,   icon: 'gift',  title: 'Exclusive Perks', desc: 'Access members-only deals and discounts from restaurants, shops, and cultural venues.' },
           ].map((h, i) => (
-            <Animated.View entering={FadeInDown.springify().damping(14).delay(400 + i * 100)} key={h.title} style={[s.highlightCard, { overflow: 'hidden' }]}>
-              {!isWeb && <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />}
-              <View style={[s.highlightIcon, { backgroundColor: h.bg }]}>
-                <Ionicons name={h.icon as keyof typeof Ionicons.glyphMap} size={24} color={h.color} />
-              </View>
-              <Text style={h.title === '2% Cashback' ? [s.highlightTitle, { color: CultureTokens.success }] : s.highlightTitle}>{h.title}</Text>
-              <Text style={s.highlightDesc}>{h.desc}</Text>
+            <Animated.View
+              entering={reducedMotion ? undefined : FadeInDown.springify().damping(14).delay(400 + i * 100)}
+              key={h.title}
+              style={s.highlightCardOuter}
+            >
+              <LiquidGlassPanel
+                borderRadius={20}
+                bordered={false}
+                style={[s.highlightCardGlass, { borderWidth: 1, borderColor: colors.borderLight + '50' }]}
+                contentStyle={s.highlightCardInner}
+              >
+                <View style={[s.highlightIcon, { backgroundColor: h.bg }]}>
+                  <Ionicons name={h.icon as keyof typeof Ionicons.glyphMap} size={24} color={h.color} />
+                </View>
+                <Text style={h.title === '2% Cashback' ? [s.highlightTitle, { color: CultureTokens.success }] : s.highlightTitle}>{h.title}</Text>
+                <Text style={s.highlightDesc}>{h.desc}</Text>
+              </LiquidGlassPanel>
             </Animated.View>
           ))}
         </View>
 
         {/* Active / Subscribe CTA */}
         {isPlus ? (
-          <Animated.View entering={FadeInUp.springify().damping(15)} style={s.activeSection}>
+          <Animated.View entering={reducedMotion ? undefined : FadeInUp.springify().damping(15)} style={s.activeSection}>
             <View style={s.activeBadge}>
               <Ionicons name="checkmark-circle" size={20} color={CultureTokens.success} />
               <Text style={s.activeText}>{"You're a CulturePass+ member"}</Text>
@@ -335,7 +395,10 @@ export default function UpgradeScreen() {
             </Button>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeInUp.springify().damping(18).stiffness(90).delay(700)} style={s.ctaSection}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInUp.springify().damping(18).stiffness(90).delay(700)}
+            style={s.ctaSection}
+          >
             <Button
               onPress={executeSubscribe}
               loading={loading}
@@ -357,7 +420,6 @@ export default function UpgradeScreen() {
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:          { flex: 1, backgroundColor: colors.background },
   header:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  backBtn:            { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight, overflow: 'hidden' },
   headerTitle:        { fontSize: 18, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
   scroll:             { flex: 1 },
   scrollContent:      { paddingHorizontal: 20, flexGrow: 1 },
@@ -367,7 +429,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroTitle:          { fontSize: 32, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, textAlign: 'center' },
   heroTagline:        { fontSize: 14, fontFamily: 'Poppins_700Bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, color: CultureTokens.gold, textAlign: 'center' },
   heroDesc:           { fontSize: 16, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 24, paddingHorizontal: 10, color: colors.textSecondary },
-  socialProof:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 99, marginTop: 16, marginBottom: 32, alignSelf: 'center', backgroundColor: CultureTokens.gold + '10', borderWidth: 1, borderColor: CultureTokens.gold + '25' },
+  socialProofOuter:   { marginTop: 16, marginBottom: 32, alignSelf: 'center' },
+  socialProofGlass:   { borderWidth: 1, borderColor: CultureTokens.gold + '28' },
+  socialProofInner:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20 },
   socialProofText:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginLeft: 10, color: CultureTokens.gold },
   benefitsPreview:    { marginVertical: 24 },
   benefitItem:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 20, marginBottom: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderLeftWidth: 4 },
@@ -381,21 +445,26 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   toggleText:         { fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
   saveBadge:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8, backgroundColor: CultureTokens.teal },
   saveBadgeText:      { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'white' },
-  priceCard:          { borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight + '50', shadowColor: 'black', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 8, backgroundColor: isWeb ? colors.surface : 'transparent' },
+  priceCard:          {
+    ...Platform.select({
+      web: { boxShadow: '0px 8px 28px rgba(0,0,0,0.12)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8 },
+    }),
+  },
   priceCardInner:     { alignItems: 'center', paddingVertical: 32 },
   priceAmount:        { fontSize: 56, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold, letterSpacing: -1 },
   pricePeriod:        { fontSize: 13, fontFamily: 'Poppins_700Bold', marginTop: -4, color: colors.textTertiary, letterSpacing: 1 },
   breakdownBadge:     { marginTop: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: CultureTokens.gold + '15', borderWidth: 1, borderColor: CultureTokens.gold + '30' },
   priceBreakdown:     { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
   sectionTitle:       { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, color: colors.textTertiary, textAlign: 'center' },
-  comparisonSection:  { 
-    marginTop: 32, marginBottom: 24, paddingVertical: 20, 
-    backgroundColor: isWeb ? colors.surface : colors.surface + '60', borderRadius: 24, borderWidth: 1, borderColor: colors.borderLight + '50',
+  comparisonSectionOuter: { marginTop: 32, marginBottom: 24 },
+  comparisonSectionGlass: {
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
     }),
   },
+  comparisonSectionInner: { paddingVertical: 20 },
   comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingRight: 4, paddingHorizontal: 16 },
   compColHeader:      { width: 60, alignItems: 'center', paddingVertical: 6 },
   compColPlus:        { width: 70, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: CultureTokens.gold, shadowColor: CultureTokens.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6 },
@@ -407,13 +476,14 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   compCheck:          { width: 60, alignItems: 'center' },
   compCheckPlus:      { width: 70 },
   highlightsSection:  { marginBottom: 32, gap: 12 },
-  highlightCard:      { 
-    borderRadius: 20, padding: 20, backgroundColor: isWeb ? colors.surface : colors.surface + '60', borderWidth: 1, borderColor: colors.borderLight + '50',
+  highlightCardOuter: {},
+  highlightCardGlass: {
     ...Platform.select({
       web: { boxShadow: '0px 4px 20px rgba(0,0,0,0.06)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 },
     }),
   },
+  highlightCardInner: { padding: 20 },
   highlightIcon:      { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   highlightTitle:     { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
   highlightDesc:      { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: colors.textSecondary },

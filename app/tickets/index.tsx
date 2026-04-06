@@ -21,7 +21,8 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens, gradients , TextStyles } from '@/constants/theme';
+import { CultureTokens, gradients, LiquidGlassTokens, TextStyles } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -106,14 +107,14 @@ function TicketCardInner({ ticket, onCancel }: TicketCardProps) {
           <View style={styles.bannerContent}>
             <View style={styles.statusRow}>
               <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <Text style={[styles.statusText, { color: '#FFFFFF' }]}>{statusStyle.label}</Text>
+                <Text style={[styles.statusText, { color: colors.textOnBrandGradient }]}>{statusStyle.label}</Text>
               </View>
             </View>
 
             {isActive && (
               <View style={[styles.liveBadge, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
-                <View style={[styles.liveDot, { backgroundColor: '#FFFFFF' }]} />
-                <Text style={[styles.liveText, { color: '#FFFFFF' }]}>Active Ticket</Text>
+                <View style={[styles.liveDot, { backgroundColor: colors.textOnBrandGradient }]} />
+                <Text style={[styles.liveText, { color: colors.textOnBrandGradient }]}>Active Ticket</Text>
               </View>
             )}
           </View>
@@ -250,18 +251,28 @@ export default function TicketsScreen() {
   return (
     <AuthGuard icon="ticket-outline" title="My Tickets" message="Sign in to view and manage your event tickets.">
       <Stack.Screen options={{ title: 'My Tickets | CulturePass' }} />
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
         <LinearGradient
           colors={gradients.culturepassBrand as [string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{ paddingTop: topInset }}
+          style={tixStyles.ambientMesh}
+          pointerEvents="none"
+        />
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={styles.headerGlassInner}
         >
-          <View style={styles.header}>
-            <BackButton fallback="/(tabs)/profile" color="#FFFFFF" style={styles.headerBackBtn} />
-            <Text style={[TextStyles.headline, { color: '#FFFFFF', flex: 1, textAlign: 'center', marginRight: 44 }]}>My Tickets</Text>
-          </View>
-        </LinearGradient>
+          <BackButton fallback="/(tabs)/profile" color={colors.text} style={styles.headerBackBtn} />
+          <Text style={[TextStyles.headline, { color: colors.text, flex: 1, textAlign: 'center', marginRight: 44 }]}>
+            My Tickets
+          </Text>
+        </LiquidGlassPanel>
 
         <ScrollView
           style={{ flex: 1 }}
@@ -296,9 +307,13 @@ export default function TicketsScreen() {
               </View>
             ) : tickets.length === 0 ? (
               <View style={styles.emptyState}>
-                <View style={[styles.emptyIconContainer, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <LiquidGlassPanel
+                  borderRadius={LiquidGlassTokens.corner.mainCard}
+                  style={{ borderWidth: 1, borderColor: colors.borderLight }}
+                  contentStyle={styles.emptyIconGlassInner}
+                >
                   <Ionicons name="ticket-outline" size={48} color={CultureTokens.indigo} />
-                </View>
+                </LiquidGlassPanel>
                 <Text style={[TextStyles.title2, { color: colors.text }]}>No Tickets Yet</Text>
                 <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 20 }]}>
                   When you book tickets for events or festivals, they will appear here.
@@ -354,19 +369,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
 
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 16, 
-    paddingVertical: 14 
+  headerGlassInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   headerBackBtn: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyIconGlassInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   section: { marginBottom: 32 },
   sectionTitle: {
@@ -593,16 +615,6 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     gap: 16,
   },
-  emptyIconContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(120,120,140,0.12)',
-  },
   emptyTitle: {
     fontSize: 20,
     fontFamily: 'Poppins_700Bold',
@@ -625,5 +637,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     color: '#fff',
+  },
+});
+
+const tixStyles = StyleSheet.create({
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.07,
   },
 });

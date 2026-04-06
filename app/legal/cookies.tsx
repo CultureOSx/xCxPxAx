@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 const COOKIE_TYPES = [
   { name: 'Essential Cookies',   desc: 'Required for the app to function. They enable core features like secure login, session management, and payment processing. These cannot be disabled.',                                                           icon: 'lock-closed' as const, color: CultureTokens.coral, required: true },
@@ -26,15 +28,32 @@ export default function CookiesScreen() {
   const colors = useColors();
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
-  const webTop = 0;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + webTop }]}>
-      <View style={styles.header}>
-        <View style={{ width: 44 }} />
-        <Text style={styles.headerTitle}>Data & Cookie Policy</Text>
-        <View style={{ width: 44 }} />
-      </View>
+    <View style={[styles.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={legalAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={styles.headerGlassInner}
+      >
+        <View style={{ width: 40 }} />
+        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+          Data & Cookie Policy
+        </Text>
+        <View style={{ width: 40 }} />
+      </LiquidGlassPanel>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 10 }} showsVerticalScrollIndicator={false}>
         <View style={styles.intro}>
@@ -77,11 +96,25 @@ export default function CookiesScreen() {
   );
 }
 
+const legalAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.07 },
+});
+
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.background },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  container:    { flex: 1 },
+  headerGlassInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: LayoutRules.screenHorizontalPadding,
+    paddingVertical: LayoutRules.iconTextGap,
+  },
+  headerTitle:  {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+  },
   intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center' },
   iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.gold + '15' },
   introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },

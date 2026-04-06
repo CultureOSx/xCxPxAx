@@ -12,7 +12,8 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { GlassView } from 'expo-glass-effect';import { router } from 'expo-router';
+import { GlassView } from 'expo-glass-effect';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens, EntityTypeColors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';

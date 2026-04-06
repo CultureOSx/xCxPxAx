@@ -9,10 +9,12 @@ import {
   ScrollView,
   ActivityIndicator,
   Vibration,
+  StyleSheet,
 } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
+  useReducedMotion,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -31,7 +33,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 import { getStyles } from '@/components/scanner/Scanner.styles';
 import {
@@ -60,6 +63,7 @@ export default function ScannerScreen() {
   // Render static glass styles since we migrated out of theme
   const colors = useColors();
   const s = useMemo(() => getStyles(colors), [colors]);
+  const reducedMotion = useReducedMotion();
 
   const [mode, setMode] = useState<ScanMode>('culturepass');
 
@@ -351,28 +355,50 @@ export default function ScannerScreen() {
   return (
     <AuthGuard icon="scan-outline" title="Scanner" message="Sign in to scan CulturePass QR cards and manage contacts.">
     <View style={[s.container, { paddingTop: topInset }]}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={scannerAmbient.mesh}
+        pointerEvents="none"
+      />
 
       {/* Header */}
-      <Animated.View entering={FadeInDown.duration(280)} style={s.header}>
-        <View style={{ width: 34 }} />
-        <Text style={s.headerTitle}>
-          {mode === 'tickets' ? 'Check-In' : 'Scanner'}
-        </Text>
-        <View style={s.headerRight}>
-          {mode === 'tickets' ? (
-            <Pressable style={s.headerBtn} onPress={resetSession} accessibilityRole="button" accessibilityLabel="Reset session">
-              <Ionicons name="refresh-outline" size={16} color={CultureTokens.error} />
-            </Pressable>
-          ) : (
-            <Pressable style={s.headerBtn} onPress={() => router.push('/contacts')} accessibilityRole="button" accessibilityLabel="View contacts">
-              <Ionicons name="people-outline" size={16} color={colors.text} />
-            </Pressable>
-          )}
-        </View>
+      <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(280)}>
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={s.headerGlassInner}
+        >
+          <View style={{ width: 34 }} />
+          <Text style={s.headerTitle}>
+            {mode === 'tickets' ? 'Check-In' : 'Scanner'}
+          </Text>
+          <View style={s.headerRight}>
+            {mode === 'tickets' ? (
+              <Pressable style={s.headerBtn} onPress={resetSession} accessibilityRole="button" accessibilityLabel="Reset session">
+                <Ionicons name="refresh-outline" size={16} color={CultureTokens.error} />
+              </Pressable>
+            ) : (
+              <Pressable style={s.headerBtn} onPress={() => router.push('/contacts')} accessibilityRole="button" accessibilityLabel="View contacts">
+                <Ionicons name="people-outline" size={16} color={colors.text} />
+              </Pressable>
+            )}
+          </View>
+        </LiquidGlassPanel>
       </Animated.View>
 
       {/* Mode toggle */}
-      <View style={s.toggleContainer}>
+      <LiquidGlassPanel
+        borderRadius={10}
+        bordered={false}
+        style={s.toggleGlassOuter}
+        contentStyle={s.toggleGlassInner}
+      >
         <Pressable
           style={[s.toggleTab, mode === 'culturepass' && { backgroundColor: colors.surface }]}
           onPress={() => { setMode('culturepass'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
@@ -389,7 +415,7 @@ export default function ScannerScreen() {
             <Text style={[s.toggleText, mode === 'tickets' && { color: colors.text }]}>Staff Check-In</Text>
           </Pressable>
         )}
-      </View>
+      </LiquidGlassPanel>
 
       {/* Loading overlay */}
       {isLookingUp && (
@@ -402,31 +428,38 @@ export default function ScannerScreen() {
       {/* ═══════════ STAFF TICKET MODE ═══════════ */}
       {mode === 'tickets' && (
         <>
-          <Animated.View entering={FadeInUp.springify()} style={s.statsBar}>
-            <View style={s.statItem}>
-              <Text style={[s.statNum, { color: CultureTokens.success }]}>{session.accepted}</Text>
-              <Text style={s.statLabel}>Accepted</Text>
-            </View>
-            <View style={s.statDivider} />
-            <View style={s.statItem}>
-              <Text style={[s.statNum, { color: CultureTokens.warning }]}>{session.duplicates}</Text>
-              <Text style={s.statLabel}>Dup</Text>
-            </View>
-            <View style={s.statDivider} />
-            <View style={s.statItem}>
-              <Text style={[s.statNum, { color: CultureTokens.error }]}>{session.rejected}</Text>
-              <Text style={s.statLabel}>Invalid</Text>
-            </View>
-            <View style={s.statDivider} />
-            <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.text }]}>{session.accepted + session.duplicates + session.rejected}</Text>
-              <Text style={s.statLabel}>Total</Text>
-            </View>
-            <View style={s.statDivider} />
-            <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.textSecondary, fontSize: 16 }]}>{sessionDuration}</Text>
-              <Text style={s.statLabel}>Session</Text>
-            </View>
+          <Animated.View entering={reducedMotion ? undefined : FadeInUp.springify()}>
+            <LiquidGlassPanel
+              borderRadius={10}
+              bordered={false}
+              style={s.statsGlassOuter}
+              contentStyle={s.statsGlassInner}
+            >
+              <View style={s.statItem}>
+                <Text style={[s.statNum, { color: CultureTokens.success }]}>{session.accepted}</Text>
+                <Text style={s.statLabel}>Accepted</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={[s.statNum, { color: CultureTokens.warning }]}>{session.duplicates}</Text>
+                <Text style={s.statLabel}>Dup</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={[s.statNum, { color: CultureTokens.error }]}>{session.rejected}</Text>
+                <Text style={s.statLabel}>Invalid</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={[s.statNum, { color: colors.text }]}>{session.accepted + session.duplicates + session.rejected}</Text>
+                <Text style={s.statLabel}>Total</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={[s.statNum, { color: colors.textSecondary, fontSize: 16 }]}>{sessionDuration}</Text>
+                <Text style={s.statLabel}>Session</Text>
+              </View>
+            </LiquidGlassPanel>
           </Animated.View>
 
           {ticketCameraActive && (
@@ -751,3 +784,10 @@ export default function ScannerScreen() {
     </AuthGuard>
   );
 }
+
+const scannerAmbient = StyleSheet.create({
+  mesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
+});

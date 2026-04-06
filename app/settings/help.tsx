@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { LayoutRules, Radius, Spacing } from '@/constants/theme';
+import { LayoutRules, Radius, Spacing, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 
@@ -37,13 +38,28 @@ export default function SettingsHelpScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => goBackOrReplace('/settings')}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={helpAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={styles.headerInner}
+      >
+        <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/settings')}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
         <View style={{ width: 40 }} />
-      </View>
+      </LiquidGlassPanel>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.xxl + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Hero */}
@@ -124,10 +140,14 @@ export default function SettingsHelpScreen() {
   );
 }
 
+const helpAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.07 },
+});
+
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
-  backBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
+  backBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
 
   heroCard:     { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, alignItems: 'center' },

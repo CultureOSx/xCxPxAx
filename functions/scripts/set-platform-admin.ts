@@ -5,7 +5,7 @@ const UID = '1VLiq1SEUzWNM7J2XScWn3UbFI52';
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
-    projectId: 'culturepass-2e058',
+    projectId: 'culturepass-4f264',
   });
 }
 

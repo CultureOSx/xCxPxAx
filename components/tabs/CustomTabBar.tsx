@@ -8,7 +8,7 @@
  * - Haptic feedback (iOS/Android)
  * - User avatar in Profile tab
  * - Notification badge on Profile tab
- * - BlurView on iOS, solid on Android/Web
+ * - LiquidGlassPanel (iOS glass / blur fallback / web backdrop-filter)
  * - Hidden on desktop web (sidebar takes over)
  */
 
@@ -20,22 +20,21 @@ import {
   StyleSheet,
   Platform,
   Animated,
-  useColorScheme,
   AccessibilityInfo,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { SymbolView } from 'expo-symbols';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, LiquidGlassTokens } from '@/constants/theme';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -117,7 +116,7 @@ const badge = StyleSheet.create({
     paddingHorizontal: 3,
     zIndex: 10,
   },
-  txt: { fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  txt: { fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
 });
 
 // ─── Individual tab item ──────────────────────────────────────────────────────
@@ -327,7 +326,7 @@ const tabItem = StyleSheet.create({
 
 export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const colors = useColors();
-  const isDark = useColorScheme() === 'dark';
+  const isDark = useIsDark();
   const { isDesktop } = useLayout();
   const { user, userId, isAuthenticated } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -387,38 +386,37 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   // Only render tabs that match our TABS config
   const visibleRoutes = state.routes.filter((r) => TABS.some((t) => t.name === r.name));
 
+  const pillShadow = Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: isDark ? 0.45 : 0.14,
+      shadowRadius: 16,
+    },
+    android: { elevation: 14 },
+    web: {
+      boxShadow: isDark
+        ? '0px 6px 20px rgba(0,0,0,0.6)'
+        : '0px 6px 20px rgba(44,42,114,0.18)',
+    },
+    default: {},
+  });
+
   return (
     <View style={[bar.root, { paddingBottom: bottomPad }]}>
-      <View
+      <LiquidGlassPanel
+        borderRadius={LiquidGlassTokens.corner.mainCard}
+        bordered
         style={[
           bar.pill,
+          pillShadow,
           {
-            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-            boxShadow: isDark 
-              ? '0px 6px 20px rgba(0,0,0,0.6)' 
-              : '0px 6px 20px rgba(44,42,114,0.18)',
+            borderColor: colors.borderLight,
+            overflow: 'visible',
           },
         ]}
+        contentStyle={bar.pillInner}
       >
-        {/* Background */}
-        {Platform.OS === 'ios' ? (
-          <BlurView
-            intensity={90}
-            tint={isDark ? 'dark' : 'extraLight'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
-        ) : (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark ? 'rgba(11, 11, 24, 0.97)' : 'rgba(255, 255, 255, 0.97)',
-                borderRadius: 28,
-              },
-            ]}
-          />
-        )}
-
         {/* Brand gradient top edge */}
         <LinearGradient
           colors={[CultureTokens.indigo, CultureTokens.teal, 'rgba(46,196,182,0)']}
@@ -459,7 +457,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
             />
           );
         })}
-      </View>
+      </LiquidGlassPanel>
     </View>
   );
 }
@@ -473,15 +471,15 @@ const bar = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   pill: {
+    minHeight: 64,
+  },
+  pillInner: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 64,
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'visible',
+    minHeight: 60,
     paddingHorizontal: 4,
     paddingVertical: 2,
-    elevation: 14,
   },
   topLine: {
     position: 'absolute',

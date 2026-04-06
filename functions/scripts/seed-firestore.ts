@@ -2067,7 +2067,7 @@ async function seed() {
   console.log('\nNext steps:');
   console.log('  1. Run: firebase deploy --only functions');
   console.log('  2. Run: firebase deploy --only firestore:rules,firestore:indexes');
-  console.log('  3. Test: curl https://us-central1-culturepass-2e058.cloudfunctions.net/api/events\n');
+  console.log('  3. Test: curl https://us-central1-culturepass-4f264.cloudfunctions.net/api/events\n');
 }
 
 seed().catch((err) => {

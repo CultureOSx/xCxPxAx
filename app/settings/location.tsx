@@ -1,10 +1,12 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { LayoutRules, Spacing } from '@/constants/theme';
+import { LayoutRules, Spacing, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { LocationPicker } from '@/components/LocationPicker';
 
 export default function SettingsLocationScreen() {
@@ -17,15 +19,30 @@ export default function SettingsLocationScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={locAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={styles.headerInner}
+      >
+        <Pressable style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Location & City</Text>
         <View style={{ width: LayoutRules.buttonHeight }} />
-      </View>
+      </LiquidGlassPanel>
 
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
+      <LiquidGlassPanel style={{ marginHorizontal: LayoutRules.screenHorizontalPadding, marginTop: Spacing.sm }} contentStyle={styles.cardInner}>
         <Text style={[styles.label, { color: colors.text }]}>Current location</Text>
         <Text style={[styles.current, { color: colors.textSecondary }]}>
           {state.city ? `${state.city}, ${state.country || 'Australia'}` : 'No location selected'}
@@ -36,14 +53,18 @@ export default function SettingsLocationScreen() {
         </View>
 
         <Text style={[styles.help, { color: colors.textSecondary }]}>Use location picker to update your city for local events and recommendations.</Text>
-      </View>
+      </LiquidGlassPanel>
     </View>
   );
 }
 
+const locAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.07 },
+});
+
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
-  header: {
+  headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -56,17 +77,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: LayoutRules.borderRadius,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
   },
-  card: {
-    marginHorizontal: LayoutRules.screenHorizontalPadding,
-    marginTop: Spacing.sm,
-    borderRadius: LayoutRules.borderRadius,
-    borderWidth: 1,
+  cardInner: {
     padding: LayoutRules.cardPaddingMax,
     gap: LayoutRules.iconTextGap,
   },

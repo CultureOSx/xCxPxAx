@@ -30,7 +30,7 @@
 | **.env Configuration** | `.env` | ✅ Holds active credentials |
 
 ### ✅ Firebase Configuration
-- **Project ID**: `culturepass-60df3`
+- **Project ID**: `culturepass-4f264`
 - **.firebaserc**: ✅ Updated to use correct project ID
 - **Firestore Rules**: ✅ In place (`firestore.rules`)
 - **Storage Rules**: ✅ In place (`storage.rules`)
@@ -49,8 +49,8 @@ cat .env | grep EXPO_PUBLIC_FIREBASE_
 
 # Should show:
 # EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyA38YmkzxfEYi6TAUGYfo7bxfPW3Ogi9XQ
-# EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=culturepass-60df3.firebaseapp.com
-# EXPO_PUBLIC_FIREBASE_PROJECT_ID=culturepass-60df3
+# EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=culturepass-4f264.firebaseapp.com
+# EXPO_PUBLIC_FIREBASE_PROJECT_ID=culturepass-4f264
 # [... other vars ...]
 ```
 
@@ -111,20 +111,20 @@ firebase deploy --only hosting
 # Expected output:
 # ✔ Deploy complete!
 #
-# Project Console: https://console.firebase.google.com/project/culturepass-60df3
-# Hosting URL: https://culturepass-60df3.web.app
+# Project Console: https://console.firebase.google.com/project/culturepass-4f264
+# Hosting URL: https://culturepass-4f264.web.app
 ```
 
 ### Step 3: Verify Deployment
 ```bash
 # Visit in browser:
-# https://culturepass-60df3.web.app/
+# https://culturepass-4f264.web.app/
 
 # Check specific routes:
-# https://culturepass-60df3.web.app/calendar
-# https://culturepass-60df3.web.app/communities
-# https://culturepass-60df3.web.app/perks
-# https://culturepass-60df3.web.app/profile
+# https://culturepass-4f264.web.app/calendar
+# https://culturepass-4f264.web.app/communities
+# https://culturepass-4f264.web.app/perks
+# https://culturepass-4f264.web.app/profile
 ```
 
 ---
@@ -155,7 +155,7 @@ firebase deploy --only functions
 
 # Expected output:
 # ✔ functions[api]: Successful create operation.
-# Function URL: https://us-central1-culturepass-60df3.cloudfunctions.net/api/
+# Function URL: https://us-central1-culturepass-4f264.cloudfunctions.net/api/
 #
 # Deployment complete!
 ```
@@ -166,10 +166,10 @@ firebase deploy --only functions
 firebase functions:list
 
 # Test an API endpoint:
-curl https://us-central1-culturepass-60df3.cloudfunctions.net/api/health 2>/dev/null | jq .
+curl https://us-central1-culturepass-4f264.cloudfunctions.net/api/health 2>/dev/null | jq .
 
 # Or visit in browser:
-# https://us-central1-culturepass-60df3.cloudfunctions.net/api/
+# https://us-central1-culturepass-4f264.cloudfunctions.net/api/
 ```
 
 ---
@@ -192,13 +192,13 @@ npm run deploy-all
 ### Expected Output
 ```
 ✔ functions[api]: Successful create operation.
-Function URL: https://us-central1-culturepass-60df3.cloudfunctions.net/api/
+Function URL: https://us-central1-culturepass-4f264.cloudfunctions.net/api/
 
 ✔ Deploy complete!
 
-Project Console: https://console.firebase.google.com/project/culturepass-60df3
-Hosting URL: https://culturepass-60df3.web.app
-Function URL: https://us-central1-culturepass-60df3.cloudfunctions.net/api/
+Project Console: https://console.firebase.google.com/project/culturepass-4f264
+Hosting URL: https://culturepass-4f264.web.app
+Function URL: https://us-central1-culturepass-4f264.cloudfunctions.net/api/
 ```
 
 ---
@@ -333,10 +333,10 @@ firebase deploy --only hosting
 ```bash
 # Make sure .firebaserc has correct project ID
 cat .firebaserc
-# Should show: "default": "culturepass-60df3"
+# Should show: "default": "culturepass-4f264"
 
 # If not, run:
-firebase use culturepass-60df3
+firebase use culturepass-4f264
 ```
 
 ### Issue: "firebase: command not found"
@@ -375,8 +375,8 @@ firebase deploy --only functions
 
 | Component | Status | URL | Command |
 |-----------|--------|-----|---------|
-| **Web (Hosting)** | ✅ Ready | https://culturepass-60df3.web.app | `npm run deploy-web` |
-| **Functions** | ✅ Ready | https://us-central1-culturepass-60df3.cloudfunctions.net/api/ | `firebase deploy --only functions` |
+| **Web (Hosting)** | ✅ Ready | https://culturepass-4f264.web.app | `npm run deploy-web` |
+| **Functions** | ✅ Ready | https://us-central1-culturepass-4f264.cloudfunctions.net/api/ | `firebase deploy --only functions` |
 | **iOS (App Store)** | ✅ Ready | App Store | `eas build --platform ios` |
 | **Android (Play)** | ✅ Ready | Google Play | `eas build --platform android` |
 
@@ -391,8 +391,8 @@ cd /Users/wedoboring/Documents/CultureOS/CulturePass
 npm run deploy-all
 
 # Wait for confirmation, then check:
-# ✓ Web: https://culturepass-60df3.web.app/
-# ✓ API: https://us-central1-culturepass-60df3.cloudfunctions.net/api/health
+# ✓ Web: https://culturepass-4f264.web.app/
+# ✓ API: https://us-central1-culturepass-4f264.cloudfunctions.net/api/health
 ```
 
 ---
@@ -400,7 +400,7 @@ npm run deploy-all
 ## ✅ Post-Deployment Verification
 
 ### Web App Smoke Test
-- [ ] Visit https://culturepass-60df3.web.app/
+- [ ] Visit https://culturepass-4f264.web.app/
 - [ ] Check Discover page loads events
 - [ ] Check Calendar renders with month view
 - [ ] Check Communities list loads
@@ -411,7 +411,7 @@ npm run deploy-all
 ### Cloud Functions Smoke Test
 ```bash
 # Test health endpoint
-curl https://us-central1-culturepass-60df3.cloudfunctions.net/api/health
+curl https://us-central1-culturepass-4f264.cloudfunctions.net/api/health
 
 # Expected: { "status": "ok" }
 ```
@@ -425,7 +425,7 @@ curl https://us-central1-culturepass-60df3.cloudfunctions.net/api/health
 
 ## 📞 Support & Resources
 
-- **Firebase Console**: https://console.firebase.google.com/project/culturepass-60df3
+- **Firebase Console**: https://console.firebase.google.com/project/culturepass-4f264
 - **EAS Dashboard**: https://expo.dev/accounts/@YOUR_USERNAME
 - **App Store Connect**: https://appstoreconnect.apple.com/
 - **Google Play Console**: https://play.google.com/console/

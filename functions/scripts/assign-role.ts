@@ -22,7 +22,7 @@
 
 import * as admin from 'firebase-admin';
 
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT ?? 'culturepass-2e058';
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT ?? 'culturepass-4f264';
 
 const VALID_ROLES = [
   'user', 'organizer', 'business', 'sponsor',

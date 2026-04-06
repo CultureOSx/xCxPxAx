@@ -37,6 +37,17 @@ export const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 // Explicit allowlist — credentials mode requires an origin function (not `true`)
+const LOCAL_DEV_PORTS = [8081, 8082, 8083, 8084, 8085, 19006, 3000, 5000, 5173];
+const LOCAL_DEV_HOSTS = ['localhost', '127.0.0.1'] as const;
+const LOCAL_DEV_ORIGINS = LOCAL_DEV_HOSTS.flatMap((host) =>
+  LOCAL_DEV_PORTS.flatMap((port) => [`http://${host}:${port}`, `https://${host}:${port}`]),
+);
+
+const CORS_EXTRA = (process.env.CORS_EXTRA_ORIGINS ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
+
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Production
   'https://culturepass.app',
@@ -44,28 +55,21 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   /^https:\/\/[\w-]+\.culturepass\.app$/,          // preview/staging subdomains
   // EAS/Expo OTA
   /^https:\/\/[\w-]+\.expo\.dev$/,
-  // Local development
-  'http://localhost:8081',
-  'http://localhost:8082',
-  'http://localhost:8083',
-  'http://localhost:8084',
-  'http://localhost:8085',
-  'http://localhost:19006',
-  'http://localhost:3000',
-  'http://localhost:5000',
-  'http://localhost:5173',
-  'http://127.0.0.1:8081',
-  'http://127.0.0.1:8082',
-  'http://127.0.0.1:8083',
-  'http://127.0.0.1:8084',
-  'http://127.0.0.1:8085',
-  'http://127.0.0.1:19006',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5173',
-  // Local network development (Expo on LAN)
-  /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
-  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
-  /^http:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/,
+  // Hosted previews (set CORS_EXTRA_ORIGINS for private URLs)
+  /^https:\/\/[\w-]+\.vercel\.app$/,
+  /^https:\/\/[\w-]+\.netlify\.app$/,
+  /^https:\/\/[\w-]+\.ngrok(-free)?\.app$/,
+  // Local development (http + https — Expo / Vite may use TLS locally)
+  ...LOCAL_DEV_ORIGINS,
+  // IPv6 loopback
+  /^https?:\/\/\[::1\]:\d+$/,
+  // Local network development (Expo on LAN; optional https tunnels)
+  /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+  /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/,
+  // *.local mDNS hostnames (common with Expo dev clients)
+  /^https?:\/\/[\w-]+\.local:\d+$/,
+  ...CORS_EXTRA,
 ];
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -106,13 +110,48 @@ const corsOptions: cors.CorsOptions = {
 
 // --- Middleware ---
 app.disable('x-powered-by');
+
+/**
+ * Preflight must succeed with CORS headers before helmet/json/rate-limit.
+ * If `allowedHeaders` in cors() omits a header the browser lists in
+ * Access-Control-Request-Headers, the preflight fails and Chrome reports
+ * "No 'Access-Control-Allow-Origin'" (misleading). For allowlisted origins,
+ * echo the requested header list so Expo / devtools / future clients never break.
+ */
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== 'OPTIONS') {
+    next();
+    return;
+  }
+  const origin = req.headers.origin;
+  if (typeof origin !== 'string' || !isAllowedOrigin(origin)) {
+    next();
+    return;
+  }
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  const requestedHeaders = req.headers['access-control-request-headers'];
+  if (typeof requestedHeaders === 'string' && requestedHeaders.length > 0) {
+    res.setHeader('Access-Control-Allow-Headers', requestedHeaders);
+  } else {
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Requested-With, Accept, Accept-Language, If-None-Match',
+    );
+  }
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Vary', 'Origin');
+  res.status(204).end();
+});
+
+// CORS before helmet/json so every response (including errors) gets ACAO when origin matches
+app.use(cors(corsOptions));
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Firebase Hosting rewrites
   contentSecurityPolicy: false, // CSP is managed at the Hosting layer
 }));
 app.use(express.json({ limit: '2mb' }));
-// Apply CORS before all routes — cors() middleware handles OPTIONS preflight automatically
-app.use(cors(corsOptions));
 // Do not count CORS preflight toward the limit — a burst of OPTIONS can otherwise
 // return 429 without CORS headers and the browser reports a misleading CORS failure.
 app.use(
@@ -207,7 +246,12 @@ app.use(createStripeRouter());
 app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));
 
 // Error handler — never exposes internal details in production
-app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error & { status?: number }, req: Request, res: Response, _next: NextFunction) => {
+  const origin = req.headers.origin;
+  if (typeof origin === 'string' && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   const status = err.status ?? 500;
   console.error('[App Error]:', err);
   const safe = status < 500;  // 4xx errors are safe to surface to clients

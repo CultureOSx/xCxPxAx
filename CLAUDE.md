@@ -252,7 +252,7 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID=
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 EXPO_PUBLIC_FIREBASE_APP_ID=
-EXPO_PUBLIC_API_URL=https://us-central1-culturepass-b5f96.cloudfunctions.net/api/
+EXPO_PUBLIC_API_URL=https://us-central1-culturepass-4f264.cloudfunctions.net/api/
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
 EXPO_PUBLIC_GOOGLE_MAPS_KEY=
 
@@ -278,7 +278,7 @@ npm run typecheck
 npm run lint
 ```
 
-Emulator API URL: `EXPO_PUBLIC_API_URL=http://localhost:5001/culturepass-b5f96/us-central1/api/`
+Emulator API URL: `EXPO_PUBLIC_API_URL=http://localhost:5001/culturepass-4f264/us-central1/api/`
 
 ---
 

@@ -22,13 +22,26 @@ import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ticket } from '@shared/schema';
-import { CardTokens, CultureTokens } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CardTokens, CultureTokens, gradients } from '@/constants/theme';
 import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
+
+function TicketDetailAmbientMesh() {
+  return (
+    <LinearGradient
+      colors={gradients.culturepassBrand}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[StyleSheet.absoluteFillObject, { opacity: 0.06 }]}
+      pointerEvents="none"
+    />
+  );
+}
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
@@ -190,6 +203,7 @@ export default function TicketDetailScreen() {
   if (isLoading) {
     return (
       <View style={s.container}>
+        <TicketDetailAmbientMesh />
         <AppHeaderBar title="Ticket Details" backFallback="/tickets/index" topInset={topInset} />
         <View style={isDesktop && s.desktopShellWrapper}>
           <View style={isDesktop && s.desktopShell}>
@@ -230,6 +244,7 @@ export default function TicketDetailScreen() {
   if (!ticket) {
     return (
       <View style={s.container}>
+        <TicketDetailAmbientMesh />
         <AppHeaderBar title="Ticket Details" backFallback="/tickets/index" topInset={topInset} />
         <View style={isDesktop && s.desktopShellWrapper}>
           <View style={isDesktop && s.desktopShell}>
@@ -263,6 +278,7 @@ export default function TicketDetailScreen() {
 
   return (
     <View style={s.container}>
+      <TicketDetailAmbientMesh />
       <AppHeaderBar
         title="Ticket Details"
         backFallback="/tickets/index"

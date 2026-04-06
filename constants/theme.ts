@@ -17,13 +17,13 @@
  *   Desktop  ≥ 1024px  — 3–4 column grid, 32px h-padding, 1280px max-width
  *
  * Web shell (app/_layout.tsx WebShell):
- *   Mobile web  → 480px phone-shell on dark background
- *   Tablet web  → 768px container on light background
- *   Desktop web → up to 1280px container on light background
+ *   Subtle brand-gradient ambient mesh behind content; base fill = colors.background.
+ *   Desktop (≥1024px) → 240px WebSidebar + main column (see useLayout().sidebarWidth).
+ *   Tablet / mobile web → full-width column; bottom tabs where the tabs layout applies.
  *
  * Navigation:
- *   Mobile  → bottom tab bar, 84px height
- *   Desktop → bottom tab bar, 64px height (no sidebar yet)
+ *   Native + web (non-desktop) → bottom tab bar (TabBarTokens.heightMobile = 84).
+ *   Desktop web → sidebar only; tabBarHeight = 0 in useLayout().
  *
  * Grid columns (Events screen):
  *   Mobile  → 2 columns
@@ -67,6 +67,9 @@
  *   const colors = useColors();
  *   <Text style={{ color: colors.primary }}>...</Text>
  */
+
+import { CultureTokens } from './colors';
+import { SpringConfig } from './animations';
 
 // ---------------------------------------------------------------------------
 // Re-exports — single import surface
@@ -302,6 +305,38 @@ export const BorderTokens = {
   widthBold: 3,
   widthNormal: 1.5,
 };
+
+/**
+ * Liquid Glass–aligned radii and fallback blur strengths.
+ * Native liquid glass uses `expo-glass-effect` when the API is available; otherwise expo-blur / CSS.
+ */
+export const LiquidGlassTokens = {
+  blurFallback: {
+    ios: 56,
+    android: 36,
+    webPx: 44,
+  },
+  corner: {
+    mainCard: 28,
+    innerRow: 18,
+    valueRibbon: 16,
+  },
+  parallaxFactor: 0.14,
+  entranceSpring: SpringConfig.smooth,
+} as const;
+
+/** Saturated translucent wells for stacked glass rows (onboarding feature icons). */
+export const LiquidGlassAccents = {
+  eventIconWell: 'rgba(255, 140, 66, 0.18)',
+  communityIconWell: 'rgba(255, 94, 91, 0.18)',
+  perksIconWell: 'rgba(255, 200, 87, 0.2)',
+  valueRibbonFill: 'rgba(255, 200, 87, 0.14)',
+  valueRibbonBorder: `${CultureTokens.gold}55`,
+  hostAccentBar: CultureTokens.teal,
+  /** Inline validation / auth error callouts on glass forms */
+  errorBannerFill: 'rgba(255, 94, 91, 0.16)',
+  errorBannerBorder: `${CultureTokens.coral}55`,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Platform-safe web box-shadow helper

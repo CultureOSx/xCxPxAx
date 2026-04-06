@@ -2,16 +2,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  Platform, Share, Linking, Alert,
+  Platform, Share, Linking, Alert, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 
+import { HeroGlassIconButton } from '@/app/event/_components/HeroGlassIconButton';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -19,7 +19,8 @@ import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { useQueryClient } from '@tanstack/react-query';
@@ -51,9 +52,20 @@ export default function ProfileScreen() {
   const [showCultureMap, setShowCultureMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const queryClient = useQueryClient();
+  const reducedMotion = useReducedMotion();
 
-  const { user, isLoading } = useCurrentUser();
-  const { data: perks = [] } = usePerks();
+  const { user, isLoading, isFetching, isError, refetch: refetchProfile, error: profileError } = useCurrentUser();
+  const { data: perks = [], isLoading: perksLoading, refetch: refetchPerks } = usePerks();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchProfile(), refetchPerks()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchProfile, refetchPerks]);
 
   const matchedCultures = useMemo(() => {
     const natId = onboarding?.nationalityId;
@@ -73,7 +85,41 @@ export default function ProfileScreen() {
       .filter((c): c is NonNullable<typeof c> => c !== null);
   }, [onboarding?.nationalityId, onboarding?.cultureIds]);
 
-  const displayUser = (user || authUser) as Partial<User>;
+  const displayUser = useMemo((): Partial<User> => {
+    const a = (authUser ?? {}) as Partial<User>;
+    const u = (user ?? {}) as Partial<User>;
+    return {
+      ...a,
+      ...u,
+      id: (u.id ?? a.id ?? userId) as string | undefined,
+      email: u.email ?? a.email,
+      username: u.username ?? a.username,
+      displayName: u.displayName ?? a.displayName,
+      city: u.city ?? a.city,
+      country: u.country ?? a.country,
+      bio: u.bio ?? a.bio,
+      avatarUrl: u.avatarUrl ?? a.avatarUrl,
+      handle: u.handle ?? a.handle,
+      createdAt: u.createdAt ?? a.createdAt,
+      culturePassId: u.culturePassId ?? a.culturePassId,
+      website: u.website ?? a.website,
+      phone: u.phone ?? a.phone,
+      followersCount: u.followersCount ?? a.followersCount,
+      followingCount: u.followingCount ?? a.followingCount,
+      likesCount: u.likesCount ?? a.likesCount,
+      socialLinks: u.socialLinks ?? a.socialLinks,
+      membership: u.membership ?? a.membership,
+    };
+  }, [user, authUser, userId]);
+
+  const tierKey = useMemo(() => {
+    const apiTier = user?.membership?.tier;
+    const sub = authUser?.subscriptionTier;
+    const raw = String(apiTier ?? sub ?? 'free').toLowerCase();
+    if (raw === 'sydney-local') return 'plus';
+    return raw;
+  }, [user?.membership?.tier, authUser?.subscriptionTier]);
+
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const name     = displayUser?.displayName || displayUser?.username || 'a CulturePass member';
@@ -92,12 +138,13 @@ export default function ProfileScreen() {
   }, [displayUser?.displayName, displayUser?.username, displayUser?.handle, userId]);
 
   if (!userId) return <GuestProfileView topInset={insets.top} />;
-  if (isLoading) return <ProfileSkeleton colors={colors} />;
+
+  const showBootSkeleton = isLoading && !user && !authUser?.username && !authUser?.email;
+  if (showBootSkeleton) return <ProfileSkeleton colors={colors} topInset={Platform.OS === 'web' ? 0 : insets.top} />;
 
   const displayName  = displayUser?.displayName || displayUser?.username || 'CulturePass Member';
   const handle       = displayUser?.handle ?? displayUser?.username;
   const locationText = [displayUser?.city, displayUser?.country].filter(Boolean).join(', ');
-  const tierKey      = displayUser?.membership?.tier ?? 'free';
   const tierConf     = TIER_CFG[tierKey] ?? TIER_CFG.free;
   const cpidStr      = displayUser?.culturePassId ?? `CP-${(userId || '').slice(-6).toUpperCase()}`;
   const isFree       = !tierKey || tierKey === 'free';
@@ -118,107 +165,147 @@ export default function ProfileScreen() {
           visible={showScanner}
           onClose={() => setShowScanner(false)}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['/api/profiles/me'] });
+            void queryClient.invalidateQueries({ queryKey: ['currentUser'] });
           }}
+        />
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={profileGlass.ambientMesh}
+          pointerEvents="none"
         />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
-        >
-          {/* ── HERO ─────────────────────────────────────── (full-width) */}
-          <View style={[hero.container, { paddingTop: topInset + 12 }]}>
-            <LinearGradient
-              colors={[colors.background, CultureTokens.indigo + '40', '#1B0F2E']}
-              start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={CultureTokens.indigo}
+              colors={[CultureTokens.indigo]}
             />
-            <View style={[hero.arcOuter]} pointerEvents="none" />
-            <View style={[hero.arcInner]} pointerEvents="none" />
+          }
+        >
+          {isError ? (
+            <Pressable
+              onPress={() => void refetchProfile()}
+              style={[profileGlass.errorBanner, { marginHorizontal: hPad, backgroundColor: CultureTokens.coral + '14', borderColor: CultureTokens.coral + '35' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Profile could not load. Tap to retry."
+            >
+              <Ionicons name="cloud-offline-outline" size={18} color={CultureTokens.coral} />
+              <Text style={[profileGlass.errorBannerText, { color: colors.text }]} numberOfLines={2}>
+                {profileError instanceof Error ? profileError.message : String(profileError ?? 'Could not refresh profile.')} Tap to retry.
+              </Text>
+            </Pressable>
+          ) : null}
 
-            <View style={[hero.nav, { paddingHorizontal: hPad }]}>
-              {!isDesktop && (
-                <Pressable
-                  style={({ pressed }) => [hero.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-                  onPress={() => router.push('/settings')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Settings"
-                >
-                  <BlurView intensity={Platform.OS === 'ios' ? 24 : 50} tint="dark" style={StyleSheet.absoluteFill} />
-                  <Ionicons name="settings-outline" size={20} color="#fff" />
-                </Pressable>
-              )}
-              <View style={{ flex: 1 }} />
-              <Pressable
-                style={({ pressed }) => [hero.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-                onPress={handleShare}
+          <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: topInset + 10 }]}>
+            {!isDesktop && (
+              <HeroGlassIconButton
+                onPress={() => router.push('/settings')}
                 accessibilityRole="button"
-                accessibilityLabel="Share profile"
+                accessibilityLabel="Settings"
               >
-                <BlurView intensity={Platform.OS === 'ios' ? 24 : 50} tint="dark" style={StyleSheet.absoluteFill} />
-                <Ionicons name="share-outline" size={20} color="#fff" />
-              </Pressable>
-            </View>
+                <Ionicons name="settings-outline" size={20} color={colors.text} />
+              </HeroGlassIconButton>
+            )}
+            <View style={{ flex: 1 }} />
+            {isFetching && !refreshing ? (
+              <ActivityIndicator size="small" color={CultureTokens.indigo} style={{ marginRight: 8 }} />
+            ) : null}
+            <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share profile">
+              <Ionicons name="share-outline" size={20} color={colors.text} />
+            </HeroGlassIconButton>
+          </View>
 
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.mainCard}
+            style={{ marginHorizontal: hPad, marginTop: 4 }}
+            contentStyle={{ alignItems: 'center', paddingVertical: 20, paddingHorizontal: 16 }}
+          >
             <ProfileAvatar user={displayUser} displayName={displayName} size={96} />
 
-            <Text style={hero.name}>{displayName}</Text>
-            {handle && <Text style={hero.handle}>@{handle}</Text>}
+            <Text style={[hero.name, { color: colors.text }]}>{displayName}</Text>
+            {handle ? <Text style={[hero.handle, { color: colors.textSecondary }]}>@{handle}</Text> : null}
 
-            {hasCultures && (
+            {hasCultures ? (
               <Pressable
-                style={hero.culturePills}
+                style={profileGlass.culturePills}
                 onPress={() => setShowCultureMap(true)}
                 accessibilityRole="button"
                 accessibilityLabel="View cultural heritage"
               >
                 {matchedCultures.slice(0, 4).map(c => (
-                  <View key={c.id} style={hero.culturePill}>
+                  <View
+                    key={c.id}
+                    style={[profileGlass.culturePill, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                  >
                     <Text style={{ fontSize: 14 }}>{c.emoji}</Text>
-                    <Text style={hero.culturePillText}>{c.name}</Text>
+                    <Text style={[profileGlass.culturePillText, { color: colors.text }]}>{c.name}</Text>
                   </View>
                 ))}
-                {matchedCultures.length > 4 && (
-                  <View style={hero.culturePill}>
-                    <Text style={hero.culturePillText}>+{matchedCultures.length - 4}</Text>
+                {matchedCultures.length > 4 ? (
+                  <View style={[profileGlass.culturePill, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                    <Text style={[profileGlass.culturePillText, { color: colors.textSecondary }]}>
+                      +{matchedCultures.length - 4}
+                    </Text>
                   </View>
-                )}
+                ) : null}
               </Pressable>
-            )}
+            ) : null}
 
-            <View style={hero.statsBar}>
+            <View
+              style={[
+                profileGlass.statsBar,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
+              ]}
+            >
               <LinearGradient
-                colors={['transparent', CultureTokens.teal, CultureTokens.indigo, CultureTokens.teal, 'transparent']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={hero.statsAccentLine}
+                colors={['transparent', CultureTokens.teal + 'AA', CultureTokens.indigo + 'AA', CultureTokens.teal + 'AA', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={profileGlass.statsAccentLine}
               />
               {[
                 { label: 'Followers', value: displayUser?.followersCount ?? 0 },
-                { label: 'Following', value: displayUser?.followingCount  ?? 0 },
-                { label: 'Likes',     value: displayUser?.likesCount      ?? 0 },
+                { label: 'Following', value: displayUser?.followingCount ?? 0 },
+                { label: 'Likes', value: displayUser?.likesCount ?? 0 },
               ].map((stat, i, arr) => (
                 <React.Fragment key={stat.label}>
-                  <Pressable style={hero.statItem} onPress={() => router.push('/profile/edit')} accessibilityRole="button">
-                    <Text style={hero.statNum}>{fmt(stat.value)}</Text>
-                    <Text style={hero.statLabel}>{stat.label}</Text>
+                  <Pressable
+                    style={hero.statItem}
+                    onPress={() => router.push('/profile/edit')}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[hero.statNum, { color: colors.text }]}>{fmt(stat.value)}</Text>
+                    <Text style={[hero.statLabel, { color: colors.textTertiary }]}>{stat.label}</Text>
                   </Pressable>
-                  {i < arr.length - 1 && <View style={hero.statDivider} />}
+                  {i < arr.length - 1 ? (
+                    <View style={[hero.statDivider, { backgroundColor: colors.borderLight }]} />
+                  ) : null}
                 </React.Fragment>
               ))}
             </View>
-          </View>
+          </LiquidGlassPanel>
 
           {/* ── CONTENT (max-width centred on desktop) ────────────────── */}
           <View style={isDesktop ? { maxWidth: 720, width: '100%', alignSelf: 'center' } : undefined}>
 
-          {/* ── ACTION BUTTONS ────────────────────────────────────────── */}
-          <View style={[act.row, { paddingHorizontal: hPad, marginTop: 16 }]}>
+          {/* ── ACTION BUTTONS (glass rail) ───────────────────────────── */}
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.mainCard}
+            style={{ marginHorizontal: hPad, marginTop: 16 }}
+            contentStyle={[act.row, { padding: 12, gap: 10 }]}
+          >
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [act.btn, { backgroundColor: hovered ? CultureTokens.indigo + 'DD' : CultureTokens.indigo, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push('/profile/edit'); }}
               accessibilityRole="button" accessibilityLabel="Edit profile"
             >
-              <Ionicons name="pencil" size={15} color="#fff" />
-              <Text style={[act.label, { color: '#fff' }]}>Edit Profile</Text>
+              <Ionicons name="pencil" size={15} color={colors.textOnBrandGradient} />
+              <Text style={[act.label, { color: colors.textOnBrandGradient }]}>Edit Profile</Text>
             </Pressable>
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
@@ -234,7 +321,7 @@ export default function ProfileScreen() {
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
                 act.btn,
-                { backgroundColor: hovered ? colors.surfaceElevated : colors.surface, borderWidth: 1, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                { backgroundColor: hovered ? colors.surfaceElevated : colors.primarySoft, borderWidth: 1, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.97 : 1 }] },
               ]}
               onPress={handleShare}
               accessibilityRole="button" accessibilityLabel="Share profile"
@@ -242,107 +329,134 @@ export default function ProfileScreen() {
               <Ionicons name="share-outline" size={15} color={colors.textSecondary} />
               <Text style={[act.label, { color: colors.textSecondary }]}>Share</Text>
             </Pressable>
-          </View>
+          </LiquidGlassPanel>
 
           {/* ── MEMBERSHIP TIER ───────────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
-            <LinearGradient
-              colors={[tierConf.color + '20', tierConf.color + '08', colors.surface]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={[tier.card, { borderColor: tierConf.color + '35', backgroundColor: colors.surface }]}
+            <LiquidGlassPanel
+              borderRadius={LiquidGlassTokens.corner.mainCard}
+              contentStyle={{ padding: 0, overflow: 'hidden' }}
             >
-              <View style={tier.left}>
-                <View style={[tier.iconWrap, { backgroundColor: tierConf.color + '20' }]}>
-                  <Ionicons name={tierConf.icon} size={20} color={tierConf.color} />
+              <LinearGradient
+                colors={[tierConf.color + '22', tierConf.color + '0A', colors.surface]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[tier.card, { borderWidth: 0, borderColor: tierConf.color + '35' }]}
+              >
+                <View style={tier.left}>
+                  <View style={[tier.iconWrap, { backgroundColor: tierConf.color + '20' }]}>
+                    <Ionicons name={tierConf.icon} size={20} color={tierConf.color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[tier.label, { color: tierConf.color }]}>{tierConf.label} Member</Text>
+                    {since ? <Text style={[tier.since, { color: colors.textTertiary }]}>Member since {since}</Text> : null}
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[tier.label, { color: tierConf.color }]}>{tierConf.label} Member</Text>
-                  {since ? <Text style={[tier.since, { color: colors.textTertiary }]}>Member since {since}</Text> : null}
-                </View>
-              </View>
-              {isFree && (
-                <Pressable
-                  style={[tier.upgradeBtn, { backgroundColor: CultureTokens.indigo }]}
-                  onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push('/membership/upgrade'); }}
-                  accessibilityRole="button"
-                >
-                  <Text style={tier.upgradeTxt}>Upgrade</Text>
-                  <Ionicons name="arrow-forward" size={13} color="#fff" />
-                </Pressable>
-              )}
-            </LinearGradient>
+                {isFree ? (
+                  <Pressable
+                    style={[tier.upgradeBtn, { backgroundColor: CultureTokens.indigo }]}
+                    onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push('/membership/upgrade'); }}
+                    accessibilityRole="button"
+                  >
+                    <Text style={tier.upgradeTxt}>Upgrade</Text>
+                    <Ionicons name="arrow-forward" size={13} color={colors.textOnBrandGradient} />
+                  </Pressable>
+                ) : null}
+              </LinearGradient>
+            </LiquidGlassPanel>
           </View>
 
           {/* ── BIO ───────────────────────────────────────────────────── */}
           {displayUser?.bio ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
               <SectionHeader title="About" colors={colors} />
-              <View style={[sec.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 16 }}>
                 <Text style={[sec.bioText, { color: colors.textSecondary }]}>{displayUser.bio}</Text>
-              </View>
+              </LiquidGlassPanel>
             </View>
           ) : null}
 
           {/* ── HERITAGE ──────────────────────────────────────────────── */}
-          {hasCultures && (
+          {hasCultures ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
               <SectionHeader title="Heritage" action="View Map" onAction={() => setShowCultureMap(true)} colors={colors} />
-              <View style={cul.grid}>
-                {matchedCultures.map((c, i) => (
-                  <Animated.View
-                    key={c.id}
-                    entering={Platform.OS !== 'web' ? FadeInDown.delay(i * 70).springify().damping(18).stiffness(110) : undefined}
-                    style={[cul.chip, { backgroundColor: colors.surface, borderColor: CultureTokens.teal + '28' }]}
-                  >
-                    <LinearGradient
-                      colors={[CultureTokens.teal + '12', CultureTokens.indigo + '0A']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                    <Text style={{ fontSize: 24 }}>{c.emoji}</Text>
-                    <Text style={[cul.chipLabel, { color: colors.text }]}>{c.name}</Text>
-                  </Animated.View>
-                ))}
-              </View>
+              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 14 }}>
+                <View style={cul.grid}>
+                  {matchedCultures.map((c, i) => (
+                    <Animated.View
+                      key={c.id}
+                      entering={
+                        reducedMotion || Platform.OS === 'web'
+                          ? undefined
+                          : FadeInDown.delay(Math.min(i * 70, 350)).springify().damping(18).stiffness(110)
+                      }
+                      style={[cul.chip, { backgroundColor: colors.primarySoft, borderColor: CultureTokens.teal + '35' }]}
+                    >
+                      <LinearGradient
+                        colors={[CultureTokens.teal + '14', CultureTokens.indigo + '08']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                      <Text style={{ fontSize: 24 }}>{c.emoji}</Text>
+                      <Text style={[cul.chipLabel, { color: colors.text }]}>{c.name}</Text>
+                    </Animated.View>
+                  ))}
+                </View>
+              </LiquidGlassPanel>
             </View>
-          )}
+          ) : null}
 
           {/* ── PERKS ─────────────────────────────────────────────────── */}
-          {perks.length > 0 && (
+          {(perksLoading || perks.length > 0) ? (
             <View style={[sec.wrap, { marginTop: 24 }]}>
               <View style={{ paddingHorizontal: hPad }}>
                 <SectionHeader title="Your Perks" action="View All" onAction={() => router.push('/(tabs)/perks')} colors={colors} />
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[prk.scroll, { paddingHorizontal: hPad }]}>
-                {perks.slice(0, 6).map(perk => (
-                  <Pressable
-                    key={perk.id}
-                    style={[prk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                    onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push({ pathname: '/perks/[id]', params: { id: perk.id } }); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={perk.title}
-                  >
-                    <LinearGradient colors={[CultureTokens.gold + '30', CultureTokens.indigo + '20']} style={prk.cardGrad} />
-                    <View style={[prk.icon, { backgroundColor: CultureTokens.gold + '20' }]}>
-                      <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
-                    </View>
-                    <Text style={[prk.title, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
-                    {'discount' in perk && (perk as unknown as { discount?: string }).discount && (
-                      <View style={[prk.badge, { backgroundColor: CultureTokens.coral + '18' }]}>
-                        <Text style={[prk.badgeText, { color: CultureTokens.coral }]}>{(perk as unknown as { discount: string }).discount}</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                ))}
+                {perksLoading
+                  ? [0, 1, 2].map((i) => (
+                      <LiquidGlassPanel
+                        key={`perk-sk-${i}`}
+                        borderRadius={20}
+                        style={{ width: 160, minHeight: 130 }}
+                        contentStyle={{ alignItems: 'center', justifyContent: 'center', padding: 14 }}
+                      >
+                        <ActivityIndicator color={CultureTokens.indigo} />
+                      </LiquidGlassPanel>
+                    ))
+                  : perks.slice(0, 6).map(perk => (
+                      <Pressable
+                        key={perk.id}
+                        onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push({ pathname: '/perks/[id]', params: { id: perk.id } }); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={perk.title}
+                        style={({ pressed }) => [{ width: 160, opacity: pressed ? 0.9 : 1 }]}
+                      >
+                        <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 14, overflow: 'hidden', minHeight: 128 }}>
+                          <LinearGradient colors={[CultureTokens.gold + '28', CultureTokens.indigo + '18']} style={prk.cardGrad} />
+                          <View style={[prk.icon, { backgroundColor: CultureTokens.gold + '20' }]}>
+                            <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
+                          </View>
+                          <Text style={[prk.title, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
+                          {'discount' in perk && (perk as unknown as { discount?: string }).discount ? (
+                            <View style={[prk.badge, { backgroundColor: CultureTokens.coral + '18' }]}>
+                              <Text style={[prk.badgeText, { color: CultureTokens.coral }]}>{(perk as unknown as { discount: string }).discount}</Text>
+                            </View>
+                          ) : null}
+                        </LiquidGlassPanel>
+                      </Pressable>
+                    ))}
               </ScrollView>
             </View>
-          )}
+          ) : null}
 
           {/* ── DIGITAL IDENTITY CARD ─────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
             <SectionHeader title="Digital Identity" colors={colors} />
+            <LiquidGlassPanel borderRadius={28} bordered={false} contentStyle={{ padding: 0, overflow: 'hidden' }}>
             <LinearGradient
-              colors={['#0B0B14', '#1a0533', '#0B0B14']}
+              colors={[colors.background, CultureTokens.indigo + '35', colors.background]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={cpid.card}
             >
@@ -354,7 +468,7 @@ export default function ProfileScreen() {
               <View style={cpid.topRow}>
                 <View style={cpid.logoRow}>
                   <LinearGradient colors={[CultureTokens.teal, CultureTokens.indigo]} style={cpid.logoIcon}>
-                    <Ionicons name="globe" size={13} color="#fff" />
+                    <Ionicons name="globe" size={13} color={colors.textOnBrandGradient} />
                   </LinearGradient>
                   <Text style={cpid.logoText}>CulturePass</Text>
                 </View>
@@ -395,22 +509,24 @@ export default function ProfileScreen() {
                   />
                 </View>
               </View>
-              <View style={[cpid.footer, { borderTopColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={[cpid.footer, { borderTopColor: colors.borderLight + '55' }]}>
                 <Text style={cpid.footerText}>Verified Digital Identity</Text>
                 <Ionicons name="finger-print" size={20} color={CultureTokens.teal + '55'} />
               </View>
             </LinearGradient>
+            </LiquidGlassPanel>
           </View>
 
           {/* ── SOCIAL LINKS ─────────────────────────────────────────── */}
           {activeSocials.length > 0 && (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
               <SectionHeader title="Social" colors={colors} />
+              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 12 }}>
               <View style={soc.grid}>
                 {activeSocials.map(s => (
                   <Pressable
                     key={s.key}
-                    style={[soc.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                    style={[soc.card, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       const url = socialLinks[s.key];
@@ -428,6 +544,7 @@ export default function ProfileScreen() {
                   </Pressable>
                 ))}
               </View>
+              </LiquidGlassPanel>
             </View>
           )}
 
@@ -435,7 +552,8 @@ export default function ProfileScreen() {
           {(locationText || displayUser?.website || displayUser?.phone) ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
               <SectionHeader title="Details" colors={colors} />
-              <View style={[det.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+              <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 4 }}>
+              <View style={[det.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
                 {locationText ? (
                   <View style={det.row}>
                     <View style={[det.iconWrap, { backgroundColor: CultureTokens.indigo + '14' }]}>
@@ -477,13 +595,15 @@ export default function ProfileScreen() {
                   </>
                 ) : null}
               </View>
+              </LiquidGlassPanel>
             </View>
           ) : null}
 
           {/* ── SETTINGS SHORTCUTS ───────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
             <SectionHeader title="Settings" colors={colors} />
-            <View style={[set.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 4 }}>
+            <View style={[set.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
               {[
                 { icon: 'person-outline' as const,        label: 'Edit Profile',   path: '/profile/edit',           accent: CultureTokens.indigo },
                 { icon: 'notifications-outline' as const, label: 'Notifications',  path: '/settings/notifications', accent: CultureTokens.teal   },
@@ -507,10 +627,12 @@ export default function ProfileScreen() {
                 </React.Fragment>
               ))}
             </View>
+            </LiquidGlassPanel>
           </View>
 
           {/* ── SIGN OUT ─────────────────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 16 }]}>
+            <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} bordered={false} contentStyle={{ padding: 0 }}>
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [sout.btn, { borderColor: hovered ? CultureTokens.coral + '60' : CultureTokens.coral + '40', backgroundColor: pressed ? CultureTokens.coral + '16' : hovered ? CultureTokens.coral + '12' : CultureTokens.coral + '09', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               onPress={async () => {
@@ -532,6 +654,7 @@ export default function ProfileScreen() {
               <Ionicons name="log-out-outline" size={18} color={CultureTokens.coral} />
               <Text style={[sout.label, { color: CultureTokens.coral }]}>Sign Out</Text>
             </Pressable>
+            </LiquidGlassPanel>
           </View>
           </View>{/* end desktop centering wrapper */}
         </ScrollView>
@@ -549,3 +672,68 @@ export default function ProfileScreen() {
     </ErrorBoundary>
   );
 }
+
+const profileGlass = StyleSheet.create({
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 18,
+  },
+  culturePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  culturePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 50,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  culturePillText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 15,
+  },
+  statsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    width: '100%',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    overflow: 'hidden',
+  },
+  statsAccentLine: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 2,
+    opacity: 0.45,
+  },
+});

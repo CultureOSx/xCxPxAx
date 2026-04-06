@@ -9,6 +9,11 @@
  * Usage:
  *   import { api } from '@/lib/api';
  *   const events = await api.events.list({ city: 'Sydney', page: 1 });
+ *
+ * Architecture:
+ *   • Transport: apiRequest / apiRequestMultipart from ./query-client (base URL, auth headers, JSON).
+ *   • Surface: a single `api` object with domain namespaces (events, tickets, profiles, …).
+ *   • New endpoints: add methods on the appropriate namespace; keep paths aligned with functions/src/routes/*.
  */
 
 import { apiRequest, apiRequestMultipart, getApiUrl } from './query-client';

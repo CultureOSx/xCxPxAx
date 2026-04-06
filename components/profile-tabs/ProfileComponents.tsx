@@ -84,10 +84,10 @@ const av = StyleSheet.create({
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
-export function ProfileSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
+export function ProfileSkeleton({ colors, topInset = 0 }: { colors: ReturnType<typeof useColors>; topInset?: number }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={[sk.hero, { backgroundColor: '#0B0B14' }]}>
+      <View style={[sk.hero, { backgroundColor: '#0B0B14', paddingTop: topInset + 48 }]}>
         <View style={[sk.avatarRing, { backgroundColor: colors.border + '40' }]} />
         <View style={[sk.nameLine, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
         <View style={[sk.handleLine, { backgroundColor: 'rgba(255,255,255,0.07)' }]} />
@@ -101,7 +101,7 @@ export function ProfileSkeleton({ colors }: { colors: ReturnType<typeof useColor
   );
 }
 const sk = StyleSheet.create({
-  hero:       { alignItems: 'center', paddingTop: 80, paddingBottom: 32, gap: 12 },
+  hero:       { alignItems: 'center', paddingBottom: 32, gap: 12 },
   avatarRing: { width: 108, height: 108, borderRadius: 54 },
   nameLine:   { width: 160, height: 18, borderRadius: 9, marginTop: 4 },
   handleLine: { width: 100, height: 12, borderRadius: 6 },

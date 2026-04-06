@@ -95,6 +95,7 @@
     "expo-widgets": "^55.0.8",
     "fbjs": "^3.0.5",
     "firebase": "^12.11.0",
+    "firebase-functions": "^7.2.3",
     "firebase-tools": "^15.12.0",
     "makeerror": "^1.0.12",
     "metro-core": "^0.83.3",

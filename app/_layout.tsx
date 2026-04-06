@@ -27,6 +27,8 @@ import {
 } from "@/contexts/OnboardingContext";
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
+import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "@/constants/theme";
 import { useColors } from "@/hooks/useColors";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useLayout } from "@/hooks/useLayout";
@@ -268,6 +270,7 @@ function RootLayoutNav() {
       <Stack.Screen name="settings/help" />
       <Stack.Screen name="settings/notifications" />
       <Stack.Screen name="settings/privacy" />
+      <Stack.Screen name="settings/calendar-sync" />
       <Stack.Screen name="dashboard" />
 
       <Stack.Screen name="help/index" />
@@ -316,6 +319,13 @@ function WebShell({ children }: { children: React.ReactNode }) {
         },
       ]}
     >
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={webStyles.ambientMesh}
+        pointerEvents="none"
+      />
       {isDesktop ? (
         <>
           <WebSidebar />
@@ -337,6 +347,7 @@ function WebShell({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 
 function RootLayoutContent() {
+  const colors = useColors();
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -370,7 +381,10 @@ function RootLayoutContent() {
   }
 
   const appShell = (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      onLayout={onLayoutRootView}
+    >
       <DataSync />
       <WidgetSync />
       <AuthGuard />
@@ -505,7 +519,7 @@ function RootLayoutContent() {
           />
         )}
 
-        <meta name="theme-color" content="#0B0B14" />
+        <meta name="theme-color" content={colors.background} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
@@ -520,6 +534,10 @@ const webStyles = StyleSheet.create({
     flexDirection: "row",
     overflow: "hidden",
     ...(Platform.OS === "web" && { minHeight: "100vh" as unknown as number }),
+  },
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.055,
   },
   contentContainer: {
     flex: 1,

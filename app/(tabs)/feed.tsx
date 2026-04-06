@@ -6,7 +6,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import Reanimated from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, Stack } from 'expo-router';
@@ -20,7 +20,8 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, Spacing } from '@/constants/theme';
+import { CultureTokens, Spacing, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
@@ -240,9 +241,22 @@ export default function CultureFeedScreen() {
         }} 
       />
       <View style={[sc.root, { backgroundColor: colors.background, paddingTop: topInset }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={feedAmbient.mesh}
+          pointerEvents="none"
+        />
         {/* ── Header ── */}
-        <Reanimated.View
-          style={[sc.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={[sc.header, { paddingHorizontal: hPad }]}
         >
           <View style={{ flex: 1 }}>
             {/* Single page heading: “header” + “heading” each map to <h1> on web — never nest both. */}
@@ -262,7 +276,7 @@ export default function CultureFeedScreen() {
           <View style={sc.headerRight}>
             <HeaderAvatar />
             <Pressable
-              style={[sc.headerIconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+              style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
               onPress={() => router.push('/search')}
               accessibilityRole="button"
               accessibilityLabel="Search"
@@ -273,7 +287,7 @@ export default function CultureFeedScreen() {
               <Ionicons name="search-outline" size={20} color={colors.text} />
             </Pressable>
             <Pressable
-              style={[sc.headerIconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+              style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); void handleRefresh(); }}
               accessibilityRole="button"
               accessibilityLabel="Refresh feed"
@@ -287,17 +301,27 @@ export default function CultureFeedScreen() {
                 : <Ionicons name="refresh-outline" size={20} color={colors.text} />}
             </Pressable>
           </View>
-        </Reanimated.View>
+        </LiquidGlassPanel>
 
         {/* Sticky filter tabs — outside FlatList */}
-        <FeedFilterBar
-          active={activeFilter}
-          onChange={setActiveFilter}
-          eventCount={postCounts.eventCount}
-          commCount={postCounts.commCount}
-          colors={colors}
-          hPad={hPad}
-        />
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={sc.filterBarGlassInner}
+        >
+          <FeedFilterBar
+            active={activeFilter}
+            onChange={setActiveFilter}
+            eventCount={postCounts.eventCount}
+            commCount={postCounts.commCount}
+            colors={colors}
+            hPad={hPad}
+          />
+        </LiquidGlassPanel>
 
         {/* Fetch indicator */}
         {isFetching && !isLoading && (
@@ -337,7 +361,7 @@ export default function CultureFeedScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={CultureTokens.indigo}
+                tintColor={colors.primary}
                 colors={[CultureTokens.indigo]}
               />
             }
@@ -375,7 +399,7 @@ export default function CultureFeedScreen() {
                     accessibilityHint="Opens the events or communities browse screen"
                     android_ripple={Platform.OS === 'android' ? { color: 'rgba(255,255,255,0.25)' } : undefined}
                   >
-                    <Text style={sc.emptyCtaText}>
+                    <Text style={[sc.emptyCtaText, { color: colors.textOnBrandGradient }]}>
                       {activeFilter === 'events' ? 'Browse events' : 'Browse communities'}
                     </Text>
                   </Pressable>
@@ -411,9 +435,14 @@ export default function CultureFeedScreen() {
   );
 }
 
+const feedAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
+});
+
 const sc = StyleSheet.create({
   root:         { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  filterBarGlassInner: { paddingVertical: 0 },
   title:        { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 28, letterSpacing: -0.4 },
   locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
   locationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
@@ -429,7 +458,7 @@ const sc = StyleSheet.create({
   emptyTitle:   { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
   emptySub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
   emptyCta:     { marginTop: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
-  emptyCtaText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 18 },
+  emptyCtaText: { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 18 },
   emptyActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 6, paddingHorizontal: 8 },
   emptyCtaSecondary: { paddingHorizontal: 22, paddingVertical: 12, borderRadius: 24, borderWidth: 1 },
   emptyCtaSecondaryText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },

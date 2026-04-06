@@ -188,9 +188,10 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
   hPad: number;
 }) {
   return (
-    <View style={[fb.wrap, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+    <View style={[fb.wrap, { backgroundColor: 'transparent' }]}>
       <ScrollView
         horizontal
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[fb.scroll, { paddingHorizontal: hPad }]}
         accessibilityRole="tablist"
@@ -217,7 +218,7 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
 }
 
 const fb = StyleSheet.create({
-  wrap:  { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
+  wrap:  { paddingVertical: 10 },
   scroll:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
 

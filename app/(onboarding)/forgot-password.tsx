@@ -1,4 +1,13 @@
-import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,30 +15,33 @@ import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
-  gradients,
   CardTokens,
-  glass,
   shadows,
   FontFamily,
   FontSize,
   TextStyles,
   Spacing,
-  IconSize,
+  LiquidGlassTokens,
 } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import Animated, { FadeInUp, useReducedMotion } from 'react-native-reanimated';
+import {
+  AuthAmbientBackground,
+  AuthLiquidFormCard,
+  AuthDesktopBackPill,
+  AuthMobileHeader,
+} from '@/components/onboarding/AuthScreenPrimitives';
 
 export default function ForgotPasswordScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const reducedMotion = useReducedMotion();
 
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -46,95 +58,74 @@ export default function ForgotPasswordScreen() {
       setSent(true);
     } catch (err: unknown) {
       const code = (err as Record<string, unknown>)?.code as string | undefined;
-      const msg = code === 'auth/user-not-found'
-        ? 'No account found with that email address.'
-        : code === 'auth/invalid-email'
-        ? 'Please enter a valid email address.'
-        : 'Something went wrong. Please try again.';
+      const msg =
+        code === 'auth/user-not-found'
+          ? 'No account found with that email address.'
+          : code === 'auth/invalid-email'
+            ? 'Please enter a valid email address.'
+            : 'Something went wrong. Please try again.';
       Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
   };
 
+  const enterUp = reducedMotion
+    ? undefined
+    : FadeInUp.springify()
+        .damping(LiquidGlassTokens.entranceSpring.damping)
+        .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
+
+  const handleResend = async () => {
+    if (!isValid) return;
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Email sent', 'A new reset link has been sent to your email.');
+    } catch {
+      Alert.alert('Error', 'Could not resend. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <View style={[s.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
-      />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AuthAmbientBackground />
 
-      {Platform.OS === 'web' && (
-        <>
-          <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5 }]} />
-          <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3 }]} />
-        </>
+      {isDesktop ? (
+        <AuthDesktopBackPill label="Back to Sign In" onPress={() => router.back()} />
+      ) : (
+        <AuthMobileHeader variant="back-only" onPress={() => router.back()} />
       )}
 
-      {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={Spacing.sm}
-            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Sign In"
-          >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
-            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back to Sign In</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
-          </Pressable>
-        </View>
-      )}
-
-      <KeyboardAvoidingView
-        style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 },
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
+            !isDesktop && { paddingTop: 12 },
+            { paddingBottom: 60 + (Platform.OS === 'web' ? 0 : insets.bottom) },
           ]}
         >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            )}
-
-            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
+          <Animated.View entering={enterUp} style={styles.cardWrap}>
+            <AuthLiquidFormCard isDesktop={isDesktop}>
               {!sent ? (
                 <>
-                  <View style={s.headerBlock}>
-                    <View style={[s.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
-                      <Ionicons name="lock-open-outline" size={28} color={colors.textInverse} />
+                  <View style={styles.headerBlock}>
+                    <View style={[styles.iconWrapper, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                      <Ionicons name="lock-open-outline" size={28} color={colors.primary} />
                     </View>
-                    <Text style={[s.title, { color: colors.textInverse }]}>Reset Password</Text>
-                    <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+                    <Text style={[styles.title, { color: colors.text }]}>Reset Password</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                       Enter the email address associated with your account. We&apos;ll send you a link to reset your password.
                     </Text>
                   </View>
 
-                  <View style={s.block}>
+                  <View style={styles.block}>
                     <Input
                       label="Email Address"
                       placeholder="you@example.com"
@@ -146,40 +137,47 @@ export default function ForgotPasswordScreen() {
                     />
                   </View>
 
-                  <View style={s.spacer} />
+                  <View style={styles.spacer} />
 
                   <Button
                     variant="primary"
                     size="lg"
                     fullWidth
+                    haptic
                     rightIcon="send"
                     loading={loading}
                     disabled={!isValid || loading}
                     onPress={handleSubmit}
-                    style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                    style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                    accessibilityLabel="Send password reset link"
                   >
                     Send Reset Link
                   </Button>
 
-                  {!isDesktop && (
+                  {!isDesktop ? (
                     <Pressable
-                      style={s.backRow}
+                      style={styles.backRow}
                       onPress={() => router.back()}
                       hitSlop={12}
                       accessibilityRole="link"
                       accessibilityLabel="Back to Sign In"
                     >
-                      <Text style={[s.backText, { color: CultureTokens.gold }]}>Back to Sign In</Text>
+                      <Text style={[styles.backText, { color: CultureTokens.gold }]}>Back to Sign In</Text>
                     </Pressable>
-                  )}
+                  ) : null}
                 </>
               ) : (
-                <View style={s.successContainer}>
-                  <Ionicons name="checkmark-circle" size={72} color={CultureTokens.success} style={{ marginBottom: 20 }} />
-                  <Text style={[s.successTitle, { color: colors.textInverse }]}>Check Your Email</Text>
-                  <Text style={[s.successSub, { color: colors.textSecondary }]}>We&apos;ve sent a password reset link to:</Text>
-                  <Text style={s.emailDisplay}>{email}</Text>
-                  <Text style={[s.successHint, { color: colors.textSecondary }]}>
+                <View style={styles.successContainer}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={72}
+                    color={colors.success}
+                    style={{ marginBottom: Spacing.lg }}
+                  />
+                  <Text style={[styles.successTitle, { color: colors.text }]}>Check Your Email</Text>
+                  <Text style={[styles.successSub, { color: colors.textSecondary }]}>We&apos;ve sent a password reset link to:</Text>
+                  <Text style={[styles.emailDisplay, { color: colors.gold }]}>{email}</Text>
+                  <Text style={[styles.successHint, { color: colors.textSecondary }]}>
                     If you don&apos;t see it, check your spam folder. The link expires in 24 hours.
                   </Text>
 
@@ -187,77 +185,44 @@ export default function ForgotPasswordScreen() {
                     variant="primary"
                     size="lg"
                     fullWidth
+                    haptic
                     leftIcon="chevron-back"
                     onPress={() => router.replace('/(onboarding)/login')}
-                    style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold, marginTop: Spacing.lg }]}
+                    style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold, marginTop: Spacing.lg }]}
+                    accessibilityLabel="Back to sign in"
                   >
                     Back to Sign In
                   </Button>
 
                   <Pressable
-                    style={s.backRow}
-                    onPress={() => Alert.alert('Email Resent', 'A new reset link has been sent to your email.')}
+                    style={styles.backRow}
+                    onPress={handleResend}
                     hitSlop={12}
                     accessibilityRole="button"
                     accessibilityLabel="Resend reset email"
+                    disabled={loading}
                   >
-                    <Text style={[s.backTextSecondary, { color: colors.textSecondary }]}>
+                    <Text style={[styles.backTextSecondary, { color: colors.textSecondary }]}>
                       Didn&apos;t receive it?{' '}
                       <Text style={{ color: CultureTokens.gold, fontFamily: FontFamily.bold }}>Resend</Text>
                     </Text>
                   </Pressable>
                 </View>
               )}
-            </View>
-          </View>
+            </AuthLiquidFormCard>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles — static StyleSheet
-// ---------------------------------------------------------------------------
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1 },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    ...Platform.select({
-      web: { filter: 'blur(50px)' } as Record<string, string>,
-      default: {},
-    }),
-  },
   keyboardAvoid: { flex: 1 },
-  mobileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: Spacing.sm + 4,
-  },
-  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
-  desktopBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    borderRadius: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    borderWidth: 1,
-  },
-  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
-  formContainerDesktop: { maxWidth: 520 },
-  formBlur: { borderWidth: 1 },
-  formContent: { paddingTop: Spacing.xxl },
-
+  cardWrap: { width: '100%' },
   headerBlock: { alignItems: 'center', marginBottom: Spacing.xl },
   iconWrapper: {
     width: 64,
@@ -266,7 +231,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
   title: {
     ...TextStyles.display,
@@ -278,15 +243,12 @@ const s = StyleSheet.create({
     ...TextStyles.callout,
     textAlign: 'center',
   },
-
   block: { marginBottom: Spacing.md },
   spacer: { height: Spacing.md },
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
-
   backRow: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.sm + 4 },
   backText: { fontFamily: FontFamily.semibold, fontSize: FontSize.callout },
   backTextSecondary: { fontFamily: FontFamily.regular, fontSize: FontSize.body2 },
-
   successContainer: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   successTitle: {
     ...TextStyles.hero,
@@ -299,7 +261,6 @@ const s = StyleSheet.create({
     fontSize: FontSize.title3,
     marginTop: Spacing.sm,
     marginBottom: Spacing.md,
-    color: CultureTokens.gold,
     textAlign: 'center',
   },
   successHint: {

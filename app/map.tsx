@@ -1,10 +1,12 @@
 import { View, Text, Pressable, StyleSheet, Platform, ActivityIndicator, ScrollView, TextInput, Linking, useWindowDimensions, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -271,9 +273,30 @@ export default function MapScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
-      <View style={[styles.header, shellStyle || undefined]}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={mapAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={styles.headerGlassOuter}
+      >
+        <View style={shellStyle ?? undefined}>
         <View style={styles.headerMainRow}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
 
@@ -284,13 +307,28 @@ export default function MapScreen() {
             </Text>
           </View>
 
-          <Pressable onPress={clearMapState} style={[styles.resetButton, !hasActiveFilters && styles.resetDisabled]} disabled={!hasActiveFilters}>
+          <Pressable
+            onPress={clearMapState}
+            style={[styles.resetButton, !hasActiveFilters && styles.resetDisabled]}
+            disabled={!hasActiveFilters}
+            accessibilityLabel="Clear map filters"
+            accessibilityRole="button"
+          >
             <Ionicons name="refresh-outline" size={20} color={hasActiveFilters ? CultureTokens.indigo : colors.textTertiary} />
           </Pressable>
         </View>
 
         {Platform.OS === 'web' && (
-          <View style={[webStyles.searchContainer, { marginBottom: 12 }]}>
+          <View
+            style={[
+              webStyles.searchContainer,
+              {
+                marginBottom: 12,
+                backgroundColor: colors.primarySoft,
+                borderRadius: LiquidGlassTokens.corner.valueRibbon,
+              },
+            ]}
+          >
             <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput
               value={citySearch}
@@ -309,9 +347,10 @@ export default function MapScreen() {
         )}
 
         <View style={styles.discoveryRailContainer}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.discoveryRow}
             style={styles.discoveryRail}
           >
@@ -341,7 +380,8 @@ export default function MapScreen() {
             ))}
           </ScrollView>
         </View>
-      </View>
+        </View>
+      </LiquidGlassPanel>
 
       {isLoading ? (
         <View style={styles.centeredLoading}>
@@ -408,20 +448,39 @@ export default function MapScreen() {
   );
 }
 
+const mapAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
+});
+
 const getStyles = (colors: ReturnType<typeof useColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: colors.background },
+    headerGlassOuter: {
+      paddingHorizontal: LayoutRules.screenHorizontalPadding,
+      paddingTop: 16,
+      paddingBottom: 16,
+    },
     headerMainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     backButton: {
-      width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight,
-      alignItems: 'center', justifyContent: 'center', marginRight: 12,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
     },
     screenTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.4 },
     screenSubtitle: { fontSize: 15, color: colors.textSecondary, marginTop: 2 },
     resetButton: {
-      width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: CultureTokens.indigo + '40',
-      alignItems: 'center', justifyContent: 'center',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: CultureTokens.indigo + '40',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     resetDisabled: { borderColor: colors.borderLight, opacity: 0.5 },
     filterChip: {

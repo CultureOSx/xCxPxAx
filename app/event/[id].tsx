@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
-import { TextStyles , CultureTokens } from '@/constants/theme';
+import { TextStyles, CultureTokens, shadows } from '@/constants/theme';
 import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -22,7 +22,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { calculateDistance } from '@shared/location/australian-postcodes';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { BlurView } from 'expo-blur';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { EventData } from '@/shared/schema';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +33,8 @@ import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
 import { formatEventTime } from '@/lib/dateUtils';
 import { routeWithRedirect } from '@/lib/routes';
 import { getStyles } from './_components/styles';
+import { EventLiquidModalBody } from './_components/EventLiquidModalBody';
+import { HeroGlassIconButton } from './_components/HeroGlassIconButton';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
 import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
 import { AdminToolbar } from '@/components/ui/AdminToolbar';
@@ -700,10 +702,21 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                     accessibilityLabel="Change cover image"
                   >
                     {uploading ? (
-                      <ActivityIndicator size="large" color="white" />
+                      <ActivityIndicator size="large" color={colors.textOnBrandGradient} />
                     ) : (
-                      <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' }}>
-                        <Ionicons name="camera" size={24} color="white" />
+                      <View
+                        style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: 27,
+                          backgroundColor: colors.overlay,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: StyleSheet.hairlineWidth * 2,
+                          borderColor: colors.borderLight,
+                        }}
+                      >
+                        <Ionicons name="camera" size={24} color={colors.textOnBrandGradient} />
                       </View>
                     )}
                   </Pressable>
@@ -717,46 +730,57 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                 <View style={[s.heroOverlay, { paddingTop: topInset + 12 }]}>
                   {/* Top Header Buttons */}
                   <View style={s.heroNav}>
-                    <Pressable
+                    <HeroGlassIconButton
                       onPress={() => {
-                        if(!isWeb) Haptics.selectionAsync();
+                        if (!isWeb) Haptics.selectionAsync();
                         goBackOrReplace('/(tabs)');
                       }}
-                      style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                       accessibilityRole="button"
                       accessibilityLabel="Go back"
                     >
-                    <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
-                      <Ionicons name="chevron-back" size={24} color="white" />
-                    </Pressable>
+                      <Ionicons name="chevron-back" size={24} color={colors.textOnBrandGradient} />
+                    </HeroGlassIconButton>
                     <View style={s.heroActions}>
-                      <Pressable
-                        onPress={handleShare}
-                        style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Share"
-                      >
-                        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
-                        <Ionicons name="share-outline" size={20} color="white" />
-                      </Pressable>
-                      <Pressable
+                      <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
+                        <Ionicons name="share-outline" size={20} color={colors.textOnBrandGradient} />
+                      </HeroGlassIconButton>
+                      <HeroGlassIconButton
                         onPress={() => {
-                          if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           handleSave();
                         }}
-                        style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                         accessibilityRole="button"
                         accessibilityLabel="Save event"
                       >
-                        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
-                        <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={20} color={saved ? CultureTokens.gold : 'white'} />
-                      </Pressable>
+                        <Ionicons
+                          name={saved ? 'bookmark' : 'bookmark-outline'}
+                          size={20}
+                          color={saved ? CultureTokens.gold : colors.textOnBrandGradient}
+                        />
+                      </HeroGlassIconButton>
                     </View>
                   </View>
 
                   <View style={s.heroBottomContent}>
                     <View style={s.heroTitleRibbon}>
-                      <Text style={[TextStyles.hero, { color: 'white', ...Platform.select({ web: { textShadow: '0px 2px 6px rgba(0,0,0,0.5)' }, default: { textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 } }) }]} numberOfLines={3}>
+                      <Text
+                        style={[
+                          TextStyles.hero,
+                          {
+                            color: colors.textOnBrandGradient,
+                            ...Platform.select({
+                              web: { textShadow: '0px 2px 6px rgba(0,0,0,0.5)' },
+                              default: {
+                                textShadowColor: 'rgba(0,0,0,0.5)',
+                                textShadowOffset: { width: 0, height: 2 },
+                                textShadowRadius: 6,
+                              },
+                            }),
+                          },
+                        ]}
+                        numberOfLines={3}
+                        maxFontSizeMultiplier={1.5}
+                      >
                         {event.title}
                       </Text>
                     </View>
@@ -764,7 +788,9 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                         <View style={[s.heroCardBadge, { backgroundColor: CultureTokens.gold }]}>
                             <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.category || 'Event'}</Text>
                         </View>
-                        <Text style={[TextStyles.captionSemibold, { color: 'rgba(255,255,255,0.9)' }]}>{formatDate(event.date)}</Text>
+                        <Text style={[TextStyles.captionSemibold, { color: colors.textOnBrandGradient, opacity: 0.92 }]}>
+                          {formatDate(event.date)}
+                        </Text>
                     </View>
                   </View>
                 </View>
@@ -942,42 +968,64 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
 
       {/* Floating Bottom Bar Container */}
       <View style={[s.floatingBottomBarWrapper, { paddingBottom: bottomInset + 16, pointerEvents: 'box-none' }]}>
-        <View style={{ overflow: 'hidden', borderRadius: 24, marginHorizontal: 20 }}>
-          {isWeb ? (
-            <View style={[s.floatingBottomBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <BottomBarInner event={event} openTicketModal={openTicketModal} />
-            </View>
-          ) : (
-            <BlurView intensity={30} tint="dark" style={[s.floatingBottomBar, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <BottomBarInner event={event} openTicketModal={openTicketModal} />
-            </BlurView>
-          )}
-        </View>
+        <LiquidGlassPanel
+          borderRadius={24}
+          style={[
+            { marginHorizontal: 20 },
+            Platform.select({
+              ios: shadows.large,
+              android: { elevation: 12 },
+              web: shadows.medium,
+            }),
+            isDesktop ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : null,
+          ]}
+          contentStyle={[s.floatingBottomBar]}
+        >
+          <BottomBarInner event={event} openTicketModal={openTicketModal} />
+        </LiquidGlassPanel>
       </View>
 
       {/* Ticket Modal */}
       <Modal visible={ticketModalVisible} animationType="slide" transparent onRequestClose={() => setTicketModalVisible(false)}>
         <View style={s.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setTicketModalVisible(false)} />
-          <View style={[s.modalSheet, { paddingBottom: insets.bottom + 20 }, isDesktop && { maxHeight: 800, maxWidth: 600, width: '100%', alignSelf: 'center', borderRadius: 24, marginBottom: 'auto', marginTop: 'auto' }]}>
-            {isWeb ? <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background}]} /> : <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.borderLight}]} />
-            {!isDesktop && <View style={s.modalHandle} />}
-            
-            <View style={[s.modalHeader, isDesktop && { paddingTop: 20 }]}>
-              <Text style={s.modalTitle}>Select Tickets</Text>
-              <Pressable
-                onPress={() => setTicketModalVisible(false)}
-                hitSlop={10}
-                style={({ pressed }) => [{ width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.6 : 1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-              >
-                <Ionicons name="close" size={15} color={colors.textSecondary} />
-              </Pressable>
-            </View>
+          <View
+            style={[
+              s.modalSheet,
+              isDesktop && { maxHeight: 800, maxWidth: 600, width: '100%', alignSelf: 'center', marginBottom: 'auto', marginTop: 'auto' },
+            ]}
+          >
+            <EventLiquidModalBody isDesktop={isDesktop}>
+              {!isDesktop ? <View style={s.modalHandle} /> : null}
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
+              <View style={[s.modalHeader, isDesktop && { paddingTop: 20 }]}>
+                <Text style={s.modalTitle}>Select Tickets</Text>
+                <Pressable
+                  onPress={() => setTicketModalVisible(false)}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    {
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: colors.backgroundSecondary,
+                      opacity: pressed ? 0.6 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                >
+                  <Ionicons name="close" size={15} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 20 }}
+              >
               <Text style={s.modalGroupLabel}>How are you booking?</Text>
               <View style={s.buyModeRow}>
                 {([
@@ -1082,6 +1130,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                 {totalPrice <= 0 ? "Get Free Ticket" : `Pay ${formatCurrency(totalPrice, event?.country)}`}
               </Button>
             </ScrollView>
+            </EventLiquidModalBody>
           </View>
         </View>
       </Modal>
@@ -1090,23 +1139,32 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
       <Modal visible={calendarSheetVisible} animationType="slide" transparent onRequestClose={() => setCalendarSheetVisible(false)}>
         <View style={s.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setCalendarSheetVisible(false)} />
-          <View style={[s.modalSheet, { paddingBottom: insets.bottom + 12 }]}>
-            {isWeb ? <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} /> : <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.borderLight }]} />
-            {!isDesktop && <View style={s.modalHandle} />}
-            <View style={[s.modalHeader, { paddingTop: 16 }]}>
-              <Text style={s.modalTitle}>Add to Calendar</Text>
-              <Pressable
-                onPress={() => setCalendarSheetVisible(false)}
-                hitSlop={10}
-                style={({ pressed }) => [{ width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.6 : 1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-              >
-                <Ionicons name="close" size={15} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-            <View style={{ padding: 16, gap: 10 }}>
+          <View style={[s.modalSheet]}>
+            <EventLiquidModalBody isDesktop={isDesktop}>
+              {!isDesktop ? <View style={s.modalHandle} /> : null}
+              <View style={[s.modalHeader, { paddingTop: 16 }]}>
+                <Text style={s.modalTitle}>Add to Calendar</Text>
+                <Pressable
+                  onPress={() => setCalendarSheetVisible(false)}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    {
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: colors.backgroundSecondary,
+                      opacity: pressed ? 0.6 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                >
+                  <Ionicons name="close" size={15} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+              <View style={{ padding: 16, gap: 10, paddingBottom: insets.bottom + 12 }}>
               {[
                 { label: 'Google Calendar', sub: 'Open in Google Calendar', icon: 'logo-google' as const, color: GOOGLE_BRAND_COLOR, onPress: addToGoogleCalendar },
                 { label: 'Outlook Calendar', sub: 'Open in Outlook / Office 365', icon: 'mail' as const, color: OUTLOOK_BRAND_COLOR, onPress: addToOutlook },
@@ -1129,7 +1187,8 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                   <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                 </Pressable>
               ))}
-            </View>
+              </View>
+            </EventLiquidModalBody>
           </View>
         </View>
       </Modal>

@@ -11,16 +11,15 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import Animated, {
-  FadeInDown, FadeInUp,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients, LiquidGlassTokens, FontFamily, FontSize, LineHeight, shadows } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -83,6 +82,7 @@ export default function CommunitiesScreen() {
   const insets = useSafeAreaInsets();
   const { hPad, columnWidth, isDesktop } = useLayout();
   const { state: onboardingState } = useOnboarding();
+  const reducedMotion = useReducedMotion();
 
   const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 0 : insets.bottom;
@@ -193,79 +193,104 @@ export default function CommunitiesScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: Community; index: number }) => (
       <Animated.View
-        entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+        entering={
+          reducedMotion
+            ? undefined
+            : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)
+        }
         style={{ flex: 1 }}
       >
         <CommunityGridCard item={item} width={cardW} onPress={handleCardPress} />
       </Animated.View>
     ),
-    [cardW, handleCardPress],
+    [cardW, handleCardPress, reducedMotion],
   );
 
   return (
     <ErrorBoundary>
       <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.ambientMesh}
+          pointerEvents="none"
+        />
 
-        {/* ── Header ── */}
-        <Animated.View
-          entering={FadeInUp.duration(320).springify()}
-          style={[s.header, { paddingHorizontal: hPad, borderBottomColor: colors.divider, backgroundColor: colors.background }]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[s.headerTitle, { color: colors.text }]}>Communities</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
-              <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                {locationLabel}
-                {!isLoading && filteredCommunities.length > 0
-                  ? ` · ${filteredCommunities.length.toLocaleString()} shown`
-                  : ''}
-              </Text>
-            </View>
-          </View>
-
-          {/* Search input */}
-          <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Ionicons name="search" size={15} color={colors.textTertiary} />
-            <TextInput
-              style={[s.searchInput, { color: colors.text }]}
-              placeholder="Search..."
-              placeholderTextColor={colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              returnKeyType="search"
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
-                <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
-              </Pressable>
-            )}
-          </View>
-
-          <Pressable
-            onPress={() => refetch()}
-            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh communities"
+        {/* ── Header (liquid glass) ── */}
+        <Animated.View entering={reducedMotion ? undefined : FadeInUp.duration(320).springify()}>
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
           >
-            {isRefetching
-              ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
-              : <Ionicons name="refresh" size={18} color={colors.text} />}
-            {Platform.OS === 'ios' && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
-          </Pressable>
+            <View style={s.headerTitleBlock}>
+              <Text style={[s.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
+                Communities
+              </Text>
+              <View style={s.headerMetaRow}>
+                <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+                <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {locationLabel}
+                  {!isLoading && filteredCommunities.length > 0
+                    ? ` · ${filteredCommunities.length.toLocaleString()} shown`
+                    : ''}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+              <Ionicons name="search" size={15} color={colors.textTertiary} />
+              <TextInput
+                style={[s.searchInput, { color: colors.text }]}
+                placeholder="Search..."
+                placeholderTextColor={colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+                returnKeyType="search"
+                accessibilityLabel="Search communities"
+              />
+              {search.length > 0 ? (
+                <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
+                  <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
+                </Pressable>
+              ) : null}
+            </View>
+
+            <Pressable
+              onPress={() => refetch()}
+              style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh communities"
+            >
+              {isRefetching ? (
+                <ActivityIndicator size="small" color={CultureTokens.indigo} />
+              ) : (
+                <Ionicons name="refresh" size={18} color={colors.text} />
+              )}
+            </Pressable>
+          </LiquidGlassPanel>
         </Animated.View>
 
         {/* ── Shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
 
-          {/* ── Filter rows ── */}
-          <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
-
+          {/* ── Filter rows (glass rail) ── */}
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.mainCard}
+            style={{ marginHorizontal: hPad, marginTop: 10, marginBottom: 8 }}
+            contentStyle={s.filterGlassInner}
+          >
             {/* Row 1: Category filters */}
             <ScrollView
               horizontal
+              nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+              contentContainerStyle={s.filterRow}
               accessibilityRole="tablist"
               accessibilityLabel="Category filters"
             >
@@ -296,11 +321,12 @@ export default function CommunitiesScreen() {
             </ScrollView>
 
             {/* Row 2: Culture / nationality filters */}
-            {cultureChips.length > 0 && (
+            {cultureChips.length > 0 ? (
               <ScrollView
                 horizontal
+                nestedScrollEnabled
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[s.filterRow, s.filterRowSecondary, { paddingHorizontal: hPad }]}
+                contentContainerStyle={[s.filterRow, s.filterRowSecondary]}
                 accessibilityRole="tablist"
                 accessibilityLabel="Culture filters"
               >
@@ -336,8 +362,8 @@ export default function CommunitiesScreen() {
                   );
                 })}
               </ScrollView>
-            )}
-          </View>
+            ) : null}
+          </LiquidGlassPanel>
 
           {/* ── Grid ── */}
           {isLoading ? (
@@ -405,8 +431,19 @@ export default function CommunitiesScreen() {
 
         {/* ── Create CTA (bottom-right corner) ── */}
         <Animated.View
-          entering={FadeInDown.delay(300).springify()}
-          style={[s.fab, { backgroundColor: CultureTokens.indigo, bottom: bottomInset + 96 }]}
+          entering={reducedMotion ? undefined : FadeInDown.delay(300).springify()}
+          style={[
+            s.fab,
+            {
+              backgroundColor: CultureTokens.indigo,
+              bottom: bottomInset + 96,
+              ...Platform.select({
+                ios: shadows.large,
+                android: { elevation: 8 },
+                web: shadows.medium,
+              }),
+            },
+          ]}
         >
           <Pressable
             onPress={() => {
@@ -417,7 +454,7 @@ export default function CommunitiesScreen() {
             accessibilityLabel="Create a community"
             style={s.fabInner}
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={22} color={colors.textOnBrandGradient} />
           </Pressable>
         </Animated.View>
       </View>
@@ -433,22 +470,50 @@ export default function CommunitiesScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  container:      { flex: 1 },
+  container: { flex: 1 },
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
 
-  header:         { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
-  headerSub:      { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
+  headerGlassInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  headerTitleBlock: { flex: 1, minWidth: 0 },
+  headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  headerTitle: { fontSize: FontSize.title2, fontFamily: FontFamily.bold, lineHeight: LineHeight.title2 },
+  headerSub: { fontSize: FontSize.chip, fontFamily: FontFamily.medium, lineHeight: LineHeight.chip },
 
-  searchBar:      { flex: 1, flexDirection: 'row', alignItems: 'center', height: 36, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, gap: 6 },
-  searchInput:    { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', height: 36, padding: 0 },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: LiquidGlassTokens.corner.valueRibbon,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    gap: 6,
+    minWidth: 0,
+  },
+  searchInput: { flex: 1, fontSize: FontSize.chip, fontFamily: FontFamily.regular, height: 36, padding: 0 },
 
-  shell:          { flex: 1 },
-  shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
+  shell: { flex: 1 },
+  shellDesktop: { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
 
-  filterBlock:    { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
-  filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  filterRowSecondary: { paddingBottom: 4 },
+  filterGlassInner: { paddingVertical: 10, paddingHorizontal: 8, gap: 8 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  filterRowSecondary: { paddingBottom: 2 },
   clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
   clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 
@@ -469,17 +534,13 @@ const s = StyleSheet.create({
   resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
   resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
 
-  fab: { 
-    position: 'absolute', 
-    right: 20, 
-    width: 52, 
-    height: 52, 
-    borderRadius: 26, 
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
-      android: { elevation: 6, shadowColor: '#000' },
-      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.2)' },
-    }),
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    overflow: 'hidden',
   },
   fabInner:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

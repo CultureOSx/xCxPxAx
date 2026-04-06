@@ -3,14 +3,14 @@ import {
   StyleSheet, Text, View, ScrollView, Pressable,
   Platform, ActivityIndicator,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens, webShadow } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
+import { CultureTokens, gradients, LiquidGlassTokens, webShadow } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCouncil } from '@/hooks/useCouncil';
@@ -36,9 +36,8 @@ import { useCalendarSync } from '@/hooks/useCalendarSync';
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const isDark = useIsDark();
 
-  const { isDesktop, isTablet, width } = useLayout();
+  const { isDesktop, isTablet, width, hPad } = useLayout();
   const isWeb = Platform.OS === 'web';
   const isDesktopWeb = isWeb && isDesktop;
 
@@ -46,12 +45,6 @@ export default function CalendarScreen() {
   const contentMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
   const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
 
-   
-  const calCardShadow = Platform.select<any>({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
-    android: { elevation: 6, shadowColor: '#000' },
-    web: webShadow(isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.08)'),
-  });
    
   const civicRowShadow = Platform.select<any>({
     ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
@@ -319,25 +312,35 @@ export default function CalendarScreen() {
   return (
     <ErrorBoundary>
       <View style={[s.root, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.ambientMesh}
+          pointerEvents="none"
+        />
 
-        {/* ── Personalised Header ── */}
-        <View style={{ paddingTop: topInset, backgroundColor: colors.background }}>
-          <LinearGradient
-            colors={[colors.background, CultureTokens.indigo + '12', colors.background] as [string, string, string]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={s.headerGradient}
+        {/* ── Personalised Header (liquid glass) ── */}
+        <View style={{ paddingTop: topInset }}>
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
           >
             {/* Row: chevron · month+name · chevron */}
             <View style={s.monthNavRow}>
-              <Pressable
-                onPress={prevMonth}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel="Previous month"
-                style={({ pressed }) => [
+                <Pressable
+                  onPress={prevMonth}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous month"
+                  style={({ pressed }) => [
                   s.navPill,
-                  { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                  { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
                   pressed && { opacity: 0.7 },
                 ]}
               >
@@ -368,7 +371,7 @@ export default function CalendarScreen() {
                   accessibilityLabel="Calendar sync settings"
                   style={({ pressed }) => [
                     s.navPill,
-                    { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                    { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
                     pressed && { opacity: 0.7 },
                   ]}
                 >
@@ -386,7 +389,7 @@ export default function CalendarScreen() {
                   accessibilityLabel="Next month"
                   style={({ pressed }) => [
                     s.navPill,
-                    { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                    { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
                     pressed && { opacity: 0.7 },
                   ]}
                 >
@@ -418,7 +421,7 @@ export default function CalendarScreen() {
                 </View>
               )}
             </View>
-          </LinearGradient>
+          </LiquidGlassPanel>
         </View>
 
         <ScrollView
@@ -431,8 +434,12 @@ export default function CalendarScreen() {
             paddingHorizontal: contentHorizontalPadding,
           }}
         >
-          {/* ── Filter chips ── */}
-          <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 4 }}>
+          {/* ── Filter chips (glass rail) ── */}
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.mainCard}
+            style={{ marginHorizontal: hPad, marginTop: 16, marginBottom: 8 }}
+            contentStyle={{ paddingVertical: 10, paddingHorizontal: 4 }}
+          >
             <FilterChipRow
               selectedId={activeChip}
               onSelect={handleChipSelect}
@@ -449,19 +456,16 @@ export default function CalendarScreen() {
               ]}
               size="small"
             />
-          </View>
+          </LiquidGlassPanel>
 
-          <View style={isDesktopWeb ? s.desktopSplit : undefined}>
+          <View style={isDesktopWeb ? [s.desktopSplit, { paddingHorizontal: hPad }] : undefined}>
             <View style={isDesktopWeb ? s.desktopCalendarCol : undefined}>
 
               {/* ── Calendar card ── */}
-              <View
-                style={[
-                  s.calCard,
-                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                  calCardShadow,
-                  isDesktopWeb && s.calCardCompact,
-                ]}
+              <LiquidGlassPanel
+                borderRadius={LiquidGlassTokens.corner.mainCard}
+                style={[s.calCardOuter, { marginHorizontal: isDesktopWeb ? 0 : hPad }, isDesktopWeb && s.calCardCompact]}
+                contentStyle={s.calCardInner}
               >
                 {/* Dot legend when personal events visible */}
                 {calPrefs.deviceConnected && calPrefs.showPersonalEvents && (
@@ -556,7 +560,7 @@ export default function CalendarScreen() {
                     );
                   })}
                 </View>
-              </View>
+              </LiquidGlassPanel>
 
               {/* ── Selected date events ── */}
               {selectedDate && (
@@ -748,9 +752,9 @@ export default function CalendarScreen() {
                     civicRowShadow,
                   ]}
                 >
-                  <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
+                  <View style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
                     <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
-                  </BlurView>
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.civicTitle, { color: colors.text }]}>{reminder.title}</Text>
                     <Text style={[s.civicSub, { color: colors.textSecondary }]}>
@@ -872,6 +876,10 @@ const syncStyles = StyleSheet.create({
 // ---------------------------------------------------------------------------
 const s = StyleSheet.create({
   root: { flex: 1 },
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
 
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingCard: {
@@ -881,9 +889,10 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginTop: 16,
   },
 
-  // Header
-  headerGradient: {
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
+  // Header (inside LiquidGlassPanel)
+  headerGlassInner: {
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   monthNavRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -921,12 +930,12 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold', fontSize: 11,
   },
 
-  // Calendar card
-  calCard: {
-    marginHorizontal: 16, borderRadius: 20, padding: 16,
-    borderWidth: 1, marginTop: 0, elevation: 4,
+  // Calendar card (LiquidGlassPanel shell + inner padding)
+  calCardOuter: {
+    marginTop: 0,
   },
   calCardCompact: { marginHorizontal: 0 },
+  calCardInner: { padding: 16 },
 
   dotLegend: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -1013,7 +1022,7 @@ const s = StyleSheet.create({
   // Desktop split layout
   desktopSplit: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 32,
-    paddingHorizontal: 20, width: '100%', alignSelf: 'center', marginTop: 12,
+    width: '100%', alignSelf: 'center', marginTop: 12,
   },
   desktopCalendarCol: { flex: 1.5 },
   desktopUpcomingCol: { flex: 1 },

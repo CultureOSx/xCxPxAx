@@ -138,8 +138,8 @@ export default function PerkDetailScreen() {
 
     if (perk.priceTier && perk.priceTier !== 'free') {
       try {
-        const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-        const result = await createCheckoutSession({ perkId: perk.id });
+        const createCheckoutSessionFn = httpsCallable(functions, 'createCheckoutSessionV2');
+        const result = await createCheckoutSessionFn({ perkId: perk.id });
         const { url } = result.data as any;
         if (url) {
           Linking.openURL(url);

@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, usePathname } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { gradients } from '@/constants/theme';
+import { gradients, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 // ---------------------------------------------------------------------------
 // Guest view (intentionally dark)
@@ -21,7 +22,8 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
         colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0.95 }}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, { opacity: 0.14 }]}
+        pointerEvents="none"
       />
       <View style={[gs.orb, gs.orbTop, { backgroundColor: colors.primary + '33' }]} />
       <View style={[gs.orb, gs.orbBottom, { backgroundColor: colors.accent + '2E' }]} />
@@ -29,7 +31,11 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
         <Text style={[gs.headerTitle, { color: colors.textInverse }]}>Profile</Text>
       </View>
       <ScrollView contentContainerStyle={[gs.content, isDesktop && gs.desktopContent]} showsVerticalScrollIndicator={false}>
-        <View style={[gs.contentCard, isDesktop && gs.desktopCard, { backgroundColor: colors.surfaceElevated ?? (Platform.OS === 'web' ? '#FFF8F0' : '#0066CC'), borderColor: colors.border + '66' }]}>
+        <LiquidGlassPanel
+          borderRadius={LiquidGlassTokens.corner.mainCard}
+          style={[gs.contentCard, isDesktop && gs.desktopCard]}
+          contentStyle={gs.glassCardInner}
+        >
         <View style={[gs.iconWrap, { backgroundColor: colors.textInverse + '24', borderColor: colors.textInverse + '47' }]}>
           <Ionicons name="person-circle-outline" size={64} color={colors.textInverse + 'E6'} />
         </View>
@@ -53,19 +59,19 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
           ))}
         </View>
         <Pressable
-          style={[gs.primaryBtn, { backgroundColor: '#FFFFFF' }]}
+          style={[gs.primaryBtn, { backgroundColor: colors.surface }]}
           onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any)}
         >
           <Text style={[gs.primaryBtnText, { color: colors.primary }]}>Create Free Account</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.primary} />
         </Pressable>
         <Pressable
-          style={[gs.secondaryBtn, { borderColor: colors.primary, backgroundColor: '#FFFFFF' }]}
+          style={[gs.secondaryBtn, { borderColor: colors.primary, backgroundColor: colors.surface }]}
           onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}
         >
           <Text style={[gs.secondaryBtnText, { color: colors.primary }]}>I already have an account</Text>
         </Pressable>
-        </View>
+        </LiquidGlassPanel>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -83,13 +89,15 @@ const gs = StyleSheet.create({
   desktopContent: { justifyContent: 'center', minHeight: '100%' as unknown as number },
   contentCard: {
     width: '100%',
-    borderRadius: 24,
+    maxWidth: 560,
+    alignSelf: 'center' as const,
+  },
+  glassCardInner: {
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 18,
-    borderWidth: 1,
   },
-  desktopCard: { maxWidth: 560 },
+  desktopCard: {},
   iconWrap:  { width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, marginBottom: 24, alignSelf: 'center' },
   title:     { fontSize: 26, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 12, letterSpacing: -0.3 },
   subtitle:  { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 23, marginBottom: 28 },

@@ -137,15 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
           
-          const needsBootstrap = !profileData.createdAt || !profileData.culturePassId;
-          if (needsBootstrap) {
-            await api.auth.register({
-              displayName: firebaseUser.displayName ?? undefined,
-              city: profileData.city,
-              country: profileData.country ?? 'Australia',
-            });
-            profileData = await api.auth.me() as User;
-          }
+          // Firestore profile is materialized on first GET /api/auth/me (functions).
+          // Avoid POST /auth/register here — stale deploys returned HTML 404 for that path.
         } catch (error) {
           // "Failed to fetch" = network / CORS error (e.g. localhost hitting prod API without CORS origin).
           // The user is still authenticated via Firebase; profile data will be sparse.

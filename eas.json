@@ -41,13 +41,14 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-b5f96.cloudfunctions.net/api/",
+        "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-4f264.cloudfunctions.net/api/",
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDjAJFTdTfkP63pjuQd7j41DNEKYAYYupw",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "culturepass-b5f96.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "culturepass-b5f96",
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "culturepass-b5f96.appspot.com",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "culturepass-4f264.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "culturepass-4f264",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "culturepass-4f264.firebasestorage.app",
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "476251116440",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:476251116440:web:d17db0b0419cb8915151ed",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:476251116440:web:5295433d935ddf325151ed",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-N34JPFC1T0",
         "EXPO_PUBLIC_EAS_PROJECT_ID": "01dab28f-0531-42aa-8f76-c3dc0e13216e",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }
@@ -62,13 +63,14 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-b5f96.cloudfunctions.net/api/",
+        "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-4f264.cloudfunctions.net/api/",
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDjAJFTdTfkP63pjuQd7j41DNEKYAYYupw",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "culturepass-b5f96.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "culturepass-b5f96",
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "culturepass-b5f96.appspot.com",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "culturepass-4f264.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "culturepass-4f264",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "culturepass-4f264.firebasestorage.app",
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "476251116440",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:476251116440:web:d17db0b0419cb8915151ed",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:476251116440:web:5295433d935ddf325151ed",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-N34JPFC1T0",
         "EXPO_PUBLIC_EAS_PROJECT_ID": "01dab28f-0531-42aa-8f76-c3dc0e13216e",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
       }

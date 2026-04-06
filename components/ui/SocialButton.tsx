@@ -9,6 +9,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Button, type ButtonProps } from './Button';
+import { useColors } from '@/hooks/useColors';
 
 export interface SocialButtonProps extends Omit<ButtonProps, 'children' | 'variant' | 'leftIcon'> {
   provider: 'google' | 'apple';
@@ -16,8 +17,8 @@ export interface SocialButtonProps extends Omit<ButtonProps, 'children' | 'varia
 }
 
 const PROVIDER_CONFIG = {
-  google: { icon: 'logo-google' as const, label: 'Google', color: '#DB4437' },
-  apple: { icon: 'logo-apple' as const, label: 'Apple', color: '#000000' },
+  google: { icon: 'logo-google' as const, label: 'Google' },
+  apple: { icon: 'logo-apple' as const, label: 'Apple' },
 } as const;
 
 export function SocialButton({
@@ -26,6 +27,7 @@ export function SocialButton({
   disabled,
   ...rest
 }: SocialButtonProps) {
+  const colors = useColors();
   const config = PROVIDER_CONFIG[provider];
   const isDisabled = disabled || comingSoon;
 
@@ -35,14 +37,16 @@ export function SocialButton({
       variant="outline"
       size="lg"
       disabled={isDisabled}
+      haptic
       style={[styles.button, isDisabled && styles.disabled]}
       leftIcon={config.icon}
-      labelStyle={styles.label}
+      iconColor={provider === 'google' ? colors.error : colors.text}
+      labelStyle={[styles.label, { color: colors.text }]}
     >
       {comingSoon ? (
-        <Text style={styles.wrap}>
+        <Text style={[styles.wrap, { color: colors.text }]}>
           {config.label}
-          <Text style={styles.soon}> (coming soon)</Text>
+          <Text style={[styles.soon, { color: colors.textSecondary }]}> (coming soon)</Text>
         </Text>
       ) : (
         config.label
@@ -54,7 +58,7 @@ export function SocialButton({
 const styles = StyleSheet.create({
   button: { flex: 1 },
   disabled: { opacity: 0.5 },
-  label: { color: '#1A1A1A' },
+  label: {},
   wrap: { fontFamily: 'Poppins_600SemiBold' },
-  soon: { fontSize: 10, fontFamily: 'Poppins_400Regular', color: '#888' },
+  soon: { fontSize: 10, fontFamily: 'Poppins_400Regular' },
 });

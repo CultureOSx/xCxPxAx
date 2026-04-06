@@ -13,19 +13,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CultureTokens,
-  gradients,
   CardTokens,
-  glass,
   shadows,
   FontFamily,
   FontSize,
   TextStyles,
   Spacing,
   IconSize,
+  LiquidGlassTokens,
+  LiquidGlassAccents,
 } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -35,172 +34,213 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { routeWithRedirect } from '@/lib/routes';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
 import { useSignup } from '@/hooks/useSignup';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { HapticManager } from '@/lib/haptics';
+import {
+  AuthAmbientBackground,
+  AuthLiquidFormCard,
+  AuthDesktopBackPill,
+  AuthMobileHeader,
+} from '@/components/onboarding/AuthScreenPrimitives';
 
 export default function SignUpScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const reducedMotion = useReducedMotion();
 
   const {
-    name, setName,
-    email, setEmail,
-    password, setPassword,
-    agreed, setAgreed,
-    role, setRole,
-    nameError, emailError, passwordError, globalError,
-    loading, isValid, clearErrors,
-    handleGoogleSignUp, handleAppleSignUp, handleSignUp,
-    redirectTo
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    agreed,
+    setAgreed,
+    role,
+    setRole,
+    nameError,
+    emailError,
+    passwordError,
+    globalError,
+    loading,
+    isValid,
+    clearErrors,
+    handleGoogleSignUp,
+    handleAppleSignUp,
+    handleSignUp,
+    redirectTo,
   } = useSignup();
 
+  const enterUp = reducedMotion
+    ? undefined
+    : FadeInUp.springify()
+        .damping(LiquidGlassTokens.entranceSpring.damping)
+        .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
+  const enter = (delay: number) =>
+    reducedMotion
+      ? undefined
+      : FadeInDown.delay(delay)
+          .springify()
+          .damping(LiquidGlassTokens.entranceSpring.damping)
+          .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
+
   return (
-    <View style={[s.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
-      />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AuthAmbientBackground />
 
-      {Platform.OS === 'web' && (
-        <>
-          <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5 }]} />
-          <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3 }]} />
-        </>
+      {isDesktop ? (
+        <AuthDesktopBackPill label="Back to Discover" onPress={() => router.replace('/(tabs)')} />
+      ) : (
+        <AuthMobileHeader
+          variant="close-only"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+        />
       )}
 
-      {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable
-            onPress={() => router.replace('/(tabs)')}
-            hitSlop={Spacing.sm}
-            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Discover"
-          >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
-            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
-          <Pressable
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Ionicons name="close" size={28} color={colors.textInverse} />
-          </Pressable>
-        </View>
-      )}
-
-      <KeyboardAvoidingView
-        style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 },
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
+            !isDesktop && { paddingTop: 12 },
+            { paddingBottom: 60 + (Platform.OS === 'web' ? 0 : insets.bottom) },
           ]}
         >
-          <Animated.View entering={FadeInUp.springify().damping(16).duration(600)} style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            )}
-
-            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
-              <View style={s.logoRow}>
-                <View style={[s.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
-                  <Ionicons name="globe-outline" size={IconSize.xl} color={colors.textInverse} />
+          <Animated.View entering={enterUp} style={styles.cardWrap}>
+            <AuthLiquidFormCard isDesktop={isDesktop}>
+              <Animated.View entering={enter(60)} style={styles.logoRow}>
+                <View style={[styles.logoCircle, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                  <LinearGradient
+                    colors={[colors.primaryGlow, 'transparent']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
                 </View>
-                <BrandWordmark size="md" withTagline centered light />
-              </View>
+                <BrandWordmark size="md" withTagline centered />
+              </Animated.View>
 
-              <Text style={[s.title, { color: colors.textInverse }]}>Create Account.</Text>
-              <Text style={[s.benefitsRow, { color: CultureTokens.gold }]}>
+              <Animated.Text entering={enter(100)} style={[styles.title, { color: colors.text }]}>
+                Create Account.
+              </Animated.Text>
+              <Animated.Text entering={enter(130)} style={[styles.benefitsRow, { color: CultureTokens.gold }]}>
                 Free events · Community access · Exclusive perks
-              </Text>
+              </Animated.Text>
 
               {globalError ? (
-                <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
-                  <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
-                  <Text style={[s.globalErrorText, { color: CultureTokens.coral }]}>{globalError}</Text>
+                <View
+                  style={[
+                    styles.errorBanner,
+                    {
+                      backgroundColor: LiquidGlassAccents.errorBannerFill,
+                      borderColor: LiquidGlassAccents.errorBannerBorder,
+                    },
+                  ]}
+                  accessibilityRole="alert"
+                >
+                  <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
+                  <Text style={[styles.globalErrorText, { color: colors.error }]}>{globalError}</Text>
                 </View>
               ) : null}
 
-              <View style={s.roleToggleGroup}>
-                <Text style={[s.roleLabel, { color: colors.textSecondary }]}>I want to...</Text>
-                <View style={s.roleRow}>
+              <Animated.View entering={enter(180)} style={styles.roleToggleGroup}>
+                <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>I want to...</Text>
+                <View style={styles.roleRow}>
                   <Pressable
                     style={[
-                      s.roleOption,
+                      styles.roleOption,
                       role === 'user'
-                        ? { backgroundColor: colors.primaryGlow, borderColor: colors.primary }
+                        ? { backgroundColor: colors.primarySoft, borderColor: colors.primary }
                         : { backgroundColor: 'transparent', borderColor: colors.borderLight },
                     ]}
-                    onPress={() => { setRole('user'); HapticManager.light(); }}
+                    onPress={() => {
+                      setRole('user');
+                      HapticManager.light();
+                    }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: role === 'user' }}
                     accessibilityLabel="Discover Events"
                   >
-                    <Ionicons name="compass-outline" size={IconSize.md} color={role === 'user' ? colors.textInverse : colors.textSecondary} />
-                    <Text style={[s.roleOptionText, role === 'user' ? { color: colors.textInverse, fontFamily: FontFamily.semibold } : { color: colors.textSecondary }]}>
+                    <Ionicons
+                      name="compass-outline"
+                      size={IconSize.md}
+                      color={role === 'user' ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.roleOptionText,
+                        role === 'user'
+                          ? { color: colors.text, fontFamily: FontFamily.semibold }
+                          : { color: colors.textSecondary },
+                      ]}
+                    >
                       Discover Events
                     </Text>
                   </Pressable>
                   <Pressable
                     style={[
-                      s.roleOption,
+                      styles.roleOption,
                       role === 'organizer'
-                        ? { backgroundColor: colors.primaryGlow, borderColor: colors.primary }
+                        ? { backgroundColor: colors.primarySoft, borderColor: colors.primary }
                         : { backgroundColor: 'transparent', borderColor: colors.borderLight },
                     ]}
-                    onPress={() => { setRole('organizer'); HapticManager.light(); }}
+                    onPress={() => {
+                      setRole('organizer');
+                      HapticManager.light();
+                    }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: role === 'organizer' }}
                     accessibilityLabel="Host Events"
                   >
-                    <Ionicons name="calendar-outline" size={IconSize.md} color={role === 'organizer' ? colors.textInverse : colors.textSecondary} />
-                    <Text style={[s.roleOptionText, role === 'organizer' ? { color: colors.textInverse, fontFamily: FontFamily.semibold } : { color: colors.textSecondary }]}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={IconSize.md}
+                      color={role === 'organizer' ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.roleOptionText,
+                        role === 'organizer'
+                          ? { color: colors.text, fontFamily: FontFamily.semibold }
+                          : { color: colors.textSecondary },
+                      ]}
+                    >
                       Host Events
                     </Text>
                   </Pressable>
                 </View>
-              </View>
+              </Animated.View>
 
-              <View style={s.form}>
-                <View style={s.inputGroup}>
+              <Animated.View entering={enter(240)} style={styles.form}>
+                <View style={styles.inputGroup}>
                   <Input
                     label="Full Name"
                     placeholder="Enter your full name"
                     leftIcon="person-outline"
                     value={name}
-                    onChangeText={(v) => { setName(v); clearErrors(); }}
+                    onChangeText={(v) => {
+                      setName(v);
+                      clearErrors();
+                    }}
                     autoCapitalize="words"
                     returnKeyType="next"
                     error={nameError}
                   />
                 </View>
 
-                <View style={s.inputGroup}>
+                <View style={styles.inputGroup}>
                   <Input
                     label="Email Address"
                     placeholder="you@example.com"
                     leftIcon="mail-outline"
                     value={email}
-                    onChangeText={(v) => { setEmail(v); clearErrors(); }}
+                    onChangeText={(v) => {
+                      setEmail(v);
+                      clearErrors();
+                    }}
                     autoCapitalize="none"
                     keyboardType="email-address"
                     returnKeyType="next"
@@ -208,77 +248,93 @@ export default function SignUpScreen() {
                   />
                 </View>
 
-                <View style={s.inputGroup}>
+                <View style={styles.inputGroup}>
                   <Input
                     label="Password"
                     placeholder="Min. 6 characters"
                     leftIcon="lock-closed-outline"
                     value={password}
-                    onChangeText={(v) => { setPassword(v); clearErrors(); }}
+                    onChangeText={(v) => {
+                      setPassword(v);
+                      clearErrors();
+                    }}
                     passwordToggle
                     returnKeyType="done"
                     onSubmitEditing={handleSignUp}
                     error={passwordError}
                   />
-                  {password.length > 0 && <PasswordStrengthIndicator password={password} />}
+                  {password.length > 0 ? <PasswordStrengthIndicator password={password} /> : null}
                 </View>
-              </View>
+              </Animated.View>
 
-              <View style={s.optionsRow}>
+              <Animated.View entering={enter(300)} style={styles.optionsRow}>
                 <Checkbox
                   checked={agreed}
-                  onToggle={(v) => { setAgreed(v); clearErrors(); }}
+                  onToggle={(v) => {
+                    setAgreed(v);
+                    clearErrors();
+                  }}
                   label={
-                    <Text style={[s.checkText, { color: colors.textInverse }]}>
+                    <Text style={[styles.checkText, { color: colors.text }]}>
                       I agree to the{' '}
-                      <Text style={[s.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/terms')}>Terms</Text>
+                      <Text style={[styles.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/terms')}>
+                        Terms
+                      </Text>
                       {' & '}
-                      <Text style={[s.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/privacy')}>Privacy</Text>
+                      <Text style={[styles.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/privacy')}>
+                        Privacy
+                      </Text>
                     </Text>
                   }
                 />
-              </View>
+              </Animated.View>
 
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                rightIcon="arrow-forward"
-                loading={loading}
-                disabled={!isValid || loading}
-                onPress={handleSignUp}
-                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
-              >
-                Create Account
-              </Button>
+              <Animated.View entering={enter(360)}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  haptic
+                  rightIcon="arrow-forward"
+                  loading={loading}
+                  disabled={!isValid || loading}
+                  onPress={handleSignUp}
+                  style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+                  accessibilityLabel="Create account"
+                >
+                  Create Account
+                </Button>
+              </Animated.View>
 
-              <View style={s.socialDivider}>
-                <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-                <Text style={[s.divText, { color: colors.textSecondary }]}>or sign up with</Text>
-                <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-              </View>
+              <Animated.View entering={enter(420)} style={styles.socialDivider}>
+                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
+                <Text style={[styles.divText, { color: colors.textSecondary }]}>or sign up with</Text>
+                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
+              </Animated.View>
 
-              <View style={s.socialRow}>
+              <Animated.View entering={enter(480)} style={styles.socialRow}>
                 <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
                 {Platform.OS === 'ios' ? (
                   <SocialButton provider="apple" onPress={handleAppleSignUp} disabled={loading} />
                 ) : (
                   <SocialButton provider="apple" comingSoon disabled={loading} />
                 )}
-              </View>
+              </Animated.View>
 
-              <Pressable
-                style={s.switchRow}
-                onPress={() => router.replace(routeWithRedirect('/(onboarding)/login', redirectTo) as string)}
-                hitSlop={12}
-                accessibilityRole="link"
-                accessibilityLabel="Sign in to existing account"
-              >
-                <Text style={[s.switchText, { color: colors.textSecondary }]}>
-                  Already have an account? <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign In</Text>
-                </Text>
-              </Pressable>
-            </View>
+              <Animated.View entering={enter(540)}>
+                <Pressable
+                  style={styles.switchRow}
+                  onPress={() => router.replace(routeWithRedirect('/(onboarding)/login', redirectTo) as string)}
+                  hitSlop={12}
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign in to existing account"
+                >
+                  <Text style={[styles.switchText, { color: colors.textSecondary }]}>
+                    Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.gold }]}>Sign In</Text>
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            </AuthLiquidFormCard>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -286,41 +342,12 @@ export default function SignUpScreen() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles — static StyleSheet
-// ---------------------------------------------------------------------------
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: { flex: 1 },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    ...Platform.select({
-      web: { filter: 'blur(50px)' } as Record<string, string>,
-      default: {},
-    }),
-  },
   keyboardAvoid: { flex: 1 },
-  mobileHeader: { paddingHorizontal: 20, paddingBottom: Spacing.sm + 4 },
-  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
-  desktopBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    borderRadius: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    borderWidth: 1,
-  },
-  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
-  formContainerDesktop: { maxWidth: 520 },
-  formBlur: { borderWidth: 1 },
-  formContent: { paddingTop: Spacing.xxl },
+  cardWrap: { width: '100%' },
   logoRow: { alignItems: 'center', marginBottom: 20 },
   logoCircle: {
     width: 68,
@@ -329,7 +356,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
   },
   title: {
@@ -352,7 +379,7 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: CardTokens.radius,
     marginBottom: Spacing.lg,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
   globalErrorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   roleToggleGroup: { marginBottom: 20 },
@@ -372,7 +399,7 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: 14,
     borderRadius: CardTokens.radius,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
   roleOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   form: { gap: 20, marginBottom: 20 },
@@ -382,7 +409,7 @@ const s = StyleSheet.create({
   linkText: { fontFamily: FontFamily.semibold },
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
   socialDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
-  divLine: { flex: 1, height: 1 },
+  divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   socialRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.xl },
   switchRow: { alignItems: 'center', paddingVertical: Spacing.sm },

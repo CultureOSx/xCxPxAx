@@ -34,7 +34,7 @@ const projectEnv =
   process.env.PROJECT_ID ??
   null;
 
-export const projectId = admin.apps[0]?.options?.projectId ?? projectEnv ?? 'culturepass-b5f96';
+export const projectId = admin.apps[0]?.options?.projectId ?? projectEnv ?? 'culturepass-4f264';
 
 /**
  * True only when actual Firestore credentials are available.

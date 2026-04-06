@@ -22,8 +22,6 @@
  *   const colors = useColors(); // Runtime theme access
  */
 
-import { Platform } from "react-native";
-
 export interface ShadowStyle {
   shadowColor?: string;
   shadowOffset?: { width: number; height: number };
@@ -149,6 +147,8 @@ export type ColorTheme = {
   textSecondary: string;
   textTertiary: string;
   textInverse: string;
+  /** High-contrast text on saturated brand gradients (hero ribbons, CTAs on color). */
+  textOnBrandGradient: string;
 
   // Status
   success: string;
@@ -226,6 +226,7 @@ export const light: ColorTheme = {
   textSecondary: "#4A4A4A",
   textTertiary: "#767676", // AA compliant on #FFFFFF (4.54:1 — was #8D8D8D at 3.29:1, failed AA)
   textInverse: "#FFFFFF",
+  textOnBrandGradient: "#FFFFFF",
 
   card: "#FFFFFF",
   cardBorder: "#E6D3B3",
@@ -281,6 +282,7 @@ export const dark: ColorTheme = {
   textSecondary: "#C9C9D6",    // Secondary text
   textTertiary: "#8D8D8D",     // Muted text
   textInverse: "#0B0B14",
+  textOnBrandGradient: "#FFFFFF",
 
   card: "#22203A",
   cardBorder: "#2A2747",

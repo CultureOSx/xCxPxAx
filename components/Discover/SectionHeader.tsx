@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, FontFamily, FontSize, LineHeight, LiquidGlassTokens } from '@/constants/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -17,13 +17,16 @@ function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeader
 
   return (
     <View style={styles.wrap}>
-      {/* Left accent bar */}
       <View style={[styles.accentBar, { backgroundColor: accent }]} />
 
       <View style={styles.textBlock}>
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.title, { color: colors.text }]} maxFontSizeMultiplier={1.6}>
+          {title}
+        </Text>
         {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]} maxFontSizeMultiplier={1.5}>
+            {subtitle}
+          </Text>
         ) : null}
       </View>
 
@@ -53,20 +56,20 @@ const styles = StyleSheet.create({
   accentBar: {
     width: 4,
     height: 40,
-    borderRadius: 2,
+    borderRadius: LiquidGlassTokens.corner.valueRibbon / 8,
     flexShrink: 0,
   },
   textBlock: { flex: 1, gap: 3 },
   title: {
-    fontSize: 19,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.title3,
+    fontFamily: FontFamily.bold,
     letterSpacing: -0.3,
-    lineHeight: 26,
+    lineHeight: LineHeight.title3,
   },
   subtitle: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 19,
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.chip,
     opacity: 0.75,
   },
   seeAllBtn: {
@@ -78,8 +81,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   seeAllText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.semibold,
   },
 });
 

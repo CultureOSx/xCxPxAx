@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-admin.initializeApp({ projectId: 'culturepass-b5f96' });
+admin.initializeApp({ projectId: 'culturepass-4f264' });
 const db = admin.firestore();
 async function run() {
   const events = await db.collection('events').limit(5).get();

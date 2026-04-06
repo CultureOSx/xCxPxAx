@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 
@@ -9,66 +10,121 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock', {
 
 const db = admin.firestore();
 
-export const createCheckoutSession = functions.https.onCall(async (data, context) => {
-  // 1. Verify Authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in to purchase perks.');
-  }
-  const uid = context.auth.uid;
+type CheckoutArgs = { uid: string; email: string | undefined; perkId: string };
 
-  // 2. Validate Request
-  const { perkId } = data;
-  if (!perkId) {
-    throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a perkId.');
-  }
+async function createPerkCheckoutSession(args: CheckoutArgs): Promise<{ sessionId: string; url: string | null }> {
+  const { uid, email, perkId } = args;
 
-  // 3. Fetch Perk Data
   const perkDoc = await db.collection('perks').doc(perkId).get();
   if (!perkDoc.exists) {
-    throw new functions.https.HttpsError('not-found', 'Perk not found.');
+    throw new Error('NOT_FOUND');
   }
 
   const perk = perkDoc.data();
   if (!perk || perk.priceTier === 'free') {
-    throw new functions.https.HttpsError('failed-precondition', 'This perk is free and does not require checkout.');
+    throw new Error('FREE_PERK');
   }
 
-  const priceCents = perk.discountedPriceCents || perk.originalPriceCents || 500; // fallback to $5.00
-  
-  // 4. Create Stripe Checkout Session
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'link'],
-      mode: 'payment',
-      success_url: `https://culturepass.app/perks/${perkId}?success=true`,
-      cancel_url: `https://culturepass.app/perks/${perkId}?canceled=true`,
-      customer_email: context.auth.token.email,
-      client_reference_id: uid, // Track which user is purchasing
-      metadata: {
-        perkId: perkId,
-      },
-      line_items: [
-        {
-          price_data: {
-            currency: 'aud',
-            product_data: {
-              name: perk.title || 'Premium Cultural Perk',
-              description: perk.description || 'Exclusive access via CulturePass.',
-              images: perk.coverUrl ? [perk.coverUrl] : [],
-            },
-            unit_amount: priceCents,
-          },
-          quantity: 1,
-        },
-      ],
-    });
+  const priceCents = perk.discountedPriceCents || perk.originalPriceCents || 500;
 
-    return {
-      sessionId: session.id,
-      url: session.url,
-    };
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card', 'link'],
+    mode: 'payment',
+    success_url: `https://culturepass.app/perks/${perkId}?success=true`,
+    cancel_url: `https://culturepass.app/perks/${perkId}?canceled=true`,
+    customer_email: email,
+    client_reference_id: uid,
+    metadata: {
+      perkId: perkId,
+    },
+    line_items: [
+      {
+        price_data: {
+          currency: 'aud',
+          product_data: {
+            name: perk.title || 'Premium Cultural Perk',
+            description: perk.description || 'Exclusive access via CulturePass.',
+            images: perk.coverUrl ? [perk.coverUrl] : [],
+          },
+          unit_amount: priceCents,
+        },
+        quantity: 1,
+      },
+    ],
+  });
+
+  return {
+    sessionId: session.id,
+    url: session.url,
+  };
+}
+
+/**
+ * 1st gen — keep until `createCheckoutSessionV2` is verified, then remove this export
+ * and rename V2 → `createCheckoutSession` (see Firebase 2nd gen upgrade guide).
+ */
+export const createCheckoutSession = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in to purchase perks.');
+  }
+  const uid = context.auth.uid;
+  const { perkId } = data as { perkId?: string };
+  if (!perkId) {
+    throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a perkId.');
+  }
+
+  try {
+    return await createPerkCheckoutSession({
+      uid,
+      email: context.auth.token.email,
+      perkId,
+    });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') {
+        throw new functions.https.HttpsError('not-found', 'Perk not found.');
+      }
+      if (error.message === 'FREE_PERK') {
+        throw new functions.https.HttpsError('failed-precondition', 'This perk is free and does not require checkout.');
+      }
+    }
     console.error('Error creating Stripe Checkout session:', error);
     throw new functions.https.HttpsError('internal', 'Unable to create checkout session.');
   }
 });
+
+/** 2nd gen (Cloud Run). New name required until 1st gen `createCheckoutSession` is deleted. */
+export const createCheckoutSessionV2 = onCall(
+  {
+    region: 'us-central1',
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in to purchase perks.');
+    }
+    const uid = request.auth.uid;
+    const { perkId } = request.data as { perkId?: string };
+    if (!perkId) {
+      throw new HttpsError('invalid-argument', 'The function must be called with a perkId.');
+    }
+
+    try {
+      return await createPerkCheckoutSession({
+        uid,
+        email: request.auth.token.email,
+        perkId,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'NOT_FOUND') {
+          throw new HttpsError('not-found', 'Perk not found.');
+        }
+        if (error.message === 'FREE_PERK') {
+          throw new HttpsError('failed-precondition', 'This perk is free and does not require checkout.');
+        }
+      }
+      console.error('Error creating Stripe Checkout session:', error);
+      throw new HttpsError('internal', 'Unable to create checkout session.');
+    }
+  },
+);

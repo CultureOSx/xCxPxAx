@@ -6,19 +6,21 @@ export const CORNER_W = 3;
 export const getStyles = (colors: any) => StyleSheet.create({
   container:        { flex: 1, backgroundColor: colors.background },
 
-  // Header — slim, purposeful
-  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, zIndex: 10 },
+  // Header — liquid glass inner
+  headerGlassInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, zIndex: 10 },
   headerBtn:        { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary },
   headerTitle:      { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.2 },
   headerRight:      { width: 34, alignItems: 'flex-end' },
 
-  // Segmented control — feels like iOS
-  toggleContainer:  { flexDirection: 'row', marginHorizontal: 16, borderRadius: 10, padding: 3, backgroundColor: colors.backgroundSecondary },
+  // Segmented control — glass shell
+  toggleGlassOuter: { marginHorizontal: 16 },
+  toggleGlassInner: { flexDirection: 'row', padding: 3 },
   toggleTab:        { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 8 },
   toggleText:       { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
 
-  // Stats bar — compact, secondary to the camera
-  statsBar:         { flexDirection: 'row', marginHorizontal: 16, marginTop: 10, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  // Stats bar — glass shell
+  statsGlassOuter:  { marginHorizontal: 16, marginTop: 10 },
+  statsGlassInner:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12 },
   statItem:         { flex: 1, alignItems: 'center', gap: 1 },
   statNum:          { fontSize: 17, fontFamily: 'Poppins_700Bold' },
   statLabel:        { fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },

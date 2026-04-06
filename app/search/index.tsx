@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +10,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { CultureTokens, gradients, HeaderTokens } from '@/constants/theme';
+import { CultureTokens, gradients, CategoryColors, LiquidGlassTokens } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useLayout } from '@/hooks/useLayout';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 import { LocationPicker } from '@/components/LocationPicker';
@@ -44,7 +45,8 @@ export default function SearchScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const s = getStyles(colors);
-  const { isDesktop } = useLayout();
+  const { isDesktop, hPad } = useLayout();
+  const reducedMotion = useReducedMotion();
 
   const openNotifications = useCallback(() => {
     if (isAuthenticated) {
@@ -76,7 +78,7 @@ export default function SearchScreen() {
     movie:      { label: 'Movies',       icon: 'film',       color: CultureTokens.gold },
     restaurant: { label: 'Dining',       icon: 'restaurant', color: CultureTokens.coral },
     activity:   { label: 'Activities',   icon: 'football',   color: CultureTokens.teal },
-    shopping:   { label: 'Stores',       icon: 'bag',        color: '#FF9F1C' },
+    shopping:   { label: 'Stores',       icon: 'bag',        color: CategoryColors.shopping },
     community:  { label: 'Communities',  icon: 'people',     color: CultureTokens.indigo },
     person:     { label: 'People',       icon: 'person',     color: CultureTokens.coral },
   }), []);
@@ -190,101 +192,135 @@ export default function SearchScreen() {
     <ErrorBoundary>
       <View style={[s.container, { paddingTop: topInset }]}>
         <LinearGradient
-          colors={[CultureTokens.indigo + '66', colors.background]}
-          style={[StyleSheet.absoluteFillObject, { pointerEvents: 'none' }]}
-        />
-        
-        {/* Decorative Orbs */}
-        <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.3 }, isWeb && { filter: 'blur(80px)' } as Record<string, unknown>]} />
-        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.gold, opacity: 0.15 }, isWeb && { filter: 'blur(100px)' } as Record<string, unknown>]} />
-
-        {/* Top Bar — Location, Search, Notifications */}
-        <LinearGradient
           colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={s.topBarGradient}
-        >
-          <View style={s.topBar}>
+          style={searchStyles.ambientMesh}
+          pointerEvents="none"
+        />
+
+        {/* Top bar — liquid glass */}
+        <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(280).springify()}>
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              zIndex: 10,
+              elevation: 10,
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={s.topBar}
+          >
             <Pressable
               onPress={() => goBackOrReplace('/(tabs)')}
-              style={({ pressed }) => [s.headerIconBtn, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [s.headerIconBtn, pressed && { opacity: 0.85 }]}
               accessibilityRole="button"
               accessibilityLabel="Back"
             >
-              </Pressable>
-            <Text style={[TextStyles.title2, { color: '#FFFFFF', flex: 1, textAlign: 'center' }]}>Search</Text>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </Pressable>
+            <Text style={[TextStyles.title2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Search</Text>
             <View style={s.topBarActions}>
               <LocationPicker
                 variant="icon"
-                iconColor="#FFFFFF"
-                buttonStyle={s.headerIconBtn}
+                iconColor={colors.text}
+                buttonStyle={{ ...s.headerIconBtn, backgroundColor: 'transparent' }}
               />
               <Pressable
                 onPress={openNotifications}
-                style={({ pressed }) => [s.headerIconBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [s.headerIconBtn, pressed && { opacity: 0.85 }]}
                 accessibilityRole="button"
                 accessibilityLabel="Notifications"
               >
-                <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-                {isAuthenticated && <View style={s.notifDot} />}
+                <Ionicons name="notifications-outline" size={22} color={colors.text} />
+                {isAuthenticated && <View style={[s.notifDot, { borderColor: colors.surface }]} />}
               </Pressable>
             </View>
-          </View>
-        </LinearGradient>
+          </LiquidGlassPanel>
+        </Animated.View>
 
         <View style={[s.shell, isDesktop && s.desktopShell]}>
-          <View style={s.header}>
-            <View style={s.searchBarContainer}>
-              {Platform.OS === 'ios' || isWeb ? (
-                <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.backgroundSecondary }]} />
+          <LiquidGlassPanel
+            borderRadius={LiquidGlassTokens.corner.mainCard}
+            bordered={false}
+            style={{ marginHorizontal: hPad, marginTop: 10, marginBottom: 8 }}
+            contentStyle={s.searchGlassInner}
+          >
+            <View
+              style={[
+                s.searchBarInner,
+                {
+                  borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight,
+                  backgroundColor: colors.primarySoft,
+                  borderRadius: LiquidGlassTokens.corner.valueRibbon,
+                },
+              ]}
+            >
+              <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : colors.textSecondary} />
+              <TextInput
+                style={s.searchInput}
+                placeholder="Events, communities, venues..."
+                placeholderTextColor={colors.textSecondary}
+                value={query}
+                onChangeText={setQuery}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                autoFocus
+                returnKeyType="search"
+                selectionColor={CultureTokens.indigo}
+                accessibilityLabel="Search"
+              />
+              {query.length > 0 && (
+                <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }} accessibilityRole="button" accessibilityLabel="Clear search">
+                  <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                </Pressable>
               )}
-              <View style={[s.searchBarInner, { borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight, backgroundColor: colors.surface + '40' }]}>
-                <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : colors.textSecondary} />
-                <TextInput
-                  style={s.searchInput}
-                  placeholder="Events, communities, venues..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={query}
-                  onChangeText={setQuery}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  autoFocus
-                  returnKeyType="search"
-                  selectionColor={CultureTokens.indigo}
-                />
-                {query.length > 0 && (
-                  <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }}>
-                    <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-                  </Pressable>
-                )}
-              </View>
             </View>
-          </View>
+          </LiquidGlassPanel>
 
           {query.length > 0 && allResults.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.typeRow} style={{ flexGrow: 0 }}>
-              <Pressable
-                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : colors.surface, borderColor: selectedType === 'all' ? CultureTokens.indigo : colors.borderLight }]}
-                onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
+            <LiquidGlassPanel
+              borderRadius={LiquidGlassTokens.corner.mainCard}
+              bordered={false}
+              style={{ marginHorizontal: hPad, marginBottom: 8 }}
+              contentStyle={s.filterGlassInner}
+            >
+              <ScrollView
+                horizontal
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.typeRow}
+                style={{ flexGrow: 0 }}
+                accessibilityRole="tablist"
+                accessibilityLabel="Result type filters"
               >
-                <Text style={[TextStyles.captionSemibold, { color: selectedType === 'all' ? '#FFFFFF' : colors.textSecondary }]}>All ({typeCounts.all})</Text>
-              </Pressable>
-              {(Object.keys(TYPE_CONFIG) as ResultType[]).filter(t => typeCounts[t]).map(type => (
                 <Pressable
-                  key={type}
-                  style={[s.typeChip, { backgroundColor: selectedType === type ? TYPE_CONFIG[type].color + '20' : colors.surface, borderColor: selectedType === type ? TYPE_CONFIG[type].color : colors.borderLight }]}
-                  onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType(type); }}
+                  style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : colors.surface, borderColor: selectedType === 'all' ? CultureTokens.indigo : colors.borderLight }]}
+                  onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: selectedType === 'all' }}
                 >
-                  <Ionicons name={TYPE_CONFIG[type].icon} size={14} color={selectedType === type ? TYPE_CONFIG[type].color : colors.textTertiary} />
-                  <Text style={[TextStyles.captionSemibold, { color: selectedType === type ? TYPE_CONFIG[type].color : colors.textSecondary }]}> 
-                    {TYPE_CONFIG[type].label} ({typeCounts[type]})
+                  <Text style={[TextStyles.captionSemibold, { color: selectedType === 'all' ? colors.textOnBrandGradient : colors.textSecondary }]}>
+                    All ({typeCounts.all})
                   </Text>
                 </Pressable>
-              ))}
-            </ScrollView>
+                {(Object.keys(TYPE_CONFIG) as ResultType[]).filter(t => typeCounts[t]).map(type => (
+                  <Pressable
+                    key={type}
+                    style={[s.typeChip, { backgroundColor: selectedType === type ? TYPE_CONFIG[type].color + '20' : colors.surface, borderColor: selectedType === type ? TYPE_CONFIG[type].color : colors.borderLight }]}
+                    onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType(type); }}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: selectedType === type }}
+                  >
+                    <Ionicons name={TYPE_CONFIG[type].icon} size={14} color={selectedType === type ? TYPE_CONFIG[type].color : colors.textTertiary} />
+                    <Text style={[TextStyles.captionSemibold, { color: selectedType === type ? TYPE_CONFIG[type].color : colors.textSecondary }]}>
+                      {TYPE_CONFIG[type].label} ({typeCounts[type]})
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </LiquidGlassPanel>
           )}
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 40 }}>
@@ -386,9 +422,7 @@ export default function SearchScreen() {
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   shell: { flex: 1 },
-  orb: { position: 'absolute', width: 400, height: 400, borderRadius: 200 },
   desktopShell: { maxWidth: 800, width: '100%', alignSelf: 'center' },
-  topBarGradient: { zIndex: 10, elevation: 10 },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -396,13 +430,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 12,
     minHeight: 56,
   },
-  topBarTitle: { flex: 1, fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', textAlign: 'center' },
   topBarActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerIconBtn: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -415,14 +447,20 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 5,
     backgroundColor: CultureTokens.coral,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: HeaderTokens.paddingHorizontal, paddingVertical: 12 },
-  searchBarContainer: { flex: 1, borderRadius: 16, height: 48, overflow: 'hidden', backgroundColor: colors.backgroundSecondary },
-  searchBarInner: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 10, borderWidth: 1, height: '100%' },
+  searchGlassInner: { paddingVertical: 10, paddingHorizontal: 10 },
+  filterGlassInner: { paddingVertical: 10, paddingHorizontal: 8 },
+  searchBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    minHeight: 48,
+  },
   searchInput: { flex: 1, fontSize: 16, fontFamily: 'Poppins_500Medium', paddingVertical: 0, minWidth: 0, color: colors.text },
-  
-  typeRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 16, paddingTop: 4 },
+
+  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 4 },
   typeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
   typeChipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   
@@ -484,4 +522,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   resultTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', paddingRight: 8, color: colors.text },
   resultSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 1 },
   resultArrowBox: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary + '80' },
+});
+
+const searchStyles = StyleSheet.create({
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.07,
+  },
 });

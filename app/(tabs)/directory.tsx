@@ -9,13 +9,20 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { CultureTokens, gradients } from '@/constants/theme';
+import {
+  CultureTokens,
+  gradients,
+  LiquidGlassTokens,
+  FontFamily,
+  FontSize,
+  LineHeight,
+} from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -24,7 +31,7 @@ import { queryClient } from '@/lib/query-client';
 import type { Profile, EventData } from '@/shared/schema';
 import { api, type CouncilData } from '@/lib/api';
 import type { FilterItem } from '@/components/FilterChip';
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
@@ -50,11 +57,11 @@ import {
 export default function DirectoryScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const isDark = useIsDark();
   const { width, isDesktop, isTablet, hPad } = useLayout();
   const { state: onboardingState } = useOnboarding();
   const { acknowledgement } = useLocations();
-  
+  const reducedMotion = useReducedMotion();
+
   const showAcknowledgement = ['Australia', 'New Zealand', 'Canada', 'AU', 'NZ', 'CA'].includes(onboardingState.country || 'Australia');
 
   const isDesktopWeb = isWeb && isDesktop;
@@ -223,82 +230,98 @@ export default function DirectoryScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { backgroundColor: isDark ? '#0A0A12' : '#F7F7F9' }]}>
-        <LinearGradient 
-          colors={isDark ? gradients.aurora : ['#E8F2FF', '#FFFFFF', '#FAF5FF']}
-          style={[StyleSheet.absoluteFill, { opacity: isDark ? 0.4 : 0.8 }]}
+      <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
+        <LinearGradient
+          colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          style={dirStyles.ambientMesh}
+          pointerEvents="none"
         />
 
-        {/* ── Header ── */}
-        <Animated.View entering={FadeInUp.duration(320).springify()} style={{ zIndex: 10 }}>
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 40 : 80}
-            tint={isDark ? 'dark' : 'light'}
-            style={{ paddingTop: topInset, borderBottomColor: colors.borderLight, borderBottomWidth: StyleSheet.hairlineWidth }}
+        {/* ── Header (liquid glass) ── */}
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeInUp.duration(320).springify()}
+          style={{ zIndex: 10 }}
+        >
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={[dirStyles.headerGlassInner, { paddingHorizontal: hPad, maxWidth: shellMaxWidth, alignSelf: 'center', width: '100%' }]}
           >
-            <View style={[s.header, { width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center', paddingHorizontal: hPad, borderBottomWidth: 0 }]}>
-              <View style={{ flex: 1 }}>
-            <Text style={[s.title, { color: colors.text }]}>Directory</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="location" size={10} color={CultureTokens.indigo} />
-              <Text style={[s.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                {onboardingState.city
-                  ? `${onboardingState.city}${onboardingState.country ? `, ${onboardingState.country}` : ''}`
-                  : onboardingState.country || 'your region'}
-                {!isLoading && filtered.length > 0
-                  ? ` · ${filtered.length.toLocaleString()} shown`
-                  : ''}
+            <View style={dirStyles.headerTitleBlock}>
+              <Text style={[dirStyles.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
+                Directory
               </Text>
+              <View style={dirStyles.headerMetaRow}>
+                <Ionicons name="location" size={10} color={CultureTokens.indigo} />
+                <Text style={[dirStyles.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {onboardingState.city
+                    ? `${onboardingState.city}${onboardingState.country ? `, ${onboardingState.country}` : ''}`
+                    : onboardingState.country || 'your region'}
+                  {!isLoading && filtered.length > 0
+                    ? ` · ${filtered.length.toLocaleString()} shown`
+                    : ''}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          {/* Search input */}
-          <View style={[
-            s.searchContainer,
-            { backgroundColor: colors.surface, borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight },
-          ]}>
-            <Ionicons name="search" size={15} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
-            <TextInput
-              style={[s.searchInput, { color: colors.text }]}
-              placeholder="Search…"
-              placeholderTextColor={colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              returnKeyType="search"
-            />
-            {search.length > 0 ? (
-              <Pressable onPress={() => setSearch('')} hitSlop={14} accessibilityRole="button" accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
-              </Pressable>
-            ) : null}
-          </View>
+            <View
+              style={[
+                dirStyles.searchBar,
+                {
+                  backgroundColor: colors.primarySoft,
+                  borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight,
+                },
+              ]}
+            >
+              <Ionicons name="search" size={15} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+              <TextInput
+                style={[dirStyles.searchInput, { color: colors.text }]}
+                placeholder="Search…"
+                placeholderTextColor={colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                returnKeyType="search"
+                accessibilityLabel="Search directory"
+              />
+              {search.length > 0 ? (
+                <Pressable onPress={() => setSearch('')} hitSlop={14} accessibilityRole="button" accessibilityLabel="Clear search">
+                  <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
+                </Pressable>
+              ) : null}
+            </View>
 
-          {/* Refresh button */}
-          <Pressable
-            onPress={handleRefresh}
-            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh directory"
-          >
-            {refreshing
-              ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
-              : <Ionicons name="refresh" size={18} color={colors.text} />}
+            <Pressable
+              onPress={handleRefresh}
+              style={[dirStyles.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh directory"
+            >
+              {refreshing
+                ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                : <Ionicons name="refresh" size={18} color={colors.text} />}
             </Pressable>
-            </View>
-          </BlurView>
+          </LiquidGlassPanel>
         </Animated.View>
 
-        {/* ── Filter rows ── */}
-        <View style={[s.filterBlock, { borderBottomColor: colors.divider }]}>
+        {/* ── Filter rail (glass) ── */}
+        <LiquidGlassPanel
+          borderRadius={LiquidGlassTokens.corner.mainCard}
+          style={{ marginHorizontal: hPad, marginTop: 10, marginBottom: 8, maxWidth: shellMaxWidth, alignSelf: 'center', width: '100%' }}
+          contentStyle={dirStyles.filterGlassInner}
+        >
           <ScrollView
             horizontal
+            nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
-            style={{ width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center' }}
-            contentContainerStyle={[s.filterRow, { paddingHorizontal: hPad }]}
+            contentContainerStyle={s.filterRow}
             accessibilityRole="tablist"
             accessibilityLabel="Entity type filters"
           >
@@ -326,10 +349,7 @@ export default function DirectoryScreen() {
               </>
             )}
           </ScrollView>
-        </View>
-
-        {/* ── Divider ── */}
-        <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
+        </LiquidGlassPanel>
 
         {/* ── Content ── */}
         {isLoading ? (
@@ -349,7 +369,11 @@ export default function DirectoryScreen() {
               keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
               renderItem={({ item, index }) => (
                 <Animated.View
-                  entering={Platform.OS !== 'web' ? FadeInDown.delay(index * 40).springify().damping(18) : undefined}
+                  entering={
+                    reducedMotion || Platform.OS === 'web'
+                      ? undefined
+                      : FadeInDown.delay(Math.min(index * 40, 400)).springify().damping(18)
+                  }
                   style={useWebTwoColumnResults ? [s.resultsGridItemWeb, { paddingRight: index % 2 === 0 ? 14 : 0 }] : undefined}
                 >
                   {item._type === 'event' ? (
@@ -402,4 +426,57 @@ export default function DirectoryScreen() {
     </ErrorBoundary>
   );
 }
+
+const dirStyles = StyleSheet.create({
+  ambientMesh: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
+  headerGlassInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  headerTitleBlock: { flex: 1, minWidth: 0 },
+  headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerTitle: {
+    fontSize: FontSize.title2,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.title2,
+    letterSpacing: -0.4,
+  },
+  headerSub: {
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.chip,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: LiquidGlassTokens.corner.valueRibbon,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    gap: 6,
+    minWidth: 0,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.regular,
+    height: 36,
+    padding: 0,
+  },
+  iconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  filterGlassInner: { paddingVertical: 10, paddingHorizontal: 8 },
+});
 

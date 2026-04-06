@@ -4,7 +4,7 @@ Status: Ready for rollout verification
 
 ## Live Endpoints
 - Production domain: https://culturepass.app
-- Firebase hosting mirror: https://culturepass-b5f96.web.app
+- Firebase hosting mirror: https://culturepass-4f264.web.app
 
 ## Source of Truth
 - Git branch: `main`

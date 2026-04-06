@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Switch, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -8,7 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { api } from '@/lib/api';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const PRIVACY_SETTINGS = [
@@ -85,8 +87,22 @@ export default function PrivacySettingsScreen() {
 
   return (
     <View style={[s.container, { paddingTop: topInset }]}>
-      {/* Header */}
-      <View style={s.header}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={privacyAmbient.mesh}
+        pointerEvents="none"
+      />
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={s.headerInner}
+      >
         <Pressable
           style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
           onPress={() => goBackOrReplace('/settings')}
@@ -97,13 +113,13 @@ export default function PrivacySettingsScreen() {
         </Pressable>
         <Text style={s.headerTitle}>Privacy & Security</Text>
         <View style={{ width: 34 }} />
-      </View>
+      </LiquidGlassPanel>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 16 }}>
         {/* Toggles */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Privacy</Text>
-          <View style={s.sectionCard}>
+          <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 0 }}>
             {isLoading ? (
               <ActivityIndicator color={CultureTokens.indigo} style={{ marginVertical: 20 }} />
             ) : (
@@ -134,7 +150,7 @@ export default function PrivacySettingsScreen() {
                 </View>
               ))
             )}
-          </View>
+          </LiquidGlassPanel>
         </View>
 
         {/* Danger zone */}
@@ -197,21 +213,18 @@ export default function PrivacySettingsScreen() {
   );
 }
 
+const privacyAmbient = StyleSheet.create({
+  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.07 },
+});
+
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
 
   section:      { paddingHorizontal: 16, marginBottom: 24 },
   sectionTitle: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
-  sectionCard:  { 
-    borderRadius: 20, borderWidth: 1, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.borderLight,
-    ...Platform.select({
-      web: { boxShadow: '0px 4px 16px rgba(0,0,0,0.06)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 },
-    }),
-  },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
