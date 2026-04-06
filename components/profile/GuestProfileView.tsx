@@ -4,109 +4,224 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, usePathname } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { gradients, LiquidGlassTokens } from '@/constants/theme';
+import { useLayout } from '@/hooks/useLayout';
+import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 // ---------------------------------------------------------------------------
-// Guest view (intentionally dark)
+// Guest profile — matches signed-in tab: ambient mesh + glass chrome
 // ---------------------------------------------------------------------------
 export function GuestProfileView({ topInset }: { topInset: number }) {
   const colors = useColors();
   const pathname = usePathname();
+  const { hPad } = useLayout();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const safeTop = Platform.OS === 'web' ? 0 : topInset;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
         colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0.95 }}
-        style={[StyleSheet.absoluteFill, { opacity: 0.14 }]}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFill, { opacity: 0.06 }]}
         pointerEvents="none"
       />
-      <View style={[gs.orb, gs.orbTop, { backgroundColor: colors.primary + '33' }]} />
-      <View style={[gs.orb, gs.orbBottom, { backgroundColor: colors.accent + '2E' }]} />
-      <View style={[gs.header, { paddingTop: topInset }]}>
-        <Text style={[gs.headerTitle, { color: colors.textInverse }]}>Profile</Text>
-      </View>
-      <ScrollView contentContainerStyle={[gs.content, isDesktop && gs.desktopContent]} showsVerticalScrollIndicator={false}>
+
+      <LiquidGlassPanel
+        borderRadius={0}
+        bordered={false}
+        style={{
+          borderBottomWidth: StyleSheet.hairlineWidth * 2,
+          borderBottomColor: colors.borderLight,
+        }}
+        contentStyle={{
+          paddingTop: safeTop + 14,
+          paddingBottom: 14,
+          paddingHorizontal: hPad,
+        }}
+      >
+        <Text style={[gs.headerTitle, { color: colors.text }]}>Profile</Text>
+        <Text style={[gs.headerSub, { color: colors.textSecondary }]} numberOfLines={2}>
+          Sign in to unlock tickets, wallet, and your CulturePass ID.
+        </Text>
+      </LiquidGlassPanel>
+
+      <ScrollView
+        contentContainerStyle={[gs.scrollContent, isDesktop && gs.desktopContent, { paddingHorizontal: hPad }]}
+        showsVerticalScrollIndicator={false}
+      >
         <LiquidGlassPanel
           borderRadius={LiquidGlassTokens.corner.mainCard}
-          style={[gs.contentCard, isDesktop && gs.desktopCard]}
+          style={gs.contentCard}
           contentStyle={gs.glassCardInner}
         >
-        <View style={[gs.iconWrap, { backgroundColor: colors.textInverse + '24', borderColor: colors.textInverse + '47' }]}>
-          <Ionicons name="person-circle-outline" size={64} color={colors.textInverse + 'E6'} />
-        </View>
-        <Text style={[gs.title, { color: colors.text }]}>Your Cultural Passport</Text>
-        <Text style={[gs.subtitle, { color: colors.textSecondary }]}>
-          Sign in to access your profile, tickets, saved events, wallet, and connect with communities across Australia.
-        </Text>
-        <View style={gs.featureList}>
-          {[
-            { icon: 'ticket-outline'  as const, text: 'View your event tickets & QR codes'          },
-            { icon: 'bookmark-outline'as const, text: 'Save events and join communities'             },
-            { icon: 'wallet-outline'  as const, text: 'Manage your wallet & payment methods'        },
-            { icon: 'qr-code-outline' as const, text: 'Share your CulturePass profile & ID'         },
-          ].map((f) => (
-            <View key={f.text} style={[gs.featureRow, { backgroundColor: colors.textInverse + '0F', borderColor: colors.textInverse + '14' }]}>
-              <View style={[gs.featureIcon, { backgroundColor: colors.warning + '1F' }]}>
-                <Ionicons name={f.icon} size={18} color={colors.warning} />
-              </View>
-              <Text style={[gs.featureText, { color: colors.text }]}>{f.text}</Text>
+          <View style={[gs.iconRing, { borderColor: CultureTokens.teal + '40' }]}>
+            <LinearGradient
+              colors={[CultureTokens.teal + '24', CultureTokens.indigo + '20']}
+              style={gs.iconRingFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <View style={[gs.iconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+              <Ionicons name="person-circle-outline" size={56} color={CultureTokens.indigo} />
             </View>
-          ))}
-        </View>
-        <Pressable
-          style={[gs.primaryBtn, { backgroundColor: colors.surface }]}
-          onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any)}
-        >
-          <Text style={[gs.primaryBtnText, { color: colors.primary }]}>Create Free Account</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={[gs.secondaryBtn, { borderColor: colors.primary, backgroundColor: colors.surface }]}
-          onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}
-        >
-          <Text style={[gs.secondaryBtnText, { color: colors.primary }]}>I already have an account</Text>
-        </Pressable>
+          </View>
+
+          <Text style={[gs.title, { color: colors.text }]}>Your Cultural Passport</Text>
+          <Text style={[gs.subtitle, { color: colors.textSecondary }]}>
+            Access your profile, tickets, saved events, wallet, and communities — tailored to your city.
+          </Text>
+
+          <View style={gs.featureList}>
+            {[
+              { icon: 'ticket-outline' as const, text: 'Event tickets & QR check-in', accent: CultureTokens.coral },
+              { icon: 'bookmark-outline' as const, text: 'Save events & join communities', accent: CultureTokens.gold },
+              { icon: 'wallet-outline' as const, text: 'Wallet & payment methods', accent: CultureTokens.teal },
+              { icon: 'qr-code-outline' as const, text: 'Digital CulturePass ID', accent: CultureTokens.indigo },
+            ].map((f) => (
+              <LiquidGlassPanel
+                key={f.text}
+                borderRadius={LiquidGlassTokens.corner.innerRow + 4}
+                style={{ overflow: 'hidden' }}
+                contentStyle={gs.featureRowInner}
+              >
+                <View style={[gs.featureIcon, { backgroundColor: f.accent + '22' }]}>
+                  <Ionicons name={f.icon} size={18} color={f.accent} />
+                </View>
+                <Text style={[gs.featureText, { color: colors.text }]}>{f.text}</Text>
+              </LiquidGlassPanel>
+            ))}
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [gs.primaryBtn, { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 }]}
+            onPress={() =>
+              router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as never)
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Create free account"
+          >
+            <Text style={[gs.primaryBtnText, { color: colors.textOnBrandGradient }]}>Create free account</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.textOnBrandGradient} />
+          </Pressable>
+
+          <LiquidGlassPanel borderRadius={14} contentStyle={{ padding: 0 }}>
+            <Pressable
+              style={({ pressed }) => [gs.secondaryBtnInner, { opacity: pressed ? 0.88 : 1 }]}
+              onPress={() =>
+                router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as never)
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+            >
+              <Text style={[gs.secondaryBtnText, { color: CultureTokens.indigo }]}>I already have an account</Text>
+            </Pressable>
+          </LiquidGlassPanel>
         </LiquidGlassPanel>
-        <View style={{ height: 40 }} />
+        <View style={{ height: 48 }} />
       </ScrollView>
     </View>
   );
 }
 
-// Guest view styles (intentionally static dark)
 const gs = StyleSheet.create({
-  orb:       { position: 'absolute', borderRadius: 300 },
-  orbTop:    { width: 280, height: 280, top: -70, right: -90 },
-  orbBottom: { width: 220, height: 220, bottom: '18%' as never, left: -70 },
-  header:    { paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' },
-  headerTitle:{ fontSize: 17, fontFamily: 'Poppins_600SemiBold', letterSpacing: -0.4 },
-  content:   { paddingHorizontal: 20, paddingTop: 20, alignItems: 'center' },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.35,
+    lineHeight: 26,
+  },
+  headerSub: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 18,
+    marginTop: 6,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    alignItems: 'center',
+    paddingBottom: 24,
+  },
   desktopContent: { justifyContent: 'center', minHeight: '100%' as unknown as number },
   contentCard: {
     width: '100%',
     maxWidth: 560,
-    alignSelf: 'center' as const,
+    alignSelf: 'center',
   },
   glassCardInner: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 18,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 22,
   },
-  desktopCard: {},
-  iconWrap:  { width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, marginBottom: 24, alignSelf: 'center' },
-  title:     { fontSize: 26, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 12, letterSpacing: -0.3 },
-  subtitle:  { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 23, marginBottom: 28 },
-  featureList:{ gap: 10, marginBottom: 32, width: '100%' },
-  featureRow:{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, borderWidth: StyleSheet.hairlineWidth },
-  featureIcon:{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  featureText:{ fontSize: 14, fontFamily: 'Poppins_500Medium', flex: 1 },
-  primaryBtn: { borderRadius: 14, height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12, width: '100%' },
-  primaryBtnText:{ fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  secondaryBtn:{ height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1.5, width: '100%' },
-  secondaryBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  iconRing: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  iconRingFill: { ...StyleSheet.absoluteFillObject },
+  iconWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  title: {
+    fontSize: 26,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
+    lineHeight: 23,
+    marginBottom: 26,
+  },
+  featureList: { gap: 10, marginBottom: 28, width: '100%' },
+  featureRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  featureIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureText: { fontSize: 14, fontFamily: 'Poppins_500Medium', flex: 1, lineHeight: 20 },
+  primaryBtn: {
+    borderRadius: 14,
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+    width: '100%',
+  },
+  primaryBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  secondaryBtnInner: {
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  secondaryBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
 });
