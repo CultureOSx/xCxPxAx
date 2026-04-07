@@ -717,7 +717,7 @@ export default function PerksTabScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.screen, { backgroundColor: colors.background, paddingTop: topInset }]}>
+      <View style={[s.screen, { backgroundColor: colors.background }]}>
         <LinearGradient
           colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
@@ -734,6 +734,7 @@ export default function PerksTabScreen() {
             `${locationLabel}${!perksLoading && viewMode === 'perks' && filteredPerks.length > 0 ? ` · ${filteredPerks.length} perks` : ''}`
           }
           hPad={hPad}
+          topInset={topInset}
           rightActions={
             <Pressable
               onPress={() => {

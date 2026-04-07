@@ -211,7 +211,7 @@ export default function CommunitiesScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
+      <View style={[s.container, { backgroundColor: colors.background }]}>
         <LinearGradient
           colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
@@ -228,6 +228,7 @@ export default function CommunitiesScreen() {
             `${locationLabel}${!isLoading && filteredCommunities.length > 0 ? ` · ${filteredCommunities.length.toLocaleString()} shown` : ''}`
           }
           hPad={hPad}
+          topInset={topInset}
         >
           <View style={s.headerControlsRow}>
             <View style={s.searchActionsRow}>

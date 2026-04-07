@@ -326,12 +326,12 @@ export default function CalendarScreen() {
         />
 
         {/* ── Personalised Header (liquid glass) ── */}
-        <View style={{ paddingTop: topInset }}>
           <TabPrimaryHeader
             title="Calendar"
             subtitle="Your personalized cultural agenda."
             locationLabel={user?.city && user?.country ? `${user.city}, ${user.country}` : user?.city || user?.country}
             hPad={hPad}
+            topInset={topInset}
           >
             {/* Row: chevron · month+name · chevron */}
             <View style={s.monthNavRow}>
@@ -424,7 +424,6 @@ export default function CalendarScreen() {
               )}
             </View>
           </TabPrimaryHeader>
-        </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}

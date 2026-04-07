@@ -253,7 +253,7 @@ export default function CultureFeedScreen() {
           headerShown: false,
         }} 
       />
-      <View style={[sc.root, { backgroundColor: colors.background, paddingTop: topInset }]}>
+      <View style={[sc.root, { backgroundColor: colors.background }]}>
         <LinearGradient
           colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
@@ -267,6 +267,7 @@ export default function CultureFeedScreen() {
           subtitle="Live moments, stories, and events from your communities."
           locationLabel={`${locationLabel}${!isLoading && filteredPosts.length > 0 ? ` · ${filteredPosts.length} posts` : ''}`}
           hPad={hPad}
+          topInset={topInset}
           rightActions={
             <>
               <HeaderAvatar />

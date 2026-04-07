@@ -14,6 +14,7 @@ interface TabPrimaryHeaderProps {
   rightActions?: ReactNode;
   children?: ReactNode;
   hPad: number;
+  topInset?: number;
 }
 
 export function TabPrimaryHeader({
@@ -23,6 +24,7 @@ export function TabPrimaryHeader({
   rightActions,
   children,
   hPad,
+  topInset = 0,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
 
@@ -46,7 +48,7 @@ export function TabPrimaryHeader({
         },
         Platform.OS === 'android' && { elevation: 3 },
       ]}
-      contentStyle={[styles.wrap, { paddingHorizontal: hPad }]}
+      contentStyle={[styles.wrap, { paddingHorizontal: hPad, paddingTop: topInset + 10 }]}
     >
       <View style={styles.row}>
         <View style={styles.left}>
@@ -81,7 +83,6 @@ export function TabPrimaryHeader({
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: 10,
     paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
     gap: 10,
   },
