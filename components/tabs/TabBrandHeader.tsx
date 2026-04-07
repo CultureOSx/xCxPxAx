@@ -15,9 +15,10 @@ const HEADER_TAGLINE = 'Discover ❤️ Enjoy Culture.';
 
 interface TabBrandHeaderProps {
   showMenu?: boolean;
+  compact?: boolean;
 }
 
-export function TabBrandHeader({ showMenu = true }: TabBrandHeaderProps) {
+export function TabBrandHeader({ showMenu = true, compact = false }: TabBrandHeaderProps) {
   const colors = useColors();
   const { isAuthenticated } = useAuth();
 
@@ -44,12 +45,14 @@ export function TabBrandHeader({ showMenu = true }: TabBrandHeaderProps) {
           />
         </View>
         <View style={styles.brandTextWrap}>
-          <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.brandName, compact && styles.brandNameCompact, { color: colors.text }]} numberOfLines={1}>
             CulturePass
           </Text>
-          <Text style={[styles.brandTagline, { color: CultureTokens.gold }]} numberOfLines={1}>
-            {HEADER_TAGLINE}
-          </Text>
+          {!compact ? (
+            <Text style={[styles.brandTagline, { color: CultureTokens.gold }]} numberOfLines={1}>
+              {HEADER_TAGLINE}
+            </Text>
+          ) : null}
         </View>
       </Pressable>
 
@@ -137,6 +140,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: -0.2,
+  },
+  brandNameCompact: {
+    fontSize: 16,
+    lineHeight: 20,
+    letterSpacing: -0.1,
   },
   brandTagline: {
     marginTop: 1,

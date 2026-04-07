@@ -17,6 +17,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -218,6 +219,18 @@ export default function ProfileScreen() {
           >
             <TabBrandHeader />
           </LiquidGlassPanel>
+
+          <View style={{ paddingHorizontal: hPad, paddingTop: 12 }}>
+            <CultureEngagementHero
+              title="Your Cultural Passport is growing every week."
+              subtitle="Track badges, saved events, and milestones to unlock your next identity tier."
+              stat={`${fmt((displayUser?.followersCount ?? 0) + (displayUser?.likesCount ?? 0))} social signals`}
+              badge={tierConf.label}
+              ctaLabel="Explore New Events"
+              ctaRoute="/events"
+              icon="ribbon"
+            />
+          </View>
 
           <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: 10 }]}>
             {!isDesktop && (

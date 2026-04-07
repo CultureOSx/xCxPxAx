@@ -10,6 +10,7 @@ import { CategoryColors, CultureTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { Button } from '@/components/ui/Button';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
@@ -170,6 +171,18 @@ export default function DiscoverScreen() {
         isAuthenticated={isAuthenticated}
         onRefresh={handleRefresh}
       />
+
+      <View style={{ paddingHorizontal: hPad, marginTop: 4 }}>
+        <CultureEngagementHero
+          title="Discover cultures that feel like home, and ones that surprise you."
+          subtitle="Your passport journey updates with every RSVP, story, and community join."
+          stat={`${scopedEvents.length} curated moments nearby`}
+          badge="Culture Explorer"
+          ctaLabel="See What Is Trending"
+          ctaRoute="/(tabs)/feed"
+          icon="earth"
+        />
+      </View>
 
       <SuperAppLinks />
 

@@ -173,8 +173,8 @@ function FeedFilterChip({
 }
 
 const ffc = StyleSheet.create({
-  chip:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44, borderRadius: 18, borderWidth: 1 },
-  text:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
+  chip:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 15, paddingVertical: 11, minHeight: 46, borderRadius: 20, borderWidth: 1 },
+  text:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 19 },
   badge:     { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', lineHeight: 14 },
 });
@@ -218,8 +218,8 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
 }
 
 const fb = StyleSheet.create({
-  wrap:  { paddingVertical: 10 },
-  scroll:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
+  wrap:  { paddingTop: 10, paddingBottom: 11 },
+  scroll:{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingBottom: 1 },
 });
 
 // ── Stories bar ───────────────────────────────────────────────────────────────
@@ -325,15 +325,15 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
 
 const st = StyleSheet.create({
   wrap:        { borderBottomWidth: StyleSheet.hairlineWidth },
-  scroll:      { paddingHorizontal: 14, paddingVertical: 12, gap: 14 },
-  item:        { alignItems: 'center', gap: 5 },
+  scroll:      { paddingHorizontal: 14, paddingVertical: 13, gap: 14 },
+  item:        { alignItems: 'center', gap: 6 },
   ringWrap:    { position: 'relative' },
   ring:        { width: 64, height: 64, borderRadius: 32, padding: 2.5, alignItems: 'center', justifyContent: 'center' },
   inner:       { width: 57, height: 57, borderRadius: 28.5, overflow: 'hidden' },
   img:         { width: 57, height: 57 },
   placeholder: { width: 57, height: 57, borderRadius: 28.5, alignItems: 'center', justifyContent: 'center' },
   addDot:      { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  name:        { fontSize: 10, fontFamily: 'Poppins_500Medium', maxWidth: 64, textAlign: 'center', lineHeight: 14 },
+  name:        { fontSize: 11, fontFamily: 'Poppins_500Medium', maxWidth: 68, textAlign: 'center', lineHeight: 15 },
 });
 
 // ── Create post stub ──────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ function CreatePostStub({ authUser, colors, onPress, isAuthenticated, city }: {
 }
 
 const cp = StyleSheet.create({
-  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1 },
+  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, minHeight: 62 },
   avatar:      { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   mockInput:   { flex: 1, height: 38, borderRadius: 19, borderWidth: 1, paddingHorizontal: 14, justifyContent: 'center' },
   placeholder: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
@@ -451,7 +451,7 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
 }
 
 const ti = StyleSheet.create({
-  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: Platform.OS === 'web' ? 14 : 0, borderWidth: Platform.OS === 'web' ? 1 : 0, borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginTop: 2, marginBottom: 8, paddingHorizontal: 16 },
+  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: Platform.OS === 'web' ? 14 : 0, borderWidth: Platform.OS === 'web' ? 1 : 0, borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginTop: 2, marginBottom: 10, paddingHorizontal: 16, minHeight: 74 },
   iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title:    { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
   sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 16 },
@@ -873,7 +873,7 @@ const rxn = StyleSheet.create({
   likeSummary:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth },
   likeSummaryText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
   wrap:            { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, minHeight: 44 },
+  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, minHeight: 48 },
   btnLabel:        { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 });
 
@@ -1178,9 +1178,12 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
   const cardStyle = isMobile
     ? {
         backgroundColor: colors.surface,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
+        borderRadius: CardTokens.radius,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
         marginBottom: 16,
+        marginHorizontal: 12,
+        overflow: 'hidden' as const,
       }
     : {
         backgroundColor: colors.surface,
@@ -1266,8 +1269,7 @@ const PostCard = React.memo(
 );
 
 const pcd = StyleSheet.create({
-  // Base — mobile overrides applied inline in PostCardInner
-  card: { overflow: 'hidden' },
+  card: {},
 
   // ── Event ─────────────────────────────────────────────────────────────────
   eventImg:     { height: Platform.OS === 'web' ? 260 : 320, position: 'relative', backgroundColor: '#0D0D14' },
@@ -1292,7 +1294,7 @@ const pcd = StyleSheet.create({
   storyGradient:   { ...StyleSheet.absoluteFillObject },
   storyCaption:    { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 18 },
   storyCaptionText:{ fontSize: 16, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, color: '#fff' },
-  storyTextCard:   { marginHorizontal: 14, marginBottom: 12, padding: 18, borderRadius: 16, borderWidth: 1, alignItems: 'center' },
+  storyTextCard:   { marginHorizontal: 16, marginBottom: 12, padding: 18, borderRadius: 16, borderWidth: 1, alignItems: 'center' },
   storyTextCardIcon: { marginBottom: 6 },
   storyTextCardBody:{ fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 24, textAlign: 'center' },
   announcementBody:{ paddingHorizontal: 16, paddingVertical: 14 },
@@ -1306,7 +1308,7 @@ const pcd = StyleSheet.create({
   welcomeSub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginTop: 3 },
 
   // ── Milestone / Collection ────────────────────────────────────────────────
-  milestoneWrap: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 14, marginBottom: 4, padding: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  milestoneWrap: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 16, marginBottom: 6, padding: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   milestoneIcon: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   milestoneTitle:{ fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
   milestoneSub:  { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
@@ -1348,7 +1350,7 @@ function SkeletonCard({ colors }: { colors: ReturnType<typeof useColors> }) {
 }
 
 const sk = StyleSheet.create({
-  card:       { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 18 },
+  card:       { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 18, marginHorizontal: Platform.OS === 'web' ? 0 : 12 },
   header:     { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   avatar:     { width: 38, height: 38, borderRadius: 19 },
   image:      { height: 200 },
@@ -1584,7 +1586,7 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }
 
 const flh = StyleSheet.create({
-  createWrap: { gap: 10, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  createWrap: { gap: 12, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   divider:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   divLine:    { flex: 1, height: StyleSheet.hairlineWidth },
   divPill:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },

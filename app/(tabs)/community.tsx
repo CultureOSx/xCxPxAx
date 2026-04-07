@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { CultureTokens, gradients, LiquidGlassTokens, FontFamily, FontSize, LineHeight, shadows } from '@/constants/theme';
+import { CultureTokens, gradients, LiquidGlassTokens, FontFamily, FontSize, shadows } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -29,7 +29,8 @@ import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewD
 import { useCommunities } from '@/hooks/queries/useCommunities';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { NATIONALITIES } from '@/constants/cultures';
 import type { Community } from '@/shared/schema';
 
@@ -221,70 +222,64 @@ export default function CommunitiesScreen() {
 
         {/* ── Header (liquid glass) ── */}
         <Animated.View entering={reducedMotion ? undefined : FadeInUp.duration(320).springify()}>
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
+          <TabPrimaryHeader
+            title="Communities"
+            subtitle="Find local circles, diaspora groups, and cultural forums."
+            locationLabel={
+              `${locationLabel}${!isLoading && filteredCommunities.length > 0 ? ` · ${filteredCommunities.length.toLocaleString()} shown` : ''}`
+            }
+            hPad={hPad}
           >
-            <View style={s.brandHeaderRow}>
-              <TabBrandHeader />
-            </View>
             <View style={s.headerControlsRow}>
-              <View style={s.headerTitleBlock}>
-                <Text style={[s.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
-                  Communities
-                </Text>
-                <View style={s.headerMetaRow}>
-                  <Ionicons name="location" size={MAIN_TAB_UI.iconSize.xs} color={CultureTokens.indigo} />
-                  <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {locationLabel}
-                    {!isLoading && filteredCommunities.length > 0
-                      ? ` · ${filteredCommunities.length.toLocaleString()} shown`
-                      : ''}
-                  </Text>
+              <View style={s.searchActionsRow}>
+                <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                  <Ionicons name="search" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
+                  <TextInput
+                    style={[s.searchInput, { color: colors.text }]}
+                    placeholder="Search..."
+                    placeholderTextColor={colors.textTertiary}
+                    value={search}
+                    onChangeText={setSearch}
+                    returnKeyType="search"
+                    accessibilityLabel="Search communities"
+                  />
+                  {search.length > 0 ? (
+                    <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
+                      <Ionicons name="close-circle" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
+                    </Pressable>
+                  ) : null}
                 </View>
-              </View>
 
-              <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
-                <Ionicons name="search" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
-                <TextInput
-                  style={[s.searchInput, { color: colors.text }]}
-                  placeholder="Search..."
-                  placeholderTextColor={colors.textTertiary}
-                  value={search}
-                  onChangeText={setSearch}
-                  returnKeyType="search"
-                  accessibilityLabel="Search communities"
-                />
-                {search.length > 0 ? (
-                  <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
-                    <Ionicons name="close-circle" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
-                  </Pressable>
-                ) : null}
+                <Pressable
+                  onPress={() => refetch()}
+                  style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh communities"
+                >
+                  {isRefetching ? (
+                    <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                  ) : (
+                    <Ionicons name="refresh" size={18} color={colors.text} />
+                  )}
+                </Pressable>
               </View>
-
-              <Pressable
-                onPress={() => refetch()}
-                style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-                accessibilityRole="button"
-                accessibilityLabel="Refresh communities"
-              >
-                {isRefetching ? (
-                  <ActivityIndicator size="small" color={CultureTokens.indigo} />
-                ) : (
-                  <Ionicons name="refresh" size={18} color={colors.text} />
-                )}
-              </Pressable>
             </View>
-          </LiquidGlassPanel>
+          </TabPrimaryHeader>
         </Animated.View>
 
         {/* ── Shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
+          <View style={{ paddingHorizontal: hPad, paddingTop: 10 }}>
+            <CultureEngagementHero
+              title="Build your local circle and global community."
+              subtitle="Join trusted groups, discover meetups, and become visible in your cultural network."
+              stat={`${filteredCommunities.length} communities available`}
+              badge="Global Nomad"
+              ctaLabel="Create a Community"
+              ctaRoute="/submit?type=organisation"
+              icon="people"
+            />
+          </View>
 
           {/* ── Filter rows (glass rail) ── */}
           <LiquidGlassPanel
@@ -483,14 +478,8 @@ const s = StyleSheet.create({
     opacity: 0.06,
   },
 
-  headerGlassInner: {
-    gap: 10,
-    paddingVertical: MAIN_TAB_UI.headerVerticalPadding,
-  },
-  brandHeaderRow: { marginBottom: 2 },
-  headerControlsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitleBlock: { flex: 1, minWidth: 0 },
-  headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerControlsRow: { gap: 8 },
+  searchActionsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconBtn: {
     width: 42,
     height: 42,
@@ -499,9 +488,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  headerTitle: { fontSize: FontSize.title2, fontFamily: FontFamily.bold, lineHeight: LineHeight.title2 },
-  headerSub: { fontSize: FontSize.chip, fontFamily: FontFamily.medium, lineHeight: LineHeight.chip },
-
   searchBar: {
     flex: 1,
     flexDirection: 'row',

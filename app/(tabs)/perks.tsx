@@ -32,7 +32,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_CARD_SHADOW_STRONG, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { api, type RewardsSummary } from '@/lib/api';
 import type { PerkData, Ticket } from '@/shared/schema';
 
@@ -594,6 +595,16 @@ export default function PerksTabScreen() {
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
+      <CultureEngagementHero
+        title="Rewards that make culture exploration addictive."
+        subtitle="Collect points, unlock tiers, and redeem real-world experiences near you."
+        stat={`${filteredPerks.length} perks ready to redeem`}
+        badge="Culture Explorer"
+        ctaLabel="Open Wallet & Rewards"
+        ctaRoute="/payment/wallet"
+        icon="trophy"
+      />
+
       <ExplorerBadge
         colors={colors}
         signedIn={isAuthenticated && !!userId}
@@ -714,32 +725,14 @@ export default function PerksTabScreen() {
 
         {/* ── Header (liquid glass) ── */}
         <Animated.View entering={FadeInUp.duration(320).springify()}>
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={[s.header, { paddingHorizontal: hPad }]}
-          >
-            <View style={s.brandHeaderRow}>
-              <TabBrandHeader />
-            </View>
-            <View style={s.headerBodyRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.headerTitle, { color: colors.text }]}>Perks & Rewards</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="location" size={MAIN_TAB_UI.iconSize.xs} color={CultureTokens.indigo} />
-                  <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {locationLabel}
-                    {!perksLoading && viewMode === 'perks' && filteredPerks.length > 0
-                      ? ` · ${filteredPerks.length} perks`
-                      : ''}
-                  </Text>
-                </View>
-              </View>
-
+          <TabPrimaryHeader
+            title="Perks & Rewards"
+            subtitle="Unlock discounts, loyalty rewards, and premium experiences."
+            locationLabel={
+              `${locationLabel}${!perksLoading && viewMode === 'perks' && filteredPerks.length > 0 ? ` · ${filteredPerks.length} perks` : ''}`
+            }
+            hPad={hPad}
+            rightActions={
               <Pressable
                 onPress={() => {
                   void refetch();
@@ -756,8 +749,9 @@ export default function PerksTabScreen() {
                   ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
                   : <Ionicons name="refresh" size={18} color={colors.text} />}
               </Pressable>
-            </View>
-          </LiquidGlassPanel>
+            }
+          >
+          </TabPrimaryHeader>
         </Animated.View>
 
         {/* ── Content shell ── */}
@@ -875,12 +869,7 @@ const s = StyleSheet.create({
   screen:         { flex: 1 },
   ambientMesh:    { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
-  header:         { gap: 10, paddingVertical: MAIN_TAB_UI.headerVerticalPadding },
-  brandHeaderRow: { marginBottom: 2 },
-  headerBodyRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
-  headerTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
-  headerSub:      { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
 
   shell:          { flex: 1 },
   shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },

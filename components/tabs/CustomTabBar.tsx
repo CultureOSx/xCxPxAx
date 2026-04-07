@@ -6,8 +6,7 @@
  * - Active state: indigo icon + label + small dot indicator below icon
  * - Spring scale animation on press
  * - Haptic feedback (iOS/Android)
- * - User avatar in Profile tab
- * - Notification badge on Profile tab
+ * - Notification badge on Feed tab
  * - LiquidGlassPanel (iOS glass / blur fallback / web backdrop-filter)
  * - Hidden on desktop web (sidebar takes over)
  */
@@ -25,7 +24,6 @@ import {
 import { SymbolView } from 'expo-symbols';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useColors, useIsDark } from '@/hooks/useColors';
@@ -47,6 +45,14 @@ const TABS = [
     iconActive: 'compass' as const,
     sfSymbol: 'safari' as const,
     sfSymbolActive: 'safari.fill' as const,
+  },
+  {
+    name: 'feed',
+    label: 'Feed',
+    icon: 'albums-outline' as const,
+    iconActive: 'albums' as const,
+    sfSymbol: 'rectangle.stack' as const,
+    sfSymbolActive: 'rectangle.stack.fill' as const,
   },
   {
     name: 'calendar',
@@ -71,14 +77,6 @@ const TABS = [
     iconActive: 'gift' as const,
     sfSymbol: 'gift' as const,
     sfSymbolActive: 'gift.fill' as const,
-  },
-  {
-    name: 'profile',
-    label: 'Profile',
-    icon: 'person-circle-outline' as const,
-    iconActive: 'person-circle' as const,
-    sfSymbol: 'person.crop.circle' as const,
-    sfSymbolActive: 'person.crop.circle.fill' as const,
   },
 ] as const;
 
@@ -116,10 +114,10 @@ const badge = StyleSheet.create({
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   index: 'Open discovery home and featured rails',
+  feed: 'See cultural moments, stories, and live community posts',
   calendar: 'View your calendar and saved dates',
   community: 'Browse cultural communities',
   perks: 'Open perks, offers, and rewards',
-  profile: 'Open your profile and settings',
 };
 
 interface TabItemProps {
@@ -127,9 +125,6 @@ interface TabItemProps {
   isActive: boolean;
   onPress: () => void;
   badgeCount?: number;
-  avatarUrl?: string;
-  initials?: string;
-  isGuest?: boolean;
   isDark: boolean;
   colors: ReturnType<typeof useColors>;
   reduceMotion: boolean;
@@ -140,9 +135,6 @@ function TabItem({
   isActive,
   onPress,
   badgeCount,
-  avatarUrl,
-  initials,
-  isGuest,
   isDark,
   colors,
   reduceMotion,
@@ -190,43 +182,7 @@ function TabItem({
       >
         {/* Icon */}
         <View style={tabItem.iconWrap}>
-          {tab.name === 'profile' ? (
-            <View
-              style={[
-                tabItem.avatarOuter,
-                isActive && { borderColor: CultureTokens.indigo + '80', borderWidth: 1.5 },
-              ]}
-            >
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={tabItem.avatarImg} />
-              ) : isGuest ? (
-                <View
-                  style={[
-                    tabItem.avatarInner,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' },
-                  ]}
-                >
-                  <Ionicons
-                    name={isActive ? 'person-circle' : 'person-circle-outline'}
-                    size={MAIN_TAB_UI.iconSize.lg}
-                    color={iconColor}
-                  />
-                </View>
-              ) : (
-                <View
-                  style={[
-                    tabItem.avatarInner,
-                    { backgroundColor: isDark ? 'rgba(44,42,114,0.25)' : 'rgba(44,42,114,0.08)' },
-                  ]}
-                >
-                  <Text style={[tabItem.avatarInitials, { color: iconColor }]}>
-                    {initials}
-                  </Text>
-                </View>
-              )}
-              {badgeCount ? <Badge count={badgeCount} /> : null}
-            </View>
-          ) : Platform.OS === 'ios' ? (
+          {Platform.OS === 'ios' ? (
             <SymbolView
               name={(isActive ? tab.sfSymbolActive : tab.sfSymbol) as any}
               size={MAIN_TAB_UI.iconSize.lg}
@@ -238,6 +194,7 @@ function TabItem({
           ) : (
             <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.lg} color={iconColor} />
           )}
+          {badgeCount ? <Badge count={badgeCount} /> : null}
         </View>
 
         {/* Label — min ~10px; allow scaling for Dynamic Type / accessibility */}
@@ -285,31 +242,6 @@ const tabItem = StyleSheet.create({
     height: 24,
   },
 
-  // Avatar (profile tab)
-  avatarOuter: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 0,
-    borderColor: 'transparent',
-  },
-  avatarInner: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImg: { width: 26, height: 26, borderRadius: 13 },
-  avatarInitials: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-  },
-
   label: {
     fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
@@ -332,7 +264,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const colors = useColors();
   const isDark = useIsDark();
   const { isDesktop } = useLayout();
-  const { user, userId, isAuthenticated } = useAuth();
+  const { userId } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -374,16 +306,6 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
 
   // Hidden on desktop web — sidebar handles navigation there
   if (Platform.OS === 'web' && isDesktop) return null;
-
-  const displayName = user?.displayName ?? user?.username ?? '';
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w: string) => (w[0] || ''))
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || '?';
 
   const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 8);
 
@@ -435,7 +357,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isProfileTab = tab.name === 'profile';
+          const isFeedTab = tab.name === 'feed';
           return (
             <TabItem
               key={route.key}
@@ -444,10 +366,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               isDark={isDark}
               colors={colors}
               reduceMotion={reduceMotion}
-              badgeCount={isProfileTab ? notifCount : undefined}
-              avatarUrl={isProfileTab ? user?.avatarUrl : undefined}
-              initials={isProfileTab ? initials : undefined}
-              isGuest={isProfileTab ? !isAuthenticated : undefined}
+              badgeCount={isFeedTab ? notifCount : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',

@@ -49,7 +49,7 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'My Account',
     items: [
-      { id: 'profile', label: 'My Identity',       icon: 'person-circle-outline', route: '/(tabs)/profile',  requiresAuth: true },
+      { id: 'profile', label: 'My Identity',       icon: 'person-circle-outline', route: '/profile',  requiresAuth: true },
       { id: 'tickets', label: 'Festival Tickets',  icon: 'ticket-outline',        route: '/tickets',         requiresAuth: true, color: CultureTokens.gold },
       { id: 'wallet',  label: 'Wallet & Rewards',  icon: 'wallet-outline',        route: '/payment/wallet',  requiresAuth: true, color: CultureTokens.teal },
       { id: 'saved',   label: 'Saved & Pinned',    icon: 'bookmark-outline',      route: '/saved',           requiresAuth: true },
@@ -58,6 +58,7 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'Discover',
     items: [
+      { id: 'feed',        label: 'Culture Feed', icon: 'albums-outline',      route: '/(tabs)/feed' },
       { id: 'events',      label: 'Events',       icon: 'calendar-outline',    route: '/events' },
       { id: 'movies',      label: 'Movies',       icon: 'film-outline',        route: '/movies' },
       { id: 'restaurants', label: 'Dining',       icon: 'restaurant-outline', route: '/restaurants' },

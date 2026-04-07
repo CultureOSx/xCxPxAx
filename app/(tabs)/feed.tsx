@@ -26,6 +26,8 @@ import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
 import { uploadPostImage } from '@/lib/storage';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import {
   createCommunityPost,
 } from '@/lib/feedService';
@@ -201,8 +203,6 @@ export default function CultureFeedScreen() {
   const locationLabel = state.city
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
     : state.country || 'Australia';
-  const locationA11yLabel = `${locationLabel}${!isLoading && filteredPosts.length > 0 ? `. ${filteredPosts.length} posts in feed` : ''}`;
-
   const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (item.kind === '_trending') {
       return <TrendingInterstitial city={item.city} colors={colors} />;
@@ -219,18 +219,31 @@ export default function CultureFeedScreen() {
   }, []);
 
   const listHeaderComponent = useMemo(() => (
-    <FeedListHeader
-      communities={communities}
-      authUser={authUser ?? null}
-      colors={colors}
-      isAuthenticated={isAuthenticated}
-      hPad={hPad}
-      city={state.city || ''}
-      onCreatePost={handleOpenCreatePost}
-      canPostStoryStatus={canPostStoryStatus}
-      onCreateStoryPost={handleOpenStoryPost}
-    />
-  ), [communities, authUser, colors, isAuthenticated, hPad, state.city, handleOpenCreatePost, canPostStoryStatus, handleOpenStoryPost]);
+    <>
+      <View style={{ paddingHorizontal: hPad, paddingTop: 12 }}>
+        <CultureEngagementHero
+          title="Share your culture moment and inspire the city."
+          subtitle="Post highlights, discover live events, and build your cultural streak with your community."
+          stat={`${filteredPosts.length} stories in your feed`}
+          badge="Daily Streak"
+          ctaLabel="Create Culture Post"
+          ctaRoute="/(tabs)/feed"
+          icon="camera"
+        />
+      </View>
+      <FeedListHeader
+        communities={communities}
+        authUser={authUser ?? null}
+        colors={colors}
+        isAuthenticated={isAuthenticated}
+        hPad={hPad}
+        city={state.city || ''}
+        onCreatePost={handleOpenCreatePost}
+        canPostStoryStatus={canPostStoryStatus}
+        onCreateStoryPost={handleOpenStoryPost}
+      />
+    </>
+  ), [communities, authUser, colors, isAuthenticated, hPad, state.city, handleOpenCreatePost, canPostStoryStatus, handleOpenStoryPost, filteredPosts.length]);
 
   return (
     <ErrorBoundary>
@@ -249,59 +262,46 @@ export default function CultureFeedScreen() {
           pointerEvents="none"
         />
         {/* ── Header ── */}
-        <LiquidGlassPanel
-          borderRadius={0}
-          bordered={false}
-          style={{
-            borderBottomWidth: StyleSheet.hairlineWidth * 2,
-            borderBottomColor: colors.borderLight,
-          }}
-          contentStyle={[sc.header, { paddingHorizontal: hPad }]}
+        <TabPrimaryHeader
+          title="Culture Feed"
+          subtitle="Live moments, stories, and events from your communities."
+          locationLabel={`${locationLabel}${!isLoading && filteredPosts.length > 0 ? ` · ${filteredPosts.length} posts` : ''}`}
+          hPad={hPad}
+          rightActions={
+            <>
+              <HeaderAvatar />
+              <Pressable
+                style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); void handleRefresh(); }}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh feed"
+                accessibilityHint="Reload posts for your area"
+                hitSlop={10}
+                disabled={refreshing}
+                android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 } : undefined}
+              >
+                {refreshing || isFetching
+                  ? <ActivityIndicator size="small" color={CultureTokens.indigo} accessibilityLabel="Loading" />
+                  : <Ionicons name="refresh-outline" size={20} color={colors.text} />}
+              </Pressable>
+            </>
+          }
         >
-          <View style={{ flex: 1 }}>
-            {/* Single page heading: “header” + “heading” each map to <h1> on web — never nest both. */}
-            <Text style={[sc.title, { color: colors.text }]} accessibilityRole="header">
-              Culture Feed
-            </Text>
-            <View style={sc.locationRow} accessibilityLabel={locationA11yLabel}>
-              <Ionicons name="location-outline" size={14} color={CultureTokens.indigo} style={sc.locationIcon} accessible={false} />
-              <Text style={[sc.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
-                {locationLabel}
-                {!isLoading && filteredPosts.length > 0
-                  ? ` · ${filteredPosts.length} posts`
-                  : ''}
+          <View style={sc.headerStatsRow}>
+            <View style={[sc.headerStatPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+              <Ionicons name="calendar-outline" size={13} color={CultureTokens.indigo} />
+              <Text style={[sc.headerStatText, { color: colors.textSecondary }]}>
+                {postCounts.eventCount} events
+              </Text>
+            </View>
+            <View style={[sc.headerStatPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+              <Ionicons name="people-outline" size={13} color={CultureTokens.teal} />
+              <Text style={[sc.headerStatText, { color: colors.textSecondary }]}>
+                {postCounts.commCount} updates
               </Text>
             </View>
           </View>
-          <View style={sc.headerRight}>
-            <HeaderAvatar />
-            <Pressable
-              style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-              onPress={() => router.push('/search')}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-              accessibilityHint="Search events, communities, and profiles"
-              hitSlop={10}
-              android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 } : undefined}
-            >
-              <Ionicons name="search-outline" size={20} color={colors.text} />
-            </Pressable>
-            <Pressable
-              style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-              onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); void handleRefresh(); }}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh feed"
-              accessibilityHint="Reload posts for your area"
-              hitSlop={10}
-              disabled={refreshing}
-              android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 } : undefined}
-            >
-              {refreshing || isFetching
-                ? <ActivityIndicator size="small" color={CultureTokens.indigo} accessibilityLabel="Loading" />
-                : <Ionicons name="refresh-outline" size={20} color={colors.text} />}
-            </Pressable>
-          </View>
-        </LiquidGlassPanel>
+        </TabPrimaryHeader>
 
         {/* Sticky filter tabs — outside FlatList */}
         <LiquidGlassPanel
@@ -347,14 +347,10 @@ export default function CultureFeedScreen() {
             getItemType={getItemType}
             ListHeaderComponent={listHeaderComponent}
             ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-            {...({ estimatedItemSize: isDesktop ? 420 : 500 } as any)}
-            initialNumToRender={6}
-            drawDistance={1000}
-            removeClippedSubviews={Platform.OS !== 'web'}
             contentContainerStyle={[
               sc.list,
               { paddingHorizontal: isDesktop || isWeb ? hPad : 0, paddingBottom: listBottomPad },
-              isDesktop && sc.listDesktop,
+              isDesktop ? sc.listDesktop : null,
             ]}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -441,14 +437,11 @@ const feedAmbient = StyleSheet.create({
 
 const sc = StyleSheet.create({
   root:         { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   filterBarGlassInner: { paddingVertical: 0 },
-  title:        { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 28, letterSpacing: -0.4 },
-  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
-  locationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
-  headerRight:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
   headerIconBtn:{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  locationIcon: { marginRight: 2 },
+  headerStatsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  headerStatPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  headerStatText: { fontSize: 12, lineHeight: 17, fontFamily: 'Poppins_500Medium' },
   fetchBar:     { height: 2, backgroundColor: CultureTokens.indigo + '30' },
   fetchProgress:{ height: 2, width: '60%' },
   list:         { paddingTop: 0 },

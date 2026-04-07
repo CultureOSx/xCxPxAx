@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Main Tab Layout — CulturePass
- * Primary tabs: Discover → Calendar → Community → Perks → Profile
+ * Primary tabs: Discover → Feed → Calendar → Community → Perks
  * (Desktop web hides the bottom bar; WebSidebar handles nav.)
  */
 export default function TabsLayout() {
@@ -30,6 +30,15 @@ export default function TabsLayout() {
 
       {/* 2. Calendar — Personal schedule */}
       <Tabs.Screen
+        name="feed"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" size={size} color={color} />,
+        }}
+      />
+
+      {/* 3. Calendar — Personal schedule */}
+      <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
@@ -37,7 +46,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3. Community — Connect with your heritage */}
+      {/* 4. Community — Connect with your heritage */}
       <Tabs.Screen
         name="community"
         options={{
@@ -46,7 +55,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4. Perks — Offers & rewards */}
+      {/* 5. Perks — Offers & rewards */}
       <Tabs.Screen
         name="perks"
         options={{
@@ -55,17 +64,8 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 5. Profile — User settings & identity */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" size={size} color={color} />,
-        }}
-      />
-
       {/* Hidden Routes */}
-      <Tabs.Screen name="feed" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />

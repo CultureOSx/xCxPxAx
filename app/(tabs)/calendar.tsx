@@ -21,7 +21,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { FilterChipRow } from '@/components/FilterChip';
 import { EventRow } from '@/components/calendar/EventRow';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
@@ -320,18 +321,12 @@ export default function CalendarScreen() {
 
         {/* ── Personalised Header (liquid glass) ── */}
         <View style={{ paddingTop: topInset }}>
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
+          <TabPrimaryHeader
+            title="Calendar"
+            subtitle="Your personalized cultural agenda."
+            locationLabel={user?.city && user?.country ? `${user.city}, ${user.country}` : user?.city || user?.country}
+            hPad={hPad}
           >
-            <View style={s.brandHeaderRow}>
-              <TabBrandHeader />
-            </View>
             {/* Row: chevron · month+name · chevron */}
             <View style={s.monthNavRow}>
                 <Pressable
@@ -422,7 +417,7 @@ export default function CalendarScreen() {
                 </View>
               )}
             </View>
-          </LiquidGlassPanel>
+          </TabPrimaryHeader>
         </View>
 
         <ScrollView
@@ -435,6 +430,18 @@ export default function CalendarScreen() {
             paddingHorizontal: contentHorizontalPadding,
           }}
         >
+          <View style={{ paddingHorizontal: hPad, paddingTop: 10 }}>
+            <CultureEngagementHero
+              title="Plan your cultural week with zero friction."
+              subtitle="Sync events, earn streaks, and get smarter suggestions based on your calendar rhythm."
+              stat={`${eventsInMonthCount} cultural events this month`}
+              badge="Sydney Legend"
+              ctaLabel="Open Full Events List"
+              ctaRoute="/events"
+              icon="calendar"
+            />
+          </View>
+
           {/* ── Filter chips (glass rail) ── */}
           <LiquidGlassPanel
             borderRadius={MAIN_TAB_UI.cardRadius}
@@ -890,14 +897,6 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginTop: 16,
   },
 
-  // Header (inside LiquidGlassPanel)
-  headerGlassInner: {
-    paddingTop: 16,
-    paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
-  },
-  brandHeaderRow: {
-    marginBottom: 12,
-  },
   monthNavRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 6,
