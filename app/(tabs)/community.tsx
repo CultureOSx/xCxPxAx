@@ -28,6 +28,8 @@ import { CommunityGridCard } from '@/components/community/CommunityGridCard';
 import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewDrawer';
 import { useCommunities } from '@/hooks/queries/useCommunities';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
 import { NATIONALITIES } from '@/constants/cultures';
 import type { Community } from '@/shared/schema';
 
@@ -223,56 +225,61 @@ export default function CommunitiesScreen() {
             borderRadius={0}
             bordered={false}
             style={{
-              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
               borderBottomColor: colors.borderLight,
             }}
             contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
           >
-            <View style={s.headerTitleBlock}>
-              <Text style={[s.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
-                Communities
-              </Text>
-              <View style={s.headerMetaRow}>
-                <Ionicons name="location" size={10} color={CultureTokens.indigo} />
-                <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {locationLabel}
-                  {!isLoading && filteredCommunities.length > 0
-                    ? ` · ${filteredCommunities.length.toLocaleString()} shown`
-                    : ''}
+            <View style={s.brandHeaderRow}>
+              <TabBrandHeader />
+            </View>
+            <View style={s.headerControlsRow}>
+              <View style={s.headerTitleBlock}>
+                <Text style={[s.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
+                  Communities
                 </Text>
+                <View style={s.headerMetaRow}>
+                  <Ionicons name="location" size={MAIN_TAB_UI.iconSize.xs} color={CultureTokens.indigo} />
+                  <Text style={[s.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {locationLabel}
+                    {!isLoading && filteredCommunities.length > 0
+                      ? ` · ${filteredCommunities.length.toLocaleString()} shown`
+                      : ''}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
-              <Ionicons name="search" size={15} color={colors.textTertiary} />
-              <TextInput
-                style={[s.searchInput, { color: colors.text }]}
-                placeholder="Search..."
-                placeholderTextColor={colors.textTertiary}
-                value={search}
-                onChangeText={setSearch}
-                returnKeyType="search"
-                accessibilityLabel="Search communities"
-              />
-              {search.length > 0 ? (
-                <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
-                  <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
-                </Pressable>
-              ) : null}
-            </View>
+              <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                <Ionicons name="search" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
+                <TextInput
+                  style={[s.searchInput, { color: colors.text }]}
+                  placeholder="Search..."
+                  placeholderTextColor={colors.textTertiary}
+                  value={search}
+                  onChangeText={setSearch}
+                  returnKeyType="search"
+                  accessibilityLabel="Search communities"
+                />
+                {search.length > 0 ? (
+                  <Pressable onPress={() => setSearch('')} accessibilityLabel="Clear search" accessibilityRole="button">
+                    <Ionicons name="close-circle" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
+                  </Pressable>
+                ) : null}
+              </View>
 
-            <Pressable
-              onPress={() => refetch()}
-              style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh communities"
-            >
-              {isRefetching ? (
-                <ActivityIndicator size="small" color={CultureTokens.indigo} />
-              ) : (
-                <Ionicons name="refresh" size={18} color={colors.text} />
-              )}
-            </Pressable>
+              <Pressable
+                onPress={() => refetch()}
+                style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh communities"
+              >
+                {isRefetching ? (
+                  <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                ) : (
+                  <Ionicons name="refresh" size={18} color={colors.text} />
+                )}
+              </Pressable>
+            </View>
           </LiquidGlassPanel>
         </Animated.View>
 
@@ -281,8 +288,8 @@ export default function CommunitiesScreen() {
 
           {/* ── Filter rows (glass rail) ── */}
           <LiquidGlassPanel
-            borderRadius={LiquidGlassTokens.corner.mainCard}
-            style={{ marginHorizontal: hPad, marginTop: 10, marginBottom: 8 }}
+            borderRadius={MAIN_TAB_UI.cardRadius}
+            style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapSmall, marginBottom: 8 }}
             contentStyle={s.filterGlassInner}
           >
             {/* Row 1: Category filters */}
@@ -313,7 +320,7 @@ export default function CommunitiesScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Clear all filters"
                   >
-                    <Ionicons name="close" size={12} color={colors.textTertiary} />
+                    <Ionicons name="close" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
                     <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
                   </Pressable>
                 </>
@@ -418,7 +425,7 @@ export default function CommunitiesScreen() {
                       onPress={clearFilters}
                       accessibilityRole="button"
                     >
-                      <Ionicons name="refresh-outline" size={14} color={CultureTokens.indigo} />
+                      <Ionicons name="refresh-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
                       <Text style={[s.resetBtnText, { color: CultureTokens.indigo }]}>Reset filters</Text>
                     </Pressable>
                   )}
@@ -477,11 +484,11 @@ const s = StyleSheet.create({
   },
 
   headerGlassInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 10,
-    paddingVertical: 14,
+    paddingVertical: MAIN_TAB_UI.headerVerticalPadding,
   },
+  brandHeaderRow: { marginBottom: 2 },
+  headerControlsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerTitleBlock: { flex: 1, minWidth: 0 },
   headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: {
@@ -521,7 +528,7 @@ const s = StyleSheet.create({
   cultureEmoji:   { fontSize: 14, lineHeight: 18 },
   cultureLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
-  list:           { paddingTop: 20, gap: 20 },
+  list:           { paddingTop: MAIN_TAB_UI.sectionGap, gap: MAIN_TAB_UI.sectionGap },
   listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
   listFooterText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
   endLine:        { flex: 1, height: 1, opacity: 0.5 },

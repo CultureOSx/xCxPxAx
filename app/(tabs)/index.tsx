@@ -6,9 +6,10 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
-import { CategoryColors, CultureTokens, LiquidGlassTokens } from '@/constants/theme';
+import { CategoryColors, CultureTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { Button } from '@/components/ui/Button';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
@@ -174,9 +175,9 @@ export default function DiscoverScreen() {
 
       {keralaDomain ? (
         <LiquidGlassPanel
-          borderRadius={LiquidGlassTokens.corner.innerRow + 4}
-          style={{ marginHorizontal: hPad, marginBottom: 16 }}
-          contentStyle={{ padding: 14, gap: 6 }}
+          borderRadius={MAIN_TAB_UI.cardRadius}
+          style={{ marginHorizontal: hPad, marginBottom: MAIN_TAB_UI.sectionGap }}
+          contentStyle={{ padding: 16, gap: 8 }}
         >
           <Text style={[styles.keralaEyebrow, { color: CultureTokens.gold }]}>CultureKerala</Text>
           <Text style={[styles.keralaTitle, { color: colors.text }]}>
@@ -204,7 +205,7 @@ export default function DiscoverScreen() {
           <View style={styles.keralaCtaRow}>
             <Button
               variant="primary"
-              size="sm"
+              size="md"
               pill
               haptic={false}
               onPress={() => {
@@ -218,7 +219,7 @@ export default function DiscoverScreen() {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               pill
               haptic={false}
               onPress={() => {
@@ -403,10 +404,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   keralaCtaRow: {
-    marginTop: 4,
+    marginTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  keralaBtnGrow: { flex: 1 },
+  keralaBtnGrow: { flex: 1, minHeight: MAIN_TAB_UI.ctaMinHeight },
 });

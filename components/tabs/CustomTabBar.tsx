@@ -35,6 +35,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { CultureTokens, LiquidGlassTokens } from '@/constants/theme';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -48,12 +49,12 @@ const TABS = [
     sfSymbolActive: 'safari.fill' as const,
   },
   {
-    name: 'feed',
-    label: 'Feed',
-    icon: 'newspaper-outline' as const,
-    iconActive: 'newspaper' as const,
-    sfSymbol: 'newspaper' as const,
-    sfSymbolActive: 'newspaper.fill' as const,
+    name: 'calendar',
+    label: 'Calendar',
+    icon: 'calendar-outline' as const,
+    iconActive: 'calendar' as const,
+    sfSymbol: 'calendar' as const,
+    sfSymbolActive: 'calendar' as const,
   },
   {
     name: 'community',
@@ -64,12 +65,12 @@ const TABS = [
     sfSymbolActive: 'person.2.circle.fill' as const,
   },
   {
-    name: 'calendar',
-    label: 'Calendar',
-    icon: 'calendar-outline' as const,
-    iconActive: 'calendar' as const,
-    sfSymbol: 'calendar' as const,
-    sfSymbolActive: 'calendar' as const,
+    name: 'perks',
+    label: 'Perks',
+    icon: 'gift-outline' as const,
+    iconActive: 'gift' as const,
+    sfSymbol: 'gift' as const,
+    sfSymbolActive: 'gift.fill' as const,
   },
   {
     name: 'profile',
@@ -78,14 +79,6 @@ const TABS = [
     iconActive: 'person-circle' as const,
     sfSymbol: 'person.crop.circle' as const,
     sfSymbolActive: 'person.crop.circle.fill' as const,
-  },
-  {
-    name: 'perks',
-    label: 'Quests',
-    icon: 'gift-outline' as const,
-    iconActive: 'gift' as const,
-    sfSymbol: 'gift' as const,
-    sfSymbolActive: 'gift.fill' as const,
   },
 ] as const;
 
@@ -123,10 +116,9 @@ const badge = StyleSheet.create({
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   index: 'Open discovery home and featured rails',
-  feed: 'Open community feed and updates',
-  community: 'Browse cultural communities',
   calendar: 'View your calendar and saved dates',
-  perks: 'Open quests, perks, and rewards',
+  community: 'Browse cultural communities',
+  perks: 'Open perks, offers, and rewards',
   profile: 'Open your profile and settings',
 };
 
@@ -186,7 +178,16 @@ function TabItem({
       hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
       android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: false } : undefined}
     >
-      <Animated.View style={[tabItem.inner, { transform: [{ scale }] }]}>
+      <Animated.View
+        style={[
+          tabItem.inner,
+          isActive && {
+            backgroundColor: isDark ? 'rgba(44,42,114,0.22)' : 'rgba(44,42,114,0.09)',
+            borderColor: isDark ? 'rgba(44,42,114,0.36)' : 'rgba(44,42,114,0.22)',
+          },
+          { transform: [{ scale }] },
+        ]}
+      >
         {/* Icon */}
         <View style={tabItem.iconWrap}>
           {tab.name === 'profile' ? (
@@ -207,7 +208,7 @@ function TabItem({
                 >
                   <Ionicons
                     name={isActive ? 'person-circle' : 'person-circle-outline'}
-                    size={22}
+                    size={MAIN_TAB_UI.iconSize.lg}
                     color={iconColor}
                   />
                 </View>
@@ -228,14 +229,14 @@ function TabItem({
           ) : Platform.OS === 'ios' ? (
             <SymbolView
               name={(isActive ? tab.sfSymbolActive : tab.sfSymbol) as any}
-              size={22}
+              size={MAIN_TAB_UI.iconSize.lg}
               tintColor={iconColor}
               fallback={
-                <Ionicons name={isActive ? tab.iconActive : tab.icon} size={22} color={iconColor} />
+                <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.lg} color={iconColor} />
               }
             />
           ) : (
-            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={22} color={iconColor} />
+            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.lg} color={iconColor} />
           )}
         </View>
 
@@ -268,11 +269,14 @@ const tabItem = StyleSheet.create({
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     gap: 4,
-    minWidth: 48,
-    minHeight: 48,
+    minWidth: 56,
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   iconWrap: {
     alignItems: 'center',
@@ -307,16 +311,16 @@ const tabItem = StyleSheet.create({
   },
 
   label: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
     letterSpacing: 0.15,
     textAlign: 'center',
   },
 
   dot: {
-    width: 4,
-    height: 3,
-    borderRadius: 2,
+    width: 6,
+    height: 4,
+    borderRadius: 3,
     backgroundColor: CultureTokens.indigo,
     marginTop: 1,
   },
@@ -381,7 +385,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
     .join('')
     .toUpperCase() || '?';
 
-  const bottomPad = Math.max(insets.bottom, 8);
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 8);
 
   // Only render tabs that match our TABS config
   const visibleRoutes = state.routes.filter((r) => TABS.some((t) => t.name === r.name));
@@ -441,7 +445,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               colors={colors}
               reduceMotion={reduceMotion}
               badgeCount={isProfileTab ? notifCount : undefined}
-              avatarUrl={isProfileTab ? (user as any)?.avatarUrl : undefined}
+              avatarUrl={isProfileTab ? user?.avatarUrl : undefined}
               initials={isProfileTab ? initials : undefined}
               isGuest={isProfileTab ? !isAuthenticated : undefined}
               onPress={() => {
@@ -466,20 +470,20 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
 
 const bar = StyleSheet.create({
   root: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
+    paddingHorizontal: 14,
+    paddingTop: Platform.OS === 'android' ? 4 : 6,
     backgroundColor: 'transparent',
   },
   pill: {
-    minHeight: 64,
+    minHeight: Platform.OS === 'android' ? 68 : 66,
   },
   pillInner: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 60,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    minHeight: Platform.OS === 'android' ? 64 : 60,
+    paddingHorizontal: 6,
+    paddingVertical: Platform.OS === 'android' ? 3 : 2,
   },
   topLine: {
     position: 'absolute',

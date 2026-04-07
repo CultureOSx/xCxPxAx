@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, LiquidGlassTokens, webShadow } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -20,6 +20,8 @@ import type { EventData, Ticket } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
+import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
 import { FilterChipRow } from '@/components/FilterChip';
 import { EventRow } from '@/components/calendar/EventRow';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
@@ -46,11 +48,7 @@ export default function CalendarScreen() {
   const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
 
    
-  const civicRowShadow = Platform.select<any>({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-    android: { elevation: 1, shadowColor: '#000' },
-    web: webShadow('0 2px 8px rgba(0,0,0,0.04)'),
-  });
+  const civicRowShadow = MAIN_TAB_CARD_SHADOW;
 
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -326,11 +324,14 @@ export default function CalendarScreen() {
             borderRadius={0}
             bordered={false}
             style={{
-              borderBottomWidth: StyleSheet.hairlineWidth * 2,
+              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
               borderBottomColor: colors.borderLight,
             }}
             contentStyle={[s.headerGlassInner, { paddingHorizontal: hPad }]}
           >
+            <View style={s.brandHeaderRow}>
+              <TabBrandHeader />
+            </View>
             {/* Row: chevron · month+name · chevron */}
             <View style={s.monthNavRow}>
                 <Pressable
@@ -401,14 +402,14 @@ export default function CalendarScreen() {
             {/* Stats row */}
             <View style={s.statsRow}>
               <View style={[s.statBadge, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '30' }]}>
-                <Ionicons name="calendar-outline" size={13} color={CultureTokens.indigo} />
+                <Ionicons name="calendar-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
                 <Text style={[s.statText, { color: CultureTokens.indigo }]}>
                   {eventsInMonthCount} events
                 </Text>
               </View>
               {isAuthenticated && myEvents.length > 0 && (
                 <View style={[s.statBadge, { backgroundColor: CultureTokens.teal + '14', borderColor: CultureTokens.teal + '30' }]}>
-                  <Ionicons name="ticket-outline" size={13} color={CultureTokens.teal} />
+                  <Ionicons name="ticket-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.teal} />
                   <Text style={[s.statText, { color: CultureTokens.teal }]}>
                     {myEvents.length} ticket{myEvents.length !== 1 ? 's' : ''}
                   </Text>
@@ -416,7 +417,7 @@ export default function CalendarScreen() {
               )}
               {calPrefs.deviceConnected && (
                 <View style={[s.statBadge, { backgroundColor: CultureTokens.coral + '14', borderColor: CultureTokens.coral + '30' }]}>
-                  <Ionicons name="link-outline" size={13} color={CultureTokens.coral} />
+                  <Ionicons name="link-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.coral} />
                   <Text style={[s.statText, { color: CultureTokens.coral }]}>Synced</Text>
                 </View>
               )}
@@ -436,8 +437,8 @@ export default function CalendarScreen() {
         >
           {/* ── Filter chips (glass rail) ── */}
           <LiquidGlassPanel
-            borderRadius={LiquidGlassTokens.corner.mainCard}
-            style={{ marginHorizontal: hPad, marginTop: 16, marginBottom: 8 }}
+            borderRadius={MAIN_TAB_UI.cardRadius}
+            style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapSmall, marginBottom: 8 }}
             contentStyle={{ paddingVertical: 10, paddingHorizontal: 4 }}
           >
             <FilterChipRow
@@ -463,7 +464,7 @@ export default function CalendarScreen() {
 
               {/* ── Calendar card ── */}
               <LiquidGlassPanel
-                borderRadius={LiquidGlassTokens.corner.mainCard}
+                borderRadius={MAIN_TAB_UI.cardRadius}
                 style={[s.calCardOuter, { marginHorizontal: isDesktopWeb ? 0 : hPad }, isDesktopWeb && s.calCardCompact]}
                 contentStyle={s.calCardInner}
               >
@@ -843,7 +844,7 @@ function EventRowWithSync({
           pressed && { opacity: 0.7 },
         ]}
       >
-        <Ionicons name="calendar-outline" size={13} color={CultureTokens.indigo} />
+        <Ionicons name="calendar-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
         <Text style={[syncStyles.addBtnText, { color: CultureTokens.indigo }]}>Add to calendar</Text>
       </Pressable>
     </View>
@@ -892,7 +893,10 @@ const s = StyleSheet.create({
   // Header (inside LiquidGlassPanel)
   headerGlassInner: {
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+  },
+  brandHeaderRow: {
+    marginBottom: 12,
   },
   monthNavRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -965,7 +969,7 @@ const s = StyleSheet.create({
   eventDot: { width: 5, height: 5, borderRadius: 3 },
 
   // Sections
-  eventsSection: { paddingHorizontal: 16, paddingTop: 24 },
+  eventsSection: { paddingHorizontal: 16, paddingTop: MAIN_TAB_UI.sectionGapLarge },
   sectionRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 14,
@@ -1001,7 +1005,7 @@ const s = StyleSheet.create({
   // Civic reminders
   civicRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, elevation: 2,
+    borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1,
   },
   civicIcon: {
     width: 40, height: 40, borderRadius: 12,

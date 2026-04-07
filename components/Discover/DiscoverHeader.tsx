@@ -1,19 +1,15 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { CultureTokens, FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
-import { BrandLockup } from '@/components/ui/BrandLockup';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { TAGLINE_PRIMARY } from '@/lib/app-meta';
-import * as Haptics from 'expo-haptics';
+import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
 
-const isWeb = Platform.OS === 'web';
+const HEADER_TAGLINE = 'Discover ❤️ Enjoy Culture.';
 
 interface DiscoverHeaderProps {
   currentTime: string;
@@ -28,15 +24,12 @@ function DiscoverHeaderComponent({
   currentTime,
   weatherSummary,
   city,
-  isAuthenticated,
 }: DiscoverHeaderProps) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { isDesktop, hPad } = useLayout();
   const { user } = useAuth();
 
-  /** Native dark chrome → light icons; web (light theme) → dark icons */
-  const chromeIconColor = isWeb ? colors.text : colors.textOnBrandGradient;
   const { timeGreeting, firstName } = useMemo(() => {
     const hour = new Date().getHours();
     const tg = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -47,82 +40,9 @@ function DiscoverHeaderComponent({
   const greeting = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
   const mobileMetaLabel = [currentTime, weatherSummary].filter(Boolean).join(' · ');
 
-  const haptic = () => {
-    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  };
-
   const TopBarContent = (
     <View style={[styles.topBarInner, { paddingHorizontal: hPad }]}>
-      <Pressable
-        style={styles.brandBlock}
-        onPress={() => {
-          haptic();
-          router.push('/(tabs)' as const);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="CulturePass home"
-      >
-        <BrandLockup
-          light={!isWeb}
-          withTagline={false}
-          wordmarkSize="sm"
-          wordmarkMaxWidth={112}
-          logoSize={36}
-          logoRadius={10}
-          logoBackground="soft"
-          softLogoBackgroundColor={colors.primarySoft}
-        />
-      </Pressable>
-
-      <View style={styles.flex1} />
-
-      <View style={styles.actions}>
-        <Pressable
-          style={[styles.iconBtn, { backgroundColor: colors.primarySoft }]}
-          onPress={() => {
-            haptic();
-            router.push('/search' as const);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Search"
-        >
-          <Ionicons name="search" size={20} color={chromeIconColor} />
-        </Pressable>
-
-        {isAuthenticated ? (
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: colors.primarySoft }]}
-            onPress={() => {
-              haptic();
-              router.push('/notifications' as const);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-          >
-            <Ionicons name="notifications" size={20} color={chromeIconColor} />
-            <View style={[styles.notifDot, { borderColor: colors.background }]} />
-          </Pressable>
-        ) : null}
-
-        <Pressable
-          style={[
-            styles.iconBtn,
-            styles.menuBtn,
-            {
-              backgroundColor: colors.primarySoft,
-              borderColor: colors.borderLight,
-            },
-          ]}
-          onPress={() => {
-            haptic();
-            router.push('/menu' as const);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-        >
-          <Ionicons name="menu" size={22} color={chromeIconColor} />
-        </Pressable>
-      </View>
+      <TabBrandHeader />
     </View>
   );
 
@@ -143,7 +63,7 @@ function DiscoverHeaderComponent({
 
   return (
     <View>
-      {!isDesktop ? renderTopBar() : null}
+      {renderTopBar()}
 
       {isDesktop ? (
         <View style={[styles.heroDesktop, { paddingHorizontal: hPad }]}>
@@ -153,36 +73,13 @@ function DiscoverHeaderComponent({
               {weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
             <Text style={[styles.desktopGreeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>{`${TAGLINE_PRIMARY} • CELEBRATE CULTURE`}</Text>
+            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
           </View>
           <View style={styles.desktopActions}>
             <LocationPicker />
-            <Pressable
-              style={[styles.iconBtn, styles.desktopIconBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-              onPress={() => router.push('/search' as const)}
-              accessibilityLabel="Search"
-            >
-              <Ionicons name="search" size={20} color={colors.text} />
-            </Pressable>
-            {isAuthenticated ? (
-              <Pressable
-                style={[styles.iconBtn, styles.desktopIconBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                onPress={() => router.push('/notifications' as const)}
-                accessibilityLabel="Notifications"
-              >
-                <Ionicons name="notifications-outline" size={20} color={colors.text} />
-              </Pressable>
-            ) : null}
-            <Pressable
-              style={[styles.iconBtn, styles.desktopIconBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-              onPress={() => router.push('/menu' as const)}
-              accessibilityLabel="Open menu"
-            >
-              <Ionicons name="menu" size={22} color={colors.text} />
-            </Pressable>
           </View>
         </View>
       ) : (
@@ -190,7 +87,7 @@ function DiscoverHeaderComponent({
           <Text style={[styles.mobileGreeting, { color: colors.text }]} numberOfLines={1}>
             {greeting}
           </Text>
-          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>{`${TAGLINE_PRIMARY} • CELEBRATE CULTURE`}</Text>
+          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
               <LocationPicker variant="text" />
@@ -208,45 +105,11 @@ function DiscoverHeaderComponent({
 }
 
 const styles = StyleSheet.create({
-  flex1: { flex: 1 },
-
   topBarInner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    minHeight: 56,
-  },
-  brandBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    maxWidth: 180,
-    flexShrink: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuBtn: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: CultureTokens.coral,
-    borderWidth: 1.5,
+    minHeight: 64,
   },
 
   mobileHero: {
@@ -261,10 +124,9 @@ const styles = StyleSheet.create({
     lineHeight: LineHeight.hero,
   },
   mobileTagline: {
-    fontSize: 9,
-    fontFamily: FontFamily.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
+    fontSize: 12,
+    fontFamily: FontFamily.medium,
+    letterSpacing: 0.2,
   },
   mobileMetaRow: {
     flexDirection: 'row',
@@ -298,19 +160,14 @@ const styles = StyleSheet.create({
     lineHeight: 42,
   },
   desktopTagline: {
-    fontSize: 10,
-    fontFamily: FontFamily.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
+    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    letterSpacing: 0.2,
     marginTop: 4,
     marginBottom: 12,
   },
   desktopSub: { fontSize: FontSize.callout, fontFamily: FontFamily.regular, lineHeight: LineHeight.callout },
   desktopActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 24 },
-  desktopIconBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
 });
 
 export const DiscoverHeader = React.memo(DiscoverHeaderComponent);

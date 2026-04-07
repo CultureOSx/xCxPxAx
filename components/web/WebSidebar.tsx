@@ -28,7 +28,6 @@ interface NavItem {
 
 const MAIN_NAV: NavItem[] = [
   { label: 'Discover', icon: 'compass-outline', iconActive: 'compass', route: '/(tabs)' },
-  { label: 'Feed', icon: 'newspaper-outline', iconActive: 'newspaper', route: '/(tabs)/feed' },
   { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
   { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
   { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Main Tab Layout — CulturePass
- * Primary tabs: Discovery → Feed → Community → Calendar → Quests → Profile
+ * Primary tabs: Discover → Calendar → Community → Perks → Profile
  * (Desktop web hides the bottom bar; WebSidebar handles nav.)
  */
 export default function TabsLayout() {
@@ -19,21 +19,21 @@ export default function TabsLayout() {
       }}
       initialRouteName="index"
     >
-      {/* 1. Discovery — Home experience (The first thing users see) */}
+      {/* 1. Discover — Home experience */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Discovery',
+          title: 'Discover',
           tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
       />
 
-      {/* 2. Feed — Community updates & social feed */}
+      {/* 2. Calendar — Personal schedule */}
       <Tabs.Screen
-        name="feed"
+        name="calendar"
         options={{
-          title: 'Feed',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          title: 'Calendar',
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
       />
 
@@ -46,12 +46,12 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4. Calendar — Personal schedule */}
+      {/* 4. Perks — Offers & rewards */}
       <Tabs.Screen
-        name="calendar"
+        name="perks"
         options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+          title: 'Perks',
+          tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
         }}
       />
 
@@ -64,16 +64,8 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 6. Quest Center — Perks & Gamification (Visible) */}
-      <Tabs.Screen
-        name="perks"
-        options={{
-          title: 'Quests',
-          tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
-        }}
-      />
-
       {/* Hidden Routes */}
+      <Tabs.Screen name="feed" options={{ href: null }} />
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />

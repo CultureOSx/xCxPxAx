@@ -15,11 +15,13 @@ import { HeroGlassIconButton } from '@/components/event-detail/HeroGlassIconButt
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
-import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
@@ -201,7 +203,23 @@ export default function ProfileScreen() {
             </Pressable>
           ) : null}
 
-          <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: topInset + 10 }]}>
+          <LiquidGlassPanel
+            borderRadius={0}
+            bordered={false}
+            style={{
+              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
+              borderBottomColor: colors.borderLight,
+            }}
+            contentStyle={{
+              paddingTop: topInset,
+              paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+              paddingHorizontal: hPad,
+            }}
+          >
+            <TabBrandHeader />
+          </LiquidGlassPanel>
+
+          <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: 10 }]}>
             {!isDesktop && (
               <HeroGlassIconButton
                 onPress={() => router.push('/settings')}
@@ -221,8 +239,8 @@ export default function ProfileScreen() {
           </View>
 
           <LiquidGlassPanel
-            borderRadius={LiquidGlassTokens.corner.mainCard}
-            style={{ marginHorizontal: hPad, marginTop: 4 }}
+            borderRadius={MAIN_TAB_UI.cardRadius}
+            style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapSmall }}
             contentStyle={{ alignItems: 'center', paddingVertical: 20, paddingHorizontal: 16 }}
           >
             <ProfileAvatar user={displayUser} displayName={displayName} size={96} />
@@ -295,8 +313,8 @@ export default function ProfileScreen() {
 
           {/* ── ACTION BUTTONS (glass rail) ───────────────────────────── */}
           <LiquidGlassPanel
-            borderRadius={LiquidGlassTokens.corner.mainCard}
-            style={{ marginHorizontal: hPad, marginTop: 16 }}
+            borderRadius={MAIN_TAB_UI.cardRadius}
+            style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }}
             contentStyle={[act.row, { padding: 12, gap: 10 }]}
           >
             <Pressable
@@ -304,7 +322,7 @@ export default function ProfileScreen() {
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); router.push('/profile/edit'); }}
               accessibilityRole="button" accessibilityLabel="Edit profile"
             >
-              <Ionicons name="pencil" size={15} color={colors.textOnBrandGradient} />
+              <Ionicons name="pencil" size={MAIN_TAB_UI.iconSize.sm} color={colors.textOnBrandGradient} />
               <Text style={[act.label, { color: colors.textOnBrandGradient }]}>Edit Profile</Text>
             </Pressable>
             <Pressable
@@ -315,7 +333,7 @@ export default function ProfileScreen() {
               onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); setShowScanner(true); }}
               accessibilityRole="button" accessibilityLabel="Scan ID"
             >
-              <Ionicons name="scan-outline" size={15} color={CultureTokens.teal} />
+              <Ionicons name="scan-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.teal} />
               <Text style={[act.label, { color: CultureTokens.teal }]}>Scan</Text>
             </Pressable>
             <Pressable
@@ -326,15 +344,15 @@ export default function ProfileScreen() {
               onPress={handleShare}
               accessibilityRole="button" accessibilityLabel="Share profile"
             >
-              <Ionicons name="share-outline" size={15} color={colors.textSecondary} />
+              <Ionicons name="share-outline" size={MAIN_TAB_UI.iconSize.sm} color={colors.textSecondary} />
               <Text style={[act.label, { color: colors.textSecondary }]}>Share</Text>
             </Pressable>
           </LiquidGlassPanel>
 
           {/* ── MEMBERSHIP TIER ───────────────────────────────────────── */}
-          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <LiquidGlassPanel
-              borderRadius={LiquidGlassTokens.corner.mainCard}
+              borderRadius={MAIN_TAB_UI.cardRadius}
               contentStyle={{ padding: 0, overflow: 'hidden' }}
             >
               <LinearGradient
@@ -368,9 +386,9 @@ export default function ProfileScreen() {
 
           {/* ── BIO ───────────────────────────────────────────────────── */}
           {displayUser?.bio ? (
-            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="About" colors={colors} />
-              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 16 }}>
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 16 }}>
                 <Text style={[sec.bioText, { color: colors.textSecondary }]}>{displayUser.bio}</Text>
               </LiquidGlassPanel>
             </View>
@@ -378,9 +396,9 @@ export default function ProfileScreen() {
 
           {/* ── HERITAGE ──────────────────────────────────────────────── */}
           {hasCultures ? (
-            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Heritage" action="View Map" onAction={() => setShowCultureMap(true)} colors={colors} />
-              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 14 }}>
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14 }}>
                 <View style={cul.grid}>
                   {matchedCultures.map((c, i) => (
                     <Animated.View
@@ -409,7 +427,7 @@ export default function ProfileScreen() {
 
           {/* ── PERKS ─────────────────────────────────────────────────── */}
           {(perksLoading || perks.length > 0) ? (
-            <View style={[sec.wrap, { marginTop: 24 }]}>
+            <View style={[sec.wrap, { marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <View style={{ paddingHorizontal: hPad }}>
                 <SectionHeader title="Your Perks" action="View All" onAction={() => router.push('/(tabs)/perks')} colors={colors} />
               </View>
@@ -418,7 +436,7 @@ export default function ProfileScreen() {
                   ? [0, 1, 2].map((i) => (
                       <LiquidGlassPanel
                         key={`perk-sk-${i}`}
-                        borderRadius={20}
+                        borderRadius={MAIN_TAB_UI.cardRadius}
                         style={{ width: 160, minHeight: 130 }}
                         contentStyle={{ alignItems: 'center', justifyContent: 'center', padding: 14 }}
                       >
@@ -433,7 +451,7 @@ export default function ProfileScreen() {
                         accessibilityLabel={perk.title}
                         style={({ pressed }) => [{ width: 160, opacity: pressed ? 0.9 : 1 }]}
                       >
-                        <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 14, overflow: 'hidden', minHeight: 128 }}>
+                        <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, overflow: 'hidden', minHeight: 128 }}>
                           <LinearGradient colors={[CultureTokens.gold + '28', CultureTokens.indigo + '18']} style={prk.cardGrad} />
                           <View style={[prk.icon, { backgroundColor: CultureTokens.gold + '20' }]}>
                             <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
@@ -452,7 +470,7 @@ export default function ProfileScreen() {
           ) : null}
 
           {/* ── DIGITAL IDENTITY CARD ─────────────────────────────────── */}
-          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Digital Identity" colors={colors} />
             <LiquidGlassPanel borderRadius={28} bordered={false} contentStyle={{ padding: 0, overflow: 'hidden' }}>
             <LinearGradient
@@ -519,9 +537,9 @@ export default function ProfileScreen() {
 
           {/* ── SOCIAL LINKS ─────────────────────────────────────────── */}
           {activeSocials.length > 0 && (
-            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Social" colors={colors} />
-              <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} contentStyle={{ padding: 12 }}>
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 12 }}>
               <View style={soc.grid}>
                 {activeSocials.map(s => (
                   <Pressable
@@ -550,9 +568,9 @@ export default function ProfileScreen() {
 
           {/* ── CONTACT DETAILS ──────────────────────────────────────── */}
           {(locationText || displayUser?.website || displayUser?.phone) ? (
-            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Details" colors={colors} />
-              <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 4 }}>
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
               <View style={[det.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
                 {locationText ? (
                   <View style={det.row}>
@@ -600,9 +618,9 @@ export default function ProfileScreen() {
           ) : null}
 
           {/* ── SETTINGS SHORTCUTS ───────────────────────────────────── */}
-          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 24 }]}>
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Settings" colors={colors} />
-            <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 4 }}>
+            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
             <View style={[set.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
               {[
                 { icon: 'person-outline' as const,        label: 'Edit Profile',   path: '/profile/edit',           accent: CultureTokens.indigo },
@@ -631,8 +649,8 @@ export default function ProfileScreen() {
           </View>
 
           {/* ── SIGN OUT ─────────────────────────────────────────────── */}
-          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: 16 }]}>
-            <LiquidGlassPanel borderRadius={LiquidGlassTokens.corner.mainCard} bordered={false} contentStyle={{ padding: 0 }}>
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }]}>
+            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} bordered={false} contentStyle={{ padding: 0 }}>
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [sout.btn, { borderColor: hovered ? CultureTokens.coral + '60' : CultureTokens.coral + '40', backgroundColor: pressed ? CultureTokens.coral + '16' : hovered ? CultureTokens.coral + '12' : CultureTokens.coral + '09', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               onPress={async () => {
