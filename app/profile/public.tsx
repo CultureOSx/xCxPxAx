@@ -30,14 +30,14 @@ import {
   TIER_CONFIG,
   formatMemberDate,
   getInitials,
-} from './_styles';
+} from '@/components/profile-public/constants';
 
-import { BrandDots } from './_components/BrandDots';
-import { StatItem } from './_components/StatItem';
-import { SectionHeader } from './_components/SectionHeader';
-import { SocialCard } from './_components/SocialCard';
-import { DetailRow } from './_components/DetailRow';
-import { LoadingSkeleton } from './_components/LoadingSkeleton';
+import { BrandDots } from '@/components/profile-public/BrandDots';
+import { StatItem } from '@/components/profile-public/StatItem';
+import { SectionHeader } from '@/components/profile-public/SectionHeader';
+import { SocialCard } from '@/components/profile-public/SocialCard';
+import { DetailRow } from '@/components/profile-public/DetailRow';
+import { LoadingSkeleton } from '@/components/profile-public/LoadingSkeleton';
 
 export default function PublicProfileScreen() {
   const colors = useColors();

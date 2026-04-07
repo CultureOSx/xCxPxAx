@@ -69,6 +69,9 @@ async function run() {
     firebaseConfig.includes('projectId');
 
   if (!hasProjectId) {
+    if (process.env.CI === 'true') {
+      throw new Error('functions council claim lifecycle checks require a Firebase project id in CI');
+    }
     console.log('functions council claim lifecycle checks skipped (no Firebase project id configured)');
     return;
   }

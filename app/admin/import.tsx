@@ -14,9 +14,9 @@ import { useRole } from '@/hooks/useRole';
 import { gradients } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-import { AdHocTab }   from './import/_components/AdHocTab';
-import { SourcesTab } from './import/_components/SourcesTab';
-import { JobsTab }    from './import/_components/JobsTab';
+import { AdHocTab }   from '@/components/admin-import/AdHocTab';
+import { SourcesTab } from '@/components/admin-import/SourcesTab';
+import { JobsTab }    from '@/components/admin-import/JobsTab';
 
 const TABS = [
   { id: 'adhoc',   label: 'Import',   icon: 'cloud-download-outline' as const },

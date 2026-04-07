@@ -11,6 +11,8 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import {
   Platform,
+  Pressable,
+  Text,
   View,
   StyleSheet,
 } from "react-native";
@@ -28,7 +30,7 @@ import {
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { gradients } from "@/constants/theme";
+import { CultureTokens, gradients } from "@/constants/theme";
 import { useColors } from "@/hooks/useColors";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useLayout } from "@/hooks/useLayout";
@@ -44,15 +46,10 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 global.Buffer = Buffer;
 
 // Suppress known noisy warnings that are not actionable.
-// Expo Router v5 treats every file in app/ as a route unless its basename starts with _.
-// Files inside _components/ directories trigger "missing default export" warnings on all
-// platforms — suppress them globally since these are helper modules, not screens.
 if (typeof console !== 'undefined') {
   const _warn = console.warn.bind(console);
   console.warn = (...args: unknown[]) => {
     const msg = typeof args[0] === 'string' ? args[0] : '';
-    // Expo Router v5: _components/ helper files are not routes (all platforms)
-    if (msg.includes('_components') && msg.includes('missing the required default export')) return;
     // React Native Web ≥0.19 deprecations (web only)
     if (Platform.OS === 'web') {
       if (msg.includes('props.pointerEvents is deprecated')) return;
@@ -193,6 +190,30 @@ function AuthGuard() {
   }, [user, segments, isRestoring, onboardingState.isComplete, router]);
 
   return null;
+}
+
+function AuthSyncBanner() {
+  const colors = useColors();
+  const { profileSyncStatus, profileSyncMessage, retryProfileSync } = useAuth();
+
+  if (profileSyncStatus !== 'degraded' || !profileSyncMessage) return null;
+
+  return (
+    <View style={[bannerStyles.container, { backgroundColor: `${CultureTokens.coral}1F`, borderColor: `${CultureTokens.coral}55` }]}>
+      <Ionicons name="warning-outline" size={16} color={CultureTokens.coral} />
+      <Text style={[bannerStyles.text, { color: colors.text }]} numberOfLines={2}>
+        {profileSyncMessage}
+      </Text>
+      <Pressable
+        style={[bannerStyles.retryButton, { borderColor: `${CultureTokens.coral}AA` }]}
+        onPress={() => { retryProfileSync().catch(() => {}); }}
+        accessibilityRole="button"
+        accessibilityLabel="Retry profile sync"
+      >
+        <Text style={bannerStyles.retryText}>Retry</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -388,6 +409,7 @@ function RootLayoutContent() {
       <DataSync />
       <WidgetSync />
       <AuthGuard />
+      <AuthSyncBanner />
       {isWeb ? (
         <WebShell>
           <RootLayoutNav />
@@ -527,6 +549,37 @@ function RootLayoutContent() {
     </ErrorBoundary>
   );
 }
+
+const bannerStyles = StyleSheet.create({
+  container: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  text: {
+    flex: 1,
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 12,
+  },
+  retryButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  retryText: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 12,
+    color: CultureTokens.coral,
+  },
+});
 
 const webStyles = StyleSheet.create({
   outerContainer: {

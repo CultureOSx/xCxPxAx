@@ -30,12 +30,12 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
 import { formatCurrency } from '@/lib/currency';
 import { formatEventTime } from '@/lib/dateUtils';
-import { getStyles } from './_components/styles';
-import { EventLiquidModalBody } from './_components/EventLiquidModalBody';
-import { HeroGlassIconButton } from './_components/HeroGlassIconButton';
-import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
-import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
-import { useEventTicketing } from './_components/useEventTicketing';
+import { getStyles } from '@/components/event-detail/styles';
+import { EventLiquidModalBody } from '@/components/event-detail/EventLiquidModalBody';
+import { HeroGlassIconButton } from '@/components/event-detail/HeroGlassIconButton';
+import { EventDetailSkeleton } from '@/components/event-detail/EventDetailSkeleton';
+import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from '@/components/event-detail/utils';
+import { useEventTicketing } from '@/components/event-detail/useEventTicketing';
 import { AdminToolbar } from '@/components/ui/AdminToolbar';
 import { useRole } from '@/hooks/useRole';
 

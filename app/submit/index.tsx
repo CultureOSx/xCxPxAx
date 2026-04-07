@@ -45,8 +45,8 @@ import {
   type FieldErrors,
   type FormState,
   type SubmitType,
-} from './_lib/config';
-import { Card, Field, SectionLabel } from './_components/FormPrimitives';
+} from '@/features/submit/config';
+import { Card, Field, SectionLabel } from '@/components/submit/FormPrimitives';
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 

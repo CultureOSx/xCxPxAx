@@ -15,6 +15,7 @@ import { auth as firebaseAuth } from '@/lib/firebase';
 import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { api, ApiError } from '@/lib/api';
 import type { User, UserRole } from '@/shared/schema';
+import { logError } from '@/lib/reporting';
 
 /**
  * CulturePassAU Auth — Firebase Auth SDK
@@ -50,6 +51,9 @@ interface AuthContextType {
   isSydneyUser: boolean;
   isSydneyVerified: boolean;
   showSydneyWelcome: boolean;
+  profileSyncStatus: 'ok' | 'degraded';
+  profileSyncMessage: string | null;
+  retryProfileSync: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -66,6 +70,9 @@ const AuthContext = createContext<AuthContextType>({
   isSydneyUser: false,
   isSydneyVerified: false,
   showSydneyWelcome: false,
+  profileSyncStatus: 'ok',
+  profileSyncMessage: null,
+  retryProfileSync: async () => {},
 });
 
 export function useAuth() {
@@ -80,10 +87,32 @@ function devErrorLog(scope: string, error: unknown): void {
   }
 }
 
+function isTransientProfileError(error: unknown): boolean {
+  return (
+    (error instanceof ApiError && (error.isRateLimited || error.isNetworkError || error.isServerError)) ||
+    (error instanceof TypeError && error.message === 'Failed to fetch')
+  );
+}
+
+function normalizeSubscriptionTier(value: unknown): AuthUser['subscriptionTier'] {
+  switch (value) {
+    case 'free':
+    case 'plus':
+    case 'elite':
+    case 'sydney-local':
+      return value;
+    default:
+      return 'free';
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [profileSyncStatus, setProfileSyncStatus] = useState<'ok' | 'degraded'>('ok');
+  const [profileSyncMessage, setProfileSyncMessage] = useState<string | null>(null);
+  const [profileRetryCount, setProfileRetryCount] = useState(0);
 
   // ------------------------------------------------------------------
   // Firebase Auth state observer
@@ -94,6 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setAccessToken(null);
         setTokenRefresher(null);
+        setProfileSyncStatus('ok');
+        setProfileSyncMessage(null);
+        setProfileRetryCount(0);
         setIsRestoring(false);
         return;
       }
@@ -114,13 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let profileData: Partial<User> = {};
         
         // Robust API Retry Logic to prevent Ghost Sessions
-        const fetchProfileWithRetry = async (retries = 1): Promise<User> => {
+        const fetchProfileWithRetry = async (retries = 2, waitMs = 1200): Promise<User> => {
           try {
             return await api.auth.me() as User;
           } catch (err) {
-            if (retries > 0 && err instanceof ApiError && err.isRateLimited) {
-              await new Promise((r) => setTimeout(r, 2000));
-              return fetchProfileWithRetry(retries - 1);
+            if (retries > 0 && isTransientProfileError(err)) {
+              await new Promise((r) => setTimeout(r, waitMs));
+              return fetchProfileWithRetry(retries - 1, Math.min(waitMs * 2, 5000));
             }
             throw err;
           }
@@ -140,16 +172,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Firestore profile is materialized on first GET /api/auth/me (functions).
           // Avoid POST /auth/register here — stale deploys returned HTML 404 for that path.
         } catch (error) {
-          // "Failed to fetch" = network / CORS error (e.g. localhost hitting prod API without CORS origin).
-          // The user is still authenticated via Firebase; profile data will be sparse.
-          const isNetworkError = 
-            (error instanceof TypeError && error.message === 'Failed to fetch') ||
-            (error instanceof ApiError && error.status === 0);
-            
-          if (isNetworkError && __DEV__) {
-            console.warn('[auth] Profile fetch failed (network/CORS) — app running without server profile. Deploy functions or use emulator.');
+          // The user is still authenticated via Firebase; profile data may be sparse.
+          if (isTransientProfileError(error)) {
+            setProfileSyncStatus('degraded');
+            setProfileSyncMessage('Limited profile sync. Check network/CORS settings, then tap Retry.');
+            setProfileRetryCount(0);
+            logError(error, {
+              context: 'auth.profile_sync.degraded',
+              platform: Platform.OS,
+            });
+            if (__DEV__) {
+              console.warn('[auth] Profile fetch degraded (network/CORS/transient server error).');
+            }
           } else {
             devErrorLog('Critical profile fetch error. User may have limited access', error);
+            logError(error, {
+              context: 'auth.profile_sync.failed_non_transient',
+              platform: Platform.OS,
+            });
           }
         }
 
@@ -160,10 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: profileData.displayName ?? firebaseUser.displayName ?? undefined,
           email: profileData.email ?? firebaseUser.email ?? undefined,
           role: profileData.role ?? 'user',
-          subscriptionTier: profileData.membership?.tier as any ?? 'free',
+          subscriptionTier: normalizeSubscriptionTier(profileData.membership?.tier),
           avatarUrl: profileData.avatarUrl ?? (firebaseUser.photoURL ?? undefined),
           createdAt: profileData.createdAt ?? new Date().toISOString(),
         };
+
+        setProfileSyncStatus('ok');
+        setProfileSyncMessage(null);
 
         setSession({
           user: authUser,
@@ -184,6 +227,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, []);  
+
+  const retryProfileSync = useCallback(async () => {
+    const currentUser = firebaseAuth.currentUser;
+    if (!currentUser) return;
+
+    try {
+      const profile = await api.auth.me();
+      setSession((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+            ...profile,
+            id: prev.user.id,
+            subscriptionTier: normalizeSubscriptionTier(profile.membership?.tier ?? prev.user.subscriptionTier),
+          },
+        };
+      });
+      setProfileSyncStatus('ok');
+      setProfileSyncMessage(null);
+      setProfileRetryCount(0);
+    } catch (error) {
+      setProfileSyncStatus('degraded');
+      setProfileSyncMessage('Limited profile sync. Check network/CORS settings, then tap Retry.');
+      setProfileRetryCount((n) => n + 1);
+      logError(error, {
+        context: 'auth.profile_sync.retry_failed',
+        platform: Platform.OS,
+      });
+      throw error;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!session || profileSyncStatus !== 'degraded' || profileRetryCount >= 6) return;
+    const timer = setTimeout(() => {
+      retryProfileSync().catch(() => {});
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [profileRetryCount, profileSyncStatus, retryProfileSync, session]);
 
   // ------------------------------------------------------------------
   // Force-refresh ID token every 50 min to keep query-client in sync
@@ -287,9 +371,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSydneyUser,
     isSydneyVerified,
     showSydneyWelcome: isSydneyUser,
+    profileSyncStatus,
+    profileSyncMessage,
+    retryProfileSync,
   }), [
     session, isLoading, isRestoring, login, logout, refreshSession,
-    hasRole, isSydneyUser, isSydneyVerified,
+    hasRole, isSydneyUser, isSydneyVerified, profileSyncStatus, profileSyncMessage, retryProfileSync,
   ]);
 
   return (

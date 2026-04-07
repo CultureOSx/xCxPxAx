@@ -31,6 +31,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FilterChips from '@/components/ui/FilterChips';
 import EventCard from '@/components/Discover/EventCard';
 import { getStateForCity, GLOBAL_REGIONS } from '@/constants/locations';
+import type { EventData, PaginatedEventsResponse, Profile } from '@/shared/schema';
 
 // ─── City hero images ─────────────────────────────────────────────────────────
 
@@ -163,7 +164,7 @@ export default function CityScreen() {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
-  const { data: eventsData, isLoading, refetch } = useQuery({
+  const { data: eventsData, isLoading, refetch } = useQuery<PaginatedEventsResponse>({
     queryKey: ['/api/events', 'city', cityName, selectedCategories],
     queryFn: () =>
       api.events.list({
@@ -175,19 +176,19 @@ export default function CityScreen() {
     staleTime: 120_000,
   });
 
-  const { data: venuesData } = useQuery({
+  const { data: venuesData } = useQuery<Profile[]>({
     queryKey: ['/api/businesses', 'city', cityName],
     queryFn: () => api.businesses.list({ city: cityName, country: cityCountry }),
     staleTime: 300_000,
   });
 
-  const allEvents = useMemo(
-    () => (Array.isArray(eventsData) ? eventsData : (eventsData as any)?.events ?? []),
+  const allEvents = useMemo<EventData[]>(
+    () => eventsData?.events ?? [],
     [eventsData],
   );
 
-  const venues = useMemo(
-    () => (Array.isArray(venuesData) ? venuesData : (venuesData as any)?.businesses ?? []).slice(0, 6),
+  const venues = useMemo<Profile[]>(
+    () => (venuesData ?? []).slice(0, 6),
     [venuesData],
   );
 
@@ -195,7 +196,7 @@ export default function CityScreen() {
 
   const uniqueCultureTags = useMemo<string[]>(() => {
     const set = new Set<string>();
-    allEvents.forEach((e: any) => {
+    allEvents.forEach((e) => {
       (e.cultureTag ?? e.cultureTags ?? []).forEach((t: string) => set.add(t));
     });
     // Merge with CITY_META so chips are always populated even before events load
@@ -205,7 +206,7 @@ export default function CityScreen() {
 
   const uniqueLanguageTags = useMemo<string[]>(() => {
     const set = new Set<string>();
-    allEvents.forEach((e: any) => {
+    allEvents.forEach((e) => {
       (e.languageTags ?? []).forEach((t: string) => set.add(t));
     });
     cityMeta.languages.forEach((l) => set.add(l));
@@ -220,12 +221,12 @@ export default function CityScreen() {
     // Category filter: if multiple selected, show union
     if (selectedCategories.length > 1) {
       const lower = selectedCategories.map((c) => c.toLowerCase());
-      list = list.filter((e: any) => lower.includes((e.category ?? '').toLowerCase()));
+      list = list.filter((e) => lower.includes((e.category ?? '').toLowerCase()));
     }
 
     // Culture filter
     if (selectedCultures.length > 0) {
-      list = list.filter((e: any) => {
+      list = list.filter((e) => {
         const tags: string[] = [...(e.cultureTag ?? []), ...(e.cultureTags ?? [])];
         return selectedCultures.some((sel) =>
           tags.some((t) => t.toLowerCase().includes(sel.toLowerCase())),
@@ -235,7 +236,7 @@ export default function CityScreen() {
 
     // Language filter
     if (selectedLanguages.length > 0) {
-      list = list.filter((e: any) => {
+      list = list.filter((e) => {
         const langs: string[] = e.languageTags ?? [];
         return selectedLanguages.some((sel) =>
           langs.some((l) => l.toLowerCase().includes(sel.toLowerCase())),
@@ -483,7 +484,7 @@ export default function CityScreen() {
                   culture: 'Culture',
                   language: 'Language',
                 };
-                const icons: Record<FilterMode, string> = {
+                const icons: Record<FilterMode, keyof typeof Ionicons.glyphMap> = {
                   category: 'grid-outline',
                   culture: 'globe-outline',
                   language: 'chatbubble-outline',
@@ -495,7 +496,7 @@ export default function CityScreen() {
                     style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
                   >
                     <Ionicons
-                      name={icons[mode] as any}
+                      name={icons[mode]}
                       size={15}
                       color={active ? CultureTokens.indigo : colors.textTertiary}
                     />
@@ -545,7 +546,7 @@ export default function CityScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ gap: 12, paddingRight: 4 }}
               >
-                {allEvents.slice(0, 6).map((e: any) => (
+                {allEvents.slice(0, 6).map((e) => (
                   <Pressable
                     key={e.id}
                     onPress={() => router.push(`/event/${e.id}`)}
@@ -625,7 +626,7 @@ export default function CityScreen() {
                   </View>
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
-                    {events.map((event: any) => {
+                    {events.map((event) => {
                       const w = isDesktop
                         ? (gridWidth * 0.72 - gridGap) / 2
                         : cardWidth;
@@ -651,7 +652,7 @@ export default function CityScreen() {
                     Top Venues & Partners
                   </Text>
                   <View style={isDesktop ? { gap: 12 } : styles.venueGrid}>
-                    {venues.map((v: any) => (
+                    {venues.map((v) => (
                       <Pressable
                         key={v.id}
                         onPress={() => router.push(`/business/${v.id}`)}
@@ -784,14 +785,14 @@ function StatPill({
   label,
   colors,
 }: {
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   value: string;
   label: string;
   colors: ColorTheme;
 }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}>
-      <Ionicons name={icon as any} size={18} color={CultureTokens.indigo} style={{ marginBottom: 3 }} />
+      <Ionicons name={icon} size={18} color={CultureTokens.indigo} style={{ marginBottom: 3 }} />
       <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 20 }}>
         {value}
       </Text>

@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 
-import { HeroGlassIconButton } from '@/app/event/_components/HeroGlassIconButton';
+import { HeroGlassIconButton } from '@/components/event-detail/HeroGlassIconButton';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';

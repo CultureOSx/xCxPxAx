@@ -10,8 +10,8 @@ import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import type { EventData } from '@/shared/schema';
-import { api } from '@/lib/api';
+import type { EventData, User } from '@/shared/schema';
+import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -43,6 +43,31 @@ const SOCIAL_ICONS: { key: string; icon: keyof typeof Ionicons.glyphMap; color: 
 
 const _PD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const _PM = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+type ProfileDetailData = {
+  id: string;
+  name: string;
+  entityType: 'community' | 'business' | 'venue' | 'artist' | 'organizer' | 'restaurant' | 'brand' | 'creator' | 'user';
+  handle?: string;
+  avatarUrl?: string;
+  coverImageUrl?: string;
+  bio?: string;
+  description?: string;
+  city?: string;
+  country?: string;
+  location?: string | { lat: number; lng: number };
+  socialLinks?: Record<string, string | undefined>;
+  website?: string;
+  address?: string;
+  tags?: string[];
+  followersCount?: number;
+  membersCount?: number;
+  likes?: number;
+  culturePassId?: string;
+  contactEmail?: string;
+  phone?: string;
+  privacySettings?: User['privacySettings'];
+};
 
 function formatEventDate(dateStr: string, timeStr?: string | null): string {
   const p = dateStr.split('-');
@@ -81,14 +106,16 @@ export default function ProfileDetailScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const { data: profile, isLoading } = useQuery<any>({
+  const { data: profile, isLoading } = useQuery<ProfileDetailData>({
     queryKey: ['/api/profiles-and-users', id as string],
     queryFn: async () => {
       try {
         const entity = await api.profiles.get(id as string);
         return entity;
-      } catch (err: any) {
-        if (err?.status === 404 || err?.status === 403 || err?.status === 401 || err?.status === 400 || err?.message?.includes('found')) {
+      } catch (err) {
+        const status = err instanceof ApiError ? err.status : undefined;
+        const message = err instanceof Error ? err.message : '';
+        if (status === 404 || status === 403 || status === 401 || status === 400 || message.includes('found')) {
           try {
             const user = await api.users.get(id as string);
             return {
@@ -109,7 +136,7 @@ export default function ProfileDetailScreen() {
               privacySettings: user.privacySettings || { profileVisible: true, locationVisible: true },
             };
           } catch {
-            throw new Error('Could not find an Entity or a User with that ID.');
+            throw new Error('Could not find an entity or a user with that ID.');
           }
         }
         throw err;
@@ -178,7 +205,7 @@ export default function ProfileDetailScreen() {
   const entityColor = CultureTokens.indigo; 
   const entityIcon = profile.entityType === 'user' ? 'person' : ENTITY_ICONS[profile.entityType] || 'person';
   const socialLinks = (profile.socialLinks || {}) as Record<string, string | undefined>;
-  const activeSocials = SOCIAL_ICONS.filter(s => socialLinks[s.key] || (profile as Record<string, unknown>)[s.key]);
+  const activeSocials = SOCIAL_ICONS.filter((s) => socialLinks[s.key]);
   const tags = (profile.tags || []) as string[];
   
   const showLocation = isOwner || profile?.privacySettings?.locationVisible !== false;
@@ -358,7 +385,7 @@ export default function ProfileDetailScreen() {
                 <Text style={styles.sectionHeading}>Contact Details</Text>
                 <Card padding={0} style={{ overflow: 'hidden' }}>
                   {profile.website && (
-                    <Pressable style={styles.contactRowItem} onPress={() => Linking.openURL(profile.website)}>
+                    <Pressable style={styles.contactRowItem} onPress={() => Linking.openURL(profile.website!)}>
                       <View style={styles.iconCircleBlue}><Ionicons name="globe" size={18} color={entityColor} /></View>
                       <Text style={styles.contactTextLabel}>{profile.website}</Text>
                     </Pressable>
@@ -478,7 +505,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets, isDesktop: boolean) =
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
+    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as unknown as object }),
   },
   headerInfo: { gap: 4, zIndex: 2 },
   profileNameMain: {
@@ -626,7 +653,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets, isDesktop: boolean) =
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
     gap: 12,
-    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
+    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as unknown as object }),
   },
   mainFollowBtn: {
     flex: 1,
