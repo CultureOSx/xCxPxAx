@@ -40,11 +40,11 @@ import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 const TABS = [
   {
     name: 'index',
-    label: 'Discover',
-    icon: 'compass-outline' as const,
-    iconActive: 'compass' as const,
-    sfSymbol: 'safari' as const,
-    sfSymbolActive: 'safari.fill' as const,
+    label: 'Home',
+    icon: 'home-outline' as const,
+    iconActive: 'home' as const,
+    sfSymbol: 'house' as const,
+    sfSymbolActive: 'house.fill' as const,
   },
   {
     name: 'feed',
@@ -56,19 +56,11 @@ const TABS = [
   },
   {
     name: 'calendar',
-    label: 'Calendar',
+    label: 'Events',
     icon: 'calendar-outline' as const,
     iconActive: 'calendar' as const,
     sfSymbol: 'calendar' as const,
     sfSymbolActive: 'calendar' as const,
-  },
-  {
-    name: 'community',
-    label: 'Community',
-    icon: 'people-circle-outline' as const,
-    iconActive: 'people-circle' as const,
-    sfSymbol: 'person.2.circle' as const,
-    sfSymbolActive: 'person.2.circle.fill' as const,
   },
   {
     name: 'perks',
@@ -77,6 +69,14 @@ const TABS = [
     iconActive: 'gift' as const,
     sfSymbol: 'gift' as const,
     sfSymbolActive: 'gift.fill' as const,
+  },
+  {
+    name: 'profile',
+    label: 'Me',
+    icon: 'person-circle-outline' as const,
+    iconActive: 'person-circle' as const,
+    sfSymbol: 'person.crop.circle' as const,
+    sfSymbolActive: 'person.crop.circle.fill' as const,
   },
 ] as const;
 
@@ -113,11 +113,11 @@ const badge = StyleSheet.create({
 // ─── Individual tab item ──────────────────────────────────────────────────────
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
-  index: 'Open discovery home and featured rails',
-  feed: 'See cultural moments, stories, and live community posts',
-  calendar: 'View your calendar and saved dates',
-  community: 'Browse cultural communities',
+  index: 'Open home and discover curated events',
+  feed: 'See cultural moments, stories, and community posts',
+  calendar: 'Browse events and your personal calendar',
   perks: 'Open perks, offers, and rewards',
+  profile: 'View and edit your profile',
 };
 
 interface TabItemProps {

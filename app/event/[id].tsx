@@ -5,7 +5,7 @@ import {
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, usePathname, Stack } from 'expo-router';
 import Head from 'expo-router/head';
-import { goBackOrReplace } from '@/lib/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context';
 import { useSaved } from '@/contexts/SavedContext';
@@ -68,14 +68,7 @@ export default function EventDetailScreen() {
         <Text style={[TextStyles.body, { textAlign: 'center', marginBottom: 20, color: colors.textSecondary }]}>
           This event may have been removed or is currently unavailable.
         </Text>
-        <Button
-          onPress={() => goBackOrReplace('/(tabs)')}
-          variant="outline"
-          size="md"
-          leftIcon="home-outline"
-        >
-          Return Home
-        </Button>
+        <BackButton fallback="/(tabs)" style={{ marginTop: 16, alignSelf: 'center' }} accessibilityLabel="Return Home" />
       </View>
     );
   }
@@ -653,7 +646,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                     <HeroGlassIconButton
                       onPress={() => {
                         if (!isWeb) Haptics.selectionAsync();
-                        goBackOrReplace('/(tabs)');
+                        router.replace('/(tabs)');
                       }}
                       accessibilityRole="button"
                       accessibilityLabel="Go back"

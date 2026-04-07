@@ -94,11 +94,15 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
               <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
               <View style={styles.coverWrap}>
-                <Image
-                  source={{ uri: profile.imageUrl ?? '' }}
-                  style={styles.cover}
-                  contentFit="cover"
-                />
+                {profile.imageUrl ? (
+                  <Image
+                    source={{ uri: profile.imageUrl }}
+                    style={styles.cover}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[styles.cover, { backgroundColor: '#2C2A72' }]} />
+                )}
                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={StyleSheet.absoluteFill} />
                 <TouchableOpacity
                   style={[styles.closeBtn, { backgroundColor: colors.overlay }]}

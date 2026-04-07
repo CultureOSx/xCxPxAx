@@ -50,12 +50,21 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         accessibilityLabel={`Featured event: ${item.title}${item.venue ? `, at ${item.venue}` : ''}`}
         accessibilityHint="Opens event details"
       >
-        <Image
-          source={{ uri: item.imageUrl ?? '' }}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-          transition={200}
-        />
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <LinearGradient
+            colors={['#2C2A72', '#2EC4B6']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        )}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.88)']}
           style={StyleSheet.absoluteFillObject}

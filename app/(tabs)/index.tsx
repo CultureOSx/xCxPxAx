@@ -1,32 +1,148 @@
+/**
+ * Home — Discover Screen
+ *
+ * Section order (user-driven hierarchy):
+ *  1. Header          — greeting + time/weather
+ *  2. Search bar      — primary entry point
+ *  3. QuickLinks      — 8 app destinations
+ *  4. Hero Carousel   — featured events
+ *  5. Starting Soon   — urgency / live rail
+ *  6. Near You        — GPS proximity
+ *  7. Popular         — trending / attending
+ *  8. For Your Culture— personalised
+ *  9. Featured Artists— curated talent
+ * 10. Heritage Playlist— culture content
+ * 11. Indigenous Spotlight — always-on acknowledgement
+ * 12. Communities     — connection
+ * 13. Activities      — workshops & experiences
+ * 14. Browse Categories— explore by interest
+ * 15. Explore Cities  — geography
+ * 16. Restaurants     — dining
+ * 17. Movies          — entertainment
+ * 18. Shopping        — goods & markets
+ * 19. Perks           — rewards preview
+ */
+
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import {
+  View, Text, StyleSheet, RefreshControl,
+  Pressable, Platform,
+} from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
+
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { CategoryColors, CultureTokens } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { Button } from '@/components/ui/Button';
-import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { isCultureKeralaHost } from '@/lib/domainHost';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
 import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
 import { SuperAppLinks } from '@/components/Discover/SuperAppLinks';
 import { HeroCarousel } from '@/components/Discover/HeroCarousel';
-import { FeaturedArtistRail } from '@/components/Discover/FeaturedArtistRail';
-import { HeritagePlaylistRail } from '@/components/Discover/HeritagePlaylistRail';
-import { IndigenousSpotlight } from '@/components/Discover/IndigenousSpotlight';
 import { EventRail } from '@/components/Discover/EventRail';
 import { CommunityRail } from '@/components/Discover/CommunityRail';
 import { ActivityRail } from '@/components/Discover/ActivityRail';
+import { FeaturedArtistRail } from '@/components/Discover/FeaturedArtistRail';
+import { HeritagePlaylistRail } from '@/components/Discover/HeritagePlaylistRail';
+import { IndigenousSpotlight } from '@/components/Discover/IndigenousSpotlight';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
 import { PreviewRail } from '@/components/Discover/PreviewRail';
-import { isCultureKeralaHost } from '@/lib/domainHost';
+
+// ─── Search Bar ────────────────────────────────────────────────────────────────
+
+function SearchBar({
+  hPad,
+  colors,
+}: {
+  hPad: number;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const handlePress = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    router.push('/search');
+  };
+  return (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="search"
+      accessibilityLabel="Search events, communities, perks and more"
+      style={[
+        styles.searchBar,
+        {
+          marginHorizontal: hPad,
+          backgroundColor: colors.surfaceElevated,
+          borderColor: colors.borderLight,
+        },
+      ]}
+    >
+      <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+      <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
+        Events, communities, perks…
+      </Text>
+      <View style={[styles.searchMic, { borderColor: colors.borderLight }]}>
+        <Ionicons name="options-outline" size={15} color={colors.textTertiary} />
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── Kerala Domain Scoping ─────────────────────────────────────────────────────
+
+function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDiscoverData>) {
+  const isKeralaEvent = (event: EventData) => {
+    const haystack = [
+      event.title, event.description, event.category, event.city,
+      ...(event.tags ?? []), ...(event.cultureTag ?? []),
+      ...(event.cultureTags ?? []), ...(event.languageTags ?? []),
+    ].filter(Boolean).join(' ').toLowerCase();
+    return /kerala|malayali|malayalee|malayalam/.test(haystack);
+  };
+
+  const isKeralaCommunity = (community: Community) => {
+    const c = community as Community & {
+      cultureTags?: string[]; cultureIds?: string[];
+      languageIds?: string[]; languages?: string[]; description?: string;
+    };
+    const haystack = [
+      c.name, c.description,
+      ...(c.cultureTags ?? []), ...(c.cultureIds ?? []),
+      ...(c.languageIds ?? []), ...(c.languages ?? []),
+    ].filter(Boolean).join(' ').toLowerCase();
+    return /kerala|malayali|malayalee|malayalam/.test(haystack);
+  };
+
+  const scope = <T extends EventData | string>(arr: T[]): T[] =>
+    keralaDomain
+      ? arr.filter((i) => typeof i === 'string' || isKeralaEvent(i as EventData))
+      : arr;
+
+  return {
+    featured:    keralaDomain ? data.featuredEvents.filter(isKeralaEvent)    : data.featuredEvents,
+    soon:        scope(data.startingSoonRailData),
+    nearby:      scope(data.nearbyRailData),
+    popular:     scope(data.popularRailData),
+    forYou:      keralaDomain ? data.forYouEvents.filter(isKeralaEvent)      : data.forYouEvents,
+    communities: keralaDomain ? data.allCommunities.filter(isKeralaCommunity): data.allCommunities,
+    restaurants: keralaDomain
+      ? data.restaurantPreviewItems.filter(
+          (i) => i === 'skeleton' || /kerala|malayali|malayalee|malayalam/i.test(`${(i as {title:string}).title} ${(i as {subtitle?:string}).subtitle ?? ''}`),
+        )
+      : data.restaurantPreviewItems,
+    movies: keralaDomain
+      ? data.moviePreviewItems.filter(
+          (i) => i === 'skeleton' || /kerala|malayali|malayalee|malayalam/i.test(`${(i as {title:string}).title} ${(i as {subtitle?:string}).subtitle ?? ''}`),
+        )
+      : data.moviePreviewItems,
+  };
+}
+
+// ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
   const colors = useColors();
@@ -34,393 +150,231 @@ export default function DiscoverScreen() {
   const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
 
-  useEffect(() => {
-    setKeralaDomain(isCultureKeralaHost());
-  }, []);
+  useEffect(() => { setKeralaDomain(isCultureKeralaHost()); }, []);
 
-  const {
-    currentTime,
-    weatherSummary,
-    refreshing,
-    handleRefresh,
-    featuredEvents,
-    featuredArtists,
-    heritagePlaylist,
-    land,
-    indigenousOrganisations,
-    startingSoonRailData,
-    popularRailData,
-    nearbyRailData,
-    activityRailData,
-    forYouEvents,
-    eventsLoading,
-    allEvents,
-    allCommunities,
-    communitiesLoading,
-    activitiesLoading,
-    nearbyLoading,
-    discoverLoading,
-    state,
-    isAuthenticated,
-    restaurantPreviewItems,
-    restaurantsLoading,
-    moviePreviewItems,
-    moviesLoading,
-    shoppingPreviewItems,
-    shoppingLoading,
-    perksPreviewItems,
-    perksLoading,
-    eventsRailError,
-    communitiesRailError,
-    activitiesRailError,
-    nearbyRailError,
-    curationRailError,
-    curationLoading,
-    refetchEvents,
-    refetchCommunities,
-    refetchActivities,
-    refetchCuration,
-    retryNearbyProbe,
-  } = useDiscoverData();
+  const d = useDiscoverData();
+  const s = useKeralaScoping(keralaDomain, d);
 
-  const isKeralaEvent = (event: EventData) => {
-    const haystack = [
-      event.title,
-      event.description,
-      event.category,
-      event.city,
-      ...(event.tags ?? []),
-      ...(event.cultureTag ?? []),
-      ...(event.cultureTags ?? []),
-      ...(event.languageTags ?? []),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return /kerala|malayali|malayalee|malayalam/.test(haystack);
-  };
-
-  const isKeralaCommunity = (community: Community) => {
-    const c = community as Community & {
-      cultureTags?: string[];
-      cultureIds?: string[];
-      languageIds?: string[];
-      languages?: string[];
-      description?: string;
-    };
-    const haystack = [
-      c.name,
-      c.description,
-      ...(c.cultureTags ?? []),
-      ...(c.cultureIds ?? []),
-      ...(c.languageIds ?? []),
-      ...(c.languages ?? []),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return /kerala|malayali|malayalee|malayalam/.test(haystack);
-  };
-
-  const scopedEvents = keralaDomain ? allEvents.filter(isKeralaEvent) : allEvents;
-  const scopedCommunities = keralaDomain ? allCommunities.filter(isKeralaCommunity) : allCommunities;
-  const scopedFeaturedEvents = keralaDomain ? featuredEvents.filter(isKeralaEvent) : featuredEvents;
-  const scopedNearbyEvents = keralaDomain
-    ? nearbyRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item))
-    : nearbyRailData;
-  const scopedPopularEvents = keralaDomain
-    ? popularRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item))
-    : popularRailData;
-  const scopedForYouEvents = keralaDomain ? forYouEvents.filter(isKeralaEvent) : forYouEvents;
-  const scopedStartingSoon = keralaDomain
-    ? startingSoonRailData.filter((item) => typeof item === 'string' || isKeralaEvent(item))
-    : startingSoonRailData;
-  const scopedRestaurants = keralaDomain
-    ? restaurantPreviewItems.filter(
-        (item) =>
-          item === 'skeleton' ||
-          /kerala|malayali|malayalee|malayalam/i.test(`${item.title} ${item.subtitle ?? ''}`),
-      )
-    : restaurantPreviewItems;
-
-  const scopedMovies = keralaDomain
-    ? moviePreviewItems.filter(
-        (item) =>
-          item === 'skeleton' ||
-          /kerala|malayali|malayalee|malayalam/i.test(`${item.title} ${item.subtitle ?? ''}`),
-      )
-    : moviePreviewItems;
-
-  const keralaCtaPress = () => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  };
+  // Primary nearby rail: GPS first, fall back to starting-soon
+  const nearbyRailResolved   = s.nearby.filter((i) => typeof i !== 'string');
+  const hasNearby            = nearbyRailResolved.length > 0;
+  const primaryRailData      = hasNearby ? s.nearby : s.soon;
+  const primaryLoading       = d.nearbyLoading || (d.eventsLoading && s.soon.length === 0);
+  const primaryTitle         = hasNearby ? 'Near You' : 'Starting Soon';
+  const primarySubtitle      = hasNearby ? 'Events happening in your area' : 'Grab your spot before they start';
 
   return (
     <DiscoverScrollShell
       scrollBottomPad={scrollBottomPad}
-      contentContainerStyle={isDesktop ? { width: contentWidth, alignSelf: 'center' } : undefined}
+      contentContainerStyle={
+        isDesktop ? { width: contentWidth, alignSelf: 'center' } : undefined
+      }
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+        <RefreshControl
+          refreshing={d.refreshing}
+          onRefresh={d.handleRefresh}
+          tintColor={colors.primary}
+        />
       }
     >
+
+      {/* ① Greeting */}
       <DiscoverHeader
-        currentTime={currentTime}
-        weatherSummary={weatherSummary}
-        city={state.city || 'Sydney'}
-        country={state.country || 'Australia'}
-        isAuthenticated={isAuthenticated}
-        onRefresh={handleRefresh}
+        currentTime={d.currentTime}
+        weatherSummary={d.weatherSummary}
+        city={d.state.city || 'Sydney'}
+        country={d.state.country || 'Australia'}
+        isAuthenticated={d.isAuthenticated}
+        onRefresh={d.handleRefresh}
       />
 
-      <View style={{ paddingHorizontal: hPad, marginTop: 4 }}>
-        <CultureEngagementHero
-          title="Discover cultures that feel like home, and ones that surprise you."
-          subtitle="Your passport journey updates with every RSVP, story, and community join."
-          stat={`${scopedEvents.length} curated moments nearby`}
-          badge="Culture Explorer"
-          ctaLabel="See What Is Trending"
-          ctaRoute="/(tabs)/feed"
-          icon="earth"
-        />
-      </View>
+      {/* ② Search (removed) */}
 
-      <SuperAppLinks />
 
-      {keralaDomain ? (
-        <LiquidGlassPanel
-          borderRadius={MAIN_TAB_UI.cardRadius}
-          style={{ marginHorizontal: hPad, marginBottom: MAIN_TAB_UI.sectionGap }}
-          contentStyle={{ padding: 16, gap: 8 }}
-        >
-          <Text style={[styles.keralaEyebrow, { color: CultureTokens.gold }]}>CultureKerala</Text>
-          <Text style={[styles.keralaTitle, { color: colors.text }]}>
-            Kerala & Malayalee Communities Worldwide
-          </Text>
-          <Text style={[styles.keralaSub, { color: colors.textSecondary }]}>
-            Discover Malayali events, organisations, businesses, and community stories in one place.
-          </Text>
-          <View style={styles.keralaStatsRow}>
-            <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.keralaStatValue, { color: colors.text }]}>{scopedCommunities.length}</Text>
-              <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>communities</Text>
-            </View>
-            <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.keralaStatValue, { color: colors.text }]}>{scopedEvents.length}</Text>
-              <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>events</Text>
-            </View>
-            <View style={[styles.keralaStatChip, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.keralaStatValue, { color: colors.text }]}>
-                {scopedRestaurants.filter((item) => item !== 'skeleton').length}
-              </Text>
-              <Text style={[styles.keralaStatLabel, { color: colors.textSecondary }]}>places</Text>
-            </View>
-          </View>
-          <View style={styles.keralaCtaRow}>
-            <Button
-              variant="primary"
-              size="md"
-              pill
-              haptic={false}
-              onPress={() => {
-                keralaCtaPress();
-                router.push('/communities');
-              }}
-              accessibilityLabel="Explore Communities"
-              style={styles.keralaBtnGrow}
-            >
-              Explore Communities
-            </Button>
-            <Button
-              variant="outline"
-              size="md"
-              pill
-              haptic={false}
-              onPress={() => {
-                keralaCtaPress();
-                router.push('/events');
-              }}
-              accessibilityLabel="View Events"
-              style={styles.keralaBtnGrow}
-            >
-              View Events
-            </Button>
-          </View>
-        </LiquidGlassPanel>
-      ) : null}
-
-      <HeroCarousel events={scopedFeaturedEvents} />
-
-      <FeaturedArtistRail
-        data={featuredArtists}
-        isLoading={curationLoading}
-        errorMessage={curationRailError}
-        onRetry={() => void refetchCuration()}
-      />
-
-      <HeritagePlaylistRail data={heritagePlaylist} isLoading={curationLoading} />
-
-      <IndigenousSpotlight
-        land={land}
-        organisations={indigenousOrganisations}
-        festivals={[]}
-        businesses={[]}
-      />
-
+      {/* ③ Starting Soon — always visible */}
       <EventRail
         title="Starting Soon"
         subtitle="Grab your spot before they start"
         data={
-          (eventsLoading || discoverLoading) && scopedStartingSoon.length === 0
-            ? ['ss1', 'ss2', 'ss3']
-            : scopedStartingSoon
+          d.eventsLoading && s.soon.length === 0
+            ? ['sk1', 'sk2', 'sk3']
+            : s.soon
         }
-        isLoading={(eventsLoading || discoverLoading) && scopedStartingSoon.length === 0}
+        isLoading={d.eventsLoading}
         schedulingMode="live_and_countdown"
-        errorMessage={eventsRailError}
-        onRetry={() => void refetchEvents()}
-      />
-
-      <EventRail
-        title="Popular Near You"
-        subtitle="Trending in your area"
-        data={scopedPopularEvents}
-        isLoading={eventsLoading || discoverLoading}
         onSeeAll={() => router.push('/events')}
-        errorMessage={eventsRailError}
-        onRetry={() => void refetchEvents()}
+        errorMessage={d.eventsRailError}
+        onRetry={() => void d.refetchEvents()}
       />
 
-      <EventRail
-        title="Events in Your Area"
-        subtitle="Happening in your local community"
-        data={scopedNearbyEvents}
-        isLoading={nearbyLoading}
-        onSeeAll={() => router.push('/events')}
-        errorMessage={nearbyRailError}
-        onRetry={() => {
-          void refetchEvents();
-          void retryNearbyProbe();
-        }}
+      {/* ④ Quick-access links */}
+      <SuperAppLinks />
+
+      {/* ⑤ Hero Carousel — featured events */}
+      <HeroCarousel events={s.featured} />
+
+      {/* ⑥ Near You — only if distinct from primary */}
+      {hasNearby && (
+        <EventRail
+          title="Popular Near You"
+          subtitle="Trending in your area"
+          data={
+            (d.eventsLoading || d.discoverLoading) && s.popular.length === 0
+              ? ['sk1', 'sk2', 'sk3', 'sk4']
+              : s.popular
+          }
+          isLoading={d.eventsLoading || d.discoverLoading}
+          onSeeAll={() => router.push('/events')}
+          errorMessage={d.eventsRailError}
+          onRetry={() => void d.refetchEvents()}
+        />
+      )}
+
+      {/* ⑦ For Your Culture — personalised */}
+      {(s.forYou.length > 0 || d.eventsLoading) && (
+        <EventRail
+          title="For Your Culture"
+          subtitle="Personalised to your heritage"
+          data={
+            d.eventsLoading && s.forYou.length === 0
+              ? ['s1', 's2', 's3']
+              : s.forYou
+          }
+          isLoading={d.eventsLoading}
+          onSeeAll={() => router.push('/events')}
+          errorMessage={d.eventsRailError}
+          onRetry={() => void d.refetchEvents()}
+        />
+      )}
+
+      {/* ⑧ Featured Artists */}
+      <FeaturedArtistRail
+        data={d.featuredArtists}
+        isLoading={d.curationLoading}
+        errorMessage={d.curationRailError}
+        onRetry={() => void d.refetchCuration()}
       />
 
+      {/* ⑨ Heritage Playlists */}
+      <HeritagePlaylistRail
+        data={d.heritagePlaylist}
+        isLoading={d.curationLoading}
+      />
+
+      {/* ⑩ Indigenous Spotlight */}
+      <IndigenousSpotlight
+        land={d.land}
+        organisations={d.indigenousOrganisations}
+        festivals={[]}
+        businesses={[]}
+      />
+
+      {/* ⑪ Communities */}
       <CommunityRail
         title="Communities"
-        subtitle={keralaDomain ? 'Malayalee groups and cultural circles' : 'Connect with your culture'}
-        data={communitiesLoading ? ['s1', 's2', 's3', 's4'] : scopedCommunities}
-        isLoading={communitiesLoading}
-        errorMessage={communitiesRailError}
-        onRetry={() => void refetchCommunities()}
+        subtitle={
+          keralaDomain
+            ? 'Malayalee groups & cultural circles'
+            : 'Connect with your culture'
+        }
+        data={
+          d.communitiesLoading
+            ? ['s1', 's2', 's3', 's4']
+            : s.communities
+        }
+        isLoading={d.communitiesLoading}
+        errorMessage={d.communitiesRailError}
+        onRetry={() => void d.refetchCommunities()}
       />
 
+      {/* ⑫ Activities — workshops & experiences */}
       <ActivityRail
         title="Activities"
-        subtitle="Workshops and experiences"
-        data={activityRailData}
-        isLoading={activitiesLoading}
-        errorMessage={activitiesRailError}
-        onRetry={() => void refetchActivities()}
+        subtitle="Workshops, classes & experiences"
+        data={d.activityRailData}
+        isLoading={d.activitiesLoading}
+        onSeeAll={() => router.push('/activities')}
+        errorMessage={d.activitiesRailError}
+        onRetry={() => void d.refetchActivities()}
       />
 
+      {/* ⑬ Browse Categories */}
       <CategoryRail />
+
+      {/* ⑭ Explore Cities */}
       <CityRail />
 
-      <EventRail
-        title="For Your Culture"
-        subtitle="Personalised events matching your heritage"
-        data={eventsLoading && scopedForYouEvents.length === 0 ? ['s1', 's2', 's3'] : scopedForYouEvents}
-        isLoading={eventsLoading}
-        onSeeAll={() => router.push('/events')}
-        errorMessage={eventsRailError}
-        onRetry={() => void refetchEvents()}
-      />
-
+      {/* ⑮ Restaurants */}
       <PreviewRail
         title="Restaurants Near You"
         subtitle="Cultural dining in your neighbourhood"
         accentColor={CategoryColors.food}
-        items={scopedRestaurants}
-        isLoading={restaurantsLoading}
+        items={s.restaurants}
+        isLoading={d.restaurantsLoading}
         seeAllRoute="/restaurants"
       />
 
+      {/* ⑯ Movies & Entertainment */}
       <PreviewRail
         title="Movies & Entertainment"
-        subtitle="Cultural films, screenings and shows"
+        subtitle="Cultural films, screenings & shows"
         accentColor={CultureTokens.coral}
-        items={scopedMovies}
-        isLoading={moviesLoading}
+        items={s.movies}
+        isLoading={d.moviesLoading}
         seeAllRoute="/movies"
         cardStyle="portrait"
       />
 
+      {/* ⑰ Shopping & Markets */}
       <PreviewRail
         title="Shopping & Markets"
-        subtitle="Cultural goods, fashion and artisans"
+        subtitle="Cultural goods, fashion & artisans"
         accentColor={CultureTokens.teal}
-        items={shoppingPreviewItems}
-        isLoading={shoppingLoading}
+        items={d.shoppingPreviewItems}
+        isLoading={d.shoppingLoading}
         seeAllRoute="/shopping"
         cardStyle="landscape"
       />
 
+      {/* ⑱ Perks Preview */}
       <PreviewRail
         title="Perks Near You"
         subtitle="Exclusive rewards at cultural venues"
         accentColor={CultureTokens.indigo}
-        items={perksPreviewItems}
-        isLoading={perksLoading}
+        items={d.perksPreviewItems}
+        isLoading={d.perksLoading}
         seeAllRoute="/(tabs)/perks"
       />
+
     </DiscoverScrollShell>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  keralaEyebrow: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  keralaTitle: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontFamily: 'Poppins_700Bold',
-  },
-  keralaSub: {
-    fontSize: 13,
-    lineHeight: 19,
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
   },
-  keralaStatsRow: {
-    marginTop: 2,
-    flexDirection: 'row',
+  searchMic: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  keralaStatChip: {
-    flex: 1,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  keralaStatValue: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontFamily: 'Poppins_700Bold',
-  },
-  keralaStatLabel: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: 'Poppins_500Medium',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  keralaCtaRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  keralaBtnGrow: { flex: 1, minHeight: MAIN_TAB_UI.ctaMinHeight },
 });

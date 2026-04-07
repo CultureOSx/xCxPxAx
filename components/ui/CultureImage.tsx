@@ -42,9 +42,9 @@ const CultureImage = memo(({
     return undefined;
   }, [thumbhash, blurhash]);
 
-  // Final source with fallback
+  // Final source with fallback — treat empty string same as null to avoid browser broken-image icon
   const source = useMemo(() => {
-    if (!uri) return null;
+    if (!uri || uri.trim() === '') return null;
     return { uri };
   }, [uri]);
 

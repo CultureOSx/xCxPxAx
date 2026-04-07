@@ -6,7 +6,6 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, Stack } from 'expo-router';
@@ -20,13 +19,12 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, Spacing, gradients } from '@/constants/theme';
+import { CultureTokens, Spacing } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
 import { uploadPostImage } from '@/lib/storage';
-import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import {
   createCommunityPost,
@@ -219,31 +217,18 @@ export default function CultureFeedScreen() {
   }, []);
 
   const listHeaderComponent = useMemo(() => (
-    <>
-      <View style={{ paddingHorizontal: hPad, paddingTop: 12 }}>
-        <CultureEngagementHero
-          title="Share your culture moment and inspire the city."
-          subtitle="Post highlights, discover live events, and build your cultural streak with your community."
-          stat={`${filteredPosts.length} stories in your feed`}
-          badge="Daily Streak"
-          ctaLabel="Create Culture Post"
-          ctaRoute="/(tabs)/feed"
-          icon="camera"
-        />
-      </View>
-      <FeedListHeader
-        communities={communities}
-        authUser={authUser ?? null}
-        colors={colors}
-        isAuthenticated={isAuthenticated}
-        hPad={hPad}
-        city={state.city || ''}
-        onCreatePost={handleOpenCreatePost}
-        canPostStoryStatus={canPostStoryStatus}
-        onCreateStoryPost={handleOpenStoryPost}
-      />
-    </>
-  ), [communities, authUser, colors, isAuthenticated, hPad, state.city, handleOpenCreatePost, canPostStoryStatus, handleOpenStoryPost, filteredPosts.length]);
+    <FeedListHeader
+      communities={communities}
+      authUser={authUser ?? null}
+      colors={colors}
+      isAuthenticated={isAuthenticated}
+      hPad={hPad}
+      city={state.city || ''}
+      onCreatePost={handleOpenCreatePost}
+      canPostStoryStatus={canPostStoryStatus}
+      onCreateStoryPost={handleOpenStoryPost}
+    />
+  ), [communities, authUser, colors, isAuthenticated, hPad, state.city, handleOpenCreatePost, canPostStoryStatus, handleOpenStoryPost]);
 
   return (
     <ErrorBoundary>
@@ -254,18 +239,11 @@ export default function CultureFeedScreen() {
         }} 
       />
       <View style={[sc.root, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={gradients.culturepassBrand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={feedAmbient.mesh}
-          pointerEvents="none"
-        />
         {/* ── Header ── */}
         <TabPrimaryHeader
-          title="Culture Feed"
-          subtitle="Live moments, stories, and events from your communities."
-          locationLabel={`${locationLabel}${!isLoading && filteredPosts.length > 0 ? ` · ${filteredPosts.length} posts` : ''}`}
+          title="Feed"
+          subtitle={locationLabel}
+          locationLabel=""
           hPad={hPad}
           topInset={topInset}
           rightActions={
@@ -276,7 +254,6 @@ export default function CultureFeedScreen() {
                 onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); void handleRefresh(); }}
                 accessibilityRole="button"
                 accessibilityLabel="Refresh feed"
-                accessibilityHint="Reload posts for your area"
                 hitSlop={10}
                 disabled={refreshing}
                 android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 } : undefined}
@@ -287,22 +264,7 @@ export default function CultureFeedScreen() {
               </Pressable>
             </>
           }
-        >
-          <View style={sc.headerStatsRow}>
-            <View style={[sc.headerStatPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-              <Ionicons name="calendar-outline" size={13} color={CultureTokens.indigo} />
-              <Text style={[sc.headerStatText, { color: colors.textSecondary }]}>
-                {postCounts.eventCount} events
-              </Text>
-            </View>
-            <View style={[sc.headerStatPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-              <Ionicons name="people-outline" size={13} color={CultureTokens.teal} />
-              <Text style={[sc.headerStatText, { color: colors.textSecondary }]}>
-                {postCounts.commCount} updates
-              </Text>
-            </View>
-          </View>
-        </TabPrimaryHeader>
+        />
 
         {/* Sticky filter tabs — outside FlatList */}
         <LiquidGlassPanel
@@ -431,10 +393,6 @@ export default function CultureFeedScreen() {
     </ErrorBoundary>
   );
 }
-
-const feedAmbient = StyleSheet.create({
-  mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
-});
 
 const sc = StyleSheet.create({
   root:         { flex: 1 },

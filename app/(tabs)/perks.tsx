@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -32,7 +32,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_CARD_SHADOW_STRONG, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { api, type RewardsSummary } from '@/lib/api';
 import type { PerkData, Ticket } from '@/shared/schema';
@@ -598,16 +597,6 @@ export default function PerksTabScreen() {
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
-      <CultureEngagementHero
-        title="Rewards that make culture exploration addictive."
-        subtitle="Collect points, unlock tiers, and redeem real-world experiences near you."
-        stat={`${filteredPerks.length} perks ready to redeem`}
-        badge="Culture Explorer"
-        ctaLabel="Open Wallet & Rewards"
-        ctaRoute="/payment/wallet"
-        icon="trophy"
-      />
-
       <ExplorerBadge
         colors={colors}
         signedIn={isAuthenticated && !!userId}
@@ -718,21 +707,11 @@ export default function PerksTabScreen() {
   return (
     <ErrorBoundary>
       <View style={[s.screen, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={gradients.culturepassBrand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.ambientMesh}
-          pointerEvents="none"
-        />
-
-        {/* ── Header (liquid glass) ── */}
+        {/* ── Header ── */}
         <TabPrimaryHeader
-          title="Perks & Rewards"
-          subtitle="Unlock discounts, loyalty rewards, and premium experiences."
-          locationLabel={
-            `${locationLabel}${!perksLoading && viewMode === 'perks' && filteredPerks.length > 0 ? ` · ${filteredPerks.length} perks` : ''}`
-          }
+          title="Perks"
+          subtitle={locationLabel}
+          locationLabel=""
           hPad={hPad}
           topInset={topInset}
           rightActions={
@@ -868,7 +847,6 @@ export default function PerksTabScreen() {
 
 const s = StyleSheet.create({
   screen:         { flex: 1 },
-  ambientMesh:    { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
   iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
 

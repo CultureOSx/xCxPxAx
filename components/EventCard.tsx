@@ -8,6 +8,14 @@ import { router } from 'expo-router';
 import { useSaved } from '@/contexts/SavedContext';
 import * as Haptics from 'expo-haptics';
 import type { EventData } from '@/shared/schema';
+
+interface EventCardProps {
+  event: EventData;
+  isLive?: boolean;
+  canEdit?: boolean;
+  onEdit?: (event: EventData) => void;
+  onDelete?: (event: EventData) => void;
+}
 import { useColors } from '@/hooks/useColors';
 import { formatEventDateTime } from '@/lib/dateUtils';
 
@@ -16,7 +24,28 @@ interface EventCardProps {
   isLive?: boolean;
 }
 
-function EventCardInner({ event, isLive }: EventCardProps) {
+function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardProps) {
+    const [showUndo, setShowUndo] = useState(false);
+    const [pendingDelete, setPendingDelete] = useState(false);
+
+    const handleEdit = useCallback(() => {
+      if (onEdit) onEdit(event);
+    }, [event, onEdit]);
+
+    const handleDelete = useCallback(() => {
+      setPendingDelete(true);
+      setShowUndo(true);
+      setTimeout(() => {
+        if (pendingDelete && onDelete) onDelete(event);
+        setShowUndo(false);
+        setPendingDelete(false);
+      }, 3500);
+    }, [event, onDelete, pendingDelete]);
+
+    const handleUndo = useCallback(() => {
+      setShowUndo(false);
+      setPendingDelete(false);
+    }, []);
   const colors = useColors();
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const isSaved = isEventSaved(event.id);
@@ -164,6 +193,36 @@ function EventCardInner({ event, isLive }: EventCardProps) {
           />
         </View>
       </Pressable>
+
+      {canEdit && (
+        <View style={styles.crudActionsRow}>
+          <Pressable
+            onPress={handleEdit}
+            style={({ pressed }) => [styles.crudBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit event ${event.title}`}
+          >
+            <Ionicons name="create-outline" size={18} color={CultureTokens.indigo} />
+          </Pressable>
+          <Pressable
+            onPress={handleDelete}
+            style={({ pressed }) => [styles.crudBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete event ${event.title}`}
+          >
+            <Ionicons name="trash-outline" size={18} color={CultureTokens.coral} />
+          </Pressable>
+        </View>
+      )}
+
+      {showUndo && (
+        <View style={styles.snackbar} accessibilityLiveRegion="polite">
+          <Text style={styles.snackbarText}>Event deleted</Text>
+          <Pressable onPress={handleUndo} accessibilityRole="button" accessibilityLabel="Undo delete">
+            <Text style={styles.snackbarUndo}>Undo</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -175,6 +234,53 @@ export default EventCard;
 
 const styles = StyleSheet.create({
   card: {
+      crudActionsRow: {
+        flexDirection: 'row',
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        gap: 8,
+        zIndex: 10,
+      },
+      crudBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
+        borderWidth: 1,
+        borderColor: '#eee',
+      },
+      snackbar: {
+        position: 'absolute',
+        bottom: 18,
+        left: 18,
+        right: 18,
+        backgroundColor: '#222',
+        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 100,
+      },
+      snackbarText: {
+        color: '#fff',
+        fontSize: 15,
+        fontFamily: 'Poppins_500Medium',
+      },
+      snackbarUndo: {
+        color: CultureTokens.gold,
+        fontSize: 15,
+        fontFamily: 'Poppins_700Bold',
+        marginLeft: 18,
+      },
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,

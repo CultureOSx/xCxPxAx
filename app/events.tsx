@@ -16,6 +16,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import EventCard from '@/components/EventCard';
+import { useAuth } from '@/lib/auth';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
@@ -215,14 +216,36 @@ export default function AllEventsScreen() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => (
-    <Animated.View
-      entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
-      style={{ flex: 1 }}
-    >
-      <EventCard event={item} />
-    </Animated.View>
-  ), []);
+
+  const { user, hasRole } = useAuth();
+
+  const handleEditEvent = useCallback((event: EventData) => {
+    // Navigate to edit screen
+    router.push({ pathname: '/event/[id]', params: { id: event.id }, query: { edit: '1' } });
+  }, []);
+
+  const handleDeleteEvent = useCallback((event: EventData) => {
+    // TODO: Implement delete logic (API call, optimistic update, etc.)
+    // For now, just alert
+    Alert.alert('Delete Event', `Event "${event.title}" deleted (demo only).`);
+  }, []);
+
+  const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
+    const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));
+    return (
+      <Animated.View
+        entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+        style={{ flex: 1 }}
+      >
+        <EventCard
+          event={item}
+          canEdit={canEdit}
+          onEdit={handleEditEvent}
+          onDelete={handleDeleteEvent}
+        />
+      </Animated.View>
+    );
+  }, [user, hasRole, handleEditEvent, handleDeleteEvent]);
 
   const locationLabel = state.city
     ? `${state.city}${state.country ? `, ${state.country}` : ''}`
@@ -421,6 +444,33 @@ export default function AllEventsScreen() {
             />
           )}
         </View>
+      {/* ── Floating Action Button (FAB) for Create Event ── */}
+      <Pressable
+        onPress={() => router.push('/event/create')}
+        style={({ pressed }) => [
+          {
+            position: 'absolute',
+            right: isDesktop ? hPad + 32 : 24,
+            bottom: isDesktop ? 48 : 24,
+            zIndex: 100,
+            backgroundColor: CultureTokens.indigo,
+            borderRadius: 32,
+            width: 64,
+            height: 64,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.18,
+            shadowRadius: 12,
+            opacity: pressed ? 0.8 : 1,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Create new event"
+      >
+        <Ionicons name="add-circle" size={40} color="#fff" />
+      </Pressable>
       </View>
     </ErrorBoundary>
   );

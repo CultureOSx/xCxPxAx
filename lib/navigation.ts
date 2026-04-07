@@ -13,13 +13,7 @@ import { Platform } from 'react-native';
 // Plain navigation helpers
 // ---------------------------------------------------------------------------
 
-export function goBackOrReplace(fallback: Href) {
-  if (router.canGoBack()) {
-    router.back();
-    return;
-  }
-  router.replace(fallback);
-}
+
 
 export function goHome() {
   router.replace('/(tabs)');
@@ -39,6 +33,17 @@ export function navigateToProfile(identifier: string) {
   }
 }
 
+export function goBackOrReplace(fallback: string) {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace(fallback as Href);
+  }
+}
+
+/** Short alias used across the app — back if possible, else replace with fallback. */
+export const n = goBackOrReplace;
+
 export function shareEventLink(event: { id: string; title: string }) {
   const url = `culturepass://event/${event.id}`;
   if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
@@ -51,9 +56,14 @@ export function shareEventLink(event: { id: string; title: string }) {
 // React hooks (safe to use inside components)
 // ---------------------------------------------------------------------------
 
-export function useSafeBack(fallback: Href = '/(tabs)') {
+// Safe back navigation hook
+export function useSafeBack(fallback: string) {
   return useCallback(() => {
-    goBackOrReplace(fallback);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(fallback);
+    }
   }, [fallback]);
 }
 

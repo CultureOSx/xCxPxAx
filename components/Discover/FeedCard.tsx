@@ -80,7 +80,12 @@ export default function FeedCard({ item }: FeedCardProps) {
               {payload.imageUrl ? (
                 <Image source={{ uri: payload.imageUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
               ) : (
-                <LinearGradient colors={[CultureTokens.indigo, '#0B0B14']} style={StyleSheet.absoluteFillObject} />
+                <LinearGradient
+                  colors={[CultureTokens.indigo, '#EBF5FF']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
               )}
             </View>
             <View style={[styles.mediaInfoBlock, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>

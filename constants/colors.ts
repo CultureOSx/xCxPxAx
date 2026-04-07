@@ -52,12 +52,12 @@ export const CultureTokens = {
   // Core brand palette
   indigo: "#0066CC",        // CulturePass Blue — primary brand
   coral: "#FF5E5B",         // Movement Coral — action energy
-  gold: "#FFC857",          // Temple Gold — warm discovery
+  gold: "#0066CC",          // Changed from Temple Gold to Blue for visibility
   teal: "#2EC4B6",          // Ocean Teal — global belonging
   purple: "#AF52DE",        // Community Purple
 
   // Functional overrides
-  event: "#FFC857",         // Events now use Gold
+  event: "#0066CC",         // Events now use Blue
   eventSoft: "#FFF8E1",     // Event background tint
   artist: "#FF5E5B",        // Artists use Coral
   artistSoft: "#FFF1F0",    // Artist background tint
@@ -70,7 +70,7 @@ export const CultureTokens = {
 
   // Status overrides
   success: "#2EC4B6",       // Success = Teal
-  warning: "#FFC857",       // Warning = Gold
+  warning: "#0066CC",       // Warning = Blue
   error: "#FF5E5B",         // Error = Coral
   info: "#0066CC",          // Info = Blue
 } as const;

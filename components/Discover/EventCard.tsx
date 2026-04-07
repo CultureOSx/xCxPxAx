@@ -210,7 +210,7 @@ function StackedCardContent({
         </Text>
       </View>
       {event.priceLabel ? (
-        <View style={styles.stackedPriceRow}>
+        <View>
           <View
             style={[
               styles.stackedPricePill,
@@ -295,14 +295,7 @@ function EventCard({
               contentFit="cover"
               transition={300}
             />
-            <View style={styles.rankBadge}>
-              <Text style={styles.rankText}>{index + 1}</Text>
-            </View>
-            {event.isFeatured ? (
-              <View style={[styles.featuredBadge, { backgroundColor: CultureTokens.gold }]}>
-                <Ionicons name="star" size={9} color="#000" />
-              </View>
-            ) : null}
+            {/* Minimal UI: Remove rank and featured badge for clarity */}
           </View>
           <StackedCardContent
             event={event}
@@ -375,6 +368,11 @@ const styles = StyleSheet.create({
     height: 260,
     borderRadius: 24,
     overflow: 'hidden',
+    // Minimal shadow for clarity
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   stackedCard: {
     borderRadius: 22,
@@ -398,70 +396,50 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   stackedDate: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   stackedTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Poppins_700Bold',
-    lineHeight: 21,
+    lineHeight: 22,
+    marginBottom: 2,
   },
   stackedTitleHi: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 17,
+    lineHeight: 24,
   },
   stackedMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     maxWidth: '100%',
+    marginTop: 2,
+    marginBottom: 2,
   },
   stackedLocation: {
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
     flexShrink: 1,
-  },
-  stackedPriceRow: {
-    marginTop: 4,
-    alignItems: 'flex-start',
+    color: '#888',
   },
   stackedPricePill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
+    backgroundColor: '#F5F5F5',
+    marginTop: 2,
   },
   stackedPriceText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+    color: '#222',
   },
-  rankBadge: {
-    position: 'absolute',
-    bottom: 10,
-    left: 12,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  rankText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFF',
-    lineHeight: 20,
-  },
-  featuredBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // Removed featuredBadge and rankBadge for minimalism
   statusBadgeStacked: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -470,12 +448,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     marginBottom: 2,
+    backgroundColor: '#F5F5F5',
   },
   statusBadgeTextDark: {
     fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFF',
-    letterSpacing: 0.5,
+    fontFamily: 'Poppins_500Medium',
+    color: '#222',
+    letterSpacing: 0.3,
   },
   countdownRow: {
     flexDirection: 'row',

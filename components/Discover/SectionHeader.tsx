@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, FontFamily, FontSize, LineHeight, LiquidGlassTokens } from '@/constants/theme';
+import { CultureTokens, FontFamily, FontSize, LineHeight } from '@/constants/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -17,7 +18,13 @@ function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeader
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.accentBar, { backgroundColor: accent }]} />
+      {/* Gradient accent bar — "Vibrant & Block-based" visual identity */}
+      <LinearGradient
+        colors={[accent, accent === CultureTokens.indigo ? CultureTokens.teal : CultureTokens.indigo]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.accentBar}
+      />
 
       <View style={styles.textBlock}>
         <Text style={[styles.title, { color: colors.text }]} maxFontSizeMultiplier={1.6}>
@@ -55,8 +62,8 @@ const styles = StyleSheet.create({
   },
   accentBar: {
     width: 4,
-    height: 40,
-    borderRadius: LiquidGlassTokens.corner.valueRibbon / 8,
+    height: 42,
+    borderRadius: 3,
     flexShrink: 0,
   },
   textBlock: { flex: 1, gap: 3 },
@@ -76,9 +83,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    paddingVertical: 6,
-    paddingLeft: 4,
+    paddingVertical: 10,
+    paddingLeft: 8,
+    paddingRight: 2,
     flexShrink: 0,
+    minHeight: 44,
   },
   seeAllText: {
     fontSize: FontSize.chip,

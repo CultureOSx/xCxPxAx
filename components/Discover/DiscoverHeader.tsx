@@ -96,7 +96,27 @@ function DiscoverHeaderComponent({
           <Text style={[styles.mobileGreeting, { color: colors.text, fontSize: greetingFontSize }]} numberOfLines={1}>
             {greeting}
           </Text>
-          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>
+          <Text
+            style={[
+              styles.mobileTagline,
+              {
+                color: CultureTokens.gold,
+                fontSize: 14,
+                lineHeight: 18,
+                textAlign: 'left',
+                marginTop: 2,
+                marginBottom: 2,
+                alignSelf: 'flex-start',
+                maxWidth: '98%',
+                flexShrink: 1,
+              },
+            ]}
+            numberOfLines={2}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
+          >
+            {HEADER_TAGLINE}
+          </Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
               <LocationPicker variant="text" />

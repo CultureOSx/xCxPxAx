@@ -9,7 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { goBackOrReplace } from '@/lib/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import * as Haptics from 'expo-haptics';
 
@@ -44,9 +44,7 @@ function UpdateDetailContent() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { paddingTop: topInset + 12, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-          <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/updates/index')} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </Pressable>
+          <BackButton fallback="/updates/index" style={styles.backBtn} accessibilityLabel="Go back" />
         </View>
         <View style={[styles.content, { paddingHorizontal: hPad }]}>
           <View style={styles.metaRow}>

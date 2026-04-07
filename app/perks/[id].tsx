@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { goBackOrReplace } from '@/lib/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
@@ -99,9 +99,7 @@ export default function PerkDetailScreen() {
         <View style={[styles.container, { paddingTop: topInset, justifyContent: 'center', alignItems: 'center' }]}> 
           <Ionicons name="gift-outline" size={48} color={colors.textSecondary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>{isLoading ? 'Loading...' : 'Perk not found'}</Text>
-          <Pressable onPress={() => goBackOrReplace('/(tabs)')} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={styles.backLink}>Go Back</Text>
-          </Pressable>
+          <BackButton fallback="/(tabs)" style={styles.backLink} accessibilityLabel="Go back" />
         </View>
       </ErrorBoundary>
     );

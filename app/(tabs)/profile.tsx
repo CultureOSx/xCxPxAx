@@ -17,12 +17,11 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
-import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
@@ -171,13 +170,6 @@ export default function ProfileScreen() {
             void queryClient.invalidateQueries({ queryKey: ['currentUser'] });
           }}
         />
-        <LinearGradient
-          colors={gradients.culturepassBrand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={profileGlass.ambientMesh}
-          pointerEvents="none"
-        />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
@@ -219,18 +211,6 @@ export default function ProfileScreen() {
           >
             <TabBrandHeader />
           </LiquidGlassPanel>
-
-          <View style={{ paddingHorizontal: hPad, paddingTop: 12 }}>
-            <CultureEngagementHero
-              title="Your Cultural Passport is growing every week."
-              subtitle="Track badges, saved events, and milestones to unlock your next identity tier."
-              stat={`${fmt((displayUser?.followersCount ?? 0) + (displayUser?.likesCount ?? 0))} social signals`}
-              badge={tierConf.label}
-              ctaLabel="Explore New Events"
-              ctaRoute="/events"
-              icon="ribbon"
-            />
-          </View>
 
           <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: 10 }]}>
             {!isDesktop && (
@@ -707,10 +687,6 @@ export default function ProfileScreen() {
 }
 
 const profileGlass = StyleSheet.create({
-  ambientMesh: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.06,
-  },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
