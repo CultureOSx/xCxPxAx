@@ -63,9 +63,9 @@ function DiscoverHeaderComponent({
         accessibilityLabel="CulturePass home"
       >
         <View style={[styles.logoCircle, { backgroundColor: colors.primarySoft }]}>
-          <Image source={require('@/assets/images/icon.png')} style={styles.logoImg} contentFit="contain" />
+          <Image source={require('@/assets/images/culturepass-logo.png')} style={styles.logoImg} contentFit="cover" />
         </View>
-        <BrandWordmark size="sm" withTagline light={!isWeb} />
+        <BrandWordmark size="sm" light={!isWeb} maxWidth={112} />
       </Pressable>
 
       <View style={styles.flex1} />
@@ -147,7 +147,7 @@ function DiscoverHeaderComponent({
               {weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
             <Text style={[styles.desktopGreeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE</Text>
+            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE • CELEBRATE CULTURE</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
@@ -184,7 +184,7 @@ function DiscoverHeaderComponent({
           <Text style={[styles.mobileGreeting, { color: colors.text }]} numberOfLines={1}>
             {greeting}
           </Text>
-          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE</Text>
+          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE • CELEBRATE CULTURE</Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
               <LocationPicker variant="text" />

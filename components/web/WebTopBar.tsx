@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, Modal, ScrollView, Platform } from "
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import Constants from "expo-constants";
 import { router, usePathname } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
@@ -69,6 +70,7 @@ export function WebTopBar() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { isDesktop } = useLayout();
   const pathname = usePathname();
+  const appVersion = Constants.expoConfig?.version ?? Constants.nativeApplicationVersion ?? 'dev';
 
   const displayName = user?.displayName ?? user?.username ?? user?.id?.slice(0, 8) ?? 'You';
   const initials = displayName.trim().split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -140,10 +142,14 @@ export function WebTopBar() {
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
           >
-            <Ionicons name="globe-outline" size={18} color="#fff" />
+            <Image
+              source={require('@/assets/images/culturepass-logo.png')}
+              style={styles.logoMark}
+              contentFit="cover"
+            />
           </LinearGradient>
           <View style={styles.appNameCol}>
-            <BrandWordmark size="sm" withTagline light />
+            <BrandWordmark size="sm" withTagline light tagline="BELONG ANYWHERE" maxWidth={120} />
           </View>
         </Pressable>
 
@@ -378,7 +384,7 @@ export function WebTopBar() {
 
               <View style={styles.menuFooter}>
                 <Text style={[styles.menuFooterText, { color: colors.textTertiary }]}>
-                  CulturePass · v1.0.0
+                  {`CulturePass · v${appVersion}`}
                 </Text>
               </View>
             </ScrollView>
@@ -476,11 +482,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoMark: {
+    width: 32,
+    height: 32,
   },
   appNameCol: {
     marginLeft: 8,
     marginTop: 2,
     justifyContent: 'center',
+    maxWidth: 124,
+    overflow: 'hidden',
+    flexShrink: 1,
   },
   appName: {
     color: '#fff',

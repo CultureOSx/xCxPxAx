@@ -12,9 +12,9 @@ import { useColors, useIsDark } from '@/hooks/useColors';
 import { routeWithRedirect } from '@/lib/routes';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { Image } from 'expo-image';
-import Svg, { Defs, Stop, Text as SvgText, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import Constants from 'expo-constants';
 import { Button } from '@/components/ui/Button';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 interface NavItem {
@@ -142,37 +142,6 @@ function AvatarWithRing({
           </LinearGradient>
         )}
       </View>
-    </View>
-  );
-}
-
-// ─── Gradient Wordmark (Logo Name) ───────────────────────────────────────────
-const SIDEBAR_WORDMARK_W = 138;
-const SIDEBAR_WORDMARK_H = 26;
-const SIDEBAR_WORDMARK_FS = 21;
-
-function SidebarGradientWordmark() {
-  const gradId = `cpwm_${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  return (
-    <View style={{ height: SIDEBAR_WORDMARK_H, maxWidth: '100%' }} pointerEvents="none">
-      <Svg height={SIDEBAR_WORDMARK_H} width={SIDEBAR_WORDMARK_W} viewBox={`0 0 ${SIDEBAR_WORDMARK_W} ${SIDEBAR_WORDMARK_H}`}>
-        <Defs>
-          <SvgLinearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={CultureTokens.indigo} />
-            <Stop offset="100%" stopColor={CultureTokens.coral} />
-          </SvgLinearGradient>
-        </Defs>
-        <SvgText
-          fill={`url(#${gradId})`}
-          fontSize={SIDEBAR_WORDMARK_FS}
-          fontFamily="Poppins_800ExtraBold"
-          x={0}
-          y={SIDEBAR_WORDMARK_FS * 0.9}
-          letterSpacing={-0.6}
-        >
-          CulturePass
-        </SvgText>
-      </Svg>
     </View>
   );
 }
@@ -335,7 +304,7 @@ export function WebSidebar() {
             </View>
             <View style={s.brandTextCol}>
               <View style={s.brandNameGradientWrap}>
-                <SidebarGradientWordmark />
+                <BrandWordmark size="sm" maxWidth={132} />
               </View>
               <Text
                 style={s.brandTaglineOnDark}
@@ -344,6 +313,14 @@ export function WebSidebar() {
                 minimumFontScale={0.78}
               >
                 BELONG ANYWHERE
+              </Text>
+              <Text
+                style={s.brandSubTaglineOnDark}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                Discover. Connect. Belong.
               </Text>
             </View>
           </View>
@@ -740,6 +717,14 @@ const getSidebarStyles = (colors: ColorTheme) => {
       flexShrink: 1,
       textTransform: 'uppercase',
       opacity: 0.9,
+    },
+    brandSubTaglineOnDark: {
+      fontSize: 10.5,
+      fontFamily: 'Poppins_500Medium',
+      color: 'rgba(255,255,255,0.72)',
+      lineHeight: 13.5,
+      flexShrink: 1,
+      marginTop: 1,
     },
     headerMetaStrip: {
       alignSelf: 'stretch',
