@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { CardTokens } from '@/constants/theme';
+import { CardTokens, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import type { Community } from '@/shared/schema';
 import {
@@ -55,7 +55,7 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
       accessibilityLabel={`View ${community.name} community`}
     >
       {/* Cover area */}
-      <View style={styles.cover}>
+      <View style={[styles.cover, { backgroundColor: colors.backgroundSecondary }]}>
         {community.imageUrl ? (
           <Image
             source={{ uri: community.imageUrl }}
@@ -151,7 +151,6 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     height: 160,
-    backgroundColor: '#1A1A2E',
     overflow: 'hidden',
     position: 'relative',
   },
@@ -201,7 +200,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#2C2A72',
+    backgroundColor: CultureTokens.indigo,
     alignItems: 'center',
     justifyContent: 'center',
   },

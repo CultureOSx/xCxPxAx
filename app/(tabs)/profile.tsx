@@ -309,6 +309,8 @@ export default function ProfileScreen() {
                     style={hero.statItem}
                     onPress={() => router.push('/profile/edit')}
                     accessibilityRole="button"
+                    accessibilityLabel={`${fmt(stat.value)} ${stat.label}`}
+                    accessibilityHint="Opens profile edit"
                   >
                     <Text style={[hero.statNum, { color: colors.text }]}>{fmt(stat.value)}</Text>
                     <Text style={[hero.statLabel, { color: colors.textTertiary }]}>{stat.label}</Text>

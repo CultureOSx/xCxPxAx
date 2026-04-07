@@ -9,6 +9,8 @@ export const MAIN_TAB_UI = {
   sectionGapLarge: 24,
   sectionGapSmall: 12,
   ctaMinHeight: 44,
+  /** Standard bottom padding for scrollable tab content — clears the tab bar + safe area. */
+  scrollBottomPad: 120,
   iconSize: {
     xs: 10,
     sm: 14,

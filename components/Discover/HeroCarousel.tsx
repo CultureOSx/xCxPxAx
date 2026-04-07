@@ -46,6 +46,9 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
           pressed && isWeb && { opacity: 0.9 },
         ]}
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: item.id } })}
+        accessibilityRole="button"
+        accessibilityLabel={`Featured event: ${item.title}${item.venue ? `, at ${item.venue}` : ''}`}
+        accessibilityHint="Opens event details"
       >
         <Image
           source={{ uri: item.imageUrl ?? '' }}

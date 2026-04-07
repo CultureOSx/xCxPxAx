@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import type { ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
@@ -30,10 +30,22 @@ export function TabPrimaryHeader({
     <LiquidGlassPanel
       borderRadius={0}
       bordered={false}
-      style={{
-        borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-        borderBottomColor: colors.borderLight,
-      }}
+      style={[
+        {
+          borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
+          borderBottomColor: colors.border,
+        },
+        Platform.OS === 'web' && {
+          boxShadow: '0px 2px 12px rgba(0,0,0,0.07)',
+        } as object,
+        Platform.OS === 'ios' && {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+        },
+        Platform.OS === 'android' && { elevation: 3 },
+      ]}
       contentStyle={[styles.wrap, { paddingHorizontal: hPad }]}
     >
       <View style={styles.row}>

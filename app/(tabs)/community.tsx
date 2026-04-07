@@ -221,17 +221,16 @@ export default function CommunitiesScreen() {
         />
 
         {/* ── Header (liquid glass) ── */}
-        <Animated.View entering={reducedMotion ? undefined : FadeInUp.duration(320).springify()}>
-          <TabPrimaryHeader
-            title="Communities"
-            subtitle="Find local circles, diaspora groups, and cultural forums."
-            locationLabel={
-              `${locationLabel}${!isLoading && filteredCommunities.length > 0 ? ` · ${filteredCommunities.length.toLocaleString()} shown` : ''}`
-            }
-            hPad={hPad}
-          >
-            <View style={s.headerControlsRow}>
-              <View style={s.searchActionsRow}>
+        <TabPrimaryHeader
+          title="Communities"
+          subtitle="Find local circles, diaspora groups, and cultural forums."
+          locationLabel={
+            `${locationLabel}${!isLoading && filteredCommunities.length > 0 ? ` · ${filteredCommunities.length.toLocaleString()} shown` : ''}`
+          }
+          hPad={hPad}
+        >
+          <View style={s.headerControlsRow}>
+            <View style={s.searchActionsRow}>
                 <View style={[s.searchBar, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
                   <Ionicons name="search" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
                   <TextInput
@@ -265,7 +264,6 @@ export default function CommunitiesScreen() {
               </View>
             </View>
           </TabPrimaryHeader>
-        </Animated.View>
 
         {/* ── Shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>

@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Animated, {
-  FadeInDown, FadeInUp, SlideInDown,
+  FadeInDown, FadeInUp, SlideInDown, useReducedMotion,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -316,10 +316,11 @@ function ExplorerBadge({
   rewardsError: boolean;
   onRetryRewards: () => void;
 }) {
+  const reducedMotionBadge = useReducedMotion();
   if (!signedIn) {
     return (
       <Animated.View
-        entering={!isWeb ? FadeInDown.duration(350) : undefined}
+        entering={reducedMotionBadge || isWeb ? undefined : FadeInDown.duration(350)}
         style={[eb.explorerCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
       >
         <LinearGradient
@@ -389,7 +390,7 @@ function ExplorerBadge({
 
   return (
     <Animated.View
-      entering={!isWeb ? FadeInDown.duration(350) : undefined}
+      entering={reducedMotionBadge || isWeb ? undefined : FadeInDown.duration(350)}
       style={[eb.explorerCard, { backgroundColor: colors.surface }]}
     >
       <LinearGradient
@@ -453,9 +454,10 @@ const eb = StyleSheet.create({
 // ─── Membership Upgrade Banner ────────────────────────────────────────────────
 
 function MembershipUpgradeBanner() {
+  const reducedMotionBanner = useReducedMotion();
   return (
     <Animated.View
-      entering={!isWeb ? FadeInDown.duration(400).delay(100) : undefined}
+      entering={reducedMotionBanner || isWeb ? undefined : FadeInDown.duration(400).delay(100)}
       style={{ marginBottom: 20 }}
     >
       <LinearGradient
@@ -514,6 +516,7 @@ export default function PerksTabScreen() {
   const topInset    = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 0 : insets.bottom;
 
+  const reducedMotion = useReducedMotion();
   const [viewMode, setViewMode]           = useState<'quests' | 'perks'>('quests');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -578,20 +581,20 @@ export default function PerksTabScreen() {
 
   const renderQuestItem = useCallback(({ item, index }: { item: ActiveQuest; index: number }) => (
     <Animated.View
-      entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
     >
       <QuestCard quest={item} onContinue={() => handleQuestContinue(item)} />
     </Animated.View>
-  ), [handleQuestContinue]);
+  ), [handleQuestContinue, reducedMotion]);
 
   const renderPerkItem = useCallback(({ item, index }: { item: ReturnType<typeof usePerks>['data'] extends (infer T)[] | undefined ? T : never; index: number }) => (
     <Animated.View
-      entering={FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
       style={{ flex: 1 }}
     >
       <PerkCard perk={item as Parameters<typeof PerkCard>[0]['perk']} />
     </Animated.View>
-  ), []);
+  ), [reducedMotion]);
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
@@ -724,35 +727,32 @@ export default function PerksTabScreen() {
         />
 
         {/* ── Header (liquid glass) ── */}
-        <Animated.View entering={FadeInUp.duration(320).springify()}>
-          <TabPrimaryHeader
-            title="Perks & Rewards"
-            subtitle="Unlock discounts, loyalty rewards, and premium experiences."
-            locationLabel={
-              `${locationLabel}${!perksLoading && viewMode === 'perks' && filteredPerks.length > 0 ? ` · ${filteredPerks.length} perks` : ''}`
-            }
-            hPad={hPad}
-            rightActions={
-              <Pressable
-                onPress={() => {
-                  void refetch();
-                  if (userId) {
-                    void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
-                    void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
-                  }
-                }}
-                style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-                accessibilityRole="button"
-                accessibilityLabel="Refresh perks"
-              >
-                {isRefetching
-                  ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
-                  : <Ionicons name="refresh" size={18} color={colors.text} />}
-              </Pressable>
-            }
-          >
-          </TabPrimaryHeader>
-        </Animated.View>
+        <TabPrimaryHeader
+          title="Perks & Rewards"
+          subtitle="Unlock discounts, loyalty rewards, and premium experiences."
+          locationLabel={
+            `${locationLabel}${!perksLoading && viewMode === 'perks' && filteredPerks.length > 0 ? ` · ${filteredPerks.length} perks` : ''}`
+          }
+          hPad={hPad}
+          rightActions={
+            <Pressable
+              onPress={() => {
+                void refetch();
+                if (userId) {
+                  void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+                  void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
+                }
+              }}
+              style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh perks"
+            >
+              {isRefetching
+                ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
+                : <Ionicons name="refresh" size={18} color={colors.text} />}
+            </Pressable>
+          }
+        />
 
         {/* ── Content shell ── */}
         <View style={[s.shell, isDesktop && s.shellDesktop]}>
@@ -763,7 +763,7 @@ export default function PerksTabScreen() {
               renderItem={renderQuestItem}
               ListHeaderComponent={renderHeader}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: bottomInset + 120 }]}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad }]}
               ListEmptyComponent={
                 !userId ? (
                   <View style={[s.emptyState, { paddingVertical: 48 }]}>
@@ -816,7 +816,7 @@ export default function PerksTabScreen() {
               ListHeaderComponent={renderHeader}
               numColumns={numPerkColumns}
               columnWrapperStyle={numPerkColumns > 1 ? { gap: colGap } : undefined}
-              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap, paddingBottom: bottomInset + 120 }]}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap, paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad }]}
               showsVerticalScrollIndicator={false}
               refreshing={isRefetching}
               onRefresh={refetch}

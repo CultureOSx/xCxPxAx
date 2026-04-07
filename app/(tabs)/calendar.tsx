@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable,
-  Platform, ActivityIndicator,
+  Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,11 +89,17 @@ export default function CalendarScreen() {
     return set;
   }, [personalEvents]);
 
-  const { data: eventsPage, isLoading } = useEventsList({
+  const { data: eventsPage, isLoading, refetch: refetchEvents } = useEventsList({
     city: user?.city,
     country: user?.country,
     pageSize: 300,
   });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try { await refetchEvents(); } finally { setRefreshing(false); }
+  }, [refetchEvents]);
   const allEventsRaw = useMemo(() => eventsPage?.events ?? [], [eventsPage]);
 
   const { data: tickets = [] } = useQuery<Ticket[]>({
@@ -422,8 +428,15 @@ export default function CalendarScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { void handleRefresh(); }}
+              tintColor={CultureTokens.indigo}
+            />
+          }
           contentContainerStyle={{
-            paddingBottom: 120,
+            paddingBottom: MAIN_TAB_UI.scrollBottomPad,
             maxWidth: contentMaxWidth,
             width: '100%',
             alignSelf: 'center',

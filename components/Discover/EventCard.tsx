@@ -312,7 +312,9 @@ function EventCard({
             onHoverIn: () => setIsHovered(true),
             onHoverOut: () => setIsHovered(false),
           } as Record<string, unknown>)}
+          accessibilityRole="button"
           accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
+          accessibilityHint="Opens event details"
         >
           <Image
             source={event.imageUrl ? { uri: event.imageUrl } : undefined}
@@ -360,7 +362,9 @@ function EventCard({
           onHoverIn: () => setIsHovered(true),
           onHoverOut: () => setIsHovered(false),
         } as Record<string, unknown>)}
+        accessibilityRole="button"
         accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
+        accessibilityHint="Opens event details"
       >
         <Image
           source={event.imageUrl ? { uri: event.imageUrl } : undefined}
@@ -389,7 +393,6 @@ const styles = StyleSheet.create({
     height: 260,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#000',
   },
   stackedCard: {
     borderRadius: 22,

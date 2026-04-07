@@ -45,11 +45,15 @@ function cityToCoordinates(city?: string): { latitude: number; longitude: number
 }
 
 async function fetchWeather(lat: number, lon: number) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&timezone=auto`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Weather fetch failed');
-  const data = await res.json();
-  return data.current_weather;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { current_weather?: { temperature: number; weathercode: number } };
+    return data.current_weather ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function useDiscoverData() {
@@ -75,22 +79,18 @@ export function useDiscoverData() {
     let cancelled = false;
     fetchWeather(coords.lat, coords.lon)
       .then(w => {
-        if (!cancelled) {
-          const condition =
-            w.weathercode === 0 ? 'Clear' :
-            w.weathercode <= 3  ? 'Partly Cloudy' :
-            w.weathercode <= 49 ? 'Foggy' :
-            w.weathercode <= 67 ? 'Rainy' :
-            w.weathercode <= 77 ? 'Snowy' :
-            w.weathercode <= 82 ? 'Showers' :
-            'Stormy';
-          setWeatherSummary(`${Math.round(w.temperature)}°C ${condition}`);
-        }
+        if (cancelled || !w) return;
+        const condition =
+          w.weathercode === 0 ? 'Clear' :
+          w.weathercode <= 3  ? 'Partly Cloudy' :
+          w.weathercode <= 49 ? 'Foggy' :
+          w.weathercode <= 67 ? 'Rainy' :
+          w.weathercode <= 77 ? 'Snowy' :
+          w.weathercode <= 82 ? 'Showers' :
+          'Stormy';
+        setWeatherSummary(`${Math.round(w.temperature)}°C ${condition}`);
       })
-      .catch((err: unknown) => {
-        if (!cancelled) setWeatherSummary('');
-        if (__DEV__) console.error('[useDiscoverData] weather fetch failed:', err);
-      });
+      .catch(() => undefined);
     return () => { cancelled = true; };
   }, [coords.lat, coords.lon]);
 

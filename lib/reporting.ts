@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 
 export function logError(error: unknown, context?: Record<string, any>) {
   if (__DEV__) {
-    console.error('Logged Error:', error, context);
+    console.warn('[logError]', context?.context ?? 'unknown', error);
   }
 }
 
