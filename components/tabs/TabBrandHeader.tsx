@@ -11,7 +11,7 @@ import { CultureTokens } from '@/constants/theme';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
 const isWeb = Platform.OS === 'web';
-const HEADER_TAGLINE = 'Discover ❤️ Enjoy Culture.';
+const HEADER_TAGLINE = 'Discover Culture. Belong Anywhere.';
 
 interface TabBrandHeaderProps {
   showMenu?: boolean;
@@ -136,10 +136,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   brandName: {
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: Platform.OS === 'web' ? 18 : 20,
+    lineHeight: Platform.OS === 'web' ? 22 : 25,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   brandNameCompact: {
     fontSize: 16,

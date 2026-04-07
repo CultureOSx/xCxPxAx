@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Colors, CultureTokens, SpringConfig } from '@/constants/theme';
+import { CultureTagRow } from '@/components/ui/CultureTag';
 import { useColors } from '@/hooks/useColors';
 import {
   DISCOVER_EVENT_LIVE_WINDOW_MS,
@@ -16,8 +17,8 @@ import {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const RAIL_CARD_WIDTH = 248;
-const RAIL_IMAGE_HEIGHT = 152;
+const RAIL_CARD_WIDTH = 256;
+const RAIL_IMAGE_HEIGHT = 168;
 
 function isFreePriceLabel(label: string | undefined): boolean {
   return Boolean(label && label.trim().toLowerCase() === 'free');
@@ -37,6 +38,8 @@ interface EventCardProps {
     priceLabel?: string;
     isFeatured?: boolean;
     distanceKm?: number;
+    cultureTag?: string[];
+    cultureTags?: string[];
   };
   highlight?: boolean;
   index?: number;
@@ -175,26 +178,39 @@ function StackedCardContent({
   const isToday = eventDate.toDateString() === now.toDateString();
   const isStartingNext = !isLive && isToday;
 
-  if (schedulingMode === 'live_and_countdown') {
-    return (
-      <View style={styles.stackedBody}>
-        <StackedLiveSoonSchedule event={event} />
-        <Text style={[styles.stackedDate, { color: CultureTokens.gold }]}>
-          {formatEventDateTimeBadge(event.date, event.time)}
+  const liveOrNextBadge = schedulingMode === 'live_and_countdown' ? (
+    <StackedLiveSoonSchedule event={event} />
+  ) : isLive ? (
+    <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.error }]}>
+      <View style={styles.pulseDot} />
+      <Text style={styles.statusBadgeTextDark}>now live</Text>
+    </View>
+  ) : isStartingNext ? (
+    <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.indigo }]}>
+      <Text style={styles.statusBadgeTextDark}>Starting next</Text>
+    </View>
+  ) : null;
+
+  return (
+    <View style={styles.stackedBody}>
+      {liveOrNextBadge}
+      <Text style={[styles.stackedDate, { color: CultureTokens.gold }]}>
+        {formatEventDateTimeBadge(event.date, event.time)}
+      </Text>
+      <Text
+        style={[styles.stackedTitle, { color: colors.text }, highlight && styles.stackedTitleHi]}
+        numberOfLines={2}
+      >
+        {event.title}
+      </Text>
+      <View style={styles.stackedMetaRow}>
+        <Ionicons name="location-outline" size={13} color={colors.textTertiary} />
+        <Text style={[styles.stackedLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+          {event.venue || event.city || ' '}
         </Text>
-        <Text
-          style={[styles.stackedTitle, { color: colors.text }, highlight && styles.stackedTitleHi]}
-          numberOfLines={2}
-        >
-          {event.title}
-        </Text>
-        <View style={styles.stackedMetaRow}>
-          <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
-          <Text style={[styles.stackedLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-            {event.venue || event.city || ' '}
-          </Text>
-        </View>
-        {event.priceLabel ? (
+      </View>
+      {event.priceLabel ? (
+        <View style={styles.stackedPriceRow}>
           <View
             style={[
               styles.stackedPricePill,
@@ -207,56 +223,12 @@ function StackedCardContent({
           >
             <Text style={[styles.stackedPriceText, { color: colors.text }]}>{event.priceLabel}</Text>
           </View>
-        ) : null}
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.stackedBody}>
-      {isLive ? (
-        <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.error }]}>
-          <View style={styles.pulseDot} />
-          <Text style={styles.statusBadgeTextDark}>now live</Text>
-        </View>
-      ) : isStartingNext ? (
-        <View style={[styles.statusBadgeStacked, { backgroundColor: CultureTokens.indigo }]}>
-          <Text style={styles.statusBadgeTextDark}>Starting next</Text>
         </View>
       ) : null}
-
-      <Text style={[styles.stackedDate, { color: CultureTokens.gold }]}>
-        {formatEventDateTimeBadge(event.date, event.time)}
-      </Text>
-
-      <Text
-        style={[styles.stackedTitle, { color: colors.text }, highlight && styles.stackedTitleHi]}
-        numberOfLines={2}
-      >
-        {event.title}
-      </Text>
-
-      <View style={styles.stackedMetaRow}>
-        <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
-        <Text style={[styles.stackedLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-          {event.venue || event.city || ' '}
-        </Text>
-      </View>
-
-      {event.priceLabel ? (
-        <View
-          style={[
-            styles.stackedPricePill,
-            { borderColor: colors.border, backgroundColor: colors.backgroundSecondary },
-            isFreePriceLabel(event.priceLabel) && {
-              backgroundColor: CultureTokens.teal + '22',
-              borderColor: CultureTokens.teal + '55',
-            },
-          ]}
-        >
-          <Text style={[styles.stackedPriceText, { color: colors.text }]}>{event.priceLabel}</Text>
-        </View>
-      ) : null}
+      {(() => {
+        const tags = Array.from(new Set([...(event.cultureTag ?? []), ...(event.cultureTags ?? [])]));
+        return tags.length > 0 ? <CultureTagRow tags={tags} max={2} /> : null;
+      })()}
     </View>
   );
 }
@@ -316,12 +288,22 @@ function EventCard({
           accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
           accessibilityHint="Opens event details"
         >
-          <Image
-            source={event.imageUrl ? { uri: event.imageUrl } : undefined}
-            style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
-            contentFit="cover"
-            transition={300}
-          />
+          <View style={{ position: 'relative' }}>
+            <Image
+              source={event.imageUrl ? { uri: event.imageUrl } : undefined}
+              style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+              contentFit="cover"
+              transition={300}
+            />
+            <View style={styles.rankBadge}>
+              <Text style={styles.rankText}>{index + 1}</Text>
+            </View>
+            {event.isFeatured ? (
+              <View style={[styles.featuredBadge, { backgroundColor: CultureTokens.gold }]}>
+                <Ionicons name="star" size={9} color="#000" />
+              </View>
+            ) : null}
+          </View>
           <StackedCardContent
             event={event}
             highlight={highlight}
@@ -411,50 +393,74 @@ const styles = StyleSheet.create({
   stackedBody: {
     paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 14,
-    alignItems: 'center',
-    gap: 6,
+    paddingBottom: 16,
+    alignItems: 'flex-start',
+    gap: 4,
   },
   stackedDate: {
     fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    textAlign: 'center',
   },
   stackedTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
     lineHeight: 21,
   },
   stackedTitleHi: {
-    fontSize: 17,
+    fontSize: 16,
     lineHeight: 22,
   },
   stackedMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    justifyContent: 'center',
     maxWidth: '100%',
   },
   stackedLocation: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Poppins_500Medium',
     flexShrink: 1,
-    textAlign: 'center',
+  },
+  stackedPriceRow: {
+    marginTop: 4,
+    alignItems: 'flex-start',
   },
   stackedPricePill: {
-    marginTop: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
     borderWidth: 1,
   },
   stackedPriceText: {
     fontSize: 11,
     fontFamily: 'Poppins_700Bold',
+  },
+  rankBadge: {
+    position: 'absolute',
+    bottom: 10,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  rankText: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFF',
+    lineHeight: 20,
+  },
+  featuredBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusBadgeStacked: {
     flexDirection: 'row',

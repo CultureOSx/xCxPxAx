@@ -7,6 +7,7 @@ import {
   Pressable,
   Platform,
   RefreshControl,
+  Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
@@ -253,6 +254,19 @@ export default function CityScreen() {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
+  const handleShare = useCallback(async () => {
+    haptic();
+    const shareUrl = `https://culturepass.app/city/${encodeURIComponent(cityName)}?country=${encodeURIComponent(cityCountry)}`;
+    const message = `Explore ${cityName} on CulturePass — cultural events, communities & experiences.\n${shareUrl}`;
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: `${cityName} City Guide`, text: message, url: shareUrl });
+      } else {
+        await Share.share({ title: `${cityName} City Guide`, message, url: shareUrl });
+      }
+    } catch {}
+  }, [haptic, cityName, cityCountry]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
@@ -410,7 +424,7 @@ export default function CityScreen() {
                 contentStyle={styles.heroGlassCircleInner}
               >
                 <Pressable
-                  onPress={haptic}
+                  onPress={() => { void handleShare(); }}
                   style={styles.heroIconHit}
                   accessibilityLabel="Share city guide"
                   accessibilityRole="button"

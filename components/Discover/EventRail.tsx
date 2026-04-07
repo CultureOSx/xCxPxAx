@@ -9,7 +9,7 @@ import { RailErrorBanner } from './RailErrorBanner';
 import type { EventData } from '@/shared/schema';
 
 /** Stacked Discover card width — match `EventCard` rail width. */
-const RAIL_CARD_WIDTH = 248;
+const RAIL_CARD_WIDTH = 256;
 const RAIL_ITEM_GAP = 24;
 
 interface EventRailProps {

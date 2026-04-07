@@ -25,6 +25,7 @@ import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { FilterChipRow } from '@/components/FilterChip';
 import { EventRow } from '@/components/calendar/EventRow';
+import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
 import {
   DAYS, DAY_LETTERS, MONTHS, getDaysInMonth,
@@ -682,15 +683,18 @@ export default function CalendarScreen() {
                     </Pressable>
                   </View>
                   {upcomingEvents.length > 0 ? (
-                    upcomingEvents.map((event) => (
-                      <EventRow
-                        key={event.id}
-                        event={event}
-                        colors={colors}
-                        isAuthenticated={isAuthenticated}
-                        isWeb={isWeb}
-                      />
-                    ))
+                    <View style={s.eventsGrid}>
+                      {upcomingEvents.map((event, index) => (
+                        <View key={event.id} style={s.eventsGridItem}>
+                          <EventCard
+                            event={event}
+                            index={index}
+                            layout="stacked"
+                            containerWidth={(contentMaxWidth - contentHorizontalPadding * 2 - MAIN_TAB_UI.sectionGapSmall) / 2}
+                          />
+                        </View>
+                      ))}
+                    </View>
                   ) : (
                     <CalendarEmptyState colors={colors} title="No upcoming events" subtitle="Check back soon" />
                   )}
@@ -735,22 +739,25 @@ export default function CalendarScreen() {
 
           {/* ── Mobile: upcoming events (no date selected) ── */}
           {!isDesktopWeb && !selectedDate && upcomingEvents.length > 0 && (
-            <View style={s.eventsSection}>
+            <View style={[s.eventsSection, { paddingHorizontal: hPad }]}>
               <View style={s.sectionRow}>
                 <Text style={[s.sectionTitle, { color: colors.text }]}>All Upcoming</Text>
                 <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
                   <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
                 </Pressable>
               </View>
-              {upcomingEvents.map((event) => (
-                <EventRow
-                  key={event.id}
-                  event={event}
-                  colors={colors}
-                  isAuthenticated={isAuthenticated}
-                  isWeb={isWeb}
-                />
-              ))}
+              <View style={s.eventsGrid}>
+                {upcomingEvents.map((event, index) => (
+                  <View key={event.id} style={s.eventsGridItem}>
+                    <EventCard
+                      event={event}
+                      index={index}
+                      layout="stacked"
+                      containerWidth={Math.floor((width - hPad * 2 - MAIN_TAB_UI.sectionGapSmall) / 2)}
+                    />
+                  </View>
+                ))}
+              </View>
             </View>
           )}
 
@@ -978,6 +985,14 @@ const s = StyleSheet.create({
   dayText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
   dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1 },
   eventDot: { width: 5, height: 5, borderRadius: 3 },
+
+  eventsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: MAIN_TAB_UI.sectionGapSmall,
+    marginTop: MAIN_TAB_UI.sectionGapSmall,
+  },
+  eventsGridItem: { flex: 0 },
 
   // Sections
   eventsSection: { paddingHorizontal: 16, paddingTop: MAIN_TAB_UI.sectionGapLarge },

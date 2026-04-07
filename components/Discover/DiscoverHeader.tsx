@@ -9,7 +9,7 @@ import { LocationPicker } from '@/components/LocationPicker';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
 
-const HEADER_TAGLINE = 'Discover ❤️ Enjoy Culture.';
+const HEADER_TAGLINE = 'Discover Culture. Belong Anywhere.';
 
 interface DiscoverHeaderProps {
   currentTime: string;
@@ -38,6 +38,15 @@ function DiscoverHeaderComponent({
   }, [user?.displayName, user?.username]);
 
   const greeting = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+
+  // Scale greeting font down for longer names so it never wraps
+  const greetingFontSize = useMemo(() => {
+    const len = greeting.length;
+    if (len <= 20) return FontSize.hero;       // ≤ "Good morning, Alex" → full size
+    if (len <= 26) return FontSize.hero - 2;   // medium names
+    if (len <= 32) return FontSize.hero - 4;   // longer names
+    return FontSize.hero - 6;                  // very long names
+  }, [greeting]);
   const mobileMetaLabel = [currentTime, weatherSummary].filter(Boolean).join(' · ');
 
   const TopBarContent = (
@@ -72,7 +81,7 @@ function DiscoverHeaderComponent({
               {currentTime}
               {weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
-            <Text style={[styles.desktopGreeting, { color: colors.text }]}>{greeting}</Text>
+            <Text style={[styles.desktopGreeting, { color: colors.text, fontSize: Math.min(36, greetingFontSize + 8) }]}>{greeting}</Text>
             <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
@@ -84,7 +93,7 @@ function DiscoverHeaderComponent({
         </View>
       ) : (
         <View style={[styles.mobileHero, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.mobileGreeting, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.mobileGreeting, { color: colors.text, fontSize: greetingFontSize }]} numberOfLines={1}>
             {greeting}
           </Text>
           <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>

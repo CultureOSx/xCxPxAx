@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import CultureImage from '@/components/ui/CultureImage';
+import { CultureTagRow } from '@/components/ui/CultureTag';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens, SpringConfig } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
@@ -98,14 +99,8 @@ function PerkCardInner({ perk, containerWidth, highlight }: PerkCardProps) {
           {perk.description}
         </Text>
 
-        {(perk.cultureTags && perk.cultureTags.length > 0) && (
-          <View style={styles.tagsRow}>
-            {perk.cultureTags.slice(0, 2).map((tag, idx) => (
-              <View key={`ptag-${idx}`} style={[styles.pill, { borderColor: colors.border }]}>
-                <Text style={[styles.pillText, { color: colors.textTertiary }]}>{tag}</Text>
-              </View>
-            ))}
-          </View>
+        {perk.cultureTags && perk.cultureTags.length > 0 && (
+          <CultureTagRow tags={perk.cultureTags} max={2} />
         )}
       </View>
     </AnimatedPressable>

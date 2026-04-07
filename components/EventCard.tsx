@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
+import { CultureTagRow } from '@/components/ui/CultureTag';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useSaved } from '@/contexts/SavedContext';
@@ -123,11 +124,7 @@ function EventCardInner({ event, isLive }: EventCardProps) {
                   </Text>
                 </View>
               ) : null}
-              {cultureTags.map((tag, idx) => (
-                <View key={`culture-${idx}`} style={styles.richTagPill}>
-                  <Text style={styles.richTagText}>{tag}</Text>
-                </View>
-              ))}
+              <CultureTagRow tags={cultureTags} max={2} />
               {(event.accessibility ?? []).slice(0, 1).map((tag, idx) => (
                 <View key={`acc-${idx}`} style={[styles.richTagPill, { borderColor: CultureTokens.coral + '60' }]}>
                   <Ionicons name="body-outline" size={10} color={CultureTokens.coral} style={{ marginRight: 2 }} />
