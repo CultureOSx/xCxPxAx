@@ -11,184 +11,42 @@ import { useColors } from '@/hooks/useColors';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
 import { useRole } from '@/hooks/useRole';
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens, CardTokens } from '@/constants/theme';
 import { useLayout } from '@/hooks/useLayout';
 import { getPostcodeData, getPostcodesByPlace } from '@shared/location/australian-postcodes';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type SubmitType =
-  | 'event'
-  | 'festival'
-  | 'concert'
-  | 'workshop'
-  | 'movie'
-  | 'restaurant'
-  | 'shop'
-  | 'activity'
-  | 'professional'
-  | 'organisation'
-  | 'business'
-  | 'artist'
-  | 'perk';
-
-const TYPE_CONFIG: Record<SubmitType, { label: string; description: string; icon: string; color: string }> = {
-  event: { label: 'Event', description: 'Timed happenings & community gatherings', icon: 'calendar', color: CultureTokens.gold },
-  festival: { label: 'Festival', description: 'Multi-day festivals & celebrations', icon: 'color-filter', color: CultureTokens.gold },
-  concert: { label: 'Concert / show', description: 'Live music, theatre & performances', icon: 'musical-notes', color: CultureTokens.coral },
-  workshop: { label: 'Workshop / class', description: 'Classes, talks & skill sessions', icon: 'school', color: CultureTokens.teal },
-  movie: { label: 'Movie', description: 'Cinema listings & screenings', icon: 'film', color: CultureTokens.movie },
-  restaurant: { label: 'Dining', description: 'Restaurant & café listings', icon: 'restaurant', color: CultureTokens.teal },
-  shop: { label: 'Shopping', description: 'Retail & boutique listings', icon: 'bag-handle', color: CultureTokens.indigo },
-  activity: { label: 'Activity', description: 'Tours, experiences & cultural sites', icon: 'compass', color: CultureTokens.venue },
-  professional: { label: 'Professional', description: 'Practice & professional profile page', icon: 'briefcase', color: CultureTokens.indigo },
-  organisation: { label: 'Organisation', description: 'Cultural groups & communities', icon: 'people', color: CultureTokens.teal },
-  business: { label: 'Business', description: 'General business profile', icon: 'business', color: CultureTokens.indigo },
-  artist: { label: 'Artist', description: 'Musicians, dancers & creatives', icon: 'color-palette', color: CultureTokens.coral },
-  perk: { label: 'Perk', description: 'Discounts & member benefits', icon: 'gift', color: CultureTokens.gold },
-};
-
-const EVENT_LIKE: SubmitType[] = ['event', 'festival', 'concert', 'workshop'];
-const PROFILE_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
-const ORG_LISTING_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
-const TYPE_ORDER: SubmitType[] = [
-  'event', 'festival', 'concert', 'workshop', 'movie', 'restaurant', 'shop', 'activity',
-  'professional', 'organisation', 'business', 'artist', 'perk',
-];
-
-function isEventLike(tab: SubmitType): boolean {
-  return EVENT_LIKE.includes(tab);
-}
-
-function normalizeSubmitType(type?: string, variant?: string): SubmitType {
-  const t = (type || 'event').toLowerCase().trim();
-  const v = (variant || '').toLowerCase().trim();
-  if (t === 'event') {
-    if (v === 'festival') return 'festival';
-    if (v === 'concert' || v === 'music') return 'concert';
-    if (v === 'workshop' || v === 'class') return 'workshop';
-    return 'event';
-  }
-  if ((t === 'organisation' || t === 'org') && v === 'professional') return 'professional';
-  if (t === 'dining' || t === 'food') return 'restaurant';
-  if (t === 'retail' || t === 'shopping' || t === 'store') return 'shop';
-  if (t === 'cinema' || t === 'films') return 'movie';
-  const allowed = Object.keys(TYPE_CONFIG) as SubmitType[];
-  if (allowed.includes(t as SubmitType)) return t as SubmitType;
-  return 'event';
-}
-
-function resolveEventCategory(tab: SubmitType, formCategory: string): string {
-  if (tab === 'festival') return formCategory || 'Festival';
-  if (tab === 'concert') return formCategory || 'Music';
-  if (tab === 'workshop') return formCategory || 'Workshop';
-  return formCategory || 'Cultural';
-}
-
-const EVENT_CATEGORIES   = ['Cultural', 'Music', 'Dance', 'Festival', 'Workshop', 'Religious', 'Food', 'Sports'];
-const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
-const BIZ_CATEGORIES     = ['Restaurant', 'Retail', 'Services', 'Beauty', 'Tech', 'Grocery'];
-const ARTIST_GENRES      = ['Music', 'Dance', 'Visual Arts', 'Theatre', 'Film', 'Literature'];
-const ACTIVITY_CATEGORIES = ['Tour', 'Workshop', 'Cultural Site', 'Outdoor', 'Family', 'Food & drink'];
-const SHOP_CATEGORIES    = ['Fashion', 'Gifts', 'Books', 'Grocery', 'Electronics', 'Home', 'Beauty'];
-const CUISINE_OPTIONS    = ['Asian', 'Middle Eastern', 'European', 'African', 'Latin', 'Fusion', 'Cafe', 'Seafood', 'Vegetarian', 'General'];
-const MOVIE_GENRES       = ['Drama', 'Comedy', 'Documentary', 'Horror', 'Family', 'Arthouse', 'World cinema'];
-const PRICE_RANGE_OPTS   = ['$', '$$', '$$$', '$$$$'] as const;
-const LISTING_PLACEHOLDER_IMG = 'https://placehold.co/1200x800/e8e8f0/2C2A72?text=CulturePass';
-const PERK_TYPES = [
-  { key: 'discount_percent', label: '% Discount',  icon: 'pricetag-outline'    },
-  { key: 'discount_fixed',   label: '$ Discount',  icon: 'cash-outline'        },
-  { key: 'free_ticket',      label: 'Free Ticket', icon: 'ticket-outline'      },
-  { key: 'early_access',     label: 'Early Access',icon: 'time-outline'        },
-  { key: 'vip_upgrade',      label: 'VIP Upgrade', icon: 'star-outline'        },
-  { key: 'cashback',         label: 'Cashback',    icon: 'refresh-circle-outline' },
-];
-const PERK_CATEGORIES = ['tickets', 'events', 'dining', 'shopping', 'wallet'];
-
-const initialForm = {
-  name: '', description: '', city: '', state: '', postcode: '', country: 'Australia',
-  contactEmail: '', phone: '', website: '', category: '', abn: '',
-  instagram: '', facebook: '', youtube: '', twitterX: '', linkedin: '', airpal: '',
-  date: '', time: '', venue: '', address: '',
-  price: '', capacity: '', externalTicketUrl: '', communityId: '',
-  hostName: '', hostEmail: '', hostPhone: '', sponsors: '',
-  perkType: '', discountValue: '', providerName: '', perkCategory: '',
-  runtime: '', movieRating: 'M', director: '', language: 'English', priceRange: '$$',
-};
-
-type FormState = typeof initialForm;
-type FieldErrors = Partial<Record<keyof FormState | 'perkType', string>>;
-type DerivedLocation = { city: string; state: string; country: string; postcode: number; latitude: number; longitude: number };
-
-// ─── Helper components ────────────────────────────────────────────────────────
-
-function Card({ children, colors, hPad }: { children: React.ReactNode; colors: ReturnType<typeof useColors>; hPad: number }) {
-  return (
-    <View style={[card.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight, marginHorizontal: hPad }]}>
-      {children}
-    </View>
-  );
-}
-
-function SectionLabel({ label, icon, accent, colors }: { label: string; icon: string; accent: string; colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={card.sectionHead}>
-      <LinearGradient
-        colors={[accent + '28', accent + '10']}
-        style={card.sectionIconBg}
-      >
-        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={15} color={accent} />
-      </LinearGradient>
-      <Text style={[card.sectionTitle, { color: colors.text }]}>{label}</Text>
-    </View>
-  );
-}
-
-function Field({
-  label, required, hint, error, children,
-}: {
-  label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode;
-}) {
-  const colors = useColors();
-  return (
-    <View style={card.field}>
-      <View style={card.fieldLabelRow}>
-        <Text style={[card.fieldLabel, { color: colors.textSecondary }]}>
-          {label}{required ? <Text style={{ color: colors.error }}> *</Text> : null}
-        </Text>
-        {hint ? <Text style={[card.fieldHint, { color: colors.textTertiary }]}>{hint}</Text> : null}
-      </View>
-      {children}
-      {error ? <Text style={[card.fieldError, { color: colors.error }]}>{error}</Text> : null}
-    </View>
-  );
-}
-
-const card = StyleSheet.create({
-  wrap: {
-    borderRadius: CardTokens.radius, borderWidth: StyleSheet.hairlineWidth,
-    padding: 16, marginBottom: 12,
-    ...Platform.select({
-      web: { boxShadow: '0px 1px 6px rgba(0,0,0,0.06)' } as object,
-      default: { shadowColor: 'black', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
-    }),
-  },
-  sectionHead:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionIconBg: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  field:         { marginBottom: 12 },
-  fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  fieldLabel:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  fieldHint:     { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  fieldError:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 4 },
-});
+import {
+  ACTIVITY_CATEGORIES,
+  ARTIST_GENRES,
+  BIZ_CATEGORIES,
+  CUISINE_OPTIONS,
+  EVENT_CATEGORIES,
+  LISTING_PLACEHOLDER_IMG,
+  MOVIE_GENRES,
+  ORG_CATEGORIES,
+  ORG_LISTING_TABS,
+  PERK_CATEGORIES,
+  PERK_TYPES,
+  PRICE_RANGE_OPTS,
+  PROFILE_TABS,
+  SHOP_CATEGORIES,
+  TYPE_CONFIG,
+  TYPE_ORDER,
+  initialForm,
+  isEventLike,
+  normalizeSubmitType,
+  resolveEventCategory,
+  type DerivedLocation,
+  type FieldErrors,
+  type FormState,
+  type SubmitType,
+} from './_lib/config';
+import { Card, Field, SectionLabel } from './_components/FormPrimitives';
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -244,8 +102,7 @@ export default function SubmitScreen() {
 
   const submitEventMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await apiRequest('POST', '/api/events', data);
-      return res.json() as Promise<Record<string, unknown>>;
+      return api.events.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -261,8 +118,7 @@ export default function SubmitScreen() {
 
   const submitProfileMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await apiRequest('POST', '/api/profiles', data);
-      return res.json() as Promise<Record<string, unknown>>;
+      return api.profiles.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
@@ -277,7 +133,7 @@ export default function SubmitScreen() {
 
   const submitPerkMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      await apiRequest('POST', '/api/perks', data);
+      await api.perks.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/perks'] });
@@ -373,7 +229,7 @@ export default function SubmitScreen() {
       const formData = new FormData();
       formData.append('image', blob as unknown as Blob, 'upload.jpg');
       const uploaded = await api.uploads.image(formData);
-      await apiRequest('POST', '/api/media/attach', {
+      await api.media.attach({
         targetType,
         targetId,
         imageUrl: uploaded.imageUrl,

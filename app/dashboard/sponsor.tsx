@@ -20,7 +20,7 @@ import { useRole } from '@/hooks/useRole';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import type { EventData } from '@/shared/schema';
@@ -279,8 +279,8 @@ function SponsorDashboardContent() {
     queryKey: ['/api/events', 'sponsor', userId],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', `/api/events?organizerId=${userId}&pageSize=100`);
-        return await res.json() as { events: SponsoredEvent[] };
+        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 100 });
+        return { events: (res.events ?? []) as SponsoredEvent[] };
       } catch {
         return { events: [] };
       }

@@ -7,6 +7,7 @@ import Svg, {
   Stop 
 } from 'react-native-svg';
 import { CultureTokens } from '@/constants/theme';
+import { TAGLINE_PRIMARY } from '@/lib/app-meta';
 
 
 interface BrandWordmarkProps {
@@ -30,7 +31,7 @@ export function BrandWordmark({
   withTagline = false,
   light = false,
   centered = false,
-  tagline = 'BELONG ANYWHERE',
+  tagline = TAGLINE_PRIMARY,
   maxWidth,
 }: BrandWordmarkProps) {
   const { fontSize, height, taglineSize, gap, width, taglineLetterSpacing } = SIZES[size];

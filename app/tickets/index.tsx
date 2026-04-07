@@ -16,7 +16,8 @@ import { router, Stack } from 'expo-router';
 import { BackButton } from '@/components/ui/BackButton';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -219,7 +220,7 @@ export default function TicketsScreen() {
 
   const cancelMutation = useMutation({
     mutationFn: async (ticketId: string) => {
-      await apiRequest('PUT', `/api/tickets/${ticketId}/cancel`);
+      await api.tickets.cancel(ticketId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });

@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/query-client';
 import { api, ApiError } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
@@ -213,8 +212,7 @@ export function useToggleFavorite() {
   
   return useMutation({
     mutationFn: async ({ eventId, favorite }: { eventId: string; favorite: boolean }) => {
-      const res = await apiRequest('POST', `/api/events/${eventId}/favorite`, { favorite });
-      return res.json();
+      return api.events.favorite(eventId, favorite);
     },
     onMutate: async ({ eventId, favorite }) => {
       await queryClient.cancelQueries({ queryKey: ['currentUser'] });

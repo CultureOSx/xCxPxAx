@@ -52,7 +52,9 @@ function localFunctionsEmulatorApiBase(host: string): string {
   return normalizeBaseUrl(`http://${host}:5001/${projectId}/us-central1/api`);
 }
 
-export function getApiUrl(): string {
+let _cachedApiUrl: string | null = null;
+
+function resolveApiUrl(): string {
   const explicit = getExplicitApiUrl();
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -108,6 +110,17 @@ export function getApiUrl(): string {
   }
 
   return normalizeBaseUrl(`http://${EMULATOR_HOST}:5050`);
+}
+
+export function resetApiUrlCache(): void {
+  _cachedApiUrl = null;
+}
+
+export function getApiUrl(): string {
+  if (_cachedApiUrl) return _cachedApiUrl;
+  const resolved = resolveApiUrl();
+  _cachedApiUrl = resolved;
+  return resolved;
 }
 
 function normalizeRoute(route: string): string {

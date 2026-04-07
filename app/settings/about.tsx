@@ -3,11 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Constants from 'expo-constants';
 import { LayoutRules, Spacing, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
+import { APP_NAME, APP_NAME_AU, PLATFORM_TAGLINE, PRIMARY_REGION, TAGLINE_PRIMARY, getAppVersion } from '@/lib/app-meta';
 
 const FEATURES = [
   { icon: 'calendar', label: 'Events',      desc: 'Discover cultural events near you',          colorKey: 'accent' as const },
@@ -27,7 +27,7 @@ export default function AboutScreen() {
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const appVersion = Constants.expoConfig?.version ?? Constants.nativeApplicationVersion ?? 'dev';
+  const appVersion = getAppVersion();
   
 
   const resolveColor = (key: 'accent' | 'secondary' | 'warning' | 'info' | 'primary'): string => {
@@ -69,8 +69,8 @@ export default function AboutScreen() {
           <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoGradient}>
             <Ionicons name="globe" size={38} color={colors.textInverse} />
           </LinearGradient>
-          <Text style={[styles.appName, { color: colors.text }]}>CulturePass</Text>
-          <Text style={[styles.version, { color: colors.textSecondary }]}>{`Version ${appVersion} · Australia`}</Text>
+          <Text style={[styles.appName, { color: colors.text }]}>{APP_NAME}</Text>
+          <Text style={[styles.version, { color: colors.textSecondary }]}>{`Version ${appVersion} · ${PRIMARY_REGION}`}</Text>
         </View>
 
         {/* Brand info */}
@@ -78,7 +78,7 @@ export default function AboutScreen() {
           <View style={[styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <Text style={[styles.brandTitle, { color: colors.text }]}>Brand Info</Text>
             <Text style={[styles.brandBody, { color: colors.textSecondary }]}>
-              CulturePass AU is a cultural lifestyle marketplace built for diaspora communities across Australia and beyond.
+              {`${APP_NAME_AU} is a cultural lifestyle marketplace built for diaspora communities across Australia and beyond.`}
             </Text>
             <View style={styles.brandTagsRow}>
               <View style={[styles.brandTag, { backgroundColor: colors.primarySoft }]}>
@@ -88,7 +88,7 @@ export default function AboutScreen() {
                 <Text style={[styles.brandTagText, { color: colors.secondary }]}>Diaspora-first</Text>
               </View>
               <View style={[styles.brandTag, { backgroundColor: colors.warning + '1A' }]}>
-                <Text style={[styles.brandTagText, { color: colors.warning }]}>Night Festival</Text>
+                <Text style={[styles.brandTagText, { color: colors.warning }]}>{TAGLINE_PRIMARY}</Text>
               </View>
             </View>
           </View>
@@ -155,7 +155,7 @@ export default function AboutScreen() {
         {/* Footer */}
         <View style={styles.taglineSection}>
           <Ionicons name="heart" size={20} color={colors.primary} />
-          <Text style={[styles.tagline, { color: colors.text }]}>Made with love for cultural communities</Text>
+          <Text style={[styles.tagline, { color: colors.text }]}>{PLATFORM_TAGLINE}</Text>
           <Text style={[styles.copyright, { color: colors.textSecondary }]}>© 2025 CulturePass. All rights reserved.</Text>
         </View>
       </ScrollView>

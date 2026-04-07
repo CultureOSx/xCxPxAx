@@ -1,6 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { apiRequest } from '@/lib/query-client';
+import { api } from '@/lib/api';
 
 
 export function logError(error: unknown, context?: Record<string, any>) {
@@ -89,8 +89,7 @@ interface ReportPayload {
 }
 
 export async function submitReport(payload: ReportPayload): Promise<{ id: string }> {
-  const res = await apiRequest('POST', '/api/reports/v2', payload);
-  return res.json();
+  return api.reports.submit(payload);
 }
 
 export async function submitSydneyReport(
@@ -221,4 +220,3 @@ export const SydneyReportPresets = {
   fakeProfile: (userId: string) => 
     quickReport('profile', userId, 'fake', 'Impersonation or bot account'),
 };
-

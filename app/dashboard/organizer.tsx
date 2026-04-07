@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
@@ -134,8 +134,7 @@ function OrganizerDashboardContent() {
   const { data: eventsData, isLoading, refetch, isRefetching } = useQuery<EventsResponse>({
     queryKey: ['/api/events', { organizerId: userId }],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/events?organizerId=${userId}&page=1&pageSize=50`);
-      return res.json();
+      return api.events.list({ organizerId: userId ?? undefined, page: 1, pageSize: 50 });
     },
     enabled: !!userId,
   });
@@ -583,4 +582,3 @@ export default function OrganizerDashboard() {
     </ErrorBoundary>
   );
 }
-

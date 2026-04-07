@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +8,9 @@ import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { CultureTokens, FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
-import { BrandWordmark } from '@/components/ui/BrandWordmark';
+import { BrandLockup } from '@/components/ui/BrandLockup';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { TAGLINE_PRIMARY } from '@/lib/app-meta';
 import * as Haptics from 'expo-haptics';
 
 const isWeb = Platform.OS === 'web';
@@ -62,10 +62,16 @@ function DiscoverHeaderComponent({
         accessibilityRole="button"
         accessibilityLabel="CulturePass home"
       >
-        <View style={[styles.logoCircle, { backgroundColor: colors.primarySoft }]}>
-          <Image source={require('@/assets/images/culturepass-logo.png')} style={styles.logoImg} contentFit="cover" />
-        </View>
-        <BrandWordmark size="sm" light={!isWeb} maxWidth={112} />
+        <BrandLockup
+          light={!isWeb}
+          withTagline={false}
+          wordmarkSize="sm"
+          wordmarkMaxWidth={112}
+          logoSize={36}
+          logoRadius={10}
+          logoBackground="soft"
+          softLogoBackgroundColor={colors.primarySoft}
+        />
       </Pressable>
 
       <View style={styles.flex1} />
@@ -147,7 +153,7 @@ function DiscoverHeaderComponent({
               {weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
             <Text style={[styles.desktopGreeting, { color: colors.text }]}>{greeting}</Text>
-            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE • CELEBRATE CULTURE</Text>
+            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>{`${TAGLINE_PRIMARY} • CELEBRATE CULTURE`}</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
@@ -184,7 +190,7 @@ function DiscoverHeaderComponent({
           <Text style={[styles.mobileGreeting, { color: colors.text }]} numberOfLines={1}>
             {greeting}
           </Text>
-          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>BELONG ANYWHERE • CELEBRATE CULTURE</Text>
+          <Text style={[styles.mobileTagline, { color: CultureTokens.gold }]}>{`${TAGLINE_PRIMARY} • CELEBRATE CULTURE`}</Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
               <LocationPicker variant="text" />
@@ -214,14 +220,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    maxWidth: 180,
+    flexShrink: 1,
   },
-  logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  logoImg: { width: 36, height: 36 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -12,9 +12,8 @@ import { useSaved } from '@/contexts/SavedContext';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
 import { TextStyles, CultureTokens, shadows } from '@/constants/theme';
-import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/lib/auth';
@@ -29,14 +28,14 @@ import { Card } from '@/components/ui/Card';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
-import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
+import { formatCurrency } from '@/lib/currency';
 import { formatEventTime } from '@/lib/dateUtils';
-import { routeWithRedirect } from '@/lib/routes';
 import { getStyles } from './_components/styles';
 import { EventLiquidModalBody } from './_components/EventLiquidModalBody';
 import { HeroGlassIconButton } from './_components/HeroGlassIconButton';
 import { EventDetailSkeleton } from './_components/EventDetailSkeleton';
 import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCalendarDate, toGoogleCalendarTimestamp, buildICS, safeIcsFilenameBase, isWeb } from './_components/utils';
+import { useEventTicketing } from './_components/useEventTicketing';
 import { AdminToolbar } from '@/components/ui/AdminToolbar';
 import { useRole } from '@/hooks/useRole';
 
@@ -150,9 +149,6 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
   
   const [now, setNow] = useState(() => new Date());
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
-  const [selectedTierIndex, setSelectedTierIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [buyMode, setBuyMode] = useState<"single" | "family" | "group">("single");
 
   const { data: membership } = useQuery<{ tier: string; cashbackMultiplier?: number; }>({
     queryKey: [`/api/membership/${userId}`],
@@ -203,107 +199,31 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     rsvpMutation.mutate('going');
   }, [userId, pathname, myRsvp, rsvpMutation]);
 
-  // ── External Ticket Click Tracking ────────────────────────────────────────
-  const handleExternalTicketPress = useCallback(async () => {
-    const url = event.externalTicketUrl ?? event.externalUrl;
-    if (!url) return;
-    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // fire-and-forget tracking
-    api.events.trackTicketClick(event.id).catch(() => {});
-    try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert('Error', 'Could not open the ticket page.');
-    }
-  }, [event.id, event.externalTicketUrl, event.externalUrl]);
-
-  const [paymentLoading, setPaymentLoading] = useState(false);
-
-  const purchaseMutation = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await apiRequest("POST", "/api/stripe/create-checkout-session", { ticketData: body });
-      return await res.json();
-    },
-    onSuccess: async (data: any) => {
-      if (data.checkoutUrl) {
-        setPaymentLoading(true);
-        setTicketModalVisible(false);
-        try {
-          const result = await WebBrowser.openBrowserAsync(data.checkoutUrl, { dismissButtonStyle: "cancel", presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN });
-          queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-          if (result.type === "cancel" || result.type === "dismiss") {
-            const ticketRes = await apiRequest("GET", `/api/ticket/${data.ticketId}`);
-            const ticket = await ticketRes.json();
-            if (ticket.paymentStatus === "paid" || ticket.status === "confirmed") {
-              if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("Ticket Purchased!", "Your payment was successful.", [
-                { text: "View Ticket", onPress: () => router.push(`/tickets/${data.ticketId}`) },
-                { text: "OK" },
-              ]);
-            }
-          }
-        } catch {
-          Alert.alert("Payment Error", "Could not open payment page. Please try again.");
-        } finally {
-          setPaymentLoading(false);
-        }
-      }
-    },
-    onError: (error: Error) => Alert.alert("Purchase Failed", error.message),
+  const {
+    eventTiers,
+    isPurchasing,
+    paymentLoading,
+    selectedTierIndex,
+    setSelectedTierIndex,
+    quantity,
+    setQuantity,
+    buyMode,
+    setBuyMode,
+    selectedTier,
+    minQty,
+    maxQty,
+    rawTotal,
+    discountAmount,
+    totalPrice,
+    effectiveQty,
+    handleExternalTicketPress,
+    handlePurchase,
+  } = useEventTicketing({
+    event,
+    userId,
+    pathname,
+    setTicketModalVisible,
   });
-
-  const eventTiers = event.tiers;
-  const selectedTier = useMemo(() => eventTiers?.[selectedTierIndex] || { priceCents: 0, available: 0, name: 'Standard' }, [eventTiers, selectedTierIndex]);
-
-  // Family / group purchase constants
-  const familySize    = 4;  // standard family pack size
-  const familyDiscount = 0.10; // 10% family discount
-  const groupDiscount  = 0.15; // 15% group discount (6+)
-
-  const minQty = buyMode === "group" ? 6 : 1;
-  const maxQty = buyMode === "family" ? 1 : Math.max(minQty, Math.min(20, selectedTier?.available || 20));
-
-  const basePrice = selectedTier?.priceCents ?? 0;
-
-  const rawTotal = buyMode === "family" ? basePrice * familySize : basePrice * quantity;
-  const discountRate = buyMode === "family" ? familyDiscount : buyMode === "group" ? groupDiscount : 0;
-  const discountAmount = Math.round(rawTotal * discountRate); // Force Integer to prevent Stripe fractional cent crash
-  const totalPrice = rawTotal - discountAmount; 
-  const effectiveQty = buyMode === "family" ? familySize : quantity;
-  
-  const purchaseFreeTicket = useCallback(async (body: Record<string, unknown>) => {
-    try {
-      const res = await apiRequest("POST", "/api/tickets", body);
-      const data = await res.json();
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      setTicketModalVisible(false);
-      if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Ticket Confirmed!", "Your free ticket has been reserved.", [
-        { text: "View Ticket", onPress: () => router.push(`/tickets/${data.id}`) },
-        { text: "OK" },
-      ]);
-    } catch {
-      Alert.alert("Error", "Failed to reserve ticket. Please try again.");
-    }
-  }, []);
-
-  const handlePurchase = useCallback(() => {
-    if (!userId) {
-      Alert.alert("Login required", "Please sign in to complete ticket purchase.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => router.push(routeWithRedirect('/(onboarding)/login', pathname)) },
-      ]);
-      return;
-    }
-    const ticketLabel = buyMode === "family" ? `${selectedTier.name} (Family Pack)` : buyMode === "group" ? `${selectedTier.name} (Group)` : selectedTier.name;
-    const body = {
-      userId, eventId: event.id, eventTitle: event.title, eventDate: event.date, eventTime: event.time,
-      eventVenue: event.venue, tierName: ticketLabel, quantity: effectiveQty, totalPriceCents: totalPrice,
-      currency: getCurrencyForCountry(event?.country), imageColor: event.imageColor ?? CultureTokens.indigo,
-    };
-    if (totalPrice <= 0) { purchaseFreeTicket(body); return; }
-    purchaseMutation.mutate(body);
-  }, [userId, event, selectedTier, totalPrice, effectiveQty, buyMode, pathname, purchaseMutation, purchaseFreeTicket]);
 
   // ── Admin Actions ────────────────────────────────────────────────────────
   const deleteMutation = useMutation({
@@ -346,7 +266,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     setBuyMode("single");
     setTicketModalVisible(true);
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  }, [setBuyMode, setQuantity, setSelectedTierIndex, setTicketModalVisible]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
@@ -1124,7 +1044,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                 variant="gradient"
                 size="lg"
                 fullWidth
-                loading={purchaseMutation.isPending || paymentLoading}
+                loading={isPurchasing || paymentLoading}
                 onPress={handlePurchase}
               >
                 {totalPrice <= 0 ? "Get Free Ticket" : `Pay ${formatCurrency(totalPrice, event?.country)}`}

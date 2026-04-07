@@ -18,6 +18,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { TextStyles } from '@/constants/typography';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { APP_NAME_AU, PRIMARY_REGION, getAppVersion, getAppVersionWithBuild } from '@/lib/app-meta';
 
 interface SettingItem {
   icon: string;
@@ -40,6 +41,8 @@ export default function AccountSettingsScreen() {
   const { user, isAuthenticated, logout } = useAuth();
   const { isOrganizer, isAdmin, hasMinRole } = useRole();
   const canTargetCampaigns = hasMinRole('cityAdmin');
+  const appVersion = getAppVersion();
+  const appVersionWithBuild = getAppVersionWithBuild();
 
   const tier      = user?.subscriptionTier ?? 'free';
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
@@ -151,7 +154,7 @@ export default function AccountSettingsScreen() {
       items: [
         { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,     route: '/settings/about' },
         { icon: 'newspaper-outline',          label: "What's New",        color: CultureTokens.teal,       route: '/updates/index' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary,     rightText: '1.1.0 (1)' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary,     rightText: appVersionWithBuild },
       ],
     },
   ];
@@ -178,7 +181,7 @@ export default function AccountSettingsScreen() {
       items: [
         { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,  route: '/settings/about' },
         { icon: 'newspaper-outline',          label: "What's New",        color: CultureTokens.teal,    route: '/updates/index' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.1.0 (1)' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: appVersionWithBuild },
       ],
     },
   ];
@@ -415,7 +418,7 @@ export default function AccountSettingsScreen() {
         )}
 
         <Text style={s.footer}>
-          CulturePass AU · v1.1.0{'\n'}Available in Australia
+          {`${APP_NAME_AU} · v${appVersion}${'\n'}Available in ${PRIMARY_REGION}`}
         </Text>
       </ScrollView>
     </View>

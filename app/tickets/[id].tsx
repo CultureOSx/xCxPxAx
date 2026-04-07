@@ -16,7 +16,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient, getQueryFn } from '@/lib/query-client';
+import { queryClient, getQueryFn } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
@@ -111,8 +112,7 @@ export default function TicketDetailScreen() {
 
   const cancelMutation = useMutation({
     mutationFn: async (ticketId: string) => {
-      const res = await apiRequest('POST', '/api/stripe/refund', { ticketId });
-      return await res.json() as Record<string, unknown>;
+      return api.stripe.refund(ticketId);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/ticket', id] });
@@ -180,11 +180,10 @@ export default function TicketDetailScreen() {
         text: 'Add',
         onPress: async () => {
           try {
-            const endpoint = walletType === 'apple'
-              ? `/api/tickets/${ticket.id}/wallet/apple`
-              : `/api/tickets/${ticket.id}/wallet/google`;
-            const res  = await apiRequest('GET', endpoint);
-            const data = await res.json() as { url?: string; code?: string };
+            const raw = walletType === 'apple'
+              ? await api.tickets.walletApple(ticket.id)
+              : await api.tickets.walletGoogle(ticket.id);
+            const data = raw as typeof raw & { code?: string };
             if (data.url) {
               await Linking.openURL(data.url);
             } else if (data.code === 'WALLET_NOT_IMPLEMENTED') {

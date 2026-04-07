@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useState, useMemo } from 'react';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { goBackOrReplace } from '@/lib/navigation';
+import { APP_DOMAIN, AVAILABILITY_MARKETS, PLATFORM_TAGLINE, getAppVersion } from '@/lib/app-meta';
 
 const isWeb = Platform.OS === 'web';
 
@@ -107,6 +108,7 @@ export default function HelpScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const styles = getStyles(colors);
+  const appVersion = getAppVersion();
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -376,10 +378,10 @@ export default function HelpScreen() {
           <View style={styles.aboutLogo}>
             <Ionicons name="globe" size={32} color={CultureTokens.indigo} />
           </View>
-          <Text style={styles.aboutName}>culturepass.app</Text>
-          <Text style={styles.aboutVersion}>Version 1.0.0</Text>
-          <Text style={styles.aboutTagline}>Your one-stop lifestyle platform for cultural diaspora communities</Text>
-          <Text style={styles.aboutCountries}>Available in Australia · New Zealand · UAE · UK · Canada</Text>
+          <Text style={styles.aboutName}>{APP_DOMAIN}</Text>
+          <Text style={styles.aboutVersion}>{`Version ${appVersion}`}</Text>
+          <Text style={styles.aboutTagline}>{PLATFORM_TAGLINE}</Text>
+          <Text style={styles.aboutCountries}>{AVAILABILITY_MARKETS}</Text>
         </View>
       </ScrollView>
     </View>

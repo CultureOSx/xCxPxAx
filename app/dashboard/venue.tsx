@@ -9,7 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import type { EventData } from '@/shared/schema';
@@ -186,8 +186,7 @@ function VenueDashboardContent() {
     queryKey: ['/api/profiles/my', userId, 'venue'],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', '/api/profiles/my?entityType=venue');
-        return await res.json() as VenueProfile;
+        return await api.profiles.my({ entityType: 'venue' }) as VenueProfile | null;
       } catch {
         return null;
       }
@@ -200,8 +199,8 @@ function VenueDashboardContent() {
     queryKey: ['/api/events', 'venue', userId],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', `/api/events?organizerId=${userId}&pageSize=50`);
-        return await res.json() as { events: VenueEvent[] };
+        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 50 });
+        return { events: (res.events ?? []) as VenueEvent[] };
       } catch {
         return { events: [] };
       }

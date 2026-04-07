@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { APP_NAME, getAppVersionWithBuild } from '@/lib/app-meta';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -199,6 +200,7 @@ export default function MenuScreen() {
   const insets      = useSafeAreaInsets();
   const colors      = useColors();
   const { isDesktop, contentWidth, hPad } = useLayout();
+  const appVersionWithBuild = getAppVersionWithBuild();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { isAdmin, isSuperAdmin } = useRole();
@@ -357,9 +359,9 @@ export default function MenuScreen() {
 
           {/* ── Footer ── */}
           <View style={styles.footer}>
-            <Image source={require('@/assets/images/icon.png')} style={styles.footerLogo} />
+            <Image source={require('@/assets/images/culturepass-logo.png')} style={styles.footerLogo} />
             <Text style={[styles.footerText, { color: colors.textTertiary }]}>
-              CulturePass · v1.0.0
+              {`${APP_NAME} · v${appVersionWithBuild}`}
             </Text>
           </View>
         </ScrollView>

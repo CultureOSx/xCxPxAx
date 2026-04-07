@@ -211,6 +211,9 @@ const events = {
   trackTicketClick: (eventId: string) =>
     request<{ ok: boolean }>('POST', `api/events/${eventId}/ticket-click`),
 
+  favorite: (eventId: string, favorite: boolean) =>
+    request<{ success?: boolean; favorite?: boolean }>('POST', `api/events/${eventId}/favorite`, { favorite }),
+
   remove: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/events/${id}`),
 };
@@ -249,6 +252,8 @@ const stripeApi = {
     totalPriceCents?: number;
     currency?: string;
   }) => request<{ checkoutUrl: string; ticketId: string; sessionId: string }>('POST', 'api/stripe/create-checkout-session', { ticketData }),
+  refund: (ticketId: string) =>
+    request<Record<string, unknown>>('POST', 'api/stripe/refund', { ticketId }),
 };
 
 // ---------------------------------------------------------------------------
@@ -808,6 +813,9 @@ const perks = {
 
   get: (id: string) => request<PerkData>('GET', `api/perks/${id}`),
 
+  create: (data: Record<string, unknown>) =>
+    request<PerkData>('POST', 'api/perks', data),
+
   redeem: (id: string) =>
     request<{ success: boolean; redemption?: Record<string, unknown> }>(
       'POST', `api/perks/${id}/redeem`
@@ -818,6 +826,30 @@ const perks = {
 
   remove: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/perks/${id}`),
+};
+
+const media = {
+  attach: (data: {
+    targetType: string;
+    targetId: string;
+    imageUrl: string;
+    thumbnailUrl?: string;
+    width?: number;
+    height?: number;
+  }) => request<{ success?: boolean; id?: string }>('POST', 'api/media/attach', data),
+};
+
+const paymentMethods = {
+  create: (data: Record<string, unknown>) =>
+    request<{ success?: boolean; id?: string }>('POST', 'api/payment-methods', data),
+  remove: (id: string) =>
+    request<{ success?: boolean }>('DELETE', `api/payment-methods/${id}`),
+  setDefault: (userId: string, methodId: string) =>
+    request<{ success?: boolean }>('PUT', `api/payment-methods/${userId}/default/${methodId}`),
+};
+
+const rollout = {
+  config: () => request<{ phase: string; features: Record<string, boolean> }>('GET', 'api/rollout/config'),
 };
 
 // ---------------------------------------------------------------------------
@@ -852,6 +884,13 @@ const profiles = {
   },
 
   get: (id: string) => request<Profile>('GET', `api/profiles/${id}`),
+
+  my: (params?: { entityType?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.entityType) qs.set('entityType', params.entityType);
+    const q = qs.toString();
+    return request<Profile | null>('GET', `api/profiles/my${q ? `?${q}` : ''}`);
+  },
 
   create: (payload: Partial<Profile>) =>
     request<Profile>('POST', 'api/profiles', payload),
@@ -1324,6 +1363,16 @@ const social = {
   },
 };
 
+const reports = {
+  submit: (payload: {
+    targetType: string;
+    targetId: string;
+    reason: string;
+    details?: string;
+    userAgent?: string;
+  }) => request<{ id: string }>('POST', 'api/reports/v2', payload),
+};
+
 // ---------------------------------------------------------------------------
 // CulturePass ID lookup
 // ---------------------------------------------------------------------------
@@ -1371,6 +1420,9 @@ const calendar = {
 export const api = {
   auth,
   uploads,
+  media,
+  paymentMethods,
+  rollout,
   events,
   tickets,
   stripe: stripeApi,
@@ -1396,6 +1448,7 @@ export const api = {
   cities,
   cpid,
   social,
+  reports,
   admin,
   culture,
   widgets,

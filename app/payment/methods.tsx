@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
@@ -60,7 +61,7 @@ export default function PaymentMethodsScreen() {
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      await apiRequest('POST', '/api/payment-methods', data);
+      await api.paymentMethods.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods', userId] });
@@ -71,7 +72,7 @@ export default function PaymentMethodsScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/payment-methods/${id}`);
+      await api.paymentMethods.remove(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods', userId] });
@@ -80,7 +81,8 @@ export default function PaymentMethodsScreen() {
 
   const setDefaultMutation = useMutation({
     mutationFn: async (methodId: string) => {
-      await apiRequest('PUT', `/api/payment-methods/${userId}/default/${methodId}`);
+      if (!userId) return;
+      await api.paymentMethods.setDefault(userId, methodId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-methods', userId] });

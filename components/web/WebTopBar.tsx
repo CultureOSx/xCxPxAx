@@ -3,7 +3,6 @@ import { View, Text, Pressable, StyleSheet, Modal, ScrollView, Platform } from "
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Constants from "expo-constants";
 import { router, usePathname } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
@@ -12,7 +11,8 @@ import { useAuth } from "@/lib/auth";
 import { LocationPicker } from "@/components/LocationPicker";
 import { useLayout } from "@/hooks/useLayout";
 import { routeWithRedirect } from "@/lib/routes";
-import { BrandWordmark } from "../ui/BrandWordmark";
+import { BrandLockup } from "@/components/ui/BrandLockup";
+import { getAppVersionWithBuild } from "@/lib/app-meta";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TabItem {
@@ -70,7 +70,7 @@ export function WebTopBar() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { isDesktop } = useLayout();
   const pathname = usePathname();
-  const appVersion = Constants.expoConfig?.version ?? Constants.nativeApplicationVersion ?? 'dev';
+  const appVersion = getAppVersionWithBuild();
 
   const displayName = user?.displayName ?? user?.username ?? user?.id?.slice(0, 8) ?? 'You';
   const initials = displayName.trim().split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -136,21 +136,15 @@ export function WebTopBar() {
           onPress={() => handleNav('/(tabs)')}
           accessibilityLabel="CulturePass Home"
         >
-          <LinearGradient
-            colors={[CultureTokens.indigo, CultureTokens.coral]}
-            style={styles.logoBg}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-          >
-            <Image
-              source={require('@/assets/images/culturepass-logo.png')}
-              style={styles.logoMark}
-              contentFit="cover"
-            />
-          </LinearGradient>
-          <View style={styles.appNameCol}>
-            <BrandWordmark size="sm" withTagline light tagline="BELONG ANYWHERE" maxWidth={120} />
-          </View>
+          <BrandLockup
+            light
+            withTagline
+            wordmarkSize="sm"
+            wordmarkMaxWidth={120}
+            logoSize={32}
+            logoRadius={16}
+            logoBackground="gradient"
+          />
         </Pressable>
 
         {/* Location picker (desktop only) */}
@@ -475,41 +469,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  logoBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  logoMark: {
-    width: 32,
-    height: 32,
-  },
-  appNameCol: {
-    marginLeft: 8,
-    marginTop: 2,
-    justifyContent: 'center',
-    maxWidth: 124,
-    overflow: 'hidden',
+    maxWidth: 164,
     flexShrink: 1,
-  },
-  appName: {
-    color: '#fff',
-    fontSize: 18,
-    fontFamily: 'Poppins_800ExtraBold',
-    letterSpacing: -0.4,
-    lineHeight: 22,
-  },
-  tagLine: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 9,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginTop: -1,
   },
   locationWrap: {
     marginLeft: 16,

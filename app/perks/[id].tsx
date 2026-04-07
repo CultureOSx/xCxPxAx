@@ -7,7 +7,7 @@ import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -77,8 +77,7 @@ export default function PerkDetailScreen() {
 
   const redeemMutation = useMutation({
     mutationFn: async (perkId: string) => {
-      const res = await apiRequest('POST', `/api/perks/${perkId}/redeem`, { userId });
-      return res.json();
+      return api.raw('POST', `api/perks/${perkId}/redeem`, { userId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/perks'] });

@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
+import { api } from '@/lib/api';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
@@ -167,10 +168,11 @@ function PlatformContent() {
   const rolloutQuery = useQuery({
     queryKey: ['rollout-config'],
     queryFn: async () => {
-      // rollout/config is a public endpoint on the misc router
-      const { apiRequest } = await import('@/lib/query-client');
-      const res = await apiRequest('GET', 'api/rollout/config');
-      return res.json() as Promise<{ phase: RolloutPhase; features: Record<string, boolean> }>;
+      const res = await api.rollout.config();
+      return {
+        phase: (res.phase as RolloutPhase) ?? 'internal',
+        features: res.features ?? {},
+      };
     },
     staleTime: 60_000,
     enabled: isSuperAdmin,
