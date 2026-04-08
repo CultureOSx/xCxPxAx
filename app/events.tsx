@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, Pressable, Platform,
+  StyleSheet, Text, View, Pressable, Platform, Alert,
   ActivityIndicator, FlatList, ScrollView,
 } from 'react-native';
+import { router } from 'expo-router';
 import Animated, {
   FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring,
   interpolateColor, withTiming,
@@ -221,7 +222,7 @@ export default function AllEventsScreen() {
 
   const handleEditEvent = useCallback((event: EventData) => {
     // Navigate to edit screen
-    router.push({ pathname: '/event/[id]', params: { id: event.id }, query: { edit: '1' } });
+    router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
   }, []);
 
   const handleDeleteEvent = useCallback((event: EventData) => {

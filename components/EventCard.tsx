@@ -1,12 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import CultureImage from '@/components/ui/CultureImage';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import CultureImage from '@/components/ui/CultureImage';
 import { CultureTagRow } from '@/components/ui/CultureTag';
 import { CultureTokens } from '@/constants/theme';
-import { router } from 'expo-router';
 import { useSaved } from '@/contexts/SavedContext';
-import * as Haptics from 'expo-haptics';
+import { useColors } from '@/hooks/useColors';
+import { formatEventDateTime } from '@/lib/dateUtils';
 import type { EventData } from '@/shared/schema';
 
 interface EventCardProps {
@@ -16,40 +18,22 @@ interface EventCardProps {
   onEdit?: (event: EventData) => void;
   onDelete?: (event: EventData) => void;
 }
-import { useColors } from '@/hooks/useColors';
-import { formatEventDateTime } from '@/lib/dateUtils';
-
-interface EventCardProps {
-  event: EventData;
-  isLive?: boolean;
-}
 
 function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardProps) {
-    const [showUndo, setShowUndo] = useState(false);
-    const [pendingDelete, setPendingDelete] = useState(false);
-
-    const handleEdit = useCallback(() => {
-      if (onEdit) onEdit(event);
-    }, [event, onEdit]);
-
-    const handleDelete = useCallback(() => {
-      setPendingDelete(true);
-      setShowUndo(true);
-      setTimeout(() => {
-        if (pendingDelete && onDelete) onDelete(event);
-        setShowUndo(false);
-        setPendingDelete(false);
-      }, 3500);
-    }, [event, onDelete, pendingDelete]);
-
-    const handleUndo = useCallback(() => {
-      setShowUndo(false);
-      setPendingDelete(false);
-    }, []);
   const colors = useColors();
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const isSaved = isEventSaved(event.id);
   const [hovered, setHovered] = useState(false);
+  const [showUndo, setShowUndo] = useState(false);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) {
+        clearTimeout(deleteTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCardPress = useCallback(() => {
     router.push({ pathname: '/event/[id]', params: { id: event.id } });
@@ -60,13 +44,37 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
     toggleSaveEvent(event.id);
   }, [event.id, toggleSaveEvent]);
 
+  const handleEdit = useCallback(() => {
+    onEdit?.(event);
+  }, [event, onEdit]);
+
+  const handleDelete = useCallback(() => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+    }
+    setShowUndo(true);
+    deleteTimerRef.current = setTimeout(() => {
+      onDelete?.(event);
+      setShowUndo(false);
+      deleteTimerRef.current = null;
+    }, 3500);
+  }, [event, onDelete]);
+
+  const handleUndo = useCallback(() => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+      deleteTimerRef.current = null;
+    }
+    setShowUndo(false);
+  }, []);
+
   const priceDisplay =
     event.priceLabel ??
     (event.priceCents === 0
       ? 'Free'
       : event.priceCents != null
-      ? `$${(event.priceCents / 100).toFixed(2)}`
-      : null);
+        ? `$${(event.priceCents / 100).toFixed(2)}`
+        : null);
 
   const isFreeDisplay =
     priceDisplay != null && String(priceDisplay).trim().toLowerCase() === 'free';
@@ -105,12 +113,12 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
             contentFit="cover"
             recyclingKey={`event-${event.id}`}
           />
-          {ageBadge && (
+          {ageBadge ? (
             <View style={[styles.ageBadge, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
               <Text style={[styles.ageBadgeText, { color: colors.text }]}>{ageBadge}</Text>
             </View>
-          )}
-          {isLive && (
+          ) : null}
+          {isLive ? (
             <View style={styles.liveBadge}>
               <View
                 style={[StyleSheet.absoluteFill, { backgroundColor: CultureTokens.coral, opacity: 0.9, borderRadius: 8 }]}
@@ -118,7 +126,7 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
               <Ionicons name="pulse" size={12} color="white" style={{ marginRight: 4 }} />
               <Text style={styles.liveBadgeText}>LIVE</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         <View style={styles.info}>
@@ -161,9 +169,7 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
                 </View>
               ))}
               {priceDisplay ? (
-                <Text
-                  style={[styles.price, { color: isFreeDisplay ? CultureTokens.teal : colors.text }]}
-                >
+                <Text style={[styles.price, { color: isFreeDisplay ? CultureTokens.teal : colors.text }]}>
                   {priceDisplay}
                 </Text>
               ) : null}
@@ -194,7 +200,7 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
         </View>
       </Pressable>
 
-      {canEdit && (
+      {canEdit ? (
         <View style={styles.crudActionsRow}>
           <Pressable
             onPress={handleEdit}
@@ -213,16 +219,16 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
             <Ionicons name="trash-outline" size={18} color={CultureTokens.coral} />
           </Pressable>
         </View>
-      )}
+      ) : null}
 
-      {showUndo && (
+      {showUndo ? (
         <View style={styles.snackbar} accessibilityLiveRegion="polite">
           <Text style={styles.snackbarText}>Event deleted</Text>
           <Pressable onPress={handleUndo} accessibilityRole="button" accessibilityLabel="Undo delete">
             <Text style={styles.snackbarUndo}>Undo</Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -230,57 +236,8 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
 const EventCard = React.memo(EventCardInner);
 export default EventCard;
 
-// ─── Static styles (created once at module level) ─────────────────────────────
-
 const styles = StyleSheet.create({
   card: {
-      crudActionsRow: {
-        flexDirection: 'row',
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        gap: 8,
-        zIndex: 10,
-      },
-      crudBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-        borderWidth: 1,
-        borderColor: '#eee',
-      },
-      snackbar: {
-        position: 'absolute',
-        bottom: 18,
-        left: 18,
-        right: 18,
-        backgroundColor: '#222',
-        borderRadius: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        zIndex: 100,
-      },
-      snackbarText: {
-        color: '#fff',
-        fontSize: 15,
-        fontFamily: 'Poppins_500Medium',
-      },
-      snackbarUndo: {
-        color: CultureTokens.gold,
-        fontSize: 15,
-        fontFamily: 'Poppins_700Bold',
-        marginLeft: 18,
-      },
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
@@ -414,5 +371,52 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  crudActionsRow: {
+    flexDirection: 'row',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    gap: 8,
+    zIndex: 10,
+  },
+  crudBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: 18,
+    left: 18,
+    right: 18,
+    backgroundColor: '#222',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 100,
+  },
+  snackbarText: {
+    color: '#fff',
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
+  },
+  snackbarUndo: {
+    color: CultureTokens.gold,
+    fontSize: 15,
+    fontFamily: 'Poppins_700Bold',
+    marginLeft: 18,
   },
 });

@@ -28,6 +28,8 @@ interface BackButtonProps {
   style?: StyleProp<ViewStyle>;
   /** Add a subtle circular background (useful on hero images) */
   circled?: boolean;
+  /** Accessibility label override */
+  accessibilityLabel?: string;
 }
 
 export function BackButton({
@@ -37,6 +39,7 @@ export function BackButton({
   fallback = '/(tabs)',
   style,
   circled = false,
+  accessibilityLabel = 'Go back',
 }: BackButtonProps) {
   const colors = useColors();
   const tint = color ?? colors.text;
@@ -69,7 +72,7 @@ export function BackButton({
         style,
       ]}
       accessibilityRole="button"
-      accessibilityLabel="Go back"
+      accessibilityLabel={accessibilityLabel}
     >
       {isIOS ? (
         // SF Symbol chevron on iOS — matches native UIKit back button

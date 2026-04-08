@@ -240,7 +240,7 @@ function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () =
               style={[qs.shareBtn, { borderColor: CultureTokens.gold }]}
               onPress={() => {
                 if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push('/(tabs)/feed');
+                router.push('/(tabs)/community');
               }}
               accessibilityRole="button"
               accessibilityLabel="Post to community feed"

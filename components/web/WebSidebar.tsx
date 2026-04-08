@@ -28,7 +28,7 @@ interface NavItem {
 
 const MAIN_NAV: NavItem[] = [
   { label: 'Discover', icon: 'compass-outline', iconActive: 'compass', route: '/(tabs)' },
-  { label: 'Feed', icon: 'albums-outline', iconActive: 'albums', route: '/(tabs)/feed' },
+  { label: 'My City', icon: 'location-outline', iconActive: 'location', route: '/(tabs)/city' },
   { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
   { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
   { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },

@@ -38,10 +38,20 @@ import { formatDate, promptRsvpLogin, confirmRemoveRsvp, cityToCoordinates, toCa
 import { useEventTicketing } from '@/components/event-detail/useEventTicketing';
 import { AdminToolbar } from '@/components/ui/AdminToolbar';
 import { useRole } from '@/hooks/useRole';
+import { CultureTagRow } from '@/components/ui/CultureTag';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';
 const OUTLOOK_BRAND_COLOR = '#0078D4';
+
+function startCaseLabel(value?: string | null): string | null {
+  if (!value) return null;
+  return value
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export default function EventDetailScreen() {
   const { id, adminMode } = useLocalSearchParams<{ id: string; adminMode?: string }>();
@@ -130,6 +140,36 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
   }, [event.id, event.imageUrl, uploadImage, deleteImage]);
 
   const canEdit = userId === event.organizerId || userId === event.createdBy || __DEV__;
+  const displayCommunity = startCaseLabel(event.communityId) ?? 'General';
+  const displayCategory = startCaseLabel(event.category) ?? 'Event';
+  const hostName = event.hostInfo?.name ?? event.hostName ?? startCaseLabel(event.organizerId) ?? displayCommunity ?? 'CulturePass';
+  const hostEmail = event.hostInfo?.contactEmail ?? event.hostEmail;
+  const hostPhone = event.hostInfo?.contactPhone ?? event.hostPhone;
+  const hostWebsite = event.hostInfo?.websiteUrl;
+  const cultureTags = useMemo(
+    () => Array.from(new Set([...(event.cultureTag ?? []), ...(event.cultureTags ?? [])])).filter(Boolean),
+    [event.cultureTag, event.cultureTags],
+  );
+  const languageTags = useMemo(
+    () => Array.from(new Set(event.languageTags ?? [])).filter(Boolean),
+    [event.languageTags],
+  );
+  const accessibilityTags = useMemo(
+    () => Array.from(new Set(event.accessibility ?? [])).filter(Boolean),
+    [event.accessibility],
+  );
+  const sponsorNames = useMemo(
+    () => Array.from(new Set((event.eventSponsors ?? []).map((sponsor) => sponsor.name).filter(Boolean))),
+    [event.eventSponsors],
+  );
+  const artistSummary = useMemo(
+    () => Array.from(new Set((event.artists ?? []).map((artist) => artist.name).filter(Boolean))),
+    [event.artists],
+  );
+  const eventLocationLabel = useMemo(
+    () => [event.venue, event.address, event.city, event.country].filter(Boolean).join(', '),
+    [event.address, event.city, event.country, event.venue],
+  );
 
   // Re-enabled localized distance mapping safely
   const distanceKm = useMemo(() => {
@@ -335,6 +375,26 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     Linking.openURL(url);
   }, [event.venue, event.city, event.country]);
+
+  const openExternalLink = useCallback((url: string, errorMessage: string) => {
+    Linking.openURL(url).catch(() => Alert.alert('Error', errorMessage));
+  }, []);
+
+  const handleVisitWebsite = useCallback(() => {
+    if (!hostWebsite) return;
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    openExternalLink(hostWebsite, 'Could not open the host website.');
+  }, [hostWebsite, openExternalLink]);
+
+  const handleEmailHost = useCallback(() => {
+    if (!hostEmail) return;
+    openExternalLink(`mailto:${hostEmail}`, 'Could not open your email app.');
+  }, [hostEmail, openExternalLink]);
+
+  const handleCallHost = useCallback(() => {
+    if (!hostPhone) return;
+    openExternalLink(`tel:${hostPhone}`, 'Could not open your phone app.');
+  }, [hostPhone, openExternalLink]);
 
 
   const [calendarSheetVisible, setCalendarSheetVisible] = useState(false);
@@ -715,7 +775,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
               <Card glass={!isDark} padding={20} style={s.heroInfoCard}>
                 <View style={s.heroBadges}>
                   <View style={[s.heroBadge, { backgroundColor: CultureTokens.gold }]}>
-                    <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{event.communityId || 'General'}</Text>
+                    <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{displayCommunity}</Text>
                   </View>
                   {event.councilTag ? (
                     <View style={[s.heroBadge, { backgroundColor: colors.primarySoft }]}>
@@ -731,7 +791,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                   </View>
                 </View>
                 <Text style={[TextStyles.title, { color: colors.text, marginTop: 8 }]}>{event.title}</Text>
-                <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, marginTop: 4 }]}>by {event.organizerId || event.communityId || 'CulturePass'}</Text>
+                <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, marginTop: 4 }]}>Hosted by {hostName}</Text>
               </Card>
               
               {countdown && (
@@ -807,10 +867,89 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
               {/* Sections */}
               <View style={s.section}>
                 <Text style={TextStyles.badgeCaps}>About</Text>
-                <Text style={[TextStyles.body, { color: colors.textSecondary, lineHeight: 26, marginTop: 8 }]}>{event.description}</Text>
+                <Text style={[TextStyles.body, { color: colors.textSecondary, lineHeight: 26, marginTop: 8 }]}>
+                  {event.description?.trim() || 'More details for this event will be announced soon.'}
+                </Text>
               </View>
 
               <View style={s.divider} />
+
+              <View style={s.section}>
+                <Text style={s.sectionTitle}>Plan Your Visit</Text>
+                <View style={[s.actionGrid, isDesktop && s.actionGridDesktop]}>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    leftIcon="location-outline"
+                    onPress={openMap}
+                    style={s.actionButton}
+                  >
+                    Open map
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    leftIcon="calendar-number-outline"
+                    onPress={openCalendarSheet}
+                    style={s.actionButton}
+                  >
+                    Add to calendar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    leftIcon="share-social-outline"
+                    onPress={handleShare}
+                    style={s.actionButton}
+                  >
+                    Share event
+                  </Button>
+                </View>
+                {eventLocationLabel ? (
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                    {eventLocationLabel}
+                  </Text>
+                ) : null}
+              </View>
+
+              {(cultureTags.length > 0 || languageTags.length > 0 || accessibilityTags.length > 0) && (
+                <>
+                  <View style={s.divider} />
+                  <View style={s.section}>
+                    <Text style={s.sectionTitle}>Culture & Access</Text>
+                    {cultureTags.length > 0 ? (
+                      <View style={s.metaBlock}>
+                        <Text style={TextStyles.badgeCaps}>Culture</Text>
+                        <CultureTagRow tags={cultureTags} max={6} size="md" />
+                      </View>
+                    ) : null}
+                    {languageTags.length > 0 ? (
+                      <View style={s.metaBlock}>
+                        <Text style={TextStyles.badgeCaps}>Languages</Text>
+                        <View style={s.chipRow}>
+                          {languageTags.map((tag) => (
+                            <View key={tag} style={[s.metaChip, { backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }]}>
+                              <Text style={[s.metaChipText, { color: colors.primaryLight }]}>{startCaseLabel(tag) ?? tag}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                    {accessibilityTags.length > 0 ? (
+                      <View style={s.metaBlock}>
+                        <Text style={TextStyles.badgeCaps}>Accessibility</Text>
+                        <View style={s.chipRow}>
+                          {accessibilityTags.map((tag) => (
+                            <View key={tag} style={[s.metaChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+                              <Text style={[s.metaChipText, { color: colors.text }]}>{startCaseLabel(tag) ?? tag}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                </>
+              )}
 
               <View style={s.section}>
                 <View style={s.capacityHeader}>
@@ -857,6 +996,69 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
               <View style={s.divider} />
 
               <View style={s.section}>
+                <Text style={s.sectionTitle}>Host</Text>
+                <Card style={s.hostCard} padding={18}>
+                  <View style={s.hostHeader}>
+                    <View style={[s.metricIconBg, { backgroundColor: colors.primarySoft }]}>
+                      <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+                    </View>
+                    <View style={s.hostContent}>
+                      <Text style={[TextStyles.headline, { color: colors.text }]}>{hostName}</Text>
+                      <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                        {displayCategory} in {event.city}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[s.chipRow, { marginTop: 14 }]}>
+                    {hostEmail ? (
+                      <Button variant="outline" size="sm" leftIcon="mail-outline" onPress={handleEmailHost}>
+                        Email host
+                      </Button>
+                    ) : null}
+                    {hostPhone ? (
+                      <Button variant="outline" size="sm" leftIcon="call-outline" onPress={handleCallHost}>
+                        Call host
+                      </Button>
+                    ) : null}
+                    {hostWebsite ? (
+                      <Button variant="outline" size="sm" leftIcon="globe-outline" onPress={handleVisitWebsite}>
+                        Visit website
+                      </Button>
+                    ) : null}
+                  </View>
+                </Card>
+              </View>
+
+              {(artistSummary.length > 0 || sponsorNames.length > 0) && (
+                <>
+                  <View style={s.divider} />
+                  <View style={s.section}>
+                    <Text style={s.sectionTitle}>Lineup & Partners</Text>
+                    {artistSummary.length > 0 ? (
+                      <View style={s.metaBlock}>
+                        <Text style={TextStyles.badgeCaps}>Featuring</Text>
+                        <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary }]}>
+                          {artistSummary.join(', ')}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {sponsorNames.length > 0 ? (
+                      <View style={s.metaBlock}>
+                        <Text style={TextStyles.badgeCaps}>Partners</Text>
+                        <View style={s.chipRow}>
+                          {sponsorNames.map((name) => (
+                            <View key={name} style={[s.metaChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+                              <Text style={[s.metaChipText, { color: colors.text }]}>{name}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                </>
+              )}
+
+              <View style={s.section}>
                  <Text style={s.sectionTitle}>Event Details</Text>
                  {event.culturePassId && (
                    <View style={s.metricRow}>
@@ -866,11 +1068,11 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                  )}
                  <View style={s.metricRow}>
                    <View style={s.metricIconBg}><Ionicons name="pricetag-outline" size={16} color={colors.textSecondary} /></View>
-                   <Text style={s.metricText}>Category: {event.category}</Text>
+                   <Text style={s.metricText}>Category: {displayCategory}</Text>
                  </View>
                  <View style={s.metricRow}>
                    <View style={s.metricIconBg}><Ionicons name="people-outline" size={16} color={colors.textSecondary} /></View>
-                   <Text style={s.metricText}>Community: {event.communityId}</Text>
+                   <Text style={s.metricText}>Community: {displayCommunity}</Text>
                  </View>
               </View>
 

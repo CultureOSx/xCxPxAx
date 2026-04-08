@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import * as Haptics from 'expo-haptics';
+import { goBackOrReplace } from '@/lib/navigation';
 
 const CATEGORY_CONFIG: Record<UpdateCategory, { label: string; color: string; icon: string }> = {
   release:      { label: 'Release',      color: CultureTokens.indigo,  icon: 'rocket-outline' },

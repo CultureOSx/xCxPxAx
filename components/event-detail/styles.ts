@@ -131,6 +131,18 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   section: { gap: 12 },
   sectionTitle: { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4, color: colors.textTertiary },
   aboutDesc: { fontSize: 16, fontFamily: 'Poppins_400Regular', lineHeight: 26, color: colors.textSecondary },
+  actionGrid: { gap: 10 },
+  actionGridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
+  actionButton: { flex: 1, minWidth: 160 },
+  metaBlock: { gap: 10 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  metaChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  metaChipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 
   capacityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   capacityPercent: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
@@ -161,6 +173,14 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   metricRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   metricIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
   metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  hostCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: colors.surface,
+    borderColor: colors.borderLight,
+  },
+  hostHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hostContent: { flex: 1, gap: 2 },
 
   floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
   unifiedBarRow: {

@@ -154,7 +154,10 @@ export default function LocationScreen() {
     () => regions.find((r) => r.code === pendingState),
     [regions, pendingState],
   );
-  const allCitiesForState = pendingRegionMeta?.cities ?? [];
+  const allCitiesForState = useMemo(
+    () => pendingRegionMeta?.cities ?? [],
+    [pendingRegionMeta],
+  );
   const citiesToShow = useMemo(() => {
     if (!citySearch.trim()) return allCitiesForState;
     const q = citySearch.trim().toLowerCase();
@@ -417,7 +420,7 @@ export default function LocationScreen() {
                   {citiesToShow.length === 0 ? (
                     <View style={s.noResults}>
                       <Ionicons name="search-outline" size={36} color={colors.textSecondary} />
-                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>No cities match "{citySearch}"</Text>
+                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>No cities match &quot;{citySearch}&quot;</Text>
                       <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
                         <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
                       </Pressable>
