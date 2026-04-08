@@ -1,70 +1,89 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Pressable,
-  Platform, ActivityIndicator, RefreshControl,
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  Pressable,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { useCouncil } from '@/hooks/useCouncil';
-import { useEventsList } from '@/hooks/queries/useEvents';
-import { ticketKeys } from '@/hooks/queries/keys';
-import type { EventData, Ticket } from '@/shared/schema';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
-import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { api } from '@/lib/api';
+import { useEventsList } from '@/hooks/queries/useEvents';
+import { ticketKeys } from '@/hooks/queries/keys';
+import { useCouncil } from '@/hooks/useCouncil';
+import { useCalendarSync } from '@/hooks/useCalendarSync';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
-import { FilterChipRow } from '@/components/FilterChip';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { EventRow } from '@/components/calendar/EventRow';
 import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
-import {
-  DAYS, DAY_LETTERS, MONTHS, getDaysInMonth,
-  getFirstDayOfMonth, formatDateKey, toSafeDateKey,
-} from '@/components/calendar/utils';
-import { useCalendarSync } from '@/hooks/useCalendarSync';
+import { CultureTokens, gradients } from '@/constants/theme';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { DAY_LETTERS, MONTHS, formatDateKey, getDaysInMonth, getFirstDayOfMonth, toSafeDateKey } from '@/components/calendar/utils';
+import type { EventData, Ticket } from '@/shared/schema';
 
+const IS_WEB = Platform.OS === 'web';
 
-// ---------------------------------------------------------------------------
-// Main CalendarScreen
-// ---------------------------------------------------------------------------
+type CalendarFilter = 'All' | 'Today' | 'This Week' | 'My Tickets' | 'Free' | 'Council';
+
+function mergeById(...lists: EventData[][]): EventData[] {
+  const seen = new Set<string>();
+  const merged: EventData[] = [];
+  for (const list of lists) {
+    for (const item of list) {
+      if (!item.id) {
+        merged.push(item);
+        continue;
+      }
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      merged.push(item);
+    }
+  }
+  return merged;
+}
+
+function toDateFromKey(key: string): Date {
+  return new Date(`${key}T00:00:00`);
+}
+
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-
   const { isDesktop, isTablet, width, hPad } = useLayout();
-  const isWeb = Platform.OS === 'web';
-  const isDesktopWeb = isWeb && isDesktop;
+  const { user, userId, isAuthenticated } = useAuth();
+  const { state: onboarding } = useOnboarding();
+  const { data: councilData } = useCouncil();
 
-  const topInset = isWeb ? 0 : insets.top;
-  const contentMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
-  const contentHorizontalPadding = isWeb ? (isDesktopWeb ? 32 : 20) : 0;
+  const bottomInset = IS_WEB ? 0 : insets.bottom;
+  const isDesktopWeb = IS_WEB && isDesktop;
+  const contentMaxWidth = isDesktopWeb ? 1180 : isTablet ? 900 : width;
+  const topInset = IS_WEB ? 0 : insets.top;
 
-   
-  const civicRowShadow = MAIN_TAB_CARD_SHADOW;
+  const city = user?.city ?? onboarding?.city;
+  const country = user?.country ?? onboarding?.country;
 
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(formatDateKey(today.getFullYear(), today.getMonth(), today.getDate()));
+  const [activeFilter, setActiveFilter] = useState<CalendarFilter>('All');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: councilData } = useCouncil();
-  const council = councilData?.council;
-  const councilEvents = useMemo(() => councilData?.events ?? [], [councilData]);
-
-  const { user, isAuthenticated, userId } = useAuth();
-  const firstName = user?.displayName?.split(' ')[0] ?? user?.username ?? null;
-
-  // Calendar sync — personal events
   const {
     prefs: calPrefs,
     personalEvents,
@@ -72,36 +91,18 @@ export default function CalendarScreen() {
     exportEventToCalendar,
   } = useCalendarSync();
 
-  // Load personal events whenever month changes
   useEffect(() => {
     if (!calPrefs.deviceConnected || !calPrefs.showPersonalEvents) return;
     const start = new Date(currentYear, currentMonth, 1);
     const end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
     fetchPersonalEvents(start, end);
-  }, [currentMonth, currentYear, calPrefs.deviceConnected, calPrefs.showPersonalEvents, fetchPersonalEvents]);
-
-  // Build a set of personal-busy dates for the calendar grid
-  const personalBusyDates = useMemo(() => {
-    const set = new Set<string>();
-    personalEvents.forEach((ev) => {
-      const dk = formatDateKey(ev.startDate.getFullYear(), ev.startDate.getMonth(), ev.startDate.getDate());
-      set.add(dk);
-    });
-    return set;
-  }, [personalEvents]);
+  }, [calPrefs.deviceConnected, calPrefs.showPersonalEvents, currentMonth, currentYear, fetchPersonalEvents]);
 
   const { data: eventsPage, isLoading, refetch: refetchEvents } = useEventsList({
-    city: user?.city,
-    country: user?.country,
+    city,
+    country,
     pageSize: 300,
   });
-
-  const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try { await refetchEvents(); } finally { setRefreshing(false); }
-  }, [refetchEvents]);
-  const allEventsRaw = useMemo(() => eventsPage?.events ?? [], [eventsPage]);
 
   const { data: tickets = [] } = useQuery<Ticket[]>({
     queryKey: ticketKeys.forUser(userId ?? ''),
@@ -109,206 +110,181 @@ export default function CalendarScreen() {
     enabled: !!userId,
   });
 
-  const rsvps = useMemo<unknown[]>(() => [], []);
-  const likes = useMemo<unknown[]>(() => [], []);
-  const interests = useMemo<unknown[]>(() => [], []);
+  const allEvents = useMemo(
+    () => mergeById(eventsPage?.events ?? [], councilData?.events ?? []),
+    [eventsPage?.events, councilData?.events],
+  );
 
-  const allEvents = useMemo(() => {
-    const ids = new Set();
-    const merged: EventData[] = [];
-    [...allEventsRaw, ...councilEvents].forEach((ev: EventData) => {
-      const eid = ev.id;
-      if (eid && !ids.has(eid)) {
-        merged.push(ev);
-        ids.add(eid);
-      } else if (!eid) {
-        merged.push(ev);
-      }
-    });
-    return merged;
-  }, [allEventsRaw, councilEvents]);
-
-  // My Events = events the user has tickets for
-  const myEvents = useMemo(() => {
-    if (!isAuthenticated || !(tickets as Ticket[]).length) return [];
-    const ticketedIds = new Set((tickets as Ticket[]).map((t) => t.eventId));
-    return allEvents.filter((e) => ticketedIds.has(e.id));
-  }, [allEvents, tickets, isAuthenticated]);
-
-  const [activeChip, setActiveChip] = useState('All');
+  const ticketedEventIds = useMemo(() => new Set(tickets.map((t) => t.eventId)), [tickets]);
 
   const filteredEvents = useMemo(() => {
-    let events = allEvents;
-    switch (activeChip) {
-      case 'All':
-        break;
-      case 'Today': {
-        const todayStr = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-        events = events.filter((e) => toSafeDateKey(e.date) === todayStr);
-        break;
+    const now = new Date();
+    const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekEnd = new Date(now);
+    weekEnd.setDate(now.getDate() + 7);
+
+    return allEvents.filter((event) => {
+      const key = toSafeDateKey(event.date);
+      if (!key) return false;
+      const dateObj = toDateFromKey(key);
+      switch (activeFilter) {
+        case 'All':
+          return true;
+        case 'Today':
+          return key === todayKey;
+        case 'This Week':
+          return dateObj >= toDateFromKey(todayKey) && dateObj <= weekEnd;
+        case 'My Tickets':
+          return isAuthenticated && ticketedEventIds.has(event.id);
+        case 'Free':
+          return (event.priceCents ?? 0) === 0;
+        case 'Council':
+          return Boolean(event.councilId) || event.category?.toLowerCase() === 'civic' || event.category?.toLowerCase() === 'council';
+        default:
+          return true;
       }
-      case 'My Events':
-        if (isAuthenticated) {
-          const rsvpIds = new Set((rsvps as { eventId: string }[]).map((r) => r.eventId));
-          const ticketedIds = new Set((tickets as Ticket[]).map((t) => t.eventId));
-          events = events.filter((e) => rsvpIds.has(e.id) || ticketedIds.has(e.id));
-        }
-        break;
-      case 'Tickets':
-        if (isAuthenticated) {
-          const ticketIds = new Set((tickets as Ticket[]).map((t) => t.eventId));
-          events = events.filter((e) => ticketIds.has(e.id));
-        }
-        break;
-      case 'Council':
-        events = events.filter((e) => e.councilId);
-        break;
-      case 'Interests':
-        if (isAuthenticated) {
-          const likeIds = new Set((likes as { eventId: string }[]).map((l) => l.eventId));
-          const interestTags = new Set((interests as { interestTag: string }[]).map((i) => i.interestTag));
-          events = events.filter(
-            (e) =>
-              likeIds.has(e.id) ||
-              (e.tags && e.tags.some((tag: string) => interestTags.has(tag))),
-          );
-        }
-        break;
-      default:
-        events = events.filter((e) => {
-          const cat = (e.category || '').toLowerCase();
-          const target = activeChip.toLowerCase();
-          return cat === target || (e.councilId && activeChip === 'Council');
-        });
-    }
-    return events;
-  }, [activeChip, allEvents, tickets, rsvps, likes, interests, isAuthenticated, today]);
-
-  const eventsInMonthCount = useMemo(() => {
-    return allEvents.filter((e) => {
-      const dk = toSafeDateKey(e.date);
-      if (!dk) return false;
-      const d = new Date(`${dk}T00:00:00`);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    }).length;
-  }, [allEvents, currentMonth, currentYear]);
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth);
-  const days: (number | null)[] = [];
-  for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(d);
-
-  const eventDates = useMemo(() => {
-    const set = new Set<string>();
-    filteredEvents.forEach((e) => {
-      const dateKey = toSafeDateKey(e.date);
-      if (dateKey) set.add(dateKey);
     });
-    return set;
+  }, [allEvents, activeFilter, isAuthenticated, ticketedEventIds]);
+
+  const eventsInCurrentMonth = useMemo(() => {
+    return filteredEvents.filter((event) => {
+      const key = toSafeDateKey(event.date);
+      if (!key) return false;
+      const d = toDateFromKey(key);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+  }, [filteredEvents, currentMonth, currentYear]);
+
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, EventData[]>();
+    for (const event of filteredEvents) {
+      const key = toSafeDateKey(event.date);
+      if (!key) continue;
+      const arr = map.get(key) ?? [];
+      arr.push(event);
+      map.set(key, arr);
+    }
+    return map;
   }, [filteredEvents]);
 
-  // My-events dot dates (tickets) — shown in teal
-  const myEventDates = useMemo(() => {
+  const personalBusyDates = useMemo(() => {
     const set = new Set<string>();
-    myEvents.forEach((e) => {
-      const dk = toSafeDateKey(e.date);
-      if (dk) set.add(dk);
-    });
+    for (const event of personalEvents) {
+      set.add(formatDateKey(event.startDate.getFullYear(), event.startDate.getMonth(), event.startDate.getDate()));
+    }
     return set;
-  }, [myEvents]);
+  }, [personalEvents]);
+
+  const ticketDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const event of allEvents) {
+      const key = toSafeDateKey(event.date);
+      if (!key) continue;
+      if (ticketedEventIds.has(event.id)) set.add(key);
+    }
+    return set;
+  }, [allEvents, ticketedEventIds]);
 
   const selectedEvents = useMemo(() => {
     if (!selectedDate) return [];
-    return filteredEvents.filter((e) => toSafeDateKey(e.date) === selectedDate);
-  }, [filteredEvents, selectedDate]);
+    return eventsByDate.get(selectedDate) ?? [];
+  }, [eventsByDate, selectedDate]);
 
   const selectedPersonalEvents = useMemo(() => {
     if (!selectedDate || !calPrefs.showPersonalEvents) return [];
     return personalEvents.filter((ev) => {
-      const dk = formatDateKey(ev.startDate.getFullYear(), ev.startDate.getMonth(), ev.startDate.getDate());
-      return dk === selectedDate;
+      const key = formatDateKey(ev.startDate.getFullYear(), ev.startDate.getMonth(), ev.startDate.getDate());
+      return key === selectedDate;
     });
   }, [selectedDate, personalEvents, calPrefs.showPersonalEvents]);
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
     return filteredEvents
-      .filter((e) => {
-        const eventDate = toSafeDateKey(e.date);
-        if (!eventDate) return false;
-        const dateObj = new Date(`${eventDate}T00:00:00`);
-        return (
-          dateObj.getTime() >= now.getTime() &&
-          dateObj.getTime() <= now.getTime() + sevenDays
-        );
+      .filter((event) => {
+        const key = toSafeDateKey(event.date);
+        if (!key) return false;
+        return toDateFromKey(key).getTime() >= now.getTime();
+      })
+      .sort((a, b) => {
+        const aKey = toSafeDateKey(a.date);
+        const bKey = toSafeDateKey(b.date);
+        if (!aKey || !bKey) return 0;
+        return toDateFromKey(aKey).getTime() - toDateFromKey(bKey).getTime();
       })
       .slice(0, 10);
   }, [filteredEvents]);
 
-  const civicReminders = useMemo(() => {
-    return filteredEvents
-      .filter((e) => {
-        const eventDate = toSafeDateKey(e.date);
-        if (!eventDate) return false;
-        const dateObj = new Date(`${eventDate}T00:00:00`);
-        return (
-          (e.category === 'council' || e.category === 'civic' || e.councilId) &&
-          dateObj.getMonth() === currentMonth &&
-          dateObj.getFullYear() === currentYear
-        );
-      })
-      .map((e) => ({
-        id: e.id,
-        title: e.title,
-        dateKey: toSafeDateKey(e.date),
-        note: e.description,
-      }));
-  }, [filteredEvents, currentMonth, currentYear]);
+  const monthDays = useMemo(() => {
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    const first = getFirstDayOfMonth(currentYear, currentMonth);
+    const grid: (number | null)[] = [];
+    for (let i = 0; i < first; i += 1) grid.push(null);
+    for (let d = 1; d <= daysInMonth; d += 1) grid.push(d);
+    return grid;
+  }, [currentYear, currentMonth]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetchEvents();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchEvents]);
 
   const prevMonth = useCallback(() => {
-    if (!isWeb) Haptics.selectionAsync();
-    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
-    else setCurrentMonth((m) => m - 1);
+    if (!IS_WEB) Haptics.selectionAsync().catch(() => {});
     setSelectedDate(null);
-  }, [currentMonth, isWeb]);
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+      return;
+    }
+    setCurrentMonth((m) => m - 1);
+  }, [currentMonth]);
 
   const nextMonth = useCallback(() => {
-    if (!isWeb) Haptics.selectionAsync();
-    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1); }
-    else setCurrentMonth((m) => m + 1);
+    if (!IS_WEB) Haptics.selectionAsync().catch(() => {});
     setSelectedDate(null);
-  }, [currentMonth, isWeb]);
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((y) => y + 1);
+      return;
+    }
+    setCurrentMonth((m) => m + 1);
+  }, [currentMonth]);
 
   const goToday = useCallback(() => {
-    if (!isWeb) Haptics.selectionAsync();
-    setCurrentMonth(today.getMonth());
-    setCurrentYear(today.getFullYear());
-    const todayStr = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-    setSelectedDate(todayStr);
-  }, [today, isWeb]);
+    if (!IS_WEB) Haptics.selectionAsync().catch(() => {});
+    const now = new Date();
+    setCurrentMonth(now.getMonth());
+    setCurrentYear(now.getFullYear());
+    setSelectedDate(formatDateKey(now.getFullYear(), now.getMonth(), now.getDate()));
+    setActiveFilter('Today');
+  }, []);
 
-  const handleChipSelect = useCallback(
-    (id: string) => {
-      setActiveChip(id);
-      if (id === 'Today') goToday();
-    },
-    [goToday],
+  const monthTitle = `${MONTHS[currentMonth]} ${currentYear}`;
+  const calendarFilterItems = useMemo(
+    () =>
+      [
+        { id: 'All', label: 'All', icon: 'apps-outline' },
+        { id: 'Today', label: 'Today', icon: 'today-outline' },
+        { id: 'This Week', label: 'Week', icon: 'calendar-number-outline' },
+        ...(isAuthenticated ? [{ id: 'My Tickets', label: 'Tickets', icon: 'ticket-outline' }] : []),
+        { id: 'Free', label: 'Free', icon: 'pricetag-outline' },
+        { id: 'Council', label: 'Council', icon: 'business-outline' },
+      ] as { id: CalendarFilter; label: string; icon: keyof typeof Ionicons.glyphMap }[],
+    [isAuthenticated],
   );
-
-  const todayLabel = useMemo(() => {
-    const dayName = DAYS[today.getDay()];
-    return `Today · ${dayName} ${today.getDate()} ${MONTHS[today.getMonth()]}`;
-  }, [today]);
 
   if (isLoading) {
     return (
       <ErrorBoundary>
-        <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
-          <View style={[s.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+        <View style={[styles.loadingRoot, { backgroundColor: colors.background }]}>
+          <View style={[styles.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={[s.loadingText, { color: colors.text }]}>Loading events…</Text>
+            <Text style={[styles.loadingText, { color: colors.text }]}>Building your events calendar…</Text>
           </View>
         </View>
       </ErrorBoundary>
@@ -317,743 +293,440 @@ export default function CalendarScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.root, { backgroundColor: colors.background }]}>
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
         <LinearGradient
           colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={s.ambientMesh}
+          style={styles.ambientMesh}
           pointerEvents="none"
         />
 
-        {/* ── Personalised Header (liquid glass) ── */}
-          <TabPrimaryHeader
-            title="Events"
-            subtitle="Your personalised cultural agenda."
-            locationLabel={user?.city && user?.country ? `${user.city}, ${user.country}` : user?.city || user?.country}
-            hPad={hPad}
-            topInset={topInset}
-          >
-            {/* Row: chevron · month+name · chevron */}
-            <View style={s.monthNavRow}>
-                <Pressable
-                  onPress={prevMonth}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel="Previous month"
-                  style={({ pressed }) => [
-                  s.navPill,
-                  { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Ionicons name="chevron-back" size={18} color={colors.text} />
-              </Pressable>
-
-              <View style={s.monthCenter}>
-                {/* Personalised calendar name */}
-                {firstName ? (
-                  <Text style={[s.calendarOwnerLabel, { color: colors.textTertiary }]}>
-                    {firstName}&rsquo;s events
-                  </Text>
-                ) : null}
-                <Text style={[s.monthTitle, { color: colors.text }]}>
-                  {MONTHS[currentMonth]} {currentYear}
-                </Text>
-                <Text style={[s.todaySubline, { color: colors.textSecondary }]}>
-                  {todayLabel}
-                </Text>
-              </View>
-
-              <View style={s.headerActions}>
-                {/* Calendar Sync shortcut */}
-                <Pressable
-                  onPress={() => router.push('/settings/calendar-sync')}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Calendar sync settings"
-                  style={({ pressed }) => [
-                    s.navPill,
-                    { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Ionicons
-                    name={calPrefs.deviceConnected ? 'calendar' : 'calendar-outline'}
-                    size={18}
-                    color={calPrefs.deviceConnected ? CultureTokens.indigo : colors.text}
-                  />
-                </Pressable>
-
-                <Pressable
-                  onPress={nextMonth}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel="Next month"
-                  style={({ pressed }) => [
-                    s.navPill,
-                    { borderColor: colors.borderLight, backgroundColor: colors.primarySoft },
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Ionicons name="chevron-forward" size={18} color={colors.text} />
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Stats row */}
-            <View style={s.statsRow}>
-              <View style={[s.statBadge, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '30' }]}>
-                <Ionicons name="calendar-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
-                <Text style={[s.statText, { color: CultureTokens.indigo }]}>
-                  {eventsInMonthCount} events
-                </Text>
-              </View>
-              {isAuthenticated && myEvents.length > 0 && (
-                <View style={[s.statBadge, { backgroundColor: CultureTokens.teal + '14', borderColor: CultureTokens.teal + '30' }]}>
-                  <Ionicons name="ticket-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.teal} />
-                  <Text style={[s.statText, { color: CultureTokens.teal }]}>
-                    {myEvents.length} ticket{myEvents.length !== 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-              {calPrefs.deviceConnected && (
-                <View style={[s.statBadge, { backgroundColor: CultureTokens.coral + '14', borderColor: CultureTokens.coral + '30' }]}>
-                  <Ionicons name="link-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.coral} />
-                  <Text style={[s.statText, { color: CultureTokens.coral }]}>Synced</Text>
-                </View>
-              )}
-            </View>
-          </TabPrimaryHeader>
+        <TabPrimaryHeader
+          title="Events"
+          subtitle={undefined}
+          locationLabel={undefined}
+          hPad={hPad}
+          topInset={topInset}
+          showChromeHairline={false}
+          topHeaderAction={
+            <Pressable
+              onPress={() => router.push('/settings/calendar-sync')}
+              style={[styles.topHeaderSyncBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open calendar sync settings"
+            >
+              <Ionicons
+                name={calPrefs.deviceConnected ? 'calendar' : 'calendar-outline'}
+                size={MAIN_TAB_UI.iconSize.md}
+                color={calPrefs.deviceConnected ? CultureTokens.indigo : colors.text}
+              />
+            </Pressable>
+          }
+        />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => { void handleRefresh(); }}
+              onRefresh={() => {
+                void handleRefresh();
+              }}
               tintColor={CultureTokens.indigo}
+              colors={[CultureTokens.indigo]}
             />
           }
           contentContainerStyle={{
-            paddingBottom: MAIN_TAB_UI.scrollBottomPad,
             maxWidth: contentMaxWidth,
             width: '100%',
             alignSelf: 'center',
-            paddingHorizontal: contentHorizontalPadding,
+            paddingTop: 0,
+            paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad,
           }}
         >
-          <View style={{ paddingHorizontal: hPad, paddingTop: 10 }}>
-            <CultureEngagementHero
-              title="Plan your cultural week with zero friction."
-              subtitle="Sync events, earn streaks, and get smarter suggestions based on your calendar rhythm."
-              stat={`${eventsInMonthCount} cultural events this month`}
-              badge="Sydney Legend"
-              ctaLabel="Open Full Events List"
-              ctaRoute="/events"
-              icon="calendar"
-            />
-          </View>
-
-          {/* ── Filter chips (glass rail) ── */}
-          <LiquidGlassPanel
-            borderRadius={MAIN_TAB_UI.cardRadius}
-            style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapSmall, marginBottom: 8 }}
-            contentStyle={{ paddingVertical: 10, paddingHorizontal: 4 }}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.compactFilterRail, { paddingHorizontal: hPad }]}
+            style={{ marginTop: 10 }}
           >
-            <FilterChipRow
-              selectedId={activeChip}
-              onSelect={handleChipSelect}
-              items={[
-                { id: 'All',      label: 'All',      icon: 'apps' },
-                { id: 'Today',    label: 'Today',    icon: 'today' },
-                ...(isAuthenticated ? [{ id: 'My Events', label: 'My Events', icon: 'ticket' as const }] : []),
-                { id: 'Festival', label: 'Festival', icon: 'color-palette' },
-                { id: 'Movie',    label: 'Movie',    icon: 'film' },
-                { id: 'Workshop', label: 'Workshop', icon: 'hammer' },
-                { id: 'Concert',  label: 'Concert',  icon: 'musical-notes' },
-                { id: 'Food',     label: 'Food',     icon: 'restaurant' },
-                { id: 'Civic',    label: 'Civic',    icon: 'business' },
+            <View
+              style={[
+                styles.compactStatChip,
+                { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '36' },
               ]}
-              size="small"
-            />
-          </LiquidGlassPanel>
+            >
+              <Text style={[styles.compactStatText, { color: CultureTokens.indigo }]}>
+                {eventsInCurrentMonth.length} this month
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.compactStatChip,
+                { backgroundColor: CultureTokens.teal + '14', borderColor: CultureTokens.teal + '36' },
+              ]}
+            >
+              <Text style={[styles.compactStatText, { color: CultureTokens.teal }]}>
+                {ticketedEventIds.size} ticketed
+              </Text>
+            </View>
+            {calendarFilterItems.map((item) => {
+              const active = activeFilter === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setActiveFilter(item.id)}
+                  style={({ pressed }) => [
+                    styles.compactChip,
+                    {
+                      backgroundColor: active ? CultureTokens.indigo : colors.surface,
+                      borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                      opacity: pressed ? 0.82 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Filter by ${item.label}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <Ionicons
+                    name={item.icon}
+                    size={14}
+                    color={active ? '#fff' : colors.textSecondary}
+                  />
+                  <Text style={[styles.compactChipText, { color: active ? '#fff' : colors.text }]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-          <View style={isDesktopWeb ? [s.desktopSplit, { paddingHorizontal: hPad }] : undefined}>
-            <View style={isDesktopWeb ? s.desktopCalendarCol : undefined}>
-
-              {/* ── Calendar card ── */}
+          <View style={isDesktopWeb ? [styles.desktopSplit, { paddingHorizontal: hPad }] : undefined}>
+            <View style={isDesktopWeb ? styles.leftCol : undefined}>
               <LiquidGlassPanel
                 borderRadius={MAIN_TAB_UI.cardRadius}
-                style={[s.calCardOuter, { marginHorizontal: isDesktopWeb ? 0 : hPad }, isDesktopWeb && s.calCardCompact]}
-                contentStyle={s.calCardInner}
+                style={{ marginHorizontal: isDesktopWeb ? 0 : hPad, marginTop: 12 }}
+                contentStyle={{ padding: 14 }}
               >
-                {/* Dot legend when personal events visible */}
-                {calPrefs.deviceConnected && calPrefs.showPersonalEvents && (
-                  <View style={s.dotLegend}>
-                    <View style={s.legendItem}>
-                      <View style={[s.legendDot, { backgroundColor: CultureTokens.coral }]} />
-                      <Text style={[s.legendText, { color: colors.textTertiary }]}>Cultural events</Text>
-                    </View>
-                    <View style={s.legendItem}>
-                      <View style={[s.legendDot, { backgroundColor: CultureTokens.teal }]} />
-                      <Text style={[s.legendText, { color: colors.textTertiary }]}>Your tickets</Text>
-                    </View>
-                    <View style={s.legendItem}>
-                      <View style={[s.legendDot, { backgroundColor: colors.textTertiary + '80' }]} />
-                      <Text style={[s.legendText, { color: colors.textTertiary }]}>Personal busy</Text>
-                    </View>
+                <View style={styles.calendarTopBar}>
+                  <Text style={[styles.monthYearHeading, { color: colors.text }]}>{monthTitle}</Text>
+                  <View style={styles.calendarTopActions}>
+                    <Pressable
+                      onPress={prevMonth}
+                      style={[styles.monthControlBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Previous month"
+                    >
+                      <Ionicons name="chevron-back" size={14} color={colors.text} />
+                    </Pressable>
+                    <Pressable
+                      onPress={goToday}
+                      style={[styles.todayBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Jump to today"
+                    >
+                      <Text style={[styles.todayBtnText, { color: colors.text }]}>Today</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => router.push('/settings/calendar-sync')}
+                      style={[styles.monthControlBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Open calendar sync settings"
+                    >
+                      <Ionicons
+                        name={calPrefs.deviceConnected ? 'calendar' : 'calendar-outline'}
+                        size={14}
+                        color={calPrefs.deviceConnected ? CultureTokens.indigo : colors.text}
+                      />
+                    </Pressable>
+                    <Pressable
+                      onPress={nextMonth}
+                      style={[styles.monthControlBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Next month"
+                    >
+                      <Ionicons name="chevron-forward" size={14} color={colors.text} />
+                    </Pressable>
                   </View>
-                )}
+                </View>
 
-                {/* Day-of-week header row */}
-                <View style={s.dayHeaders}>
-                  {DAY_LETTERS.map((d, i) => (
-                    <Text key={`${d}-${i}`} style={[s.dayHeaderText, { color: colors.textTertiary }]}>
-                      {d}
+                <View style={styles.dayHeaderRow}>
+                  {DAY_LETTERS.map((label, index) => (
+                    <Text key={`${label}-${index}`} style={[styles.dayHeaderText, { color: colors.textTertiary }]}>
+                      {label}
                     </Text>
                   ))}
                 </View>
 
-                {/* Date grid */}
-                <View style={s.daysGrid}>
-                  {days.map((day, idx) => {
-                    if (day === null) {
-                      return <View key={`empty-${idx}`} style={s.dayCellEmpty} />;
-                    }
+                <View style={styles.daysGrid}>
+                  {monthDays.map((day, idx) => {
+                    if (day == null) return <View key={`empty-${idx}`} style={styles.dayCellEmpty} />;
                     const dateKey = formatDateKey(currentYear, currentMonth, day);
-                    const hasEvent = eventDates.has(dateKey);
-                    const hasMyEvent = myEventDates.has(dateKey);
-                    const hasPersonal = personalBusyDates.has(dateKey) && calPrefs.showPersonalEvents;
+                    const isTodayCell =
+                      day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
                     const isSelected = selectedDate === dateKey;
-                    const isToday =
-                      day === today.getDate() &&
-                      currentMonth === today.getMonth() &&
-                      currentYear === today.getFullYear();
+                    const hasEvents = (eventsByDate.get(dateKey)?.length ?? 0) > 0;
+                    const hasTickets = ticketDates.has(dateKey);
+                    const hasPersonal = personalBusyDates.has(dateKey) && calPrefs.showPersonalEvents;
 
                     return (
                       <Pressable
                         key={dateKey}
-                        onPress={() => {
-                          if (!isWeb) Haptics.selectionAsync();
-                          setSelectedDate(isSelected ? null : dateKey);
-                        }}
+                        onPress={() => setSelectedDate((prev) => (prev === dateKey ? null : dateKey))}
                         accessibilityRole="button"
                         accessibilityLabel={`${day} ${MONTHS[currentMonth]}`}
                         style={({ pressed }) => [
-                          s.dayCell,
+                          styles.dayCell,
                           isSelected
                             ? { backgroundColor: CultureTokens.indigo }
-                            : isToday
-                            ? { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '60', borderWidth: 1.5 }
-                            : { backgroundColor: 'transparent' },
-                          pressed && { opacity: 0.65 },
+                            : isTodayCell
+                              ? { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '55', borderWidth: 1.5 }
+                              : { backgroundColor: 'transparent' },
+                          pressed && { opacity: 0.75 },
                         ]}
                       >
                         <Text
                           style={[
-                            s.dayText,
+                            styles.dayText,
                             isSelected
                               ? { color: '#fff' }
-                              : isToday
-                              ? { color: CultureTokens.indigo }
-                              : { color: colors.text },
+                              : isTodayCell
+                                ? { color: CultureTokens.indigo }
+                                : { color: colors.text },
                           ]}
                         >
                           {day}
                         </Text>
-
-                        {/* Event dots row */}
-                        {(hasEvent || hasMyEvent || hasPersonal) && (
-                          <View style={s.dotsRow}>
-                            {hasEvent && (
-                              <View style={[s.eventDot, { backgroundColor: isSelected ? '#fff' : CultureTokens.coral }]} />
-                            )}
-                            {hasMyEvent && (
-                              <View style={[s.eventDot, { backgroundColor: isSelected ? '#fff' : CultureTokens.teal }]} />
-                            )}
-                            {hasPersonal && !isSelected && (
-                              <View style={[s.eventDot, { backgroundColor: colors.textTertiary + '80' }]} />
-                            )}
+                        {(hasEvents || hasTickets || hasPersonal) ? (
+                          <View style={styles.dotRow}>
+                            {hasEvents ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : CultureTokens.coral }]} /> : null}
+                            {hasTickets ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : CultureTokens.teal }]} /> : null}
+                            {hasPersonal ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : colors.textTertiary }]} /> : null}
                           </View>
-                        )}
+                        ) : null}
                       </Pressable>
                     );
                   })}
                 </View>
               </LiquidGlassPanel>
 
-              {/* ── Selected date events ── */}
-              {selectedDate && (
-                <View style={s.eventsSection}>
-                  <View style={s.sectionRow}>
-                    <Text style={[s.sectionTitle, { color: colors.text }]}>
-                      Events on{' '}
-                      {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
-                        weekday: 'long', day: 'numeric', month: 'long',
-                      })}
-                    </Text>
-                    <Text style={[s.sectionCount, { color: colors.textTertiary }]}>
+              <View style={[styles.section, { paddingHorizontal: hPad }]}>
+                <View style={styles.sectionRow}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    {selectedDate
+                      ? `Agenda · ${new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}`
+                      : 'Select a day to view your agenda'}
+                  </Text>
+                  {selectedDate ? (
+                    <Text style={[styles.sectionCount, { color: colors.textTertiary }]}>
                       {selectedEvents.length + selectedPersonalEvents.length}
                     </Text>
-                  </View>
-
-                  {/* Personal busy blocks first (sorted by time) */}
-                  {selectedPersonalEvents.map((pev) => (
-                    <View
-                      key={pev.id}
-                      style={[s.busyBlock, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                    >
-                      <View style={[s.busyStripe, { backgroundColor: pev.color }]} />
-                      <View style={s.busyContent}>
-                        <View style={[s.busyBadge, { backgroundColor: colors.textTertiary + '15' }]}>
-                          <Ionicons name="lock-closed" size={10} color={colors.textTertiary} />
-                          <Text style={[s.busyBadgeText, { color: colors.textTertiary }]}>Personal · Private</Text>
-                        </View>
-                        <Text style={[s.busyTime, { color: colors.textSecondary }]}>
-                          {pev.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {' – '}
-                          {pev.endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {' · '}
-                          {pev.calendarName}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-
-                  {selectedEvents.length === 0 && selectedPersonalEvents.length === 0 ? (
-                    <CalendarEmptyState
-                      colors={colors}
-                      title="No events this day"
-                      subtitle="Explore nearby events"
-                      onSubtitlePress={() => router.push('/events')}
-                    />
-                  ) : (
-                    selectedEvents.map((event) => (
-                      <EventRowWithSync
-                        key={event.id}
-                        event={event}
-                        colors={colors}
-                        isAuthenticated={isAuthenticated}
-                        isWeb={isWeb}
-                        onAddToCalendar={() => exportEventToCalendar(event)}
-                      />
-                    ))
-                  )}
+                  ) : null}
                 </View>
-              )}
+
+                {selectedDate ? (
+                  <>
+                    {selectedPersonalEvents.map((pev) => (
+                      <View key={pev.id} style={[styles.personalRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                        <View style={[styles.personalStripe, { backgroundColor: pev.color }]} />
+                        <View style={{ flex: 1, padding: 10 }}>
+                          <Text style={[styles.personalTitle, { color: colors.textTertiary }]}>Personal calendar</Text>
+                          <Text style={[styles.personalTime, { color: colors.textSecondary }]}>
+                            {pev.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {pev.endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {pev.calendarName}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+
+                    {selectedEvents.length === 0 && selectedPersonalEvents.length === 0 ? (
+                      <CalendarEmptyState
+                        colors={colors}
+                        title="No events on this day"
+                        subtitle="Browse all events"
+                        onSubtitlePress={() => router.push('/events')}
+                      />
+                    ) : (
+                      selectedEvents.map((event) => (
+                        <View key={event.id}>
+                          <EventRow event={event} colors={colors} isAuthenticated={isAuthenticated} isWeb={IS_WEB} />
+                          <Pressable
+                            onPress={() => exportEventToCalendar(event)}
+                            style={({ pressed }) => [
+                              styles.addCalendarBtn,
+                              { borderColor: CultureTokens.indigo + '35', backgroundColor: CultureTokens.indigo + '10', opacity: pressed ? 0.8 : 1 },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Add this event to calendar"
+                          >
+                            <Ionicons name="calendar-outline" size={14} color={CultureTokens.indigo} />
+                            <Text style={[styles.addCalendarText, { color: CultureTokens.indigo }]}>Add to calendar</Text>
+                          </Pressable>
+                        </View>
+                      ))
+                    )}
+                  </>
+                ) : (
+                  <CalendarEmptyState
+                    colors={colors}
+                    title="Choose a date"
+                    subtitle="Tap any day above to open agenda"
+                  />
+                )}
+              </View>
             </View>
 
-            {/* ── Desktop: upcoming column ── */}
-            {isDesktopWeb && (
-              <View style={s.desktopUpcomingCol}>
-                {/* My Events section */}
-                {isAuthenticated && myEvents.length > 0 && (
-                  <View style={s.eventsSection}>
-                    <View style={s.sectionRow}>
-                      <Text style={[s.sectionTitle, { color: colors.text }]}>
-                        {firstName ? `${firstName}'s Events` : 'My Events'}
-                      </Text>
-                      <View style={[s.myEventsBadge, { backgroundColor: CultureTokens.teal + '15', borderColor: CultureTokens.teal + '30' }]}>
-                        <Text style={[s.myEventsBadgeText, { color: CultureTokens.teal }]}>{myEvents.length}</Text>
+            <View style={isDesktopWeb ? styles.rightCol : undefined}>
+              <View style={[styles.section, { paddingHorizontal: hPad }]}>
+                <View style={styles.sectionRow}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming</Text>
+                  <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
+                    <Text style={[styles.linkText, { color: CultureTokens.indigo }]}>See all</Text>
+                  </Pressable>
+                </View>
+                {upcomingEvents.length > 0 ? (
+                  <View style={styles.upcomingGrid}>
+                    {upcomingEvents.slice(0, isDesktopWeb ? 6 : 4).map((event, index) => (
+                      <View key={event.id}>
+                        <EventCard
+                          event={event}
+                          index={index}
+                          layout="stacked"
+                          containerWidth={isDesktopWeb ? 260 : Math.floor((width - hPad * 2 - MAIN_TAB_UI.sectionGapSmall) / 2)}
+                        />
                       </View>
-                    </View>
-                    {myEvents.slice(0, 5).map((event) => (
-                      <EventRow
-                        key={event.id}
-                        event={event}
-                        colors={colors}
-                        isAuthenticated={isAuthenticated}
-                        isWeb={isWeb}
-                      />
                     ))}
-                    {myEvents.length > 5 && (
-                      <Pressable onPress={() => router.push('/tickets')} style={s.seeMoreBtn}>
-                        <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all {myEvents.length} tickets</Text>
-                      </Pressable>
-                    )}
                   </View>
+                ) : (
+                  <CalendarEmptyState colors={colors} title="No upcoming events" subtitle="Try another filter" />
                 )}
+              </View>
 
-                <View style={s.eventsSection}>
-                  <View style={s.sectionRow}>
-                    <Text style={[s.sectionTitle, { color: colors.text }]}>Upcoming Events</Text>
-                    <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
-                      <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
+              {isAuthenticated && ticketedEventIds.size > 0 ? (
+                <View style={[styles.section, { paddingHorizontal: hPad }]}>
+                  <View style={styles.sectionRow}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>My Tickets</Text>
+                    <Pressable onPress={() => router.push('/tickets')} accessibilityRole="link">
+                      <Text style={[styles.linkText, { color: CultureTokens.indigo }]}>Open tickets</Text>
                     </Pressable>
                   </View>
-                  {upcomingEvents.length > 0 ? (
-                    <View style={s.eventsGrid}>
-                      {upcomingEvents.map((event, index) => (
-                        <View key={event.id} style={s.eventsGridItem}>
-                          <EventCard
-                            event={event}
-                            index={index}
-                            layout="stacked"
-                            containerWidth={(contentMaxWidth - contentHorizontalPadding * 2 - MAIN_TAB_UI.sectionGapSmall) / 2}
-                          />
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <CalendarEmptyState colors={colors} title="No upcoming events" subtitle="Check back soon" />
-                  )}
+                  {allEvents
+                    .filter((event) => ticketedEventIds.has(event.id))
+                    .slice(0, 4)
+                    .map((event) => (
+                      <EventRow key={event.id} event={event} colors={colors} isAuthenticated={isAuthenticated} isWeb={IS_WEB} />
+                    ))}
                 </View>
-              </View>
-            )}
+              ) : null}
+            </View>
           </View>
-
-          {/* ── Mobile: My Events (when authenticated + has tickets) ── */}
-          {!isDesktopWeb && isAuthenticated && myEvents.length > 0 && !selectedDate && activeChip === 'All' && (
-            <View style={s.eventsSection}>
-              <View style={s.sectionRow}>
-                <View style={s.myEventsTitleRow}>
-                  <Ionicons name="ticket" size={16} color={CultureTokens.teal} />
-                  <Text style={[s.sectionTitle, { color: colors.text }]}>
-                    {firstName ? `${firstName}'s Events` : 'My Events'}
-                  </Text>
-                </View>
-                <Pressable onPress={() => router.push('/tickets')} accessibilityRole="link">
-                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>All tickets</Text>
-                </Pressable>
-              </View>
-              {myEvents.slice(0, 3).map((event) => (
-                <EventRowWithSync
-                  key={event.id}
-                  event={event}
-                  colors={colors}
-                  isAuthenticated={isAuthenticated}
-                  isWeb={isWeb}
-                  onAddToCalendar={() => exportEventToCalendar(event)}
-                />
-              ))}
-              {myEvents.length > 3 && (
-                <Pressable onPress={() => router.push('/tickets')} style={s.seeMoreBtn}>
-                  <Text style={[s.seeMoreText, { color: CultureTokens.indigo }]}>
-                    +{myEvents.length - 3} more tickets
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
-          {/* ── Mobile: upcoming events (no date selected) ── */}
-          {!isDesktopWeb && !selectedDate && upcomingEvents.length > 0 && (
-            <View style={[s.eventsSection, { paddingHorizontal: hPad }]}>
-              <View style={s.sectionRow}>
-                <Text style={[s.sectionTitle, { color: colors.text }]}>All Upcoming</Text>
-                <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
-                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>See all</Text>
-                </Pressable>
-              </View>
-              <View style={s.eventsGrid}>
-                {upcomingEvents.map((event, index) => (
-                  <View key={event.id} style={s.eventsGridItem}>
-                    <EventCard
-                      event={event}
-                      index={index}
-                      layout="stacked"
-                      containerWidth={Math.floor((width - hPad * 2 - MAIN_TAB_UI.sectionGapSmall) / 2)}
-                    />
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* ── Civic reminders ── */}
-          {!selectedDate && civicReminders.length > 0 && (
-            <View style={s.eventsSection}>
-              <View style={s.sectionRow}>
-                <Text style={[s.sectionTitle, { color: colors.text }]}>Civic Reminders</Text>
-                <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
-                  <Text style={[s.seeAll, { color: CultureTokens.indigo }]}>All Events</Text>
-                </Pressable>
-              </View>
-              {civicReminders.map((reminder) => (
-                <View
-                  key={reminder.id}
-                  style={[
-                    s.civicRow,
-                    { backgroundColor: colors.surface, borderColor: CultureTokens.indigo + '30' },
-                    civicRowShadow,
-                  ]}
-                >
-                  <View style={[s.civicIcon, { backgroundColor: CultureTokens.indigo + '12' }]}>
-                    <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.civicTitle, { color: colors.text }]}>{reminder.title}</Text>
-                    <Text style={[s.civicSub, { color: colors.textSecondary }]}>
-                      {reminder.dateKey
-                        ? new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString(undefined, {
-                            weekday: 'long', day: 'numeric', month: 'short',
-                          })
-                        : ''}
-                      {reminder.note ? ` · ${reminder.note}` : ''}
-                      {council ? ` · ${council.name}` : ''}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* ── Empty ── */}
-          {!isDesktopWeb && !selectedDate && upcomingEvents.length === 0 && (
-            <View style={s.eventsSection}>
-              <CalendarEmptyState
-                colors={colors}
-                title="No events found"
-                subtitle="Try a different filter"
-              />
-            </View>
-          )}
-
-          {/* ── Calendar sync CTA (unauthenticated or not connected) ── */}
-          {isAuthenticated && !calPrefs.deviceConnected && (
-            <Pressable
-              onPress={() => router.push('/settings/calendar-sync')}
-              style={({ pressed }) => [
-                s.syncCta,
-                { backgroundColor: colors.surface, borderColor: CultureTokens.indigo + '30' },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <View style={[s.syncCtaIcon, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                <Ionicons name="calendar-outline" size={20} color={CultureTokens.indigo} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.syncCtaTitle, { color: colors.text }]}>Sync your calendar</Text>
-                <Text style={[s.syncCtaSub, { color: colors.textSecondary }]}>
-                  Connect Apple, Google or Outlook to see all your events in one place
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={CultureTokens.indigo} />
-            </Pressable>
-          )}
         </ScrollView>
       </View>
     </ErrorBoundary>
   );
 }
 
-// ---------------------------------------------------------------------------
-// EventRow with "Add to Calendar" action
-// ---------------------------------------------------------------------------
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
-function EventRowWithSync({
-  event, colors, isAuthenticated, isWeb, onAddToCalendar,
-}: {
-  event: EventData;
-  colors: ReturnType<typeof useColors>;
-  isAuthenticated: boolean;
-  isWeb: boolean;
-  onAddToCalendar: () => void;
-}) {
-  return (
-    <View style={syncStyles.wrapper}>
-      <EventRow
-        event={event}
-        colors={colors}
-        isAuthenticated={isAuthenticated}
-        isWeb={isWeb}
-      />
-      <Pressable
-        onPress={onAddToCalendar}
-        hitSlop={4}
-        accessibilityRole="button"
-        accessibilityLabel="Add to calendar"
-        style={({ pressed }) => [
-          syncStyles.addBtn,
-          { borderColor: CultureTokens.indigo + '30', backgroundColor: CultureTokens.indigo + '08' },
-          pressed && { opacity: 0.7 },
-        ]}
-      >
-        <Ionicons name="calendar-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
-        <Text style={[syncStyles.addBtnText, { color: CultureTokens.indigo }]}>Add to calendar</Text>
-      </Pressable>
-    </View>
-  );
-}
+  loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
+  loadingText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
 
-const syncStyles = StyleSheet.create({
-  wrapper: { marginBottom: 4 },
-  addBtn: {
-    flexDirection: 'row',
+  topHeaderSyncBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-end',
-    marginTop: -6,
-    marginRight: 4,
-    marginBottom: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    justifyContent: 'center',
     borderWidth: 1,
   },
-  addBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 11,
-  },
-});
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-const s = StyleSheet.create({
-  root: { flex: 1 },
-  ambientMesh: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.06,
+  headerMonthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  monthNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  monthCenter: { alignItems: 'center', flex: 1 },
+  monthTitle: { fontFamily: 'Poppins_700Bold', fontSize: 17, lineHeight: 21 },
+  monthSub: { fontFamily: 'Poppins_400Regular', fontSize: 12 },
 
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingCard: {
-    borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1,
+  statsRow: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  statPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  statPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11 },
+  compactFilterRail: { gap: 8, paddingTop: 10, paddingBottom: 2 },
+  compactStatChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  loadingText: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginTop: 16,
-  },
-
-  monthNavRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 6,
-  },
-  navPill: {
-    width: 40, height: 40, borderRadius: 12, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-  },
-  monthCenter: {
-    alignItems: 'center', flex: 1, gap: 1,
-  },
-  calendarOwnerLabel: {
-    fontFamily: 'Poppins_500Medium', fontSize: 11, letterSpacing: 0.3,
-  },
-  monthTitle: {
-    fontFamily: 'Poppins_700Bold', fontSize: 22, letterSpacing: -0.3,
-  },
-  todaySubline: {
-    fontFamily: 'Poppins_400Regular', fontSize: 12,
-  },
-
-  statsRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 8, marginTop: 10,
-  },
-  statBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
-  },
-  statText: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 11,
-  },
-
-  // Calendar card (LiquidGlassPanel shell + inner padding)
-  calCardOuter: {
-    marginTop: 0,
-  },
-  calCardCompact: { marginHorizontal: 0 },
-  calCardInner: { padding: 16 },
-
-  dotLegend: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginBottom: 12, paddingHorizontal: 2,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot: { width: 7, height: 7, borderRadius: 4 },
-  legendText: { fontFamily: 'Poppins_400Regular', fontSize: 10 },
-
-  // Day-of-week header
-  dayHeaders: { flexDirection: 'row', marginBottom: 8 },
-  dayHeaderText: {
-    flex: 1, textAlign: 'center', fontFamily: 'Poppins_600SemiBold',
-    fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8,
-  },
-
-  // Days grid
-  daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCellEmpty: { width: '14.28%', minHeight: 38, borderRadius: 10 },
-  dayCell: {
-    width: '14.28%', minHeight: 42, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-    marginVertical: 2, paddingVertical: 4,
-  },
-  dayText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
-  dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1 },
-  eventDot: { width: 5, height: 5, borderRadius: 3 },
-
-  eventsGrid: {
+  compactStatText: { fontFamily: 'Poppins_700Bold', fontSize: 12 },
+  compactChip: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: MAIN_TAB_UI.sectionGapSmall,
-    marginTop: MAIN_TAB_UI.sectionGapSmall,
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
   },
-  eventsGridItem: { flex: 0 },
+  compactChipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
 
-  // Sections
-  eventsSection: { paddingHorizontal: 16, paddingTop: MAIN_TAB_UI.sectionGapLarge },
-  sectionRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 14,
-  },
-  sectionTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16, flex: 1, flexWrap: 'wrap' },
-  sectionCount: { fontFamily: 'Poppins_500Medium', fontSize: 13, marginLeft: 8 },
-  seeAll: { fontFamily: 'Poppins_700Bold', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 },
+  desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 28, marginTop: 4 },
+  leftCol: { flex: 1.4 },
+  rightCol: { flex: 1 },
 
-  myEventsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
-  myEventsBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1,
-  },
-  myEventsBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 11 },
+  calendarTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  calendarTopActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  calendarTopLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.7 },
+  monthYearHeading: { fontFamily: 'Poppins_700Bold', fontSize: 22, lineHeight: 28, letterSpacing: -0.25 },
+  todayBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
+  monthControlBtn: { width: 32, height: 32, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  todayBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
 
-  seeMoreBtn: { alignItems: 'center', paddingVertical: 8 },
-  seeMoreText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  dayHeaderRow: { flexDirection: 'row', marginBottom: 8 },
+  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 },
+  daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  dayCellEmpty: { width: '14.28%', minHeight: 40 },
+  dayCell: { width: '14.28%', minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 10, marginVertical: 2 },
+  dayText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  dotRow: { flexDirection: 'row', gap: 3, marginTop: 2 },
+  dot: { width: 5, height: 5, borderRadius: 3 },
 
-  // Personal busy block
-  busyBlock: {
-    flexDirection: 'row', borderRadius: 12, marginBottom: 8,
-    borderWidth: 1, overflow: 'hidden',
-  },
-  busyStripe: { width: 4, alignSelf: 'stretch' },
-  busyContent: { flex: 1, paddingHorizontal: 12, paddingVertical: 10, gap: 4 },
-  busyBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    alignSelf: 'flex-start', paddingHorizontal: 7, paddingVertical: 3,
-    borderRadius: 6,
-  },
-  busyBadgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10 },
-  busyTime: { fontFamily: 'Poppins_400Regular', fontSize: 12 },
+  section: { paddingTop: MAIN_TAB_UI.sectionGapLarge },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 },
+  sectionTitle: { flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
+  sectionCount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  linkText: { fontFamily: 'Poppins_700Bold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  // Civic reminders
-  civicRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1,
-  },
-  civicIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  civicTitle: { fontFamily: 'Poppins_700Bold', fontSize: 14, letterSpacing: -0.1 },
-  civicSub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 2, flexShrink: 1 },
+  personalRow: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
+  personalStripe: { width: 4 },
+  personalTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
+  personalTime: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 16 },
 
-  // Calendar sync CTA
-  syncCta: {
-    marginHorizontal: 16, marginTop: 20, borderRadius: 16, padding: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1,
+  addCalendarBtn: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: -6,
+    marginBottom: 10,
+    marginRight: 4,
   },
-  syncCtaIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  syncCtaTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
-  syncCtaSub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 2, lineHeight: 16 },
+  addCalendarText: { fontFamily: 'Poppins_600SemiBold', fontSize: 11 },
 
-  // Desktop split layout
-  desktopSplit: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 32,
-    width: '100%', alignSelf: 'center', marginTop: 12,
-  },
-  desktopCalendarCol: { flex: 1.5 },
-  desktopUpcomingCol: { flex: 1 },
+  upcomingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: MAIN_TAB_UI.sectionGapSmall },
 });
+

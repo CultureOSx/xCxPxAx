@@ -2,9 +2,8 @@
  * Tab header chrome: home logo + page title + global actions (search, notifications, account menu).
  * One pattern for Discover, Feed, Events, Community, Perks, and Profile (in-tab).
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, type ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -25,8 +24,6 @@ function haptic() {
 
 /** Logo only — tap returns to Discover home. */
 export function HomeLogoMark({ compact = true }: { compact?: boolean }) {
-  const colors = useColors();
-
   const onHome = useCallback(() => {
     haptic();
     router.push('/(tabs)' as const);
@@ -40,28 +37,11 @@ export function HomeLogoMark({ compact = true }: { compact?: boolean }) {
       style={markStyles.logoPress}
       hitSlop={8}
     >
-      <View style={[markStyles.logoRingOuter, compact && markStyles.logoRingOuterCompact]}>
-        <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.teal]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[markStyles.logoRingGradient, compact && markStyles.logoRingGradientCompact]}
-        >
-          <View
-            style={[
-              markStyles.logoRingInner,
-              { backgroundColor: colors.background },
-              compact && markStyles.logoRingInnerCompact,
-            ]}
-          >
-            <Image
-              source={require('@/assets/images/culturepass-logo.png')}
-              style={[markStyles.logo, compact && markStyles.logoCompact]}
-              contentFit="cover"
-            />
-          </View>
-        </LinearGradient>
-      </View>
+      <Image
+        source={require('@/assets/images/culturepass-logo.png')}
+        style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
+        contentFit="cover"
+      />
     </Pressable>
   );
 }
@@ -88,28 +68,11 @@ export function BrandMark({
       accessibilityRole="button"
       accessibilityLabel="CulturePass home"
     >
-      <View style={[markStyles.logoRingOuter, compact && markStyles.logoRingOuterCompact]}>
-        <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.teal]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[markStyles.logoRingGradient, compact && markStyles.logoRingGradientCompact]}
-        >
-          <View
-            style={[
-              markStyles.logoRingInner,
-              { backgroundColor: colors.background },
-              compact && markStyles.logoRingInnerCompact,
-            ]}
-          >
-            <Image
-              source={require('@/assets/images/culturepass-logo.png')}
-              style={[markStyles.logo, compact && markStyles.logoCompact]}
-              contentFit="cover"
-            />
-          </View>
-        </LinearGradient>
-      </View>
+      <Image
+        source={require('@/assets/images/culturepass-logo.png')}
+        style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
+        contentFit="cover"
+      />
 
       <View style={markStyles.textWrap}>
         <Text
@@ -128,7 +91,13 @@ export function BrandMark({
   );
 }
 
-export function GlobalNavActions({ showMenu = true }: { showMenu?: boolean }) {
+export function GlobalNavActions({
+  showMenu = true,
+  leadingAction,
+}: {
+  showMenu?: boolean;
+  leadingAction?: ReactNode;
+}) {
   const colors = useColors();
   const isDark = useIsDark();
   const { isAuthenticated } = useAuth();
@@ -139,6 +108,7 @@ export function GlobalNavActions({ showMenu = true }: { showMenu?: boolean }) {
 
   return (
     <View style={markStyles.actions}>
+      {leadingAction ? leadingAction : null}
       <Pressable
         style={({ pressed }) => [
           markStyles.iconBtn,
@@ -203,19 +173,21 @@ export function GlobalNavActions({ showMenu = true }: { showMenu?: boolean }) {
   );
 }
 
-/** Page-first header: logo | title + subtitle | search · notifications · account menu */
+/** Page-first header: logo | title | search · notifications · account menu */
 export function TabPageChromeRow({
   title,
-  subtitle,
+  subtitle: _subtitle,
   locationLabel,
   showMenu = true,
-  showHairline = true,
+  showHairline = false,
+  topHeaderAction,
 }: {
   title: string;
   subtitle?: string;
   locationLabel?: string;
   showMenu?: boolean;
   showHairline?: boolean;
+  topHeaderAction?: ReactNode;
 }) {
   const colors = useColors();
 
@@ -236,11 +208,6 @@ export function TabPageChromeRow({
         >
           {title}
         </Text>
-        {subtitle ? (
-          <Text style={[markStyles.pageSubtitle, { color: colors.textSecondary }]} numberOfLines={2}>
-            {subtitle}
-          </Text>
-        ) : null}
         {locationLabel ? (
           <View style={markStyles.locationInline}>
             <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
@@ -250,7 +217,7 @@ export function TabPageChromeRow({
           </View>
         ) : null}
       </View>
-      <GlobalNavActions showMenu={showMenu} />
+      <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
     </View>
   );
 }
@@ -258,6 +225,16 @@ export function TabPageChromeRow({
 const markStyles = StyleSheet.create({
   logoPress: {
     flexShrink: 0,
+  },
+  logoPlain: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+  },
+  logoPlainCompact: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
   },
   pageChromeRow: {
     flexDirection: 'row',

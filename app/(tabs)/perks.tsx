@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Animated, {
-  FadeInDown, FadeInUp, SlideInDown, useReducedMotion,
+  FadeInDown, SlideInDown, useReducedMotion,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,6 +58,10 @@ type ActiveQuest = {
   image?: string;
   cta: QuestCta;
 };
+
+type PerkFeedItem =
+  | { kind: 'section'; id: string; title: string; subtitle: string }
+  | { kind: 'perk'; id: string; perk: PerkData };
 
 function tierJourneyQuestProgress(rewards: RewardsSummary): { progress: number; total: number } {
   const p = rewards.points;
@@ -519,11 +523,26 @@ export default function PerksTabScreen() {
   const [viewMode, setViewMode]           = useState<'quests' | 'perks'>('quests');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const { data: perks = [], refetch, isRefetching, isLoading: perksLoading } = usePerks();
+  const { data: perks = [], refetch, isRefetching, isLoading: perksLoading } = usePerks({
+    city: state.city || undefined,
+    country: state.country || undefined,
+    status: 'active',
+    pageSize: 150,
+  });
 
   const { data: rewards, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
     queryKey: ['rewards', userId],
     queryFn: () => api.rewards.get(userId!),
+    enabled: !!userId,
+  });
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet', userId],
+    queryFn: () => api.wallet.get(userId!),
+    enabled: !!userId,
+  });
+  const { data: redemptions } = useQuery({
+    queryKey: ['perk-redemptions', userId],
+    queryFn: () => api.perks.redemptions(),
     enabled: !!userId,
   });
 
@@ -544,6 +563,37 @@ export default function PerksTabScreen() {
     if (selectedCategory === 'All') return perks;
     return perks.filter((p) => p.categories?.includes(selectedCategory));
   }, [perks, selectedCategory]);
+
+  const sectionedPerkFeed = useMemo<PerkFeedItem[]>(() => {
+    const now = Date.now();
+    const list = filteredPerks;
+    const featured = list.filter((p) => p.status === 'featured');
+    const nearby = list.filter((p) => !state.city || !p.city || p.city === state.city);
+    const expiring = list
+      .filter((p) => p.expiresAt && Date.parse(p.expiresAt) > now)
+      .sort((a, b) => Date.parse(a.expiresAt || '') - Date.parse(b.expiresAt || ''))
+      .slice(0, 8);
+    const forYou = list
+      .filter((p) => {
+        const pointsCost = Number(p.pointsCost ?? 0);
+        return pointsCost <= Number(rewards?.points ?? 0) || pointsCost === 0;
+      })
+      .slice(0, 10);
+
+    const buckets = [
+      { key: 'featured', title: 'Featured Offers', subtitle: 'Editor-picked right now', items: featured },
+      { key: 'nearby', title: 'Nearby Offers', subtitle: state.city ? `Around ${state.city}` : 'Around your area', items: nearby },
+      { key: 'expiring', title: 'Ending Soon', subtitle: 'Redeem before expiry', items: expiring },
+      { key: 'for-you', title: 'For You', subtitle: 'Based on your rewards balance', items: forYou },
+    ].filter((bucket) => bucket.items.length > 0);
+
+    const out: PerkFeedItem[] = [];
+    buckets.forEach((bucket) => {
+      out.push({ kind: 'section', id: `section-${bucket.key}`, title: bucket.title, subtitle: bucket.subtitle });
+      bucket.items.slice(0, 4).forEach((perk) => out.push({ kind: 'perk', id: `${bucket.key}-${perk.id}`, perk }));
+    });
+    return out;
+  }, [filteredPerks, state.city, rewards?.points]);
 
   const numPerkColumns = isDesktop || isTablet ? 2 : 1;
   const colGap = isDesktop ? 20 : 12;
@@ -586,14 +636,24 @@ export default function PerksTabScreen() {
     </Animated.View>
   ), [handleQuestContinue, reducedMotion]);
 
-  const renderPerkItem = useCallback(({ item, index }: { item: ReturnType<typeof usePerks>['data'] extends (infer T)[] | undefined ? T : never; index: number }) => (
-    <Animated.View
-      entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
-      style={{ flex: 1 }}
-    >
-      <PerkCard perk={item as Parameters<typeof PerkCard>[0]['perk']} />
-    </Animated.View>
-  ), [reducedMotion]);
+  const renderPerkItem = useCallback(({ item, index }: { item: PerkFeedItem; index: number }) => {
+    if (item.kind === 'section') {
+      return (
+        <View style={s.dynamicSectionHeader}>
+          <Text style={[s.dynamicSectionTitle, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[s.dynamicSectionSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
+        </View>
+      );
+    }
+    return (
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+        style={{ flex: 1 }}
+      >
+        <PerkCard perk={item.perk} />
+      </Animated.View>
+    );
+  }, [reducedMotion, colors.text, colors.textSecondary]);
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
@@ -624,7 +684,7 @@ export default function PerksTabScreen() {
             ]}
             accessibilityRole="tab"
             accessibilityState={{ selected: viewMode === mode }}
-            accessibilityLabel={mode === 'quests' ? 'Active Quests' : 'Exclusive Perks'}
+            accessibilityLabel={mode === 'quests' ? 'Rewards Progress' : 'Offers'}
           >
             {viewMode === mode && (
               <LinearGradient
@@ -640,7 +700,7 @@ export default function PerksTabScreen() {
               color={viewMode === mode ? '#fff' : colors.textSecondary}
             />
             <Text style={[s.toggleText, { color: viewMode === mode ? '#fff' : colors.textSecondary }]}>
-              {mode === 'quests' ? 'Active Quests' : 'Exclusive Perks'}
+              {mode === 'quests' ? 'Rewards Progress' : 'Offers'}
             </Text>
           </Pressable>
         ))}
@@ -688,6 +748,18 @@ export default function PerksTabScreen() {
       )}
 
       {viewMode === 'perks' && <MembershipUpgradeBanner />}
+      {viewMode === 'perks' && !!userId && (
+        <View style={[s.statsRow, { marginBottom: 14 }]}>
+          <View style={[s.statPill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Ionicons name="wallet-outline" size={14} color={CultureTokens.indigo} />
+            <Text style={[s.statPillText, { color: colors.text }]}>{wallet?.balance ?? 0} AUD</Text>
+          </View>
+          <View style={[s.statPill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Ionicons name="gift-outline" size={14} color={CultureTokens.teal} />
+            <Text style={[s.statPillText, { color: colors.text }]}>{redemptions?.redemptions?.length ?? 0} redeemed</Text>
+          </View>
+        </View>
+      )}
 
       <View style={s.sectionHeaderRow}>
         <Ionicons
@@ -697,41 +769,40 @@ export default function PerksTabScreen() {
         />
         <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>
           {viewMode === 'quests'
-            ? (!userId ? 'Sign in for quests' : `${activeQuests.length} active quests`)
-            : `Member Perks · ${filteredPerks.length} available`}
+            ? (!userId ? 'Sign in for rewards' : `${activeQuests.length} rewards in progress`)
+            : `Offers · ${filteredPerks.length} available`}
         </Text>
       </View>
     </View>
-  ), [colors, hPad, viewMode, selectedCategory, filteredPerks.length, filtersActive, clearFilters, userId, activeQuests.length, isAuthenticated, rewards, rewardsLoading, rewardsError, queryClient]);
+  ), [
+    colors,
+    hPad,
+    viewMode,
+    selectedCategory,
+    filteredPerks.length,
+    filtersActive,
+    clearFilters,
+    userId,
+    activeQuests.length,
+    isAuthenticated,
+    rewards,
+    rewardsLoading,
+    rewardsError,
+    queryClient,
+    wallet?.balance,
+    redemptions?.redemptions?.length,
+  ]);
 
   return (
     <ErrorBoundary>
       <View style={[s.screen, { backgroundColor: colors.background }]}>
         {/* ── Header ── */}
         <TabPrimaryHeader
-          title="Perks"
-          subtitle={locationLabel}
-          locationLabel=""
+          title="Offers & Rewards"
+          subtitle={`Offers and rewards in ${locationLabel}`}
+          locationLabel={undefined}
           hPad={hPad}
           topInset={topInset}
-          rightActions={
-            <Pressable
-              onPress={() => {
-                void refetch();
-                if (userId) {
-                  void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
-                  void queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
-                }
-              }}
-              style={[s.iconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh perks"
-            >
-              {isRefetching
-                ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
-                : <Ionicons name="refresh" size={18} color={colors.text} />}
-            </Pressable>
-          }
         />
 
         {/* ── Content shell ── */}
@@ -790,22 +861,21 @@ export default function PerksTabScreen() {
             // Perks grid
             <FlatList
               key={`perks-${numPerkColumns}`}
-              data={filteredPerks}
+              data={sectionedPerkFeed}
               keyExtractor={(item) => item.id}
               renderItem={renderPerkItem}
               ListHeaderComponent={renderHeader}
-              numColumns={numPerkColumns}
-              columnWrapperStyle={numPerkColumns > 1 ? { gap: colGap } : undefined}
+              numColumns={1}
               contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap, paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad }]}
               showsVerticalScrollIndicator={false}
               refreshing={isRefetching}
               onRefresh={refetch}
               ListFooterComponent={() => {
-                if (filteredPerks.length > 0) return (
+                if (sectionedPerkFeed.length > 0) return (
                   <View style={s.listFooter}>
                     <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                     <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
-                      {filteredPerks.length} perk{filteredPerks.length !== 1 ? 's' : ''} shown
+                      {filteredPerks.length} offer{filteredPerks.length !== 1 ? 's' : ''} indexed
                     </Text>
                     <View style={[s.endLine, { backgroundColor: colors.divider }]} />
                   </View>
@@ -817,7 +887,7 @@ export default function PerksTabScreen() {
                   <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
                     <Ionicons name="gift-outline" size={28} color={colors.textTertiary} />
                   </View>
-                  <Text style={[s.emptyTitle, { color: colors.text }]}>No perks available</Text>
+                  <Text style={[s.emptyTitle, { color: colors.text }]}>No offers available</Text>
                   <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
                     {filtersActive
                       ? 'Try a different category.'
@@ -848,8 +918,6 @@ export default function PerksTabScreen() {
 const s = StyleSheet.create({
   screen:         { flex: 1 },
 
-  iconBtn:        { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2 },
-
   shell:          { flex: 1 },
   shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
 
@@ -866,6 +934,12 @@ const s = StyleSheet.create({
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
   sectionLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  statsRow: { flexDirection: 'row', gap: 8 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  statPillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  dynamicSectionHeader: { marginTop: 10, marginBottom: 2 },
+  dynamicSectionTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  dynamicSectionSubtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
 
   list:           { paddingTop: MAIN_TAB_UI.sectionGapSmall, gap: MAIN_TAB_UI.sectionGapSmall },
   listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },

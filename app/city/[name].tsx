@@ -259,12 +259,12 @@ export default function CityScreen() {
   const handleShare = useCallback(async () => {
     haptic();
     const shareUrl = `https://culturepass.app/city/${encodeURIComponent(cityName)}?country=${encodeURIComponent(cityCountry)}`;
-    const message = `Explore ${cityName} on CulturePass — cultural events, communities & experiences.\n${shareUrl}`;
+    const message = `Explore My City: ${cityName} on CulturePass — local events, communities and experiences.\n${shareUrl}`;
     try {
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({ title: `${cityName} City Guide`, text: message, url: shareUrl });
+        await navigator.share({ title: `${cityName} · My City`, text: message, url: shareUrl });
       } else {
-        await Share.share({ title: `${cityName} City Guide`, message, url: shareUrl });
+        await Share.share({ title: `${cityName} · My City`, message, url: shareUrl });
       }
     } catch {}
   }, [haptic, cityName, cityCountry]);
@@ -338,7 +338,7 @@ export default function CityScreen() {
     if (selectedCategories.length) parts.push(selectedCategories.join(', '));
     if (selectedCultures.length) parts.push(selectedCultures.join(', '));
     if (selectedLanguages.length) parts.push(selectedLanguages.join(', '));
-    return parts.length ? `${parts.join(' · ')} Events` : 'Upcoming Events';
+    return parts.length ? `${parts.join(' · ')} Events` : 'My City Highlights';
   }, [selectedCategories, selectedCultures, selectedLanguages]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -439,7 +439,7 @@ export default function CityScreen() {
             {/* Hero content */}
             <View style={styles.heroContent}>
               <View style={styles.heroBadge}>
-                <Text style={[styles.heroBadgeText, { color: colors.text }]}>CITY GUIDE</Text>
+                <Text style={[styles.heroBadgeText, { color: colors.text }]}>MY CITY</Text>
               </View>
 
               <Text style={[styles.heroCity, { color: colors.textOnBrandGradient }]}>{cityName}</Text>
@@ -554,7 +554,7 @@ export default function CityScreen() {
           {allEvents.length > 5 && totalActiveFilters === 0 && (
             <View style={styles.section}>
               <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 12 }]}>
-                Trending in {cityName}
+                Happening Now in {cityName}
               </Text>
               <ScrollView
                 horizontal
@@ -665,7 +665,7 @@ export default function CityScreen() {
               {venues.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0, paddingTop: 0 }]}>
                   <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 16 }]}>
-                    Top Venues & Partners
+                    Local Places & Partners
                   </Text>
                   <View style={isDesktop ? { gap: 12 } : styles.venueGrid}>
                     {venues.map((v) => (

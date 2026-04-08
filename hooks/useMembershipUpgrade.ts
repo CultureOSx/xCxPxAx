@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Alert, Platform } from 'react-native';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { router, usePathname } from 'expo-router';
@@ -13,13 +13,23 @@ import { membershipRepository } from '@/repositories/MembershipRepository';
 import { purchaseMembershipUseCase } from '@/use-cases/PurchaseMembershipUseCase';
 import { cancelMembershipUseCase } from '@/use-cases/CancelMembershipUseCase';
 
-const isWeb = Platform.OS === 'web';
-
 export function useMembershipUpgrade() {
   const pathname = usePathname();
   const { userId, isAuthenticated } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
+  const isMountedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const setLoadingSafe = useCallback((value: boolean) => {
+    if (isMountedRef.current) setLoading(value);
+  }, []);
 
   // Queries
   const { data: membership, isLoading: isMembershipLoading } = useQuery<MembershipSummary>({
@@ -47,7 +57,7 @@ export function useMembershipUpgrade() {
       ]);
       return;
     }
-    setLoading(true);
+    setLoadingSafe(true);
     try {
       await HapticManager.medium();
       const result = await purchaseMembershipUseCase.execute(billingPeriod);
@@ -91,9 +101,9 @@ export function useMembershipUpgrade() {
       const msg = e instanceof Error ? e.message : 'Failed to start subscription';
       Alert.alert('Error', msg);
     } finally {
-      setLoading(false);
+      setLoadingSafe(false);
     }
-  }, [userId, billingPeriod, pathname]);
+  }, [userId, billingPeriod, pathname, setLoadingSafe]);
 
   const executeCancel = useCallback(async () => {
     if (!userId) return;
@@ -106,7 +116,7 @@ export function useMembershipUpgrade() {
           text: 'Cancel Membership',
           style: 'destructive',
           onPress: async () => {
-            setLoading(true);
+            setLoadingSafe(true);
             try {
               const result = await cancelMembershipUseCase.execute();
               if (result.status === 'success') {
@@ -130,13 +140,13 @@ export function useMembershipUpgrade() {
               const msg = e instanceof Error ? e.message : 'Failed to cancel';
               Alert.alert('Error', msg);
             } finally {
-              setLoading(false);
+              setLoadingSafe(false);
             }
           },
         },
       ]
     );
-  }, [userId]);
+  }, [userId, setLoadingSafe]);
 
   return {
     isAuthenticated,

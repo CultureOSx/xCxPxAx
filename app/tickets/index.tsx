@@ -1,649 +1,340 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  Pressable, 
-  StyleSheet, 
-  ScrollView, 
-  Platform, 
-  Alert, 
-  Share 
+import React, { useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Platform,
+  Alert,
+  Share,
+  RefreshControl,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
-import { BackButton } from '@/components/ui/BackButton';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/query-client';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
+
 import { AuthGuard } from '@/components/AuthGuard';
-import { CultureTokens, gradients, LiquidGlassTokens, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
+import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
+import { queryClient } from '@/lib/query-client';
+import { ticketKeys } from '@/hooks/queries/keys';
+import { CultureTokens } from '@/constants/theme';
+import type { Ticket } from '@/shared/schema';
 
-interface Ticket {
-  id: string;
-  userId: string;
-  eventId: string;
-  eventTitle: string;
-  eventDate: string | null;
-  eventTime: string | null;
-  eventVenue: string | null;
-  tierName: string | null;
-  quantity: number | null;
-  totalPriceCents: number | null;
-  currency: string | null;
-  status: string | null;
-  paymentStatus?: string | null;
-  priority?: 'low' | 'normal' | 'high' | 'vip' | null;
-  ticketCode: string | null;
-  imageColor: string | null;
-  createdAt: string | null;
+const IS_WEB = Platform.OS === 'web';
+
+function parseDate(raw?: string | null): Date | null {
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function formatDate(dateStr: string | null, options: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat(undefined, options).format(d);
+function formatDate(raw?: string | null): string {
+  const d = parseDate(raw);
+  if (!d) return 'Date TBA';
+  return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-async function handleShare(ticket: Ticket) {
+function formatMoney(cents?: number | null, currency?: string | null): string {
+  const value = (cents ?? 0) / 100;
+  const c = (currency || 'AUD').toUpperCase();
   try {
-    const dateStr  = ticket.eventDate ? formatDate(ticket.eventDate) : '';
-    const timeStr  = ticket.eventTime ? ` at ${ticket.eventTime}` : '';
-    const venueStr = ticket.eventVenue ? `\nVenue: ${ticket.eventVenue}` : '';
-    const shareUrl = ticket.eventId
-      ? `https://culturepass.app/event/${ticket.eventId}`
-      : 'https://culturepass.app';
-    await Share.share({
-      message: `Check out my ticket for ${ticket.eventTitle}!\n${dateStr}${timeStr}${venueStr}\n\n${shareUrl}`,
-      title:   ticket.eventTitle,
-      url:     shareUrl,
-    });
-  } catch {}
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(value);
+  } catch {
+    return `$${value.toFixed(2)}`;
+  }
 }
 
-interface TicketCardProps {
+function ticketState(t: Ticket): 'upcoming' | 'past' | 'cancelled' {
+  if (t.status === 'cancelled') return 'cancelled';
+  if (t.status === 'used' || t.status === 'expired') return 'past';
+  const d = parseDate(t.eventDate || null);
+  if (d && d.getTime() < Date.now()) return 'past';
+  return 'upcoming';
+}
+
+async function shareTicket(t: Ticket) {
+  const url = t.eventId ? `https://culturepass.app/event/${t.eventId}` : 'https://culturepass.app';
+  const msg = `${t.eventTitle}\n${formatDate(t.eventDate || null)}${t.eventTime ? ` · ${t.eventTime}` : ''}\n${t.eventVenue || 'Venue TBA'}\n\n${url}`;
+  try {
+    await Share.share({ title: t.eventTitle, message: msg, url });
+  } catch {
+    // ignore user cancel
+  }
+}
+
+function TicketCard({
+  ticket,
+  onCancel,
+}: {
   ticket: Ticket;
   onCancel: (t: Ticket) => void;
-}
-
-function TicketCardInner({ ticket, onCancel }: TicketCardProps) {
+}) {
   const colors = useColors();
-  const isActive = ticket.status === 'confirmed';
-
-  const statusStyle = 
-    ticket.status === 'confirmed' ? { bg: CultureTokens.teal + '20', color: CultureTokens.teal, label: 'Confirmed' } :
-    ticket.status === 'used'      ? { bg: colors.surfaceElevated, color: colors.textTertiary, label: 'Used' } :
-    ticket.status === 'cancelled' ? { bg: CultureTokens.coral + '15', color: CultureTokens.coral, label: 'Cancelled' } :
-    ticket.status === 'expired'   ? { bg: CultureTokens.gold + '15', color: CultureTokens.gold, label: 'Expired' } :
-                                    { bg: colors.surfaceElevated, color: colors.textTertiary, label: ticket.status || 'Unknown' };
-
-  const bannerColor = ticket.imageColor || CultureTokens.indigo;
+  const state = ticketState(ticket);
+  const isUpcoming = state === 'upcoming';
+  const statusText =
+    state === 'upcoming' ? 'Upcoming' : state === 'cancelled' ? 'Cancelled' : 'Past';
+  const statusColor =
+    state === 'upcoming' ? CultureTokens.teal : state === 'cancelled' ? CultureTokens.coral : colors.textTertiary;
 
   return (
-    <Card 
-      style={styles.ticketCard}
-      padding={0}
-      onPress={() => {
-        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push({ pathname: '/tickets/[id]', params: { id: ticket.id } });
-      }}
+    <Card
+      onPress={() => router.push({ pathname: '/tickets/[id]', params: { id: ticket.id } })}
+      style={[styles.ticketCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
+      padding={14}
     >
-      <View style={styles.ticketTapArea}>
-        {/* Banner */}
-        <View style={[styles.ticketBanner, { backgroundColor: bannerColor }]}>
-          <LinearGradient
-            colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.bannerContent}>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <Text style={[styles.statusText, { color: colors.textOnBrandGradient }]}>{statusStyle.label}</Text>
-              </View>
-            </View>
-
-            {isActive && (
-              <View style={[styles.liveBadge, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
-                <View style={[styles.liveDot, { backgroundColor: colors.textOnBrandGradient }]} />
-                <Text style={[styles.liveText, { color: colors.textOnBrandGradient }]}>Active Ticket</Text>
-              </View>
-            )}
-          </View>
+      <View style={styles.rowBetween}>
+        <View style={[styles.statusPill, { backgroundColor: statusColor + '18' }]}>
+          <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
         </View>
+        <Text style={[styles.price, { color: colors.text }]}>
+          {formatMoney(ticket.totalPriceCents, ticket.currency)}
+        </Text>
+      </View>
 
-        {/* Main content */}
-        <View style={styles.ticketBody}>
-          <Text style={[TextStyles.title3, { color: colors.text }]} numberOfLines={2}>
-            {ticket.eventTitle}
+      <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+        {ticket.eventTitle || 'Event Ticket'}
+      </Text>
+
+      <View style={styles.metaList}>
+        <View style={styles.metaRow}>
+          <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.metaText, { color: colors.textSecondary }]}>{formatDate(ticket.eventDate || null)}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.metaText, { color: colors.textSecondary }]}>{ticket.eventTime || 'Time TBA'}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
+            {ticket.eventVenue || 'Venue TBA'}
           </Text>
-
-          <View style={styles.dateTimeContainer}>
-            <View style={[styles.dateBlock, { backgroundColor: colors.backgroundSecondary }]}>
-              <Text style={[TextStyles.title2, { color: colors.text, lineHeight: 28 }]}>
-                {ticket.eventDate ? new Date(ticket.eventDate).getDate() : '--'}
-              </Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.textSecondary }]}>
-                {ticket.eventDate ? formatDate(ticket.eventDate, { month: 'short' }).toUpperCase() : '---'}
-              </Text>
-            </View>
-
-            <View style={styles.timeVenueBlock}>
-              <View style={styles.timeRow}>
-                <Ionicons name="time-outline" size={14} color={CultureTokens.indigo} />
-                <Text style={[TextStyles.headline, { color: colors.text }]}>{ticket.eventTime || 'TBA'}</Text>
-              </View>
-              <View style={styles.venueRow}>
-                <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                <Text style={[TextStyles.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {ticket.eventVenue || 'Online / TBA'}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={[styles.ticketFooter, { borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 12 }]}>
-            <View style={styles.metaLeft}>
-              <View style={[styles.tierBadge, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                <Text style={[TextStyles.badge, { color: CultureTokens.indigo }]}>{ticket.tierName || 'Standard'}</Text>
-              </View>
-              <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
-                ×{ticket.quantity || 1}
-              </Text>
-            </View>
-
-            <Text style={[TextStyles.headline, { color: colors.text }]}>
-              ${( (ticket.totalPriceCents || 0) / 100 ).toFixed(2)}
-            </Text>
-          </View>
         </View>
       </View>
 
-      {/* Action bar */}
-      {isActive && (
-        <View style={[styles.actionBar, { borderTopColor: colors.borderLight, backgroundColor: colors.backgroundSecondary + '40' }]}>
-          <View style={styles.actionIcons}>
-            <Pressable
-              style={styles.iconButton}
-              onPress={() => handleShare(ticket)}
-              accessibilityRole="button"
-              accessibilityLabel="Share ticket"
-            >
-              <Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable
-              style={styles.iconButton}
-              onPress={() => Alert.alert('Saved to Wallet')}
-              accessibilityRole="button"
-              accessibilityLabel="Save to wallet"
-            >
-              <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
-            </Pressable>
-          </View>
+      <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
 
-          <Pressable
-            onPress={() => onCancel(ticket)}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel ticket"
-          >
-            <Text style={[TextStyles.labelSemibold, { color: CultureTokens.coral }]}>Cancel Ticket</Text>
+      <View style={styles.rowBetween}>
+        <Text style={[styles.small, { color: colors.textSecondary }]}>
+          {ticket.tierName || 'Standard'} x{ticket.quantity || 1}
+        </Text>
+        <View style={styles.actionsInline}>
+          <Pressable onPress={() => void shareTicket(ticket)} style={styles.iconBtn}>
+            <Ionicons name="share-social-outline" size={18} color={colors.textSecondary} />
           </Pressable>
+          {isUpcoming ? (
+            <Pressable onPress={() => onCancel(ticket)}>
+              <Text style={[styles.cancelText, { color: CultureTokens.coral }]}>Cancel</Text>
+            </Pressable>
+          ) : null}
         </View>
-      )}
+      </View>
     </Card>
   );
 }
 
-TicketCardInner.displayName = 'TicketCard';
-const TicketCard = React.memo(TicketCardInner);
-
 export default function TicketsScreen() {
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
-  const { isDesktop } = useLayout();
+  const { hPad, isDesktop } = useLayout();
+  const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const topInset = IS_WEB ? 0 : insets.top;
+  const bottomInset = IS_WEB ? 20 : insets.bottom;
 
-  const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ['/api/tickets', userId],
+  const {
+    data: tickets = [],
+    isLoading,
+    isRefetching,
+    refetch,
+    isError,
+  } = useQuery<Ticket[]>({
+    queryKey: ticketKeys.forUser(userId ?? ''),
+    queryFn: () => api.tickets.forUser(userId!),
     enabled: !!userId,
+    staleTime: 30_000,
   });
 
   const cancelMutation = useMutation({
-    mutationFn: async (ticketId: string) => {
-      await api.tickets.cancel(ticketId);
-    },
+    mutationFn: (ticketId: string) => api.tickets.cancel(ticketId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tickets', userId] });
-      Alert.alert('Ticket Cancelled', 'Your ticket has been cancelled. Refund processing may take 5–7 business days.');
+      queryClient.invalidateQueries({ queryKey: ticketKeys.forUser(userId ?? '') });
+      Alert.alert('Ticket cancelled', 'Your ticket has been cancelled.');
+    },
+    onError: () => {
+      Alert.alert('Cancellation failed', 'Please try again.');
     },
   });
 
-  const handleCancel = (ticket: Ticket) => {
-    Alert.alert(
-      'Cancel Ticket',
-      `Are you sure you want to cancel "${ticket.eventTitle}"?`,
-      [
-        { text: 'Keep Ticket', style: 'cancel' },
-        {
-          text: 'Cancel Ticket',
-          style: 'destructive',
-          onPress: () => {
-            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            cancelMutation.mutate(ticket.id);
-          },
+  const grouped = useMemo(() => {
+    const upcoming: Ticket[] = [];
+    const past: Ticket[] = [];
+    const cancelled: Ticket[] = [];
+    for (const t of tickets) {
+      const s = ticketState(t);
+      if (s === 'upcoming') upcoming.push(t);
+      else if (s === 'past') past.push(t);
+      else cancelled.push(t);
+    }
+    return { upcoming, past, cancelled };
+  }, [tickets]);
+
+  const askCancel = (ticket: Ticket) => {
+    Alert.alert('Cancel ticket', `Cancel "${ticket.eventTitle}"?`, [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Cancel Ticket',
+        style: 'destructive',
+        onPress: () => {
+          if (!IS_WEB) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          cancelMutation.mutate(ticket.id);
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  const activeTickets = tickets.filter(t => t.status === 'confirmed');
-  const pastTickets = tickets.filter(t => t.status !== 'confirmed');
-
   return (
-    <AuthGuard icon="ticket-outline" title="My Tickets" message="Sign in to view and manage your event tickets.">
-      <Stack.Screen options={{ title: 'My Tickets | CulturePass' }} />
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topInset }]}>
-        <LinearGradient
-          colors={gradients.culturepassBrand as [string, string]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={tixStyles.ambientMesh}
-          pointerEvents="none"
-        />
-        <LiquidGlassPanel
-          borderRadius={0}
-          bordered={false}
-          style={{
-            borderBottomWidth: StyleSheet.hairlineWidth * 2,
-            borderBottomColor: colors.borderLight,
-          }}
-          contentStyle={styles.headerGlassInner}
-        >
-          <BackButton fallback="/(tabs)/profile" color={colors.text} style={styles.headerBackBtn} />
-          <Text style={[TextStyles.headline, { color: colors.text, flex: 1, textAlign: 'center', marginRight: 44 }]}>
-            My Tickets
-          </Text>
-        </LiquidGlassPanel>
+    <AuthGuard icon="ticket-outline" title="My Tickets" message="Sign in to view and manage your tickets.">
+      <ErrorBoundary>
+        <Stack.Screen options={{ title: 'My Tickets | CulturePass' }} />
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+          <TabPrimaryHeader title="My Tickets" subtitle={undefined} locationLabel={undefined} hPad={hPad} topInset={topInset} />
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: 40 + (Platform.OS === 'web' ? 0 : insets.bottom) },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={[styles.contentWrapper, isDesktop && styles.contentWrapperDesktop]}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={() => void refetch()}
+                tintColor={CultureTokens.indigo}
+                colors={[CultureTokens.indigo]}
+              />
+            }
+            contentContainerStyle={{
+              paddingHorizontal: hPad,
+              paddingTop: 12,
+              paddingBottom: bottomInset + 34,
+              alignSelf: 'center',
+              width: '100%',
+              maxWidth: isDesktop ? 860 : undefined,
+            }}
+          >
             {isLoading ? (
-              <View style={{ gap: 16, paddingTop: 12 }}>
-                {[1, 2, 3].map(i => (
-                  <View key={i} style={[styles.ticketCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-                    <Skeleton width="100%" height={72} borderRadius={0} />
-                    <View style={styles.ticketBody}>
-                      <Skeleton width="80%" height={24} borderRadius={6} style={{ marginBottom: 16 }} />
-                      <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
-                        <Skeleton width={64} height={64} borderRadius={12} />
-                        <View style={{ flex: 1, gap: 8 }}>
-                          <Skeleton width="50%" height={16} borderRadius={4} />
-                          <Skeleton width="70%" height={14} borderRadius={4} />
-                        </View>
-                      </View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.borderLight }}>
-                        <Skeleton width={100} height={28} borderRadius={8} />
-                        <Skeleton width={60} height={24} borderRadius={4} />
-                      </View>
-                    </View>
+              <View style={{ gap: 12 }}>
+                {[0, 1, 2].map((k) => (
+                  <View key={k} style={[styles.ticketCard, { borderColor: colors.borderLight, backgroundColor: colors.surface, padding: 14 }]}>
+                    <Skeleton width="70%" height={20} borderRadius={6} />
+                    <Skeleton width="100%" height={52} borderRadius={8} style={{ marginTop: 10 }} />
+                    <Skeleton width="45%" height={14} borderRadius={6} style={{ marginTop: 10 }} />
                   </View>
                 ))}
               </View>
+            ) : isError ? (
+              <View style={styles.stateWrap}>
+                <Ionicons name="alert-circle-outline" size={30} color={CultureTokens.coral} />
+                <Text style={[styles.stateTitle, { color: colors.text }]}>Could not load tickets</Text>
+                <Button onPress={() => void refetch()} variant="primary">Try Again</Button>
+              </View>
             ) : tickets.length === 0 ? (
-              <View style={styles.emptyState}>
-                <LiquidGlassPanel
-                  borderRadius={LiquidGlassTokens.corner.mainCard}
-                  style={{ borderWidth: 1, borderColor: colors.borderLight }}
-                  contentStyle={styles.emptyIconGlassInner}
-                >
-                  <Ionicons name="ticket-outline" size={48} color={CultureTokens.indigo} />
-                </LiquidGlassPanel>
-                <Text style={[TextStyles.title2, { color: colors.text }]}>No Tickets Yet</Text>
-                <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 20 }]}>
-                  When you book tickets for events or festivals, they will appear here.
+              <View style={styles.stateWrap}>
+                <Ionicons name="ticket-outline" size={36} color={CultureTokens.indigo} />
+                <Text style={[styles.stateTitle, { color: colors.text }]}>No tickets yet</Text>
+                <Text style={[styles.stateSub, { color: colors.textSecondary }]}>
+                  Book events and your tickets will appear here.
                 </Text>
-                <Button
-                  onPress={() => router.push('/(tabs)/explore')}
-                  variant="primary"
-                  style={{ marginTop: 12, paddingHorizontal: 32 }}
-                  leftIcon="search-outline"
-                >
-                  Discover Events
-                </Button>
+                <Button onPress={() => router.push('/events')} variant="primary">Discover Events</Button>
               </View>
             ) : (
               <>
-                {activeTickets.length > 0 && (
+                {grouped.upcoming.length > 0 ? (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
-                      Upcoming • {activeTickets.length}
+                    <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+                      Upcoming ({grouped.upcoming.length})
                     </Text>
-                    {activeTickets.map(ticket => (
-                      <TicketCard key={ticket.id} ticket={ticket} onCancel={handleCancel} />
+                    {grouped.upcoming.map((t) => (
+                      <TicketCard key={t.id} ticket={t} onCancel={askCancel} />
                     ))}
                   </View>
-                )}
+                ) : null}
 
-                {pastTickets.length > 0 && (
+                {grouped.past.length > 0 ? (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
-                      Past Tickets • {pastTickets.length}
+                    <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+                      Past ({grouped.past.length})
                     </Text>
-                    {pastTickets.map(ticket => (
-                      <TicketCard key={ticket.id} ticket={ticket} onCancel={handleCancel} />
+                    {grouped.past.map((t) => (
+                      <TicketCard key={t.id} ticket={t} onCancel={askCancel} />
                     ))}
                   </View>
-                )}
+                ) : null}
+
+                {grouped.cancelled.length > 0 ? (
+                  <View style={styles.section}>
+                    <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+                      Cancelled ({grouped.cancelled.length})
+                    </Text>
+                    {grouped.cancelled.map((t) => (
+                      <TicketCard key={t.id} ticket={t} onCancel={askCancel} />
+                    ))}
+                  </View>
+                ) : null}
               </>
             )}
-          </View>
-        </ScrollView>
-      </View>
+          </ScrollView>
+        </View>
+      </ErrorBoundary>
     </AuthGuard>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingTop: 12 },
-  contentWrapper: { paddingHorizontal: 16 },
-  contentWrapperDesktop: {
-    maxWidth: 720,
-    alignSelf: 'center',
-    paddingHorizontal: 0,
-  },
-
-  headerGlassInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerBackBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyIconGlassInner: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  section: { marginBottom: 32 },
-  sectionTitle: {
-    fontSize: 13,
+  root: { flex: 1 },
+  section: { marginBottom: 22 },
+  sectionLabel: {
+    marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
+    fontSize: 12,
     textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 16,
+    letterSpacing: 0.8,
   },
 
-  // Ticket Card
   ticketCard: {
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 16,
-    overflow: 'hidden',
-    elevation: 2,
-    ...Platform.select({ web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' }, default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 } }),
+    marginBottom: 10,
   },
-  ticketTapArea: { width: '100%' },
-
-  // Banner
-  ticketBanner: { height: 72, justifyContent: 'center' },
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-  },
-  bannerContent: {
+  rowBetween: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
-  },
-  priorityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,200,140,0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0,200,140,0.35)',
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00C88C',
-  },
-  liveText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#00C88C',
-  },
-
-  // Perforation
-  perfDivider: {
-    height: 1,
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-    marginHorizontal: 16,
-  },
-
-  // Body
-  ticketBody: { padding: 16 },
-  ticketTitle: {
-    fontSize: 19,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 26,
-    marginBottom: 16,
-  },
-
-  dateTimeContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 16,
-  },
-  dateBlock: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(100,100,120,0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    minWidth: 64,
-  },
-  dayNumber: {
-    fontSize: 26,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 28,
-  },
-  monthText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#888',
-    marginTop: 2,
-  },
-  timeVenueBlock: { flex: 1 },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  timeText: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  venueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  venueText: {
-    fontSize: 14,
-    flex: 1,
-  },
-
-  ticketFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  metaLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  tierBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  tierText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-    color: CultureTokens.indigo,
-  },
-  qtyText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
-  },
-  priceText: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
-  },
-
-  qrContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  qrText: {
-    fontSize: 15,
-    fontFamily: 'monospace',
-    letterSpacing: 1.2,
-    flex: 1,
-  },
-
-  // Action Bar
-  actionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-  },
-  actionIcons: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  iconButton: {
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(120,120,140,0.08)',
-  },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: CultureTokens.coral + '15',
-  },
-  cancelText: {
-    color: CultureTokens.coral,
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 14,
-  },
-
-  // Empty State
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 100,
-    gap: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  browseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
-    marginTop: 12,
   },
-  browseButtonText: {
-    fontSize: 16,
-    fontFamily: 'Poppins_700Bold',
-    color: '#fff',
-  },
+  statusPill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  statusText: { fontFamily: 'Poppins_700Bold', fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase' },
+  price: { fontFamily: 'Poppins_700Bold', fontSize: 16 },
+  title: { marginTop: 8, fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
+  metaList: { marginTop: 10, gap: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  metaText: { fontFamily: 'Poppins_400Regular', fontSize: 12, flex: 1 },
+  divider: { height: 1, marginVertical: 10, opacity: 0.55 },
+  small: { fontFamily: 'Poppins_500Medium', fontSize: 12 },
+  actionsInline: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  cancelText: { fontFamily: 'Poppins_700Bold', fontSize: 12 },
+
+  stateWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 90, gap: 10 },
+  stateTitle: { fontFamily: 'Poppins_700Bold', fontSize: 19 },
+  stateSub: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
 });
 
-const tixStyles = StyleSheet.create({
-  ambientMesh: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.07,
-  },
-});

@@ -77,7 +77,7 @@ export default function PerkDetailScreen() {
 
   const redeemMutation = useMutation({
     mutationFn: async (perkId: string) => {
-      return api.raw('POST', `api/perks/${perkId}/redeem`, { userId });
+      return api.perks.redeem(perkId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/perks'] });

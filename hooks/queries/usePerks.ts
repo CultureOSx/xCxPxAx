@@ -5,10 +5,10 @@ import { perkKeys } from './keys';
 
 // ─── List ─────────────────────────────────────────────────────────────────────
 
-export function usePerks() {
+export function usePerks(filters?: { city?: string; country?: string; category?: string; q?: string; status?: string; pageSize?: number }) {
   return useQuery<PerkData[]>({
-    queryKey: perkKeys.lists(),
-    queryFn: () => api.perks.list(),
+    queryKey: [...perkKeys.lists(), filters ?? {}],
+    queryFn: () => api.perks.list(filters),
     staleTime: 1000 * 60 * 10,
   });
 }

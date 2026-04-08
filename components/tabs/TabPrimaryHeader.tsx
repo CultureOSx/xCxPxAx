@@ -11,23 +11,28 @@ interface TabPrimaryHeaderProps {
   title: string;
   subtitle?: string;
   locationLabel?: string;
+  topHeaderAction?: ReactNode;
   rightActions?: ReactNode;
   children?: ReactNode;
   hPad: number;
   topInset?: number;
   /** Page chrome (logo + title + search / notifications / account menu). */
   withGlobalNav?: boolean;
+  /** Controls the divider under the chrome row (not the shell border). */
+  showChromeHairline?: boolean;
 }
 
 export function TabPrimaryHeader({
   title,
   subtitle,
   locationLabel,
+  topHeaderAction,
   rightActions,
   children,
   hPad,
   topInset = 0,
   withGlobalNav = true,
+  showChromeHairline = false,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
@@ -35,7 +40,13 @@ export function TabPrimaryHeader({
   const webTopPad = topInset + (withGlobalNav ? 8 : 10);
 
   const chrome = withGlobalNav ? (
-    <TabPageChromeRow title={title} subtitle={subtitle} locationLabel={locationLabel} showHairline />
+    <TabPageChromeRow
+      title={title}
+      subtitle={subtitle}
+      locationLabel={locationLabel}
+      topHeaderAction={topHeaderAction}
+      showHairline={showChromeHairline}
+    />
   ) : null;
 
   const toolbar = rightActions ? (

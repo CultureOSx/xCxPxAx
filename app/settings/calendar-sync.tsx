@@ -1,744 +1,437 @@
-/**
- * Calendar Sync Settings
- * ----------------------
- * Lets users connect their device calendar (Apple / Google / Outlook)
- * to CulturePass so that:
- *   1. Their personal events appear as subtle "busy" blocks on the CulturePass calendar.
- *   2. CulturePass events (tickets) can be auto-exported to their device calendar.
- *   3. They can export individual or all events to any calendar app they use.
- */
-
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView,
-  Switch, Platform, Alert, Linking, ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Switch,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn, Layout } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { GlassContainer, GlassView } from 'expo-glass-effect';
 
-import { useColors, useIsDark } from '@/hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, LayoutRules } from '@/constants/theme';
-import { BackButton } from '@/components/ui/BackButton';
-import { TextStyles } from '@/constants/typography';
-import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { useAuth } from '@/lib/auth';
-import type { EventData } from '@/shared/schema';
+import { api } from '@/lib/api';
+import { useCalendarSync } from '@/hooks/useCalendarSync';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens } from '@/constants/theme';
+import type { EventData, Ticket } from '@/shared/schema';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-interface CalendarProvider {
-  id: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  description: string;
-  available: boolean;
-  linkUrl?: string;
-}
-
-const CALENDAR_PROVIDERS: CalendarProvider[] = [
-  {
-    id: 'device',
-    label: Platform.OS === 'ios' ? 'Apple Calendar' : 'Device Calendar',
-    icon: Platform.OS === 'ios' ? 'logo-apple' : 'calendar-outline',
-    color: '#1C1C1E',
-    description:
-      Platform.OS === 'ios'
-        ? 'iCloud Calendar, local calendars, and subscribed calendars on this iPhone'
-        : 'Google Calendar, Exchange, and other calendars synced to this device',
-    available: Platform.OS !== 'web',
-  },
-  {
-    id: 'google',
-    label: 'Google Calendar',
-    icon: 'logo-google',
-    color: '#4285F4',
-    description: 'Open Google Calendar in your browser to import or subscribe',
-    available: true,
-    linkUrl: 'https://calendar.google.com',
-  },
-  {
-    id: 'outlook',
-    label: 'Outlook / Office 365',
-    icon: 'mail-outline',
-    color: '#0078D4',
-    description: 'Import an ICS file into Outlook or subscribe via link',
-    available: true,
-    linkUrl: 'https://outlook.live.com/calendar',
-  },
-];
-
-const HOW_IT_WORKS = [
-  {
-    title: 'Connect your calendar',
-    desc: 'Tap the toggle next to your preferred calendar app to grant access.',
-  },
-  {
-    title: 'See all events in one place',
-    desc: 'Your personal events appear as quiet "busy" blocks on the CulturePass calendar.',
-  },
-  {
-    title: 'Never double-book',
-    desc: 'CulturePass highlights potential conflicts before you buy a ticket.',
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
+const IS_WEB = Platform.OS === 'web';
 
 export default function CalendarSyncScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useColors();
-  const isDark = useIsDark();
-  const { isDesktop } = useLayout();
-  const { user, userId } = useAuth();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const { hPad, isDesktop } = useLayout();
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
+  const { userId, isAuthenticated } = useAuth();
+  const topInset = IS_WEB ? 0 : insets.top;
+  const bottomInset = IS_WEB ? 20 : insets.bottom;
 
   const {
     prefs,
     isLoading,
     isSyncing,
+    permissionGranted,
     connectDeviceCalendar,
     disconnectDeviceCalendar,
     setShowPersonalEvents,
     setAutoAddTickets,
     exportAllTickets,
-    isCalendarLinked,
   } = useCalendarSync();
 
-  // Fetch user tickets to enable exporting!
-  const { data: tickets = [] } = useQuery<any[]>({
-    queryKey: ['/api/tickets', userId],
+  const {
+    data: tickets = [],
+    isLoading: isTicketsLoading,
+    refetch: refetchTickets,
+  } = useQuery<Ticket[]>({
+    queryKey: ['calendar-sync-tickets', userId],
+    queryFn: () => api.tickets.forUser(userId!),
     enabled: !!userId,
+    staleTime: 60_000,
   });
 
-  const s = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+  const activeTicketCount = useMemo(
+    () => tickets.filter((t) => t.status === 'confirmed' || t.status === 'reserved' || t.status === 'used').length,
+    [tickets],
+  );
 
-  const haptic = useCallback(() => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const haptic = () => {
+    if (!IS_WEB) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
+  const openSettings = useCallback(() => {
+    Linking.openSettings().catch(() => {});
   }, []);
 
   const handleDeviceToggle = useCallback(async () => {
     haptic();
     if (prefs.deviceConnected) {
       Alert.alert(
-        'Disconnect Calendar',
-        'Your personal events will no longer appear on the CulturePass calendar.',
+        'Disconnect calendar',
+        'CulturePass will stop reading your busy times from device calendar.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Disconnect', style: 'destructive', onPress: () => disconnectDeviceCalendar() },
+          { text: 'Disconnect', style: 'destructive', onPress: () => void disconnectDeviceCalendar() },
         ],
       );
-    } else {
-      if (!isCalendarLinked) {
-        Alert.alert(
-          'Calendar Module Missing',
-          'The native Calendar module is not linked in this build. Please rebuild the dev client with npx expo run:ios.',
-        );
-        return;
-      }
-      await connectDeviceCalendar();
+      return;
     }
-  }, [prefs.deviceConnected, connectDeviceCalendar, disconnectDeviceCalendar, haptic, isCalendarLinked]);
+    await connectDeviceCalendar();
+  }, [prefs.deviceConnected, connectDeviceCalendar, disconnectDeviceCalendar]);
 
-    const handleExport = useCallback(async () => {
-      haptic();
-      if (tickets.length === 0) {
-        Alert.alert('No Tickets', 'You do not have any active tickets to export.');
-        return;
-      }
-      if (Platform.OS !== 'web' && !isCalendarLinked) {
-        Alert.alert(
-          'Calendar Module Missing',
-          'Native export is not available in this build. Please rebuild the dev client with npx expo run:ios.',
-        );
-        return;
-      }
-      Alert.alert(
-        'Export Calendar',
-        `This will export ${tickets.length} tickets to your calendar.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Export',
-            onPress: async () => {
-              try {
-                const exportableEvents = tickets.map(t => ({
-                  id: t.eventId,
-                  title: t.eventTitle,
-                  venue: t.eventVenue,
-                  address: '',
-                  city: '',
-                  date: new Date(t.eventDate || Date.now()),
-                  description: `Ticket Type: ${t.tierName || 'Standard'}`
-                } as unknown as EventData));
-                await exportAllTickets(exportableEvents);
-              } catch {
-                Alert.alert('Export Failed', 'Could not export your tickets.');
-              }
-            }
-          },
-        ]
-      );
-    }, [haptic, tickets, exportAllTickets, isCalendarLinked]);
-
-  const handleProviderLink = useCallback((url: string, label: string) => {
+  const handleExportTickets = useCallback(async () => {
     haptic();
-    Alert.alert(
-      `Open ${label}`,
-      `You'll be taken to ${label} where you can subscribe to your CulturePass calendar or import events.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open', onPress: () => Linking.openURL(url) },
-      ],
-    );
-  }, [haptic]);
+    if (!isAuthenticated || !userId) {
+      Alert.alert('Sign in required', 'Please sign in to sync your tickets to calendar.');
+      return;
+    }
+
+    const active = tickets.filter((t) => t.status === 'confirmed' || t.status === 'reserved' || t.status === 'used');
+    if (!active.length) {
+      Alert.alert('No active tickets', 'You do not have active tickets to export.');
+      return;
+    }
+
+    try {
+      const ids = [...new Set(active.map((t) => t.eventId).filter(Boolean))];
+      const settled = await Promise.allSettled(ids.map((id) => api.events.get(id)));
+      const events = settled
+        .filter((r): r is PromiseFulfilledResult<EventData> => r.status === 'fulfilled')
+        .map((r) => r.value);
+
+      if (!events.length) {
+        Alert.alert('Nothing to export', 'Could not load event details for your tickets right now.');
+        return;
+      }
+
+      await exportAllTickets(events);
+    } catch {
+      Alert.alert('Export failed', 'Unable to sync tickets right now. Please try again.');
+    }
+  }, [isAuthenticated, userId, tickets, exportAllTickets]);
 
   if (isLoading) {
     return (
-      <View style={[s.root, { justifyContent: 'center', alignItems: 'center' }]}> 
-        <ActivityIndicator size="large" color={CultureTokens.indigo} />
-      </View>
+      <ErrorBoundary>
+        <View style={[styles.loadingRoot, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={CultureTokens.indigo} />
+        </View>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <View style={[s.root, { paddingTop: topInset }]}>
-      {/* Header */}
-      <View style={s.header}>
-        <BackButton fallback="/settings" style={s.backBtn} />
-        <Text style={[TextStyles.headline, s.headerTitle]}>Calendar Sync</Text>
-        <View style={{ width: 44 }} />
-      </View>
+    <ErrorBoundary>
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <TabPrimaryHeader
+          title="Calendar Sync"
+          subtitle={undefined}
+          locationLabel={undefined}
+          hPad={hPad}
+          topInset={topInset}
+        />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 40,
-          paddingTop: 8,
-          alignItems: isDesktop ? 'center' : 'stretch',
-        }}
-      >
-        <View style={isDesktop ? { width: '100%', maxWidth: 720 } : { flex: 1 }}>
-          <GlassContainer spacing={30}>
-          {/* Hero banner */}
-          <Animated.View entering={FadeInDown.duration(500)}>
-            <GlassView glassEffectStyle="regular" style={s.heroBanner}>
-              <LinearGradient
-                colors={
-                  isDark
-                    ? ['rgba(0,102,204,0.15)', 'rgba(46,196,182,0.05)']
-                    : ['rgba(0,102,204,0.1)', 'rgba(46,196,182,0.05)']
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: hPad,
+              paddingBottom: bottomInset + 30,
+              alignSelf: 'center',
+              width: '100%',
+              maxWidth: isDesktop ? 860 : undefined,
+            },
+          ]}
+        >
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(220)}>
+            <LiquidGlassPanel borderRadius={20} contentStyle={styles.heroCard}>
+              <View style={[styles.heroIcon, { backgroundColor: CultureTokens.indigo + '18' }]}>
+                <Ionicons
+                  name={prefs.deviceConnected ? 'checkmark-done-circle' : 'calendar-outline'}
+                  size={24}
+                  color={CultureTokens.indigo}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.heroTitle, { color: colors.text }]}>
+                  {prefs.deviceConnected ? 'Calendar Connected' : 'Connect Your Calendar'}
+                </Text>
+                <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
+                  Sync CulturePass tickets with Apple/Google calendar and avoid scheduling conflicts.
+                </Text>
+              </View>
+            </LiquidGlassPanel>
+          </Animated.View>
+
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(40).duration(220)}>
+            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+              <Row
+                icon={IS_WEB ? 'download-outline' : 'phone-portrait-outline'}
+                iconColor={CultureTokens.indigo}
+                title={IS_WEB ? 'Browser Calendar Export' : 'Device Calendar Connection'}
+                subtitle={
+                  IS_WEB
+                    ? 'On web, events export as .ics files.'
+                    : permissionGranted
+                      ? 'Calendar permission granted.'
+                      : 'Calendar permission is required on iOS/Android.'
                 }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
+                right={
+                  IS_WEB ? (
+                    <Text style={[styles.badge, { color: colors.textSecondary }]}>ICS</Text>
+                  ) : (
+                    <Switch
+                      value={prefs.deviceConnected}
+                      onValueChange={() => void handleDeviceToggle()}
+                      trackColor={{ false: colors.borderLight, true: CultureTokens.indigo + '70' }}
+                      thumbColor={prefs.deviceConnected ? CultureTokens.indigo : '#fff'}
+                      accessibilityLabel="Toggle device calendar connection"
+                    />
+                  )
+                }
               />
-              <View style={[s.heroIconWrap, { backgroundColor: CultureTokens.indigo + '20' }]}>
-                <Ionicons name="calendar" size={36} color={CultureTokens.indigo} />
-              </View>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[s.heroTitle, { color: colors.text }]}>
-                  {user?.displayName ? `${user.displayName.split(' ')[0]}'s Calendar` : 'Your Calendar'}
-                </Text>
-                <Text style={[s.heroSub, { color: colors.textSecondary }]}>
-                  Connect your calendars to see personal events alongside CulturePass events — no conflicts, full context.
-                </Text>
-              </View>
-            </GlassView>
+
+              {!IS_WEB && !permissionGranted ? (
+                <>
+                  <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+                  <Pressable
+                    onPress={openSettings}
+                    style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.82 : 1, borderColor: colors.borderLight }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open device settings"
+                  >
+                    <Ionicons name="settings-outline" size={16} color={colors.text} />
+                    <Text style={[styles.actionBtnText, { color: colors.text }]}>Open Device Settings</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </LiquidGlassPanel>
           </Animated.View>
 
-          {/* Connect Calendars */}
-          <Animated.View entering={FadeInDown.delay(80).duration(500)} layout={Layout.duration(300)}>
-            <View style={s.section}>
-              <SectionTitle label="Connect Calendars" colors={colors} />
-              <GlassView glassEffectStyle="regular" style={[s.card, { borderColor: colors.borderLight }]}>
-                {CALENDAR_PROVIDERS.map((provider, idx) => {
-                  const isDevice = provider.id === 'device';
-                  const isConnected = isDevice ? prefs.deviceConnected : false;
-                  const isLast = idx === CALENDAR_PROVIDERS.length - 1;
-
-                  return (
-                    <View key={provider.id}>
-                      <View style={s.providerRow}>
-                        {/* Icon */}
-                        <View style={[s.providerIcon, { backgroundColor: provider.color + '18' }]}>
-                          <Ionicons name={provider.icon} size={22} color={provider.color} />
-                        </View>
-
-                        {/* Labels */}
-                        <View style={{ flex: 1, gap: 3 }}>
-                          <Text style={[s.providerLabel, { color: colors.text }]}>{provider.label}</Text>
-                          <Text style={[s.providerDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-                            {provider.description}
-                          </Text>
-                          {isConnected && (
-                            <Animated.View entering={FadeIn} style={s.connectedBadge}>
-                              <Ionicons name="checkmark-circle" size={12} color={CultureTokens.teal} />
-                              <Text style={[s.connectedText, { color: CultureTokens.teal }]}>Connected</Text>
-                            </Animated.View>
-                          )}
-                        </View>
-
-                        {/* Action */}
-                        {isDevice ? (
-                          provider.available ? (
-                            <Switch
-                              value={prefs.deviceConnected}
-                              onValueChange={handleDeviceToggle}
-                              trackColor={{ false: colors.borderLight, true: CultureTokens.indigo + '80' }}
-                              thumbColor={prefs.deviceConnected ? CultureTokens.indigo : '#fff'}
-                              accessibilityLabel={`${provider.label} ${prefs.deviceConnected ? 'connected' : 'disconnected'}`}
-                            />
-                          ) : (
-                            <Text style={[s.unavailableText, { color: colors.textTertiary }]}>Web only via ICS</Text>
-                          )
-                        ) : (
-                          <Pressable
-                            onPress={() => provider.linkUrl && handleProviderLink(provider.linkUrl, provider.label)}
-                            style={({ pressed }) => [
-                              s.linkBtn,
-                              { borderColor: provider.color + '40', backgroundColor: provider.color + (pressed ? '20' : '10') },
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Open ${provider.label}`}
-                          >
-                            <Ionicons name="open-outline" size={14} color={provider.color} />
-                            <Text style={[s.linkBtnText, { color: provider.color }]}>Open</Text>
-                          </Pressable>
-                        )}
-                      </View>
-                      {!isLast && <View style={[s.divider, { backgroundColor: colors.borderLight }]} />}
-                    </View>
-                  );
-                })}
-              </GlassView>
-            </View>
-          </Animated.View>
-
-          {/* Preferences (only shown when device calendar connected) */}
-          {prefs.deviceConnected && (
-            <Animated.View entering={FadeInDown.delay(140).duration(500)} layout={Layout.duration(300)}>
-              <View style={s.section}>
-                <SectionTitle label="Calendar Preferences" colors={colors} />
-                <GlassView glassEffectStyle="regular" style={[s.card, { borderColor: colors.borderLight }]}>
-                  <PreferenceRow
-                    icon="eye-outline"
-                    iconColor={CultureTokens.indigo}
-                    label="Show Personal Events"
-                    description="Display your personal events as busy blocks on the CulturePass calendar — event titles are private"
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(80).duration(220)}>
+            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+              <Row
+                icon="eye-outline"
+                iconColor={CultureTokens.teal}
+                title="Show Personal Busy Blocks"
+                subtitle="Show personal calendar occupancy in Events calendar."
+                right={
+                  <Switch
                     value={prefs.showPersonalEvents}
-                    onToggle={(v) => { haptic(); setShowPersonalEvents(v); }}
-                    colors={colors}
+                    onValueChange={(v) => void setShowPersonalEvents(v)}
+                    trackColor={{ false: colors.borderLight, true: CultureTokens.teal + '70' }}
+                    thumbColor={prefs.showPersonalEvents ? CultureTokens.teal : '#fff'}
+                    disabled={!prefs.deviceConnected}
                   />
-                  <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
-                  <PreferenceRow
-                    icon="add-circle-outline"
-                    iconColor={CultureTokens.teal}
-                    label="Auto-add Tickets to Calendar"
-                    description="Automatically add events when you purchase a ticket"
+                }
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <Row
+                icon="add-circle-outline"
+                iconColor={CultureTokens.coral}
+                title="Auto-add New Tickets"
+                subtitle="Automatically push newly purchased tickets to your calendar."
+                right={
+                  <Switch
                     value={prefs.autoAddTickets}
-                    onToggle={(v) => { haptic(); setAutoAddTickets(v); }}
-                    colors={colors}
+                    onValueChange={(v) => void setAutoAddTickets(v)}
+                    trackColor={{ false: colors.borderLight, true: CultureTokens.coral + '70' }}
+                    thumbColor={prefs.autoAddTickets ? CultureTokens.coral : '#fff'}
+                    disabled={!prefs.deviceConnected && !IS_WEB}
                   />
-                </GlassView>
+                }
+              />
+            </LiquidGlassPanel>
+          </Animated.View>
+
+          <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(120).duration(220)}>
+            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+              <Row
+                icon="ticket-outline"
+                iconColor={CultureTokens.gold}
+                title="Sync My Tickets Now"
+                subtitle={
+                  isTicketsLoading
+                    ? 'Loading your tickets...'
+                    : `${activeTicketCount} active ticket${activeTicketCount === 1 ? '' : 's'} ready to export`
+                }
+                right={isTicketsLoading ? <ActivityIndicator size="small" color={CultureTokens.indigo} /> : null}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <View style={styles.actionsRow}>
+                <Pressable
+                  onPress={() => void refetchTickets()}
+                  style={({ pressed }) => [
+                    styles.secondaryBtn,
+                    { borderColor: colors.borderLight, backgroundColor: colors.surface, opacity: pressed ? 0.85 : 1 },
+                  ]}
+                >
+                  <Ionicons name="refresh-outline" size={15} color={colors.text} />
+                  <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Refresh</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void handleExportTickets()}
+                  style={({ pressed }) => [
+                    styles.primaryBtn,
+                    { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
+                  ]}
+                >
+                  <Ionicons name="download-outline" size={15} color="#fff" />
+                  <Text style={styles.primaryBtnText}>Sync Tickets</Text>
+                </Pressable>
               </View>
-            </Animated.View>
-          )}
-
-          {/* Export Options */}
-          <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-            <View style={s.section}>
-              <SectionTitle label="Export & Share" colors={colors} />
-              <GlassView glassEffectStyle="regular" style={[s.card, { borderColor: colors.borderLight }]}>
-                <ExportRow
-                  icon="download-outline"
-                  iconColor={CultureTokens.coral}
-                  label="Export My Tickets"
-                  description="Add your upcoming CulturePass tickets to your personal calendar"
-                  onPress={handleExport}
-                  colors={colors}
-                />
-                <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
-                <ExportRow
-                  icon="share-outline"
-                  iconColor={CultureTokens.indigo}
-                  label="Share CulturePass Calendar"
-                  description="Share a link to your CulturePass events calendar with friends"
-                  onPress={() => {
-                    haptic();
-                    Alert.alert('Coming Soon', 'Calendar sharing will be available in an upcoming update.');
-                  }}
-                  colors={colors}
-                />
-              </GlassView>
-            </View>
+            </LiquidGlassPanel>
           </Animated.View>
+        </ScrollView>
 
-          {/* How it works */}
-          <Animated.View entering={FadeInDown.delay(260).duration(500)}>
-            <View style={s.section}>
-              <SectionTitle label="How It Works" colors={colors} />
-              <GlassView glassEffectStyle="regular" style={[s.card, s.howItWorksCard, { borderColor: colors.borderLight }]}>
-                {HOW_IT_WORKS.map((item, idx) => (
-                  <View key={idx} style={s.howRow}>
-                    <View style={[s.howNumBadge, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                      <Text style={[s.howNum, { color: CultureTokens.indigo }]}>{idx + 1}</Text>
-                    </View>
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={[s.howTitle, { color: colors.text }]}>{item.title}</Text>
-                      <Text style={[s.howDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
-                    </View>
-                  </View>
-                ))}
-              </GlassView>
+        {isSyncing ? (
+          <View style={styles.syncOverlay}>
+            <View style={[styles.syncPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+              <ActivityIndicator size="small" color={CultureTokens.indigo} />
+              <Text style={[styles.syncText, { color: colors.text }]}>Syncing...</Text>
             </View>
-          </Animated.View>
-
-          {/* Privacy note */}
-          <View style={[s.privacyNote, { borderColor: CultureTokens.teal + '40', backgroundColor: CultureTokens.teal + '10' }]}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={CultureTokens.teal} />
-            <Text style={[s.privacyText, { color: colors.textSecondary }]}>
-              CulturePass never reads the titles or details of your personal calendar events. Personal events appear only as anonymous &quot;busy&quot; blocks.
-            </Text>
           </View>
-
-        </GlassContainer>
-        </View>
-      </ScrollView>
-
-      {/* Loading overlay when syncing */}
-      {isSyncing && (
-        <View style={s.syncOverlay}>
-          <GlassView glassEffectStyle="regular" style={s.syncCard}>
-            <ActivityIndicator size="small" color={CultureTokens.indigo} />
-            <Text style={[s.syncText, { color: colors.text }]}>Syncing to Calendar…</Text>
-          </GlassView>
-        </View>
-      )}
-    </View>
+        ) : null}
+      </View>
+    </ErrorBoundary>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function SectionTitle({ label, colors }: { label: string; colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginLeft: 4 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: CultureTokens.indigo }} />
-      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1.2 }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function PreferenceRow({
-  icon, iconColor, label, description, value, onToggle, colors,
+function Row({
+  icon,
+  iconColor,
+  title,
+  subtitle,
+  right,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
-  label: string;
-  description: string;
-  value: boolean;
-  onToggle: (v: boolean) => void;
-  colors: ReturnType<typeof useColors>;
+  title: string;
+  subtitle: string;
+  right?: React.ReactNode;
 }) {
+  const colors = useColors();
   return (
-    <View style={prefStyles.row}>
-      <View style={[prefStyles.icon, { backgroundColor: iconColor + '15' }]}>
-        <Ionicons name={icon} size={20} color={iconColor} />
+    <View style={styles.row}>
+      <View style={[styles.rowIcon, { backgroundColor: iconColor + '18' }]}>
+        <Ionicons name={icon} size={18} color={iconColor} />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[prefStyles.label, { color: colors.text }]}>{label}</Text>
-        <Text style={[prefStyles.desc, { color: colors.textSecondary }]}>{description}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.rowTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.rowSub, { color: colors.textSecondary }]}>{subtitle}</Text>
       </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: colors.borderLight, true: iconColor + '80' }}
-        thumbColor={value ? iconColor : '#fff'}
-      />
+      {right}
     </View>
   );
 }
 
-function ExportRow({
-  icon, iconColor, label, description, onPress, colors,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  label: string;
-  description: string;
-  onPress: () => void;
-  colors: ReturnType<typeof useColors>;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [
-        prefStyles.row,
-        pressed && { opacity: 0.6, backgroundColor: colors.borderLight },
-      ]}
-    >
-      <View style={[prefStyles.icon, { backgroundColor: iconColor + '15' }]}>
-        <Ionicons name={icon} size={20} color={iconColor} />
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[prefStyles.label, { color: colors.text }]}>{label}</Text>
-        <Text style={[prefStyles.desc, { color: colors.textSecondary }]}>{description}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-    </Pressable>
-  );
-}
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { paddingTop: 12, gap: 12 },
 
-const prefStyles = StyleSheet.create({
-  row: {
+  heroCard: {
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    gap: 14,
+    gap: 12,
   },
-  icon: {
+  heroIcon: {
     width: 44,
     height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: {
-    fontSize: 15,
-    fontFamily: 'Poppins_600SemiBold',
+  heroTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
+  heroSub: { marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 17 },
+
+  card: { paddingVertical: 4 },
+  row: {
+    minHeight: 74,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  desc: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 17,
+  rowIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  rowTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 19 },
+  rowSub: { marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 16 },
+  badge: { fontFamily: 'Poppins_700Bold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4 },
+
+  divider: { height: 1, marginLeft: 66, opacity: 0.55 },
+  actionBtn: {
+    marginHorizontal: 14,
+    marginVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: 38,
+    paddingHorizontal: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  actionBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+
+  actionsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  secondaryBtn: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  secondaryBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  primaryBtn: {
+    flex: 1.2,
+    minHeight: 40,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  primaryBtnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 12 },
+
+  syncOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syncPill: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  syncText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
 });
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function getStyles(colors: ReturnType<typeof useColors>, isDark: boolean) {
-  return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.background },
-
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: LayoutRules.screenHorizontalPadding,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderLight,
-    },
-    backBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.backgroundSecondary,
-      borderWidth: 1,
-      borderColor: colors.borderLight,
-    },
-    headerTitle: {
-      flex: 1,
-      textAlign: 'center',
-    },
-
-    heroBanner: {
-      marginHorizontal: LayoutRules.screenHorizontalPadding,
-      marginBottom: 28,
-      marginTop: 16,
-      borderRadius: 24,
-      padding: 22,
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 16,
-      borderWidth: 1,
-      borderColor: CultureTokens.indigo + '30',
-      overflow: 'hidden',
-      backgroundColor: Platform.OS !== 'ios' ? colors.surfaceElevated : undefined,
-    },
-    heroIconWrap: {
-      width: 60,
-      height: 60,
-      borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    heroTitle: {
-      fontFamily: 'Poppins_700Bold',
-      fontSize: 18,
-      letterSpacing: -0.3,
-    },
-    heroSub: {
-      fontFamily: 'Poppins_400Regular',
-      fontSize: 13,
-      lineHeight: 19,
-    },
-
-    section: {
-      paddingHorizontal: LayoutRules.screenHorizontalPadding,
-      marginBottom: 24,
-    },
-
-    card: {
-      borderRadius: 24,
-      borderWidth: 1,
-      overflow: 'hidden',
-      backgroundColor: Platform.OS !== 'ios' ? colors.surface : undefined,
-    },
-
-    providerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 18,
-      gap: 14,
-    },
-    providerIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    providerLabel: {
-      fontFamily: 'Poppins_600SemiBold',
-      fontSize: 15,
-    },
-    providerDesc: {
-      fontFamily: 'Poppins_400Regular',
-      fontSize: 12,
-      lineHeight: 17,
-      marginTop: 2,
-    },
-    connectedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      alignSelf: 'flex-start',
-      marginTop: 4,
-    },
-    connectedText: {
-      fontFamily: 'Poppins_600SemiBold',
-      fontSize: 11,
-    },
-    linkBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 10,
-      borderWidth: 1,
-    },
-    linkBtnText: {
-      fontFamily: 'Poppins_600SemiBold',
-      fontSize: 12,
-    },
-    unavailableText: {
-      fontFamily: 'Poppins_400Regular',
-      fontSize: 11,
-      textAlign: 'right',
-      maxWidth: 80,
-    },
-
-    divider: {
-      height: 1,
-      marginLeft: 82,
-      opacity: 0.5,
-    },
-
-    howItWorksCard: {
-      padding: 4,
-      paddingVertical: 8,
-    },
-    howRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    howNumBadge: {
-      width: 28,
-      height: 28,
-      borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    howNum: {
-      fontFamily: 'Poppins_700Bold',
-      fontSize: 13,
-    },
-    howTitle: {
-      fontFamily: 'Poppins_600SemiBold',
-      fontSize: 14,
-    },
-    howDesc: {
-      fontFamily: 'Poppins_400Regular',
-      fontSize: 12,
-      lineHeight: 17,
-    },
-
-    privacyNote: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 10,
-      marginHorizontal: LayoutRules.screenHorizontalPadding,
-      marginBottom: 32,
-      marginTop: 8,
-      padding: 16,
-      borderRadius: 16,
-      borderWidth: 1,
-    },
-    privacyText: {
-      flex: 1,
-      fontFamily: 'Poppins_400Regular',
-      fontSize: 12,
-      lineHeight: 18,
-    },
-
-    syncOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    syncCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingHorizontal: 28,
-      paddingVertical: 20,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
-      backgroundColor: Platform.OS !== 'ios' ? colors.surfaceElevated : undefined,
-    },
-    syncText: {
-      fontFamily: 'Poppins_600SemiBold',
-      fontSize: 15,
-    },
-  });
-}

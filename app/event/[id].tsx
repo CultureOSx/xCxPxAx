@@ -668,37 +668,37 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
               <View style={[s.heroSection, { height: isDesktop ? 450 : 380 + topInset }, isDesktop && { borderRadius: 32, marginHorizontal: 20, marginTop: 20, overflow: 'hidden' }]}>
                 <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
                 
-                {canEdit && (
-                  <Pressable 
-                    onPress={handlePickCover} 
-                    style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' }]}
-                    accessibilityLabel="Change cover image"
-                  >
-                    {uploading ? (
-                      <ActivityIndicator size="large" color={colors.textOnBrandGradient} />
-                    ) : (
-                      <View
-                        style={{
-                          width: 54,
-                          height: 54,
-                          borderRadius: 27,
-                          backgroundColor: colors.overlay,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderWidth: StyleSheet.hairlineWidth * 2,
-                          borderColor: colors.borderLight,
-                        }}
-                      >
-                        <Ionicons name="camera" size={24} color={colors.textOnBrandGradient} />
-                      </View>
-                    )}
-                  </Pressable>
-                )}
-                
                 <LinearGradient
                   colors={['rgba(11,11,20,0.5)', 'transparent', 'rgba(11,11,20,0.85)']}
                   style={StyleSheet.absoluteFill}
                 />
+
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 10,
+                    alignSelf: 'center',
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 999,
+                    backgroundColor: 'rgba(0,0,0,0.24)',
+                    borderWidth: StyleSheet.hairlineWidth,
+                    borderColor: 'rgba(255,255,255,0.14)',
+                  }}
+                  pointerEvents="none"
+                >
+                  <Text
+                    style={{
+                      color: 'rgba(255,255,255,0.58)',
+                      fontFamily: 'Poppins_600SemiBold',
+                      fontSize: 10,
+                      letterSpacing: 1.2,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    CulturePass Verified
+                  </Text>
+                </View>
 
                 <View style={[s.heroOverlay, { paddingTop: topInset + 12 }]}>
                   {/* Top Header Buttons */}
@@ -714,8 +714,21 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                       <Ionicons name="chevron-back" size={24} color={colors.textOnBrandGradient} />
                     </HeroGlassIconButton>
                     <View style={s.heroActions}>
+                      {canEdit ? (
+                        <HeroGlassIconButton
+                          onPress={handlePickCover}
+                          accessibilityRole="button"
+                          accessibilityLabel="Change cover image"
+                        >
+                          {uploading ? (
+                            <ActivityIndicator size="small" color={colors.textOnBrandGradient} />
+                          ) : (
+                            <Ionicons name="create-outline" size={18} color={colors.textOnBrandGradient} />
+                          )}
+                        </HeroGlassIconButton>
+                      ) : null}
                       <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
-                        <Ionicons name="share-outline" size={20} color={colors.textOnBrandGradient} />
+                        <Ionicons name="share-outline" size={18} color={colors.textOnBrandGradient} />
                       </HeroGlassIconButton>
                       <HeroGlassIconButton
                         onPress={() => {
@@ -727,7 +740,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                       >
                         <Ionicons
                           name={saved ? 'bookmark' : 'bookmark-outline'}
-                          size={20}
+                          size={18}
                           color={saved ? CultureTokens.gold : colors.textOnBrandGradient}
                         />
                       </HeroGlassIconButton>
@@ -772,28 +785,6 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
 
             {/* Primary Info Header */}
             <View style={s.detailShell}>
-              <Card glass={!isDark} padding={20} style={s.heroInfoCard}>
-                <View style={s.heroBadges}>
-                  <View style={[s.heroBadge, { backgroundColor: CultureTokens.gold }]}>
-                    <Text style={[TextStyles.badgeCaps, { color: 'black' }]}>{displayCommunity}</Text>
-                  </View>
-                  {event.councilTag ? (
-                    <View style={[s.heroBadge, { backgroundColor: colors.primarySoft }]}>
-                      <Ionicons name="shield-checkmark" size={12} color={colors.primary} />
-                      <Text style={[TextStyles.badgeCaps, { color: colors.primary }]}>{event.councilTag}</Text>
-                    </View>
-                  ) : null}
-                  <View style={[s.heroBadge, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight }]}>
-                    <Ionicons name="finger-print-outline" size={12} color={CultureTokens.indigo} />
-                    <Text style={[TextStyles.badgeCaps, { color: colors.textSecondary }]}>
-                      CPID: {event.culturePassId ?? event.id}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={[TextStyles.title, { color: colors.text, marginTop: 8 }]}>{event.title}</Text>
-                <Text style={[TextStyles.bodyMedium, { color: colors.textSecondary, marginTop: 4 }]}>Hosted by {hostName}</Text>
-              </Card>
-              
               {countdown && (
                 <View style={s.countdownWrapper}>
                   {countdown.ended ? (
@@ -1074,6 +1065,28 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                    <View style={s.metricIconBg}><Ionicons name="people-outline" size={16} color={colors.textSecondary} /></View>
                    <Text style={s.metricText}>Community: {displayCommunity}</Text>
                  </View>
+              </View>
+
+              <View style={[s.section, { paddingTop: 2 }]}>
+                <View
+                  style={{
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.borderLight,
+                    backgroundColor: colors.backgroundSecondary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <Text style={[TextStyles.badgeCaps, { color: colors.textSecondary }]}>CPID</Text>
+                  <Text style={[TextStyles.captionSemibold, { color: colors.text }]}>
+                    {event.culturePassId ?? event.id}
+                  </Text>
+                </View>
               </View>
 
             </View>
