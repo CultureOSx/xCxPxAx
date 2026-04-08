@@ -40,19 +40,11 @@ import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 const TABS = [
   {
     name: 'index',
-    label: 'Home',
-    icon: 'home-outline' as const,
-    iconActive: 'home' as const,
-    sfSymbol: 'house' as const,
-    sfSymbolActive: 'house.fill' as const,
-  },
-  {
-    name: 'feed',
-    label: 'Feed',
-    icon: 'albums-outline' as const,
-    iconActive: 'albums' as const,
-    sfSymbol: 'rectangle.stack' as const,
-    sfSymbolActive: 'rectangle.stack.fill' as const,
+    label: 'Discover',
+    icon: 'compass-outline' as const,
+    iconActive: 'compass' as const,
+    sfSymbol: 'map' as const,
+    sfSymbolActive: 'map.fill' as const,
   },
   {
     name: 'calendar',
@@ -63,20 +55,28 @@ const TABS = [
     sfSymbolActive: 'calendar' as const,
   },
   {
+    name: 'community',
+    label: 'Community',
+    icon: 'people-outline' as const,
+    iconActive: 'people' as const,
+    sfSymbol: 'person.3' as const,
+    sfSymbolActive: 'person.3.fill' as const,
+  },
+  {
+    name: 'city',
+    label: 'My City',
+    icon: 'location-outline' as const,
+    iconActive: 'location' as const,
+    sfSymbol: 'mappin.and.ellipse' as const,
+    sfSymbolActive: 'mappin.and.ellipse' as const,
+  },
+  {
     name: 'perks',
     label: 'Perks',
     icon: 'gift-outline' as const,
     iconActive: 'gift' as const,
     sfSymbol: 'gift' as const,
     sfSymbolActive: 'gift.fill' as const,
-  },
-  {
-    name: 'profile',
-    label: 'Me',
-    icon: 'person-circle-outline' as const,
-    iconActive: 'person-circle' as const,
-    sfSymbol: 'person.crop.circle' as const,
-    sfSymbolActive: 'person.crop.circle.fill' as const,
   },
 ] as const;
 
@@ -113,11 +113,11 @@ const badge = StyleSheet.create({
 // ─── Individual tab item ──────────────────────────────────────────────────────
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
-  index: 'Open home and discover curated events',
-  feed: 'See cultural moments, stories, and community posts',
+  index: 'Discover curated events and culture near you',
   calendar: 'Browse events and your personal calendar',
+  community: 'Find communities and cultural circles',
+  city: 'See everything happening in your city',
   perks: 'Open perks, offers, and rewards',
-  profile: 'View and edit your profile',
 };
 
 interface TabItemProps {
@@ -357,7 +357,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isFeedTab = tab.name === 'feed';
+          const isFeedTab = tab.name === 'city';
           return (
             <TabItem
               key={route.key}

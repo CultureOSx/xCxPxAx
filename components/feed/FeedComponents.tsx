@@ -490,7 +490,9 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
         <Text style={[ti.title, { color: colors.text }]}>
           Trending{city ? ` in ${city}` : ' near you'}
         </Text>
-        <Text style={[ti.sub, { color: colors.textSecondary }]}>Discover what&apos;s popular this week</Text>
+        <Text style={[ti.sub, { color: colors.textSecondary }]}>
+          {"Discover what's popular this week"}
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} accessible={false} />
     </Pressable>
@@ -1653,23 +1655,19 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }) {
   return (
     <View>
-      {/* Stories / communities row */}
-      {communities.length > 0 && (
-        <StoriesBar
-          communities={communities}
-          authUser={authUser}
-          colors={colors}
-          isAuthenticated={isAuthenticated}
-          onCreatePost={onCreatePost}
-          canPostStoryStatus={canPostStoryStatus}
-          onCreateStoryPost={onCreateStoryPost}
-          hPad={hPad}
-        />
-      )}
+      <StoriesBar
+        communities={communities}
+        authUser={authUser}
+        colors={colors}
+        isAuthenticated={isAuthenticated}
+        onCreatePost={onCreatePost}
+        canPostStoryStatus={canPostStoryStatus}
+        onCreateStoryPost={onCreateStoryPost}
+        hPad={hPad}
+      />
 
-      {/* Create post + guest banner */}
+      {/* Guest banner (posting happens via + button / story entry) */}
       <View style={[flh.createWrap, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-        <CreatePostStub authUser={authUser} colors={colors} isAuthenticated={isAuthenticated} onPress={onCreatePost} city={city} />
         {!isAuthenticated && <GuestBanner colors={colors} />}
       </View>
 
@@ -1678,7 +1676,7 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
         <View style={[flh.divLine, { backgroundColor: colors.borderLight }]} />
         <View style={[flh.divPill, { backgroundColor: colors.surfaceElevated }]}>
           <Ionicons name="sparkles" size={10} color={CultureTokens.indigo} />
-          <Text style={[flh.divText, { color: colors.textTertiary }]}>Your Feed</Text>
+          <Text style={[flh.divText, { color: colors.textTertiary }]}>Culture feed</Text>
         </View>
         <View style={[flh.divLine, { backgroundColor: colors.borderLight }]} />
       </View>
@@ -1687,7 +1685,7 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }
 
 const flh = StyleSheet.create({
-  createWrap: { gap: 12, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  createWrap: { gap: 12, paddingTop: 10, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   divider:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   divLine:    { flex: 1, height: StyleSheet.hairlineWidth },
   divPill:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },

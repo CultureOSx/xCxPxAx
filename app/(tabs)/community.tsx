@@ -223,7 +223,7 @@ export default function CommunitiesScreen() {
 
         {/* ── Header (liquid glass) ── */}
         <TabPrimaryHeader
-          title="Communities"
+          title="Community"
           subtitle="Find local circles, diaspora groups, and cultural forums."
           locationLabel={
             `${locationLabel}${!isLoading && filteredCommunities.length > 0 ? ` · ${filteredCommunities.length.toLocaleString()} shown` : ''}`

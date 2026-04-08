@@ -1,292 +1,151 @@
-// app/(tabs)/feed.tsx — Culture Feed (main screen)
+/**
+ * Culture Feed — full-width layout on native + web, shared chrome with other tabs.
+ * Compose: TabPrimaryHeader → FeedFilterRail → FlashList (composer + posts).
+ */
 import React, {
-  useState, useMemo, useCallback, useEffect,
+  useMemo, useCallback,
 } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView,
-  Platform, ActivityIndicator, RefreshControl,
+  View, Pressable, StyleSheet, Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { feedKeys, communityKeys } from '@/hooks/queries/keys';
 import * as Haptics from 'expo-haptics';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
-import { useRole } from '@/hooks/useRole';
-import { CultureTokens, Spacing } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { api } from '@/lib/api';
+import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { HeaderAvatar } from '@/components/ui/HeaderAvatar';
-import { uploadPostImage } from '@/lib/storage';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import {
-  createCommunityPost,
-} from '@/lib/feedService';
-import type { EventData, Community } from '@/shared/schema';
-import {
-  FeedFilterBar, SkeletonCard, FeedListHeader, PostCard,
-  TrendingInterstitial, CreatePostModal, useAuthGate,
+  FeedFilterBar,
+  FeedListHeader,
+  PostCard,
+  TrendingInterstitial,
+  CreatePostModal,
+  useAuthGate,
 } from '@/components/feed/FeedComponents';
-import type { FeedFilter, FeedPost, ListItem } from '@/components/feed/types';
+import { FeedFilterRail } from '@/components/feed/FeedFilterRail';
+import { FeedLoadingState } from '@/components/feed/FeedLoadingState';
+import { FeedEmptyState } from '@/components/feed/FeedEmptyState';
+import { FEED_FLASH_ESTIMATED_ITEM, FEED_ANDROID_REFRESH_EXTRA } from '@/components/feed/feedScreen.constants';
+import type { ListItem } from '@/components/feed/types';
+import { useFeedScreen } from '@/components/feed/useFeedScreen';
+
+const IS_WEB = Platform.OS === 'web';
 
 export default function CultureFeedScreen() {
-  const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const isWeb    = Platform.OS === 'web';
-  const colors      = useColors();
-  const { isDesktop, hPad } = useLayout();
-  const { state }   = useOnboarding();
-  const { user: authUser, isAuthenticated } = useAuth();
-  const gate             = useAuthGate();
-  const { hasRole }      = useRole();
-  const canPostStoryStatus = hasRole('organizer', 'business', 'admin', 'platformAdmin');
-  const queryClient      = useQueryClient();
-  const listBottomPad    = useTabScrollBottomPadding(12);
+  const insets = useSafeAreaInsets();
+  const topInset = IS_WEB ? 0 : insets.top;
+  const colors = useColors();
+  const { isDesktop, hPad, tabBarHeight } = useLayout();
+  const gate = useAuthGate();
+  const listBottomPad = useTabScrollBottomPadding(12);
 
-  const [refreshing,     setRefreshing]     = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [createPostMode, setCreatePostMode] = useState<'standard' | 'story'>('standard');
-  const [localPosts,     setLocalPosts]     = useState<FeedPost[]>([]);
-  const [activeFilter,   setActiveFilter]   = useState<FeedFilter>('for-you');
+  const {
+    activeFilter,
+    setActiveFilter,
+    refreshing,
+    showCreatePost,
+    createPostMode,
+    communities,
+    authUser,
+    isAuthenticated,
+    canPostStoryStatus,
+    isLoading,
+    isFetching,
+    listItems,
+    postCounts,
+    locationLabel,
+    city,
+    openComposer,
+    closeComposer,
+    handleRefresh,
+    handleNewPost,
+  } = useFeedScreen({ isDesktop });
 
-  const { data: feedData, isLoading, isFetching } = useQuery({
-    queryKey: feedKeys.list({ city: state.city, country: state.country }),
-    queryFn: () => api.feed.list({ city: state.city, country: state.country, pageSize: 50 }),
-    staleTime: 3 * 60 * 1000,
-    placeholderData: keepPreviousData,
-  });
-
-  useEffect(() => { setLocalPosts([]); }, [state.city, state.country]);
-  useEffect(() => { if (feedData && !isFetching) setLocalPosts([]); }, [feedData, isFetching]);
-
-  const { data: communities = [] } = useQuery<Community[]>({
-    queryKey: communityKeys.list({ city: state.city, country: state.country }),
-    queryFn: () => api.communities.list({ city: state.city, country: state.country }),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const handleOpenCreatePost = useCallback(() => {
-    gate(() => {
-      setCreatePostMode('standard');
-      setShowCreatePost(true);
-    });
-  }, [gate]);
-
-  const handleOpenStoryPost = useCallback(() => {
-    gate(() => {
-      setCreatePostMode('story');
-      setShowCreatePost(true);
-    });
-  }, [gate]);
-
-  const handleNewPost = useCallback(async (
-    communityId: string,
-    communityName: string,
-    body: string,
-    imageUri?: string,
-    postStyle: 'standard' | 'story' = 'standard',
-  ) => {
-    if (!authUser) return;
-    const comm = communities.find((c) => c.id === communityId);
-    if (!comm) return;
-    const tempPost: FeedPost = {
-      id: `local-${Math.random().toString(36).slice(2)}-${Date.now()}`,
-      kind: 'announcement',
-      community: comm,
-      body,
-      postStyle: postStyle === 'story' ? 'story' : undefined,
-      authorId: authUser.id,
-      createdAt: new Date().toISOString(),
-      imageUrl: imageUri,
-    };
-    setLocalPosts((prev) => [tempPost, ...prev]);
-    (async () => {
-      try {
-        let finalImageUrl: string | undefined;
-        if (imageUri) finalImageUrl = await uploadPostImage(imageUri, authUser.id);
-        await createCommunityPost({
-          authorId: authUser.id, authorName: authUser.username || authUser.email || 'User',
-          communityId, communityName, body, imageUrl: finalImageUrl, postStyle,
-        });
-        await queryClient.invalidateQueries({ queryKey: feedKeys.list({ city: state.city, country: state.country }) });
-      } catch (err) {
-        if (__DEV__) console.error('[CultureFeed] Failed to create post:', err);
+  const renderItem = useCallback(
+    ({ item, index }: { item: ListItem; index: number }) => {
+      if (item.kind === '_trending') {
+        return <TrendingInterstitial city={item.city} colors={colors} />;
       }
-    })();
-  }, [authUser, communities, queryClient, state.city, state.country]);
+      return (
+        <ErrorBoundary>
+          <PostCard post={item} colorIdx={index} />
+        </ErrorBoundary>
+      );
+    },
+    [colors],
+  );
 
-  // Build server posts
-  const posts = useMemo<FeedPost[]>(() => {
-    const serverItems = feedData?.items ?? [];
-    const serverPosts: FeedPost[] = serverItems.map((item): FeedPost => {
-      const comm: Community = {
-        id: item.communityId ?? '', name: item.communityName ?? '',
-        imageUrl: item.communityImageUrl ?? undefined,
-      } as Community;
-      if (item.kind === 'event' && item.event) {
-        return { id: item.id, kind: 'event', event: item.event as EventData, community: comm, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
-      }
-      if (item.kind === 'milestone') {
-        return { id: item.id, kind: 'milestone', community: comm, members: item.members ?? 0, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
-      }
-      if (item.kind === 'welcome') {
-        return { id: item.id, kind: 'welcome', community: comm, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
-      }
-      if ((item as Record<string, unknown>).kind === 'collection-highlight') {
-        const ext = item as Record<string, unknown>;
-        return { id: item.id, kind: 'collection-highlight' as const, community: comm, tokenName: ext.tokenName as string, tokenImage: ext.tokenImage as string, userName: ext.userName as string, createdAt: item.createdAt, score: item.score, matchReason: item.matchReasons };
-      }
-      return {
-        id: item.id,
-        kind: 'announcement',
-        community: comm,
-        body: item.body ?? '',
-        postStyle: item.postStyle === 'story' ? 'story' : undefined,
-        imageUrl: item.imageUrl ?? undefined,
-        authorId: item.authorId,
-        likesCount: item.likesCount,
-        commentsCount: item.commentsCount,
-        createdAt: item.createdAt,
-        score: item.score,
-        matchReason: item.matchReasons,
-      };
-    });
-    return [...localPosts, ...serverPosts];
-  }, [feedData, localPosts]);
+  const getItemType = useCallback((item: ListItem) => (item.kind === '_trending' ? 'trending' : item.kind), []);
 
-  const filteredPosts = useMemo(() => {
-    if (activeFilter === 'events')      return posts.filter(p => p.kind === 'event');
-    if (activeFilter === 'communities') return posts.filter(p => p.kind !== 'event');
-    return posts;
-  }, [posts, activeFilter]);
+  const listHeader = useMemo(
+    () => (
+      <FeedListHeader
+        communities={communities}
+        authUser={authUser ?? null}
+        colors={colors}
+        isAuthenticated={isAuthenticated}
+        hPad={hPad}
+        city={city}
+        onCreatePost={() => gate(() => openComposer('standard'))}
+        canPostStoryStatus={canPostStoryStatus}
+        onCreateStoryPost={() => gate(() => openComposer('story'))}
+      />
+    ),
+    [
+      communities,
+      authUser,
+      colors,
+      isAuthenticated,
+      hPad,
+      canPostStoryStatus,
+      gate,
+      openComposer,
+    ],
+  );
 
-  const postCounts = useMemo(() => {
-    let eventCount = 0;
-    for (const post of posts) {
-      if (post.kind === 'event') eventCount += 1;
-    }
-    return { eventCount, commCount: posts.length - eventCount };
-  }, [posts]);
+  const numColumns = isDesktop ? 2 : 1;
+  const listContentStyle = useMemo(
+    () => [
+      styles.listContent,
+      {
+        paddingHorizontal: hPad,
+        paddingBottom: listBottomPad,
+      },
+      IS_WEB && isDesktop ? styles.listMaxWidth : null,
+    ],
+    [hPad, listBottomPad, isDesktop],
+  );
 
-  // Build list items, injecting a trending interstitial at position 4
-  const listItems = useMemo<ListItem[]>(() => {
-    const items: ListItem[] = [...filteredPosts];
-    const insertAt = isDesktop ? 5 : 4;
-    if (items.length >= insertAt) {
-      items.splice(insertAt, 0, { kind: '_trending', id: 'trending-interstitial', city: state.city || '' });
-    }
-    return items;
-  }, [filteredPosts, state.city, isDesktop]);
+  const androidRefreshOffset = insets.top + FEED_ANDROID_REFRESH_EXTRA;
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: feedKeys.list({ city: state.city, country: state.country }) }),
-        queryClient.refetchQueries({ queryKey: communityKeys.list({ city: state.city, country: state.country }) }),
-      ]);
-      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [queryClient, state.city, state.country]);
-
-  const locationLabel = state.city
-    ? `${state.city}${state.country ? `, ${state.country}` : ''}`
-    : state.country || 'Australia';
-  const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
-    if (item.kind === '_trending') {
-      return <TrendingInterstitial city={item.city} colors={colors} />;
-    }
-    return (
-      <ErrorBoundary>
-        <PostCard post={item} colorIdx={index} />
-      </ErrorBoundary>
-    );
-  }, [colors]);
-
-  const getItemType = useCallback((item: ListItem) => {
-    return item.kind === '_trending' ? 'trending' : item.kind;
-  }, []);
-
-  const listHeaderComponent = useMemo(() => (
-    <FeedListHeader
-      communities={communities}
-      authUser={authUser ?? null}
-      colors={colors}
-      isAuthenticated={isAuthenticated}
-      hPad={hPad}
-      city={state.city || ''}
-      onCreatePost={handleOpenCreatePost}
-      canPostStoryStatus={canPostStoryStatus}
-      onCreateStoryPost={handleOpenStoryPost}
-    />
-  ), [communities, authUser, colors, isAuthenticated, hPad, state.city, handleOpenCreatePost, canPostStoryStatus, handleOpenStoryPost]);
+  const emptyList = useMemo(
+    () => <FeedEmptyState activeFilter={activeFilter} hPad={hPad} />,
+    [activeFilter, hPad],
+  );
 
   return (
     <ErrorBoundary>
-      <Stack.Screen 
-        options={{ 
+      <Stack.Screen
+        options={{
           title: 'Feed | CulturePass',
           headerShown: false,
-        }} 
+        }}
       />
-      <View style={[sc.root, { backgroundColor: colors.background }]}>
-        {/* ── Header ── */}
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
         <TabPrimaryHeader
           title="Feed"
           subtitle={locationLabel}
           locationLabel=""
           hPad={hPad}
           topInset={topInset}
-          rightActions={
-            <>
-              <HeaderAvatar />
-              <Pressable
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.selectionAsync();
-                  void handleRefresh();
-                }}
-                style={({ pressed }) => [
-                  sc.headerIconBtn,
-                  { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-                  Platform.OS === 'ios' && pressed && !refreshing ? { opacity: 0.72 } : null,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Refresh feed"
-                hitSlop={10}
-                disabled={refreshing}
-                android_ripple={
-                  Platform.OS === 'android'
-                    ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 }
-                    : undefined
-                }
-              >
-                {refreshing || isFetching
-                  ? <ActivityIndicator size="small" color={CultureTokens.indigo} accessibilityLabel="Loading" />
-                  : <Ionicons name="refresh-outline" size={20} color={colors.text} />}
-              </Pressable>
-            </>
-          }
         />
 
-        {/* Sticky filter tabs — outside FlatList */}
-        <LiquidGlassPanel
-          borderRadius={0}
-          bordered={false}
-          style={{
-            borderBottomWidth: StyleSheet.hairlineWidth * 2,
-            borderBottomColor: colors.borderLight,
-          }}
-          contentStyle={sc.filterBarGlassInner}
-        >
+        <FeedFilterRail>
           <FeedFilterBar
             active={activeFilter}
             onChange={setActiveFilter}
@@ -295,128 +154,71 @@ export default function CultureFeedScreen() {
             colors={colors}
             hPad={hPad}
           />
-        </LiquidGlassPanel>
+        </FeedFilterRail>
 
-        {/* Fetch indicator */}
-        {isFetching && !isLoading && (
-          <View style={sc.fetchBar}>
-            <View style={[sc.fetchProgress, { backgroundColor: CultureTokens.indigo }]} />
+        {isFetching && !isLoading ? (
+          <View style={styles.syncLineTrack}>
+            <View style={[styles.syncLine, { backgroundColor: CultureTokens.indigo }]} />
           </View>
-        )}
+        ) : null}
 
         {isLoading ? (
-          <ScrollView
-            contentContainerStyle={{ paddingTop: Spacing.md, paddingBottom: listBottomPad }}
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="handled"
-            accessibilityLabel="Loading feed"
-          >
-            {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} colors={colors} />)}
-          </ScrollView>
+          <FeedLoadingState listBottomPad={listBottomPad} hPad={hPad} />
         ) : (
           <FlashList
             data={listItems}
             keyExtractor={(item) => (item as ListItem).id}
-            numColumns={isDesktop ? 2 : 1}
+            numColumns={numColumns}
             renderItem={renderItem}
             getItemType={getItemType}
-            ListHeaderComponent={listHeaderComponent}
-            ItemSeparatorComponent={() => <View style={{ height: isDesktop ? 20 : 16 }} />}
-            contentContainerStyle={[
-              sc.list,
-              {
-                paddingHorizontal: isDesktop || isWeb ? hPad : 0,
-                paddingBottom: listBottomPad,
-              },
-              isDesktop ? sc.listDesktop : null,
-            ]}
+            {...({ estimatedItemSize: FEED_FLASH_ESTIMATED_ITEM } as object)}
+            ListHeaderComponent={listHeader}
+            ItemSeparatorComponent={() => <View style={{ height: numColumns > 1 ? 20 : 16 }} />}
+            contentContainerStyle={listContentStyle}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
-                onRefresh={handleRefresh}
+                onRefresh={() => void handleRefresh()}
                 tintColor={colors.primary}
                 colors={[CultureTokens.indigo]}
-                progressViewOffset={
-                  Platform.OS === 'android' ? Math.min(topInset + 172, 220) : undefined
-                }
+                progressViewOffset={Platform.OS === 'android' ? androidRefreshOffset : undefined}
               />
             }
-            ListEmptyComponent={
-              <View
-                style={[sc.empty, { paddingHorizontal: hPad }]}
-                accessibilityRole="none"
-                accessible
-                accessibilityLabel={
-                  activeFilter === 'events'
-                    ? 'No events in feed. Browse events to find something near you.'
-                    : activeFilter === 'communities'
-                      ? 'No community updates. Browse communities to join groups.'
-                      : 'Feed is empty. Explore communities or events to get started.'
-                }
-              >
-                <View style={[sc.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-                  <Ionicons name="chatbubbles-outline" size={34} color={colors.textTertiary} accessible={false} />
-                </View>
-                <Text style={[sc.emptyTitle, { color: colors.text }]}>
-                  {activeFilter === 'events'      ? 'No events in your area yet'
-                   : activeFilter === 'communities' ? 'No community updates yet'
-                   : 'Your feed is quiet'}
-                </Text>
-                <Text style={[sc.emptySub, { color: colors.textSecondary }]}>
-                  {activeFilter === 'events'      ? 'Check back soon or browse all events in your city'
-                   : activeFilter === 'communities' ? 'Join communities to see their updates here'
-                   : 'Follow communities and explore events — your personalised feed will fill up here'}
-                </Text>
-                <View style={sc.emptyActions}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      sc.emptyCta,
-                      { backgroundColor: CultureTokens.indigo },
-                      Platform.OS === 'ios' && pressed ? { opacity: 0.9 } : null,
-                    ]}
-                    onPress={() => router.push(activeFilter === 'events' ? '/events' : '/(tabs)/community')}
-                    accessibilityRole="button"
-                    accessibilityHint="Opens the events or communities browse screen"
-                    android_ripple={Platform.OS === 'android' ? { color: 'rgba(255,255,255,0.25)' } : undefined}
-                  >
-                    <Text style={[sc.emptyCtaText, { color: colors.textOnBrandGradient }]}>
-                      {activeFilter === 'events' ? 'Browse events' : 'Browse communities'}
-                    </Text>
-                  </Pressable>
-                  {activeFilter === 'for-you' && (
-                  <Pressable
-                    style={({ pressed }) => [
-                      sc.emptyCtaSecondary,
-                      { borderColor: colors.border },
-                      Platform.OS === 'ios' && pressed ? { opacity: 0.85 } : null,
-                    ]}
-                    onPress={() => router.push('/(tabs)')}
-                    accessibilityRole="button"
-                    accessibilityLabel="Go to Discovery"
-                    accessibilityHint="Opens the discovery home with featured rails"
-                    {...(Platform.OS === 'android'
-                      ? { android_ripple: { color: CultureTokens.indigo + '18', borderless: false } }
-                      : {})}
-                  >
-                      <Text style={[sc.emptyCtaSecondaryText, { color: colors.text }]}>
-                        Explore Discovery
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            }
+            ListEmptyComponent={emptyList}
           />
         )}
+
+        {/* Floating post action — clean + consistent across iOS/Android/web */}
+        <Pressable
+          onPress={() => {
+            if (!IS_WEB) Haptics.selectionAsync().catch(() => {});
+            gate(() => openComposer('standard'));
+          }}
+          style={({ pressed }) => [
+            styles.fab,
+            {
+              backgroundColor: CultureTokens.indigo,
+              right: hPad,
+              bottom: (IS_WEB ? 16 : Math.max(insets.bottom, 10) + tabBarHeight + 12),
+              opacity: Platform.OS === 'ios' && pressed ? 0.92 : 1,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Create post"
+          accessibilityHint="Opens the post composer"
+          android_ripple={Platform.OS === 'android' ? { color: 'rgba(255,255,255,0.22)', borderless: false } : undefined}
+        >
+          <Ionicons name="add" size={20} color={colors.textOnBrandGradient} />
+        </Pressable>
       </View>
 
       <CreatePostModal
         visible={showCreatePost}
         mode={createPostMode}
-        onClose={() => setShowCreatePost(false)}
+        onClose={closeComposer}
         onSubmit={handleNewPost}
         communities={communities}
         colors={colors}
@@ -425,24 +227,35 @@ export default function CultureFeedScreen() {
   );
 }
 
-const sc = StyleSheet.create({
-  root:         { flex: 1 },
-  filterBarGlassInner: { paddingVertical: 0 },
-  headerIconBtn:{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  headerStatsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  headerStatPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
-  headerStatText: { fontSize: 12, lineHeight: 17, fontFamily: 'Poppins_500Medium' },
-  fetchBar:     { height: 2, backgroundColor: CultureTokens.indigo + '30' },
-  fetchProgress:{ height: 2, width: '60%' },
-  list:         { paddingTop: 0 },
-  listDesktop:  { maxWidth: 860, width: '100%', alignSelf: 'center' as const },
-  empty:        { alignItems: 'center', paddingVertical: 60, gap: 10 },
-  emptyIcon:    { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 4 },
-  emptyTitle:   { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
-  emptySub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
-  emptyCta:     { marginTop: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
-  emptyCtaText: { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 18 },
-  emptyActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 6, paddingHorizontal: 8 },
-  emptyCtaSecondary: { paddingHorizontal: 22, paddingVertical: 12, borderRadius: 24, borderWidth: 1 },
-  emptyCtaSecondaryText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  fab: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  syncLineTrack: {
+    height: 2,
+    backgroundColor: CultureTokens.indigo + '30',
+  },
+  syncLine: {
+    height: 2,
+    width: '60%',
+  },
+  listContent: {
+    paddingTop: 4,
+  },
+  listMaxWidth: {
+    maxWidth: 880,
+    width: '100%',
+    alignSelf: 'center',
+  },
 });

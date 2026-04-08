@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Main Tab Layout — CulturePass
- * 5 tabs: Home · Feed · Events · Perks · Me
- * Desktop web hides the bottom bar; WebSidebar handles nav.
+ * Bottom bar: Discover · Feed · Events · Community · Perks
+ * Profile & account: header menu (burger) → /menu
  */
 export default function TabsLayout() {
   return (
@@ -19,25 +19,14 @@ export default function TabsLayout() {
       }}
       initialRouteName="index"
     >
-      {/* 1. Home — curated discovery */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          title: 'Discover',
+          tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
       />
 
-      {/* 2. Feed — community posts & stories */}
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Feed',
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" size={size} color={color} />,
-        }}
-      />
-
-      {/* 3. Events — browse & personal calendar */}
       <Tabs.Screen
         name="calendar"
         options={{
@@ -46,7 +35,22 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4. Perks — rewards & offers */}
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: 'Community',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="city"
+        options={{
+          title: 'My City',
+          tabBarIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
+        }}
+      />
+
       <Tabs.Screen
         name="perks"
         options={{
@@ -55,18 +59,10 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 5. Me — profile & settings */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Me',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" size={size} color={color} />,
-        }}
-      />
+      {/* In-tab profile (opened from Account menu, deep links, avatar). Hidden from tab bar. */}
+      <Tabs.Screen name="profile" options={{ href: null }} />
 
-      {/* Hidden Routes */}
-      <Tabs.Screen name="community" options={{ href: null }} />
-      <Tabs.Screen name="explore"   options={{ href: null }} />
+      <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />
     </Tabs>

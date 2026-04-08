@@ -33,6 +33,7 @@ import FilterChips from '@/components/ui/FilterChips';
 import EventCard from '@/components/Discover/EventCard';
 import { getStateForCity, GLOBAL_REGIONS } from '@/constants/locations';
 import type { EventData, PaginatedEventsResponse, Profile } from '@/shared/schema';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 // ─── City hero images ─────────────────────────────────────────────────────────
 
@@ -144,9 +145,10 @@ export default function CityScreen() {
   const { isDesktop, contentWidth, width } = useLayout();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const { state: onboarding } = useOnboarding();
 
-  const cityName    = Array.isArray(name)    ? name[0]    : name    ?? 'Sydney';
-  const cityCountry = Array.isArray(country) ? country[0] : country ?? 'Australia';
+  const cityName    = Array.isArray(name)    ? name[0]    : name    ?? onboarding?.city ?? 'Sydney';
+  const cityCountry = Array.isArray(country) ? country[0] : country ?? onboarding?.country ?? 'Australia';
   const heroImage   = CITY_IMAGES[cityName.toLowerCase()] ?? DEFAULT_CITY_IMAGE;
   const cityMeta    = CITY_META[cityName.toLowerCase()] ?? DEFAULT_CITY_META;
 

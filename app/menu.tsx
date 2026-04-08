@@ -47,9 +47,9 @@ interface MenuSection {
 
 const SECTIONS: MenuSection[] = [
   {
-    title: 'My Account',
+    title: 'Account & profile',
     items: [
-      { id: 'profile', label: 'My Identity',       icon: 'person-circle-outline', route: '/profile',  requiresAuth: true },
+      { id: 'profile', label: 'My profile',        icon: 'person-circle-outline', route: '/(tabs)/profile', requiresAuth: true },
       { id: 'tickets', label: 'Festival Tickets',  icon: 'ticket-outline',        route: '/tickets',         requiresAuth: true, color: CultureTokens.gold },
       { id: 'wallet',  label: 'Wallet & Rewards',  icon: 'wallet-outline',        route: '/payment/wallet',  requiresAuth: true, color: CultureTokens.teal },
       { id: 'saved',   label: 'Saved & Pinned',    icon: 'bookmark-outline',      route: '/saved',           requiresAuth: true },
@@ -58,7 +58,7 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'Discover',
     items: [
-      { id: 'feed',        label: 'Culture Feed', icon: 'albums-outline',      route: '/(tabs)/feed' },
+      { id: 'my-city',     label: 'My City',      icon: 'location-outline',    route: '/(tabs)/city' },
       { id: 'events',      label: 'Events',       icon: 'calendar-outline',    route: '/events' },
       { id: 'movies',      label: 'Movies',       icon: 'film-outline',        route: '/movies' },
       { id: 'restaurants', label: 'Dining',       icon: 'restaurant-outline', route: '/restaurants' },
@@ -231,7 +231,7 @@ export default function MenuScreen() {
 
   return (
     <ErrorBoundary>
-      <Stack.Screen options={{ title: 'Menu | CulturePass', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Account | CulturePass', headerShown: false }} />
 
       <View style={[styles.root, { backgroundColor: colors.background }]}>
 
@@ -246,7 +246,7 @@ export default function MenuScreen() {
 
         {/* ── Top bar ── */}
         <View style={[styles.topBar, { paddingTop: insets.top, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-          <Text style={[styles.screenTitle, { color: colors.text }]}>Menu</Text>
+          <Text style={[styles.screenTitle, { color: colors.text }]}>Account</Text>
           <Pressable
             onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.back(); }}
             style={[styles.closeBtn, { backgroundColor: colors.surface + 'CC', borderColor: colors.borderLight }]}

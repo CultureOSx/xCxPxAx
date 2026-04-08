@@ -16,7 +16,8 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
+import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -155,7 +156,7 @@ export default function ProfileScreen() {
     } catch { /* user cancelled */ }
   }, [displayUser?.displayName, displayUser?.username, displayUser?.handle, userId]);
 
-  if (!userId) return <GuestProfileView topInset={insets.top} />;
+  if (!userId) return <GuestProfileView />;
 
   const showBootSkeleton = isLoading && !user && !authUser?.username && !authUser?.email;
   if (showBootSkeleton) return <ProfileSkeleton colors={colors} topInset={Platform.OS === 'web' ? 0 : insets.top} />;
@@ -215,40 +216,85 @@ export default function ProfileScreen() {
             </Pressable>
           ) : null}
 
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={{
-              paddingTop: topInset,
-              paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
-              paddingHorizontal: hPad,
-            }}
-          >
-            <TabBrandHeader />
-          </LiquidGlassPanel>
-
-          <View style={[hero.nav, { paddingHorizontal: hPad, paddingTop: 10 }]}>
-            {!isDesktop && (
-              <HeroGlassIconButton
-                onPress={() => router.push('/settings')}
-                accessibilityRole="button"
-                accessibilityLabel="Settings"
+          {Platform.OS === 'web' ? (
+            <LiquidGlassPanel
+              borderRadius={0}
+              bordered={false}
+              style={{
+                borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
+                borderBottomColor: colors.borderLight,
+              }}
+              contentStyle={{
+                paddingTop: topInset + 6,
+                paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+                paddingHorizontal: hPad,
+              }}
+            >
+              <TabPageChromeRow title="Profile" showHairline={false} />
+              <View
+                style={[
+                  hero.nav,
+                  {
+                    paddingTop: 8,
+                    paddingBottom: 12,
+                    marginTop: 4,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: colors.borderLight,
+                  },
+                ]}
               >
-                <Ionicons name="settings-outline" size={20} color={colors.text} />
-              </HeroGlassIconButton>
-            )}
-            <View style={{ flex: 1 }} />
-            {isFetching && !refreshing ? (
-              <ActivityIndicator size="small" color={CultureTokens.indigo} style={{ marginRight: 8 }} />
-            ) : null}
-            <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share profile">
-              <Ionicons name="share-outline" size={20} color={colors.text} />
-            </HeroGlassIconButton>
-          </View>
+                {!isDesktop && (
+                  <HeroGlassIconButton
+                    onPress={() => router.push('/settings')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Settings"
+                  >
+                    <Ionicons name="settings-outline" size={20} color={colors.text} />
+                  </HeroGlassIconButton>
+                )}
+                <View style={{ flex: 1 }} />
+                {isFetching && !refreshing ? (
+                  <ActivityIndicator size="small" color={CultureTokens.indigo} style={{ marginRight: 8 }} />
+                ) : null}
+                <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share profile">
+                  <Ionicons name="share-outline" size={20} color={colors.text} />
+                </HeroGlassIconButton>
+              </View>
+            </LiquidGlassPanel>
+          ) : (
+            <TabHeaderNativeShell hPad={hPad}>
+              <TabPageChromeRow title="Profile" showHairline={false} />
+              <View
+                style={[
+                  hero.nav,
+                  {
+                    paddingTop: 8,
+                    paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+                    marginTop: 2,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: colors.borderLight,
+                  },
+                ]}
+              >
+                {!isDesktop && (
+                  <HeroGlassIconButton
+                    onPress={() => router.push('/settings')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Settings"
+                  >
+                    <Ionicons name="settings-outline" size={20} color={colors.text} />
+                  </HeroGlassIconButton>
+                )}
+                <View style={{ flex: 1 }} />
+                {isFetching && !refreshing ? (
+                  <ActivityIndicator size="small" color={CultureTokens.indigo} style={{ marginRight: 8 }} />
+                ) : null}
+                <HeroGlassIconButton onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share profile">
+                  <Ionicons name="share-outline" size={20} color={colors.text} />
+                </HeroGlassIconButton>
+              </View>
+            </TabHeaderNativeShell>
+          )}
 
           <LiquidGlassPanel
             borderRadius={MAIN_TAB_UI.cardRadius}

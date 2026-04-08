@@ -1,6 +1,13 @@
 import { Platform, type ViewStyle } from 'react-native';
 import { LiquidGlassTokens, webShadow } from '@/constants/theme';
 
+/** Breathing room below the status bar / notch on main tab headers (native only). */
+export const TAB_HEADER_NATIVE_INSET_GAP = Platform.select({
+  ios: 6,
+  android: 8,
+  default: 8,
+});
+
 export const MAIN_TAB_UI = {
   cardRadius: LiquidGlassTokens.corner.mainCard,
   headerBorderWidth: 1,

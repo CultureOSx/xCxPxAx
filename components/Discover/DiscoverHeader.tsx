@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { CultureTokens, FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { TabBrandHeader } from '@/components/tabs/TabBrandHeader';
+import { BRAND_TAGLINE_SHORT, TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
+import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 
-const HEADER_TAGLINE = 'Discover Culture. Belong Anywhere.';
+const HEADER_TAGLINE = BRAND_TAGLINE_SHORT;
 
 interface DiscoverHeaderProps {
   currentTime: string;
@@ -25,7 +25,6 @@ function DiscoverHeaderComponent({
   weatherSummary,
   city,
 }: DiscoverHeaderProps) {
-  const insets = useSafeAreaInsets();
   const colors = useColors();
   const { isDesktop, hPad } = useLayout();
   const { user } = useAuth();
@@ -50,25 +49,34 @@ function DiscoverHeaderComponent({
   const mobileMetaLabel = [currentTime, weatherSummary].filter(Boolean).join(' · ');
 
   const TopBarContent = (
-    <View style={[styles.topBarInner, { paddingHorizontal: hPad }]}>
-      <TabBrandHeader />
+    <View style={[styles.topBarInner, Platform.OS === 'web' && { paddingHorizontal: hPad }]}>
+      <TabPageChromeRow title="Discover" subtitle={HEADER_TAGLINE} showHairline={false} />
     </View>
   );
 
-  const renderTopBar = () => (
-    <LiquidGlassPanel
-      borderRadius={0}
-      bordered={false}
-      style={{
-        zIndex: 100,
-        borderBottomWidth: StyleSheet.hairlineWidth * 2,
-        borderBottomColor: colors.borderLight,
-      }}
-      contentStyle={{ paddingTop: Platform.OS === 'web' ? 0 : insets.top }}
-    >
-      {TopBarContent}
-    </LiquidGlassPanel>
-  );
+  const renderTopBar = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            zIndex: 100,
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={{ paddingTop: 0 }}
+        >
+          {TopBarContent}
+        </LiquidGlassPanel>
+      );
+    }
+    return (
+      <TabHeaderNativeShell hPad={hPad}>
+        {TopBarContent}
+      </TabHeaderNativeShell>
+    );
+  };
 
   return (
     <View>
@@ -82,7 +90,6 @@ function DiscoverHeaderComponent({
               {weatherSummary ? ` · ${weatherSummary}` : ''}
             </Text>
             <Text style={[styles.desktopGreeting, { color: colors.text, fontSize: Math.min(36, greetingFontSize + 8) }]}>{greeting}</Text>
-            <Text style={[styles.desktopTagline, { color: CultureTokens.gold }]}>{HEADER_TAGLINE}</Text>
             <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
@@ -95,27 +102,6 @@ function DiscoverHeaderComponent({
         <View style={[styles.mobileHero, { paddingHorizontal: hPad }]}>
           <Text style={[styles.mobileGreeting, { color: colors.text, fontSize: greetingFontSize }]} numberOfLines={1}>
             {greeting}
-          </Text>
-          <Text
-            style={[
-              styles.mobileTagline,
-              {
-                color: CultureTokens.gold,
-                fontSize: 14,
-                lineHeight: 18,
-                textAlign: 'left',
-                marginTop: 2,
-                marginBottom: 2,
-                alignSelf: 'flex-start',
-                maxWidth: '98%',
-                flexShrink: 1,
-              },
-            ]}
-            numberOfLines={2}
-            adjustsFontSizeToFit={true}
-            minimumFontScale={0.7}
-          >
-            {HEADER_TAGLINE}
           </Text>
           <View style={styles.mobileMetaRow}>
             <View style={styles.mobileMetaLocationWrap}>
@@ -135,10 +121,8 @@ function DiscoverHeaderComponent({
 
 const styles = StyleSheet.create({
   topBarInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    minHeight: 64,
+    paddingVertical: 8,
+    minHeight: 56,
   },
 
   mobileHero: {
@@ -151,11 +135,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bold,
     letterSpacing: LetterSpacing.tight,
     lineHeight: LineHeight.hero,
-  },
-  mobileTagline: {
-    fontSize: 12,
-    fontFamily: FontFamily.medium,
-    letterSpacing: 0.2,
   },
   mobileMetaRow: {
     flexDirection: 'row',
@@ -188,14 +167,12 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: 42,
   },
-  desktopTagline: {
-    fontSize: 13,
-    fontFamily: FontFamily.medium,
-    letterSpacing: 0.2,
-    marginTop: 4,
-    marginBottom: 12,
+  desktopSub: {
+    fontSize: FontSize.callout,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.callout,
+    marginTop: 8,
   },
-  desktopSub: { fontSize: FontSize.callout, fontFamily: FontFamily.regular, lineHeight: LineHeight.callout },
   desktopActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 24 },
 });
 

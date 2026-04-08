@@ -308,7 +308,7 @@ export default function CalendarScreen() {
         <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
           <View style={[s.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={[s.loadingText, { color: colors.text }]}>Loading Calendar...</Text>
+            <Text style={[s.loadingText, { color: colors.text }]}>Loading events…</Text>
           </View>
         </View>
       </ErrorBoundary>
@@ -328,8 +328,8 @@ export default function CalendarScreen() {
 
         {/* ── Personalised Header (liquid glass) ── */}
           <TabPrimaryHeader
-            title="Calendar"
-            subtitle="Your personalized cultural agenda."
+            title="Events"
+            subtitle="Your personalised cultural agenda."
             locationLabel={user?.city && user?.country ? `${user.city}, ${user.country}` : user?.city || user?.country}
             hPad={hPad}
             topInset={topInset}
@@ -354,7 +354,7 @@ export default function CalendarScreen() {
                 {/* Personalised calendar name */}
                 {firstName ? (
                   <Text style={[s.calendarOwnerLabel, { color: colors.textTertiary }]}>
-                    {firstName}&rsquo;s Calendar
+                    {firstName}&rsquo;s events
                   </Text>
                 ) : null}
                 <Text style={[s.monthTitle, { color: colors.text }]}>

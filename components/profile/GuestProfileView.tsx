@@ -7,18 +7,19 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
+import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
 // ---------------------------------------------------------------------------
 // Guest profile — matches signed-in tab: ambient mesh + glass chrome
 // ---------------------------------------------------------------------------
-export function GuestProfileView({ topInset }: { topInset: number }) {
+export function GuestProfileView() {
   const colors = useColors();
   const pathname = usePathname();
   const { hPad } = useLayout();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const safeTop = Platform.OS === 'web' ? 0 : topInset;
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
@@ -29,24 +30,37 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
         pointerEvents="none"
       />
 
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
-        style={{
-          borderBottomWidth: StyleSheet.hairlineWidth * 2,
-          borderBottomColor: colors.borderLight,
-        }}
-        contentStyle={{
-          paddingTop: safeTop + 14,
-          paddingBottom: 14,
-          paddingHorizontal: hPad,
-        }}
-      >
-        <Text style={[gs.headerTitle, { color: colors.text }]}>Profile</Text>
-        <Text style={[gs.headerSub, { color: colors.textSecondary }]} numberOfLines={2}>
-          Sign in to unlock tickets, wallet, and your CulturePass ID.
-        </Text>
-      </LiquidGlassPanel>
+      {Platform.OS === 'web' ? (
+        <LiquidGlassPanel
+          borderRadius={0}
+          bordered={false}
+          style={{
+            borderBottomWidth: StyleSheet.hairlineWidth * 2,
+            borderBottomColor: colors.borderLight,
+          }}
+          contentStyle={{
+            paddingTop: 14,
+            paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+            paddingHorizontal: hPad,
+          }}
+        >
+          <TabPageChromeRow
+            title="Profile"
+            subtitle="Sign in to unlock tickets, wallet, and your CulturePass ID."
+            showHairline={false}
+          />
+        </LiquidGlassPanel>
+      ) : (
+        <TabHeaderNativeShell hPad={hPad}>
+          <View style={{ paddingBottom: MAIN_TAB_UI.headerVerticalPadding }}>
+            <TabPageChromeRow
+              title="Profile"
+              subtitle="Sign in to unlock tickets, wallet, and your CulturePass ID."
+              showHairline={false}
+            />
+          </View>
+        </TabHeaderNativeShell>
+      )}
 
       <ScrollView
         contentContainerStyle={[gs.scrollContent, isDesktop && gs.desktopContent, { paddingHorizontal: hPad }]}
@@ -127,18 +141,6 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
 }
 
 const gs = StyleSheet.create({
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.35,
-    lineHeight: 26,
-  },
-  headerSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
-    lineHeight: 18,
-    marginTop: 6,
-  },
   scrollContent: {
     paddingTop: 20,
     alignItems: 'center',
