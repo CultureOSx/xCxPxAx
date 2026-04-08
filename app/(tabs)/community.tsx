@@ -31,6 +31,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
+import { ConnectTeaser } from '@/components/connect/ConnectTeaser';
 import { NATIONALITIES } from '@/constants/cultures';
 import type { Community } from '@/shared/schema';
 
@@ -279,6 +280,9 @@ export default function CommunitiesScreen() {
               icon="people"
             />
           </View>
+
+          {/* ── Connect & Social (coming soon teaser) ── */}
+          <ConnectTeaser />
 
           {/* ── Filter rows (glass rail) ── */}
           <LiquidGlassPanel

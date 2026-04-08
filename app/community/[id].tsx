@@ -673,7 +673,8 @@ interface DbViewProps {
 function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const colors = useColors();
   const s = getStyles(colors);
-  const { isCommunityJoined, toggleJoinCommunity } = useSaved();
+  const { isCommunityJoined, toggleJoinCommunity, isCommunityBookmarked, toggleSaveCommunityBookmark } = useSaved();
+  const communityBookmarked = isCommunityBookmarked(community.id);
   const joined = isCommunityJoined(community.id);
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
@@ -1122,6 +1123,22 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                 <BackButton fallback="/(tabs)" style={s.navBtn} color={colors.textInverse} />
                 
                 <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Pressable
+                    style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+                    onPress={() => {
+                      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      toggleSaveCommunityBookmark(community.id);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={communityBookmarked ? 'Remove community bookmark' : 'Save community for later'}
+                  >
+                    <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
+                    <Ionicons
+                      name={communityBookmarked ? 'bookmark' : 'bookmark-outline'}
+                      size={20}
+                      color={colors.textInverse}
+                    />
+                  </Pressable>
                   <Pressable
                     style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
                     onPress={() => confirmAndReport({ targetType: 'community', targetId: String(community.id) })}

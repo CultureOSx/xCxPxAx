@@ -272,14 +272,25 @@ export default function CultureFeedScreen() {
             <>
               <HeaderAvatar />
               <Pressable
-                style={[sc.headerIconBtn, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-                onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); void handleRefresh(); }}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync();
+                  void handleRefresh();
+                }}
+                style={({ pressed }) => [
+                  sc.headerIconBtn,
+                  { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
+                  Platform.OS === 'ios' && pressed && !refreshing ? { opacity: 0.72 } : null,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Refresh feed"
                 accessibilityHint="Reload posts for your area"
                 hitSlop={10}
                 disabled={refreshing}
-                android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 } : undefined}
+                android_ripple={
+                  Platform.OS === 'android'
+                    ? { color: CultureTokens.indigo + '22', borderless: true, radius: 24 }
+                    : undefined
+                }
               >
                 {refreshing || isFetching
                   ? <ActivityIndicator size="small" color={CultureTokens.indigo} accessibilityLabel="Loading" />
@@ -335,6 +346,7 @@ export default function CultureFeedScreen() {
           <ScrollView
             contentContainerStyle={{ paddingTop: Spacing.md, paddingBottom: listBottomPad }}
             scrollEnabled={false}
+            keyboardShouldPersistTaps="handled"
             accessibilityLabel="Loading feed"
           >
             {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} colors={colors} />)}
@@ -347,19 +359,27 @@ export default function CultureFeedScreen() {
             renderItem={renderItem}
             getItemType={getItemType}
             ListHeaderComponent={listHeaderComponent}
-            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+            ItemSeparatorComponent={() => <View style={{ height: isDesktop ? 20 : 16 }} />}
             contentContainerStyle={[
               sc.list,
-              { paddingHorizontal: isDesktop || isWeb ? hPad : 0, paddingBottom: listBottomPad },
+              {
+                paddingHorizontal: isDesktop || isWeb ? hPad : 0,
+                paddingBottom: listBottomPad,
+              },
               isDesktop ? sc.listDesktop : null,
             ]}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
                 tintColor={colors.primary}
                 colors={[CultureTokens.indigo]}
+                progressViewOffset={
+                  Platform.OS === 'android' ? Math.min(topInset + 172, 220) : undefined
+                }
               />
             }
             ListEmptyComponent={
@@ -390,7 +410,11 @@ export default function CultureFeedScreen() {
                 </Text>
                 <View style={sc.emptyActions}>
                   <Pressable
-                    style={[sc.emptyCta, { backgroundColor: CultureTokens.indigo }]}
+                    style={({ pressed }) => [
+                      sc.emptyCta,
+                      { backgroundColor: CultureTokens.indigo },
+                      Platform.OS === 'ios' && pressed ? { opacity: 0.9 } : null,
+                    ]}
                     onPress={() => router.push(activeFilter === 'events' ? '/events' : '/(tabs)/community')}
                     accessibilityRole="button"
                     accessibilityHint="Opens the events or communities browse screen"
@@ -401,13 +425,20 @@ export default function CultureFeedScreen() {
                     </Text>
                   </Pressable>
                   {activeFilter === 'for-you' && (
-                    <Pressable
-                      style={[sc.emptyCtaSecondary, { borderColor: colors.border }]}
-                      onPress={() => router.push('/(tabs)')}
-                      accessibilityRole="button"
-                      accessibilityLabel="Go to Discovery"
-                      accessibilityHint="Opens the discovery home with featured rails"
-                    >
+                  <Pressable
+                    style={({ pressed }) => [
+                      sc.emptyCtaSecondary,
+                      { borderColor: colors.border },
+                      Platform.OS === 'ios' && pressed ? { opacity: 0.85 } : null,
+                    ]}
+                    onPress={() => router.push('/(tabs)')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go to Discovery"
+                    accessibilityHint="Opens the discovery home with featured rails"
+                    {...(Platform.OS === 'android'
+                      ? { android_ripple: { color: CultureTokens.indigo + '18', borderless: false } }
+                      : {})}
+                  >
                       <Text style={[sc.emptyCtaSecondaryText, { color: colors.text }]}>
                         Explore Discovery
                       </Text>

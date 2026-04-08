@@ -6,6 +6,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, Modal,
   TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
+  type ViewStyle,
 } from 'react-native';
 // Reanimated intentionally NOT imported — interpolateColor worklet crashes iOS (SIGABRT via worklets::UIScheduler)
 import { Image } from 'expo-image';
@@ -42,7 +43,16 @@ const ACCENT = [
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 const COUNTRY_FLAG: Record<string, string> = {
-  Australia: '🇦🇺', 'New Zealand': '🇳🇿', UAE: '🇦🇪', UK: '🇬🇧', Canada: '🇨🇦',
+  'United States': '🇺🇸',
+  USA: '🇺🇸',
+  Canada: '🇨🇦',
+  'United Arab Emirates': '🇦🇪',
+  UAE: '🇦🇪',
+  'United Kingdom': '🇬🇧',
+  UK: '🇬🇧',
+  Australia: '🇦🇺',
+  Singapore: '🇸🇬',
+  'New Zealand': '🇳🇿',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -193,7 +203,8 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
         horizontal
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[fb.scroll, { paddingHorizontal: hPad }]}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[fb.scroll, { paddingHorizontal: hPad, paddingRight: hPad + 4 }]}
         accessibilityRole="tablist"
         accessibilityLabel="Feed filters"
       >
@@ -224,7 +235,7 @@ const fb = StyleSheet.create({
 
 // ── Stories bar ───────────────────────────────────────────────────────────────
 
-function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePost, canPostStoryStatus, onCreateStoryPost }: {
+function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePost, canPostStoryStatus, onCreateStoryPost, hPad }: {
   communities: Community[];
   authUser: { displayName?: string | null; avatarUrl?: string | null } | null;
   colors: ReturnType<typeof useColors>;
@@ -233,12 +244,18 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
   /** Organizer, business, or admin — story-style status composer */
   canPostStoryStatus?: boolean;
   onCreateStoryPost?: () => void;
+  hPad: number;
 }) {
   const showStoryRing = Boolean(isAuthenticated && canPostStoryStatus && onCreateStoryPost);
 
   return (
     <View style={[st.wrap, { borderBottomColor: colors.borderLight }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.scroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[st.scroll, { paddingHorizontal: hPad, paddingRight: hPad + 6 }]}
+      >
         {/* Your story / sign in */}
         <Pressable
           style={st.item}
@@ -246,6 +263,9 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
           accessibilityRole="button"
           accessibilityLabel={isAuthenticated ? 'Create post' : 'Sign in to post'}
           accessibilityHint={isAuthenticated ? 'Compose an update for your community' : 'Opens sign in so you can share'}
+          {...(Platform.OS === 'android'
+            ? { android_ripple: { color: CultureTokens.indigo + '16', borderless: false } }
+            : {})}
         >
           <View style={st.ringWrap}>
             <LinearGradient
@@ -278,6 +298,9 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
             accessibilityRole="button"
             accessibilityLabel="Create story status"
             accessibilityHint="Share a short story-style update with a portrait photo"
+            {...(Platform.OS === 'android'
+              ? { android_ripple: { color: CultureTokens.purple + '22', borderless: false } }
+              : {})}
           >
             <LinearGradient
               colors={[CultureTokens.purple, CultureTokens.coral]}
@@ -306,6 +329,9 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
               }}
               accessibilityRole="button"
               accessibilityLabel={comm.name}
+              {...(Platform.OS === 'android'
+                ? { android_ripple: { color: accent + '28', borderless: false } }
+                : {})}
             >
               <LinearGradient colors={[accent, accent + '80']} style={st.ring}>
                 <View style={[st.inner, { backgroundColor: colors.background }]}>
@@ -325,7 +351,7 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
 
 const st = StyleSheet.create({
   wrap:        { borderBottomWidth: StyleSheet.hairlineWidth },
-  scroll:      { paddingHorizontal: 14, paddingVertical: 13, gap: 14 },
+  scroll:      { paddingVertical: 13, gap: 14 },
   item:        { alignItems: 'center', gap: 6 },
   ringWrap:    { position: 'relative' },
   ring:        { width: 64, height: 64, borderRadius: 32, padding: 2.5, alignItems: 'center', justifyContent: 'center' },
@@ -347,10 +373,17 @@ function CreatePostStub({ authUser, colors, onPress, isAuthenticated, city }: {
 }) {
   return (
     <Pressable
-      style={[cp.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
       onPress={onPress}
+      style={({ pressed }) => [
+        cp.wrap,
+        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        Platform.OS === 'ios' && pressed ? { opacity: 0.92 } : null,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={isAuthenticated ? 'Create a post' : 'Sign in to post'}
+      {...(Platform.OS === 'android'
+        ? { android_ripple: { color: CultureTokens.indigo + '14', borderless: false } }
+        : {})}
     >
       <View style={[cp.avatar, { backgroundColor: CultureTokens.indigo + '15' }]}>
         {isAuthenticated && authUser?.avatarUrl
@@ -374,7 +407,7 @@ function CreatePostStub({ authUser, colors, onPress, isAuthenticated, city }: {
 }
 
 const cp = StyleSheet.create({
-  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, minHeight: 62 },
+  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, minHeight: 62, overflow: 'hidden' },
   avatar:      { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   mockInput:   { flex: 1, height: 38, borderRadius: 19, borderWidth: 1, paddingHorizontal: 14, justifyContent: 'center' },
   placeholder: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
@@ -386,11 +419,18 @@ const cp = StyleSheet.create({
 function GuestBanner({ colors }: { colors: ReturnType<typeof useColors> }) {
   return (
     <Pressable
-      style={[gst.wrap, { borderColor: CultureTokens.indigo + '30' }]}
+      style={({ pressed }) => [
+        gst.wrap,
+        { borderColor: CultureTokens.indigo + '30' },
+        Platform.OS === 'ios' && pressed ? { opacity: 0.94 } : null,
+      ]}
       onPress={() => router.push('/(onboarding)/login')}
       accessibilityRole="button"
       accessibilityLabel="Join the conversation"
       accessibilityHint="Sign in to like posts, comment, and share with your community"
+      {...(Platform.OS === 'android'
+        ? { android_ripple: { color: CultureTokens.indigo + '18', borderless: false } }
+        : {})}
     >
       <LinearGradient
         colors={[CultureTokens.indigo + '14', CultureTokens.teal + '0C']}
@@ -425,11 +465,18 @@ const gst = StyleSheet.create({
 function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnType<typeof useColors> }) {
   return (
     <Pressable
-      style={[ti.wrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
       onPress={() => router.push('/events')}
+      style={({ pressed }) => [
+        ti.wrap,
+        { backgroundColor: colors.surface, borderColor: colors.borderLight },
+        Platform.OS === 'ios' && pressed ? { opacity: 0.92 } : null,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={city ? `Trending events in ${city}` : 'Trending events near you'}
       accessibilityHint="Opens the events browse screen"
+      {...(Platform.OS === 'android'
+        ? { android_ripple: { color: CultureTokens.gold + '28', borderless: false } }
+        : {})}
     >
       <LinearGradient
         colors={[CultureTokens.gold + '12', CultureTokens.coral + '08']}
@@ -451,7 +498,19 @@ function TrendingInterstitial({ city, colors }: { city: string; colors: ReturnTy
 }
 
 const ti = StyleSheet.create({
-  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: Platform.OS === 'web' ? 14 : 0, borderWidth: Platform.OS === 'web' ? 1 : 0, borderBottomWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginTop: 2, marginBottom: 10, paddingHorizontal: 16, minHeight: 74 },
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: 2,
+    marginBottom: 10,
+    minHeight: 74,
+  },
   iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title:    { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
   sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 16 },
@@ -618,7 +677,11 @@ function CommentsSheet({ visible, onClose, post, colors }: {
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={csh.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={csh.kav}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          enabled={Platform.OS !== 'web'}
+          style={csh.kav}
+        >
           <View style={[csh.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[csh.handle, { backgroundColor: colors.border }]} />
             <View style={[csh.header, { borderBottomColor: colors.borderLight }]}>
@@ -679,6 +742,8 @@ function CommentsSheet({ visible, onClose, post, colors }: {
                   onSubmitEditing={handleSubmit}
                   maxLength={300}
                   multiline
+                  selectionColor={CultureTokens.indigo}
+                  underlineColorAndroid="transparent"
                 />
                 <Pressable
                   style={[csh.sendBtn, { backgroundColor: body.trim() ? CultureTokens.indigo : colors.border }]}
@@ -832,6 +897,9 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
           onPress={handleLike}
           accessibilityRole="button"
           accessibilityLabel={`Like — ${likeCount} likes`}
+          {...(Platform.OS === 'android'
+            ? { android_ripple: { color: (liked ? '#E0245E' : colors.textSecondary) + '22', borderless: false } }
+            : {})}
         >
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <Ionicons name={liked ? 'heart' : 'heart-outline'} size={21} color={likeColor} />
@@ -847,6 +915,9 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
           onPress={handleComment}
           accessibilityRole="button"
           accessibilityLabel={`Comment — ${commentCount} comments`}
+          {...(Platform.OS === 'android'
+            ? { android_ripple: { color: colors.textSecondary + '22', borderless: false } }
+            : {})}
         >
           <Ionicons name="chatbubble-outline" size={20} color={commentColor} />
           <Text style={[rxn.btnLabel, { color: commentColor }]}>Comment</Text>
@@ -858,6 +929,9 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
           onPress={handleShare}
           accessibilityRole="button"
           accessibilityLabel="Share"
+          {...(Platform.OS === 'android'
+            ? { android_ripple: { color: colors.textSecondary + '22', borderless: false } }
+            : {})}
         >
           <Ionicons name="share-social-outline" size={21} color={shareColor} />
           <Text style={[rxn.btnLabel, { color: shareColor }]}>Share</Text>
@@ -933,6 +1007,9 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
         accessibilityRole="button"
         accessibilityLabel="Post options"
         style={ph.moreBtn}
+        {...(Platform.OS === 'android'
+          ? { android_ripple: { color: CultureTokens.indigo + '18', borderless: true } }
+          : {})}
       >
         <Ionicons name="ellipsis-horizontal" size={18} color={colors.textTertiary} />
       </Pressable>
@@ -950,7 +1027,13 @@ const ph = StyleSheet.create({
   sep:     { fontSize: 12, lineHeight: 16 },
   pill:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   pillText:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', lineHeight: 14 },
-  moreBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  moreBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 // ── Post card ─────────────────────────────────────────────────────────────────
@@ -1184,6 +1267,10 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
         marginBottom: 16,
         marginHorizontal: 12,
         overflow: 'hidden' as const,
+        ...Platform.select({
+          android: { elevation: 2 },
+          default: {},
+        }),
       }
     : {
         backgroundColor: colors.surface,
@@ -1192,9 +1279,18 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
         borderColor: colors.borderLight,
         marginBottom: 20,
         overflow: 'hidden' as const,
-        ...(isDark
-          ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }
-          : { shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }),
+        ...Platform.select<ViewStyle>({
+          web: (isDark
+            ? { boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }
+            : { boxShadow: '0 8px 24px rgba(44,42,114,0.12)' }) as ViewStyle,
+          ios: isDark
+            ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }
+            : { shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 },
+          android: { elevation: 3 },
+          default: isDark
+            ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }
+            : { shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 },
+        }),
       };
 
   return (
@@ -1441,7 +1537,11 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors, mode
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS !== 'web'}
+      >
         <View style={[cpm.backdrop]}>
           <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} onPress={Keyboard.dismiss} />
           <View style={[cpm.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -1563,6 +1663,7 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
           onCreatePost={onCreatePost}
           canPostStoryStatus={canPostStoryStatus}
           onCreateStoryPost={onCreateStoryPost}
+          hPad={hPad}
         />
       )}
 

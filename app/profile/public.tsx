@@ -75,7 +75,7 @@ export default function PublicProfileScreen() {
   const hasDetails   = !!(locationText || user?.website || user?.phone);
 
   const handleShare = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const shareUrl = `https://culturepass.app/u/${user?.username}`;
       await Share.share({
@@ -87,7 +87,7 @@ export default function PublicProfileScreen() {
   }, [displayName, user?.culturePassId, user?.username]);
 
   const handleOpenSocial = useCallback((key: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const url = socialLinks[key];
     if (url) Linking.openURL(url);
   }, [socialLinks]);
@@ -110,6 +110,8 @@ export default function PublicProfileScreen() {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         contentContainerStyle={{ paddingBottom: bottomInset + 30 }}
         bounces={false}
       >
@@ -125,16 +127,29 @@ export default function PublicProfileScreen() {
           </View>
 
           <View style={styles.heroNav}>
-            <Pressable 
-              style={styles.navBtn} 
+            <Pressable
+              style={styles.navBtn}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 goBackOrReplace('/(tabs)');
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              {...(Platform.OS === 'android'
+                ? { android_ripple: { color: 'rgba(255,255,255,0.15)', borderless: true } }
+                : {})}
             >
               <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
             </Pressable>
-            <Pressable style={styles.navBtn} onPress={handleShare}>
+            <Pressable
+              style={styles.navBtn}
+              onPress={handleShare}
+              accessibilityRole="button"
+              accessibilityLabel="Share profile"
+              {...(Platform.OS === 'android'
+                ? { android_ripple: { color: 'rgba(255,255,255,0.15)', borderless: true } }
+                : {})}
+            >
               <Ionicons name="share-outline" size={20} color={colors.textInverse} />
             </Pressable>
           </View>

@@ -61,14 +61,22 @@ export function TabPrimaryHeader({
             {title}
           </Text>
           {subtitle ? (
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={2}>
+            <Text
+              style={[styles.subtitle, { color: colors.textSecondary }]}
+              numberOfLines={2}
+              maxFontSizeMultiplier={1.35}
+            >
               {subtitle}
             </Text>
           ) : null}
           {locationLabel ? (
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
-              <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text
+                style={[styles.locationText, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.35}
+              >
                 {locationLabel}
               </Text>
             </View>

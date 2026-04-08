@@ -131,6 +131,8 @@ export interface PrivacySettings {
   showInDirectory?: boolean;
   /** Whether data is shared with partners */
   dataSharing?: boolean;
+  /** Browse other profiles without revealing identity (LinkedIn style) */
+  privateViewingMode?: boolean;
   [key: string]: boolean | undefined;
 }
 

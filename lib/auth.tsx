@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { setAccessToken, setTokenRefresher } from '@/lib/query-client';
 import { router } from 'expo-router';
 import { auth as firebaseAuth } from '@/lib/firebase';
-import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { signOut, onAuthStateChanged, sendEmailVerification, type User as FirebaseUser } from 'firebase/auth';
 import { api, ApiError } from '@/lib/api';
 import type { User, UserRole } from '@/shared/schema';
 import { logError } from '@/lib/reporting';
@@ -54,6 +54,10 @@ interface AuthContextType {
   profileSyncStatus: 'ok' | 'degraded';
   profileSyncMessage: string | null;
   retryProfileSync: () => Promise<void>;
+
+  emailVerified: boolean;
+  sendVerificationEmail: () => Promise<void>;
+  checkEmailVerified: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -73,6 +77,9 @@ const AuthContext = createContext<AuthContextType>({
   profileSyncStatus: 'ok',
   profileSyncMessage: null,
   retryProfileSync: async () => {},
+  emailVerified: false,
+  sendVerificationEmail: async () => {},
+  checkEmailVerified: async () => false,
 });
 
 export function useAuth() {
@@ -113,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileSyncStatus, setProfileSyncStatus] = useState<'ok' | 'degraded'>('ok');
   const [profileSyncMessage, setProfileSyncMessage] = useState<string | null>(null);
   const [profileRetryCount, setProfileRetryCount] = useState(0);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   // ------------------------------------------------------------------
   // Firebase Auth state observer
@@ -126,9 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileSyncStatus('ok');
         setProfileSyncMessage(null);
         setProfileRetryCount(0);
+        setEmailVerified(false);
         setIsRestoring(false);
         return;
       }
+
+      setEmailVerified(firebaseUser.emailVerified);
 
       try {
         const idToken = await firebaseUser.getIdToken();
@@ -349,6 +360,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [logout]);
 
+  const sendVerificationEmail = useCallback(async () => {
+    const user = firebaseAuth.currentUser;
+    if (!user) throw new Error('No authenticated user');
+    if (user.emailVerified) return;
+    await sendEmailVerification(user);
+  }, []);
+
+  const checkEmailVerified = useCallback(async (): Promise<boolean> => {
+    const user = firebaseAuth.currentUser;
+    if (!user) return false;
+    await user.reload();
+    const verified = firebaseAuth.currentUser?.emailVerified ?? false;
+    setEmailVerified(verified);
+    return verified;
+  }, []);
+
   const isSydneyUser = !!session?.user.city?.toLowerCase().includes('sydney');
   const isSydneyVerified = !!session?.user.isSydneyVerified;
 
@@ -374,9 +401,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileSyncStatus,
     profileSyncMessage,
     retryProfileSync,
+    emailVerified,
+    sendVerificationEmail,
+    checkEmailVerified,
   }), [
     session, isLoading, isRestoring, login, logout, refreshSession,
     hasRole, isSydneyUser, isSydneyVerified, profileSyncStatus, profileSyncMessage, retryProfileSync,
+    emailVerified, sendVerificationEmail, checkEmailVerified,
   ]);
 
   return (

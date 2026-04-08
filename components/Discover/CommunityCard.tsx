@@ -15,6 +15,7 @@ import {
   getCommunityMemberCount,
   getCommunitySignals,
 } from '@/lib/community';
+import { useSaved } from '@/contexts/SavedContext';
 
 interface CommunityCardProps {
   community: Community;
@@ -23,6 +24,8 @@ interface CommunityCardProps {
 
 function CommunityCard({ community, index = 0 }: CommunityCardProps) {
   const colors = useColors();
+  const { isCommunityBookmarked, toggleSaveCommunityBookmark } = useSaved();
+  const bookmarked = isCommunityBookmarked(community.id);
   const accent = getCommunityAccent(community, colors.primary);
   const members = getCommunityMemberCount(community);
   const upcomingEvents = getCommunityEventsCount(community);
@@ -102,6 +105,28 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
             <Ionicons name="checkmark" size={11} color="#FFFFFF" />
           </View>
         )}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.bookmarkFab,
+            { opacity: pressed ? 0.85 : 1 },
+            Platform.OS === 'web' && ({ cursor: 'pointer' } as object),
+          ]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            toggleSaveCommunityBookmark(community.id);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={bookmarked ? 'Remove community from saved' : 'Save community for later'}
+        >
+          <Ionicons
+            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+            size={18}
+            color="#FFFFFF"
+          />
+        </Pressable>
       </View>
 
       {/* Info strip */}
@@ -201,6 +226,17 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: CultureTokens.indigo,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bookmarkFab: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.42)',
     alignItems: 'center',
     justifyContent: 'center',
   },

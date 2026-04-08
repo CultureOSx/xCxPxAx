@@ -37,6 +37,7 @@ interface OnboardingContextValue {
   setSubscriptionTier: (tier: OnboardingState['subscriptionTier']) => void;
   completeOnboarding: () => Promise<void>;
   resetOnboarding: () => Promise<void>;
+  restartOnboarding: () => Promise<void>;
   updateLocation: (country: string, city: string) => Promise<void>;
 }
 
@@ -107,6 +108,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setInterests:        (interests: string[]) => persistUpdate({ interests }),
     setSubscriptionTier: (subscriptionTier: OnboardingState['subscriptionTier']) => persistUpdate({ subscriptionTier }),
     completeOnboarding:  () => persistUpdate({ isComplete: true }),
+    restartOnboarding:   () => persistUpdate({ isComplete: false }),
     resetOnboarding: async () => {
       setState(defaultState);
       await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});

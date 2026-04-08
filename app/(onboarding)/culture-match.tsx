@@ -153,12 +153,12 @@ export default function CultureMatchScreen() {
                   <Ionicons name={STEP_ICONS[step]} size={28} color={colors.textInverse} />
                 </View>
                 <Text style={[s.title, { color: colors.textInverse }]}>{STEP_LABELS[step]}</Text>
-                <Text style={[s.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLES[step]}</Text>
+                <Text style={s.subtitle}>{STEP_SUBTITLES[step]}</Text>
               </View>
 
               {/* Nationality step */}
               {step === 'nationality' && (
-                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft}>
                   <TextInput
                     value={nationalityQuery}
                     onChangeText={setNationalityQuery}
@@ -197,7 +197,7 @@ export default function CultureMatchScreen() {
 
               {/* Culture step */}
               {step === 'culture' && (
-                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft}>
                   {selectedNationality && (
                     <View style={[s.selectedNatBadge, { borderColor: CultureTokens.gold, backgroundColor: `${CultureTokens.gold}20` }]}>
                       <Text style={s.selectedNatEmoji}>{selectedNationality.emoji}</Text>
@@ -255,7 +255,7 @@ export default function CultureMatchScreen() {
 
               {/* Language step */}
               {step === 'language' && (
-                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft.duration(200)}>
+                <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft}>
                   {selectedLanguageObjects.length > 0 && (
                     <View style={s.selectedLangWrap}>
                       {selectedLanguageObjects.map((lang) => (
@@ -392,7 +392,7 @@ const s = StyleSheet.create({
   subtitle: {
     ...TextStyles.callout,
     textAlign: 'center',
-    opacity: 0.8,
+    color: 'rgba(255,255,255,0.75)',
   },
 
   searchInput: {

@@ -47,12 +47,18 @@ export default function SettingsLocationScreen() {
         <Text style={[styles.current, { color: colors.textSecondary }]}>
           {state.city ? `${state.city}, ${state.country || 'Australia'}` : 'No location selected'}
         </Text>
+        <Text style={[styles.pickerCue, { color: colors.textTertiary }]}>
+          Open the picker → choose country first, then region and city. Search is available on the country list.
+        </Text>
 
         <View style={styles.pickerWrap}>
           <LocationPicker />
         </View>
 
-        <Text style={[styles.help, { color: colors.textSecondary }]}>Use location picker to update your city for local events and recommendations.</Text>
+        <Text style={[styles.help, { color: colors.textSecondary }]}>
+          Pick your country first, then state or region and city. This scopes search, discover, and nearby perks. GPS auto-detect
+          is available for Australia.
+        </Text>
       </LiquidGlassPanel>
     </View>
   );
@@ -94,6 +100,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   current: {
     fontSize: 16,
     fontFamily: 'Poppins_500Medium',
+  },
+  pickerCue: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: 'Poppins_400Regular',
   },
   pickerWrap: {
     marginTop: Spacing.sm,

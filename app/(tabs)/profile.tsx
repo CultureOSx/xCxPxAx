@@ -22,6 +22,12 @@ import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
+import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
+
+const COMMUNITY_COLOR: Record<string, string> = {};
+for (const g of communityGroups) {
+  for (const m of g.members) COMMUNITY_COLOR[m] = g.color;
+}
 import { CultureTokens, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -112,6 +118,10 @@ export default function ProfileScreen() {
       likesCount: u.likesCount ?? a.likesCount,
       socialLinks: u.socialLinks ?? a.socialLinks,
       membership: u.membership ?? a.membership,
+      languages: u.languages ?? a.languages,
+      communities: u.communities ?? a.communities,
+      interests: u.interests ?? a.interests,
+      ethnicityText: u.ethnicityText ?? a.ethnicityText,
     };
   }, [user, authUser, userId]);
 
@@ -122,6 +132,12 @@ export default function ProfileScreen() {
     if (raw === 'sydney-local') return 'plus';
     return raw;
   }, [user?.membership?.tier, authUser?.subscriptionTier]);
+
+  const languages = useMemo(() => {
+    if (!displayUser?.languages) return [];
+    if (Array.isArray(displayUser.languages)) return displayUser.languages;
+    return (displayUser.languages as string).split(',').map((s: string) => s.trim()).filter(Boolean);
+  }, [displayUser?.languages]);
 
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -157,6 +173,9 @@ export default function ProfileScreen() {
   const userSocialLinks = (displayUser as Record<string, unknown>)?.socialLinks as Record<string, string> | undefined;
   const activeSocials   = SOCIAL_DEFS.filter(s => userSocialLinks?.[s.key]);
   const socialLinks     = userSocialLinks ?? {};
+
+  const communities = (displayUser?.communities as string[]) ?? [];
+  const interests   = (displayUser?.interests as string[]) ?? [];
 
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
@@ -410,30 +429,76 @@ export default function ProfileScreen() {
           ) : null}
 
           {/* ── HERITAGE ──────────────────────────────────────────────── */}
-          {hasCultures ? (
+          {(displayUser?.ethnicityText || languages.length > 0 || communities.length > 0 || hasCultures) ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
-              <SectionHeader title="Heritage" action="View Map" onAction={() => setShowCultureMap(true)} colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14 }}>
-                <View style={cul.grid}>
-                  {matchedCultures.map((c, i) => (
-                    <Animated.View
-                      key={c.id}
-                      entering={
-                        reducedMotion || Platform.OS === 'web'
-                          ? undefined
-                          : FadeInDown.delay(Math.min(i * 70, 350)).springify().damping(18).stiffness(110)
-                      }
-                      style={[cul.chip, { backgroundColor: colors.primarySoft, borderColor: CultureTokens.teal + '35' }]}
-                    >
-                      <LinearGradient
-                        colors={[CultureTokens.teal + '14', CultureTokens.indigo + '08']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFillObject}
-                      />
-                      <Text style={{ fontSize: 24 }}>{c.emoji}</Text>
-                      <Text style={[cul.chipLabel, { color: colors.text }]}>{c.name}</Text>
-                    </Animated.View>
+              <SectionHeader title="Roots & Culture" action="View Map" onAction={() => setShowCultureMap(true)} colors={colors} />
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 0, overflow: 'hidden' }}>
+                <View style={{ backgroundColor: `${CultureTokens.teal}15`, padding: 18, paddingBottom: 24 }}>
+                  {displayUser?.ethnicityText ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Text style={{ fontSize: 32 }}>{communityFlags[displayUser.ethnicityText as string] ?? '🌏'}</Text>
+                      <Text style={{ fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.3 }}>
+                        {displayUser.ethnicityText as string}
+                      </Text>
+                    </View>
+                  ) : hasCultures ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                       <Text style={{ fontSize: 32 }}>{matchedCultures[0].emoji}</Text>
+                       <Text style={{ fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.3 }}>
+                         {matchedCultures[0].name}
+                       </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {(languages.length > 0 || communities.length > 0) && (
+                  <View style={{ padding: 18 }}>
+                    {languages.length > 0 && (
+                      <View style={{ marginBottom: communities.length > 0 ? 16 : 0 }}>
+                        <Text style={{ fontSize: 13, color: colors.textTertiary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', marginBottom: 8 }}>Languages I Speak</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                          {languages.map(lang => (
+                            <View key={lang} style={{ backgroundColor: `${colors.text}08`, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 16 }}>
+                              <Text style={{ color: colors.text, fontSize: 14 }}>🗣 {lang}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {communities.length > 0 && (
+                      <View>
+                        <Text style={{ fontSize: 13, color: colors.textTertiary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', marginBottom: 8 }}>My Communities</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                          {communities.slice(0, 10).map(c => {
+                            const color = COMMUNITY_COLOR[c] ?? CultureTokens.indigo;
+                            const flag  = communityFlags[c] ?? '🌐';
+                            return (
+                              <View key={c} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: `${color}15`, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 14 }}>
+                                <Text style={{ fontSize: 16 }}>{flag}</Text>
+                                <Text style={{ color, fontSize: 13, fontFamily: 'Poppins_500Medium' }}>{c}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </LiquidGlassPanel>
+            </View>
+          ) : null}
+
+          {/* ── INTERESTS ── */}
+          {interests.length > 0 ? (
+            <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
+              <SectionHeader title="I'm Interested In" colors={colors} />
+              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} style={{ borderColor: `${CultureTokens.gold}30` }} contentStyle={{ backgroundColor: `rgba(255,200,87,0.06)`, padding: 16 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {interests.map((tag, i) => (
+                    <View key={tag + i} style={{ backgroundColor: colors.surface, borderColor: `${CultureTokens.gold}40`, borderWidth: 1, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 14, ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, web: { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } as any }) }}>
+                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Poppins_500Medium' }}>{tag}</Text>
+                    </View>
                   ))}
                 </View>
               </LiquidGlassPanel>
@@ -555,11 +620,13 @@ export default function ProfileScreen() {
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Social" colors={colors} />
               <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 12 }}>
-              <View style={soc.grid}>
+              <View style={{ gap: 12 }}>
                 {activeSocials.map(s => (
                   <Pressable
                     key={s.key}
-                    style={[soc.card, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
+                    style={({ pressed }) => [
+                      { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 100, borderWidth: 1, padding: 14, backgroundColor: pressed ? s.color + '22' : s.color + '12', borderColor: s.color + '35' }
+                    ]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       const url = socialLinks[s.key];
@@ -568,12 +635,11 @@ export default function ProfileScreen() {
                     accessibilityRole="link"
                     accessibilityLabel={s.label}
                   >
-                    <View style={[soc.strip, { backgroundColor: s.color }]} />
-                    <View style={[soc.iconWrap, { backgroundColor: s.color + '14' }]}>
-                      <Ionicons name={s.icon} size={22} color={s.color} />
+                    <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: s.color + '20' }}>
+                      <Ionicons name={s.icon as any} size={18} color={s.color} />
                     </View>
-                    <Text style={[soc.label, { color: colors.text }]}>{s.label}</Text>
-                    <Ionicons name="open-outline" size={14} color={colors.textTertiary} />
+                    <Text style={{ flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', color: colors.text }}>{s.label}</Text>
+                    <Ionicons name="arrow-forward-circle-outline" size={18} color={s.color} />
                   </Pressable>
                 ))}
               </View>
