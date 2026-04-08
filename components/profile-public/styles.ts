@@ -1,5 +1,5 @@
 import { useColors } from '@/hooks/useColors';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors, CultureTokens, Spacing } from '@/constants/theme';
 import { CP } from './constants';
 
@@ -38,10 +38,14 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     paddingBottom: 18,
   },
   navBtn: {
-    width: 40, height: 40, borderRadius: 20,
+    width: Platform.OS === 'web' ? 40 : 44,
+    height: Platform.OS === 'web' ? 40 : 44,
+    borderRadius: 22,
     backgroundColor: Colors.surfaceSecondary,
-    borderWidth: 1, borderColor: Colors.borderLight,
-    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   heroCenter: {
@@ -59,12 +63,22 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     shadowOpacity: 0.25, shadowRadius: 40,
   },
   avatarGradientRing: {
-    width: 104, height: 104, borderRadius: 52,
-    padding: Spacing.xs, marginBottom: Spacing.lg,
-    shadowColor: CultureTokens.teal,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5, shadowRadius: 18,
-    elevation: 12,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    padding: Spacing.xs,
+    marginBottom: Spacing.lg,
+    ...Platform.select<ViewStyle>({
+      web: { boxShadow: `0 8px 24px ${CultureTokens.teal}40` } as ViewStyle,
+      ios: {
+        shadowColor: CultureTokens.teal,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.5,
+        shadowRadius: 18,
+      },
+      android: { elevation: 12 },
+      default: { elevation: 12 },
+    }),
   },
   avatarInner: {
     flex: 1, borderRadius: 50,

@@ -6,5 +6,14 @@ export const ACCENT = [
 ];
 
 export const COUNTRY_FLAG: Record<string, string> = {
-  Australia: '🇦🇺', 'New Zealand': '🇳🇿', UAE: '🇦🇪', UK: '🇬🇧', Canada: '🇨🇦',
+  'United States': '🇺🇸',
+  USA: '🇺🇸',
+  Canada: '🇨🇦',
+  'United Arab Emirates': '🇦🇪',
+  UAE: '🇦🇪',
+  'United Kingdom': '🇬🇧',
+  UK: '🇬🇧',
+  Australia: '🇦🇺',
+  Singapore: '🇸🇬',
+  'New Zealand': '🇳🇿',
 };

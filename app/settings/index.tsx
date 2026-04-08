@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useRole } from '@/hooks/useRole';
 import { Button } from '@/components/ui/Button';
 import { CultureTokens, LayoutRules, Spacing, gradients, type ColorTheme } from '@/constants/theme';
@@ -38,8 +39,10 @@ export default function AccountSettingsScreen() {
   const insets   = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, emailVerified, sendVerificationEmail, checkEmailVerified } = useAuth();
+  const { restartOnboarding } = useOnboarding();
   const { isOrganizer, isAdmin, hasMinRole } = useRole();
+  const [verifySending, setVerifySending] = useState(false);
   const canTargetCampaigns = hasMinRole('cityAdmin');
   const appVersion = getAppVersion();
   const appVersionWithBuild = getAppVersionWithBuild();
@@ -86,6 +89,56 @@ export default function AccountSettingsScreen() {
     ]);
   };
 
+  const handleVerifyEmail = useCallback(async () => {
+    if (verifySending) return;
+    setVerifySending(true);
+    try {
+      await sendVerificationEmail();
+      Alert.alert(
+        'Verification email sent',
+        `We sent a link to ${user?.email ?? 'your email'}. Open it to verify your account.\n\nAlready clicked the link?`,
+        [
+          { text: 'Done', style: 'cancel' },
+          {
+            text: 'I verified — refresh',
+            onPress: async () => {
+              const verified = await checkEmailVerified();
+              if (verified) {
+                Alert.alert('Email verified', 'Your email address is now verified.');
+              } else {
+                Alert.alert('Not yet verified', 'We could not confirm verification. Please check your inbox and try again.');
+              }
+            },
+          },
+        ],
+      );
+    } catch (err: any) {
+      const msg = err?.code === 'auth/too-many-requests'
+        ? 'Too many requests. Please wait a few minutes and try again.'
+        : 'Failed to send verification email. Please try again.';
+      Alert.alert('Error', msg);
+    } finally {
+      setVerifySending(false);
+    }
+  }, [verifySending, sendVerificationEmail, checkEmailVerified, user?.email]);
+
+  const handleRedoSetup = useCallback(() => {
+    Alert.alert(
+      'Redo account setup?',
+      'Your previous selections will be kept as defaults — you can change anything.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            await restartOnboarding();
+            router.replace('/(onboarding)/location');
+          },
+        },
+      ],
+    );
+  }, [restartOnboarding]);
+
   const AUTH_SECTIONS: SettingSection[] = [
     {
       title: 'Account',
@@ -93,8 +146,16 @@ export default function AccountSettingsScreen() {
         { icon: 'person-outline',        label: 'Edit Profile',         sub: 'Name, bio, photo, social links',   color: CultureTokens.indigo, route: '/profile/edit' },
         { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.gold,   route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,  route: '/settings/notifications' },
-        { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: CultureTokens.teal,   route: '/settings/location' },
+        { icon: 'location-outline',      label: 'Location & City',      sub: 'Country, region & city for local content',     color: CultureTokens.teal,   route: '/settings/location' },
         { icon: 'calendar-outline',      label: 'Calendar Sync',        sub: 'Apple, Google, Outlook & device',  color: CultureTokens.indigo, route: '/settings/calendar-sync' },
+        ...(!emailVerified ? [{
+          icon: 'mail-unread-outline',
+          label: verifySending ? 'Sending…' : 'Verify Email',
+          sub: `${user?.email ?? 'Your email'} is not yet verified`,
+          color: CultureTokens.warning,
+          action: handleVerifyEmail,
+        }] : []),
+        { icon: 'refresh-circle-outline', label: 'Redo Account Setup', sub: 'Update your city, communities & interests', color: CultureTokens.teal, action: handleRedoSetup },
       ],
     },
     {
@@ -294,6 +355,24 @@ export default function AccountSettingsScreen() {
                     {[user.city, user.country].filter(Boolean).join(', ')}
                   </Text>
                 </View>
+              )}
+
+              {!emailVerified && (
+                <Pressable
+                  style={({ pressed }) => [s.verifyBanner, pressed && { opacity: 0.8 }]}
+                  onPress={handleVerifyEmail}
+                  accessibilityRole="button"
+                  accessibilityLabel="Verify email address"
+                >
+                  <Ionicons name="alert-circle" size={13} color={CultureTokens.warning} />
+                  <Text style={s.verifyBannerText}>
+                    Email not verified —{' '}
+                    <Text style={{ fontFamily: 'Poppins_700Bold' }}>
+                      {verifySending ? 'Sending…' : 'Send verification link'}
+                    </Text>
+                  </Text>
+                  <Ionicons name="chevron-forward" size={11} color={CultureTokens.warning} />
+                </Pressable>
               )}
             </Pressable>
           </Animated.View>
@@ -521,6 +600,26 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderWidth: 1, borderColor: 'rgba(46,196,182,0.22)',
     },
     locationText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textOnBrandGradient, opacity: 0.75 },
+
+    verifyBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      marginTop: 12,
+      backgroundColor: CultureTokens.warning + '18',
+      borderWidth: 1,
+      borderColor: CultureTokens.warning + '40',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+    },
+    verifyBannerText: {
+      flex: 1,
+      fontSize: 11,
+      fontFamily: 'Poppins_400Regular',
+      color: CultureTokens.warning,
+      lineHeight: 16,
+    },
 
     guestCardOuter: {
       marginHorizontal: LayoutRules.screenHorizontalPadding,

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,11 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  KeyboardAvoidingView,
   Platform,
   useColorScheme,
   ActivityIndicator,
+  TextInput,
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -16,99 +18,209 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/lib/auth';
+import { syncUserMarketplaceLocation } from '@/lib/syncMarketplaceLocation';
 import { useColors } from '@/hooks/useColors';
 import { useLocations } from '@/hooks/useLocations';
 import { useNearestCity } from '@/hooks/useNearestCity';
+import {
+  getCountryFlag,
+  getCountryForCity,
+  getRegionsForCountry,
+  listMarketplaceCountries,
+} from '@/lib/marketplaceLocation';
+import { CountrySelectList } from '@/components/location/CountrySelectList';
+import { CultureTokens } from '@/constants/theme';
 
-/** Country name → flag emoji for location display */
-const COUNTRY_FLAGS: Record<string, string> = {
-  Australia: '🇦🇺',
-  'New Zealand': '🇳🇿',
-  UAE: '🇦🇪',
-  'United Arab Emirates': '🇦🇪',
-  UK: '🇬🇧',
-  'United Kingdom': '🇬🇧',
-  Canada: '🇨🇦',
-};
+const isWeb = Platform.OS === 'web';
 
-function getCountryFlag(country: string): string {
-  return COUNTRY_FLAGS[country] ?? '🌍';
+function nativeCardShadow(colors: { primary: string }): ViewStyle {
+  return (
+    Platform.select<ViewStyle>({
+      web: { boxShadow: '0px 2px 9px rgba(0,0,0,0.08)' } as ViewStyle,
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 },
+      default: { elevation: 2 },
+    }) ?? {}
+  );
 }
 
 export interface LocationPickerProps {
-  /** 'icon' = compact icon button. 'full' = bordered chip. 'text' = bare inline text, no frame */
   variant?: 'icon' | 'full' | 'text';
-  /** Icon color (e.g. '#fff' for gradient headers) */
   iconColor?: string;
-  /** Style for the icon button container */
   buttonStyle?: ViewStyle;
-  /** Text color for 'text' variant */
   textColor?: string;
 }
 
+type Step = 'country' | 'region' | 'city';
+
 export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textColor }: LocationPickerProps) {
+  const { user } = useAuth();
   const { state, updateLocation } = useOnboarding();
   const colors = useColors();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-  const { states, citiesByState, getStateForCity, isLoading: locationsLoading, error: locationsError } = useLocations();
+  const { states, getStateForCity, isLoading: locationsLoading, error: locationsError } = useLocations();
   const { detect, status: detectStatus } = useNearestCity();
   const isDetecting = detectStatus === 'requesting';
   const [visible, setVisible] = useState(false);
-  const [step, setStep] = useState<'state' | 'city'>('state');
+  const [step, setStep] = useState<Step>('country');
+  const [pendingCountry, setPendingCountry] = useState('');
   const [pendingState, setPendingState] = useState('');
+  const [citySearch, setCitySearch] = useState('');
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const topInset = isWeb ? 0 : insets.top;
+  const bottomInsetNative = isWeb ? 0 : Math.max(insets.bottom, 12);
+  const listPadBottom = isWeb ? 80 : bottomInsetNative + 28;
+
+  const scrollCommon = useMemo(
+    () => ({
+      keyboardShouldPersistTaps: 'handled' as const,
+      keyboardDismissMode: (Platform.OS === 'ios' ? 'interactive' : 'on-drag') as 'interactive' | 'on-drag',
+      showsVerticalScrollIndicator: false,
+      automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
+    }),
+    [],
+  );
+
+  const countries = useMemo(() => listMarketplaceCountries(), []);
 
   const open = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep('state');
+    setStep('country');
+    setPendingCountry('');
     setPendingState('');
+    setCitySearch('');
     setVisible(true);
   }, []);
-
-  const selectState = useCallback((stateCode: string) => {
-    Haptics.selectionAsync();
-    setPendingState(stateCode);
-    setStep('city');
-  }, []);
-
-  const selectCity = useCallback(async (city: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const countryObj = states.find(s => s.cities.includes(city));
-    const finalCountry = countryObj ? ((countryObj as any).country ?? 'Australia') : 'Australia';
-    await updateLocation(finalCountry, city);
-    setVisible(false);
-  }, [updateLocation, states]);
-
-  const handleDetectLocation = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const r = await detect();
-    if (r) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await updateLocation((r as any).country || 'Australia', r.city);
-      setVisible(false);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  }, [detect, updateLocation]);
 
   const close = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setVisible(false);
   }, []);
 
-  // Derive which state the current city belongs to
-  const currentStateCode = state.city ? getStateForCity(state.city) : undefined;
-  const currentStateMeta = states.find(s => s.code === currentStateCode);
-  const pendingStateMeta = states.find(s => s.code === pendingState);
-  const citiesToShow = pendingState ? (citiesByState[pendingState] ?? []) : [];
+  const selectCountry = useCallback(
+    (countryName: string) => {
+      Haptics.selectionAsync();
+      setPendingCountry(countryName);
+      setCitySearch('');
+      const regs = getRegionsForCountry(countryName, states);
+      if (countryName === 'Australia') {
+        setPendingState('');
+        setStep('region');
+      } else if (regs.length === 1) {
+        setPendingState(regs[0].code);
+        setStep('city');
+      } else {
+        setPendingState('');
+        setStep('region');
+      }
+    },
+    [states],
+  );
 
-  const country = state.country || 'Australia';
+  const selectRegion = useCallback((code: string) => {
+    Haptics.selectionAsync();
+    setPendingState(code);
+    setCitySearch('');
+    setStep('city');
+  }, []);
+
+  const selectCity = useCallback(
+    async (city: string) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const country = pendingCountry || state.country || 'Australia';
+      await updateLocation(country, city);
+      void syncUserMarketplaceLocation(user?.id, country, city);
+      setVisible(false);
+    },
+    [pendingCountry, state.country, updateLocation, user?.id],
+  );
+
+  const handleDetectLocation = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const r = await detect();
+    if (r) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await updateLocation('Australia', r.city);
+      void syncUserMarketplaceLocation(user?.id, 'Australia', r.city);
+      setVisible(false);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [detect, updateLocation, user?.id]);
+
+  const regions = useMemo(
+    () => (pendingCountry ? getRegionsForCountry(pendingCountry, states) : []),
+    [pendingCountry, states],
+  );
+
+  const pendingRegionMeta = useMemo(
+    () => regions.find((r) => r.code === pendingState),
+    [regions, pendingState],
+  );
+
+  const citiesFiltered = useMemo(() => {
+    const list = pendingRegionMeta?.cities ?? [];
+    const q = citySearch.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((c) => c.toLowerCase().includes(q));
+  }, [pendingRegionMeta, citySearch]);
+
+  const resolvedCountry =
+    state.country || (state.city ? getCountryForCity(state.city) : '') || 'Australia';
+
+  const homeRegions = useMemo(
+    () => getRegionsForCountry(resolvedCountry, states),
+    [resolvedCountry, states],
+  );
+
+  const currentStateCode = state.city ? getStateForCity(state.city) : undefined;
+  const currentStateMeta = useMemo(
+    () => (currentStateCode ? homeRegions.find((r) => r.code === currentStateCode) : undefined),
+    [homeRegions, currentStateCode],
+  );
+
+  const country = resolvedCountry;
   const countryFlag = getCountryFlag(country);
+  const headerFlag = getCountryFlag(pendingCountry || state.country || 'Australia');
+
   const locationLabel = state.city
-    ? `${state.city}${currentStateMeta ? `, ${currentStateMeta.code}` : ''} · ${country}`
+    ? `${state.city}${
+        currentStateCode && resolvedCountry === 'Australia' && currentStateMeta
+          ? `, ${currentStateMeta.code}`
+          : ''
+      } · ${country}`
     : 'Select Location';
+
+  const modalTitle =
+    step === 'country' ? 'Country' : step === 'region' ? 'State or region' : 'City';
+
+  const headerBack = () => {
+    if (step === 'city') {
+      setCitySearch('');
+      if (pendingCountry === 'Australia') {
+        setStep('region');
+      } else {
+        setStep('country');
+        setPendingState('');
+        setPendingCountry('');
+      }
+      return;
+    }
+    if (step === 'region') {
+      setStep('country');
+      setPendingState('');
+      setPendingCountry('');
+      return;
+    }
+    close();
+  };
 
   return (
     <View style={styles.pickerRoot}>
@@ -160,12 +272,12 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="pageSheet"
         onRequestClose={close}
-        transparent={Platform.OS === 'web'}
+        transparent={isWeb}
+        statusBarTranslucent={Platform.OS === 'android'}
+        {...(Platform.OS === 'ios' ? { presentationStyle: 'pageSheet' as const } : {})}
       >
-        <View style={[styles.modal, { backgroundColor: colors.background }]}>
-          {/* Blurred modal background — iOS only */}
+        <View style={[styles.modal, { flex: 1, backgroundColor: colors.background }]}>
           {Platform.OS === 'ios' && (
             <BlurView
               intensity={60}
@@ -174,102 +286,139 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
             />
           )}
 
-          <View style={[styles.modalInner, { paddingTop: topInset + 10 }]}>
-            {/* Handle bar */}
+          <KeyboardAvoidingView
+            style={styles.kavRoot}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled={!isWeb}
+          >
+            <View
+              style={[
+                styles.modalInner,
+                {
+                  flex: 1,
+                  paddingTop: topInset + 10,
+                  paddingBottom: isWeb ? 0 : bottomInsetNative,
+                },
+              ]}
+            >
             <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
 
-            {/* Header */}
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Pressable
-                onPress={() => {
-                  if (step === 'city') {
-                    setStep('state');
-                    setPendingState('');
-                  } else {
-                    close();
-                  }
-                }}
-                hitSlop={12}
-                style={styles.headerBtn}
+                onPress={headerBack}
+                hitSlop={14}
+                {...(Platform.OS === 'android'
+                  ? { android_ripple: { color: colors.primarySoft, borderless: true } }
+                  : {})}
+                style={({ pressed }) => [
+                  styles.headerBtn,
+                  styles.headerHit,
+                  pressed && Platform.OS === 'ios' ? { opacity: 0.75 } : null,
+                ]}
               >
                 <Ionicons
-                  name={step === 'city' ? 'chevron-back' : 'close'}
+                  name={step === 'country' ? 'close' : 'chevron-back'}
                   size={24}
                   color={colors.text}
                 />
               </Pressable>
-                <Text
-                  style={[styles.modalTitle, { color: colors.text }]}
-                  accessibilityRole="header"
-                  aria-level={2}
-                >
-                  {step === 'state' ? 'Select State' : 'Select City'}
-                </Text>
-                <Text style={styles.modalFlag}>{countryFlag}</Text>
-              </View>
+              <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header" aria-level={2}>
+                {modalTitle}
+              </Text>
+              <Text style={styles.modalFlag}>{headerFlag}</Text>
+            </View>
 
-            {/* Content */}
-            {step === 'state' ? (
+            {step === 'country' ? (
               <ScrollView
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
+                {...scrollCommon}
+                contentContainerStyle={[styles.listContent, { paddingBottom: listPadBottom }]}
               >
-                {/* Current location pill (when selected) */}
-                {state.city && (
-                  <View style={[styles.currentLocationPill, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
-                    <Text style={styles.currentLocationFlag}>{countryFlag}</Text>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[styles.currentLocationCity, { color: colors.text }]} numberOfLines={1}>{state.city}</Text>
-                      <Text style={[styles.currentLocationCountry, { color: colors.textSecondary }]}>{country}</Text>
-                    </View>
-                  </View>
-                )}
-                {/* Detect location button */}
-                <Pressable
-                  style={[
-                    styles.detectBtn,
-                    {
-                      backgroundColor: colors.primarySoft,
-                      borderColor: colors.primary,
-                      opacity: isDetecting ? 0.7 : 1,
-                    },
-                  ]}
-                  onPress={handleDetectLocation}
-                  disabled={isDetecting}
-                >
-                  {isDetecting ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <Ionicons name="navigate" size={18} color={colors.primary} />
-                  )}
-                  <Text style={[styles.detectBtnText, { color: colors.primary }]}>
-                    {isDetecting ? 'Detecting location…' : 'Use My Location'}
-                  </Text>
-                </Pressable>
+                <CountrySelectList
+                  key="country-step"
+                  countries={countries}
+                  selectedName={state.country || undefined}
+                  onSelect={selectCountry}
+                  variant="sheet"
+                  colors={colors}
+                  introTitle="Where are you based?"
+                  introSubtitle="We scope events, member perks, and search to your country. You can refine city in the next steps."
+                  leadingSlot={
+                    state.city ? (
+                      <View
+                        style={[
+                          styles.currentLocationPill,
+                          { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' },
+                        ]}
+                      >
+                        <Text style={styles.currentLocationFlag}>{countryFlag}</Text>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.currentLocationLabel, { color: colors.textTertiary }]}>
+                            Current selection
+                          </Text>
+                          <Text style={[styles.currentLocationCity, { color: colors.text }]} numberOfLines={1}>
+                            {state.city}
+                          </Text>
+                          <Text style={[styles.currentLocationCountry, { color: colors.textSecondary }]}>{country}</Text>
+                        </View>
+                      </View>
+                    ) : null
+                  }
+                />
+              </ScrollView>
+            ) : null}
 
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Or choose your area manually
-                </Text>
-                {locationsLoading && (
-                  <View style={styles.loadingRow}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading locations…</Text>
-                  </View>
+            {step === 'region' ? (
+              <ScrollView
+                {...scrollCommon}
+                contentContainerStyle={[styles.listContent, { paddingBottom: listPadBottom }]}
+              >
+                {pendingCountry === 'Australia' ? (
+                  <>
+                    <Pressable
+                      style={[
+                        styles.detectBtn,
+                        {
+                          backgroundColor: colors.primarySoft,
+                          borderColor: colors.primary,
+                          opacity: isDetecting ? 0.7 : 1,
+                        },
+                      ]}
+                      onPress={handleDetectLocation}
+                      disabled={isDetecting}
+                      {...(Platform.OS === 'android'
+                        ? { android_ripple: { color: `${CultureTokens.indigo}33`, borderless: false } }
+                        : {})}
+                    >
+                      {isDetecting ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <Ionicons name="navigate" size={18} color={colors.primary} />
+                      )}
+                      <Text style={[styles.detectBtnText, { color: colors.primary }]}>
+                        {isDetecting ? 'Detecting location…' : 'Use my location (Australia)'}
+                      </Text>
+                    </Pressable>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Or choose your state</Text>
+                    {locationsLoading && (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading locations…</Text>
+                      </View>
+                    )}
+                    {!!locationsError && (
+                      <Text style={[styles.feedbackText, { color: colors.error }]}>
+                        Couldn&apos;t load updated locations. Showing fallback list.
+                      </Text>
+                    )}
+                  </>
+                ) : (
+                  <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                    Choose a region in {pendingCountry}
+                  </Text>
                 )}
-                {!!locationsError && (
-                  <Text style={[styles.feedbackText, { color: colors.error }]}>Couldn&apos;t load updated locations. Showing fallback list.</Text>
-                )}
-                {detectStatus === 'denied' && (
-                  <Text style={[styles.feedbackText, { color: colors.error }]}>Location permission denied. Please choose a state and city manually.</Text>
-                )}
-                {detectStatus === 'unavailable' && (
-                  <Text style={[styles.feedbackText, { color: colors.warning }]}>Location services are off. Turn them on or choose manually.</Text>
-                )}
-                {detectStatus === 'error' && (
-                  <Text style={[styles.feedbackText, { color: colors.error }]}>Couldn&apos;t detect your city. Please select it manually.</Text>
-                )}
-                {states.map((s) => {
-                  const isActive = s.code === currentStateCode;
+
+                {regions.map((s) => {
+                  const isActive = s.code === currentStateCode && state.country === pendingCountry;
                   return (
                     <Pressable
                       key={s.code}
@@ -278,91 +427,112 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
                         {
                           backgroundColor: isActive ? colors.primarySoft : colors.surface,
                           borderColor: isActive ? colors.primary : colors.borderLight,
-                          ...Platform.select({
-                            web: { boxShadow: '0px 2px 9px rgba(0,0,0,0.08)' },
-                            default: {
-                              shadowColor: colors.primary,
-                              shadowOffset: { width: 0, height: 2 },
-                              shadowOpacity: 0.08,
-                              shadowRadius: 6,
-                              elevation: 2,
-                            },
-                          }),
+                          ...nativeCardShadow(colors),
                         },
                       ]}
-                      onPress={() => selectState(s.code)}
+                      onPress={() => selectRegion(s.code)}
+                      {...(Platform.OS === 'android'
+                        ? { android_ripple: { color: `${CultureTokens.indigo}22`, borderless: false } }
+                        : {})}
                     >
                       <Text style={styles.stateEmoji}>{s.emoji}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.stateName, { color: isActive ? colors.primary : colors.text }]}>
-                          {s.name}
-                        </Text>
-                        <Text style={[styles.cityCount, { color: colors.textSecondary }]}>
-                          {s.cities.length} cities
-                        </Text>
+                        <Text style={[styles.stateName, { color: isActive ? colors.primary : colors.text }]}>{s.name}</Text>
+                        <Text style={[styles.cityCount, { color: colors.textSecondary }]}>{s.cities.length} cities</Text>
                       </View>
-                      {isActive && (
+                      {isActive ? (
                         <View style={[styles.currentBadge, { backgroundColor: colors.primary }]}>
                           <Text style={styles.currentBadgeText}>Current</Text>
                         </View>
-                      )}
+                      ) : null}
                       <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                     </Pressable>
                   );
                 })}
               </ScrollView>
-            ) : (
+            ) : null}
+
+            {step === 'city' ? (
               <ScrollView
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
+                {...scrollCommon}
+                contentContainerStyle={[styles.listContent, { paddingBottom: listPadBottom }]}
               >
-                {/* Selected state pill */}
                 <View style={styles.selectedStateRow}>
-                  <Text style={styles.stateEmoji}>{pendingStateMeta?.emoji}</Text>
-                  <Text style={[styles.selectedStateText, { color: colors.text }]}>
-                    {pendingStateMeta?.name}
-                  </Text>
+                  <Text style={styles.stateEmoji}>{pendingRegionMeta?.emoji}</Text>
+                  <Text style={[styles.selectedStateText, { color: colors.text }]}>{pendingRegionMeta?.name}</Text>
+                  <Text style={[styles.cityCount, { color: colors.textSecondary }]}> · {pendingCountry}</Text>
                 </View>
 
-                <View style={styles.cityGrid}>
-                  {citiesToShow.map((city) => {
-                    const isActive = state.city === city;
-                    return (
-                      <Pressable
-                        key={city}
-                        style={[
-                          styles.cityCard,
-                          {
-                            backgroundColor: isActive ? colors.primary : colors.surface,
-                            borderColor: isActive ? colors.primary : colors.borderLight,
-                            ...Platform.select({
-                              web: { boxShadow: '0px 2px 9px rgba(0,0,0,0.08)' },
-                              default: {
-                                shadowColor: colors.primary,
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.08,
-                                shadowRadius: 6,
-                                elevation: 2,
-                              },
-                            }),
-                          },
-                        ]}
-                        onPress={() => selectCity(city)}
-                      >
-                        <Text style={styles.cityCardFlag}>{countryFlag}</Text>
-                        <Text style={[styles.cityName, { color: isActive ? '#FFF' : colors.text }]}>
-                          {city}
-                        </Text>
-                        {isActive && (
-                          <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-                        )}
-                      </Pressable>
-                    );
-                  })}
+                <View
+                  style={[
+                    styles.citySearchRow,
+                    { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
+                  ]}
+                >
+                  <Ionicons name="search" size={18} color={colors.textTertiary} />
+                  <TextInput
+                    style={[styles.citySearchInput, { color: colors.text }]}
+                    placeholder="Search cities…"
+                    placeholderTextColor={colors.textTertiary}
+                    value={citySearch}
+                    onChangeText={setCitySearch}
+                    autoCorrect={false}
+                    autoCapitalize="words"
+                    returnKeyType="search"
+                    accessibilityLabel="Filter cities"
+                    selectionColor={CultureTokens.indigo}
+                    underlineColorAndroid="transparent"
+                    {...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {})}
+                  />
+                  {citySearch.length > 0 ? (
+                    <Pressable onPress={() => setCitySearch('')} hitSlop={8} accessibilityLabel="Clear city search">
+                      <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                    </Pressable>
+                  ) : null}
                 </View>
+
+                {citiesFiltered.length === 0 ? (
+                  <Text style={[styles.feedbackText, { color: colors.textSecondary, textAlign: 'center' }]}>
+                    No cities match. Try another spelling.
+                  </Text>
+                ) : (
+                  <View style={styles.cityGrid}>
+                    {citiesFiltered.map((city) => {
+                      const isActive = state.city === city && state.country === pendingCountry;
+                      const cf = getCountryFlag(pendingCountry);
+                      return (
+                        <Pressable
+                          key={city}
+                          style={[
+                            styles.cityCard,
+                            {
+                              backgroundColor: isActive ? colors.primary : colors.surface,
+                              borderColor: isActive ? colors.primary : colors.borderLight,
+                              ...nativeCardShadow(colors),
+                            },
+                          ]}
+                          onPress={() => selectCity(city)}
+                          {...(Platform.OS === 'android'
+                            ? {
+                                android_ripple: {
+                                  color: isActive ? 'rgba(255,255,255,0.2)' : `${CultureTokens.indigo}18`,
+                                  borderless: false,
+                                },
+                              }
+                            : {})}
+                        >
+                          <Text style={styles.cityCardFlag}>{cf}</Text>
+                          <Text style={[styles.cityName, { color: isActive ? '#FFF' : colors.text }]}>{city}</Text>
+                          {isActive ? <Ionicons name="checkmark-circle" size={20} color="#FFF" /> : null}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
               </ScrollView>
-            )}
-          </View>
+            ) : null}
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>
@@ -370,7 +540,6 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
 }
 
 const styles = StyleSheet.create({
-  /** Single root avoids Fragment + Modal flattening issues on react-native-web (stray text nodes in <View>). */
   pickerRoot: {
     ...Platform.select({
       web: { alignSelf: 'center' as const },
@@ -405,15 +574,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
     maxWidth: 170,
   },
+  kavRoot: {
+    flex: 1,
+  },
   modal: {
     flex: 1,
     ...Platform.select({
       web: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Add overlay on web
-      }
-    })
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      },
+    }),
   },
   modalInner: {
     flex: 1,
@@ -425,8 +597,8 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         overflow: 'hidden',
         boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
-      }
-    })
+      },
+    }),
   },
   handle: {
     alignSelf: 'center',
@@ -450,6 +622,12 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerHit: {
+    ...Platform.select({
+      ios: { minWidth: 44, minHeight: 44 },
+      default: {},
+    }),
   },
   modalTitle: {
     fontSize: 20,
@@ -475,6 +653,13 @@ const styles = StyleSheet.create({
   },
   currentLocationFlag: {
     fontSize: 28,
+  },
+  currentLocationLabel: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 2,
   },
   currentLocationCity: {
     fontSize: 16,
@@ -559,13 +744,31 @@ const styles = StyleSheet.create({
   selectedStateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 24,
-    paddingBottom: 18,
+    gap: 8,
+    marginBottom: 16,
+    paddingBottom: 12,
+    flexWrap: 'wrap',
   },
   selectedStateText: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
+  },
+  citySearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  citySearchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Poppins_500Medium',
+    padding: 0,
+    minWidth: 0,
   },
   cityGrid: {
     gap: 12,
@@ -587,7 +790,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
   },
-  // Text variant — no background, no border, blends inline with surrounding text
   textTrigger: {
     flexDirection: 'row',
     alignItems: 'center',

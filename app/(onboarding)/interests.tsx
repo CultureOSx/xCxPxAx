@@ -177,7 +177,7 @@ export default function InterestsScreen() {
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
-            <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+            <Text style={s.subtitle}>
               Pick at least {MIN_REQUIRED} to personalise your CulturePass feed
             </Text>
           </View>
@@ -403,6 +403,7 @@ const s = StyleSheet.create({
   },
   subtitle: {
     ...TextStyles.callout,
+    color: 'rgba(255,255,255,0.75)',
   },
 
   progressBlock: {

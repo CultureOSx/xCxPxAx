@@ -10,7 +10,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type AustralianState } from '@/lib/api';
-import { GLOBAL_REGIONS, CITIES_BY_STATE } from '@/constants/locations';
+import { GLOBAL_REGIONS, CITIES_BY_STATE, getStateForCity as staticStateForCity } from '@/constants/locations';
 
 // ---------------------------------------------------------------------------
 // Build the placeholder from the static constants file so picker is
@@ -77,7 +77,7 @@ export function useLocations(): UseLocationsResult {
     for (const s of states) {
       if (s.cities.includes(city)) return s.code;
     }
-    return undefined;
+    return staticStateForCity(city);
   }, [states]);
 
   const acknowledgement =

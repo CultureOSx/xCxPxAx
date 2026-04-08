@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -58,9 +58,18 @@ export function CultureEngagementHero({
 
       <Pressable
         onPress={() => router.push(ctaRoute as never)}
-        style={({ pressed }) => [styles.cta, { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.88 : 1 }]}
+        style={({ pressed }) => [
+          styles.cta,
+          { backgroundColor: CultureTokens.indigo },
+          Platform.OS === 'web' || Platform.OS === 'ios'
+            ? { opacity: pressed ? 0.88 : 1 }
+            : null,
+        ]}
         accessibilityRole="button"
         accessibilityLabel={ctaLabel}
+        {...(Platform.OS === 'android'
+          ? { android_ripple: { color: 'rgba(255,255,255,0.22)', borderless: false } }
+          : {})}
       >
         <Text style={styles.ctaText}>{ctaLabel}</Text>
         <Ionicons name="arrow-forward" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />

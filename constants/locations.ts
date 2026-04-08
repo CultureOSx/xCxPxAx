@@ -18,12 +18,14 @@ export const GLOBAL_REGIONS = [
   { label: 'Tasmania',                     value: 'TAS', emoji: '🏔️', country: 'Australia' },
   { label: 'Australian Capital Territory', value: 'ACT', emoji: '🏛️', country: 'Australia' },
   { label: 'Northern Territory',           value: 'NT',  emoji: '🦘', country: 'Australia' },
-  
-  // Phase 3 Global Expansion
-  { label: 'New Zealand',                  value: 'NZ',  emoji: '🇳🇿', country: 'New Zealand' },
-  { label: 'United Kingdom',               value: 'UK',  emoji: '🇬🇧', country: 'United Kingdom' },
-  { label: 'United Arab Emirates',         value: 'UAE', emoji: '🇦🇪', country: 'United Arab Emirates' },
+
+  // Marketplace countries (one region row each; cities in CITIES_BY_STATE)
+  { label: 'United States',                value: 'US',  emoji: '🇺🇸', country: 'United States' },
   { label: 'Canada',                       value: 'CA',  emoji: '🇨🇦', country: 'Canada' },
+  { label: 'United Arab Emirates',         value: 'UAE', emoji: '🇦🇪', country: 'United Arab Emirates' },
+  { label: 'United Kingdom',               value: 'UK',  emoji: '🇬🇧', country: 'United Kingdom' },
+  { label: 'Singapore',                    value: 'SG',  emoji: '🇸🇬', country: 'Singapore' },
+  { label: 'New Zealand',                  value: 'NZ',  emoji: '🇳🇿', country: 'New Zealand' },
 ] as const;
 
 export type StateCode = (typeof GLOBAL_REGIONS)[number]['value'];
@@ -293,7 +295,39 @@ export const CITIES_BY_STATE: Record<StateCode, string[]> = {
   UAE: ['Dubai', 'Abu Dhabi', 'Sharjah'],
 
   // ── Canada ───────────────────────────────────────────────────────────────────
-  CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
+  CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Winnipeg', 'Halifax'],
+
+  // ── United States ─────────────────────────────────────────────────────────────
+  US: [
+    'New York',
+    'Los Angeles',
+    'Chicago',
+    'Houston',
+    'Phoenix',
+    'Philadelphia',
+    'San Antonio',
+    'San Diego',
+    'Dallas',
+    'San Jose',
+    'Austin',
+    'Jacksonville',
+    'San Francisco',
+    'Seattle',
+    'Denver',
+    'Boston',
+    'Washington',
+    'Las Vegas',
+    'Miami',
+    'Atlanta',
+    'Portland',
+    'Detroit',
+    'Nashville',
+    'Charlotte',
+    'Minneapolis',
+  ],
+
+  // ── Singapore ───────────────────────────────────────────────────────────────
+  SG: ['Singapore', 'Jurong East', 'Woodlands', 'Tampines', 'Changi'],
 };
 
 /** Given a city name, return the state it belongs to (or undefined). */

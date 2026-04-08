@@ -15,31 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { onboardingCommunities as communities, communityIcons } from '@/constants/onboardingCommunities';
+import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
-
-const CHIP_COLORS = [
-  CultureTokens.coral,
-  CultureTokens.teal,
-  CultureTokens.gold,
-  CultureTokens.indigo,
-  CultureTokens.gold,
-  '#9B59B6', // Amethyst
-  '#2ECC71', // Emerald
-  '#1ABC9C', // Turquoise
-  '#8E44AD', // Wisteria
-  '#F39C12', // Orange
-  '#16A085', // Green Sea
-  '#C0392B', // Pomegranate
-  '#2980B9', // Belize Hole
-  '#D35400', // Pumpkin
-  '#27AE60', // Nephritis
-];
 
 export default function CommunitiesScreen() {
   const colors = useColors();
@@ -66,7 +48,6 @@ export default function CommunitiesScreen() {
       Alert.alert('Select at least one community', 'Choose one or more communities to continue.');
       return;
     }
-
     setCommunities(selected);
     router.replace(routeWithRedirect('/(onboarding)/culture-match', redirectTo));
   }, [selected, setCommunities, redirectTo]);
@@ -80,7 +61,6 @@ export default function CommunitiesScreen() {
         style={styles.gradientBg}
       />
 
-      {/* Decorative Orbs */}
       {Platform.OS === 'web' ? (
         <>
           <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
@@ -90,7 +70,11 @@ export default function CommunitiesScreen() {
 
       {isDesktop && (
         <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))}
+            hitSlop={8}
+            style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+          >
             <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
             <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
@@ -99,88 +83,120 @@ export default function CommunitiesScreen() {
 
       {!isDesktop && (
         <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
-          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo)))} hitSlop={12}>
+          <Pressable
+            onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))}
+            hitSlop={12}
+          >
             <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>2 of 4</Text>
         </View>
       )}
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoid} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-      >
-        <ScrollView 
-          showsVerticalScrollIndicator={false} 
-          keyboardShouldPersistTaps="handled" 
+      <KeyboardAvoidingView style={styles.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             styles.scrollContent,
             isDesktop && styles.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 }
+            !isDesktop && { paddingTop: 20 },
           ]}
         >
           <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
+              <BlurView
+                intensity={isDesktop ? 60 : 40}
+                tint="dark"
+                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]}
+              />
             ) : (
               <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
+              {/* Header */}
               <View style={styles.headerBlock}>
-                <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
-                  <Ionicons name="people-outline" size={28} color={colors.textInverse} />
+                <View style={[styles.iconWrapper, { backgroundColor: `${CultureTokens.indigo}20`, borderColor: `${CultureTokens.indigo}60` }]}>
+                  <Text style={styles.headerEmoji}>🌏</Text>
                 </View>
                 <Text style={[styles.title, { color: colors.textInverse }]}>Your Communities</Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Select the diaspora and cultural groups you&apos;d like to connect with.
+                <Text style={styles.subtitle}>
+                  Pick the diaspora and cultural groups you'd like to connect with.
                 </Text>
               </View>
 
-              <View style={styles.chipContainer}>
-                {communities.map((community, idx) => {
-                  const isSelected = selected.includes(community);
-                  const color = CHIP_COLORS[idx % CHIP_COLORS.length];
-                  const iconName = (communityIcons[community] as string | undefined) ?? 'people';
-                  
-                  return (
-                    <Pressable
-                      key={community}
-                      style={({pressed}) => [
-                        styles.chip,
-                        { 
-                          backgroundColor: isSelected 
-                            ? color 
-                            : pressed ? colors.primaryGlow : 'transparent',
-                          borderColor: isSelected ? 'transparent' : colors.borderLight,
-                        },
-                      ]}
-                      onPress={() => toggle(community)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      accessibilityLabel={`Community: ${community}`}
-                    >
-                      <Ionicons 
-                        name={iconName as keyof typeof Ionicons.glyphMap} 
-                        size={18} 
-                        color={isSelected ? colors.textInverse : colors.textSecondary} 
-                      />
-                      <Text style={[styles.chipText, { color: isSelected ? colors.textInverse : colors.textInverse }]}>
-                        {community}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={18} color={colors.textInverse} />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
+              {/* Grouped sections */}
+              {communityGroups.map((group) => (
+                <View key={group.label} style={styles.section}>
+                  {/* Section header */}
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionEmoji}>{group.emoji}</Text>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{group.label}</Text>
+                    <View style={[styles.sectionLine, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
+                  </View>
+
+                  {/* Chips */}
+                  <View style={styles.chipRow}>
+                    {group.members.map((community) => {
+                      const isSelected = selected.includes(community);
+                      const flag = communityFlags[community] ?? '🌐';
+                      return (
+                        <Pressable
+                          key={community}
+                          style={({ pressed }) => [
+                            styles.chip,
+                            {
+                              backgroundColor: isSelected
+                                ? group.color
+                                : pressed
+                                ? `${group.color}22`
+                                : 'rgba(255,255,255,0.06)',
+                              borderColor: isSelected
+                                ? group.color
+                                : pressed
+                                ? `${group.color}60`
+                                : 'rgba(255,255,255,0.13)',
+                            },
+                          ]}
+                          onPress={() => toggle(community)}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
+                          accessibilityLabel={community}
+                        >
+                          <Text style={styles.chipFlag}>{flag}</Text>
+                          <Text
+                            style={[
+                              styles.chipText,
+                              { color: isSelected ? '#fff' : colors.textInverse, opacity: isSelected ? 1 : 0.85 },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {community}
+                          </Text>
+                          {isSelected && (
+                            <Ionicons name="checkmark-circle" size={15} color="rgba(255,255,255,0.9)" />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
 
               <View style={styles.spacer} />
 
-              <View style={styles.footerInfo}>
-                <Text style={[styles.selectedCount, { color: colors.textSecondary }]}>
-                  {selected.length} {selected.length === 1 ? 'community' : 'communities'} selected
+              {/* Selected count + Continue */}
+              <View style={[styles.selectedPill, { backgroundColor: selected.length > 0 ? `${CultureTokens.indigo}30` : 'rgba(255,255,255,0.06)', borderColor: selected.length > 0 ? `${CultureTokens.indigo}60` : 'rgba(255,255,255,0.1)' }]}>
+                <Ionicons
+                  name={selected.length > 0 ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={16}
+                  color={selected.length > 0 ? CultureTokens.indigo : colors.textSecondary}
+                />
+                <Text style={[styles.selectedCount, { color: selected.length > 0 ? colors.textInverse : colors.textSecondary }]}>
+                  {selected.length === 0
+                    ? 'No communities selected'
+                    : `${selected.length} ${selected.length === 1 ? 'community' : 'communities'} selected`}
                 </Text>
               </View>
 
@@ -215,19 +231,48 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 580, alignSelf: 'center', overflow: 'hidden' },
-  formContainerDesktop: { maxWidth: 640 },
+  formContainer: { width: '100%', maxWidth: 600, alignSelf: 'center', overflow: 'hidden' },
+  formContainerDesktop: { maxWidth: 660 },
   formBlur: { borderWidth: 1 },
   formContent: { paddingTop: 40 },
-  headerBlock: { alignItems: 'center', marginBottom: 32 },
-  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, borderWidth: 1 },
-  chipText: { fontSize: 15, fontFamily: 'Poppins_500Medium' },
-  spacer: { height: 48 },
-  footerInfo: { marginBottom: 16 },
-  selectedCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
+
+  headerBlock: { alignItems: 'center', marginBottom: 28 },
+  iconWrapper: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5 },
+  headerEmoji: { fontSize: 32 },
+  title: { fontSize: 30, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 21, color: 'rgba(255,255,255,0.75)' },
+
+  section: { marginBottom: 20 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  sectionEmoji: { fontSize: 15 },
+  sectionLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionLine: { flex: 1, height: 1 },
+
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipFlag: { fontSize: 15 },
+  chipText: { fontSize: 13, fontFamily: 'Poppins_500Medium', flexShrink: 1 },
+
+  spacer: { height: 32 },
+  selectedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  selectedCount: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   submitBtn: { height: 56, borderRadius: 16 },
 });

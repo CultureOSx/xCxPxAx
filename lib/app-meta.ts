@@ -6,7 +6,8 @@ export const APP_DOMAIN = 'culturepass.app';
 export const TAGLINE_PRIMARY = 'BELONG ANYWHERE';
 export const TAGLINE_SECONDARY = 'Discover. Connect. Belong.';
 export const PLATFORM_TAGLINE = 'Your one-stop lifestyle platform for cultural diaspora communities';
-export const AVAILABILITY_MARKETS = 'Available in Australia · New Zealand · UAE · UK · Canada';
+export const AVAILABILITY_MARKETS =
+  'Available in United States · Canada · United Arab Emirates · United Kingdom · Australia · Singapore · New Zealand';
 export const PRIMARY_REGION = 'Australia';
 
 function getBuildNumber(): string | null {
