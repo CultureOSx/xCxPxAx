@@ -48,9 +48,23 @@ codecov.SHA256SUM.sig
 # local env files
 .env*.local
 
-# Claude Code dev tooling (skills, settings — not part of the app)
+# Editor / AI / IDE local tooling (not app source — do not commit)
+.agent/
 .agents/
 .claude/
+.claude-flow/
+.codebuddy/
+.codex/
+.continue/
+.cursor/skills/
+.gemini/
+.idea/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
 
 # Firebase build cache
 .firebase/
