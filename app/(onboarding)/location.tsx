@@ -420,7 +420,7 @@ export default function LocationScreen() {
                   {citiesToShow.length === 0 ? (
                     <View style={s.noResults}>
                       <Ionicons name="search-outline" size={36} color={colors.textSecondary} />
-                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>No cities match "{citySearch}"</Text>
+                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>No cities match &quot;{citySearch}&quot;</Text>
                       <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
                         <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
                       </Pressable>

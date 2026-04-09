@@ -6,7 +6,7 @@ import React, {
   useMemo, useCallback,
 } from 'react';
 import {
-  View, Pressable, StyleSheet, Platform, ActivityIndicator, RefreshControl,
+  View, Pressable, StyleSheet, Platform, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
@@ -102,6 +102,7 @@ export default function CultureFeedScreen() {
       colors,
       isAuthenticated,
       hPad,
+      city,
       canPostStoryStatus,
       gate,
       openComposer,

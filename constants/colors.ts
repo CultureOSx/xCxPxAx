@@ -12,7 +12,7 @@
  *   - Ocean Teal (#2EC4B6) — global belonging
  *
  * Design Principles:
- *   ✓ White-first marketplace surfaces for the current product direction
+ *   ✓ Black-first premium surfaces across all platforms
  *   ✓ Warm discovery + action-oriented CTAs
  *   ✓ Cultural authenticity over tech-startup aesthetics
  *   ✓ Accessible contrast ratios (WCAG AA minimum)
@@ -52,7 +52,7 @@ export const CultureTokens = {
   // Core brand palette
   indigo: "#0066CC",        // CulturePass Blue — primary brand
   coral: "#FF5E5B",         // Movement Coral — action energy
-  gold: "#0066CC",          // Changed from Temple Gold to Blue for visibility
+  gold: "#FFC857",          // Temple Gold — premium marker
   teal: "#2EC4B6",          // Ocean Teal — global belonging
   purple: "#AF52DE",        // Community Purple
 
@@ -210,30 +210,30 @@ export const light: ColorTheme = {
   primaryGlow: "rgba(0, 102, 204, 0.12)",
   primarySoft: "rgba(0, 102, 204, 0.06)",
 
-  // Backgrounds - Web-first clean light canvas
-  background: "#FFFFFF",
-  backgroundSecondary: "#FFFFFF",
+  // Backgrounds - true light mode (clear visual difference from dark)
+  background: "#F7F9FC",
+  backgroundSecondary: "#EEF3FA",
 
   surface: "#FFFFFF",
-  surfaceElevated: "#FFFFFF",
-  surfaceSecondary: "#FFFFFF",
+  surfaceElevated: "#F3F7FF",
+  surfaceSecondary: "#E9F0FA",
 
-  border: "#E6D3B3",
-  borderLight: "#F0E8DC",
-  divider: "#E6D3B3",
+  border: "#D7E1EE",
+  borderLight: "#C7D5E7",
+  divider: "#D7E1EE",
 
-  text: "#1B0F2E",
-  textSecondary: "#4A4A4A",
-  textTertiary: "#767676", // AA compliant on #FFFFFF (4.54:1 — was #8D8D8D at 3.29:1, failed AA)
-  textInverse: "#FFFFFF",
+  text: "#0F172A",
+  textSecondary: "#334155",
+  textTertiary: "#64748B",
+  textInverse: "#0B0B14",
   textOnBrandGradient: "#FFFFFF",
 
   card: "#FFFFFF",
-  cardBorder: "#E6D3B3",
+  cardBorder: "#D7E1EE",
 
-  tabBar: "rgba(255,255,255,0.98)",
-  tabBarBorder: "rgba(230,211,179,0.5)",
-  tabIconDefault: "#767676", // AA compliant on #FFFFFF (4.54:1 — was #8D8D8D at 3.29:1, failed AA)
+  tabBar: "rgba(255,255,255,0.96)",
+  tabBarBorder: "rgba(199,213,231,0.9)",
+  tabIconDefault: "#64748B",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,

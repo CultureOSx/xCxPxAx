@@ -76,6 +76,12 @@ const FEATURES = [
   },
 ];
 
+const TRUST_PILLS = [
+  { icon: 'shield-checkmark-outline' as const, label: 'Verified profiles' },
+  { icon: 'ticket-outline' as const, label: 'Tickets in one place' },
+  { icon: 'globe-outline' as const, label: 'Diaspora-first discovery' },
+];
+
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 function triggerImpact(style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) {
@@ -255,6 +261,26 @@ export default function WelcomeScreen() {
                 One trusted place for cultural discovery, tickets, and community — built for diaspora
                 cities worldwide.
               </Text>
+
+              <View style={styles.trustPillsRow}>
+                {TRUST_PILLS.map((pill) => (
+                  <View
+                    key={pill.label}
+                    style={[
+                      styles.trustPill,
+                      {
+                        backgroundColor: colors.primarySoft,
+                        borderColor: colors.borderLight,
+                      },
+                    ]}
+                  >
+                    <Ionicons name={pill.icon} size={14} color={CultureTokens.indigo} />
+                    <Text style={[styles.trustPillText, { color: colors.text }]} numberOfLines={1}>
+                      {pill.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
 
             <View
@@ -344,9 +370,9 @@ export default function WelcomeScreen() {
                 rightIcon="arrow-forward"
                 onPress={goToSignup}
                 style={[shadows.medium, { backgroundColor: CultureTokens.gold }]}
-                accessibilityLabel="Create account"
+                accessibilityLabel="Get started"
               >
-                Create Account
+                Get Started
               </Button>
 
               <Button
@@ -523,6 +549,29 @@ const getStyles = () =>
       marginTop: 12,
       lineHeight: LineHeight.body2 + 4,
       paddingHorizontal: 4,
+    },
+    trustPillsRow: {
+      marginTop: 14,
+      width: '100%',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    trustPill: {
+      minHeight: 34,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    trustPillText: {
+      fontSize: FontSize.micro,
+      fontFamily: FontFamily.semibold,
+      lineHeight: LineHeight.micro + 2,
     },
     featureList: { gap: 12, marginBottom: 16 },
     featureRow: {

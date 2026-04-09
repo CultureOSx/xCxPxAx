@@ -9,9 +9,16 @@ export const TAB_HEADER_NATIVE_INSET_GAP = Platform.select({
 });
 
 export const MAIN_TAB_UI = {
+  /** Shared content max width for top/bottom app bars on large screens. */
+  chromeMaxWidth: 1200,
   cardRadius: LiquidGlassTokens.corner.mainCard,
   headerBorderWidth: 1,
   headerVerticalPadding: 14,
+  /** Consistent minimum interactive target size for navigation controls. */
+  minTouchTarget: 44,
+  /** Standardized bottom navigation shell heights. */
+  tabBarOuterHeight: Platform.OS === 'android' ? 68 : 66,
+  tabBarInnerHeight: Platform.OS === 'android' ? 64 : 60,
   sectionGap: 20,
   sectionGapLarge: 24,
   sectionGapSmall: 12,

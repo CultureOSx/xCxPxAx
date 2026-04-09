@@ -8,8 +8,6 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '@/lib/auth';
-import { routeWithRedirect } from '@/lib/routes';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
@@ -34,14 +32,17 @@ export function HomeLogoMark({ compact = true }: { compact?: boolean }) {
       onPress={onHome}
       accessibilityRole="button"
       accessibilityLabel="CulturePass home, Discover"
+      accessibilityHint="Navigates to the Discover tab"
       style={markStyles.logoPress}
-      hitSlop={8}
+      hitSlop={10}
     >
-      <Image
-        source={require('@/assets/images/culturepass-logo.png')}
-        style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
-        contentFit="cover"
-      />
+      <View style={[markStyles.logoBg, compact && markStyles.logoBgCompact]}>
+        <Image
+          source={require('@/assets/images/culturepass-logo.png')}
+          style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
+          contentFit="cover"
+        />
+      </View>
     </Pressable>
   );
 }
@@ -68,11 +69,13 @@ export function BrandMark({
       accessibilityRole="button"
       accessibilityLabel="CulturePass home"
     >
-      <Image
-        source={require('@/assets/images/culturepass-logo.png')}
-        style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
-        contentFit="cover"
-      />
+      <View style={[markStyles.logoBg, compact && markStyles.logoBgCompact]}>
+        <Image
+          source={require('@/assets/images/culturepass-logo.png')}
+          style={[markStyles.logoPlain, compact && markStyles.logoPlainCompact]}
+          contentFit="cover"
+        />
+      </View>
 
       <View style={markStyles.textWrap}>
         <Text
@@ -100,7 +103,6 @@ export function GlobalNavActions({
 }) {
   const colors = useColors();
   const isDark = useIsDark();
-  const { isAuthenticated } = useAuth();
 
   const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
   const chipBorder = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.08)';
@@ -121,35 +123,9 @@ export function GlobalNavActions({
         }}
         accessibilityRole="button"
         accessibilityLabel="Search"
+        accessibilityHint="Open search"
       >
         <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
-      </Pressable>
-
-      <Pressable
-        style={({ pressed }) => [
-          markStyles.iconBtn,
-          { backgroundColor: chipBg, borderColor: chipBorder },
-          pressed && { opacity: 0.7 },
-        ]}
-        onPress={() => {
-          haptic();
-          if (isAuthenticated) {
-            router.push('/notifications' as const);
-            return;
-          }
-          router.push(routeWithRedirect('/(onboarding)/login', '/notifications'));
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Notifications"
-      >
-        <Ionicons
-          name={isAuthenticated ? 'notifications' : 'notifications-outline'}
-          size={MAIN_TAB_UI.iconSize.md}
-          color={colors.text}
-        />
-        {isAuthenticated ? (
-          <View style={[markStyles.notifDot, { borderColor: colors.surface }]} />
-        ) : null}
       </Pressable>
 
       {showMenu ? (
@@ -165,6 +141,7 @@ export function GlobalNavActions({
           }}
           accessibilityRole="button"
           accessibilityLabel="Account and profile menu"
+          accessibilityHint="Open app menu"
         >
           <Ionicons name="menu" size={MAIN_TAB_UI.iconSize.lg} color={colors.text} />
         </Pressable>
@@ -235,6 +212,19 @@ const markStyles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 8,
+  },
+  logoBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoBgCompact: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   pageChromeRow: {
     flexDirection: 'row',
@@ -363,21 +353,11 @@ const markStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 0 : 2,
   },
   iconBtn: {
-    width: 42,
-    height: 42,
+    width: MAIN_TAB_UI.minTouchTarget,
+    height: MAIN_TAB_UI.minTouchTarget,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: CultureTokens.coral,
-    borderWidth: 1.5,
   },
 });

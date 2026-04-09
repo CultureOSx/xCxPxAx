@@ -5,6 +5,7 @@ import {
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, usePathname, Stack } from 'expo-router';
 import Head from 'expo-router/head';
+import Constants from 'expo-constants';
 import { BackButton } from '@/components/ui/BackButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context';
@@ -112,6 +113,8 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
   const [showAdminTools, setShowAdminTools] = useState(adminMode && (isAdmin || isSuperAdmin));
   const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
+  const isExpoGoAndroid = Platform.OS === 'android' && Constants.appOwnership === 'expo';
+  const reminderSupported = !isExpoGoAndroid && Platform.OS !== 'web';
 
   const { uploadImage, deleteImage, uploading } = useImageUpload();
 
@@ -398,6 +401,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
 
 
   const [calendarSheetVisible, setCalendarSheetVisible] = useState(false);
+  const [reminderSheetVisible, setReminderSheetVisible] = useState(false);
 
   // Calendar params: compute start/end Date objects, title, details, location
   const calendarParams = useMemo(() => {
@@ -465,6 +469,76 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
       return;
     }
     setCalendarSheetVisible(true);
+  }, [calendarParams]);
+
+  const scheduleEventReminder = useCallback(
+    async (minutesBefore: number, label: string) => {
+      if (!calendarParams) {
+        Alert.alert('Reminder unavailable', 'We could not parse this event date.');
+        return;
+      }
+      if (Platform.OS === 'web') {
+        Alert.alert(
+          'Reminder not available on web',
+          'Event reminders are available on iOS and Android. You can still add this event to your calendar.'
+        );
+        return;
+      }
+
+      const triggerDate = new Date(calendarParams.start.getTime() - minutesBefore * 60_000);
+      if (triggerDate.getTime() <= Date.now()) {
+        Alert.alert('Reminder time passed', `Cannot set a ${label.toLowerCase()} reminder because that time has already passed.`);
+        return;
+      }
+
+      let NotificationsModule: typeof import('expo-notifications');
+      try {
+        NotificationsModule = await import('expo-notifications');
+      } catch {
+        Alert.alert(
+          'Reminders unavailable',
+          'Local reminders require a development build on Android (Expo Go limitation).'
+        );
+        return;
+      }
+
+      const existingPerm = await NotificationsModule.getPermissionsAsync();
+      let finalStatus = existingPerm.status;
+      if (finalStatus !== 'granted') {
+        const req = await NotificationsModule.requestPermissionsAsync();
+        finalStatus = req.status;
+      }
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permission needed', 'Please enable notifications to receive event reminders.');
+        return;
+      }
+
+      try {
+        await NotificationsModule.scheduleNotificationAsync({
+          content: {
+            title: `Reminder: ${event.title}`,
+            body: `${label} reminder. ${formatDate(event.date)} at ${formatEventTime(event.time)}.`,
+            sound: true,
+            data: { screen: 'event', eventId: event.id },
+          },
+          trigger: triggerDate as unknown as import('expo-notifications').NotificationTriggerInput,
+        });
+        if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setReminderSheetVisible(false);
+        Alert.alert('Reminder set', `You will be reminded ${label.toLowerCase()} before this event.`);
+      } catch {
+        Alert.alert('Could not set reminder', 'Please try again.');
+      }
+    },
+    [calendarParams, event.date, event.id, event.time, event.title]
+  );
+
+  const openReminderSheet = useCallback(() => {
+    if (!calendarParams) {
+      Alert.alert('Reminder unavailable', 'We could not parse this event date.');
+      return;
+    }
+    setReminderSheetVisible(true);
   }, [calendarParams]);
 
   const BottomBarInner = ({
@@ -889,6 +963,16 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                   <Button
                     variant="outline"
                     size="md"
+                    leftIcon="notifications-outline"
+                    onPress={openReminderSheet}
+                    style={s.actionButton}
+                    disabled={!reminderSupported}
+                  >
+                    Add reminder
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
                     leftIcon="share-social-outline"
                     onPress={handleShare}
                     style={s.actionButton}
@@ -899,6 +983,11 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                 {eventLocationLabel ? (
                   <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
                     {eventLocationLabel}
+                  </Text>
+                ) : null}
+                {!reminderSupported ? (
+                  <Text style={[TextStyles.caption, { color: colors.textTertiary, marginTop: 6 }]}>
+                    Reminders need a development build on Android.
                   </Text>
                 ) : null}
               </View>
@@ -1315,6 +1404,67 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                   <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                 </Pressable>
               ))}
+              </View>
+            </EventLiquidModalBody>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reminder Picker Sheet */}
+      <Modal visible={reminderSheetVisible} animationType="slide" transparent onRequestClose={() => setReminderSheetVisible(false)}>
+        <View style={s.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setReminderSheetVisible(false)} />
+          <View style={[s.modalSheet]}>
+            <EventLiquidModalBody isDesktop={isDesktop}>
+              {!isDesktop ? <View style={s.modalHandle} /> : null}
+              <View style={[s.modalHeader, { paddingTop: 16 }]}>
+                <Text style={s.modalTitle}>Add Reminder</Text>
+                <Pressable
+                  onPress={() => setReminderSheetVisible(false)}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    {
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: colors.backgroundSecondary,
+                      opacity: pressed ? 0.6 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                >
+                  <Ionicons name="close" size={15} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+              <View style={{ padding: 16, gap: 10, paddingBottom: insets.bottom + 12 }}>
+                {[
+                  { label: '1 day before', mins: 24 * 60 },
+                  { label: '3 hours before', mins: 3 * 60 },
+                  { label: '1 hour before', mins: 60 },
+                  { label: '15 minutes before', mins: 15 },
+                ].map((opt) => (
+                  <Pressable
+                    key={opt.label}
+                    style={({ pressed }) => [s.calOptRow, { opacity: pressed ? 0.7 : 1 }]}
+                    onPress={() => {
+                      void scheduleEventReminder(opt.mins, opt.label);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set reminder ${opt.label}`}
+                  >
+                    <View style={[s.calOptIcon, { backgroundColor: CultureTokens.indigo + '18' }]}>
+                      <Ionicons name="notifications-outline" size={20} color={CultureTokens.indigo} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.calOptLabel}>{opt.label}</Text>
+                      <Text style={s.calOptSub}>Local notification on this device</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                  </Pressable>
+                ))}
               </View>
             </EventLiquidModalBody>
           </View>

@@ -15,7 +15,13 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarStyle: { position: 'absolute' },
+        tabBarStyle: {
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
       }}
       initialRouteName="index"
     >
@@ -56,6 +62,14 @@ export default function TabsLayout() {
         options={{
           title: 'Perks',
           tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="menu"
+        options={{
+          title: 'Menu',
+          tabBarIcon: ({ color, size }) => <Ionicons name="menu-outline" size={size} color={color} />,
         }}
       />
 

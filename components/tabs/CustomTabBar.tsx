@@ -21,7 +21,6 @@ import {
   Animated,
   AccessibilityInfo,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -43,40 +42,36 @@ const TABS = [
     label: 'Discover',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
-    sfSymbol: 'map' as const,
-    sfSymbolActive: 'map.fill' as const,
   },
   {
     name: 'calendar',
     label: 'Events',
     icon: 'calendar-outline' as const,
     iconActive: 'calendar' as const,
-    sfSymbol: 'calendar' as const,
-    sfSymbolActive: 'calendar' as const,
   },
   {
     name: 'community',
     label: 'Community',
     icon: 'people-outline' as const,
     iconActive: 'people' as const,
-    sfSymbol: 'person.3' as const,
-    sfSymbolActive: 'person.3.fill' as const,
   },
   {
     name: 'city',
     label: 'My City',
     icon: 'location-outline' as const,
     iconActive: 'location' as const,
-    sfSymbol: 'mappin.and.ellipse' as const,
-    sfSymbolActive: 'mappin.and.ellipse' as const,
   },
   {
     name: 'perks',
     label: 'Perks',
     icon: 'gift-outline' as const,
     iconActive: 'gift' as const,
-    sfSymbol: 'gift' as const,
-    sfSymbolActive: 'gift.fill' as const,
+  },
+  {
+    name: 'menu',
+    label: 'Menu',
+    icon: 'menu-outline' as const,
+    iconActive: 'menu' as const,
   },
 ] as const;
 
@@ -118,6 +113,7 @@ const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   community: 'Find communities and cultural circles',
   city: 'See everything happening in your city',
   perks: 'Open perks, offers, and rewards',
+  menu: 'Open app menu and settings',
 };
 
 interface TabItemProps {
@@ -166,40 +162,29 @@ function TabItem({
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={tab.label}
-      accessibilityHint={hint}
-      hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
+      accessibilityHint={hint ? `${hint}. Double tap to open.` : 'Double tap to open tab'}
+      hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
       android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: false } : undefined}
     >
       <Animated.View
         style={[
           tabItem.inner,
           isActive && {
-            backgroundColor: isDark ? 'rgba(44,42,114,0.22)' : 'rgba(44,42,114,0.09)',
-            borderColor: isDark ? 'rgba(44,42,114,0.36)' : 'rgba(44,42,114,0.22)',
+            backgroundColor: isDark ? 'rgba(44,42,114,0.22)' : 'rgba(44,42,114,0.1)',
+            borderColor: isDark ? 'rgba(44,42,114,0.42)' : 'rgba(44,42,114,0.24)',
           },
           { transform: [{ scale }] },
         ]}
       >
         {/* Icon */}
         <View style={tabItem.iconWrap}>
-          {Platform.OS === 'ios' ? (
-            <SymbolView
-              name={(isActive ? tab.sfSymbolActive : tab.sfSymbol) as any}
-              size={MAIN_TAB_UI.iconSize.lg}
-              tintColor={iconColor}
-              fallback={
-                <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.lg} color={iconColor} />
-              }
-            />
-          ) : (
-            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.lg} color={iconColor} />
-          )}
+          <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.md} color={iconColor} />
           {badgeCount ? <Badge count={badgeCount} /> : null}
         </View>
 
         {/* Label — min ~10px; allow scaling for Dynamic Type / accessibility */}
         <Text
-          style={[tabItem.label, { color: labelColor }]}
+          style={[tabItem.label, { color: labelColor, opacity: isActive ? 1 : 0.88 }]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
@@ -209,9 +194,7 @@ function TabItem({
         </Text>
 
         {/* Active indicator dot */}
-        {isActive && (
-          <View style={tabItem.dot} />
-        )}
+        {isActive ? <View style={tabItem.activeLine} /> : <View style={tabItem.linePlaceholder} />}
       </Animated.View>
     </Pressable>
   );
@@ -226,12 +209,12 @@ const tabItem = StyleSheet.create({
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    gap: 4,
-    minWidth: 56,
-    minHeight: 52,
-    borderRadius: 14,
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    gap: 3,
+    minWidth: 0,
+    minHeight: 50,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -243,18 +226,23 @@ const tabItem = StyleSheet.create({
   },
 
   label: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Poppins_600SemiBold',
     letterSpacing: 0.15,
     textAlign: 'center',
   },
-
-  dot: {
-    width: 6,
-    height: 4,
-    borderRadius: 3,
+  activeLine: {
+    width: 14,
+    height: 2.5,
+    borderRadius: 99,
     backgroundColor: CultureTokens.indigo,
-    marginTop: 1,
+    marginTop: 1.5,
+  },
+  linePlaceholder: {
+    width: 14,
+    height: 2.5,
+    marginTop: 1.5,
+    opacity: 0,
   },
 });
 
@@ -307,7 +295,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   // Hidden on desktop web — sidebar handles navigation there
   if (Platform.OS === 'web' && isDesktop) return null;
 
-  const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 8);
+  const bottomPad = Math.max(insets.bottom, 10);
 
   // Only render tabs that match our TABS config
   const visibleRoutes = state.routes.filter((r) => TABS.some((t) => t.name === r.name));
@@ -338,7 +326,10 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           pillShadow,
           {
             borderColor: colors.borderLight,
-            overflow: 'visible',
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: MAIN_TAB_UI.chromeMaxWidth,
+            alignSelf: 'center',
           },
         ]}
         contentStyle={bar.pillInner}
@@ -389,20 +380,21 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
 
 const bar = StyleSheet.create({
   root: {
-    paddingHorizontal: 14,
-    paddingTop: Platform.OS === 'android' ? 4 : 6,
+    paddingHorizontal: 12,
+    paddingTop: 4,
     backgroundColor: 'transparent',
+    alignItems: 'center',
   },
   pill: {
-    minHeight: Platform.OS === 'android' ? 68 : 66,
+    minHeight: MAIN_TAB_UI.tabBarOuterHeight,
   },
   pillInner: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: Platform.OS === 'android' ? 64 : 60,
+    minHeight: MAIN_TAB_UI.tabBarInnerHeight,
     paddingHorizontal: 6,
-    paddingVertical: Platform.OS === 'android' ? 3 : 2,
+    paddingVertical: 2,
   },
   topLine: {
     position: 'absolute',

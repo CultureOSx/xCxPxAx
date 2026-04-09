@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
@@ -56,12 +55,6 @@ export function BrowseCardComponent({
             <Ionicons name={accentIcon as keyof typeof Ionicons.glyphMap} size={isGrid ? 32 : 28} color={accentColor} />
           </View>
         )}
-        {isGrid && (
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.6)']}
-            style={StyleSheet.absoluteFillObject}
-          />
-        )}
         {isGrid && item.badge && (
           <View style={styles.gridBadge}>
             <Text style={[TextStyles.badgeCaps, { color: '#FFFFFF', fontSize: 9 }]}>{item.badge}</Text>
@@ -69,12 +62,18 @@ export function BrowseCardComponent({
         )}
       </View>
 
-      <View style={[styles.cardInfo, isGrid && styles.gridInfo]}>
+      <View
+        style={[
+          styles.cardInfo,
+          isGrid && styles.gridInfo,
+          isGrid && { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderLight },
+        ]}
+      >
         <View style={styles.cardTitleRow}>
           <Text 
             style={[
               isGrid ? TextStyles.labelSemibold : TextStyles.headline, 
-              { color: isGrid ? '#FFFFFF' : colors.text }
+              { color: colors.text }
             ]} 
             numberOfLines={1}
           >
@@ -91,7 +90,7 @@ export function BrowseCardComponent({
           <Text 
             style={[
               TextStyles.caption, 
-              { color: isGrid ? 'rgba(255, 255, 255, 0.7)' : colors.textSecondary }
+              { color: colors.textSecondary }
             ]} 
             numberOfLines={1}
           >
@@ -107,7 +106,7 @@ export function BrowseCardComponent({
 
         <View style={styles.cardBottom}>
           {item.priceLabel && (
-            <Text style={[TextStyles.callout, { color: isGrid ? '#FFFFFF' : accentColor, fontWeight: '700' }]}>
+            <Text style={[TextStyles.callout, { color: accentColor, fontWeight: '700' }]}>
               {item.priceLabel}
             </Text>
           )}
@@ -119,7 +118,7 @@ export function BrowseCardComponent({
           {item.rating != null && (
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={12} color={CultureTokens.gold} />
-              <Text style={[TextStyles.captionSemibold, { color: isGrid ? '#FFFFFF' : colors.textSecondary }]}>
+              <Text style={[TextStyles.captionSemibold, { color: colors.textSecondary }]}>
                 {item.rating}{item.reviews ? ` (${item.reviews})` : ''}
               </Text>
             </View>
@@ -133,7 +132,7 @@ export function BrowseCardComponent({
 
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', borderWidth: 1, gap: 14, overflow: 'hidden' },
-  gridCard: { flexDirection: 'column', gap: 0, backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)' },
+  gridCard: { flexDirection: 'column', gap: 0 },
   cardImage: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },
   gridImageWrap: { width: '100%', overflow: 'hidden' },
   cardImageFallback: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
@@ -149,7 +148,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)' 
   },
   cardInfo: { flex: 1, gap: 2, justifyContent: 'center' },
-  gridInfo: { padding: 10, position: 'absolute', bottom: 0, left: 0, right: 0, gap: 0 },
+  gridInfo: { padding: 10, gap: 2 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   miniPromoBadge: { 
     width: 18, 

@@ -22,18 +22,13 @@
  *   components. This remains the single switch point for any future theme changes.
  */
 
-import { Platform, useColorScheme } from 'react-native';
 import type { ColorTheme } from '@/constants/colors';
 import { light, dark } from '@/constants/colors';
+import { useAppAppearance } from '@/hooks/useAppAppearance';
 
 export function useColors(): ColorTheme {
-  const scheme = useColorScheme();
-  
-  // Web: always light theme (white-first web surfaces per CLAUDE.md).
-  if (Platform.OS === 'web') return light;
-
-  // Native: default to dark (night festival aesthetic), respect explicit light.
-  return scheme === 'light' ? light : dark;
+  const { resolvedScheme } = useAppAppearance();
+  return resolvedScheme === 'light' ? light : dark;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +55,6 @@ export function useSchemeValue<T>(darkValue: T, lightValue: T): T {
 
 /** Returns true when the dark theme is active. */
 export function useIsDark(): boolean {
-  const scheme = useColorScheme();
-  if (Platform.OS === 'web') return false;
-  return scheme !== 'light';
+  const { resolvedScheme } = useAppAppearance();
+  return resolvedScheme === 'dark';
 }

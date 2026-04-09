@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens, FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
+import { FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BRAND_TAGLINE_SHORT, TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';

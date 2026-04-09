@@ -287,6 +287,7 @@ function RootLayoutNav() {
 
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="settings/location" />
+      <Stack.Screen name="settings/appearance" />
       <Stack.Screen name="settings/about" />
       <Stack.Screen name="settings/help" />
       <Stack.Screen name="settings/notifications" />

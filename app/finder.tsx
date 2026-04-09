@@ -177,7 +177,6 @@ export default function FinderScreen() {
   const [stateCode, setStateCode] = useState('NSW');
   const [languageId, setLanguageId] = useState('mal');
 
-  const topInset = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
   const padX = isDesktop ? Math.max(hPad, Spacing.xl) : Spacing.md;
 

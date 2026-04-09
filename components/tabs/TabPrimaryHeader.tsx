@@ -77,7 +77,7 @@ export function TabPrimaryHeader({
         ]}
         contentStyle={[styles.wrapWeb, { paddingHorizontal: hPad, paddingTop: webTopPad }]}
       >
-        {body}
+        <View style={styles.chromeContainer}>{body}</View>
       </LiquidGlassPanel>
     );
   }
@@ -97,6 +97,11 @@ const styles = StyleSheet.create({
   wrapNative: {
     paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
     gap: 8,
+  },
+  chromeContainer: {
+    width: '100%',
+    maxWidth: MAIN_TAB_UI.chromeMaxWidth,
+    alignSelf: 'center',
   },
   toolbarRow: {
     flexDirection: 'row',

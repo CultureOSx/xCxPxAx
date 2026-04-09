@@ -43,6 +43,7 @@ export default function AccountSettingsScreen() {
   const { restartOnboarding } = useOnboarding();
   const { isOrganizer, isAdmin, hasMinRole } = useRole();
   const [verifySending, setVerifySending] = useState(false);
+  const [showAdvancedSections, setShowAdvancedSections] = useState(false);
   const canTargetCampaigns = hasMinRole('cityAdmin');
   const appVersion = getAppVersion();
   const appVersionWithBuild = getAppVersionWithBuild();
@@ -141,13 +142,18 @@ export default function AccountSettingsScreen() {
 
   const AUTH_SECTIONS: SettingSection[] = [
     {
+      title: 'App',
+      items: [
+        { icon: 'color-palette-outline', label: 'Appearance',       sub: 'Theme and visual style',            color: CultureTokens.indigo, route: '/settings/appearance' },
+        { icon: 'location-outline',      label: 'Location & City',  sub: 'Country, region & city for local content', color: CultureTokens.teal, route: '/settings/location' },
+        { icon: 'calendar-outline',      label: 'Calendar Sync',    sub: 'Apple, Google, Outlook & device',   color: CultureTokens.indigo, route: '/settings/calendar-sync' },
+      ],
+    },
+    {
       title: 'Account',
       items: [
         { icon: 'person-outline',        label: 'Edit Profile',         sub: 'Name, bio, photo, social links',   color: CultureTokens.indigo, route: '/profile/edit' },
-        { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.gold,   route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: CultureTokens.coral,  route: '/settings/notifications' },
-        { icon: 'location-outline',      label: 'Location & City',      sub: 'Country, region & city for local content',     color: CultureTokens.teal,   route: '/settings/location' },
-        { icon: 'calendar-outline',      label: 'Calendar Sync',        sub: 'Apple, Google, Outlook & device',  color: CultureTokens.indigo, route: '/settings/calendar-sync' },
         ...(!emailVerified ? [{
           icon: 'mail-unread-outline',
           label: verifySending ? 'Sending…' : 'Verify Email',
@@ -156,6 +162,12 @@ export default function AccountSettingsScreen() {
           action: handleVerifyEmail,
         }] : []),
         { icon: 'refresh-circle-outline', label: 'Redo Account Setup', sub: 'Update your city, communities & interests', color: CultureTokens.teal, action: handleRedoSetup },
+      ],
+    },
+    {
+      title: 'Privacy',
+      items: [
+        { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: CultureTokens.gold, route: '/settings/privacy' },
       ],
     },
     {
@@ -222,6 +234,18 @@ export default function AccountSettingsScreen() {
 
   const GUEST_SECTIONS: SettingSection[] = [
     {
+      title: 'App',
+      items: [
+        { icon: 'color-palette-outline', label: 'Appearance', sub: 'Theme and visual style', color: CultureTokens.indigo, route: '/settings/appearance' },
+      ],
+    },
+    {
+      title: 'Privacy',
+      items: [
+        { icon: 'lock-closed-outline', label: 'Privacy & Security', sub: 'Profile visibility and data controls', color: CultureTokens.gold, route: '/settings/privacy' },
+      ],
+    },
+    {
       title: 'Help & Support',
       items: [
         { icon: 'help-circle-outline', label: 'Help Center',  sub: 'FAQs, guides, tutorials', color: CultureTokens.gold,  route: '/help' },
@@ -248,6 +272,21 @@ export default function AccountSettingsScreen() {
   ];
 
   const sections = isAuthenticated ? AUTH_SECTIONS : GUEST_SECTIONS;
+  const primarySectionTitles = useMemo(
+    () =>
+      isAuthenticated
+        ? new Set(['App', 'Account', 'Privacy', 'Help & Support'])
+        : new Set(['App', 'Privacy', 'Help & Support']),
+    [isAuthenticated]
+  );
+  const visibleSections = useMemo(
+    () =>
+      showAdvancedSections
+        ? sections
+        : sections.filter((section) => primarySectionTitles.has(section.title)),
+    [sections, primarySectionTitles, showAdvancedSections]
+  );
+  const hiddenSectionsCount = sections.length - visibleSections.length;
   const reducedMotion = useReducedMotion();
 
   return (
@@ -288,17 +327,7 @@ export default function AccountSettingsScreen() {
         {/* ── Profile card / guest CTA ────────────────────────── */}
         {isAuthenticated && user ? (
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18).stiffness(120)}>
-            <Pressable
-              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
-                s.profileCard,
-                isDesktopWeb && s.webSection,
-                hovered && { borderColor: 'rgba(255,255,255,0.14)' },
-                pressed && { opacity: 0.93, transform: [{ scale: 0.99 }] },
-              ]}
-              onPress={() => navigate('/profile/edit')}
-              accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-            >
+            <View style={[s.profileCard, isDesktopWeb && s.webSection]}>
               {/* Dark gradient background */}
               <LinearGradient
                 colors={['#0F0F22', '#190A30', '#0A1430'] as [string, string, string]}
@@ -309,38 +338,45 @@ export default function AccountSettingsScreen() {
               <View style={s.cardArc} pointerEvents="none" />
 
               <View style={s.profileRow}>
-                {/* Gradient-ring avatar */}
-                <View style={s.avatarRingOuter}>
-                  <LinearGradient
-                    colors={[CultureTokens.teal, CultureTokens.indigo, CultureTokens.coral] as [string, string, string]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <View style={s.avatarInner}>
-                    {user.avatarUrl ? (
-                      <Image source={{ uri: user.avatarUrl }} style={s.avatar} contentFit="cover" />
-                    ) : (
-                      <View style={s.avatarFallback}>
-                        <Text style={s.avatarLetter}>
-                          {(user.displayName ?? user.username ?? 'C')[0].toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
+                <Pressable
+                  style={({ pressed }) => [s.profileMainTap, pressed && { opacity: 0.93, transform: [{ scale: 0.99 }] }]}
+                  onPress={() => navigate('/profile/edit')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit profile"
+                >
+                  {/* Gradient-ring avatar */}
+                  <View style={s.avatarRingOuter}>
+                    <LinearGradient
+                      colors={[CultureTokens.teal, CultureTokens.indigo, CultureTokens.coral] as [string, string, string]}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                    <View style={s.avatarInner}>
+                      {user.avatarUrl ? (
+                        <Image source={{ uri: user.avatarUrl }} style={s.avatar} contentFit="cover" />
+                      ) : (
+                        <View style={s.avatarFallback}>
+                          <Text style={s.avatarLetter}>
+                            {(user.displayName ?? user.username ?? 'C')[0].toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
-                </View>
 
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={s.profileName} numberOfLines={1}>
-                    {user.displayName ?? user.username ?? 'User'}
-                  </Text>
-                  <Text style={s.profileEmail} numberOfLines={1}>{user.email ?? ''}</Text>
-                  <View style={[s.tierBadge, { backgroundColor: tierColor + '18', borderColor: tierColor + '35' }]}>
-                    <Ionicons name="star" size={9} color={tierColor} />
-                    <Text style={[s.tierText, { color: tierColor }]}>{tierLabel}</Text>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={s.profileName} numberOfLines={1}>
+                      {user.displayName ?? user.username ?? 'User'}
+                    </Text>
+                    <Text style={s.profileEmail} numberOfLines={1}>{user.email ?? ''}</Text>
+                    <View style={[s.tierBadge, { backgroundColor: tierColor + '18', borderColor: tierColor + '35' }]}>
+                      <Ionicons name="star" size={9} color={tierColor} />
+                      <Text style={[s.tierText, { color: tierColor }]}>{tierLabel}</Text>
+                    </View>
                   </View>
-                </View>
+                </Pressable>
 
-                <View pointerEvents="none" style={s.editBtnGlass}>
+                <View style={s.editBtnGlass} pointerEvents="none">
                   <LiquidGlassPanel borderRadius={14} bordered={false} contentStyle={s.editBtnInner}>
                     <Ionicons name="create-outline" size={15} color={colors.textOnBrandGradient} />
                     <Text style={[s.editBtnText, { color: colors.textOnBrandGradient }]}>Edit</Text>
@@ -374,7 +410,7 @@ export default function AccountSettingsScreen() {
                   <Ionicons name="chevron-forward" size={11} color={CultureTokens.warning} />
                 </Pressable>
               )}
-            </Pressable>
+            </View>
           </Animated.View>
         ) : (
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}>
@@ -418,7 +454,7 @@ export default function AccountSettingsScreen() {
         )}
 
         {/* ── Settings sections ───────────────────────────────── */}
-        {sections.map((section, idx) => (
+        {visibleSections.map((section, idx) => (
           <Animated.View
             entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + idx * 55, 400)).springify().damping(18).stiffness(110)}
             key={section.title}
@@ -473,6 +509,39 @@ export default function AccountSettingsScreen() {
             </LiquidGlassPanel>
           </Animated.View>
         ))}
+
+        {hiddenSectionsCount > 0 && (
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInDown.delay(220).springify().damping(18).stiffness(110)}
+            style={[s.section, isDesktopWeb && s.webSection]}
+          >
+            {showAdvancedSections ? (
+              <Text style={s.advancedHint}>Advanced and admin sections</Text>
+            ) : null}
+            <Pressable
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                s.showMoreBtn,
+                hovered && { backgroundColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.04)' },
+                pressed && { opacity: 0.75, transform: [{ scale: 0.99 }] },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowAdvancedSections((v) => !v);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={showAdvancedSections ? 'Show fewer settings' : `Show ${hiddenSectionsCount} more settings sections`}
+            >
+              <Ionicons
+                name={showAdvancedSections ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={s.showMoreText}>
+                {showAdvancedSections ? 'Show fewer settings' : `Show ${hiddenSectionsCount} more sections`}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        )}
 
         {/* ── Sign out ─────────────────────────────────────────── */}
         {isAuthenticated && (
@@ -553,6 +622,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderWidth: 26, borderColor: CultureTokens.teal + '09',
     },
     profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    profileMainTap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
 
     // Gradient-ring avatar
     avatarRingOuter: {
@@ -641,7 +711,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
     guestSignUpText: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
 
     // Sections
-    section: { paddingHorizontal: 20, marginBottom: 24 },
+    section: { paddingHorizontal: 20, marginBottom: 20 },
 
     sectionTitleRow: {
       flexDirection: 'row', alignItems: 'center',
@@ -659,7 +729,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
 
     settingRow: {
       flexDirection: 'row', alignItems: 'center',
-      paddingHorizontal: 16, paddingVertical: 15,
+      paddingHorizontal: 16, paddingVertical: 13,
       gap: 14,
     },
     settingIcon: {
@@ -667,7 +737,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       alignItems: 'center', justifyContent: 'center',
     },
     settingLabel:     { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 20 },
-    settingSub:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 16 },
+    settingSub:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 17 },
     settingRightText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
 
     divider: {
@@ -684,6 +754,29 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderWidth: 1, borderColor: CultureTokens.coral + '28',
     },
     signOutText: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+    showMoreBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+    },
+    showMoreText: {
+      fontSize: 13,
+      fontFamily: 'Poppins_600SemiBold',
+      color: colors.textSecondary,
+    },
+    advancedHint: {
+      fontSize: 11,
+      fontFamily: 'Poppins_500Medium',
+      color: colors.textTertiary,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
 
     footer: {
       textAlign: 'center', fontSize: 11, fontFamily: 'Poppins_500Medium',

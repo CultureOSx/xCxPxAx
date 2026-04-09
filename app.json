@@ -2,7 +2,7 @@
   "expo": {
     "name": "CulturePass",
     "slug": "culturepass",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "CulturePass — Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
+      "buildNumber": "2",
       "appleTeamId": "26WGXSNG58",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
@@ -51,6 +52,7 @@
     },
     "android": {
       "package": "au.culturepass.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -196,7 +198,9 @@
       }
     },
     "owner": "cultureoss-organization",
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"
     }

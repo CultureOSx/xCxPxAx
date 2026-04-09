@@ -122,7 +122,7 @@ export default function CommunitiesScreen() {
                 </View>
                 <Text style={[styles.title, { color: colors.textInverse }]}>Your Communities</Text>
                 <Text style={styles.subtitle}>
-                  Pick the diaspora and cultural groups you'd like to connect with.
+                  Pick the diaspora and cultural groups you&apos;d like to connect with.
                 </Text>
               </View>
 

@@ -50,9 +50,22 @@ declare module 'expo-notifications' {
     handleNotification: (notification: Notification) => Promise<NotificationBehavior>;
   }
 
+  export interface NotificationContentInput {
+    title?: string;
+    body?: string;
+    data?: Record<string, unknown>;
+    sound?: boolean;
+  }
+
+  export type NotificationTriggerInput = Date | null;
+
   export function getPermissionsAsync(): Promise<PermissionResponse>;
   export function requestPermissionsAsync(): Promise<PermissionResponse>;
   export function getExpoPushTokenAsync(options?: { projectId?: string }): Promise<ExpoPushToken>;
+  export function scheduleNotificationAsync(request: {
+    content: NotificationContentInput;
+    trigger: NotificationTriggerInput;
+  }): Promise<string>;
   export function setNotificationHandler(handler: NotificationHandler): void;
   export function addNotificationResponseReceivedListener(
     listener: (response: NotificationResponse) => void

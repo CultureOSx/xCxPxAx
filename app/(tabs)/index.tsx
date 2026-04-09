@@ -24,13 +24,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, RefreshControl,
-  Pressable, Platform,
-} from 'react-native';
+import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -53,44 +48,6 @@ import { IndigenousSpotlight } from '@/components/Discover/IndigenousSpotlight';
 import { CategoryRail } from '@/components/Discover/CategoryRail';
 import { CityRail } from '@/components/Discover/CityRail';
 import { PreviewRail } from '@/components/Discover/PreviewRail';
-
-// ─── Search Bar ────────────────────────────────────────────────────────────────
-
-function SearchBar({
-  hPad,
-  colors,
-}: {
-  hPad: number;
-  colors: ReturnType<typeof useColors>;
-}) {
-  const handlePress = () => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
-    router.push('/search');
-  };
-  return (
-    <Pressable
-      onPress={handlePress}
-      accessibilityRole="search"
-      accessibilityLabel="Search events, communities, perks and more"
-      style={[
-        styles.searchBar,
-        {
-          marginHorizontal: hPad,
-          backgroundColor: colors.surfaceElevated,
-          borderColor: colors.borderLight,
-        },
-      ]}
-    >
-      <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
-      <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
-        Events, communities, perks…
-      </Text>
-      <View style={[styles.searchMic, { borderColor: colors.borderLight }]}>
-        <Ionicons name="options-outline" size={15} color={colors.textTertiary} />
-      </View>
-    </Pressable>
-  );
-}
 
 // ─── Kerala Domain Scoping ─────────────────────────────────────────────────────
 
@@ -146,7 +103,7 @@ function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDisc
 
 export default function DiscoverScreen() {
   const colors = useColors();
-  const { isDesktop, contentWidth, hPad } = useLayout();
+  const { isDesktop, contentWidth } = useLayout();
   const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
 
@@ -156,12 +113,8 @@ export default function DiscoverScreen() {
   const s = useKeralaScoping(keralaDomain, d);
 
   // Primary nearby rail: GPS first, fall back to starting-soon
-  const nearbyRailResolved   = s.nearby.filter((i) => typeof i !== 'string');
-  const hasNearby            = nearbyRailResolved.length > 0;
-  const primaryRailData      = hasNearby ? s.nearby : s.soon;
-  const primaryLoading       = d.nearbyLoading || (d.eventsLoading && s.soon.length === 0);
-  const primaryTitle         = hasNearby ? 'Near You' : 'Starting Soon';
-  const primarySubtitle      = hasNearby ? 'Events happening in your area' : 'Grab your spot before they start';
+  const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
+  const hasNearby = nearbyRailResolved.length > 0;
 
   return (
     <DiscoverScrollShell
@@ -349,32 +302,3 @@ export default function DiscoverScreen() {
     </DiscoverScrollShell>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-  },
-  searchMic: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

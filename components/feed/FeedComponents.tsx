@@ -362,58 +362,6 @@ const st = StyleSheet.create({
   name:        { fontSize: 11, fontFamily: 'Poppins_500Medium', maxWidth: 68, textAlign: 'center', lineHeight: 15 },
 });
 
-// ── Create post stub ──────────────────────────────────────────────────────────
-
-function CreatePostStub({ authUser, colors, onPress, isAuthenticated, city }: {
-  authUser: { displayName?: string | null; avatarUrl?: string | null } | null;
-  colors: ReturnType<typeof useColors>;
-  onPress: () => void;
-  isAuthenticated: boolean;
-  city: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        cp.wrap,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        Platform.OS === 'ios' && pressed ? { opacity: 0.92 } : null,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={isAuthenticated ? 'Create a post' : 'Sign in to post'}
-      {...(Platform.OS === 'android'
-        ? { android_ripple: { color: CultureTokens.indigo + '14', borderless: false } }
-        : {})}
-    >
-      <View style={[cp.avatar, { backgroundColor: CultureTokens.indigo + '15' }]}>
-        {isAuthenticated && authUser?.avatarUrl
-          ? <Image source={{ uri: authUser.avatarUrl }} style={{ width: 38, height: 38 }} contentFit="cover" />
-          : <Ionicons name={isAuthenticated ? 'person' : 'log-in-outline'} size={18} color={CultureTokens.indigo} />}
-      </View>
-      <View style={[cp.mockInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-        <Text style={[cp.placeholder, { color: colors.textTertiary }]} numberOfLines={1}>
-          {isAuthenticated
-            ? (city ? `Share with ${city}…` : 'Share with your community…')
-            : 'Sign in to share…'}
-        </Text>
-      </View>
-      {isAuthenticated && (
-        <View style={[cp.imgBtn, { backgroundColor: CultureTokens.gold + '18' }]}>
-          <Ionicons name="image-outline" size={18} color={CultureTokens.gold} />
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
-const cp = StyleSheet.create({
-  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, minHeight: 62, overflow: 'hidden' },
-  avatar:      { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  mockInput:   { flex: 1, height: 38, borderRadius: 19, borderWidth: 1, paddingHorizontal: 14, justifyContent: 'center' },
-  placeholder: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
-  imgBtn:      { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-});
-
 // ── Guest banner ──────────────────────────────────────────────────────────────
 
 function GuestBanner({ colors }: { colors: ReturnType<typeof useColors> }) {

@@ -91,6 +91,8 @@ const SECTIONS: MenuSection[] = [
     title: 'Tools',
     items: [
       { id: 'scanner', label: 'Gate Scan',        icon: 'qr-code-outline',         route: '/scanner',   requiresAuth: true, color: CultureTokens.indigo },
+      { id: 'notifications', label: 'Notifications', icon: 'notifications-outline', route: '/notifications', color: CultureTokens.coral, badge: 'Quick' },
+      { id: 'appearance', label: 'Appearance', icon: 'color-palette-outline', route: '/settings/appearance', color: CultureTokens.indigo, badge: 'Quick' },
       { id: 'help',    label: 'Support & Help',  icon: 'help-circle-outline',     route: '/help' },
       { id: 'settings',label: 'App Settings',    icon: 'settings-outline',        route: '/settings' },
     ],
@@ -181,6 +183,11 @@ function CollapsibleSection({
       </Pressable>
       {!collapsed && (
         <View style={[styles.sectionCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+          {section.title === 'Tools' ? (
+            <View style={styles.quickContextRow}>
+              <Text style={[styles.quickContextText, { color: colors.textTertiary }]}>Quick actions</Text>
+            </View>
+          ) : null}
           {section.items.map((item, idx) => (
             <React.Fragment key={item.id}>
               <MenuRow item={item} colors={colors} />
@@ -445,6 +452,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
+  },
+  quickContextRow: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  quickContextText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
 
