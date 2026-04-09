@@ -6,6 +6,7 @@ import { useColors } from '@/hooks/useColors';
 import { CultureTokens, gradients, LayoutRules } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { EMAIL_LEGAL } from '@/lib/app-meta';
 
 const SECTIONS = [
   { title: '1. Acceptance of Terms', body: 'By downloading, installing, or using the CulturePass application, you agree to comply with and be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use our services.' },
@@ -18,7 +19,7 @@ const SECTIONS = [
   { title: '8. Limitation of Liability', body: 'To the maximum extent permitted by law, CulturePass shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the platform, attendance at events, or unauthorized access to your data. Events are organized by third parties, and we do not guarantee the safety, quality, or legality of any event.' },
   { title: '9. Changes to Terms', body: 'We reserve the right to modify these Terms at any time. We will provide notice of significant changes within the app. Your continued use of the platform following such changes constitutes your acceptance of the new Terms.' },
   { title: '10. Governing Law', body: 'These Terms shall be governed by and construed in accordance with the laws of New South Wales, Australia, without regard to its conflict of law provisions.' },
-  { title: '11. Contact Us', body: 'If you have any questions about these Terms, please contact us at legal@culturepass.au.' },
+  { title: '11. Contact Us', body: `If you have any questions about these Terms, please contact us at ${EMAIL_LEGAL}.` },
 ];
 
 export default function TermsScreen() {

@@ -6,6 +6,7 @@ import { useColors } from '@/hooks/useColors';
 import { CultureTokens, gradients, LayoutRules } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { EMAIL_PRIVACY } from '@/lib/app-meta';
 
 const SECTIONS = [
   { title: '1. Information We Collect', body: 'We collect information you provide directly, including: full name, email address, location preferences, and user profile details. When you purchase tickets, payment information is collected securely by our payment processor (Stripe) and is not stored on our servers. We also automatically collect log data, device information, and interaction metrics to improve your experience.' },
@@ -15,7 +16,7 @@ const SECTIONS = [
   { title: '5. Your Data Rights', body: 'You have the right to:\n\n• Access the personal data we hold about you.\n• Request correction of inaccurate information.\n• Delete your account and associated data completely.\n• Opt-out of marketing communications at any time.\n\nTo manage your data or request deletion, please use the settings in the app or contact our support team.' },
   { title: '6. Children\'s Privacy', body: 'CulturePass is strictly intended for users who are 16 years of age or older. We do not knowingly collect personal data from anyone under 16. If we become aware that we have collected information from a minor without parental consent, we will take steps to securely delete that information immediately.' },
   { title: '7. Updates to This Policy', body: 'We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify you of any material changes by posting the new policy in the app and updating the "Last updated" date.' },
-  { title: '8. Contact Information', body: 'If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:\n\nEmail: privacy@culturepass.au\nAddress: CulturePass Pty Ltd, Sydney NSW 2000, Australia' },
+  { title: '8. Contact Information', body: `If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:\n\nEmail: ${EMAIL_PRIVACY}\nAddress: CulturePass Pty Ltd, Sydney NSW 2000, Australia` },
 ];
 
 export default function PrivacyScreen() {

@@ -17,6 +17,7 @@ interface AppLink {
 }
 
 const APP_LINKS: AppLink[] = [
+  { id: 'culture', label: 'Hubs', icon: 'earth', color: CultureTokens.teal, route: '/culture' },
   { id: 'events', label: 'Events', icon: 'calendar', color: CultureTokens.gold, route: '/events' },
   { id: 'movies', label: 'Movies', icon: 'film', color: CultureTokens.coral, route: '/movies' },
   { id: 'dining', label: 'Dining', icon: 'restaurant', color: CategoryColors.food, route: '/restaurants' },

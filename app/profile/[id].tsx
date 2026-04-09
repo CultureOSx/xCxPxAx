@@ -448,7 +448,10 @@ function UserPublicProfile({
     staleTime: 60 * 1000,
   });
 
-  const catalogEventsOwner = eventsForSaved?.events ?? [];
+  const catalogEventsOwner = useMemo(
+    () => eventsForSaved?.events ?? [],
+    [eventsForSaved],
+  );
   const missingSavedEventIds = useMemo(() => {
     if (!savedCatalogFetched || savedSet.size === 0) return [];
     const have = new Set(catalogEventsOwner.map((e) => e.id));
@@ -490,7 +493,10 @@ function UserPublicProfile({
     queryFn: () => api.communities.joined(),
     enabled: Boolean(isOwner && isAuthenticated),
   });
-  const joinedIds = joinedPayload?.communityIds ?? [];
+  const joinedIds = useMemo(
+    () => joinedPayload?.communityIds ?? [],
+    [joinedPayload],
+  );
   const { data: allCommunities = [] } = useQuery({
     queryKey: ['/api/communities'],
     queryFn: () => api.communities.list(),

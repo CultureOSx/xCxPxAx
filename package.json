@@ -1,5 +1,6 @@
 {
   "name": "culturepass-app",
+  "description": "CulturePass — Expo app and web (cultural events & diaspora communities). Product site: https://culturepass.app",
   "main": "expo-router/entry",
   "version": "1.1.0",
   "private": true,

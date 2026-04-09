@@ -38,6 +38,14 @@ import { initializeWidgets } from "@/lib/widgets/register";
 import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
 import { isCultureKeralaHost } from "@/lib/domainHost";
+import {
+  APP_NAME,
+  APP_WEB_DESCRIPTION,
+  APP_WEB_KEYWORDS,
+  APP_WEB_TITLE,
+  APP_WEB_TAGLINE,
+  SITE_ORIGIN,
+} from "@/lib/app-meta";
 
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from "@expo-google-fonts/poppins";
 // Web font loader for Expo web is automatically handled by @expo-google-fonts
@@ -444,17 +452,17 @@ function RootLayoutContent() {
     </PersistQueryClientProvider>
   );
 
-  const siteOrigin = isKeralaDomain ? 'https://culturekerala.com' : 'https://culturepass.app';
+  const siteOrigin = isKeralaDomain ? 'https://culturekerala.com' : SITE_ORIGIN;
   const siteUrl = `${siteOrigin}/`;
   const siteTitle = isKeralaDomain
     ? 'CultureKerala — Kerala & Malayalee Communities Worldwide'
-    : 'CulturePass — Celebrate Your Culture, Connect Your Community';
+    : APP_WEB_TITLE;
   const siteDescription = isKeralaDomain
     ? 'Discover Kerala and Malayalee communities, events, businesses, and culture around the world.'
-    : 'Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place — Australia, NZ, UK, UAE, Canada.';
+    : APP_WEB_DESCRIPTION;
   const siteKeywords = isKeralaDomain
     ? 'CultureKerala, Kerala Communities, Malayalee, Malayalam, Kerala Events, Malayali Diaspora'
-    : 'CulturePass, cultural events, diaspora communities, event organizers, community events, festivals, tickets, Australia events, NZ events, UK events, UAE events, Canada events, cultural discovery, WhatsApp events';
+    : APP_WEB_KEYWORDS;
   const currentPath =
     isWeb && typeof window !== 'undefined' && window.location.pathname
       ? window.location.pathname
@@ -481,25 +489,25 @@ function RootLayoutContent() {
       {
         '@type': 'WebSite',
         '@id': `${siteOrigin}/#website`,
-        name: 'CulturePass',
-        alternateName: 'Celebrate Your Culture, Connect Your Community',
+        name: APP_NAME,
+        alternateName: APP_WEB_TAGLINE,
         url: siteUrl,
         description: siteDescription,
         inLanguage: 'en-AU',
         publisher: { '@id': `${siteOrigin}/#organization` },
         potentialAction: {
           '@type': 'SearchAction',
-          target: `${siteOrigin}/search?query={search_term_string}`,
+          target: `${siteOrigin}/search?q={search_term_string}`,
           'query-input': 'required name=search_term_string',
         },
       },
       {
         '@type': 'Organization',
         '@id': `${siteOrigin}/#organization`,
-        name: 'CulturePass',
+        name: APP_NAME,
         url: siteUrl,
         description: siteDescription,
-        slogan: 'Celebrate Your Culture, Connect Your Community',
+        slogan: APP_WEB_TAGLINE,
       },
     ],
   };
@@ -519,7 +527,7 @@ function RootLayoutContent() {
         <meta property="og:title" content={siteTitle} />
         <meta property="og:description" content={siteDescription} />
         <meta property="og:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
-        <meta property="og:site_name" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
+        <meta property="og:site_name" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
         <meta property="og:locale" content={isKeralaDomain ? 'ml_IN' : 'en_AU'} />
 
         {/* Twitter */}
@@ -528,8 +536,8 @@ function RootLayoutContent() {
         <meta name="twitter:title" content={siteTitle} />
         <meta name="twitter:description" content={siteDescription} />
         <meta name="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
-        <meta name="application-name" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
-        <meta name="apple-mobile-web-app-title" content={isKeralaDomain ? 'CultureKerala' : 'CulturePass'} />
+        <meta name="application-name" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
+        <meta name="apple-mobile-web-app-title" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
         {isKeralaDomain ? (
           <script
             type="application/ld+json"

@@ -19,6 +19,18 @@ const COUNTRY_FLAGS: Record<string, string> = {
   Australia: '🇦🇺',
   Singapore: '🇸🇬',
   'New Zealand': '🇳🇿',
+  India: '🇮🇳',
+  'South Korea': '🇰🇷',
+  Korea: '🇰🇷',
+  Vietnam: '🇻🇳',
+  Philippines: '🇵🇭',
+  Mexico: '🇲🇽',
+  Nigeria: '🇳🇬',
+  Ethiopia: '🇪🇹',
+  Somalia: '🇸🇴',
+  Iran: '🇮🇷',
+  Lebanon: '🇱🇧',
+  Ukraine: '🇺🇦',
 };
 
 export function getCountryFlag(country: string): string {
@@ -63,6 +75,18 @@ export function listMarketplaceCountries(): MarketplaceCountryItem[] {
   }));
 }
 
+/** Countries for culture-hub scope (marketplace + India for homeland + diaspora origin). */
+export function listCultureHubFocusCountries(): MarketplaceCountryItem[] {
+  const base = listMarketplaceCountries();
+  const india = { name: 'India', flag: '🇮🇳', hint: 'Events across India' } satisfies MarketplaceCountryItem;
+  if (base.some((b) => b.name === 'India')) return base;
+  const auIdx = base.findIndex((b) => b.name === 'Australia');
+  if (auIdx >= 0) {
+    return [...base.slice(0, auIdx + 1), india, ...base.slice(auIdx + 1)];
+  }
+  return [india, ...base];
+}
+
 export type MarketplacePickerRegion = {
   code: string;
   name: string;
@@ -81,6 +105,9 @@ export function getRegionsForCountry(
       emoji: s.emoji,
       cities: s.cities,
     }));
+  }
+  if (countryName === 'India') {
+    return [];
   }
   return GLOBAL_REGIONS.filter((r) => r.country === countryName).map((r) => ({
     code: r.value,

@@ -309,6 +309,33 @@ export default function SearchScreen() {
             </View>
           </Animated.View>
 
+          <Pressable
+            onPress={() => {
+              if (!IS_WEB) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push('/culture');
+            }}
+            style={[
+              styles.hubEntry,
+              {
+                marginHorizontal: hPad,
+                marginTop: 12,
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Browse culture and language hubs"
+          >
+            <Ionicons name="earth-outline" size={20} color={CultureTokens.indigo} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.hubEntryTitle, { color: colors.text }]}>Culture & language hubs</Text>
+              <Text style={[styles.hubEntrySub, { color: colors.textTertiary }]}>
+                Kerala, Gujarati, Filipino, and more — filter by country or worldwide
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </Pressable>
+
           {query.trim().length >= 2 ? (
             <ScrollView
               horizontal
@@ -470,5 +497,17 @@ const styles = StyleSheet.create({
   },
   resultTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
   resultSub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 1 },
+
+  hubEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  hubEntryTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
+  hubEntrySub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 2 },
 });
 

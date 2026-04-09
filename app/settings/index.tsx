@@ -19,7 +19,15 @@ import { BackButton } from '@/components/ui/BackButton';
 import { TextStyles } from '@/constants/typography';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { APP_NAME_AU, PRIMARY_REGION, getAppVersion, getAppVersionWithBuild } from '@/lib/app-meta';
+import {
+  APP_NAME,
+  APP_NAME_AU,
+  EMAIL_BUGS,
+  EMAIL_SUPPORT,
+  PRIMARY_REGION,
+  getAppVersion,
+  getAppVersionWithBuild,
+} from '@/lib/app-meta';
 
 interface SettingItem {
   icon: string;
@@ -208,8 +216,8 @@ export default function AccountSettingsScreen() {
       title: 'Help & Support',
       items: [
         { icon: 'help-circle-outline', label: 'Help Center',      sub: 'FAQs, guides, tutorials',  color: CultureTokens.gold,    route: '/help' },
-        { icon: 'mail-outline',        label: 'Contact Us',       sub: 'support@culturepass.app',  color: CultureTokens.teal,   action: () => Linking.openURL('mailto:support@culturepass.app?subject=CulturePass%20Support') },
-        { icon: 'flag-outline',        label: 'Report a Problem', sub: 'Something not working?',  color: CultureTokens.warning, action: () => Linking.openURL('mailto:bugs@culturepass.app?subject=Bug%20Report') },
+        { icon: 'mail-outline',        label: 'Contact Us',       sub: EMAIL_SUPPORT,  color: CultureTokens.teal,   action: () => Linking.openURL(`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(`${APP_NAME} Support`)}`) },
+        { icon: 'flag-outline',        label: 'Report a Problem', sub: 'Something not working?',  color: CultureTokens.warning, action: () => Linking.openURL(`mailto:${EMAIL_BUGS}?subject=${encodeURIComponent('Bug Report')}`) },
         { icon: 'star-half-outline',   label: 'Rate CulturePass', sub: 'Share your feedback',     color: CultureTokens.coral,   action: () => Linking.openURL(Platform.OS === 'android' ? 'market://details?id=au.culturepass.app' : 'https://apps.apple.com/app/culturepass/id6742686059') },
       ],
     },
@@ -249,7 +257,7 @@ export default function AccountSettingsScreen() {
       title: 'Help & Support',
       items: [
         { icon: 'help-circle-outline', label: 'Help Center',  sub: 'FAQs, guides, tutorials', color: CultureTokens.gold,  route: '/help' },
-        { icon: 'mail-outline',        label: 'Contact Us',   sub: 'support@culturepass.app', color: CultureTokens.teal, action: () => Linking.openURL('mailto:support@culturepass.app?subject=CulturePass%20Support') },
+        { icon: 'mail-outline',        label: 'Contact Us',   sub: EMAIL_SUPPORT, color: CultureTokens.teal, action: () => Linking.openURL(`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(`${APP_NAME} Support`)}`) },
       ],
     },
     {

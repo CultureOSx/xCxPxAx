@@ -1,27 +1,34 @@
 import type { PropsWithChildren } from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
 
-const siteUrl = 'https://culturepass.app';
-const siteTitle = 'CulturePass - Cultural Events and Communities';
-const siteDescription =
-  'Discover cultural events, communities, and experiences near you across Australia and beyond with CulturePass.';
+import {
+  APP_NAME,
+  APP_WEB_DESCRIPTION,
+  APP_WEB_KEYWORDS,
+  APP_WEB_TITLE,
+  SITE_ORIGIN,
+  SITE_ORIGIN_WWW,
+  THEME_COLOR_WEB,
+} from '@/lib/app-meta';
+
+const siteUrl = SITE_ORIGIN;
+const siteTitle = APP_WEB_TITLE;
+const siteDescription = APP_WEB_DESCRIPTION;
 const ogImageUrl = `${siteUrl}/assets/images/social-preview.png`;
 
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'CulturePass',
+  name: APP_NAME,
   url: siteUrl,
   logo: ogImageUrl,
-  sameAs: [
-    'https://culturepass.au',
-  ],
+  sameAs: [SITE_ORIGIN_WWW],
 };
 
 const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'CulturePass',
+  name: APP_NAME,
   url: siteUrl,
   description: siteDescription,
   potentialAction: {
@@ -40,17 +47,14 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <title>{siteTitle}</title>
         <meta name="description" content={siteDescription} />
-        <meta
-          name="keywords"
-          content="cultural events, communities, diaspora, festivals, food, arts, movies, Australia"
-        />
+        <meta name="keywords" content={APP_WEB_KEYWORDS} />
         <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
         <link rel="canonical" href={siteUrl} />
         <link rel="alternate" hrefLang="en-au" href={siteUrl} />
         <link rel="alternate" hrefLang="x-default" href={siteUrl} />
 
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="CulturePass" />
+        <meta property="og:site_name" content={APP_NAME} />
         <meta property="og:title" content={siteTitle} />
         <meta property="og:description" content={siteDescription} />
         <meta property="og:url" content={siteUrl} />
@@ -61,7 +65,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="twitter:description" content={siteDescription} />
         <meta name="twitter:image" content={ogImageUrl} />
 
-        <meta name="theme-color" content="#2C2A72" />
+        <meta name="theme-color" content={THEME_COLOR_WEB} />
         <ScrollViewStyleReset />
         <script
           type="application/ld+json"

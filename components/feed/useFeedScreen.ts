@@ -126,7 +126,7 @@ export function useFeedScreen({ isDesktop }: { isDesktop: boolean }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const communities = communitiesQuery.data ?? [];
+  const communities = useMemo(() => communitiesQuery.data ?? [], [communitiesQuery.data]);
 
   useEffect(() => {
     setLocalPosts([]);

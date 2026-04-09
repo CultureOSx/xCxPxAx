@@ -9,17 +9,18 @@ import { LayoutRules, Radius, Spacing, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
+import { APP_DOMAIN, APP_NAME, EMAIL_SUPPORT } from '@/lib/app-meta';
 
 const FAQ_ITEMS = [
-  { q: 'What is culturepass.app?', a: 'culturepass.app is a lifestyle platform designed for cultural diaspora communities. It connects you with events, communities, perks, and local businesses that celebrate your culture.' },
+  { q: `What is ${APP_NAME}?`, a: `${APP_NAME} is a lifestyle platform for cultural diaspora communities. Use the app or ${APP_DOMAIN} to connect with events, communities, perks, and local businesses that celebrate your culture.` },
   { q: 'How do I join a community?', a: 'Visit the Communities tab to browse cultural communities near you. Tap on any community to see its details, then tap "Join" to become a member and receive updates on their events and activities.' },
   { q: 'How do I purchase event tickets?', a: 'Browse events from the Home or Explore tab. Tap on an event to view details, select your ticket tier, and complete the purchase using your wallet or saved payment method.' },
-  { q: 'What are Perks & Benefits?', a: 'Perks are exclusive discounts, free tickets, early access, and VIP upgrades offered by culturepass.app and our sponsor partners. Visit the Perks page to browse and redeem available offers.' },
+  { q: 'What are Perks & Benefits?', a: `Perks are exclusive discounts, free tickets, early access, and VIP upgrades offered by ${APP_NAME} and our sponsor partners. Visit the Perks page to browse and redeem available offers.` },
   { q: 'How can I list my business or organisation?', a: 'Go to the Submit page from the directory or profile section. Fill out the form with your organisation, business, or artist details and submit for review. Our team will verify and approve your listing.' },
 ];
 
 const CONTACT_OPTIONS = [
-  { icon: 'mail', label: 'Email Support', sub: 'support@culturepass.app',       colorKey: 'primary' as const, action: () => Linking.openURL('mailto:support@culturepass.app') },
+  { icon: 'mail', label: 'Email Support', sub: EMAIL_SUPPORT,       colorKey: 'primary' as const, action: () => Linking.openURL(`mailto:${EMAIL_SUPPORT}`) },
   { icon: 'call', label: 'Phone Support', sub: '1800-CULTURE (1800 285 887)',   colorKey: 'success' as const, action: () => Linking.openURL('tel:1800285887')                },
 ];
 

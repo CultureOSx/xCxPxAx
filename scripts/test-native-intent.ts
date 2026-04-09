@@ -21,6 +21,6 @@ for (const test of cases) {
 assert.equal(redirectSystemPath({ path: '', initial: false }), '/');
 assert.equal(sanitizeInternalRedirect('/events/e1?ref=push'), '/event/e1?ref=push');
 assert.equal(sanitizeInternalRedirect('/(onboarding)/login'), null);
-assert.equal(sanitizeInternalRedirect('https://culturepass.au/event/e1'), null);
+assert.equal(sanitizeInternalRedirect('https://culturepass.app/event/e1'), null);
 
 console.log('native-intent route normalization checks passed');

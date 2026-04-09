@@ -121,7 +121,7 @@ export default function SavedScreen() {
     staleTime: 60 * 1000,
   });
 
-  const catalogEvents = eventsQuery.data ?? [];
+  const catalogEvents = useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
   const catalogFetched = eventsQuery.isFetched;
 
   const missingEventIds = useMemo(() => {
@@ -151,7 +151,7 @@ export default function SavedScreen() {
     staleTime: 60 * 1000,
   });
 
-  const allCommunities = communitiesQuery.data ?? [];
+  const allCommunities = useMemo(() => communitiesQuery.data ?? [], [communitiesQuery.data]);
 
   const bookmarkOnlyIds = useMemo(
     () => savedCommunityBookmarks.filter((id) => !joinedCommunities.includes(id)),
