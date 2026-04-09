@@ -106,7 +106,7 @@ export default function LoginScreen() {
         >
           <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
         </View>
-        <BrandWordmark size="lg" withTagline centered />
+        <BrandWordmark size="lg" withTagline centered taglineColor={CultureTokens.coral} />
       </Animated.View>
 
       {/* Copy */}

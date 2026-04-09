@@ -199,7 +199,7 @@
       }
     },
     "owner": "cultureoss-organization",
-      "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": "1.1.0",
     "updates": {
       "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"
     }

@@ -101,17 +101,17 @@ export function LiquidGlassPanel({
         } as ViewStyle)
       : {};
 
+  const webShellStyle: StyleProp<ViewStyle> = [
+    shell,
+    {
+      backgroundColor: isDark ? glass.ultraDark.backgroundColor : glass.ultraLight.backgroundColor,
+      ...webGlass,
+    },
+    style,
+  ];
+
   return (
-    <View
-      style={[
-        shell,
-        {
-          backgroundColor: isDark ? glass.ultraDark.backgroundColor : glass.ultraLight.backgroundColor,
-          ...webGlass,
-        },
-        style,
-      ]}
-    >
+    <View style={webShellStyle}>
       <View style={[{ flex: 1 }, contentStyle]}>{children}</View>
     </View>
   );

@@ -203,8 +203,8 @@ function OrganizerDashboardContent() {
           const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           });
-          // Only refetch if user completed the flow (not dismissed)
-          if (result.type === 'opened' || result.type === 'success') {
+          // WebBrowser returns OPENED when the external browser launches.
+          if (result.type === WebBrowser.WebBrowserResultType.OPENED) {
             await refetchConnect();
             queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
           }
