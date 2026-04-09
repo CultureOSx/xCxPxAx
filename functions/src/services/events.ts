@@ -366,3 +366,23 @@ export const eventsService = {
     return this.update(id, { status: 'published' });
   },
 };
+
+/**
+ * Many clients only read `imageUrl`; some records store the banner in `heroImageUrl` only.
+ * Coalesce for API responses so Discover / lists / maps get a loadable URL on all platforms.
+ */
+export function normalizeEventImageForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(
+  e: T,
+): T {
+  const fromImage = typeof e.imageUrl === 'string' ? e.imageUrl.trim() : '';
+  const fromHero = typeof e.heroImageUrl === 'string' ? e.heroImageUrl.trim() : '';
+  const merged = fromImage || fromHero;
+  if (!merged) return e;
+  return { ...e, imageUrl: merged } as T;
+}
+
+export function normalizeEventListForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(
+  items: T[],
+): T[] {
+  return items.map(normalizeEventImageForClient);
+}

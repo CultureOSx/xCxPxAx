@@ -16,6 +16,8 @@ import {
   eventsService,
   eventFeedbackService,
   type FirestoreEvent,
+  normalizeEventImageForClient,
+  normalizeEventListForClient,
 } from '../services/firestore';
 import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation,
   captureRouteError,
@@ -244,7 +246,7 @@ export function createEventsRouter() {
       );
 
       return res.json({
-        events:      result.items,
+        events:      normalizeEventListForClient(result.items),
         total:       result.total,
         page:        result.page,
         pageSize:    result.pageSize,
@@ -261,7 +263,7 @@ export function createEventsRouter() {
     try {
       const result = await eventsService.list({ status: 'published' }, { page: 1, pageSize: 50 });
       const cross = result.items.filter((e) => (e.cultureTag?.length ?? 0) >= 2);
-      return res.json(cross);
+      return res.json(normalizeEventListForClient(cross));
     } catch (err) {
       captureRouteError(err, 'GET /api/events/cross-community');
       return res.status(500).json({ error: 'Failed to fetch events' });
@@ -289,7 +291,7 @@ export function createEventsRouter() {
         { page: 1, pageSize },
       );
       return res.json({
-        events: result.items,
+        events: normalizeEventListForClient(result.items),
         total: result.total,
         radiusKm: radius,
       });
@@ -306,7 +308,7 @@ export function createEventsRouter() {
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
       }
-      return res.json(event);
+      return res.json(normalizeEventImageForClient(event));
     } catch (err) {
       captureRouteError(err, 'GET /api/events/:id');
       return res.status(500).json({ error: 'Failed to fetch event' });
@@ -426,7 +428,7 @@ export function createEventsRouter() {
           ...(b.publisherProfileId ? { publisherProfileId: String(b.publisherProfileId) } : {}),
           ...(b.venueProfileId ? { venueProfileId: String(b.venueProfileId) } : {}),
         });
-        return res.status(201).json(event);
+        return res.status(201).json(normalizeEventImageForClient(event));
       } catch (err) {
         captureRouteError(err, 'POST /api/events');
         return res.status(500).json({ error: 'Failed to create event' });
@@ -513,7 +515,8 @@ export function createEventsRouter() {
           venueProfileId: b.venueProfileId === '' ? FieldValue.delete() : String(b.venueProfileId),
         }),
       });
-      return res.json(updated);
+      if (!updated) return res.status(500).json({ error: 'Failed to update event' });
+      return res.json(normalizeEventImageForClient(updated));
     } catch (err) {
       captureRouteError(err, 'PUT /api/events/:id');
       return res.status(500).json({ error: 'Failed to update event' });
@@ -549,7 +552,8 @@ export function createEventsRouter() {
           return res.status(403).json({ error: 'Forbidden: you do not own this event' });
         }
         const published = await eventsService.publish(qparam(req.params.id));
-        return res.json(published);
+        if (!published) return res.status(500).json({ error: 'Failed to publish event' });
+        return res.json(normalizeEventImageForClient(published));
       } catch (err) {
         captureRouteError(err, 'POST /api/events/:id/publish');
         return res.status(500).json({ error: 'Failed to publish event' });

@@ -232,8 +232,16 @@ const styles = StyleSheet.create({
     width: '100%', maxWidth: 360,
     borderRadius: 24, borderWidth: 1,
     padding: 20,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25, shadowRadius: 24, elevation: 20,
+    ...Platform.select({
+      web: { boxShadow: '0px 12px 24px rgba(0,0,0,0.25)' },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 20,
+      },
+    }),
   },
 
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },

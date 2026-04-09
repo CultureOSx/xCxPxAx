@@ -20,6 +20,8 @@ import { useColors } from '@/hooks/useColors';
 import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
 import { getCommunityHeadline } from '@/lib/community';
 import { Button } from '@/components/ui/Button';
+import CultureImage from '@/components/ui/CultureImage';
+import { eventListImageUrl } from '@/lib/eventImage';
 import * as ImagePicker from 'expo-image-picker';
 import { timeAgo } from '@/lib/dateUtils';
 import {
@@ -1031,11 +1033,12 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
           <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={`View event: ${ev.title}`}>
             {/* Hero image */}
             <View style={pcd.eventImg}>
-              <Image
-                source={{ uri: ev.imageUrl ?? undefined }}
+              <CultureImage
+                uri={eventListImageUrl(ev)}
                 style={StyleSheet.absoluteFillObject}
                 contentFit="cover"
-                transition={200}
+                recyclingKey={`feed-event-${ev.id}`}
+                borderRadius={0}
               />
               {/* Bottom gradient overlay */}
               <LinearGradient

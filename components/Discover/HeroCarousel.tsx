@@ -12,6 +12,7 @@ import { TextStyles } from '@/constants/typography';
 import { CultureTokens } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatEventDateTime } from '@/lib/dateUtils';
+import { eventListImageUrl } from '@/lib/eventImage';
 import type { EventData } from '@/shared/schema';
 
 const isWeb = Platform.OS === 'web';
@@ -30,7 +31,9 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
   const heroCardWidth = isDesktop ? HERO_CARD_DESKTOP_WIDTH : width;
   const heroSnapInterval = isDesktop ? heroCardWidth + 20 : heroCardWidth;
 
-  const renderFeaturedEvent = useCallback(({ item, index }: { item: EventData; index: number }) => (
+  const renderFeaturedEvent = useCallback(({ item, index }: { item: EventData; index: number }) => {
+    const heroUri = eventListImageUrl(item);
+    return (
     <View
       style={{
         width: heroCardWidth,
@@ -50,9 +53,9 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         accessibilityLabel={`Featured event: ${item.title}${item.venue ? `, at ${item.venue}` : ''}`}
         accessibilityHint="Opens event details"
       >
-        {item.imageUrl ? (
+        {heroUri ? (
           <Image
-            source={{ uri: item.imageUrl }}
+            source={{ uri: heroUri }}
             style={StyleSheet.absoluteFillObject}
             contentFit="cover"
             transition={200}
@@ -97,7 +100,8 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         </View>
       </Pressable>
     </View>
-  ), [events.length, heroCardWidth, isDesktop, pad, styles]);
+    );
+  }, [events.length, heroCardWidth, isDesktop, pad, styles]);
 
   if (events.length === 0) {
     return (

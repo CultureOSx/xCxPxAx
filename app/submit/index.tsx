@@ -15,7 +15,6 @@ import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
-import { fetch } from 'expo/fetch';
 import { useRole } from '@/hooks/useRole';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useLayout } from '@/hooks/useLayout';
@@ -282,10 +281,19 @@ export default function SubmitScreen() {
     if (!imageUri) return null;
     try {
       const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
-      const blobRes = await fetch(processed.uri);
-      const blob = await blobRes.blob();
       const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'upload.jpg');
+      // RN/iOS multipart: Blob in FormData often does not attach — use file descriptor (web keeps Blob).
+      if (Platform.OS === 'web') {
+        const blobRes = await fetch(processed.uri);
+        const blob = await blobRes.blob();
+        formData.append('image', blob, 'upload.jpg');
+      } else {
+        formData.append('image', {
+          uri: processed.uri,
+          name: 'upload.jpg',
+          type: 'image/jpeg',
+        } as unknown as Blob);
+      }
       const uploaded = await api.uploads.image(formData);
       return uploaded.imageUrl;
     } catch (err) {

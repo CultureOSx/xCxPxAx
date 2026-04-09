@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 
 import { CultureTokens } from '@/constants/theme';
@@ -104,9 +104,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     opacity: 0.95,
     flexShrink: 1,
-    // Slight shadow for better readability when on colored backgrounds
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    // RN-web deprecates textShadow* split props; keep native split + web shorthand
+    ...Platform.select({
+      web: { textShadow: '0px 1px 1px rgba(0,0,0,0.1)' },
+      default: {
+        textShadowColor: 'rgba(0,0,0,0.1)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+      },
+    }),
   },
 });

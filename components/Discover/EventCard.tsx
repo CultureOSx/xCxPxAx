@@ -15,6 +15,7 @@ import {
   formatStartsInCountdown,
   parseEventStartMs,
 } from '@/lib/dateUtils';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -271,6 +272,7 @@ function EventCard({
   const [isHovered, setIsHovered] = React.useState(false);
 
   const cardWidth = containerWidth ?? (layout === 'stacked' ? RAIL_CARD_WIDTH : 240);
+  const displayImageUri = eventListImageUrl(event);
 
   if (layout === 'stacked') {
     return (
@@ -300,12 +302,19 @@ function EventCard({
           accessibilityHint="Opens event details"
         >
           <View style={{ position: 'relative' }}>
-            <Image
-              source={event.imageUrl ? { uri: event.imageUrl } : undefined}
-              style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
-              contentFit="cover"
-              transition={300}
-            />
+            {displayImageUri ? (
+              <Image
+                source={{ uri: displayImageUri }}
+                style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+                contentFit="cover"
+                transition={300}
+              />
+            ) : (
+              <View
+                style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+                accessibilityElementsHidden
+              />
+            )}
             {/* Minimal UI: Remove rank and featured badge for clarity */}
           </View>
           <StackedCardContent
@@ -352,12 +361,16 @@ function EventCard({
         accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
         accessibilityHint="Opens event details"
       >
-        <Image
-          source={event.imageUrl ? { uri: event.imageUrl } : undefined}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-          transition={300}
-        />
+        {displayImageUri ? (
+          <Image
+            source={{ uri: displayImageUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            transition={300}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.backgroundSecondary }]} />
+        )}
 
         <LinearGradient
           colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.92)']}

@@ -41,6 +41,7 @@ import { AdminToolbar } from '@/components/ui/AdminToolbar';
 import { useRole } from '@/hooks/useRole';
 import { CultureTagRow } from '@/components/ui/CultureTag';
 import { captureEvent } from '@/lib/analytics';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';
@@ -92,7 +93,9 @@ export default function EventDetailScreen() {
         <meta name="description" content={event.description || `Join ${event.title} on CulturePass.`} />
         <meta property="og:title" content={`${event.title} | CulturePass`} />
         <meta property="og:description" content={event.description || `Join ${event.title} on CulturePass.`} />
-        {event.imageUrl && <meta property="og:image" content={event.imageUrl} />}
+        {eventListImageUrl(event) ? (
+          <meta property="og:image" content={eventListImageUrl(event)!} />
+        ) : null}
         <meta property="og:url" content={`https://culturepass.app/event/${event.id}`} />
         <meta name="twitter:card" content="summary_large_image" />
       </Head><EventDetail event={event} insets={insets} adminMode={adminMode === 'true'} />
@@ -115,6 +118,7 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
   }, [event.id, event.publisherProfileId, event.venueProfileId, event.organizerId]);
   const colors = useColors();
   const isDark = useIsDark();
+  const heroDisplayUri = eventListImageUrl(event);
   const s = getStyles(colors, isDark);
   const saved = isEventSaved(event.id);
   const pathname = usePathname();
@@ -779,7 +783,16 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
             {/* Hero Image Block */}
             <View style={s.heroWrapper}>
               <View style={[s.heroSection, { height: isDesktop ? 450 : 380 + topInset }, isDesktop && { borderRadius: 32, marginHorizontal: 20, marginTop: 20, overflow: 'hidden' }]}>
-                <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
+                {heroDisplayUri ? (
+                  <Image
+                    source={{ uri: heroDisplayUri }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={400}
+                  />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.backgroundSecondary }]} />
+                )}
                 
                 <LinearGradient
                   colors={['rgba(11,11,20,0.5)', 'transparent', 'rgba(11,11,20,0.85)']}

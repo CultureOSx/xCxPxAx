@@ -17,6 +17,7 @@ import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useLayout } from '@/hooks/useLayout';
 import { isIndigenousEvent } from '@/lib/indigenous';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 type MapGroup = {
   label: string;
@@ -147,8 +148,8 @@ function WebCityList({
                   onPress={() => onEventPress(event.id)}
                   onLongPress={() => onOpenEventMap(event)}
                 >
-                  {event.imageUrl ? (
-                    <Image source={{ uri: event.imageUrl }} style={styles.eventImage} contentFit="cover" transition={200} />
+                  {eventListImageUrl(event) ? (
+                    <Image source={{ uri: eventListImageUrl(event)! }} style={styles.eventImage} contentFit="cover" transition={200} />
                   ) : (
                     <View style={[styles.eventImage, { backgroundColor: CultureTokens.indigo + '12', alignItems: 'center', justifyContent: 'center' }]}>
                       <Ionicons name="calendar" size={40} color={CultureTokens.indigo + '80'} />

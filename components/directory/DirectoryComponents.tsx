@@ -21,6 +21,7 @@ import { useColors } from '@/hooks/useColors';
 import type { Profile, EventData } from '@/shared/schema';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/dateUtils';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 export const isWeb = Platform.OS === 'web';
 
@@ -223,7 +224,8 @@ export function DirectoryEventCard({
     monthStr = dateObj.toLocaleString(undefined, { month: 'short' });
   }
 
-  const hasImage = Boolean(event.imageUrl);
+  const listImg = eventListImageUrl(event);
+  const hasImage = Boolean(listImg);
 
   return (
     <View style={{ marginBottom: 12, position: 'relative' }}>
@@ -244,7 +246,7 @@ export function DirectoryEventCard({
           {/* Left: image thumbnail with date overlay, or plain date block */}
           {hasImage ? (
             <View style={s.eventImgBlock}>
-              <Image source={{ uri: event.imageUrl! }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image source={{ uri: listImg! }} style={StyleSheet.absoluteFill} contentFit="cover" />
               <LinearGradient
                 colors={['transparent', categoryColor + 'E6']}
                 style={StyleSheet.absoluteFill}

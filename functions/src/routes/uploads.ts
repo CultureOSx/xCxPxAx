@@ -3,7 +3,7 @@
  * Stores under uploads/{uid}/… in the default bucket; returns public HTTPS URLs.
  */
 
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -18,9 +18,13 @@ const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024 },
 });
 
-function publicGcsUrl(bucketName: string, objectPath: string): string {
-  const encoded = objectPath.split('/').map(encodeURIComponent).join('/');
-  return `https://storage.googleapis.com/${bucketName}/${encoded}`;
+/**
+ * Firebase-compatible download URL (works with private buckets + uniform access).
+ * Plain storage.googleapis.com links often 403 when object ACLs / public access are disabled.
+ */
+function firebaseDownloadUrl(bucketName: string, objectPath: string, token: string): string {
+  const encoded = encodeURIComponent(objectPath);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${token}`;
 }
 
 uploadsRouter.post('/uploads/image', requireAuth, upload.single('image'), async (req: Request, res: Response) => {
@@ -51,27 +55,33 @@ uploadsRouter.post('/uploads/image', requireAuth, upload.single('image'), async 
     const mainFile = storageBucket.file(`${basePath}.jpg`);
     const thumbFile = storageBucket.file(`${basePath}_thumb.jpg`);
 
+    const mainToken = randomUUID();
+    const thumbToken = randomUUID();
+
     await mainFile.save(mainBuf, {
       contentType: 'image/jpeg',
       resumable: false,
-      metadata: { cacheControl: 'public, max-age=31536000' },
+      metadata: {
+        cacheControl: 'public, max-age=31536000',
+        metadata: {
+          firebaseStorageDownloadTokens: mainToken,
+        },
+      },
     });
     await thumbFile.save(thumbBuf, {
       contentType: 'image/jpeg',
       resumable: false,
-      metadata: { cacheControl: 'public, max-age=31536000' },
+      metadata: {
+        cacheControl: 'public, max-age=31536000',
+        metadata: {
+          firebaseStorageDownloadTokens: thumbToken,
+        },
+      },
     });
 
-    try {
-      await mainFile.makePublic();
-      await thumbFile.makePublic();
-    } catch {
-      // Uniform bucket-level access: object ACLs ignored — URLs still work if bucket is public or via token
-    }
-
     const bucketName = storageBucket.name;
-    const imageUrl = publicGcsUrl(bucketName, `${basePath}.jpg`);
-    const thumbnailUrl = publicGcsUrl(bucketName, `${basePath}_thumb.jpg`);
+    const imageUrl = firebaseDownloadUrl(bucketName, `${basePath}.jpg`, mainToken);
+    const thumbnailUrl = firebaseDownloadUrl(bucketName, `${basePath}_thumb.jpg`, thumbToken);
 
     return res.status(201).json({
       imageUrl,

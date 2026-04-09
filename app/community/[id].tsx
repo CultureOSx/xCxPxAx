@@ -43,6 +43,8 @@ import { Card } from '@/components/ui/Card';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
 import { BackButton } from '@/components/ui/BackButton';
+import CultureImage from '@/components/ui/CultureImage';
+import { eventListImageUrl } from '@/lib/eventImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Skeleton } from '@/components/ui/Skeleton';
 
@@ -354,11 +356,12 @@ function PostCard({ post, colorIdx }: { post: FeedPost; colorIdx: number }) {
           <>
             <Pressable onPress={handlePress} style={{ overflow: 'hidden' }}>
               <View style={pc.eventImg}>
-                <Image
-                  source={{ uri: ev.imageUrl ?? undefined }}
+                <CultureImage
+                  uri={eventListImageUrl(ev)}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
-                  transition={150}
+                  recyclingKey={`community-post-event-${ev.id}`}
+                  borderRadius={0}
                 />
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.65)']}
