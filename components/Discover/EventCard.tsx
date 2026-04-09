@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Colors, CultureTokens, SpringConfig } from '@/constants/theme';
 import { CultureTagRow } from '@/components/ui/CultureTag';
+import { EventPublisherLine } from '@/components/events/EventPublisherLine';
 import { useColors } from '@/hooks/useColors';
 import {
   DISCOVER_EVENT_LIVE_WINDOW_MS,
@@ -40,6 +41,7 @@ interface EventCardProps {
     distanceKm?: number;
     cultureTag?: string[];
     cultureTags?: string[];
+    publisherProfileId?: string;
   };
   highlight?: boolean;
   index?: number;
@@ -149,6 +151,10 @@ function OverlayCardContent({
         </Text>
       </View>
 
+      {event.publisherProfileId ? (
+        <EventPublisherLine profileId={event.publisherProfileId} variant="onDark" />
+      ) : null}
+
       {event.priceLabel && (
         <View
           style={[
@@ -209,6 +215,11 @@ function StackedCardContent({
           {event.venue || event.city || ' '}
         </Text>
       </View>
+      {event.publisherProfileId ? (
+        <View style={styles.stackedPublisherRow}>
+          <EventPublisherLine profileId={event.publisherProfileId} variant="compact" />
+        </View>
+      ) : null}
       {event.priceLabel ? (
         <View>
           <View
@@ -418,6 +429,11 @@ const styles = StyleSheet.create({
     gap: 4,
     maxWidth: '100%',
     marginTop: 2,
+    marginBottom: 2,
+  },
+  stackedPublisherRow: {
+    alignSelf: 'stretch',
+    marginTop: -2,
     marginBottom: 2,
   },
   stackedLocation: {

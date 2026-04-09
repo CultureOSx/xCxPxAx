@@ -14,7 +14,7 @@ const mediaAttachSchema = z.object({
   targetType: z.enum(['user', 'profile', 'event', 'business', 'post']),
   targetId: z.string().min(1),
   imageUrl: z.string().url(),
-  thumbnailUrl: z.string().url(),
+  thumbnailUrl: z.string().url().optional(),
   width: z.number().int().optional(),
   height: z.number().int().optional(),
 });
@@ -31,7 +31,8 @@ miscRouter.post('/media/attach', requireAuth, async (req: Request, res: Response
   try {
     const payload = parseBody(mediaAttachSchema, req.body);
     const ref = db.collection('media').doc();
-    const media = { ...payload, id: ref.id, uploadedBy: req.user!.id, createdAt: nowIso() };
+    const thumbnailUrl = payload.thumbnailUrl ?? payload.imageUrl;
+    const media = { ...payload, thumbnailUrl, id: ref.id, uploadedBy: req.user!.id, createdAt: nowIso() };
     await ref.set(media);
     return res.status(201).json(media);
   } catch (err: any) {

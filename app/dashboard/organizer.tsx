@@ -12,9 +12,10 @@ import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
@@ -22,7 +23,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens, gradients } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import type { EventData } from '@/shared/schema';
+import type { EventData, Profile } from '@/shared/schema';
 import { useColors } from '@/hooks/useColors';
 import { Skeleton } from '@/components/ui/Skeleton';
 
@@ -63,6 +64,15 @@ function formatCurrency(cents: number): string {
 function formatDate(dateStr?: string): string {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+function connectPayoutsHeadline(
+  s: { stripeConnectOnboardingStatus?: string; payoutsEnabled?: boolean } | undefined,
+): string {
+  if (s?.payoutsEnabled && s?.stripeConnectOnboardingStatus === 'complete') return 'Payouts connected';
+  if (s?.stripeConnectOnboardingStatus === 'restricted') return 'Stripe needs more information';
+  if (s?.stripeConnectOnboardingStatus === 'pending') return 'Finish Stripe setup';
+  return 'Connect Stripe for ticket revenue';
 }
 
 function statusColor(status?: string, colors?: ReturnType<typeof useColors>): string {
@@ -123,9 +133,12 @@ function OrganizerDashboardContent() {
   const { isOrganizer, isLoading: roleLoading } = useRole();
   const colors = useColors();
   const topPad = Platform.OS === 'web' ? 0 : insets.top;
+  const queryClient = useQueryClient();
+  const { connect: connectQueryParam } = useLocalSearchParams<{ connect?: string }>();
   
   const [activeTab, setActiveTab] = useState<'events' | 'performance' | 'content'>('events');
   const [activeFilter, setActiveFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [payoutProfileId, setPayoutProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isOrganizer) router.replace('/(tabs)');
@@ -137,6 +150,50 @@ function OrganizerDashboardContent() {
       return api.events.list({ organizerId: userId ?? undefined, page: 1, pageSize: 50 });
     },
     enabled: !!userId,
+  });
+
+  const { data: myProfiles = [] } = useQuery({
+    queryKey: ['/api/profiles/my'],
+    queryFn: () => api.profiles.my(),
+    enabled: !!userId && activeTab === 'events',
+  });
+
+  useEffect(() => {
+    if (payoutProfileId === null && myProfiles.length > 0) {
+      setPayoutProfileId((myProfiles[0] as Profile).id);
+    }
+  }, [myProfiles, payoutProfileId]);
+
+  const { data: connectState, refetch: refetchConnect } = useQuery({
+    queryKey: ['stripe-connect-status', payoutProfileId],
+    queryFn: () => api.stripe.connectStatus(payoutProfileId!),
+    enabled: !!payoutProfileId,
+  });
+
+  useEffect(() => {
+    if (connectQueryParam === 'return' || connectQueryParam === 'refresh') {
+      queryClient.invalidateQueries({ queryKey: ['stripe-connect-status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
+    }
+  }, [connectQueryParam, queryClient]);
+
+  const setupStripePayouts = useMutation({
+    mutationFn: async () => {
+      const pid = payoutProfileId!;
+      const status = await api.stripe.connectStatus(pid);
+      if (!status.accountId) {
+        await api.stripe.connectCreateAccount(pid);
+      }
+      const { url } = await api.stripe.connectAccountLink(pid);
+      return url;
+    },
+    onSuccess: async (url) => {
+      await WebBrowser.openBrowserAsync(url, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+      });
+      await refetchConnect();
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
+    },
   });
 
   const { data: playlistData, refetch: refetchPlaylist } = useQuery({
@@ -337,6 +394,94 @@ function OrganizerDashboardContent() {
           </Animated.View>
         ) : (
           <Animated.View entering={FadeInDown} style={dashboardStyles.eventsSection}>
+            {myProfiles.length > 0 && payoutProfileId ? (
+              <View
+                style={[
+                  dashboardStyles.payoutCard,
+                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                ]}
+              >
+                <View style={dashboardStyles.payoutCardHeader}>
+                  <Ionicons name="wallet-outline" size={22} color={CultureTokens.teal} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[dashboardStyles.payoutTitle, { color: colors.text }]}>
+                      Ticket payouts
+                    </Text>
+                    <Text style={[dashboardStyles.payoutSub, { color: colors.textSecondary }]} numberOfLines={2}>
+                      Revenue from paid events published under your profile goes to your Stripe Connect account after the platform fee.
+                    </Text>
+                  </View>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={dashboardStyles.profileChipRow}>
+                  {myProfiles.map((p: Profile) => {
+                    const sel = p.id === payoutProfileId;
+                    return (
+                      <Pressable
+                        key={p.id}
+                        onPress={() => {
+                          if (!isWeb) Haptics.selectionAsync();
+                          setPayoutProfileId(p.id);
+                        }}
+                        style={[
+                          dashboardStyles.profileChip,
+                          sel && { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo },
+                          !sel && { borderColor: colors.borderLight },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select profile ${p.name} for payouts`}
+                        accessibilityState={{ selected: sel }}
+                      >
+                        <Text
+                          style={[dashboardStyles.profileChipText, { color: sel ? CultureTokens.indigo : colors.textSecondary }]}
+                          numberOfLines={1}
+                        >
+                          {p.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+                <Text style={[dashboardStyles.payoutStatus, { color: colors.text }]}>
+                  {connectPayoutsHeadline(connectState ?? undefined)}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setupStripePayouts.mutate();
+                  }}
+                  disabled={
+                    setupStripePayouts.isPending ||
+                    (connectState?.payoutsEnabled === true && connectState?.stripeConnectOnboardingStatus === 'complete')
+                  }
+                  style={[
+                    dashboardStyles.payoutCta,
+                    {
+                      backgroundColor: CultureTokens.indigo,
+                      opacity:
+                        setupStripePayouts.isPending ||
+                        (connectState?.payoutsEnabled === true && connectState?.stripeConnectOnboardingStatus === 'complete')
+                          ? 0.45
+                          : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    connectState?.payoutsEnabled && connectState?.stripeConnectOnboardingStatus === 'complete'
+                      ? 'Stripe payouts already connected'
+                      : 'Open Stripe to connect payouts'
+                  }
+                >
+                  <Text style={dashboardStyles.payoutCtaText}>
+                    {connectState?.payoutsEnabled && connectState?.stripeConnectOnboardingStatus === 'complete'
+                      ? 'Connected'
+                      : setupStripePayouts.isPending
+                        ? 'Opening…'
+                        : 'Set up or continue in Stripe'}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             <View style={dashboardStyles.statsOverview}>
               <View style={dashboardStyles.quickStat}>
                  <Text style={[dashboardStyles.quickStatValue, { color: colors.text }]}>{stats.eventStats.totalTicketsSold}</Text>
@@ -485,6 +630,38 @@ const dashboardStyles = StyleSheet.create({
   bannerSub: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
   
   eventsSection: { gap: 16 },
+  payoutCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+    marginBottom: 4,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+      },
+      android: { elevation: 3 },
+    }),
+  },
+  payoutCardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  payoutTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  payoutSub: { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 4, lineHeight: 17 },
+  profileChipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
+  profileChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    maxWidth: 200,
+  },
+  profileChipText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  payoutStatus: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  payoutCta: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  payoutCtaText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   statsOverview: { flexDirection: 'row', alignItems: 'center', padding: 24 },
   quickStat: { flex: 1, alignItems: 'center' },
   quickStatValue: { fontSize: 22, fontFamily: 'Poppins_700Bold' },

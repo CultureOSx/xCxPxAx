@@ -8,6 +8,10 @@ export interface GlobalSearchFilters {
   category?: string;
   cultureTag?: string;
   entryType?: string;
+  /** Matches `eventType` or `category` (case-insensitive) */
+  eventType?: string;
+  publisherProfileId?: string;
+  venueProfileId?: string;
 }
 
 export interface GlobalSearchResult {
@@ -38,12 +42,16 @@ export const searchService = {
     filters: GlobalSearchFilters = {},
     pageSize = 50,
   ): Promise<GlobalSearchResult> {
-    const q = query.toLowerCase();
+    const q = query.trim().toLowerCase();
+    const hasTextQuery = q.length > 0;
     const city = filters.city?.trim();
     const country = filters.country?.trim();
     const category = filters.category?.trim();
     const cultureTag = filters.cultureTag?.trim().toLowerCase();
     const entryType = filters.entryType?.trim();
+    const eventTypeFilter = filters.eventType?.trim().toLowerCase();
+    const publisherProfileId = filters.publisherProfileId?.trim();
+    const venueProfileId = filters.venueProfileId?.trim();
 
     const [eventSnap, profileSnap, movieSnap] = await Promise.all([
       db.collection('events').where('status', '==', 'published').limit(200).get(),
@@ -56,7 +64,8 @@ export const searchService = {
       .filter((e) => {
         const title = String(e.title ?? '').toLowerCase();
         const desc = String(e.description ?? '').toLowerCase();
-        const matchesQuery = title.includes(q) || desc.includes(q);
+        const matchesQuery =
+          !hasTextQuery || title.includes(q) || desc.includes(q);
         const matchesCity = !city || String(e.city ?? '').toLowerCase() === city.toLowerCase();
         const matchesCountry =
           !country || String(e.country ?? '').toLowerCase() === country.toLowerCase();
@@ -67,38 +76,53 @@ export const searchService = {
           !cultureTag ||
           tags.some((t: unknown) => String(t).toLowerCase() === cultureTag);
         const matchesEntry = matchesEntryTypeFilter(e, entryType);
+        const et = String(e.eventType ?? '').toLowerCase();
+        const cat = String(e.category ?? '').toLowerCase();
+        const matchesEventType =
+          !eventTypeFilter || et === eventTypeFilter || cat === eventTypeFilter;
+        const matchesPublisher =
+          !publisherProfileId || String(e.publisherProfileId ?? '') === publisherProfileId;
+        const matchesVenueProf =
+          !venueProfileId || String(e.venueProfileId ?? '') === venueProfileId;
         return (
           matchesQuery &&
           matchesCity &&
           matchesCountry &&
           matchesCategory &&
           matchesCulture &&
-          matchesEntry
+          matchesEntry &&
+          matchesEventType &&
+          matchesPublisher &&
+          matchesVenueProf
         );
       });
 
-    const profiles = profileSnap.docs
-      .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
-      .filter((p) => {
-        const name = String(p.name ?? '').toLowerCase();
-        const desc = String(p.description ?? '').toLowerCase();
-        const matchesQuery = name.includes(q) || desc.includes(q);
-        const matchesCity = !city || String(p.city ?? '').toLowerCase() === city.toLowerCase();
-        const matchesCountry =
-          !country || String(p.country ?? '').toLowerCase() === country.toLowerCase();
-        return matchesQuery && matchesCity && matchesCountry;
-      });
+    const profiles = hasTextQuery
+      ? profileSnap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
+          .filter((p) => {
+            const name = String(p.name ?? '').toLowerCase();
+            const desc = String(p.description ?? '').toLowerCase();
+            const matchesQuery = name.includes(q) || desc.includes(q);
+            const matchesCity = !city || String(p.city ?? '').toLowerCase() === city.toLowerCase();
+            const matchesCountry =
+              !country || String(p.country ?? '').toLowerCase() === country.toLowerCase();
+            return matchesQuery && matchesCity && matchesCountry;
+          })
+      : [];
 
-    const movies = movieSnap.docs
-      .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
-      .filter((m) => {
-        const title = String(m.title ?? '').toLowerCase();
-        const desc = String(m.description ?? '').toLowerCase();
-        const matchesQuery = title.includes(q) || desc.includes(q);
-        const matchesCountry =
-          !country || String(m.country ?? '').toLowerCase() === country.toLowerCase();
-        return matchesQuery && matchesCountry;
-      });
+    const movies = hasTextQuery
+      ? movieSnap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Record<string, unknown> & { id: string }))
+          .filter((m) => {
+            const title = String(m.title ?? '').toLowerCase();
+            const desc = String(m.description ?? '').toLowerCase();
+            const matchesQuery = title.includes(q) || desc.includes(q);
+            const matchesCountry =
+              !country || String(m.country ?? '').toLowerCase() === country.toLowerCase();
+            return matchesQuery && matchesCountry;
+          })
+      : [];
 
     const cap = Math.min(50, Math.max(1, pageSize));
     return {

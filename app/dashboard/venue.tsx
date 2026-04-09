@@ -186,7 +186,8 @@ function VenueDashboardContent() {
     queryKey: ['/api/profiles/my', userId, 'venue'],
     queryFn: async () => {
       try {
-        return await api.profiles.my({ entityType: 'venue' }) as VenueProfile | null;
+        const venues = await api.profiles.my({ entityType: 'venue' });
+        return (venues[0] ?? null) as VenueProfile | null;
       } catch {
         return null;
       }

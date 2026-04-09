@@ -69,6 +69,12 @@ export function resolveEventCategory(tab: SubmitType, formCategory: string): str
 }
 
 export const EVENT_CATEGORIES   = ['Cultural', 'Music', 'Dance', 'Festival', 'Workshop', 'Religious', 'Food', 'Sports'];
+
+/** Multi-select on event listings — maps to API `cultureTag` */
+export const EVENT_CULTURE_TAGS = [
+  'Indian', 'Chinese', 'Vietnamese', 'Greek', 'Italian', 'Middle Eastern', 'African', 'Pacific',
+  'Indigenous', 'Multicultural', 'Faith', 'Youth', 'LGBTQIA+', 'Seniors', 'Family',
+] as const;
 export const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
 export const BIZ_CATEGORIES     = ['Restaurant', 'Retail', 'Services', 'Beauty', 'Tech', 'Grocery'];
 export const ARTIST_GENRES      = ['Music', 'Dance', 'Visual Arts', 'Theatre', 'Film', 'Literature'];
@@ -90,6 +96,8 @@ export const PERK_CATEGORIES = ['tickets', 'events', 'dining', 'shopping', 'wall
 
 export const initialForm = {
   name: '', description: '', city: '', state: '', postcode: '', country: 'Australia',
+  /** Comma-separated — sent as profile `tags` */
+  profileTags: '',
   contactEmail: '', phone: '', website: '', category: '', abn: '',
   instagram: '', facebook: '', youtube: '', twitterX: '', linkedin: '', airpal: '',
   date: '', time: '', venue: '', address: '',

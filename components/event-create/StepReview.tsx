@@ -36,8 +36,22 @@ export function StepReview({ form, colors, s, availableCultures, publishError }:
         colors={colors}
       />
       <ReviewRow
+        label="Publishing as"
+        value={
+          form.publisherProfileId
+            ? form.publisherLabel || 'Selected profile'
+            : 'Your account (no directory profile)'
+        }
+        colors={colors}
+      />
+      <ReviewRow
         label="Location"
-        value={[form.venue, form.city, form.country].filter(Boolean).join(', ')}
+        value={[
+          form.useLinkedVenue && form.venueProfileLabel ? `Venue page: ${form.venueProfileLabel}` : null,
+          [form.venue, form.city, form.country].filter(Boolean).join(', '),
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         colors={colors}
       />
       <ReviewRow

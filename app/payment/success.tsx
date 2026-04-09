@@ -6,17 +6,21 @@ import { useColors } from '@/hooks/useColors';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import { Button } from '@/components/ui/Button';
+import { captureTicketPurchaseCompleted } from '@/lib/analytics';
+import type { EventData } from '@/shared/schema';
 
 export default function PaymentSuccessScreen() {
   const { isAuthenticated } = useAuth();
   const colors = useColors();
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
-  const { ticketId } = useLocalSearchParams<{ ticketId: string }>();
+  const params = useLocalSearchParams<{ ticketId?: string | string[] }>();
+  const ticketId = Array.isArray(params.ticketId) ? params.ticketId[0] : params.ticketId;
+  const purchaseLoggedRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -34,6 +38,34 @@ export default function PaymentSuccessScreen() {
     enabled: !!ticketId && isAuthenticated,
     staleTime: 60_000,
   });
+
+  const purchaseComplete = Boolean(
+    ticket &&
+      (ticket.paymentStatus === 'paid' || ticket.status === 'confirmed'),
+  );
+
+  const { data: eventForAnalytics, isFetched: eventCtxFetched } = useQuery<EventData>({
+    queryKey: ['/api/events', ticket?.eventId, 'post-purchase-analytics'],
+    queryFn: () => api.events.get(ticket!.eventId) as Promise<EventData>,
+    enabled: Boolean(ticket?.eventId && purchaseComplete && isAuthenticated),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!ticket || !purchaseComplete || purchaseLoggedRef.current) return;
+    if (!eventCtxFetched) return;
+    purchaseLoggedRef.current = true;
+    captureTicketPurchaseCompleted({
+      ticket_id: ticket.id,
+      event_id: ticket.eventId,
+      publisher_profile_id: eventForAnalytics?.publisherProfileId ?? null,
+      venue_profile_id: eventForAnalytics?.venueProfileId ?? null,
+      organizer_id: eventForAnalytics?.organizerId ?? null,
+      quantity: ticket.quantity ?? 1,
+      total_price_cents: ticket.totalPriceCents ?? null,
+      source: 'payment_success_screen',
+    });
+  }, [ticket, purchaseComplete, eventCtxFetched, eventForAnalytics]);
 
   const handleShare = async () => {
     if (Platform.OS !== 'web') {

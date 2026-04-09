@@ -172,7 +172,11 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { state } = useOnboarding();
-  const params = useLocalSearchParams<{ q?: string }>();
+  const params = useLocalSearchParams<{
+    q?: string;
+    publisherProfileId?: string;
+    venueProfileId?: string;
+  }>();
 
   const topInset = IS_WEB ? 0 : insets.top;
   const bottomInset = IS_WEB ? 26 : insets.bottom;
@@ -180,6 +184,18 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ResultType | 'all'>('all');
   const [focused, setFocused] = useState(false);
+
+  const publisherProfileId = useMemo(() => {
+    const raw = Array.isArray(params.publisherProfileId)
+      ? params.publisherProfileId[0]
+      : params.publisherProfileId;
+    return raw?.trim() || undefined;
+  }, [params.publisherProfileId]);
+
+  const venueProfileId = useMemo(() => {
+    const raw = Array.isArray(params.venueProfileId) ? params.venueProfileId[0] : params.venueProfileId;
+    return raw?.trim() || undefined;
+  }, [params.venueProfileId]);
 
   useEffect(() => {
     const raw = Array.isArray(params.q) ? params.q[0] : params.q;
@@ -191,10 +207,20 @@ export default function SearchScreen() {
     }
   }, [params.q]);
 
+  const structuredSearch =
+    Boolean(publisherProfileId) || Boolean(venueProfileId);
+
   const { data, isFetching } = useQuery({
-    queryKey: ['search', query, state.city, state.country],
-    queryFn: () => api.search.query({ q: query, city: state.city || undefined, country: state.country || undefined }),
-    enabled: query.trim().length >= 2,
+    queryKey: ['search', query, state.city, state.country, publisherProfileId, venueProfileId],
+    queryFn: () =>
+      api.search.query({
+        q: query.trim(),
+        city: state.city || undefined,
+        country: state.country || undefined,
+        publisherProfileId,
+        venueProfileId,
+      }),
+    enabled: query.trim().length >= 2 || structuredSearch,
     staleTime: 60_000,
   });
 

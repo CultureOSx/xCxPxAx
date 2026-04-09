@@ -28,6 +28,7 @@ import { BlurView } from 'expo-blur';
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
+import { captureTicketPurchaseCompleted } from '@/lib/analytics';
 
 const isWeb = Platform.OS === 'web';
 
@@ -77,7 +78,19 @@ export default function CheckoutPage() {
 
     try {
       if (totalPriceCents === 0) {
-        await api.tickets.purchase({ eventId, tierId: tierName, quantity });
+        const t = await api.tickets.purchase({ eventId, tierId: tierName, quantity });
+        if (event) {
+          captureTicketPurchaseCompleted({
+            ticket_id: t.id,
+            event_id: event.id,
+            publisher_profile_id: event.publisherProfileId ?? null,
+            venue_profile_id: event.venueProfileId ?? null,
+            organizer_id: event.organizerId ?? null,
+            quantity: t.quantity ?? quantity,
+            total_price_cents: t.totalPriceCents ?? 0,
+            source: 'checkout_free_ticket',
+          });
+        }
         router.replace('/(tabs)');
         return;
       }

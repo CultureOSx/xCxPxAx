@@ -4,6 +4,7 @@
  * Ranking signals:
  *   Cultural Relevance (30%) · Date Proximity (25%) · Location (15%)
  *   Interest Match (12%)     · Community Affinity (10%)
+ *   Followed profiles (12%)  · Followed venue profile (6%) — Phase 3
  *   Social Proof (5%)        · Freshness Decay (8%)
  *
  * All community post data is read/written from the `communityPosts` Firestore
@@ -77,6 +78,8 @@ type UserContext = {
   interests: string[];
   culturalIdentity: { nationalityId?: string; cultureIds?: string[]; languageIds?: string[] };
   followingIds: Set<string>;
+  /** Profile ids the user follows (`follows` collection, targetType === 'profile') */
+  followingProfileIds: Set<string>;
 };
 
 // ---------------------------------------------------------------------------
@@ -145,6 +148,22 @@ function scoreItem(item: FeedItem, user: UserContext, todayMs: number): number {
     item.matchReasons.push('From your communities');
   }
 
+  // 5b. Followed organiser / venue profiles (Phase 3 — profile-first discovery)
+  if (
+    item.event?.publisherProfileId &&
+    user.followingProfileIds.has(item.event.publisherProfileId)
+  ) {
+    score += 0.12;
+    item.matchReasons.push('From a profile you follow');
+  }
+  if (
+    item.event?.venueProfileId &&
+    user.followingProfileIds.has(item.event.venueProfileId)
+  ) {
+    score += 0.06;
+    item.matchReasons.push('At a venue you follow');
+  }
+
   // 6. Social Proof (5%)
   if (item.kind === 'event' && item.event) {
     score += Math.min(1, (item.event.attending ?? 0) / 500) * 0.05;
@@ -161,6 +180,23 @@ function scoreItem(item: FeedItem, user: UserContext, todayMs: number): number {
 // ---------------------------------------------------------------------------
 // Helper: fetch real community posts from Firestore
 // ---------------------------------------------------------------------------
+
+async function fetchFollowedProfileIds(userId: string): Promise<Set<string>> {
+  if (!isFirestoreConfigured) return new Set();
+  try {
+    const snap = await db.collection('follows').where('userId', '==', userId).limit(500).get();
+    const ids = new Set<string>();
+    for (const doc of snap.docs) {
+      const data = doc.data() as { targetType?: string; targetId?: string };
+      if (data.targetType === 'profile' && typeof data.targetId === 'string' && data.targetId) {
+        ids.add(data.targetId);
+      }
+    }
+    return ids;
+  } catch {
+    return new Set();
+  }
+}
 
 async function fetchCommunityPosts(limit = 40): Promise<CommunityPost[]> {
   if (!isFirestoreConfigured) return [];
@@ -216,9 +252,11 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       interests: [],
       culturalIdentity: {},
       followingIds: new Set(),
+      followingProfileIds: new Set(),
     };
 
     if (isFirestoreConfigured && req.user?.id) {
+      const followingProfileIds = await fetchFollowedProfileIds(req.user.id);
       const profile = await usersService.getById(req.user.id);
       if (profile) {
         userCtx = {
@@ -226,6 +264,12 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
           interests: (profile.interests ?? []).map((i: string) => i.toLowerCase()),
           culturalIdentity: (profile as any).culturalIdentity ?? {},
           followingIds: new Set(profile.communities ?? []),
+          followingProfileIds,
+        };
+      } else {
+        userCtx = {
+          ...userCtx,
+          followingProfileIds,
         };
       }
     }

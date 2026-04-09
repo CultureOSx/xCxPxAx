@@ -12,9 +12,93 @@ import { useColors, useIsDark } from '@/hooks/useColors';
 import { routeWithRedirect } from '@/lib/routes';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { Image } from 'expo-image';
+import Svg, { Line } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';
-import { BrandWordmark } from '@/components/ui/BrandWordmark';
-import { TAGLINE_PRIMARY, TAGLINE_SECONDARY, getAuVersionLabel } from '@/lib/app-meta';
+import { APP_NAME, APP_WEB_TAGLINE, getAuVersionLabel } from '@/lib/app-meta';
+
+const LOGO_RAY_COUNT = 28;
+
+/** Black field, white border, white rays to the inner edge; logo centered on top. */
+function LogoRayBurst({
+  size,
+  borderRadius,
+  imagePadding,
+}: {
+  size: number;
+  borderRadius: number;
+  imagePadding: number;
+}) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const innerR = Math.max(6, size * 0.14);
+  const outerR = size / 2 - 2;
+  const strokeW = size >= 56 ? 0.95 : 0.7;
+  const innerSide = size - imagePadding * 2;
+  const whiteHub = Math.max(innerSide - 6, size * 0.38);
+
+  const rays: React.ReactNode[] = [];
+  for (let i = 0; i < LOGO_RAY_COUNT; i++) {
+    const a = (i / LOGO_RAY_COUNT) * Math.PI * 2;
+    const cos = Math.cos(a);
+    const sin = Math.sin(a);
+    rays.push(
+      <Line
+        key={i}
+        x1={cx + cos * innerR}
+        y1={cy + sin * innerR}
+        x2={cx + cos * outerR}
+        y2={cy + sin * outerR}
+        stroke="#FFFFFF"
+        strokeWidth={strokeW}
+        strokeOpacity={0.88}
+        strokeLinecap="round"
+      />,
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius,
+        overflow: 'hidden',
+        backgroundColor: '#000000',
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
+      }}
+    >
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        {rays}
+      </Svg>
+      {/* Centered on full tile — avoids RN padding-box offset with absolute % */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: (size - whiteHub) / 2,
+          top: (size - whiteHub) / 2,
+          width: whiteHub,
+          height: whiteHub,
+          borderRadius: whiteHub / 2,
+          backgroundColor: '#FFFFFF',
+        }}
+      />
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          { padding: imagePadding, alignItems: 'center', justifyContent: 'center' },
+        ]}
+      >
+        <Image
+          source={require('../../assets/images/culturepass-logo.png')}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="contain"
+        />
+      </View>
+    </View>
+  );
+}
 
 // ─── Nav definitions ─────────────────────────────────────────────────────────
 interface NavItem {
@@ -42,6 +126,7 @@ const LIBRARY_NAV: NavItem[] = [
   { label: 'Dining', icon: 'restaurant-outline', iconActive: 'restaurant', route: '/restaurants', matchPrefix: true },
   { label: 'Activities', icon: 'compass-outline', iconActive: 'compass', route: '/activities', matchPrefix: true },
   { label: 'Shopping', icon: 'bag-outline', iconActive: 'bag', route: '/shopping', matchPrefix: true },
+  { label: 'Offers', icon: 'pricetags-outline', iconActive: 'pricetags', route: '/offerings', matchPrefix: true },
   { label: 'Map', icon: 'map-outline', iconActive: 'map', route: '/map' },
   { label: 'Directory', icon: 'grid-outline', iconActive: 'grid', route: '/(tabs)/directory', matchPrefix: true },
 ];
@@ -223,10 +308,8 @@ export function WebSidebar() {
   if (collapsed) {
     return (
       <View style={[r.rail, { backgroundColor: bg, borderRightColor: border }]}>
-        <Pressable style={r.railTop} onPress={() => navigate('/(tabs)')} hitSlop={4}>
-          <View style={r.railLogo}>
-            <Image source={require('../../assets/images/culturepass-logo.png')} style={r.railLogoImage} contentFit="cover" />
-          </View>
+        <Pressable style={r.railTop} onPress={() => navigate('/(tabs)')} hitSlop={4} accessibilityLabel={`${APP_NAME} home`} accessibilityRole="button">
+          <LogoRayBurst size={44} borderRadius={13} imagePadding={7} />
         </Pressable>
         <View style={[r.divider, { backgroundColor: border }]} />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={r.railIcons}>
@@ -284,40 +367,22 @@ export function WebSidebar() {
         <Pressable
           style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
             s.brandBlackCard,
-            hovered && { opacity: 0.94 },
-            pressed && { opacity: 0.88 },
+            hovered && { opacity: 0.96 },
+            pressed && { opacity: 0.9 },
           ]}
           onPress={() => navigate('/(tabs)')}
-          accessibilityLabel="CulturePass home"
+          accessibilityLabel={`${APP_NAME} home`}
           accessibilityRole="button"
         >
           <View style={s.brandBlackCardInner}>
-            <View style={s.logoIconRound}>
-              <Image
-                source={require('../../assets/images/culturepass-logo.png')}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-              />
-            </View>
-            <View style={s.brandTextCol}>
-              <View style={s.brandNameGradientWrap}>
-                <BrandWordmark size="sm" maxWidth={132} />
-              </View>
-              <Text
-                style={s.brandTaglineOnDark}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.78}
-              >
-                {TAGLINE_PRIMARY}
+            <LogoRayBurst size={68} borderRadius={18} imagePadding={11} />
+            <View style={s.brandTextBlock}>
+              <Text style={s.brandTitleOnDark} numberOfLines={1}>
+                {APP_NAME}
               </Text>
-              <Text
-                style={s.brandSubTaglineOnDark}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                {TAGLINE_SECONDARY}
+              <View style={s.brandTitleAccent} />
+              <Text style={s.brandTaglineBlock} numberOfLines={3}>
+                {APP_WEB_TAGLINE}
               </Text>
             </View>
           </View>
@@ -332,19 +397,14 @@ export function WebSidebar() {
             },
           ]}
         >
-          <View style={s.headerMetaMain}>
-            <View style={[s.headerMetaIconWrap, { backgroundColor: colors.primarySoft }]}>
-              <Ionicons name="time-outline" size={16} color={colors.primary} />
-            </View>
-            <View style={s.headerMetaCopy}>
-              <Text style={[s.headerMetaTime, { color: colors.text }]} numberOfLines={1}>
-                {timeLabel}
-              </Text>
-              <Text style={[s.headerMetaSub, { color: colors.textSecondary }]} numberOfLines={2}>
-                {dateLabel}
-                {weatherSummary ? ` · ${weatherSummary}` : ''}
-              </Text>
-            </View>
+          <View style={s.headerMetaCopy}>
+            <Text style={[s.headerMetaTime, { color: colors.text }]} numberOfLines={1}>
+              {timeLabel}
+            </Text>
+            <Text style={[s.headerMetaSub, { color: colors.textSecondary }]} numberOfLines={2}>
+              {dateLabel}
+              {weatherSummary ? ` · ${weatherSummary}` : ''}
+            </Text>
           </View>
           <Pressable
             onPress={() => setCollapsed(true)}
@@ -361,44 +421,17 @@ export function WebSidebar() {
             <Ionicons name="chevron-back" size={19} color={CultureTokens.coral} />
           </Pressable>
         </View>
-
-        <View
-          style={[
-            s.brandInfoStrip,
-            {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,12,24,0.035)',
-              borderColor: colors.borderLight,
-            },
-          ]}
-        >
-          <View style={[s.brandInfoPill, { backgroundColor: colors.primarySoft }]}>
-            <Ionicons name="sparkles-outline" size={11} color={colors.primary} />
-            <Text style={[s.brandInfoPillText, { color: colors.primary }]}>Brand</Text>
-          </View>
-          <Text style={[s.brandInfoText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {brandMetaLine}
-          </Text>
-        </View>
       </View>
 
       <LinearGradient
-        colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
+        colors={[CultureTokens.indigo + 'CC', CultureTokens.teal + '99', 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={s.gradientLine}
       />
 
-      {/* Create CTA */}
-      <View style={s.ctaWrap}>
-        <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.ctaBtn, pressed && { opacity: 0.88 }]}>
-          <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaBtnGradient}>
-            <Text style={s.ctaBtnText}>＋ Create</Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
-
       {/* Navigation Sections - rest unchanged */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 6, paddingTop: 4 }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, paddingTop: 6 }}>
         {/* ... your NavSection calls ... */}
         <NavSection label="Discover" mutedColor={mutedColor} colors={colors}>
           {navWithBadge.map((item) => (
@@ -421,14 +454,25 @@ export function WebSidebar() {
 
       {/* Council + Bottom Section (unchanged) */}
       {myCouncil && (
-        <Pressable style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]} onPress={() => navigate('/(tabs)/directory')}>
+        <Pressable
+          style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
+          onPress={() => navigate('/(tabs)/directory')}
+          accessibilityRole="button"
+          accessibilityLabel={`My Council, ${myCouncil.name}`}
+        >
           <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
-            <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
+            <Ionicons name="shield-checkmark" size={15} color={colors.primary} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>{myCouncil.name}</Text>
+            <Text style={[s.councilEyebrow, { color: colors.primary }]} numberOfLines={1}>
+              My Council
+            </Text>
+            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>
+              {myCouncil.name}
+            </Text>
             <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
-              {myCouncil.suburb ?? 'Local'}{myCouncil.state ? `, ${myCouncil.state}` : ''}
+              {myCouncil.suburb ?? 'Local'}
+              {myCouncil.state ? `, ${myCouncil.state}` : ''}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
@@ -443,12 +487,17 @@ export function WebSidebar() {
           ))}
         </View>
 
-        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 4 }]} />
+        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 6 }]} />
 
         {isAuthenticated && user ? (
           <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={logout} />
         ) : (
           <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
+            <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]} accessibilityRole="button" accessibilityLabel="Create submission">
+              <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
+                <Text style={s.profileCreateText}>＋ Create</Text>
+              </LinearGradient>
+            </Pressable>
             <Pressable style={[s.signInBtn, { borderColor: colors.borderLight }]} onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}>
               <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
               <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
@@ -467,6 +516,9 @@ export function WebSidebar() {
           </View>
         )}
 
+        <Text style={[s.footerMarketLine, { color: colors.textSecondary }]} numberOfLines={2}>
+          {brandMetaLine}
+        </Text>
         <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
       </View>
     </View>
@@ -539,6 +591,7 @@ function SidebarProfileBlock({
   onNavigate: (route: string) => void;
   onLogout: () => void;
 }) {
+  const { s } = getSidebarStyles(colors);
   const [expanded, setExpanded] = useState(false);
   const displayName = user.displayName ?? user.username ?? user.id?.slice(0, 8) ?? 'You';
   const initials = displayName
@@ -558,6 +611,17 @@ function SidebarProfileBlock({
 
   return (
     <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
+      <Pressable
+        onPress={() => onNavigate('/submit')}
+        style={({ pressed }) => [s.profileCreateBtn, { marginBottom: 8 }, pressed && { opacity: 0.88 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Create submission"
+      >
+        <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
+          <Text style={s.profileCreateText}>＋ Create</Text>
+        </LinearGradient>
+      </Pressable>
+
       {/* Expanded quick links */}
       {expanded && (
         <View
@@ -679,69 +743,92 @@ const getSidebarStyles = (colors: ColorTheme) => {
     sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
 
     brandHeader: {
-      paddingHorizontal: 12,
-      paddingTop: 14,
-      paddingBottom: 12,
+      paddingHorizontal: 14,
+      paddingTop: 16,
+      paddingBottom: 14,
       overflow: 'hidden',
-      gap: 10,
+      gap: 12,
     },
-    brandHeaderGlow: { opacity: 0.07, backgroundColor: CultureTokens.indigo, borderBottomRightRadius: 120, top: -20, left: -20, right: '60%', bottom: '40%' },
+    brandHeaderGlow: { opacity: 0.06, backgroundColor: CultureTokens.indigo, borderBottomRightRadius: 100, top: -24, left: -24, right: '55%', bottom: '35%' },
     brandBlackCard: {
       alignSelf: 'stretch',
-      backgroundColor: '#050508',
-      borderRadius: 60,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.18)',
-      paddingVertical: 14,
+      backgroundColor: '#08080f',
+      borderRadius: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255,255,255,0.14)',
+      paddingVertical: 16,
       paddingHorizontal: 16,
       overflow: 'hidden',
       ...Platform.select({
-        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 20 },
-        android: { elevation: 15 },
-        web: { boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.03)' },
+        ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16 },
+        android: { elevation: 12 },
+        web: { boxShadow: '0 10px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset' },
       }),
     },
-    brandBlackCardInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    logoIconRound: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', backgroundColor: '#050508', flexShrink: 0 },
-    brandTextCol: { flex: 1, minWidth: 0, gap: 2, justifyContent: 'center' },
-    brandNameGradientWrap: { alignSelf: 'flex-start', maxWidth: '100%', marginBottom: -2 },
-    brandTaglineOnDark: {
-      fontSize: 10,
-      fontFamily: 'Poppins_700Bold',
-      color: 'rgba(255,255,255,0.85)',
-      letterSpacing: 1.4,
-      lineHeight: 12,
-      flexShrink: 1,
-      textTransform: 'uppercase',
-      opacity: 0.9,
+    brandBlackCardInner: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      paddingTop: 2,
+      paddingBottom: 4,
     },
-    brandSubTaglineOnDark: {
-      fontSize: 10.5,
-      fontFamily: 'Poppins_500Medium',
-      color: 'rgba(255,255,255,0.72)',
-      lineHeight: 13.5,
-      flexShrink: 1,
-      marginTop: 1,
+    brandTextBlock: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      marginTop: 20,
+      paddingTop: 16,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: 'rgba(255,255,255,0.12)',
+    },
+    brandTitleOnDark: {
+      fontSize: 19,
+      fontFamily: 'Poppins_800ExtraBold',
+      color: '#FFFFFF',
+      letterSpacing: -0.3,
+      lineHeight: 26,
+      textAlign: 'center',
+      includeFontPadding: false,
+      ...Platform.select({
+        ios: { textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+        android: { textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+        web: { textShadow: '0 1px 3px rgba(0,0,0,0.9), 0 0 18px rgba(0,0,0,0.35)' } as object,
+        default: {},
+      }),
+    },
+    brandTitleAccent: {
+      marginTop: 11,
+      width: 40,
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: CultureTokens.coral,
+    },
+    brandTaglineBlock: {
+      marginTop: 14,
+      fontSize: 12,
+      fontFamily: 'Poppins_600SemiBold',
+      color: '#FFFFFF',
+      lineHeight: 17,
+      letterSpacing: 0.08,
+      textAlign: 'center',
+      paddingHorizontal: 6,
+      alignSelf: 'stretch',
+      opacity: 0.98,
+      includeFontPadding: false,
+      ...Platform.select({
+        ios: { textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
+        android: { textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+        web: { textShadow: '0 1px 2px rgba(0,0,0,0.85)' } as object,
+        default: {},
+      }),
     },
     headerMetaStrip: {
       alignSelf: 'stretch',
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingVertical: 10,
-      paddingLeft: 10,
-      paddingRight: 8,
+      gap: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
-    },
-    headerMetaMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0 },
-    headerMetaIconWrap: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
     },
     headerMetaCopy: { flex: 1, minWidth: 0, gap: 2 },
     headerMetaTime: {
@@ -764,55 +851,38 @@ const getSidebarStyles = (colors: ColorTheme) => {
       borderWidth: StyleSheet.hairlineWidth,
       flexShrink: 0,
     },
-    gradientLine: { height: 1, marginTop: 4, marginBottom: 6 },
-    brandInfoStrip: {
-      alignSelf: 'stretch',
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      gap: 6,
-    },
-    brandInfoPill: {
-      alignSelf: 'flex-start',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    brandInfoPillText: {
-      fontSize: 10,
-      fontFamily: 'Poppins_700Bold',
-      letterSpacing: 0.3,
-    },
-    brandInfoText: {
-      fontSize: 11,
-      fontFamily: 'Poppins_500Medium',
-      lineHeight: 14,
-    },
+    gradientLine: { height: 2, marginTop: 6, marginBottom: 8, marginHorizontal: 14, borderRadius: 2, opacity: 0.85 },
 
-    ctaWrap: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 },
-    ctaBtn: { borderRadius: 12, overflow: 'hidden' },
-    ctaBtnGradient: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
-    ctaBtnText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: 0.1 },
+    profileCreateBtn: { borderRadius: 14, overflow: 'hidden', alignSelf: 'stretch' },
+    profileCreateGradient: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
+    profileCreateText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: 0.1 },
 
-    navGroup: { paddingHorizontal: 8, gap: 1 },
-    sectionHeader: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 5 },
-    sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 1.2 },
+    navGroup: { paddingHorizontal: 10, gap: 2 },
+    sectionHeader: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 6 },
+    sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 1.15 },
 
-    councilCard: { marginHorizontal: 10, marginBottom: 6, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 9 },
-    councilIconWrap: { width: 26, height: 26, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    councilCard: { marginHorizontal: 12, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    councilEyebrow: { fontSize: 9.5, fontFamily: 'Poppins_700Bold', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 1 },
+    councilIconWrap: { width: 30, height: 30, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     councilName: { fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', lineHeight: 16 },
     councilSub: { fontSize: 10, fontFamily: 'Poppins_400Regular' },
 
-    thinDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 12, marginVertical: 4 },
-    bottomNavSection: { paddingTop: 4, paddingBottom: 8 },
+    thinDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 14, marginVertical: 6 },
+    bottomNavSection: { paddingTop: 6, paddingBottom: 10 },
 
     signInBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingVertical: 9 },
     signInBtnText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-    versionText: { fontSize: 9, fontFamily: 'Poppins_400Regular', letterSpacing: 0.3, paddingHorizontal: 20, paddingBottom: 12, paddingTop: 4 },
+    footerMarketLine: {
+      fontSize: 10,
+      fontFamily: 'Poppins_500Medium',
+      lineHeight: 14,
+      textAlign: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 4,
+      opacity: 0.92,
+    },
+    versionText: { fontSize: 9, fontFamily: 'Poppins_400Regular', letterSpacing: 0.3, paddingHorizontal: 20, paddingBottom: 12, paddingTop: 2 },
 
     profileBlock: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, marginHorizontal: 8 },
     profileBlockName: { ...TextStyles.labelSemibold },
@@ -822,8 +892,6 @@ const getSidebarStyles = (colors: ColorTheme) => {
   const r = StyleSheet.create({
     rail: { width: 54, height: '100%', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0, alignItems: 'center', paddingTop: 14, paddingBottom: 4 },
     railTop: { marginBottom: 10 },
-    railLogo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#050508' },
-    railLogoImage: { ...StyleSheet.absoluteFillObject },
     divider: { height: StyleSheet.hairlineWidth, width: 32, marginBottom: 6 },
     railIcons: { alignItems: 'center', gap: 2, paddingTop: 2 },
     railItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', position: 'relative' },
@@ -832,7 +900,7 @@ const getSidebarStyles = (colors: ColorTheme) => {
   });
 
   const ni = StyleSheet.create({
-    item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, height: 44, paddingHorizontal: 12, position: 'relative', overflow: 'hidden' },
+    item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, minHeight: 46, paddingVertical: 4, paddingHorizontal: 14, position: 'relative', overflow: 'hidden' },
     itemActive: { borderRadius: 12 },
     activeBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2, overflow: 'hidden' },
     label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },

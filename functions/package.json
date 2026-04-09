@@ -14,7 +14,8 @@
     "seed:councils:dry:dev": "node scripts/uploadCouncils.js --dry-run --allow-limited-states",
     "seed:councils": "node scripts/uploadCouncils.js",
     "seed:indigenous:dry": "node scripts/seedIndigenousCulture.js --dry-run",
-    "seed:indigenous": "node scripts/seedIndigenousCulture.js"
+    "seed:indigenous": "node scripts/seedIndigenousCulture.js",
+    "seed:emulator:cap": "npx --yes tsx scripts/seed-emulator-cap-org.ts"
   },
   "engines": {
     "node": "22"
@@ -24,11 +25,11 @@
     "@tootallnate/once": "3.0.1",
     "@types/helmet": "^0.0.48",
     "cheerio": "^1.2.0",
-    "express": "^5.0.1",
+    "express": "^5.2.1",
     "express-rate-limit": "^7.5.0",
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
-    "firebase-functions": "^7.2.3",
+    "firebase-functions": "^7.2.5",
     "geofire-common": "^6.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",

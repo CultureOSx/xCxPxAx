@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import CultureImage from '@/components/ui/CultureImage';
+import { EventPublisherLine } from '@/components/events/EventPublisherLine';
 import { CultureTagRow } from '@/components/ui/CultureTag';
 import { CultureTokens } from '@/constants/theme';
 import { useSaved } from '@/contexts/SavedContext';
@@ -145,6 +146,10 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
                 {event.venue}
               </Text>
             </View>
+          ) : null}
+
+          {event.publisherProfileId ? (
+            <EventPublisherLine profileId={event.publisherProfileId} />
           ) : null}
 
           <View style={[styles.footer, { borderTopColor: colors.borderLight }]}>

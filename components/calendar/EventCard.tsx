@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import CultureImage from '@/components/ui/CultureImage';
+import { EventPublisherLine } from '@/components/events/EventPublisherLine';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { CardTokens, CultureTokens, TextStyles } from '@/constants/theme';
@@ -43,6 +44,12 @@ export default function EventCard({ event }: Props) {
             <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
               {event.venue}
             </Text>
+          </View>
+        ) : null}
+
+        {event.publisherProfileId ? (
+          <View style={styles.publisherWrap}>
+            <EventPublisherLine profileId={event.publisherProfileId} />
           </View>
         ) : null}
 
@@ -104,6 +111,10 @@ const styles = StyleSheet.create({
   meta: {
     ...TextStyles.caption,
     flex: 1,
+  },
+  publisherWrap: {
+    marginTop: -4,
+    marginBottom: -6,
   },
   badgeRow: {
     flexDirection: 'row',

@@ -16,7 +16,15 @@ import {
   usersService,
   walletsService,
   notificationsService,
+  eventsService,
+  profilesService,
 } from '../services/firestore';
+import {
+  computeApplicationFeeCents,
+  getConnectPlatformFeeBps,
+  handleStripeAccountUpdated,
+} from '../services/stripeConnect';
+import { registerStripeConnectRoutes } from './stripeConnect';
 import { db, authAdmin, stripeClient } from '../admin';
 import {
   nowIso,
@@ -121,6 +129,7 @@ function parseBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
 export function createStripeRouter() {
 
   const router = Router();
+  registerStripeConnectRoutes(router);
 
   // ── POST /api/stripe/create-checkout-session ──────────────────────────────
   router.post('/stripe/create-checkout-session', requireAuth, requireRevocationCheck, async (req: Request, res: Response) => {
@@ -174,6 +183,50 @@ export function createStripeRouter() {
 
     try {
       const appUrl = process.env.APP_URL ?? `https://${process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG).projectId + '.web.app' : 'localhost:5000'}`;
+      const sessionMetadata: Record<string, string> = {
+        ticketId: draft.id,
+        userId: draft.userId,
+        eventId: draft.eventId,
+      };
+
+      let paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData | undefined;
+
+      if (draft.totalPriceCents > 0) {
+        try {
+          const eventDoc = await eventsService.getById(draft.eventId);
+          const pubId = eventDoc?.publisherProfileId?.trim();
+          if (pubId) {
+            const sellerProfile = await profilesService.getById(pubId);
+            const acct = sellerProfile?.stripeConnectAccountId?.trim();
+            const payoutsOk = sellerProfile?.payoutsEnabled === true;
+            if (acct && payoutsOk) {
+              const acc = await stripeClient.accounts.retrieve(acct);
+              if (acc.charges_enabled) {
+                const bps = getConnectPlatformFeeBps();
+                const fee = computeApplicationFeeCents(draft.totalPriceCents, bps);
+                if (fee < draft.totalPriceCents) {
+                  paymentIntentData = {
+                    application_fee_amount: fee,
+                    transfer_data: { destination: acct },
+                    metadata: {
+                      ...sessionMetadata,
+                      publisherProfileId: pubId,
+                      stripeConnectAccountId: acct,
+                    },
+                  };
+                  sessionMetadata.publisherProfileId = pubId;
+                  sessionMetadata.stripeConnectAccountId = acct;
+                }
+              }
+            }
+          }
+        } catch (connectErr) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('[stripe] Connect routing skipped:', (connectErr as Error).message);
+          }
+        }
+      }
+
       const session = await stripeClient.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
@@ -186,7 +239,8 @@ export function createStripeRouter() {
           quantity: 1,
         }],
         allow_promotion_codes: true,
-        metadata: { ticketId: draft.id, userId: draft.userId, eventId: draft.eventId },
+        metadata: sessionMetadata,
+        ...(paymentIntentData ? { payment_intent_data: paymentIntentData } : {}),
         success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&ticketId=${draft.id}`,
         cancel_url:  `${appUrl}/payment/cancel?ticketId=${draft.id}`,
       });
@@ -333,6 +387,9 @@ export function createStripeRouter() {
               await usersService.upsert(snap.docs[0].id, { membership: { tier: 'plus', isActive: false } });
             }
           }
+
+        } else if (eventType === 'account.updated') {
+          await handleStripeAccountUpdated(event.data.object as Stripe.Account);
 
         // ── Ticket (one-time payment) events ─────────────────────────────
         } else if (ticketId) {

@@ -26,17 +26,30 @@ export interface FirestoreProfile {
   ownerId?: string;
   socialLinks?: Record<string, string>;
   contactEmail?: string;
+  phone?: string;
   website?: string;
   instagram?: string;
   facebook?: string;
+  youtube?: string;
+  linkedin?: string;
+  /** AirPal / similar profile link */
+  airpal?: string;
   twitter?: string;
   telegram?: string;
+  cultureTags?: string[];
+  languages?: string[];
+  countryOfOrigin?: string;
+  isIndigenous?: boolean;
   joinMode?: 'open' | 'request' | 'invite';
   status?: 'draft' | 'published' | 'suspended';
   handle?: string;
   handleStatus?: 'pending' | 'approved' | 'rejected';
   viewCount?: number;
   metadata?: Record<string, any>;
+  /** Stripe Connect Express account (Phase 4 marketplace) */
+  stripeConnectAccountId?: string;
+  stripeConnectOnboardingStatus?: 'not_started' | 'pending' | 'restricted' | 'complete';
+  payoutsEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,12 +63,27 @@ export const profilesService = {
     return { id: snap.id, ...snap.data() } as FirestoreProfile;
   },
 
-  async list(filters: { city?: string; country?: string; entityType?: string } = {}): Promise<FirestoreProfile[]> {
+  async list(
+    filters: { city?: string; country?: string; entityType?: string; ownerId?: string } = {},
+  ): Promise<FirestoreProfile[]> {
     let query: FirebaseFirestore.Query = profilesCol();
+
+    if (filters.ownerId) {
+      query = query.where('ownerId', '==', filters.ownerId);
+      const snap = await query.limit(100).get();
+      let rows = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as FirestoreProfile[];
+      if (filters.entityType) {
+        rows = rows.filter((p) => p.entityType === filters.entityType);
+      }
+      if (filters.city) rows = rows.filter((p) => p.city === filters.city);
+      if (filters.country) rows = rows.filter((p) => p.country === filters.country);
+      return rows;
+    }
+
     if (filters.entityType) query = query.where('entityType', '==', filters.entityType);
     if (filters.city) query = query.where('city', '==', filters.city);
     if (filters.country) query = query.where('country', '==', filters.country);
-    
+
     const snap = await query.limit(100).get();
     return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as FirestoreProfile[];
   },

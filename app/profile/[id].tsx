@@ -94,6 +94,7 @@ interface ExtendedProfile {
   culturePassId?: string;
   membership?: { tier?: string };
   isVerified?: boolean;
+  ownerId?: string;
   privacySettings?: {
     profileVisible?: boolean;
     locationVisible?: boolean;
@@ -123,6 +124,17 @@ function eventStartMs(e: EventData): number {
   if (!d) return NaN;
   const t = (e.time ?? '00:00').trim();
   return Date.parse(`${d}T${t || '00:00'}:00`);
+}
+
+function pickHostedEvents(raw: EventData[]): EventData[] {
+  const now = Date.now();
+  const rows = raw
+    .filter((e) => e.status !== 'draft' && e.status !== 'cancelled')
+    .map((e) => ({ e, ms: eventStartMs(e) }))
+    .filter((x) => !Number.isNaN(x.ms));
+  const upcoming = rows.filter((x) => x.ms >= now - 8 * 3600000).sort((a, b) => a.ms - b.ms);
+  if (upcoming.length > 0) return upcoming.slice(0, 8).map((x) => x.e);
+  return rows.sort((a, b) => b.ms - a.ms).slice(0, 5).map((x) => x.e);
 }
 
 function ticketStartMs(t: Ticket): number {
@@ -410,17 +422,10 @@ function UserPublicProfile({
     enabled: profile.entityType === 'user',
   });
 
-  const hostedEventsList = useMemo(() => {
-    const raw = hostedResp?.events ?? [];
-    const now = Date.now();
-    const rows = raw
-      .filter((e) => e.status !== 'draft' && e.status !== 'cancelled')
-      .map((e) => ({ e, ms: eventStartMs(e) }))
-      .filter((x) => !Number.isNaN(x.ms));
-    const upcoming = rows.filter((x) => x.ms >= now - 8 * 3600000).sort((a, b) => a.ms - b.ms);
-    if (upcoming.length > 0) return upcoming.slice(0, 8).map((x) => x.e);
-    return rows.sort((a, b) => b.ms - a.ms).slice(0, 5).map((x) => x.e);
-  }, [hostedResp]);
+  const hostedEventsList = useMemo(
+    () => pickHostedEvents(hostedResp?.events ?? []),
+    [hostedResp],
+  );
 
   const { data: ticketsList } = useQuery({
     queryKey: ['profile', 'tickets', profile.id],
@@ -1233,6 +1238,19 @@ const SOCIAL_ICONS_LEGACY = [
   { key: 'tiktok', icon: 'logo-tiktok' as const, color: '#FFFFFF' },
 ];
 
+const ENTITY_HOSTED_TYPES = new Set([
+  'business',
+  'artist',
+  'venue',
+  'restaurant',
+  'organisation',
+  'organizer',
+  'community',
+  'brand',
+  'creator',
+  'charity',
+]);
+
 function EntityPublicProfile({
   profile,
   isOwner,
@@ -1246,6 +1264,32 @@ function EntityPublicProfile({
 }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const showHostedEvents = ENTITY_HOSTED_TYPES.has(String(profile.entityType ?? '').toLowerCase());
+
+  const { data: entityHostedResp } = useQuery({
+    queryKey: ['profile', 'entity-hosted-events', profile.id, profile.ownerId],
+    queryFn: async () => {
+      const ownerKey = profile.ownerId;
+      const byPub = await api.events.list({ publisherProfileId: profile.id, pageSize: 40, page: 1 });
+      const byOrg = ownerKey
+        ? await api.events.list({ organizerId: ownerKey, pageSize: 40, page: 1 })
+        : { events: [] as EventData[] };
+      const map = new Map<string, EventData>();
+      for (const e of [...(byPub.events ?? []), ...(byOrg.events ?? [])]) {
+        const matchPub = e.publisherProfileId === profile.id;
+        const matchLegacy = !e.publisherProfileId && ownerKey && e.organizerId === ownerKey;
+        if (matchPub || matchLegacy) map.set(e.id, e);
+      }
+      return { events: [...map.values()] };
+    },
+    enabled: showHostedEvents,
+  });
+
+  const entityHostedList = useMemo(
+    () => pickHostedEvents(entityHostedResp?.events ?? []),
+    [entityHostedResp],
+  );
+
   const socialLinks = profile.socialLinks ?? {};
   const activeSocials = SOCIAL_ICONS_LEGACY.filter(s => socialLinks[s.key]);
   const tags = profile.tags ?? [];
@@ -1329,6 +1373,38 @@ function EntityPublicProfile({
               </View>
             </View>
           )}
+
+          {showHostedEvents ? (
+            <View style={e.section}>
+              {entityHostedList.length > 0 ? (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Events</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={pu.railScroll}
+                    contentContainerStyle={pu.railScrollContent}
+                  >
+                    {entityHostedList.map((ev) => (
+                      <EventRailCard key={ev.id} event={ev} colors={colors} />
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+              <RecoRow
+                icon="search-outline"
+                title="Search events from this profile"
+                subtitle="Open search with this page as organiser filter"
+                onPress={() =>
+                  router.push({
+                    pathname: '/search',
+                    params: { publisherProfileId: profile.id },
+                  })
+                }
+                colors={colors}
+              />
+            </View>
+          ) : null}
         </View>
       </ScrollView>
       <View style={[e.bottomBar, { paddingBottom: bottomInset + 8, backgroundColor: colors.surface, borderTopColor: colors.borderLight }]}>

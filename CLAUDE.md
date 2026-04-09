@@ -261,6 +261,9 @@ STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_MONTHLY_ID=price_...
 STRIPE_PRICE_YEARLY_ID=price_...
+APP_URL=https://culturepass.app
+# Connect marketplace fee (optional; default 1000 bps = 10%)
+STRIPE_CONNECT_PLATFORM_FEE_BPS=1000
 ```
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
@@ -274,6 +277,7 @@ npm install && cd functions && npm install && cd ..
 npx expo start            # native + web
 npx expo start --web      # web only
 firebase emulators:start --only functions,firestore,auth,storage
+npm run emulator:seed:cap   # optional: Auth + Firestore emulator seed (The CAP org + 5 events); set SEED_TEST_EMAIL / SEED_TEST_PASSWORD
 npm run typecheck
 npm run lint
 ```

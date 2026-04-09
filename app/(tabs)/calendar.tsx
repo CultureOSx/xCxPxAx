@@ -23,7 +23,6 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { useEventsList } from '@/hooks/queries/useEvents';
 import { ticketKeys } from '@/hooks/queries/keys';
-import { useCouncil } from '@/hooks/useCouncil';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
@@ -40,23 +39,6 @@ const IS_WEB = Platform.OS === 'web';
 
 type CalendarFilter = 'All' | 'Today' | 'This Week' | 'My Tickets' | 'Free' | 'Council';
 
-function mergeById(...lists: EventData[][]): EventData[] {
-  const seen = new Set<string>();
-  const merged: EventData[] = [];
-  for (const list of lists) {
-    for (const item of list) {
-      if (!item.id) {
-        merged.push(item);
-        continue;
-      }
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
-      merged.push(item);
-    }
-  }
-  return merged;
-}
-
 function toDateFromKey(key: string): Date {
   return new Date(`${key}T00:00:00`);
 }
@@ -67,8 +49,6 @@ export default function CalendarScreen() {
   const { isDesktop, isTablet, width, hPad } = useLayout();
   const { user, userId, isAuthenticated } = useAuth();
   const { state: onboarding } = useOnboarding();
-  const { data: councilData } = useCouncil();
-
   const bottomInset = IS_WEB ? 0 : insets.bottom;
   const isDesktopWeb = IS_WEB && isDesktop;
   const contentMaxWidth = isDesktopWeb ? 1180 : isTablet ? 900 : width;
@@ -110,10 +90,7 @@ export default function CalendarScreen() {
     enabled: !!userId,
   });
 
-  const allEvents = useMemo(
-    () => mergeById(eventsPage?.events ?? [], councilData?.events ?? []),
-    [eventsPage?.events, councilData?.events],
-  );
+  const allEvents = useMemo(() => eventsPage?.events ?? [], [eventsPage?.events]);
 
   const ticketedEventIds = useMemo(() => new Set(tickets.map((t) => t.eventId)), [tickets]);
 

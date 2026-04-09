@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
   TextInput, ActivityIndicator, KeyboardAvoidingView, Switch,
@@ -26,6 +26,7 @@ import {
   BIZ_CATEGORIES,
   CUISINE_OPTIONS,
   EVENT_CATEGORIES,
+  EVENT_CULTURE_TAGS,
   LISTING_PLACEHOLDER_IMG,
   MOVIE_GENRES,
   ORG_CATEGORIES,
@@ -48,12 +49,67 @@ import {
 } from '@/features/submit/config';
 import { Card, Field, SectionLabel } from '@/components/submit/FormPrimitives';
 
+/** Local aside width (submit studio); separate from app sidebar */
+const SUBMIT_ASIDE_WIDTH = 288;
+
+type SubmitStudioLayoutProps = {
+  isWebDesktop: boolean;
+  isDesktop: boolean;
+  hPad: number;
+  paddingBottom: number;
+  aside: React.ReactNode;
+  rail: React.ReactNode;
+  children: React.ReactNode;
+};
+
+function SubmitStudioLayout({
+  isWebDesktop,
+  isDesktop,
+  hPad,
+  paddingBottom,
+  aside,
+  rail,
+  children,
+}: SubmitStudioLayoutProps) {
+  if (isWebDesktop) {
+    return (
+      <View style={s.splitLayout}>
+        {aside}
+        <ScrollView
+          style={s.splitMainScroll}
+          contentContainerStyle={[s.scroll, { paddingBottom }, s.splitMainContent]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      </View>
+    );
+  }
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[
+        s.scroll,
+        { paddingBottom },
+        isDesktop && s.scrollDesktop,
+      ]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {rail}
+      {children}
+    </ScrollView>
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SubmitScreen() {
   const insets  = useSafeAreaInsets();
   const colors  = useColors();
-  const { hPad, isDesktop } = useLayout();
+  const { hPad, isDesktop, isWeb } = useLayout();
+  const isWebDesktop = isWeb && isDesktop;
   const { isAdmin, isOrganizer } = useRole();
   const params  = useLocalSearchParams<{ type?: string; variant?: string }>();
 
@@ -67,6 +123,7 @@ export default function SubmitScreen() {
   const [form, setForm]             = useState<FormState>({ ...initialForm });
   const [isFree, setIsFree]         = useState(false);
   const [imageUri, setImageUri]     = useState<string | null>(null);
+  const [eventCultureTags, setEventCultureTags] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted]   = useState(false);
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
@@ -111,6 +168,7 @@ export default function SubmitScreen() {
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
+      setEventCultureTags([]);
       setIsFree(false);
     },
     onError: (err: Error) => setFieldErrors({ name: err.message }),
@@ -220,30 +278,6 @@ export default function SubmitScreen() {
     if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
   };
 
-  const uploadAndAttach = async (targetType: string, targetId: string) => {
-    if (!imageUri) return;
-    try {
-      const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
-      const blobRes = await fetch(processed.uri);
-      const blob = await blobRes.blob();
-      const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'upload.jpg');
-      const uploaded = await api.uploads.image(formData);
-      await api.media.attach({
-        targetType,
-        targetId,
-        imageUrl: uploaded.imageUrl,
-        thumbnailUrl: uploaded.thumbnailUrl,
-        width: uploaded.width,
-        height: uploaded.height,
-      });
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[uploadAndAttach] Failed to upload and attach image', { imageUri, targetType, targetId, error: err });
-      }
-    }
-  };
-
   const uploadCoverIfNeeded = async (): Promise<string | null> => {
     if (!imageUri) return null;
     try {
@@ -261,20 +295,6 @@ export default function SubmitScreen() {
       return null;
     }
   };
-
-  useEffect(() => {
-    const created = submitProfileMutation.data;
-    if (!created?.id || !imageUri) return;
-    uploadAndAttach(activeTab === 'business' ? 'business' : 'profile', String(created.id));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submitProfileMutation.data]);
-
-  useEffect(() => {
-    const created = submitEventMutation.data;
-    if (!created?.id || !imageUri) return;
-    uploadAndAttach('event', String(created.id));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submitEventMutation.data]);
 
   // ── Validation + submit ────────────────────────────────────────────────────
 
@@ -318,6 +338,18 @@ export default function SubmitScreen() {
       if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Date is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
+      let imageUrl: string | undefined;
+      let heroImageUrl: string | undefined;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        imageUrl = url;
+        heroImageUrl = url;
+      }
       submitEventMutation.mutate({
         title:       form.name.trim(),
         description: form.description.trim() || null,
@@ -342,6 +374,9 @@ export default function SubmitScreen() {
         hostEmail:   form.hostEmail.trim() || null,
         hostPhone:   form.hostPhone.trim() || null,
         sponsors:    form.sponsors.trim() || null,
+        cultureTag:  eventCultureTags.length > 0 ? eventCultureTags : undefined,
+        imageUrl,
+        heroImageUrl,
       });
     } else if (activeTab === 'perk') {
       if (!form.perkType) { setFieldErrors(p => ({ ...p, perkType: 'Please select a perk type' })); return; }
@@ -361,7 +396,16 @@ export default function SubmitScreen() {
     } else if (activeTab === 'activity') {
       const location = deriveLocation();
       if (!location) return;
-      const imageUrl = (await uploadCoverIfNeeded()) || undefined;
+      let imageUrl: string | undefined;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        imageUrl = url;
+      }
       submitActivityMutation.mutate({
         name: form.name.trim(),
         description: form.description.trim() || '—',
@@ -380,7 +424,16 @@ export default function SubmitScreen() {
       if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
-      const imageUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      let imageUrl = LISTING_PLACEHOLDER_IMG;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        imageUrl = url;
+      }
       submitRestaurantMutation.mutate({
         name: form.name.trim(),
         cuisine: form.category || 'General',
@@ -404,7 +457,16 @@ export default function SubmitScreen() {
       if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
-      const imageUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      let imageUrl = LISTING_PLACEHOLDER_IMG;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        imageUrl = url;
+      }
       submitShopMutation.mutate({
         name: form.name.trim(),
         category: form.category || 'General',
@@ -426,7 +488,16 @@ export default function SubmitScreen() {
       if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Release date is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
-      const posterUrl = (await uploadCoverIfNeeded()) || LISTING_PLACEHOLDER_IMG;
+      let posterUrl = LISTING_PLACEHOLDER_IMG;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        posterUrl = url;
+      }
       submitMovieMutation.mutate({
         title: form.name.trim(),
         description: form.description.trim() || '—',
@@ -447,6 +518,21 @@ export default function SubmitScreen() {
     } else if (ORG_LISTING_TABS.includes(activeTab)) {
       const location = deriveLocation();
       if (!location) return;
+      let imageUrl: string | undefined;
+      if (imageUri) {
+        const url = await uploadCoverIfNeeded();
+        if (!url) {
+          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
+          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        imageUrl = url;
+      }
+      const tags = form.profileTags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 20);
       submitProfileMutation.mutate({
         entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
@@ -461,6 +547,8 @@ export default function SubmitScreen() {
         phone:        form.phone.trim() || null,
         website:      form.website.trim() || null,
         category:     activeTab === 'professional' ? 'Professional' : (form.category || null),
+        imageUrl,
+        tags:         tags.length > 0 ? tags : undefined,
         instagram:    form.instagram.trim() ? `https://instagram.com/${form.instagram.trim().replace(/^@/, '')}` : null,
         facebook:     form.facebook.trim() ? `https://facebook.com/${form.facebook.trim()}` : null,
         youtube:      form.youtube.trim() ? `https://youtube.com/@${form.youtube.trim().replace(/^@/, '')}` : null,
@@ -490,6 +578,34 @@ export default function SubmitScreen() {
     if (activeTab === 'movie') return 'Genre';
     return 'Category';
   };
+
+  const handleSelectType = useCallback((type: SubmitType) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    setActiveTab(type);
+    const next = { ...initialForm };
+    if (type === 'festival') next.category = 'Festival';
+    else if (type === 'concert') next.category = 'Music';
+    else if (type === 'workshop') next.category = 'Workshop';
+    else if (type === 'professional') next.category = 'Professional';
+    setForm(next);
+    setImageUri(null);
+    setEventCultureTags([]);
+    setFieldErrors({});
+    setIsFree(false);
+  }, []);
+
+  const headerGradientStops = useMemo(() => {
+    if (Platform.OS === 'web' && isDesktop) {
+      return {
+        colors: ['#070712', '#0E1424', accent + '38', '#0A0A12'] as const,
+        locations: [0, 0.28, 0.58, 1] as const,
+      };
+    }
+    return {
+      colors: ['#050508', accent + '48', '#0B0B14'] as const,
+      locations: [0, 0.45, 1] as const,
+    };
+  }, [accent, isDesktop]);
 
   // ── Success screen ─────────────────────────────────────────────────────────
 
@@ -553,14 +669,15 @@ export default function SubmitScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={90}
       >
-        <View style={[s.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <View style={[s.root, { flex: 1, backgroundColor: colors.background, paddingTop: insets.top }]}>
 
           {/* ── Header with gradient backdrop ── */}
           <LinearGradient
-            colors={['#0B0B14', accent + '40', '#0B0B14']}
+            colors={[...headerGradientStops.colors]}
+            locations={[...headerGradientStops.locations]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[s.headerGradient, { paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}
+            style={[s.headerGradient, { paddingHorizontal: hPad, borderBottomColor: colors.border }]}
           >
             <Pressable
               onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
@@ -571,7 +688,7 @@ export default function SubmitScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle}>Create New</Text>
+              <Text style={s.headerTitle}>List on CulturePass</Text>
               <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
             <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
@@ -579,82 +696,193 @@ export default function SubmitScreen() {
             </View>
           </LinearGradient>
 
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={[
-              s.scroll,
-              { paddingBottom: insets.bottom + 48 },
-              isDesktop && s.scrollDesktop,
-            ]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-
-            {/* ── Type Selector ── */}
-            <View style={s.typeSection}>
-              <Text style={[s.typeSectionLabel, { color: colors.textSecondary, paddingHorizontal: hPad }]}>
-                WHAT ARE YOU CREATING?
-              </Text>
+          <SubmitStudioLayout
+            isWebDesktop={isWebDesktop}
+            isDesktop={isDesktop}
+            hPad={hPad}
+            paddingBottom={insets.bottom + 48}
+            aside={(
               <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[s.typeScroll, { paddingHorizontal: hPad }]}
+                style={[
+                  s.listingAside,
+                  {
+                    width: SUBMIT_ASIDE_WIDTH,
+                    borderRightColor: colors.border,
+                    backgroundColor: colors.surfaceSecondary,
+                  },
+                  Platform.select({
+                    web: {
+                      position: 'sticky',
+                      top: 0,
+                      alignSelf: 'flex-start',
+                      maxHeight: 'calc(100vh - 88px)',
+                    } as object,
+                    default: {},
+                  }),
+                ]}
+                contentContainerStyle={s.listingAsideContent}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
-                {visibleTypes.map(type => {
+                <Text style={[s.asideOverline, { color: colors.textSecondary }]}>Creator studio</Text>
+                <Text style={[s.asideTitle, { color: colors.text }]}>Listing type</Text>
+                <Text style={[s.asideSubtitle, { color: colors.textSecondary }]}>
+                  Choose a category to load the correct fields for your listing.
+                </Text>
+                <View style={{ height: 20 }} />
+                {visibleTypes.map((type) => {
                   const conf = TYPE_CONFIG[type];
                   const isActive = activeTab === type;
                   return (
                     <Pressable
                       key={type}
+                      onPress={() => handleSelectType(type)}
                       style={[
-                        s.typeCard,
+                        s.asideRow,
                         {
-                          borderColor: isActive ? conf.color : colors.borderLight,
-                          backgroundColor: isActive ? 'transparent' : colors.surface,
-                          borderBottomColor: isActive ? conf.color : colors.borderLight,
-                          borderBottomWidth: isActive ? 4 : StyleSheet.hairlineWidth,
+                          backgroundColor: isActive ? colors.surface : colors.background,
+                          borderColor: isActive ? conf.color + '99' : colors.border,
+                          borderLeftWidth: isActive ? 4 : 1,
+                          borderLeftColor: isActive ? conf.color : colors.border,
                         },
+                        Platform.select({
+                          web: { cursor: 'pointer' } as object,
+                          default: {},
+                        }),
                       ]}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.selectionAsync();
-                        setActiveTab(type);
-                        const next = { ...initialForm };
-                        if (type === 'festival') next.category = 'Festival';
-                        else if (type === 'concert') next.category = 'Music';
-                        else if (type === 'workshop') next.category = 'Workshop';
-                        else if (type === 'professional') next.category = 'Professional';
-                        setForm(next);
-                        setImageUri(null);
-                        setFieldErrors({});
-                        setIsFree(false);
-                      }}
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
                       accessibilityLabel={conf.label}
                     >
-                      {isActive && (
-                        <LinearGradient
-                          colors={[conf.color + '22', conf.color + '10']}
-                          style={[StyleSheet.absoluteFillObject, { borderRadius: 18 }]}
+                      <View
+                        style={[
+                          s.asideIconWrap,
+                          { backgroundColor: isActive ? conf.color + '32' : conf.color + '1C' },
+                        ]}
+                      >
+                        <Ionicons
+                          name={conf.icon as keyof typeof Ionicons.glyphMap}
+                          size={20}
+                          color={conf.color}
                         />
-                      )}
-                      <View style={[
-                        s.typeCardIconWrap,
-                        isActive
-                          ? { width: 44, height: 44, backgroundColor: conf.color + '22' }
-                          : { width: 36, height: 36, backgroundColor: conf.color + '18' },
-                      ]}>
-                        <Ionicons name={conf.icon as keyof typeof Ionicons.glyphMap} size={isActive ? 22 : 18} color={conf.color} />
                       </View>
-                      <Text style={[s.typeCardLabel, { color: isActive ? colors.primary : colors.textTertiary }]}>{conf.label}</Text>
-                      <Text style={[s.typeCardDesc, { color: colors.textTertiary }]} numberOfLines={2}>
-                        {conf.description}
-                      </Text>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={[s.asideRowTitle, { color: colors.text }]} numberOfLines={1}>
+                          {conf.label}
+                        </Text>
+                        <Text
+                          style={[s.asideRowDesc, { color: colors.textSecondary }]}
+                          numberOfLines={2}
+                        >
+                          {conf.description}
+                        </Text>
+                      </View>
+                      {isActive ? (
+                        <Ionicons name="checkmark-circle" size={22} color={conf.color} />
+                      ) : (
+                        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                      )}
                     </Pressable>
                   );
                 })}
               </ScrollView>
-            </View>
-
+            )}
+            rail={(
+              <View style={s.typeSection}>
+                <View style={[s.railHeader, { paddingHorizontal: hPad }]}>
+                  <Text style={[s.railTitle, { color: colors.text }]}>Choose listing type</Text>
+                  <Text style={[s.railHint, { color: colors.textSecondary }]}>
+                    {Platform.OS !== 'web' ? 'Swipe for more · ' : ''}
+                    Each type uses its own fields and review path.
+                  </Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={[s.typeRailScroll, { paddingHorizontal: hPad }]}
+                  decelerationRate="fast"
+                  {...(Platform.OS === 'ios'
+                    ? { snapToInterval: 164, snapToAlignment: 'start' as const }
+                    : {})}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {visibleTypes.map((type) => {
+                    const conf = TYPE_CONFIG[type];
+                    const isActive = activeTab === type;
+                    return (
+                      <Pressable
+                        key={type}
+                        style={[
+                          s.typeCardPremium,
+                          {
+                            borderColor: isActive ? conf.color : colors.border,
+                            backgroundColor: isActive ? colors.surface : colors.surfaceSecondary,
+                            ...(isActive
+                              ? Platform.select({
+                                  web: { boxShadow: `0 10px 32px ${conf.color}40` } as object,
+                                  default: {
+                                    shadowColor: conf.color,
+                                    shadowOpacity: 0.38,
+                                    shadowRadius: 14,
+                                    shadowOffset: { width: 0, height: 6 },
+                                    elevation: 8,
+                                  },
+                                })
+                              : Platform.select({
+                                  web: { boxShadow: '0 2px 14px rgba(0,0,0,0.12)' } as object,
+                                  default: {
+                                    shadowColor: '#000',
+                                    shadowOpacity: 0.16,
+                                    shadowRadius: 10,
+                                    shadowOffset: { width: 0, height: 4 },
+                                    elevation: 3,
+                                  },
+                                })),
+                          },
+                          Platform.select({ web: { cursor: 'pointer' } as object, default: {} }),
+                        ]}
+                        onPress={() => handleSelectType(type)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isActive }}
+                        accessibilityLabel={conf.label}
+                      >
+                        {isActive ? (
+                          <LinearGradient
+                            colors={[conf.color + '33', conf.color + '08']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={[StyleSheet.absoluteFillObject, { borderRadius: 20 }]}
+                          />
+                        ) : null}
+                        <View
+                          style={[
+                            s.typeCardIconPremium,
+                            { backgroundColor: isActive ? conf.color + '38' : conf.color + '24' },
+                          ]}
+                        >
+                          <Ionicons
+                            name={conf.icon as keyof typeof Ionicons.glyphMap}
+                            size={22}
+                            color={conf.color}
+                          />
+                        </View>
+                        <Text style={[s.typeCardLabelPremium, { color: colors.text }]}>
+                          {conf.label}
+                        </Text>
+                        <Text
+                          style={[s.typeCardDescPremium, { color: colors.textSecondary }]}
+                          numberOfLines={2}
+                        >
+                          {conf.description}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+          >
+            <>
             {/* Organizer notice — events, movies, dining & shops */}
             {(['movie', 'restaurant', 'shop'] as SubmitType[]).includes(activeTab) || isEventLike(activeTab) ? (
               !isOrganizer && !isAdmin ? (
@@ -699,13 +927,13 @@ export default function SubmitScreen() {
                   <Ionicons name="image-outline" size={28} color={accent} />
                 </View>
                 <Text style={[s.mediaEmptyTitle, { color: colors.text }]}>Add Cover Photo</Text>
-                <Text style={[s.mediaEmptySub, { color: colors.textTertiary }]}>16:9 recommended</Text>
+                <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>16:9 recommended · high-resolution looks best</Text>
               </Pressable>
             )}
 
             {/* ── Basic Information (name + description only) ── */}
             <Card colors={colors} hPad={hPad}>
-              <SectionLabel colors={colors} accent={accent} icon="document-text-outline" label="Basic Information" />
+              <SectionLabel colors={colors} accent={accent} icon="document-text-outline" label="Listing details" />
 
               <Field
                 label={
@@ -865,6 +1093,43 @@ export default function SubmitScreen() {
                     placeholder="Community ID" placeholderTextColor={colors.textTertiary} autoCapitalize="none"
                   />
                 </Field>
+              </Card>
+            )}
+
+            {isEventLike(activeTab) && (
+              <Card colors={colors} hPad={hPad}>
+                <SectionLabel colors={colors} accent={accent} icon="people-outline" label="Culture & communities" />
+                <Text style={{ color: colors.textTertiary, fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 18, marginBottom: 10 }}>
+                  Optional. These become culture tags on your event and power discovery.
+                </Text>
+                <View style={s.chipGrid}>
+                  {EVENT_CULTURE_TAGS.map((tag) => {
+                    const isActive = eventCultureTags.includes(tag);
+                    return (
+                      <Pressable
+                        key={tag}
+                        style={[
+                          s.chip,
+                          isActive
+                            ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                            : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.selectionAsync();
+                          setEventCultureTags((prev) => {
+                            if (prev.includes(tag)) return prev.filter((t) => t !== tag);
+                            if (prev.length >= 12) return prev;
+                            return [...prev, tag];
+                          });
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Culture tag ${tag}`}
+                      >
+                        <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{tag}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </Card>
             )}
 
@@ -1290,7 +1555,18 @@ export default function SubmitScreen() {
             {/* ── Social Media (profiles) ── */}
             {PROFILE_TABS.includes(activeTab) && (
               <Card colors={colors} hPad={hPad}>
-                <SectionLabel colors={colors} accent={accent} icon="share-social-outline" label="Social Media" />
+                <SectionLabel colors={colors} accent={accent} icon="pricetag-outline" label="Discovery tags" />
+                <Field label="Tags" hint="Comma-separated — e.g. Diwali, dance, Western Sydney">
+                  <TextInput
+                    style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                    value={form.profileTags}
+                    onChangeText={v => set('profileTags', v)}
+                    placeholder="community, festival, language class…"
+                    placeholderTextColor={colors.textTertiary}
+                    autoCapitalize="none"
+                  />
+                </Field>
+                <SectionLabel colors={colors} accent={accent} icon="share-social-outline" label="Social links" />
                 {([
                   { field: 'instagram' as const, icon: 'logo-instagram', label: 'Instagram',   prefix: 'instagram.com/'  },
                   { field: 'facebook'  as const, icon: 'logo-facebook',  label: 'Facebook',    prefix: 'facebook.com/'   },
@@ -1340,8 +1616,8 @@ export default function SubmitScreen() {
                 </LinearGradient>
               </Pressable>
               <View style={s.submitNoteRow}>
-                <Ionicons name="lock-closed-outline" size={12} color={colors.textTertiary} />
-                <Text style={[s.submitNote, { color: colors.textTertiary }]}>
+                <Ionicons name="lock-closed-outline" size={12} color={colors.textSecondary} />
+                <Text style={[s.submitNote, { color: colors.textSecondary }]}>
                   {activeTab === 'perk'
                     ? 'Your perk will be created and made available immediately.'
                     : activeTab === 'activity'
@@ -1351,7 +1627,8 @@ export default function SubmitScreen() {
               </View>
             </View>
 
-          </ScrollView>
+            </>
+          </SubmitStudioLayout>
         </View>
       </KeyboardAvoidingView>
     </AuthGuard>
@@ -1365,34 +1642,163 @@ const s = StyleSheet.create({
 
   headerGradient: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      web: {
+        backdropFilter: 'saturate(140%) blur(12px)',
+      } as object,
+      default: {},
+    }),
   },
   backBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  headerSub:   { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 1 },
+  headerTitle: {
+    fontSize: 22,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FAFAFF',
+    letterSpacing: -0.3,
+    ...Platform.select({
+      web: { textShadow: '0 1px 18px rgba(0,0,0,0.45)' } as object,
+      default: {},
+    }),
+  },
+  headerSub:   { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 2, opacity: 0.95 },
   headerTypeBadge: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1,
   },
 
   scroll:        { paddingTop: 20 },
   scrollDesktop: { maxWidth: 720, width: '100%', alignSelf: 'center' },
 
-  typeSection:      { marginBottom: 16 },
-  typeSectionLabel: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.8, marginBottom: 10 },
-  typeScroll:       { gap: 10, paddingBottom: 4 },
-  typeCard: {
-    width: 130, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth,
-    padding: 14, gap: 6, overflow: 'hidden',
+  splitLayout: {
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: 0,
+    minWidth: 0,
+  },
+  listingAside: {
+    flexGrow: 0,
+    flexShrink: 0,
+    borderRightWidth: StyleSheet.hairlineWidth,
+  },
+  listingAsideContent: {
+    paddingTop: 22,
+    paddingBottom: 40,
+    paddingHorizontal: 16,
+  },
+  asideOverline: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    opacity: 0.95,
+  },
+  asideTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.4,
+    lineHeight: 26,
+  },
+  asideSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 19,
+    marginTop: 4,
+    opacity: 0.92,
+  },
+  asideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  asideIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  asideRowTitle: {
+    fontSize: 15,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.2,
+  },
+  asideRowDesc: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 16,
+    marginTop: 2,
+  },
+
+  splitMainScroll: {
+    flex: 1,
+    minWidth: 0,
+  },
+  splitMainContent: {
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+  },
+
+  typeSection: { marginBottom: 20 },
+  railHeader: { marginBottom: 12 },
+  railTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.35,
+  },
+  railHint: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 17,
+    marginTop: 4,
+    opacity: 0.95,
+  },
+  typeRailScroll: {
+    gap: 12,
+    paddingBottom: 8,
+    flexDirection: 'row',
+  },
+  typeCardPremium: {
+    width: 152,
+    minHeight: 118,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    padding: 14,
+    gap: 8,
+    overflow: 'hidden',
     ...Platform.select({ web: { cursor: 'pointer' } as object, default: {} }),
   },
-  typeCardIconWrap: { borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  typeCardLabel: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  typeCardDesc:  { fontSize: 11, fontFamily: 'Poppins_400Regular', lineHeight: 15 },
+  typeCardIconPremium: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeCardLabelPremium: {
+    fontSize: 15,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.25,
+  },
+  typeCardDescPremium: {
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 15,
+  },
 
   notice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,

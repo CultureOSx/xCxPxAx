@@ -34,6 +34,7 @@ This document describes the live Firebase Functions API surface in this reposito
 - `GET /api/activities/:id`
 - `GET /api/shopping`
 - `GET /api/shopping/:id`
+- `GET /api/offerings` — aggregated unified browse rows (deals, menu highlights, activities, movie showtimes). Query: `city`, `country`, `kinds` (comma-separated), `domains` (comma-separated), `limit` (default 80, max 200). See `shared/schema/offering.ts`.
 
 ## Wallet, Membership, and Payments
 - `GET /api/wallet/:userId`

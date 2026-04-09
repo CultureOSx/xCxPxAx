@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { CultureTokens } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
+import { captureTicketPurchaseCompleted } from '@/lib/analytics';
 import { getCurrencyForCountry } from '@/lib/currency';
 import { routeWithRedirect } from '@/lib/routes';
 import type { EventData } from '@/shared/schema';
@@ -87,6 +88,16 @@ export function useEventTicketing({
         if ((result.type === 'cancel' || result.type === 'dismiss') && data.ticketId) {
           const ticket = await api.tickets.get(data.ticketId);
           if (ticket.paymentStatus === 'paid' || ticket.status === 'confirmed') {
+            captureTicketPurchaseCompleted({
+              ticket_id: ticket.id,
+              event_id: event.id,
+              publisher_profile_id: event.publisherProfileId ?? null,
+              venue_profile_id: event.venueProfileId ?? null,
+              organizer_id: event.organizerId ?? null,
+              quantity: ticket.quantity ?? effectiveQty,
+              total_price_cents: ticket.totalPriceCents ?? totalPrice,
+              source: 'stripe_web_checkout_return',
+            });
             if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('Ticket Purchased!', 'Your payment was successful.', [
               { text: 'View Ticket', onPress: () => router.push(`/tickets/${data.ticketId}`) },
@@ -106,6 +117,16 @@ export function useEventTicketing({
   const purchaseFreeTicket = useCallback(async (body: Record<string, unknown>) => {
     try {
       const data = await api.tickets.purchase(body as { eventId: string; tierId?: string; quantity?: number });
+      captureTicketPurchaseCompleted({
+        ticket_id: data.id,
+        event_id: event.id,
+        publisher_profile_id: event.publisherProfileId ?? null,
+        venue_profile_id: event.venueProfileId ?? null,
+        organizer_id: event.organizerId ?? null,
+        quantity: data.quantity ?? effectiveQty,
+        total_price_cents: data.totalPriceCents ?? 0,
+        source: 'free_ticket_in_app',
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
       setTicketModalVisible(false);
       if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -116,7 +137,7 @@ export function useEventTicketing({
     } catch {
       Alert.alert('Error', 'Failed to reserve ticket. Please try again.');
     }
-  }, [setTicketModalVisible]);
+  }, [effectiveQty, event, setTicketModalVisible]);
 
   const handlePurchase = useCallback(() => {
     if (!userId) {

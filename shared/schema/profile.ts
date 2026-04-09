@@ -112,6 +112,12 @@ export interface Profile {
   
   ownerId?: string;
   creatorId?: string;
+  /** Stripe Connect connected account id (acct_…); unset until seller onboarding. */
+  stripeConnectAccountId?: string;
+  /** Seller onboarding / capability state for Connect. */
+  stripeConnectOnboardingStatus?: 'not_started' | 'pending' | 'restricted' | 'complete';
+  /** Mirror Stripe capabilities.payouts / charges_enabled for gating checkout. */
+  payoutsEnabled?: boolean;
   culturePassId?: string;
   images?: string[];
   createdAt?: string;

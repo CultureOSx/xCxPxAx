@@ -34,11 +34,17 @@ export interface FirestoreEvent {
   category?: string;
   organizerId?: string;
   organizer?: string;
+  /** Canonical publisher directory profile — Phase 1 */
+  publisherProfileId?: string;
+  /** Linked venue profile (venue | business | restaurant) — Phase 1 */
+  venueProfileId?: string;
   organizerReputationScore?: number;
   capacity?: number;
   attending?: number;
   isFeatured?: boolean;
   isFree?: boolean;
+  /** Submitter / organiser contact for review (listing form) */
+  contactEmail?: string;
   externalTicketUrl?: string | null;
   // Entry type & end datetime (event creation wizard)
   entryType?: 'ticketed' | 'free_open';
@@ -94,6 +100,8 @@ export interface EventFilters {
   isFree?: boolean;
   venue?: string;
   time?: string;
+  publisherProfileId?: string;
+  venueProfileId?: string;
 }
 
 const eventsCol = () => db.collection('events');
@@ -178,6 +186,12 @@ export const eventsService = {
         if (filters.isFree !== undefined && data.isFree !== filters.isFree) matchesAdvanced = false;
         if (filters.venue && data.venue !== filters.venue) matchesAdvanced = false;
         if (filters.time && data.time !== filters.time) matchesAdvanced = false;
+        if (filters.publisherProfileId && data.publisherProfileId !== filters.publisherProfileId) {
+          matchesAdvanced = false;
+        }
+        if (filters.venueProfileId && data.venueProfileId !== filters.venueProfileId) {
+          matchesAdvanced = false;
+        }
 
         if (matchesAdvanced && data.latitude != null && data.longitude != null) {
           const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
@@ -231,6 +245,12 @@ export const eventsService = {
         if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
         if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
         if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
+        if (filters.publisherProfileId) {
+          memItems = memItems.filter((e) => e.publisherProfileId === filters.publisherProfileId);
+        }
+        if (filters.venueProfileId) {
+          memItems = memItems.filter((e) => e.venueProfileId === filters.venueProfileId);
+        }
         memItems.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         return memItems;
       };
@@ -276,6 +296,12 @@ export const eventsService = {
 
       if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
       if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
+      if (filters.publisherProfileId) {
+        memItems = memItems.filter((e) => e.publisherProfileId === filters.publisherProfileId);
+      }
+      if (filters.venueProfileId) {
+        memItems = memItems.filter((e) => e.venueProfileId === filters.venueProfileId);
+      }
 
       total = memItems.length;
       items = memItems.slice(offset, offset + pageSize);
@@ -311,18 +337,20 @@ export const eventsService = {
     return event;
   },
 
-  async update(id: string, data: Partial<FirestoreEvent>): Promise<FirestoreEvent | null> {
+  async update(id: string, data: Record<string, unknown>): Promise<FirestoreEvent | null> {
     const ref = eventsCol().doc(id);
     const existingSnap = await ref.get();
     if (!existingSnap.exists) return null;
-    
-    const updates: Partial<FirestoreEvent> = { ...data, updatedAt: new Date().toISOString() };
-    
-    if (updates.latitude != null && updates.longitude != null) {
-      updates.geoHash = geofire.geohashForLocation([updates.latitude, updates.longitude]);
+
+    const updates: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
+
+    const lat = updates.latitude;
+    const lng = updates.longitude;
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      updates.geoHash = geofire.geohashForLocation([lat, lng]);
     }
 
-    await ref.update(updates);
+    await ref.update(updates as FirebaseFirestore.UpdateData<FirestoreEvent>);
     const updated = await ref.get();
     return { ...(updated.data() as FirestoreEvent), id: updated.id };
   },

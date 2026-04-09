@@ -14,10 +14,18 @@ export interface FormData {
   description: string;
   eventType: EventType | '';
   heroImageUrl: string;
+  /** Directory profile shown as canonical publisher (optional). */
+  publisherProfileId: string;
+  /** Cached label for review UI */
+  publisherLabel: string;
   venue: string;
   address: string;
   city: string;
   country: string;
+  /** Link to a venue-style profile (optional; one-off address when unset). */
+  venueProfileId: string;
+  venueProfileLabel: string;
+  useLinkedVenue: boolean;
   date: string;
   endDate: string;
   time: string;
@@ -40,10 +48,15 @@ export const defaultForm: FormData = {
   description: '',
   eventType: '',
   heroImageUrl: '',
+  publisherProfileId: '',
+  publisherLabel: '',
   venue: '',
   address: '',
   city: '',
   country: 'Australia',
+  venueProfileId: '',
+  venueProfileLabel: '',
+  useLinkedVenue: false,
   date: '',
   endDate: '',
   time: '',
@@ -64,12 +77,13 @@ export const defaultForm: FormData = {
 // ---------------------------------------------------------------------------
 // Step definitions
 // ---------------------------------------------------------------------------
-export type Step = 'basics' | 'image' | 'location' | 'datetime' | 'entry' | 'tickets' | 'team' | 'culture' | 'review';
+export type Step = 'basics' | 'publishing' | 'image' | 'location' | 'datetime' | 'entry' | 'tickets' | 'team' | 'culture' | 'review';
 
-export const ALL_STEPS: Step[] = ['basics', 'image', 'location', 'datetime', 'entry', 'tickets', 'team', 'culture', 'review'];
+export const ALL_STEPS: Step[] = ['basics', 'publishing', 'image', 'location', 'datetime', 'entry', 'tickets', 'team', 'culture', 'review'];
 
 export const STEP_TITLES: Record<Step, string> = {
   basics:   'Event Details',
+  publishing: 'Publishing as',
   image:    'Event Image',
   location: 'Where is it?',
   datetime: 'When is it?',
@@ -82,6 +96,7 @@ export const STEP_TITLES: Record<Step, string> = {
 
 export const STEP_ICONS: Record<Step, keyof typeof Ionicons.glyphMap> = {
   basics:   'create-outline',
+  publishing: 'business-outline',
   image:    'image-outline',
   location: 'location-outline',
   datetime: 'calendar-outline',
@@ -95,6 +110,7 @@ export const STEP_ICONS: Record<Step, keyof typeof Ionicons.glyphMap> = {
 export function getStepSub(step: Step): string {
   switch (step) {
     case 'basics':   return 'Name and describe your event';
+    case 'publishing': return 'Choose the profile that appears as the organiser';
     case 'image':    return 'Add a hero image for your event';
     case 'location': return "Tell us where it's happening";
     case 'datetime': return 'Set the date and start time';

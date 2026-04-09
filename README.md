@@ -123,6 +123,20 @@ npx expo start        # iOS / Android / Web
 firebase emulators:start --only functions,firestore,auth,storage
 ```
 
+### Emulator: test org + events (“The CAP”)
+
+With **Auth + Firestore emulators** running (ports `9099` / `8080` per `firebase.json`):
+
+```bash
+# Optional: your own throwaway credentials (defaults: cap-emulator@test.local / CapEmulator1!)
+export SEED_TEST_EMAIL='you@example.test'
+export SEED_TEST_PASSWORD='your-local-only-password'
+
+npm run emulator:seed:cap
+```
+
+This creates (or reuses) the Auth user, a `users/{uid}` row with role `organizer`, an **organisation** profile **The CAP**, and **five** published events with `publisherProfileId` set. Re-run to refresh seed events. **Do not** run this script while pointed at production Firestore (the repo script forces emulator hosts by default).
+
 ### Environment variables
 
 ```bash

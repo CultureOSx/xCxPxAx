@@ -20,7 +20,9 @@ import {
 import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation,
   captureRouteError,
 } from './utils';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '../admin';
+import { validatePublisherProfileLink, validateVenueProfileLink } from '../services/eventProfileLinks';
 
 // ---------------------------------------------------------------------------
 // Shared types (inlined to avoid circular import with app.ts)
@@ -121,6 +123,11 @@ const createEventSchema = z.object({
   capacity:    z.coerce.number().int().min(1).optional(),
   isFree:      z.coerce.boolean().optional(),
   isFeatured:  z.coerce.boolean().optional(),
+  /** Listing form — stored for moderator / organiser contact */
+  contactEmail: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    z.string().email().optional(),
+  ),
   tiers:       z.array(eventTierSchema).max(10).optional(),
   tags:        z.array(z.string().max(50)).max(20).optional(),
   cultureTag:  z.array(z.string().max(50)).max(20).optional(),
@@ -159,9 +166,16 @@ const createEventSchema = z.object({
     contactPhone: z.string().max(30).optional(),
     websiteUrl:   z.string().url().optional().or(z.literal('')),
   }).nullable().optional(),
+  /** Directory profile that owns this listing (see docs/PROFILE_PUBLISHING_AND_MARKETPLACE_GAPS.md) */
+  publisherProfileId: z.string().min(1).max(128).optional(),
+  /** Linked venue-style profile (entityType venue | business | restaurant) */
+  venueProfileId: z.string().min(1).max(128).optional(),
 });
 
-const updateEventSchema = createEventSchema.partial();
+const updateEventSchema = createEventSchema.partial().extend({
+  publisherProfileId: z.union([z.string().min(1).max(128), z.literal('')]).optional(),
+  venueProfileId: z.union([z.string().min(1).max(128), z.literal('')]).optional(),
+});
 
 function parseBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
   const result = schema.safeParse(body);
@@ -193,6 +207,8 @@ export function createEventsRouter() {
       const isFree      = isFreeStr === 'true' ? true : isFreeStr === 'false' ? false : undefined;
       const venue       = qstr(req.query.venue).trim() || undefined;
       const time        = qstr(req.query.time).trim() || undefined;
+      const publisherProfileId = qstr(req.query.publisherProfileId).trim() || undefined;
+      const venueProfileId = qstr(req.query.venueProfileId).trim() || undefined;
 
       const centerLatStr  = qstr(req.query.centerLat).trim();
       const centerLngStr  = qstr(req.query.centerLng).trim();
@@ -205,7 +221,25 @@ export function createEventsRouter() {
       const pageSize = Math.min(100, Math.max(1, parseInt(qstr(req.query.pageSize) || '20', 10) || 20));
 
       const result = await eventsService.list(
-        { city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, communityId, centerLat, centerLng, radiusInKm, isFree, venue, time },
+        {
+          city,
+          country,
+          category,
+          eventType,
+          dateFrom,
+          dateTo,
+          isFeatured,
+          organizerId,
+          communityId,
+          centerLat,
+          centerLng,
+          radiusInKm,
+          isFree,
+          venue,
+          time,
+          publisherProfileId,
+          venueProfileId,
+        },
         { page, pageSize },
       );
 
@@ -302,6 +336,15 @@ export function createEventsRouter() {
         return res.status(400).json({ error: 'endDate cannot be before start date' });
       }
 
+      if (b.publisherProfileId) {
+        const pv = await validatePublisherProfileLink(req.user!, b.publisherProfileId);
+        if (!pv.ok) return res.status(pv.status).json({ error: pv.error });
+      }
+      if (b.venueProfileId) {
+        const vv = await validateVenueProfileLink(req.user!, b.venueProfileId);
+        if (!vv.ok) return res.status(vv.status).json({ error: vv.error });
+      }
+
       // Resolve council LGA from location (best-effort, non-blocking)
       let lgaCode: string | null = null;
       let councilId: string | null = null;
@@ -352,6 +395,7 @@ export function createEventsRouter() {
           attending:   0,
           isFree:    b.isFree    != null ? Boolean(b.isFree)    : true,
           isFeatured: b.isFeatured != null ? Boolean(b.isFeatured) : false,
+          contactEmail: b.contactEmail ? String(b.contactEmail) : undefined,
           tiers:     Array.isArray(b.tiers)        ? b.tiers        : undefined,
           tags:      Array.isArray(b.tags)         ? b.tags         : undefined,
           indigenousTags: Array.isArray(b.indigenousTags) ? b.indigenousTags : undefined,
@@ -379,6 +423,8 @@ export function createEventsRouter() {
           lgaCode,
           councilId,
           status: 'draft',
+          ...(b.publisherProfileId ? { publisherProfileId: String(b.publisherProfileId) } : {}),
+          ...(b.venueProfileId ? { venueProfileId: String(b.venueProfileId) } : {}),
         });
         return res.status(201).json(event);
       } catch (err) {
@@ -402,6 +448,15 @@ export function createEventsRouter() {
       }
 
       const b = parseResult.data;
+
+      if (b.publisherProfileId !== undefined && b.publisherProfileId !== '') {
+        const pv = await validatePublisherProfileLink(req.user!, b.publisherProfileId);
+        if (!pv.ok) return res.status(pv.status).json({ error: pv.error });
+      }
+      if (b.venueProfileId !== undefined && b.venueProfileId !== '') {
+        const vv = await validateVenueProfileLink(req.user!, b.venueProfileId);
+        if (!vv.ok) return res.status(vv.status).json({ error: vv.error });
+      }
       const hasLocationFields =
         b.city != null || b.state != null || b.postcode != null ||
         b.country != null || b.latitude != null || b.longitude != null;
@@ -450,6 +505,13 @@ export function createEventsRouter() {
         ...(Array.isArray(b.cultureTag) && { cultureTag: b.cultureTag }),
         ...(b.category  != null && { category:  String(b.category) }),
         ...(b.eventType != null && { eventType: String(b.eventType) }),
+        ...(b.publisherProfileId !== undefined && {
+          publisherProfileId:
+            b.publisherProfileId === '' ? FieldValue.delete() : String(b.publisherProfileId),
+        }),
+        ...(b.venueProfileId !== undefined && {
+          venueProfileId: b.venueProfileId === '' ? FieldValue.delete() : String(b.venueProfileId),
+        }),
       });
       return res.json(updated);
     } catch (err) {

@@ -42,17 +42,8 @@ import type {
   ActivityData,
   ActivityInput,
   CouncilData,
-  CouncilWasteSchedule,
-  CouncilAlert,
-  CouncilFacility,
-  CouncilGrant,
-  CouncilLink,
-  CouncilPreference,
-  CouncilWasteReminder,
-  CouncilDashboard,
+  CouncilLgaContext,
   CouncilListResponse,
-  CouncilClaim,
-  CouncilClaimLetter,
   AdminAuditLog,
   AppUpdate,
   UpdateCategory,
@@ -63,7 +54,7 @@ import type {
   IngestScheduleInterval,
 } from '@/shared/schema';
 
-export type { MembershipSummary, Notification, CouncilData, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilDashboard, ActivityData, ActivityInput, CouncilPreference, CouncilFacility, CouncilGrant, CouncilAlert, CouncilLink, CouncilWasteSchedule, CouncilWasteReminder, CouncilListResponse, CouncilClaim, CouncilClaimLetter, AdminAuditLog, AppUpdate, UpdateCategory, IngestSource, IngestionJob, IngestScheduleInterval } from '@/shared/schema';
+export type { MembershipSummary, Notification, CouncilData, CouncilLgaContext, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilListResponse, ActivityData, ActivityInput, AdminAuditLog, AppUpdate, UpdateCategory, IngestSource, IngestionJob, IngestScheduleInterval } from '@/shared/schema';
 
 // ---------------------------------------------------------------------------
 // Pending handle item — returned by admin handle approval endpoint
@@ -157,6 +148,10 @@ export interface EventListParams {
   isFeatured?: boolean;
   organizerId?: string;
   isFree?: boolean;
+  /** Filter by canonical publisher profile id (GET /api/events) */
+  publisherProfileId?: string;
+  /** Filter by linked venue profile id */
+  venueProfileId?: string;
 }
 
 const events = {
@@ -175,7 +170,9 @@ const events = {
     if (params.isFeatured !== undefined) qs.set('isFeatured', String(params.isFeatured));
     if (params.organizerId) qs.set('organizerId', params.organizerId);
     if (params.isFree !== undefined) qs.set('isFree', String(params.isFree));
-    
+    if (params.publisherProfileId) qs.set('publisherProfileId', params.publisherProfileId);
+    if (params.venueProfileId) qs.set('venueProfileId', params.venueProfileId);
+
     const query = qs.toString();
     return request<PaginatedEventsResponse>('GET', `api/events${query ? `?${query}` : ''}`);
   },
@@ -254,6 +251,30 @@ const stripeApi = {
   }) => request<{ checkoutUrl: string; ticketId: string; sessionId: string }>('POST', 'api/stripe/create-checkout-session', { ticketData }),
   refund: (ticketId: string) =>
     request<Record<string, unknown>>('POST', 'api/stripe/refund', { ticketId }),
+
+  connectCreateAccount: (profileId: string) =>
+    request<{
+      accountId: string;
+      alreadyExists?: boolean;
+      onboardingStatus?: string;
+      payoutsEnabled?: boolean;
+    }>('POST', 'api/stripe/connect/create-account', { profileId }),
+
+  connectAccountLink: (profileId: string, refreshUrl?: string, returnUrl?: string) =>
+    request<{ url: string }>('POST', 'api/stripe/connect/account-link', {
+      profileId,
+      ...(refreshUrl ? { refreshUrl } : {}),
+      ...(returnUrl ? { returnUrl } : {}),
+    }),
+
+  connectStatus: (profileId: string) =>
+    request<{
+      accountId: string | null;
+      stripeConnectOnboardingStatus: 'not_started' | 'pending' | 'restricted' | 'complete';
+      payoutsEnabled: boolean;
+      chargesEnabled?: boolean;
+      detailsSubmitted?: boolean;
+    }>('GET', `api/stripe/connect/status?profileId=${encodeURIComponent(profileId)}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -264,6 +285,12 @@ export interface SearchParams {
   type?: string;
   city?: string;
   country?: string;
+  category?: string;
+  cultureTag?: string;
+  entryType?: string;
+  eventType?: string;
+  publisherProfileId?: string;
+  venueProfileId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -274,6 +301,12 @@ const search = {
     if (params.type) qs.set('type', params.type);
     if (params.city) qs.set('city', params.city);
     if (params.country) qs.set('country', params.country);
+    if (params.category) qs.set('category', params.category);
+    if (params.cultureTag) qs.set('cultureTag', params.cultureTag);
+    if (params.entryType) qs.set('entryType', params.entryType);
+    if (params.eventType) qs.set('eventType', params.eventType);
+    if (params.publisherProfileId) qs.set('publisherProfileId', params.publisherProfileId);
+    if (params.venueProfileId) qs.set('venueProfileId', params.venueProfileId);
     if (params.page != null) qs.set('page', String(params.page));
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
     return request<{ events: EventData[]; profiles: Profile[]; movies: import('@shared/schema').MovieData[]; users: User[] }>('GET', `api/search?${qs}`);
@@ -896,11 +929,13 @@ const profiles = {
 
   get: (id: string) => request<Profile>('GET', `api/profiles/${id}`),
 
-  my: (params?: { entityType?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.entityType) qs.set('entityType', params.entityType);
-    const q = qs.toString();
-    return request<Profile | null>('GET', `api/profiles/my${q ? `?${q}` : ''}`);
+  my: async (params?: { entityType?: string }) => {
+    const res = await request<{ profiles: Profile[] }>('GET', 'api/profiles/my');
+    let list = res.profiles ?? [];
+    if (params?.entityType) {
+      list = list.filter((p) => p.entityType === params.entityType);
+    }
+    return list;
   },
 
   create: (payload: Partial<Profile>) =>
@@ -1067,6 +1102,30 @@ const activities = {
   promote: (id: string, isPromoted = true) =>
     request<ActivityData>('POST', `api/activities/${id}/promote`, { isPromoted }),
 };
+
+/** Phase 5 — unified browse model (deals, menu lines, activities, movie showtimes). */
+const offerings = {
+  list: (params?: {
+    city?: string;
+    country?: string;
+    kinds?: string;
+    domains?: string;
+    limit?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set('city', params.city);
+    if (params?.country) qs.set('country', params.country);
+    if (params?.kinds) qs.set('kinds', params.kinds);
+    if (params?.domains) qs.set('domains', params.domains);
+    if (params?.limit != null) qs.set('limit', String(params.limit));
+    const q = qs.toString();
+    return request<{ offerings: import('@shared/schema').UnifiedOffering[]; total: number }>(
+      'GET',
+      `api/offerings${q ? `?${q}` : ''}`,
+    );
+  },
+};
+
 const businesses  = {
   ...directoryNamespace<Profile>('api/businesses'),
   /** List businesses, optionally filtering by location or sponsored-only */
@@ -1082,6 +1141,7 @@ const businesses  = {
 };
 
 const council = {
+  /** Browse LGAs for directory / location pickers */
   list: async (params?: { q?: string; state?: string; verificationStatus?: 'verified' | 'unverified'; sortBy?: 'name' | 'state' | 'verification'; sortDir?: 'asc' | 'desc'; page?: number; pageSize?: number }) => {
     const qs = new URLSearchParams();
     if (params?.q) qs.set('q', params.q);
@@ -1100,8 +1160,22 @@ const council = {
       source: (res as { source?: string }).source,
     };
   },
-  getSelected: () => request<{ council: CouncilData | null }>('GET', 'api/council/selected'),
-  select: (councilId: string) => request<{ success: boolean; councilId: string }>('POST', 'api/council/select', { councilId }),
+  /** Public: best LGA match for a place (e.g. business detail) */
+  resolve: async (params?: { city?: string; state?: string; country?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set('city', params.city);
+    if (params?.state) qs.set('state', params.state);
+    if (params?.country) qs.set('country', params.country);
+    const q = qs.toString();
+    return request<CouncilLgaContext>('GET', `api/council/resolve${q ? `?${q}` : ''}`);
+  },
+  getSelected: async () => {
+    const res = await request<CouncilLgaContext>('GET', 'api/council/selected');
+    return res?.council ? res : null;
+  },
+  select: (councilId: string) =>
+    request<{ success: boolean; councilId: string; lgaCode: string | null }>('POST', 'api/council/select', { councilId }),
+  /** Signed-in user’s LGA context for discover / calendar */
   my: async (params?: { postcode?: number; suburb?: string; city?: string; state?: string; country?: string }) => {
     const qs = new URLSearchParams();
     if (params?.postcode) qs.set('postcode', String(params.postcode));
@@ -1110,72 +1184,10 @@ const council = {
     if (params?.state) qs.set('state', params.state);
     if (params?.country) qs.set('country', params.country);
     const q = qs.toString();
-    const res = await request<CouncilDashboard | null>('GET', `api/council/my${q ? `?${q}` : ''}`);
-    if (!res || !(res as CouncilDashboard).council) return null;
-    return {
-      ...res as CouncilDashboard,
-      events: Array.isArray((res as CouncilDashboard).events) ? (res as CouncilDashboard).events : [],
-      preferences: Array.isArray((res as CouncilDashboard).preferences) ? (res as CouncilDashboard).preferences : [],
-      alerts: Array.isArray((res as CouncilDashboard).alerts) ? (res as CouncilDashboard).alerts : [],
-    };
+    const res = await request<CouncilLgaContext>('GET', `api/council/my${q ? `?${q}` : ''}`);
+    return res?.council ? res : null;
   },
   get: (id: string) => request<CouncilData>('GET', `api/council/${id}`),
-  waste: (id: string, params?: { postcode?: number; suburb?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.postcode) qs.set('postcode', String(params.postcode));
-    if (params?.suburb) qs.set('suburb', params.suburb);
-    const q = qs.toString();
-    return request<CouncilWasteSchedule>('GET', `api/council/${id}/waste${q ? `?${q}` : ''}`);
-  },
-  alerts: (id: string, category?: string) => {
-    const q = category ? `?category=${encodeURIComponent(category)}` : '';
-    return request<CouncilAlert[]>('GET', `api/council/${id}/alerts${q}`);
-  },
-  events: (id: string) => request<EventData[]>('GET', `api/council/${id}/events`),
-  facilities: (id: string) => request<CouncilFacility[]>('GET', `api/council/${id}/facilities`),
-  grants: (id: string) => request<CouncilGrant[]>('GET', `api/council/${id}/grants`),
-  links: (id: string) => request<CouncilLink[]>('GET', `api/council/${id}/links`),
-  follow: (id: string) => request<{ success: boolean; following: boolean; institutionId: string }>('POST', `api/council/${id}/follow`),
-  unfollow: (id: string) => request<{ success: boolean; following: boolean; institutionId: string }>('DELETE', `api/council/${id}/follow`),
-  getPreferences: (id: string) => request<CouncilPreference[]>('GET', `api/council/${id}/preferences`),
-  updatePreferences: (id: string, preferences: CouncilPreference[]) =>
-    request<{ success: boolean; preferences: CouncilPreference[] }>('PUT', `api/council/${id}/preferences`, { preferences }),
-  getWasteReminder: (id: string) => request<CouncilWasteReminder | null>('GET', `api/council/${id}/waste-reminder`),
-  updateWasteReminder: (id: string, payload: { reminderTime: string; enabled: boolean; postcode?: number; suburb?: string }) =>
-    request<{ success: boolean; reminder: CouncilWasteReminder }>('PUT', `api/council/${id}/waste-reminder`, payload),
-  claim: (id: string, payload: { workEmail: string; roleTitle: string; note?: string }) =>
-    request<CouncilClaim>('POST', `api/council/${id}/claim`, payload),
-  myClaims: (id: string) => request<CouncilClaim[]>('GET', `api/council/${id}/claims/me`),
-  updateProfileMedia: (id: string, payload: { logoUrl?: string; bannerUrl?: string }) =>
-    request<CouncilData>('PATCH', `api/council/${id}/profile-media`, payload),
-  admin: {
-    createAlert: (id: string, payload: Pick<CouncilAlert, 'title' | 'description' | 'category' | 'severity' | 'startAt' | 'endAt' | 'status'>) =>
-      request<CouncilAlert>('POST', `api/council/${id}/alerts`, payload),
-    updateAlert: (id: string, alertId: string, payload: Partial<Pick<CouncilAlert, 'title' | 'description' | 'category' | 'severity' | 'startAt' | 'endAt' | 'status'>>) =>
-      request<CouncilAlert>('PATCH', `api/council/${id}/alerts/${alertId}`, payload),
-    deleteAlert: (id: string, alertId: string) =>
-      request<{ success: boolean }>('DELETE', `api/council/${id}/alerts/${alertId}`),
-    createGrant: (id: string, payload: Pick<CouncilGrant, 'title' | 'description' | 'category' | 'fundingMin' | 'fundingMax' | 'opensAt' | 'closesAt' | 'applicationUrl' | 'status'>) =>
-      request<CouncilGrant>('POST', `api/council/${id}/grants`, payload),
-    updateGrant: (id: string, grantId: string, payload: Partial<Pick<CouncilGrant, 'title' | 'description' | 'category' | 'fundingMin' | 'fundingMax' | 'opensAt' | 'closesAt' | 'applicationUrl' | 'status'>>) =>
-      request<CouncilGrant>('PATCH', `api/council/${id}/grants/${grantId}`, payload),
-    deleteGrant: (id: string, grantId: string) =>
-      request<{ success: boolean }>('DELETE', `api/council/${id}/grants/${grantId}`),
-    listClaims: (status?: 'pending_admin_review' | 'approved' | 'rejected') => {
-      const q = status ? `?status=${encodeURIComponent(status)}` : '';
-      return request<CouncilClaim[]>('GET', `api/admin/council/claims${q}`);
-    },
-    approveClaim: (claimId: string) =>
-      request<{ success: boolean; claim: CouncilClaim }>('POST', `api/admin/council/claims/${claimId}/approve`),
-    rejectClaim: (claimId: string, reason?: string) =>
-      request<{ success: boolean; claim: CouncilClaim }>('POST', `api/admin/council/claims/${claimId}/reject`, reason ? { reason } : {}),
-    sendClaimLetter: (councilId: string, recipientEmail?: string) =>
-      request<{ success: boolean; letter: CouncilClaimLetter; message: string }>(
-        'POST',
-        `api/admin/council/${councilId}/send-claim-letter`,
-        recipientEmail ? { recipientEmail } : {},
-      ),
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -1453,6 +1465,7 @@ export const api = {
   shopping,
   movies,
   activities,
+  offerings,
   businesses,
   council,
   locations,

@@ -49,8 +49,13 @@ export interface FirestoreUser {
     deviceConnected?: boolean;
     lastSyncedAt?: string;
   };
-  metadata?: Record<string, any>; 
-  
+  metadata?: Record<string, any>;
+
+  /** Australian LGA — location attribute (see councils collection). */
+  lgaCode?: string;
+  /** Firestore councils/{id} when user chose an LGA. */
+  councilId?: string;
+
   createdAt: string;
   updatedAt: string;
 }

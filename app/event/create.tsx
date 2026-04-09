@@ -30,6 +30,7 @@ import {
   defaultForm, ALL_STEPS, STEP_TITLES, STEP_ICONS, getStepSub,
 } from '@/components/event-create/types';
 import { StepBasics } from '@/components/event-create/StepBasics';
+import { StepPublishing } from '@/components/event-create/StepPublishing';
 import { StepImage } from '@/components/event-create/StepImage';
 import { StepLocation } from '@/components/event-create/StepLocation';
 import { StepDatetime } from '@/components/event-create/StepDatetime';
@@ -222,6 +223,12 @@ export default function CreateEventScreen() {
         hostName:  form.hostInfo.name || undefined,
         hostEmail: form.hostInfo.contactEmail || undefined,
         hostPhone: form.hostInfo.contactPhone || undefined,
+        ...(form.publisherProfileId.trim()
+          ? { publisherProfileId: form.publisherProfileId.trim() }
+          : {}),
+        ...(form.useLinkedVenue && form.venueProfileId.trim()
+          ? { venueProfileId: form.venueProfileId.trim() }
+          : {}),
       };
       const draft = await api.events.create(payload);
       await api.events.publish(draft.id);
@@ -343,7 +350,12 @@ export default function CreateEventScreen() {
       if (form.title.trim().length < 5) return 'Title must be at least 5 characters.';
       if (!form.description.trim()) return 'Description is required.';
     }
-    if (step === 'location' && !form.city.trim()) return 'City is required.';
+    if (step === 'location') {
+      if (!form.city.trim()) return 'City is required.';
+      if (form.useLinkedVenue && !form.venueProfileId.trim()) {
+        return 'Select a saved venue profile, or switch to one-off address.';
+      }
+    }
     if (step === 'datetime') {
       if (!form.date) return 'Date is required.';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return 'Date format must be YYYY-MM-DD.';
@@ -382,7 +394,13 @@ export default function CreateEventScreen() {
         event={publishedEvent}
         onCreateAnother={() => {
           setPublishedEvent(null);
-          setForm({ ...defaultForm, city: form.city, country: form.country });
+          setForm({
+            ...defaultForm,
+            city: form.city,
+            country: form.country,
+            cultureTagIds: onboardingState.cultureIds?.slice(0, 3) ?? [],
+            languageTagIds: onboardingState.languageIds?.slice(0, 2) ?? [],
+          });
           setStepIndex(0);
         }}
         colors={colors}
@@ -470,6 +488,9 @@ export default function CreateEventScreen() {
             {/* Step content */}
             {step === 'basics' && (
               <StepBasics form={form} setField={setField} colors={colors} s={s} stepError={stepError} haptic={haptic} />
+            )}
+            {step === 'publishing' && (
+              <StepPublishing form={form} setField={setField} colors={colors} s={s} haptic={haptic} />
             )}
             {step === 'image' && (
               <StepImage form={form} setField={setField} colors={colors} s={s} imageUploading={imageUploading} imageUploadError={imageUploadError} pickImage={pickImage} />

@@ -267,6 +267,7 @@ function RootLayoutNav() {
       <Stack.Screen name="activities/[id]" />
       <Stack.Screen name="shopping/index" />
       <Stack.Screen name="shopping/[id]" />
+      <Stack.Screen name="offerings/index" />
       <Stack.Screen name="communities/index" />
 
       <Stack.Screen name="payment/methods" />

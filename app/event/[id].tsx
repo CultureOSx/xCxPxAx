@@ -40,6 +40,7 @@ import { useEventTicketing } from '@/components/event-detail/useEventTicketing';
 import { AdminToolbar } from '@/components/ui/AdminToolbar';
 import { useRole } from '@/hooks/useRole';
 import { CultureTagRow } from '@/components/ui/CultureTag';
+import { captureEvent } from '@/lib/analytics';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';
@@ -103,6 +104,15 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const { userId } = useAuth();
   const { state: onboardingState } = useOnboarding();
+
+  useEffect(() => {
+    captureEvent('event_detail_viewed', {
+      event_id: event.id,
+      publisher_profile_id: event.publisherProfileId ?? null,
+      venue_profile_id: event.venueProfileId ?? null,
+      organizer_id: event.organizerId ?? null,
+    });
+  }, [event.id, event.publisherProfileId, event.venueProfileId, event.organizerId]);
   const colors = useColors();
   const isDark = useIsDark();
   const s = getStyles(colors, isDark);
@@ -142,13 +152,37 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     }
   }, [event.id, event.imageUrl, uploadImage, deleteImage]);
 
+  const { data: publisherProfile } = useQuery({
+    queryKey: ['/api/profiles', event.publisherProfileId],
+    queryFn: () => api.profiles.get(event.publisherProfileId!),
+    enabled: !!event.publisherProfileId,
+    staleTime: 120_000,
+  });
+
+  const { data: linkedVenueProfile } = useQuery({
+    queryKey: ['/api/profiles', event.venueProfileId],
+    queryFn: () => api.profiles.get(event.venueProfileId!),
+    enabled: !!event.venueProfileId,
+    staleTime: 120_000,
+  });
+
   const canEdit = userId === event.organizerId || userId === event.createdBy || __DEV__;
   const displayCommunity = startCaseLabel(event.communityId) ?? 'General';
   const displayCategory = startCaseLabel(event.category) ?? 'Event';
-  const hostName = event.hostInfo?.name ?? event.hostName ?? startCaseLabel(event.organizerId) ?? displayCommunity ?? 'CulturePass';
-  const hostEmail = event.hostInfo?.contactEmail ?? event.hostEmail;
-  const hostPhone = event.hostInfo?.contactPhone ?? event.hostPhone;
-  const hostWebsite = event.hostInfo?.websiteUrl;
+  const hostName =
+    publisherProfile?.name ??
+    event.hostInfo?.name ??
+    event.hostName ??
+    startCaseLabel(event.organizerId) ??
+    displayCommunity ??
+    'CulturePass';
+  const hostEmail =
+    event.hostInfo?.contactEmail ??
+    event.hostEmail ??
+    publisherProfile?.contactEmail ??
+    publisherProfile?.email;
+  const hostPhone = event.hostInfo?.contactPhone ?? event.hostPhone ?? publisherProfile?.phone;
+  const hostWebsite = event.hostInfo?.websiteUrl ?? publisherProfile?.website;
   const cultureTags = useMemo(
     () => Array.from(new Set([...(event.cultureTag ?? []), ...(event.cultureTags ?? [])])).filter(Boolean),
     [event.cultureTag, event.cultureTags],
@@ -169,10 +203,13 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     () => Array.from(new Set((event.artists ?? []).map((artist) => artist.name).filter(Boolean))),
     [event.artists],
   );
-  const eventLocationLabel = useMemo(
-    () => [event.venue, event.address, event.city, event.country].filter(Boolean).join(', '),
-    [event.address, event.city, event.country, event.venue],
-  );
+  const eventLocationLabel = useMemo(() => {
+    const parts = [event.venue, event.address, event.city, event.country].filter(Boolean);
+    if (linkedVenueProfile?.name && event.venueProfileId) {
+      return [linkedVenueProfile.name, ...parts].join(', ');
+    }
+    return parts.join(', ');
+  }, [event.address, event.city, event.country, event.venue, event.venueProfileId, linkedVenueProfile?.name]);
 
   // Re-enabled localized distance mapping safely
   const distanceKm = useMemo(() => {
@@ -1077,7 +1114,22 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
 
               <View style={s.section}>
                 <Text style={s.sectionTitle}>Host</Text>
-                <Card style={s.hostCard} padding={18}>
+                <Card
+                  style={s.hostCard}
+                  padding={18}
+                  onPress={
+                    event.publisherProfileId
+                      ? () =>
+                          router.push({
+                            pathname: '/profile/[id]',
+                            params: { id: event.publisherProfileId! },
+                          })
+                      : undefined
+                  }
+                  accessibilityLabel={
+                    event.publisherProfileId ? `Open organiser profile ${hostName}` : undefined
+                  }
+                >
                   <View style={s.hostHeader}>
                     <View style={[s.metricIconBg, { backgroundColor: colors.primarySoft }]}>
                       <Ionicons name="sparkles-outline" size={18} color={colors.primary} />

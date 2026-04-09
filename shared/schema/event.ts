@@ -59,6 +59,17 @@ export interface EventData {
   category?: string;
   communityId?: string;
   organizerId?: string;
+  /**
+   * Canonical public profile that publishes this event (directory “page”).
+   * When set, discovery/dashboards should prefer this over organizerId-only resolution.
+   * See docs/PROFILE_PUBLISHING_AND_MARKETPLACE_GAPS.md
+   */
+  publisherProfileId?: string;
+  /**
+   * Optional link to profiles/{id} where entityType is venue (or approved venue-like profile).
+   * Inline venue/address fields remain the fallback for one-off locations.
+   */
+  venueProfileId?: string;
   createdBy?: string;
   imageColor?: string;
   imageUrl?: string;

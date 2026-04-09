@@ -55,6 +55,10 @@ export interface User {
   state?: string;
   postcode?: number;
   country?: string;
+  /** Australian LGA code — proximity / perks gating (not governance). */
+  lgaCode?: string;
+  /** councils/{id} when the member chose an LGA. */
+  councilId?: string;
   bio?: string;
   interests?: string[];
   location?: string;

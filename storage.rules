@@ -47,10 +47,10 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
 
-    // ── Temp uploads (Cloud Functions staging) ──────────────────────────────
+    // ── User uploads (Cloud Functions — public URLs for listing images) ────
     match /uploads/{userId}/{filename} {
-      allow read:  if isOwner(userId);
-      allow write: if false; // Cloud Functions only
+      allow read:  if true;
+      allow write: if false; // Admin SDK / Cloud Functions only
     }
 
     // ── Deny everything else ────────────────────────────────────────────────

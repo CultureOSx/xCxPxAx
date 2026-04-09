@@ -652,7 +652,13 @@ export default function CityScreen() {
                           key={event.id}
                           style={[isDesktop ? { width: w } : animatedCardStyle, { marginBottom: gridGap }]}
                         >
-                          <EventCard event={event} containerWidth={w} containerHeight={260} />
+                          <EventCard
+                            event={event}
+                            containerWidth={w}
+                            containerHeight={Platform.OS === 'web' ? 320 : 260}
+                            layout={Platform.OS === 'web' ? 'stacked' : 'overlay'}
+                            schedulingMode={Platform.OS === 'web' ? 'live_and_countdown' : 'default'}
+                          />
                         </Animated.View>
                       );
                     })}

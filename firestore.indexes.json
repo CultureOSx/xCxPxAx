@@ -141,6 +141,24 @@
       ]
     },
     {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "publisherProfileId", "mode": "ASCENDING" },
+        { "fieldPath": "date", "mode": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "mode": "ASCENDING" },
+        { "fieldPath": "venueProfileId", "mode": "ASCENDING" },
+        { "fieldPath": "date", "mode": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "feed",
       "queryScope": "COLLECTION",
       "fields": [

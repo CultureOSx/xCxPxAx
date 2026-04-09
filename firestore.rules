@@ -33,10 +33,13 @@ service cloud.firestore {
     }
 
     // Events: public can read only published/non-deleted events.
+    // Writes: organizer role + (owner of event or admin). Mutations should prefer Cloud Functions API.
     match /events/{eventId} {
       allow read: if resource.data.status == 'published' && !(resource.data.deletedAt is timestamp);
-      allow create: if isOrganizerLike();
-      allow update, delete: if isOrganizerLike();
+      allow create: if isOrganizerLike()
+        && (request.resource.data.organizerId == request.auth.uid || isAdminLike());
+      allow update, delete: if isOrganizerLike()
+        && (resource.data.organizerId == request.auth.uid || isAdminLike());
     }
 
     // Tickets: owners can read their tickets; writes happen via Cloud Functions.

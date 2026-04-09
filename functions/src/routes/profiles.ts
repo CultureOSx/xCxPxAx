@@ -9,20 +9,45 @@ import { parseBody,
   nowIso,
 } from './utils';
 import { z } from 'zod';
+import type { FirestoreProfile } from '../services/profiles';
 
 export const profilesRouter = Router();
+
+/** Accepts null / "" from JSON clients; normalises to undefined */
+const optionalUrlField = z
+  .union([z.string().url(), z.null(), z.literal('')])
+  .optional()
+  .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
+
+const optionalEmailField = z
+  .union([z.string().email(), z.null(), z.literal('')])
+  .optional()
+  .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
 
 const createProfileSchema = z.object({
   name: z.string().min(1),
   entityType: z.enum(['community', 'business', 'venue', 'artist', 'organisation', 'council', 'government', 'charity']),
   city: z.string().optional(),
+  state: z.string().max(20).optional(),
+  postcode: z.coerce.number().int().min(200).max(9999).optional(),
   country: z.string().optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
   category: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  imageUrl: z.string().optional(),
-  website: z.string().url().optional(),
-  email: z.string().email().optional(),
+  imageUrl: optionalUrlField,
+  website: optionalUrlField,
+  email: optionalEmailField,
+  contactEmail: optionalEmailField,
+  phone: z.string().max(40).optional(),
+  instagram: z.string().max(500).optional(),
+  facebook: z.string().max(500).optional(),
+  youtube: z.string().max(500).optional(),
+  /** Client sends X URLs under this key */
+  twitterX: z.string().max(500).optional(),
+  linkedin: z.string().max(500).optional(),
+  airpal: z.string().max(500).optional(),
   // Cultural Identity Layer
   nationalityId: z.string().optional(),
   cultureIds: z.array(z.string()).optional(),
@@ -33,6 +58,55 @@ const createProfileSchema = z.object({
   countryOfOrigin: z.string().optional(),
   isIndigenous: z.boolean().optional(),
 });
+
+function trimOpt(s: string | null | undefined): string | undefined {
+  if (s == null) return undefined;
+  const t = String(s).trim();
+  return t.length ? t : undefined;
+}
+
+function buildProfileCreatePayload(
+  raw: z.output<typeof createProfileSchema>,
+  ownerId: string,
+): Omit<FirestoreProfile, 'id' | 'createdAt' | 'updatedAt'> {
+  const contact = trimOpt(raw.contactEmail) ?? trimOpt(raw.email);
+  const twitter = trimOpt(raw.twitterX);
+  return {
+    name: raw.name.trim(),
+    entityType: raw.entityType,
+    ownerId,
+    description: trimOpt(raw.description),
+    city: trimOpt(raw.city),
+    state: trimOpt(raw.state),
+    postcode: raw.postcode,
+    country: trimOpt(raw.country),
+    latitude: raw.latitude,
+    longitude: raw.longitude,
+    category: trimOpt(raw.category),
+    tags: raw.tags,
+    imageUrl: raw.imageUrl,
+    website: raw.website,
+    contactEmail: contact,
+    phone: trimOpt(raw.phone),
+    instagram: trimOpt(raw.instagram),
+    facebook: trimOpt(raw.facebook),
+    youtube: trimOpt(raw.youtube),
+    linkedin: trimOpt(raw.linkedin),
+    airpal: trimOpt(raw.airpal),
+    twitter: twitter ?? undefined,
+    nationalityId: trimOpt(raw.nationalityId),
+    cultureIds: raw.cultureIds,
+    languageIds: raw.languageIds,
+    diasporaGroupIds: raw.diasporaGroupIds,
+    cultureTags: raw.cultureTags,
+    languages: raw.languages,
+    countryOfOrigin: trimOpt(raw.countryOfOrigin),
+    isIndigenous: raw.isIndigenous,
+    isVerified: false,
+    status: 'published',
+    handleStatus: 'pending',
+  };
+}
 
 /** GET /api/communities — list communities */
 profilesRouter.get('/communities', async (req, res) => {
@@ -190,6 +264,21 @@ profilesRouter.get('/profiles', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/profiles/my — profiles owned by the signed-in user.
+ * Registered before /profiles/:id so "my" is not captured as an id.
+ */
+profilesRouter.get('/profiles/my', requireAuth, async (req: Request, res: Response) => {
+  if (!isFirestoreConfigured) return res.json({ profiles: [] });
+  try {
+    const profiles = await profilesService.list({ ownerId: req.user!.id });
+    return res.json({ profiles });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/profiles/my');
+    return res.status(500).json({ error: 'Failed to fetch your profiles' });
+  }
+});
+
 /** GET /api/profiles/:id — profile detail */
 profilesRouter.get('/profiles/:id', async (req, res) => {
   const id = String(req.params.id ?? '');
@@ -206,11 +295,10 @@ profilesRouter.get('/profiles/:id', async (req, res) => {
 /** POST /api/profiles — create profile */
 profilesRouter.post('/profiles', requireAuth, moderationCheck, async (req: Request, res: Response) => {
   try {
-    const data = parseBody(createProfileSchema, req.body);
+    const data = parseBody(createProfileSchema, req.body) as z.output<typeof createProfileSchema>;
     const ownerId = req.user!.id;
-    
-    // profilesService.create returns the FirestoreProfile object
-    const fresh = await profilesService.create({ ...data, ownerId });
+    const payload = buildProfileCreatePayload(data, ownerId);
+    const fresh = await profilesService.create(payload);
     return res.status(201).json(fresh);
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to create profile' });
@@ -221,12 +309,21 @@ profilesRouter.post('/profiles', requireAuth, moderationCheck, async (req: Reque
 profilesRouter.put('/profiles/:id', requireAuth, moderationCheck, async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id ?? '');
-    const updates = parseBody(createProfileSchema.partial(), req.body);
-    
+    const raw = parseBody(createProfileSchema.partial(), req.body);
+    const { twitterX, email, contactEmail, ...rest } = raw;
+    const patch: Record<string, unknown> = { ...rest };
+    if (twitterX !== undefined) patch.twitter = trimOpt(twitterX);
+    if (contactEmail !== undefined || email !== undefined) {
+      patch.contactEmail = trimOpt(contactEmail) ?? trimOpt(email);
+    }
+    const updates = Object.fromEntries(
+      Object.entries(patch).filter(([, v]) => v !== undefined),
+    ) as Partial<FirestoreProfile>;
+
     const existing = await profilesService.getById(id);
     if (!existing) return res.status(404).json({ error: 'Profile not found' });
     if (existing.ownerId !== req.user!.id && req.user!.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
-    
+
     const updated = await profilesService.update(id, updates);
     return res.json(updated);
   } catch (err: any) {

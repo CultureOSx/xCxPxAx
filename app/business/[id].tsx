@@ -25,13 +25,13 @@ export default function BusinessDetailScreen() {
     enabled: !!id,
   });
 
-  const { data: councilData } = useQuery({
-    queryKey: ['/api/council/my', business?.city, business?.country],
-    queryFn: () => api.council.my({ city: business?.city, country: business?.country }),
-    enabled: !!business,
+  const { data: councilLga } = useQuery({
+    queryKey: ['/api/council/resolve', business?.city, business?.country],
+    queryFn: () => api.council.resolve({ city: business?.city, country: business?.country }),
+    enabled: !!business && !!(business.city || business.country),
   });
 
-  const council = councilData?.council;
+  const council = councilLga?.council ?? null;
   const isCouncilVerified = council?.verificationStatus === 'verified';
   const lgaCode = council?.lgaCode;
 

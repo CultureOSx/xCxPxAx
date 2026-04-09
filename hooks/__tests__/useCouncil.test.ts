@@ -6,7 +6,6 @@ import { useCouncil } from '../useCouncil';
 // ---------------------------------------------------------------------------
 
 const mockRefetch = jest.fn();
-const mockMutate = jest.fn();
 
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(() => ({
@@ -14,10 +13,6 @@ jest.mock('@tanstack/react-query', () => ({
     isLoading: false,
     isError: false,
     refetch: mockRefetch,
-  })),
-  useMutation: jest.fn(() => ({
-    mutate: mockMutate,
-    isPending: false,
   })),
   useQueryClient: jest.fn(() => ({
     invalidateQueries: jest.fn(),
@@ -41,10 +36,6 @@ jest.mock('../../lib/api', () => ({
   api: {
     council: {
       my: jest.fn(),
-      follow: jest.fn(),
-      unfollow: jest.fn(),
-      updatePreferences: jest.fn(),
-      updateWasteReminder: jest.fn(),
     },
   },
 }));
@@ -81,26 +72,12 @@ describe('useCouncil hook', () => {
     });
   });
 
-  it('should pass enabled: true when authenticated and city is set', () => {
+  it('should pass enabled: true when authenticated', () => {
     renderHook(() => useCouncil());
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         enabled: true,
-      }),
-    );
-  });
-
-  it('should pass enabled: false when city is empty', () => {
-    (useOnboarding as jest.Mock).mockReturnValue({
-      state: { city: '', country: 'Australia' },
-    });
-
-    renderHook(() => useCouncil());
-
-    expect(useQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        enabled: false,
       }),
     );
   });
@@ -120,11 +97,9 @@ describe('useCouncil hook', () => {
     );
   });
 
-  it('should expose council data and loading state', () => {
+  it('should expose council, councilId, lgaCode from LGA context', () => {
     const mockData = {
-      council: { id: 'c1', name: 'City of Sydney' },
-      preferences: [{ category: 'emergency', enabled: true }],
-      following: false,
+      council: { id: 'c1', name: 'City of Sydney', lgaCode: 'LGA12345' },
     };
 
     (useQuery as jest.Mock).mockReturnValue({
@@ -137,36 +112,20 @@ describe('useCouncil hook', () => {
     const { result } = renderHook(() => useCouncil());
 
     expect(result.current.data).toBe(mockData);
+    expect(result.current.council).toEqual(mockData.council);
+    expect(result.current.councilId).toBe('c1');
+    expect(result.current.lgaCode).toBe('LGA12345');
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isError).toBe(false);
-    expect(result.current.councilId).toBe('c1');
     expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('should use data preferences when no local overrides exist', () => {
-    const prefs = [
-      { category: 'emergency', enabled: true },
-      { category: 'flood', enabled: false },
-    ];
-
-    (useQuery as jest.Mock).mockReturnValue({
-      data: { council: { id: 'c1' }, preferences: prefs, following: false },
-      isLoading: false,
-      isError: false,
-      refetch: mockRefetch,
-    });
-
-    const { result } = renderHook(() => useCouncil());
-
-    expect(result.current.effectivePrefs).toEqual(prefs);
-  });
-
-  it('should include the correct query key with city and postcode', () => {
+  it('should include the correct query key with city, postcode, and state', () => {
     renderHook(() => useCouncil());
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['/api/council/my', 'Sydney', 2000],
+        queryKey: ['/api/council/my', 'Sydney', 2000, 'NSW'],
       }),
     );
   });
