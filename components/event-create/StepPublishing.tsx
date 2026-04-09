@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { CultureTokens } from '@/constants/theme';
-import { TextStyles } from '@/constants/typography';
+import { TextStyles } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Profile } from '@/shared/schema';

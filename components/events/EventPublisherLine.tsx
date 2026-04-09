@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { api } from '@/lib/api';
+import { Spacing, FontFamily, FontSize } from '@/constants/theme';
 
 export type EventPublisherLineVariant = 'default' | 'compact' | 'onDark';
 
@@ -15,26 +16,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   metaCompact: {
-    gap: 4,
-    marginBottom: 4,
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
     marginTop: 0,
   },
   metaOnDark: {
-    gap: 4,
-    marginBottom: 8,
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
     justifyContent: 'center',
   },
   metaText: {
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.chip,
     flex: 1,
   },
   metaTextCompact: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
   },
   metaTextOnDark: {
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 12,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.caption,
     flexShrink: 1,
     maxWidth: '90%',
     textAlign: 'center',

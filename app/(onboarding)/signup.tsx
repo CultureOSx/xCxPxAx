@@ -11,6 +11,32 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  useReducedMotion,
+} from 'react-native-reanimated';
+
+import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
+import { useSignup } from '@/hooks/useSignup';
+
+import {
+  Button,
+  Input,
+  Checkbox,
+  SocialButton,
+  PasswordStrengthIndicator,
+} from '@/components/ui';
+
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
+import {
+  AuthAmbientBackground,
+  AuthLiquidFormCard,
+  AuthDesktopBackPill,
+  AuthMobileHeader,
+} from '@/components/onboarding/AuthScreenPrimitives';
+
 import {
   CultureTokens,
   CardTokens,
@@ -23,24 +49,20 @@ import {
   LiquidGlassTokens,
   LiquidGlassAccents,
 } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { SocialButton } from '@/components/ui/SocialButton';
-import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
+
 import { routeWithRedirect } from '@/lib/routes';
-import { BrandWordmark } from '@/components/ui/BrandWordmark';
-import { useSignup } from '@/hooks/useSignup';
-import Animated, { FadeInUp, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { HapticManager } from '@/lib/haptics';
-import {
-  AuthAmbientBackground,
-  AuthLiquidFormCard,
-  AuthDesktopBackPill,
-  AuthMobileHeader,
-} from '@/components/onboarding/AuthScreenPrimitives';
+
+const ROLE_OPTIONS = [
+  { value: 'user' as const, icon: 'compass-outline' as const, label: 'Discover Events' },
+  { value: 'organizer' as const, icon: 'calendar-outline' as const, label: 'Host Events' },
+] as const;
+
+const VALUE_PROPS = [
+  { icon: 'calendar-outline' as const, title: 'Cultural Events', desc: "Discover what's on this week in your city." },
+  { icon: 'people-outline' as const, title: 'Your Community', desc: 'Connect with people who share your culture.' },
+  { icon: 'gift-outline' as const, title: 'Member Perks', desc: 'Exclusive rewards from local businesses.' },
+] as const;
 
 export default function SignUpScreen() {
   const colors = useColors();
@@ -86,53 +108,68 @@ export default function SignUpScreen() {
           .damping(LiquidGlassTokens.entranceSpring.damping)
           .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
 
-  const padBottom = 64 + (isWeb ? 0 : insets.bottom);
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
+  const padBottom = isWeb ? 40 : 64 + insets.bottom;
 
-  // Shared form card content — renders identically in both desktop and mobile layouts
-  const formCard = (
+  const formContent = (
     <AuthLiquidFormCard isDesktop={isDesktop}>
       {/* Brand */}
       <Animated.View entering={enter(40)} style={s.brandBlock}>
-        <View style={[s.brandIcon, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+        <View
+          style={[
+            s.brandIcon,
+            { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
+          ]}
+        >
           <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
         </View>
         <BrandWordmark size="lg" withTagline centered />
       </Animated.View>
 
-      {/* Headline */}
-      <Animated.Text entering={enter(80)} style={[s.title, { color: colors.text }]}>
-        Create Account.
+      {/* Main Headline */}
+      <Animated.Text
+        entering={enter(80)}
+        style={[s.title, { color: colors.text }]}
+      >
+        Belong anywhere.
       </Animated.Text>
+
       <Animated.Text entering={enter(110)} style={[s.subtitle, { color: colors.textSecondary }]}>
         Join the cultural community built for diaspora cities.
       </Animated.Text>
 
-      {/* Benefits pill */}
+      {/* Benefits */}
       <Animated.View
         entering={enter(140)}
-        style={[s.benefitsPill, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
+        style={[
+          s.benefitsPill,
+          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+        ]}
       >
         <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
           Free Events · Communities · Exclusive Perks
         </Text>
       </Animated.View>
 
-      {/* Error banner */}
-      {globalError ? (
+      {/* Global Error */}
+      {globalError && (
         <Animated.View
-          entering={enter(160)}
+          entering={enter(200)}
           style={[
             s.errorBanner,
-            { backgroundColor: LiquidGlassAccents.errorBannerFill, borderColor: LiquidGlassAccents.errorBannerBorder },
+            {
+              backgroundColor: LiquidGlassAccents.errorBannerFill,
+              borderColor: LiquidGlassAccents.errorBannerBorder,
+            },
           ]}
           accessibilityRole="alert"
         >
           <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
           <Text style={[s.errorText, { color: colors.error }]}>{globalError}</Text>
         </Animated.View>
-      ) : null}
+      )}
 
-      {/* Role toggle */}
+      {/* Role Selection */}
       <Animated.View
         entering={enter(180)}
         style={s.roleGroup}
@@ -141,12 +178,7 @@ export default function SignUpScreen() {
       >
         <Text style={[s.roleLabel, { color: colors.textSecondary }]}>I want to</Text>
         <View style={s.roleRow}>
-          {(
-            [
-              { value: 'user', icon: 'compass-outline', label: 'Discover Events' },
-              { value: 'organizer', icon: 'calendar-outline', label: 'Host Events' },
-            ] as const
-          ).map((opt) => {
+          {ROLE_OPTIONS.map((opt) => {
             const active = role === opt.value;
             return (
               <Pressable
@@ -186,7 +218,7 @@ export default function SignUpScreen() {
         </View>
       </Animated.View>
 
-      {/* Form fields */}
+      {/* Form Fields */}
       <Animated.View entering={enter(240)} style={s.form}>
         <Input
           label="Full Name"
@@ -228,11 +260,11 @@ export default function SignUpScreen() {
             onSubmitEditing={handleSignUp}
             error={passwordError}
           />
-          {password.length > 0 ? <PasswordStrengthIndicator password={password} /> : null}
+          {password.length > 0 && <PasswordStrengthIndicator password={password} />}
         </View>
       </Animated.View>
 
-      {/* Terms agreement */}
+      {/* Terms Checkbox */}
       <Animated.View entering={enter(300)} style={s.optionsRow}>
         <Checkbox
           checked={agreed}
@@ -240,11 +272,17 @@ export default function SignUpScreen() {
           label={
             <Text style={[s.checkText, { color: colors.text }]}>
               I agree to the{' '}
-              <Text style={[s.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/terms')}>
+              <Text
+                style={[s.linkText, { color: colors.primary }]}
+                onPress={() => router.push('/legal/terms')}
+              >
                 Terms
               </Text>
               {' & '}
-              <Text style={[s.linkText, { color: CultureTokens.gold }]} onPress={() => router.push('/legal/privacy')}>
+              <Text
+                style={[s.linkText, { color: colors.primary }]}
+                onPress={() => router.push('/legal/privacy')}
+              >
                 Privacy Policy
               </Text>
             </Text>
@@ -252,7 +290,7 @@ export default function SignUpScreen() {
         />
       </Animated.View>
 
-      {/* CTA */}
+      {/* Submit Button */}
       <Animated.View entering={enter(340)}>
         <Button
           variant="gold"
@@ -270,14 +308,13 @@ export default function SignUpScreen() {
         </Button>
       </Animated.View>
 
-      {/* Social divider */}
+      {/* Social */}
       <Animated.View entering={enter(380)} style={s.socialDivider}>
         <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
         <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
         <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
       </Animated.View>
 
-      {/* Social buttons */}
       <Animated.View entering={enter(420)} style={s.socialRow}>
         <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
         {Platform.OS === 'ios' ? (
@@ -287,7 +324,6 @@ export default function SignUpScreen() {
         )}
       </Animated.View>
 
-      {/* Switch to login */}
       <Animated.View entering={enter(460)}>
         <Pressable
           style={s.switchRow}
@@ -298,7 +334,7 @@ export default function SignUpScreen() {
         >
           <Text style={[s.switchText, { color: colors.textSecondary }]}>
             Already have an account?{' '}
-            <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign In</Text>
+            <Text style={[s.switchLink, { color: colors.primary }]}>Sign In</Text>
           </Text>
         </Pressable>
       </Animated.View>
@@ -318,40 +354,46 @@ export default function SignUpScreen() {
         />
       )}
 
-      <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={s.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+        enabled
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             s.scrollContent,
             isDesktop && s.scrollContentDesktop,
-            !isDesktop && { paddingTop: 10 },
             { paddingBottom: padBottom },
           ]}
         >
           {isWeb && isDesktop ? (
             <View style={s.webRow}>
-              {/* Left marketing panel */}
+              {/* Marketing Column */}
               <View style={s.webLeft}>
                 <Animated.View entering={enter(40)} style={s.webKickerRow}>
                   <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
                   <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
                 </Animated.View>
+
                 <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
                   Your cultural home,{'\n'}anywhere.
                 </Animated.Text>
+
                 <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
                   The premium marketplace for diaspora communities — events, local businesses, and exclusive member perks in your city.
                 </Animated.Text>
+
                 <Animated.View entering={enter(130)} style={s.webValueGrid}>
-                  {[
-                    { icon: 'calendar-outline' as const, title: 'Cultural Events', desc: 'Discover what's on this week in your city.' },
-                    { icon: 'people-outline' as const, title: 'Your Community', desc: 'Connect with people who share your culture.' },
-                    { icon: 'gift-outline' as const, title: 'Member Perks', desc: 'Exclusive rewards from local businesses.' },
-                  ].map((item) => (
+                  {VALUE_PROPS.map((item) => (
                     <View
                       key={item.title}
-                      style={[s.webValueCard, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+                      style={[
+                        s.webValueCard,
+                        { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                      ]}
                     >
                       <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
                         <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
@@ -365,14 +407,14 @@ export default function SignUpScreen() {
                 </Animated.View>
               </View>
 
-              {/* Right form card */}
+              {/* Form Card */}
               <Animated.View entering={enterUp} style={s.cardWrap}>
-                {formCard}
+                {formContent}
               </Animated.View>
             </View>
           ) : (
             <Animated.View entering={enterUp} style={s.cardWrap}>
-              {formCard}
+              {formContent}
             </Animated.View>
           )}
         </ScrollView>
@@ -384,24 +426,38 @@ export default function SignUpScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   keyboardAvoid: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center' },
-  scrollContentDesktop: { paddingVertical: 64 },
-  cardWrap: { width: '100%' },
 
-  // Desktop two-column row
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingTop: 20,
+  },
+  scrollContentDesktop: {
+    paddingVertical: 64,
+    paddingHorizontal: 32,
+  },
+
+  cardWrap: { width: '100%', maxWidth: 420, alignSelf: 'center' },
+
+  /* Desktop Marketing */
   webRow: {
     width: '100%',
-    maxWidth: 960,
+    maxWidth: 1120,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 48,
-    paddingHorizontal: 32,
+    gap: 72,
   },
   webLeft: { flex: 1, minWidth: 0 },
   webKickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   webDot: { width: 8, height: 8, borderRadius: 4 },
-  webKicker: { fontFamily: FontFamily.semibold, fontSize: 12, letterSpacing: 1.1, textTransform: 'uppercase' },
+  webKicker: {
+    fontFamily: FontFamily.semibold,
+    fontSize: 12,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+  },
   webHeadline: {
     fontFamily: FontFamily.bold,
     fontSize: 42,
@@ -409,47 +465,65 @@ const s = StyleSheet.create({
     lineHeight: 50,
     marginBottom: 14,
   },
-  webLead: { fontFamily: FontFamily.regular, fontSize: 15, lineHeight: 24, maxWidth: 440, marginBottom: 24 },
-  webValueGrid: { gap: 10, marginTop: 4, maxWidth: 440 },
+  webLead: {
+    fontFamily: FontFamily.regular,
+    fontSize: 15,
+    lineHeight: 24,
+    maxWidth: 460,
+    marginBottom: 28,
+  },
+  webValueGrid: { gap: 12, marginTop: 8, maxWidth: 460 },
   webValueCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     borderWidth: 1,
     borderRadius: CardTokens.radius,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  webValueIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  webValueIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   webValueTitle: { fontFamily: FontFamily.semibold, fontSize: 14 },
-  webValueDesc: { fontFamily: FontFamily.regular, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  webValueDesc: {
+    fontFamily: FontFamily.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
 
-  // Form card internals
-  brandBlock: { alignItems: 'center', marginBottom: 20, gap: 6 },
+  /* Form Styles */
+  brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
   brandIcon: {
-    width: 64,
-    height: 64,
+    width: 69,
+    height: 69,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 8,
   },
 
   title: {
     ...TextStyles.display,
-    fontSize: 34,
+    fontSize: 48,
     textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.4,
+    marginBottom: 12,
+    letterSpacing: -1.2,
+    lineHeight: 54,
   },
   subtitle: {
-    ...TextStyles.callout,
+    ...TextStyles.title2,
     textAlign: 'center',
-    maxWidth: 360,
+    maxWidth: 369,
     alignSelf: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
     lineHeight: 22,
   },
 
@@ -457,9 +531,9 @@ const s = StyleSheet.create({
     alignSelf: 'center',
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    marginBottom: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    marginBottom: 24,
   },
   benefitsText: {
     ...TextStyles.caption,
@@ -475,37 +549,40 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: Spacing.md,
     borderRadius: CardTokens.radius,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  // Role toggle
-  roleGroup: { marginBottom: 20 },
+  roleGroup: { marginBottom: 24 },
   roleLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.body2,
     marginBottom: Spacing.sm,
   },
-  roleRow: { flexDirection: 'row', gap: 10 },
+  roleRow: { flexDirection: 'row', gap: 12 },
   roleOption: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: CardTokens.radius,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   roleOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  // Form
-  form: { gap: 16, marginBottom: 4 },
+  form: { gap: 18, marginBottom: 8 },
   passwordGroup: { gap: Spacing.sm },
 
-  optionsRow: { marginTop: 4, marginBottom: 20 },
-  checkText: { flex: 1, fontFamily: FontFamily.regular, fontSize: FontSize.body2, lineHeight: 20 },
+  optionsRow: { marginTop: 8, marginBottom: 24 },
+  checkText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.body2,
+    lineHeight: 20,
+  },
   linkText: { fontFamily: FontFamily.semibold },
 
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
@@ -514,14 +591,24 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginTop: 22,
-    marginBottom: 18,
+    marginTop: 24,
+    marginBottom: 20,
   },
   divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-  socialRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: 20, justifyContent: 'center' },
 
-  switchRow: { alignItems: 'center', paddingVertical: 10 },
-  switchText: { fontFamily: FontFamily.regular, fontSize: FontSize.callout, textAlign: 'center' },
+  socialRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: 24,
+    justifyContent: 'center',
+  },
+
+  switchRow: { alignItems: 'center', paddingVertical: 12 },
+  switchText: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.callout,
+    textAlign: 'center',
+  },
   switchLink: { fontFamily: FontFamily.bold },
 });

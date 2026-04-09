@@ -124,13 +124,13 @@ export default function LoginScreen() {
           { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
         ]}
       >
-        <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
+        <Text style={[s.benefitsText, { color: colors.textSecondary }]}>
           Events · Communities · Perks
         </Text>
       </Animated.View>
 
       {/* Global Error */}
-      {globalError && (
+      {globalError ? (
         <Animated.View
           entering={enter(180)}
           style={[
@@ -145,7 +145,7 @@ export default function LoginScreen() {
           <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
           <Text style={[s.globalErrorText, { color: colors.error }]}>{globalError}</Text>
         </Animated.View>
-      )}
+      ) : null}
 
       {/* Form */}
       <Animated.View entering={enter(220)} style={s.form}>
@@ -176,7 +176,7 @@ export default function LoginScreen() {
             accessibilityRole="link"
             accessibilityLabel="Forgot password"
           >
-            <Text style={[s.forgotText, { color: CultureTokens.gold }]}>Forgot?</Text>
+            <Text style={[s.forgotText, { color: colors.primary }]}>Forgot?</Text>
           </Pressable>
         </View>
 
@@ -246,7 +246,7 @@ export default function LoginScreen() {
         >
           <Text style={[s.switchText, { color: colors.textSecondary }]}>
             Don&apos;t have an account?{' '}
-            <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
+            <Text style={[s.switchLink, { color: colors.primary }]}>Sign Up</Text>
           </Text>
         </Pressable>
       </Animated.View>
