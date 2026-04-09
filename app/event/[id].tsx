@@ -204,12 +204,14 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     [event.artists],
   );
   const eventLocationLabel = useMemo(() => {
-    const parts = [event.venue, event.address, event.city, event.country].filter(Boolean);
-    if (linkedVenueProfile?.name && event.venueProfileId) {
-      return [linkedVenueProfile.name, ...parts].join(', ');
-    }
-    return parts.join(', ');
-  }, [event.address, event.city, event.country, event.venue, event.venueProfileId, linkedVenueProfile?.name]);
+    // Prefer linkedVenueProfile.name if present, otherwise event.venue
+    const primaryVenueName = linkedVenueProfile?.name && event.venueProfileId ? linkedVenueProfile.name : event.venue;
+    // Build parts, deduplicating venue name
+    const parts = [primaryVenueName, event.address, event.city, event.country].filter(Boolean);
+    // Remove duplicate venue if present
+    const dedupedParts = parts.filter((part, idx) => idx === 0 || part !== parts[0]);
+    return dedupedParts.join(', ');
+  }, [event.venue, event.venueProfileId, linkedVenueProfile?.name, event.address, event.city, event.country]);
 
   // Re-enabled localized distance mapping safely
   const distanceKm = useMemo(() => {
@@ -1127,7 +1129,14 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
                       : undefined
                   }
                   accessibilityLabel={
-                    event.publisherProfileId ? `Open organiser profile ${hostName}` : undefined
+                    event.publisherProfileId
+                      ? `Open organiser profile ${hostName}`
+                      : `Organiser: ${hostName}`
+                  }
+                  accessibilityHint={
+                    event.publisherProfileId
+                      ? 'Opens organiser profile'
+                      : 'Organiser information (not interactive)'
                   }
                 >
                   <View style={s.hostHeader}>

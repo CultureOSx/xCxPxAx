@@ -265,6 +265,11 @@ APP_URL=https://culturepass.app
 # Connect marketplace fee (optional; default 1000 bps = 10%)
 STRIPE_CONNECT_PLATFORM_FEE_BPS=1000
 ```
+ 
+# Local development seeding only
+SEED_TEST_EMAIL=testuser@example.com   # for local development seeding only
+SEED_TEST_PASSWORD=supersecret        # for local development seeding only
+# Used by: npm run emulator:seed:cap
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
 

@@ -207,8 +207,8 @@ export default function SearchScreen() {
     }
   }, [params.q]);
 
-  const structuredSearch =
-    Boolean(publisherProfileId) || Boolean(venueProfileId);
+  const structuredSearch = Boolean(publisherProfileId) || Boolean(venueProfileId);
+  const isStructuredOrText = structuredSearch || query.trim().length >= 2;
 
   const { data, isFetching } = useQuery({
     queryKey: ['search', query, state.city, state.country, publisherProfileId, venueProfileId],
@@ -362,7 +362,7 @@ export default function SearchScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </Pressable>
 
-          {query.trim().length >= 2 ? (
+          {isStructuredOrText ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -393,7 +393,7 @@ export default function SearchScreen() {
           ) : null}
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 40 }}>
-            {query.trim().length === 0 ? (
+            {!structuredSearch && query.trim().length === 0 ? (
               <View style={[styles.section, { paddingHorizontal: hPad }]}>
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Trending Searches</Text>
                 <View style={styles.trendingGrid}>

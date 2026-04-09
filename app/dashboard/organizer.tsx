@@ -174,27 +174,52 @@ function OrganizerDashboardContent() {
     if (connectQueryParam === 'return' || connectQueryParam === 'refresh') {
       queryClient.invalidateQueries({ queryKey: ['stripe-connect-status'] });
       queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
+      // Clear the connect param from the URL to avoid repeated invalidation
+      if (typeof window !== 'undefined' && window.history && window.location) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('connect');
+        window.history.replaceState({}, '', url.toString());
+      }
     }
   }, [connectQueryParam, queryClient]);
 
   const setupStripePayouts = useMutation({
-    mutationFn: async () => {
-      const pid = payoutProfileId!;
-      const status = await api.stripe.connectStatus(pid);
-      if (!status.accountId) {
-        await api.stripe.connectCreateAccount(pid);
-      }
-      const { url } = await api.stripe.connectAccountLink(pid);
-      return url;
-    },
-    onSuccess: async (url) => {
-      await WebBrowser.openBrowserAsync(url, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-      });
-      await refetchConnect();
-      queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
-    },
-  });
+      mutationFn: async () => {
+        try {
+          const pid = payoutProfileId!;
+          const status = await api.stripe.connectStatus(pid);
+          if (!status.accountId) {
+            await api.stripe.connectCreateAccount(pid);
+          }
+          const { url } = await api.stripe.connectAccountLink(pid);
+          return url;
+        } catch (err) {
+          if (__DEV__) console.error('Stripe setup error', err);
+          throw err;
+        }
+      },
+      onSuccess: async (url) => {
+        try {
+          const result = await WebBrowser.openBrowserAsync(url, {
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          });
+          // Only refetch if user completed the flow (not dismissed)
+          if (result.type === 'opened' || result.type === 'success') {
+            await refetchConnect();
+            queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
+          }
+        } catch (err) {
+          if (__DEV__) console.error('WebBrowser error', err);
+        }
+      },
+      onError: (error) => {
+        if (__DEV__) console.error('Stripe Connect setup failed', error);
+        // Optionally show a toast/alert here
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert('Failed to set up Stripe payouts. Please try again or contact support.');
+        }
+      },
+    });
 
   const { data: playlistData, refetch: refetchPlaylist } = useQuery({
     queryKey: ['/api/playlists', userId],

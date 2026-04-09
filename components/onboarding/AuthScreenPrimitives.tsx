@@ -192,8 +192,9 @@ const styles = StyleSheet.create({
   },
   formCardDesktop: { maxWidth: 520 },
   formCardInner: {
-    padding: CardTokens.paddingLarge * 2,
-    paddingTop: Spacing.xxl,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.xl,
   },
   desktopBackRow: {
     position: 'absolute',

@@ -1,9 +1,22 @@
-import React, { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useReducedMotion,
+} from 'react-native-reanimated';
+
 import { useLogin } from '@/hooks/useLogin';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +24,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+
 import {
   CardTokens,
   CultureTokens,
@@ -23,6 +37,7 @@ import {
   TextStyles,
   shadows,
 } from '@/constants/theme';
+
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
 import {
@@ -39,7 +54,9 @@ export default function LoginScreen() {
   const reducedMotion = useReducedMotion();
 
   const searchParams = useLocalSearchParams();
-  const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
+  const redirectTo = sanitizeInternalRedirect(
+    searchParams.redirectTo ?? searchParams.redirect,
+  );
 
   const {
     email,
@@ -73,8 +90,168 @@ export default function LoginScreen() {
           .damping(LiquidGlassTokens.entranceSpring.damping)
           .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
 
-  const padBottom = 64 + (isWeb ? 0 : insets.bottom);
-  const cardPadding = useMemo(() => (isDesktop ? CardTokens.paddingLarge * 2 : CardTokens.paddingLarge * 2), [isDesktop]);
+  // Better keyboard offset for iOS (status bar + header)
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
+  const padBottom = isWeb ? 40 : 64 + insets.bottom;
+
+  const FormContent = () => (
+    <View style={s.cardInner}>
+      {/* Brand */}
+      <Animated.View entering={enter(40)} style={s.brandBlock}>
+        <View
+          style={[
+            s.brandIcon,
+            { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
+          ]}
+        >
+          <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
+        </View>
+        <BrandWordmark size="lg" withTagline centered />
+      </Animated.View>
+
+      {/* Copy */}
+      <Animated.Text entering={enter(90)} style={[s.title, { color: colors.text }]}>
+        Welcome back.
+      </Animated.Text>
+      <Animated.Text entering={enter(120)} style={[s.subtitle, { color: colors.textSecondary }]}>
+        Sign in to continue your cultural journey.
+      </Animated.Text>
+
+      <Animated.View
+        entering={enter(150)}
+        style={[
+          s.benefitsPill,
+          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+        ]}
+      >
+        <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
+          Events · Communities · Perks
+        </Text>
+      </Animated.View>
+
+      {/* Global Error */}
+      {globalError && (
+        <Animated.View
+          entering={enter(180)}
+          style={[
+            s.errorBanner,
+            {
+              backgroundColor: LiquidGlassAccents.errorBannerFill,
+              borderColor: LiquidGlassAccents.errorBannerBorder,
+            },
+          ]}
+          accessibilityRole="alert"
+        >
+          <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
+          <Text style={[s.globalErrorText, { color: colors.error }]}>{globalError}</Text>
+        </Animated.View>
+      )}
+
+      {/* Form */}
+      <Animated.View entering={enter(220)} style={s.form}>
+        <Input
+          label="Email Address"
+          placeholder="you@example.com"
+          leftIcon="mail-outline"
+          value={email}
+          onChangeText={(v) => {
+            setEmail(v);
+            clearErrors();
+          }}
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="username"
+          keyboardType="email-address"
+          returnKeyType="next"
+          error={emailError}
+        />
+
+        <View style={s.passwordHeader}>
+          <Text style={[s.passwordLabel, { color: colors.text }]}>Password</Text>
+          <Pressable
+            hitSlop={12}
+            onPress={() =>
+              router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as string)
+            }
+            accessibilityRole="link"
+            accessibilityLabel="Forgot password"
+          >
+            <Text style={[s.forgotText, { color: CultureTokens.gold }]}>Forgot?</Text>
+          </Pressable>
+        </View>
+
+        <Input
+          placeholder="Enter password"
+          leftIcon="lock-closed-outline"
+          value={password}
+          onChangeText={(v) => {
+            setPassword(v);
+            clearErrors();
+          }}
+          passwordToggle
+          autoComplete="password"
+          textContentType="password"
+          returnKeyType="done"
+          onSubmitEditing={handleLogin}
+          error={passwordError}
+        />
+
+        <View style={s.optionsRow}>
+          <Checkbox checked={rememberMe} onToggle={setRememberMe} label="Keep me signed in" />
+        </View>
+
+        <Button
+          variant="gold"
+          size="lg"
+          fullWidth
+          haptic
+          rightIcon="arrow-forward"
+          loading={loading}
+          disabled={!isValid || loading}
+          onPress={handleLogin}
+          style={[s.submitBtn, shadows.medium]}
+          accessibilityLabel="Sign in"
+        >
+          Sign In
+        </Button>
+      </Animated.View>
+
+      {/* Social Divider */}
+      <Animated.View entering={enter(320)} style={s.socialDivider}>
+        <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
+        <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
+        <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
+      </Animated.View>
+
+      {/* Social Buttons */}
+      <Animated.View entering={enter(360)} style={s.socialRow}>
+        <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
+        {Platform.OS === 'ios' ? (
+          <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
+        ) : (
+          <SocialButton provider="apple" comingSoon disabled={loading} />
+        )}
+      </Animated.View>
+
+      {/* Switch to Signup */}
+      <Animated.View entering={enter(420)}>
+        <Pressable
+          style={s.switchRow}
+          onPress={() =>
+            router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)
+          }
+          hitSlop={12}
+          accessibilityRole="link"
+          accessibilityLabel="Sign up for an account"
+        >
+          <Text style={[s.switchText, { color: colors.textSecondary }]}>
+            Don&apos;t have an account?{' '}
+            <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -89,37 +266,51 @@ export default function LoginScreen() {
         />
       )}
 
-      <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={s.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+        enabled
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             s.scrollContent,
             isDesktop && s.scrollContentDesktop,
-            !isDesktop && { paddingTop: 10 },
             { paddingBottom: padBottom },
           ]}
         >
           {isWeb && isDesktop ? (
             <View style={s.webRow}>
+              {/* Left marketing column */}
               <View style={s.webLeft}>
                 <Animated.View entering={enter(40)} style={s.webKickerRow}>
                   <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
                   <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
                 </Animated.View>
+
                 <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
                   Belong anywhere.
                 </Animated.Text>
+
                 <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
                   A premium cultural lifestyle marketplace — find events, communities, and local places built for diaspora cities.
                 </Animated.Text>
+
                 <Animated.View entering={enter(130)} style={s.webValueGrid}>
                   {[
                     { icon: 'calendar-outline' as const, title: 'Events', desc: 'Discover what’s on this week.' },
                     { icon: 'people-outline' as const, title: 'Communities', desc: 'Join and share with your people.' },
                     { icon: 'gift-outline' as const, title: 'Perks', desc: 'Member-only rewards & offers.' },
                   ].map((item) => (
-                    <View key={item.title} style={[s.webValueCard, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+                    <View
+                      key={item.title}
+                      style={[
+                        s.webValueCard,
+                        { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                      ]}
+                    >
                       <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
                         <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
                       </View>
@@ -132,310 +323,18 @@ export default function LoginScreen() {
                 </Animated.View>
               </View>
 
+              {/* Form Card */}
               <Animated.View entering={enterUp} style={s.cardWrap}>
-                <AuthLiquidFormCard isDesktop={isDesktop} style={{}}>
-                  <View style={[s.cardInner, { padding: cardPadding }]}>
-                {/* Brand */}
-                <Animated.View entering={enter(40)} style={s.brandBlock}>
-                  <View
-                    style={[
-                      s.brandIcon,
-                      { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-                    ]}
-                  >
-                    <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
-                  </View>
-                  <BrandWordmark size="lg" withTagline centered />
-                </Animated.View>
-
-                {/* Copy */}
-                <Animated.Text entering={enter(90)} style={[s.title, { color: colors.text }]}>
-                  Welcome back.
-                </Animated.Text>
-                <Animated.Text entering={enter(120)} style={[s.subtitle, { color: colors.textSecondary }]}>
-                  Sign in to continue your cultural journey.
-                </Animated.Text>
-
-                <Animated.View
-                  entering={enter(150)}
-                  style={[
-                    s.benefitsPill,
-                    { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-                  ]}
-                >
-                  <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>Events · Communities · Perks</Text>
-                </Animated.View>
-
-                {/* Errors */}
-                {globalError ? (
-                  <Animated.View
-                    entering={enter(180)}
-                    style={[
-                      s.errorBanner,
-                      {
-                        backgroundColor: LiquidGlassAccents.errorBannerFill,
-                        borderColor: LiquidGlassAccents.errorBannerBorder,
-                      },
-                    ]}
-                    accessibilityRole="alert"
-                  >
-                    <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
-                    <Text style={[s.globalErrorText, { color: colors.error }]}>{globalError}</Text>
-                  </Animated.View>
-                ) : null}
-
-                {/* Form */}
-                <Animated.View entering={enter(220)} style={s.form}>
-                  <Input
-                    label="Email Address"
-                    placeholder="you@example.com"
-                    leftIcon="mail-outline"
-                    value={email}
-                    onChangeText={(v) => {
-                      setEmail(v);
-                      clearErrors();
-                    }}
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    textContentType="username"
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                    error={emailError}
-                  />
-
-                  <View style={s.passwordHeader}>
-                    <Text style={[s.passwordLabel, { color: colors.text }]}>Password</Text>
-                    <Pressable
-                      hitSlop={12}
-                      onPress={() => router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as string)}
-                      accessibilityRole="link"
-                      accessibilityLabel="Forgot password"
-                    >
-                      <Text style={[s.forgotText, { color: CultureTokens.gold }]}>Forgot?</Text>
-                    </Pressable>
-                  </View>
-                  <Input
-                    placeholder="Enter password"
-                    leftIcon="lock-closed-outline"
-                    value={password}
-                    onChangeText={(v) => {
-                      setPassword(v);
-                      clearErrors();
-                    }}
-                    passwordToggle
-                    autoComplete="password"
-                    textContentType="password"
-                    returnKeyType="done"
-                    onSubmitEditing={handleLogin}
-                    error={passwordError}
-                  />
-
-                  <View style={s.optionsRow}>
-                    <Checkbox checked={rememberMe} onToggle={setRememberMe} label="Keep me signed in" />
-                  </View>
-
-                  <Button
-                    variant="gold"
-                    size="lg"
-                    fullWidth
-                    haptic
-                    rightIcon="arrow-forward"
-                    loading={loading}
-                    disabled={!isValid || loading}
-                    onPress={handleLogin}
-                    style={[s.submitBtn, shadows.medium]}
-                    accessibilityLabel="Sign in"
-                  >
-                    Sign In
-                  </Button>
-                </Animated.View>
-
-                {/* Social */}
-                <Animated.View entering={enter(320)} style={s.socialDivider}>
-                  <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-                  <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
-                  <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-                </Animated.View>
-
-                <Animated.View entering={enter(360)} style={s.socialRow}>
-                  <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
-                  {Platform.OS === 'ios' ? (
-                    <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
-                  ) : (
-                    <SocialButton provider="apple" comingSoon disabled={loading} />
-                  )}
-                </Animated.View>
-
-                {/* Switch */}
-                <Animated.View entering={enter(420)}>
-                  <Pressable
-                    style={s.switchRow}
-                    onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
-                    hitSlop={12}
-                    accessibilityRole="link"
-                    accessibilityLabel="Sign up for an account"
-                  >
-                    <Text style={[s.switchText, { color: colors.textSecondary }]}>
-                      Don&apos;t have an account?{' '}
-                      <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-                  </View>
+                <AuthLiquidFormCard isDesktop={isDesktop}>
+                  <FormContent />
                 </AuthLiquidFormCard>
               </Animated.View>
             </View>
           ) : (
+            /* Mobile / non-desktop */
             <Animated.View entering={enterUp} style={s.cardWrap}>
-              <AuthLiquidFormCard isDesktop={isDesktop} style={{}}>
-                <View style={[s.cardInner, { padding: cardPadding }]}>
-                  {/* Brand */}
-                  <Animated.View entering={enter(40)} style={s.brandBlock}>
-                    <View
-                      style={[
-                        s.brandIcon,
-                        { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-                      ]}
-                    >
-                      <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
-                    </View>
-                    <BrandWordmark size="lg" withTagline centered />
-                  </Animated.View>
-
-                  {/* Copy */}
-                  <Animated.Text entering={enter(90)} style={[s.title, { color: colors.text }]}>
-                    Welcome back.
-                  </Animated.Text>
-                  <Animated.Text entering={enter(120)} style={[s.subtitle, { color: colors.textSecondary }]}>
-                    Sign in to continue your cultural journey.
-                  </Animated.Text>
-
-                  <Animated.View
-                    entering={enter(150)}
-                    style={[
-                      s.benefitsPill,
-                      { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-                    ]}
-                  >
-                    <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>Events · Communities · Perks</Text>
-                  </Animated.View>
-
-                  {/* Errors */}
-                  {globalError ? (
-                    <Animated.View
-                      entering={enter(180)}
-                      style={[
-                        s.errorBanner,
-                        {
-                          backgroundColor: LiquidGlassAccents.errorBannerFill,
-                          borderColor: LiquidGlassAccents.errorBannerBorder,
-                        },
-                      ]}
-                      accessibilityRole="alert"
-                    >
-                      <Ionicons name="alert-circle" size={IconSize.md} color={colors.error} />
-                      <Text style={[s.globalErrorText, { color: colors.error }]}>{globalError}</Text>
-                    </Animated.View>
-                  ) : null}
-
-                  {/* Form */}
-                  <Animated.View entering={enter(220)} style={s.form}>
-                    <Input
-                      label="Email Address"
-                      placeholder="you@example.com"
-                      leftIcon="mail-outline"
-                      value={email}
-                      onChangeText={(v) => {
-                        setEmail(v);
-                        clearErrors();
-                      }}
-                      autoCapitalize="none"
-                      autoComplete="email"
-                      textContentType="username"
-                      keyboardType="email-address"
-                      returnKeyType="next"
-                      error={emailError}
-                    />
-
-                    <View style={s.passwordHeader}>
-                      <Text style={[s.passwordLabel, { color: colors.text }]}>Password</Text>
-                      <Pressable
-                        hitSlop={12}
-                        onPress={() => router.push(routeWithRedirect('/(onboarding)/forgot-password', redirectTo) as string)}
-                        accessibilityRole="link"
-                        accessibilityLabel="Forgot password"
-                      >
-                        <Text style={[s.forgotText, { color: CultureTokens.gold }]}>Forgot?</Text>
-                      </Pressable>
-                    </View>
-                    <Input
-                      placeholder="Enter password"
-                      leftIcon="lock-closed-outline"
-                      value={password}
-                      onChangeText={(v) => {
-                        setPassword(v);
-                        clearErrors();
-                      }}
-                      passwordToggle
-                      autoComplete="password"
-                      textContentType="password"
-                      returnKeyType="done"
-                      onSubmitEditing={handleLogin}
-                      error={passwordError}
-                    />
-
-                    <View style={s.optionsRow}>
-                      <Checkbox checked={rememberMe} onToggle={setRememberMe} label="Keep me signed in" />
-                    </View>
-
-                    <Button
-                      variant="gold"
-                      size="lg"
-                      fullWidth
-                      haptic
-                      rightIcon="arrow-forward"
-                      loading={loading}
-                      disabled={!isValid || loading}
-                      onPress={handleLogin}
-                      style={[s.submitBtn, shadows.medium]}
-                      accessibilityLabel="Sign in"
-                    >
-                      Sign In
-                    </Button>
-                  </Animated.View>
-
-                  {/* Social */}
-                  <Animated.View entering={enter(320)} style={s.socialDivider}>
-                    <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-                    <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
-                    <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
-                  </Animated.View>
-
-                  <Animated.View entering={enter(360)} style={s.socialRow}>
-                    <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
-                    {Platform.OS === 'ios' ? (
-                      <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
-                    ) : (
-                      <SocialButton provider="apple" comingSoon disabled={loading} />
-                    )}
-                  </Animated.View>
-
-                  {/* Switch */}
-                  <Animated.View entering={enter(420)}>
-                    <Pressable
-                      style={s.switchRow}
-                      onPress={() => router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
-                      hitSlop={12}
-                      accessibilityRole="link"
-                      accessibilityLabel="Sign up for an account"
-                    >
-                      <Text style={[s.switchText, { color: colors.textSecondary }]}>
-                        Don&apos;t have an account?{' '}
-                        <Text style={[s.switchLink, { color: CultureTokens.gold }]}>Sign Up</Text>
-                      </Text>
-                    </Pressable>
-                  </Animated.View>
-                </View>
+              <AuthLiquidFormCard isDesktop={isDesktop}>
+                <FormContent />
               </AuthLiquidFormCard>
             </Animated.View>
           )}
@@ -448,47 +347,70 @@ export default function LoginScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   keyboardAvoid: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center' },
-  scrollContentDesktop: { paddingVertical: 64 },
-  cardWrap: { width: '100%' },
+
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingTop: 20, // prevents form from being too high on tall screens
+  },
+  scrollContentDesktop: {
+    paddingVertical: 64,
+    paddingHorizontal: 32,
+  },
+
+  cardWrap: { width: '100%', maxWidth: 420, alignSelf: 'center' },
   cardInner: { width: '100%' },
 
+  /* Web two-column */
   webRow: {
     width: '100%',
-    maxWidth: 1080,
+    maxWidth: 1100,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 36,
-    paddingHorizontal: 8,
+    gap: 64,
   },
-  webLeft: { flex: 1, minWidth: 0, paddingLeft: 6 },
-  webKickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  webLeft: { flex: 1, minWidth: 0 },
+  webKickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   webDot: { width: 8, height: 8, borderRadius: 4 },
   webKicker: { fontFamily: FontFamily.semibold, fontSize: 12, letterSpacing: 1.1, textTransform: 'uppercase' },
   webHeadline: {
     fontFamily: FontFamily.bold,
-    fontSize: 44,
+    fontSize: 42,
     letterSpacing: -0.8,
-    lineHeight: 48,
-    marginBottom: 12,
+    lineHeight: 50,
+    marginBottom: 14,
   },
-  webLead: { fontFamily: FontFamily.regular, fontSize: 15, lineHeight: 22, maxWidth: 520, marginBottom: 18 },
-  webValueGrid: { gap: 12, marginTop: 6, maxWidth: 520 },
+  webLead: {
+    fontFamily: FontFamily.regular,
+    fontSize: 15,
+    lineHeight: 24,
+    maxWidth: 440,
+    marginBottom: 24,
+  },
+  webValueGrid: { gap: 12, marginTop: 8, maxWidth: 440 },
   webValueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: CardTokens.radius,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  webValueIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  webValueIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   webValueTitle: { fontFamily: FontFamily.semibold, fontSize: 14 },
-  webValueDesc: { fontFamily: FontFamily.regular, fontSize: 12, lineHeight: 16, marginTop: 2 },
+  webValueDesc: { fontFamily: FontFamily.regular, fontSize: 12, lineHeight: 17, marginTop: 2 },
 
-  brandBlock: { alignItems: 'center', marginBottom: 22, gap: 6 },
+  /* Shared form styles */
+  brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
   brandIcon: {
     width: 64,
     height: 64,
@@ -497,7 +419,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 8,
   },
 
   title: {
@@ -512,7 +434,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 380,
     alignSelf: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     lineHeight: 22,
   },
 
@@ -520,9 +442,9 @@ const s = StyleSheet.create({
     alignSelf: 'center',
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
     paddingVertical: 8,
-    marginBottom: 22,
+    marginBottom: 24,
   },
   benefitsText: {
     ...TextStyles.caption,
@@ -538,29 +460,42 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: Spacing.md,
     borderRadius: CardTokens.radius,
-    marginBottom: 18,
+    marginBottom: 20,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   globalErrorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  form: { gap: 14, marginBottom: 2 },
+  form: { gap: 18, marginBottom: 8 },
   passwordHeader: {
-    marginTop: 4,
+    marginTop: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   passwordLabel: { fontFamily: FontFamily.semibold, fontSize: 14 },
   forgotText: { fontFamily: FontFamily.semibold, fontSize: 13 },
-  optionsRow: { marginTop: 8, marginBottom: 14 },
+
+  optionsRow: { marginTop: 4, marginBottom: 12 },
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
 
-  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: 22, marginBottom: 18 },
+  socialDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: 24,
+    marginBottom: 20,
+  },
   divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-  socialRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: 22, justifyContent: 'center' },
 
-  switchRow: { alignItems: 'center', paddingVertical: 10 },
+  socialRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: 24,
+    justifyContent: 'center',
+  },
+
+  switchRow: { alignItems: 'center', paddingVertical: 12 },
   switchText: { fontFamily: FontFamily.regular, fontSize: FontSize.callout, textAlign: 'center' },
   switchLink: { fontFamily: FontFamily.bold },
 });
