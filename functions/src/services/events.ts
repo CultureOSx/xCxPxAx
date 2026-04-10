@@ -1,5 +1,6 @@
 import { db } from '../admin';
 import * as geofire from 'geofire-common';
+import { sanitizeStoredImagePointer } from '../utils/httpsImageUrl';
 import type { PaginationParams, PaginatedResult } from './base';
 
 export interface FirestoreEvent {
@@ -374,11 +375,12 @@ export const eventsService = {
 export function normalizeEventImageForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(
   e: T,
 ): T {
-  const fromImage = typeof e.imageUrl === 'string' ? e.imageUrl.trim() : '';
-  const fromHero = typeof e.heroImageUrl === 'string' ? e.heroImageUrl.trim() : '';
+  const fromImage = sanitizeStoredImagePointer(e.imageUrl);
+  const fromHero = sanitizeStoredImagePointer(e.heroImageUrl);
   const merged = fromImage || fromHero;
-  if (!merged) return e;
-  return { ...e, imageUrl: merged } as T;
+  const out = { ...e } as T & { imageUrl?: string | null; heroImageUrl?: string | null };
+  out.imageUrl = merged ?? null;
+  return out as T;
 }
 
 export function normalizeEventListForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(

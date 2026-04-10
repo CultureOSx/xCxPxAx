@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { zOptionalNullableHttpsImageUrl } from '../utils/httpsImageUrl';
 import { db, isFirestoreConfigured, authAdmin } from '../admin';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
@@ -96,7 +97,7 @@ socialRouter.post('/posts', requireAuth, moderationCheck, async (req: Request, r
     communityId:   z.string().min(1),
     communityName: z.string().min(1),
     body:          z.string().min(1).max(500),
-    imageUrl:      z.string().url().optional().nullable(),
+    imageUrl:      zOptionalNullableHttpsImageUrl,
   });
   try {
     const { communityId, communityName, body, imageUrl } = parseBody(schema, req.body);

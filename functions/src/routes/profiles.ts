@@ -10,6 +10,7 @@ import { parseBody,
 } from './utils';
 import { z } from 'zod';
 import type { FirestoreProfile } from '../services/profiles';
+import { zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 export const profilesRouter = Router();
 
@@ -36,7 +37,7 @@ const createProfileSchema = z.object({
   category: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  imageUrl: optionalUrlField,
+  imageUrl: zOptionalHttpsImageUrl,
   website: optionalUrlField,
   email: optionalEmailField,
   contactEmail: optionalEmailField,

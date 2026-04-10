@@ -25,6 +25,7 @@ import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type
 import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '../admin';
 import { validatePublisherProfileLink, validateVenueProfileLink } from '../services/eventProfileLinks';
+import { zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 // ---------------------------------------------------------------------------
 // Shared types (inlined to avoid circular import with app.ts)
@@ -114,7 +115,7 @@ const createEventSchema = z.object({
   latitude:    z.coerce.number().optional(),
   longitude:   z.coerce.number().optional(),
   communityId: z.string().max(100).optional(),
-  imageUrl:    z.string().url('imageUrl must be a valid URL').optional().or(z.literal('')),
+  imageUrl:    zOptionalHttpsImageUrl,
   imageColor:  z.string().max(20).optional(),
   priceCents:  z.coerce.number().int().min(0).optional(),
   priceLabel:  z.string().max(50).optional(),
@@ -147,18 +148,18 @@ const createEventSchema = z.object({
   entryType:   z.enum(['ticketed', 'free_open']).optional(),
   endDate:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
   endTime:     z.string().max(20).optional(),
-  heroImageUrl: z.string().url().optional().or(z.literal('')),
+  heroImageUrl: zOptionalHttpsImageUrl,
   artists: z.array(z.object({
     profileId: z.string().optional(),
     name:      z.string().min(1).max(200),
     role:      z.string().max(50).optional(),
-    imageUrl:  z.string().url().optional().or(z.literal('')),
+    imageUrl:  zOptionalHttpsImageUrl,
   })).max(20).optional(),
   eventSponsors: z.array(z.object({
     profileId:  z.string().optional(),
     name:       z.string().min(1).max(200),
     tier:       z.enum(['title', 'gold', 'silver', 'bronze']),
-    logoUrl:    z.string().url().optional().or(z.literal('')),
+    logoUrl:    zOptionalHttpsImageUrl,
     websiteUrl: z.string().url().optional().or(z.literal('')),
   })).max(20).optional(),
   hostInfo: z.object({
@@ -497,6 +498,7 @@ export function createEventsRouter() {
         ...(loc && { longitude: loc.longitude }),
         ...(loc && { country:   loc.country }),
         ...(b.imageUrl     != null && { imageUrl:    String(b.imageUrl) }),
+        ...(b.heroImageUrl != null && { heroImageUrl: String(b.heroImageUrl) }),
         ...(b.priceCents   != null && { priceCents:  Number(b.priceCents) }),
         ...(b.priceLabel   != null && { priceLabel:  String(b.priceLabel) }),
         ...(b.capacity     != null && { capacity:    Number(b.capacity) }),

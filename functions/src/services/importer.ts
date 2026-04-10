@@ -15,6 +15,7 @@
 import * as cheerio from 'cheerio';
 import { db, isFirestoreConfigured } from '../admin';
 import * as geofireCommon from 'geofire-common';
+import { sanitizeImportImageUrl } from '../utils/httpsImageUrl';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -533,7 +534,7 @@ export async function importEvents(
           city:         event.city ?? 'Sydney',
           state:        event.state ?? null,
           country:      event.country ?? 'Australia',
-          imageUrl:          event.imageUrl ?? null,
+          imageUrl:          sanitizeImportImageUrl(event.imageUrl) ?? null,
           externalUrl:       event.externalUrl ?? null,
           externalTicketUrl: event.externalTicketUrl ?? null,
           entryType:         event.entryType ?? (event.isFree ? 'free_open' : 'ticketed'),

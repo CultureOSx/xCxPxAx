@@ -1428,6 +1428,10 @@ const uploads = {
       throw new ApiError(0, err instanceof Error ? err.message : 'Network error');
     }
   },
+  /** Server fetches https URL, runs Sharp pipeline, stores in Firebase Storage — returns token URLs. */
+  ingestFromUrl: async (url: string): Promise<ImageUploadResponse> => {
+    return request<ImageUploadResponse>('POST', 'api/uploads/ingest-url', { url });
+  },
 };
 
 const calendar = {

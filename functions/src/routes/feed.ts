@@ -13,11 +13,17 @@
 
 import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
-import { eventsService, profilesService, usersService } from '../services/firestore';
+import {
+  eventsService,
+  profilesService,
+  usersService,
+  normalizeEventListForClient,
+} from '../services/firestore';
 import { isFirestoreConfigured, db } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import type { UserRole } from '../../../shared/schema';
 import type { FirestoreEvent } from '../services/firestore';
+import { isAllowedHttpsImageUrl, MAX_IMAGE_URL_LENGTH, sanitizeStoredImagePointer } from '../utils/httpsImageUrl';
 
 export const feedRouter = Router();
 
@@ -239,11 +245,13 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       fetchCommunityPosts(40),
     ]);
 
-    const events      = eventsResult.items.filter((event) => {
-      const cityOk = !city || (event.city ?? '').toLowerCase() === city.toLowerCase();
-      const countryOk = !country || (event.country ?? '').toLowerCase() === country.toLowerCase();
-      return cityOk && countryOk;
-    });
+    const events      = normalizeEventListForClient(
+      eventsResult.items.filter((event) => {
+        const cityOk = !city || (event.city ?? '').toLowerCase() === city.toLowerCase();
+        const countryOk = !country || (event.country ?? '').toLowerCase() === country.toLowerCase();
+        return cityOk && countryOk;
+      }),
+    );
     const communities = communitiesResult;
 
     // 2. Resolve user context for personalised ranking
@@ -293,7 +301,7 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
         event,
         communityId:       comm?.id,
         communityName:     comm?.name,
-        communityImageUrl: comm?.imageUrl ?? null,
+        communityImageUrl: sanitizeStoredImagePointer(comm?.imageUrl) ?? null,
         createdAt: event.createdAt ?? new Date(now - i * 3_600_000).toISOString(),
       });
     });
@@ -308,9 +316,12 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
         matchReasons:      [],
         communityId:       post.communityId,
         communityName:     comm?.name ?? post.communityName,
-        communityImageUrl: comm?.imageUrl ?? post.communityImageUrl ?? null,
+        communityImageUrl:
+          sanitizeStoredImagePointer(comm?.imageUrl) ??
+          sanitizeStoredImagePointer(post.communityImageUrl) ??
+          null,
         body:              post.body,
-        imageUrl:          post.imageUrl ?? null,
+        imageUrl:          sanitizeStoredImagePointer(post.imageUrl) ?? null,
         postStyle:         post.postStyle === 'story' ? 'story' : undefined,
         authorId:          post.authorId,
         likesCount:        post.likesCount,
@@ -361,6 +372,13 @@ feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) 
     }
   } else if (trimmed.length > 500) {
     return res.status(400).json({ error: 'body must be 500 characters or less' });
+  }
+
+  if (imageUrl != null && typeof imageUrl === 'string' && imageUrl.trim()) {
+    const u = imageUrl.trim();
+    if (u.length > MAX_IMAGE_URL_LENGTH || !isAllowedHttpsImageUrl(u)) {
+      return res.status(400).json({ error: 'imageUrl must be a public https:// URL' });
+    }
   }
 
   try {
