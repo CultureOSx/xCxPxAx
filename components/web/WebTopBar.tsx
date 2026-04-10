@@ -68,7 +68,7 @@ const MENU_SECTIONS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 export function WebTopBar() {
   const colors = useColors();
-  const { isAuthenticated, user, userId, logout } = useAuth();
+  const { isAuthenticated, user, userId, isRestoring, logout } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const { isDesktop } = useLayout();
   const pathname = usePathname();
@@ -93,7 +93,7 @@ export function WebTopBar() {
       const res = await api.notifications.unreadCount();
       return res.count ?? 0;
     },
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && !isRestoring,
     refetchInterval: 60_000,
   });
 

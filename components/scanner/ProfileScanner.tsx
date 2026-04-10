@@ -43,7 +43,7 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
       if (onSuccess) onSuccess(targetId);
       onClose();
     } catch (err) {
-      console.error('Failed to follow user:', err);
+      if (__DEV__) console.error('Failed to follow user:', err);
       // Reset after 2 seconds to allow another scan
       setTimeout(() => {
         setScanned(false);

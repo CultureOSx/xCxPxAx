@@ -157,7 +157,7 @@ export function GlobalNavActions({
 }) {
   const colors = useColors();
   const isDark = useIsDark();
-  const { userId } = useAuth();
+  const { userId, isRestoring } = useAuth();
 
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ['notifications', 'unread-count', userId, 'tab-header-chrome'],
@@ -165,7 +165,7 @@ export function GlobalNavActions({
       const res = await api.notifications.unreadCount();
       return res.count ?? 0;
     },
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && !isRestoring,
     refetchInterval: 60_000,
   });
 

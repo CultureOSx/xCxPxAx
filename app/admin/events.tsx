@@ -77,9 +77,9 @@ function EventRow({ event, onPress, onToggleFeatured, onDelete, index }: {
         </Pressable>
         <Pressable 
           onPress={onDelete} 
-          style={[styles.actionBtn, { backgroundColor: '#FF5E5B20' }]}
+          style={[styles.actionBtn, { backgroundColor: colors.error + '20' }]}
         >
-          <Ionicons name="trash-outline" size={18} color="#FF5E5B" />
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
         </Pressable>
       </View>
     </Animated.View>

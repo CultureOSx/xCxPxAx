@@ -45,8 +45,8 @@ function CommunityRow({ community, onPress, onToggleJoinMode, onDelete }: {
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{community.name}</Text>
             <View style={styles.metaRow}>
               <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{community.city} • {community.communityCategory}</Text>
-              <View style={[styles.modeBadge, { backgroundColor: isOpen ? '#10B98115' : CultureTokens.gold + '15' }]}>
-                <Text style={[styles.modeText, { color: isOpen ? '#10B981' : CultureTokens.gold }]}>
+              <View style={[styles.modeBadge, { backgroundColor: isOpen ? colors.success + '15' : CultureTokens.gold + '15' }]}>
+                <Text style={[styles.modeText, { color: isOpen ? colors.success : CultureTokens.gold }]}>
                   {(community.joinMode || 'OPEN').toUpperCase()}
                 </Text>
               </View>
@@ -59,19 +59,19 @@ function CommunityRow({ community, onPress, onToggleJoinMode, onDelete }: {
       <View style={styles.actions}>
         <Pressable 
           onPress={onToggleJoinMode} 
-          style={[styles.actionBtn, { backgroundColor: isOpen ? '#10B98115' : colors.surfaceElevated }]}
+          style={[styles.actionBtn, { backgroundColor: isOpen ? colors.success + '15' : colors.surfaceElevated }]}
         >
           <Ionicons 
             name={isOpen ? "lock-open-outline" : "lock-closed-outline"} 
             size={18} 
-            color={isOpen ? '#10B981' : colors.textTertiary} 
+            color={isOpen ? colors.success : colors.textTertiary} 
           />
         </Pressable>
         <Pressable 
           onPress={onDelete} 
-          style={[styles.actionBtn, { backgroundColor: '#FF5E5B15' }]}
+          style={[styles.actionBtn, { backgroundColor: colors.error + '15' }]}
         >
-          <Ionicons name="trash-outline" size={18} color="#FF5E5B" />
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
         </Pressable>
       </View>
     </View>

@@ -39,8 +39,8 @@ function TicketRow({ ticket, onPress, onCancel }: {
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{ticket.eventSnapshot?.title || 'Unknown Event'}</Text>
             <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{ticket.tierName || 'Standard'} • {ticket.cpTicketId || ticket.id.slice(0, 8)}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: ticket.status === 'confirmed' ? '#10B98120' : colors.divider }]}>
-            <Text style={[styles.statusText, { color: ticket.status === 'confirmed' ? '#10B981' : colors.textTertiary }]}>
+          <View style={[styles.statusBadge, { backgroundColor: ticket.status === 'confirmed' ? colors.success + '20' : colors.divider }]}>
+            <Text style={[styles.statusText, { color: ticket.status === 'confirmed' ? colors.success : colors.textTertiary }]}>
               {ticket.status?.toUpperCase()}
             </Text>
           </View>
@@ -52,9 +52,9 @@ function TicketRow({ ticket, onPress, onCancel }: {
         {isCancellable && (
           <Pressable 
             onPress={onCancel} 
-            style={[styles.actionBtn, { backgroundColor: '#FF5E5B15' }]}
+            style={[styles.actionBtn, { backgroundColor: colors.error + '15' }]}
           >
-            <Ionicons name="close-circle-outline" size={18} color="#FF5E5B" />
+            <Ionicons name="close-circle-outline" size={18} color={colors.error} />
           </Pressable>
         )}
       </View>

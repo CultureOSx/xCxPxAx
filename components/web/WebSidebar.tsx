@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-n
 import { usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { useCouncil } from '@/hooks/useCouncil';
@@ -15,6 +16,7 @@ import { Image } from 'expo-image';
 import Svg, { Line } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';
 import { APP_NAME, APP_WEB_TAGLINE, getAuVersionLabel } from '@/lib/app-meta';
+import { api } from '@/lib/api';
 
 const LOGO_RAY_COUNT = 28;
 
@@ -71,7 +73,6 @@ function LogoRayBurst({
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         {rays}
       </Svg>
-      {/* Centered on full tile — avoids RN padding-box offset with absolute % */}
       <View
         pointerEvents="none"
         style={{
@@ -111,31 +112,31 @@ interface NavItem {
 }
 
 const MAIN_NAV: NavItem[] = [
-  { label: 'Discover', icon: 'compass-outline', iconActive: 'compass', route: '/(tabs)' },
-  { label: 'My City', icon: 'location-outline', iconActive: 'location', route: '/(tabs)/city' },
-  { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
-  { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
-  { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },
+  { label: 'Discover',   icon: 'compass-outline',        iconActive: 'compass',        route: '/(tabs)' },
+  { label: 'My City',    icon: 'location-outline',       iconActive: 'location',       route: '/(tabs)/city' },
+  { label: 'Calendar',   icon: 'calendar-outline',       iconActive: 'calendar',       route: '/(tabs)/calendar' },
+  { label: 'Community',  icon: 'people-circle-outline',  iconActive: 'people-circle',  route: '/(tabs)/community' },
+  { label: 'Perks',      icon: 'gift-outline',           iconActive: 'gift',           route: '/(tabs)/perks' },
 ];
 
 const LIBRARY_NAV: NavItem[] = [
-  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
-  { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
-  { label: 'All Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
-  { label: 'Movies', icon: 'film-outline', iconActive: 'film', route: '/movies', matchPrefix: true },
-  { label: 'Dining', icon: 'restaurant-outline', iconActive: 'restaurant', route: '/restaurants', matchPrefix: true },
-  { label: 'Activities', icon: 'compass-outline', iconActive: 'compass', route: '/activities', matchPrefix: true },
-  { label: 'Shopping', icon: 'bag-outline', iconActive: 'bag', route: '/shopping', matchPrefix: true },
-  { label: 'Offers', icon: 'pricetags-outline', iconActive: 'pricetags', route: '/offerings', matchPrefix: true },
-  { label: 'Map', icon: 'map-outline', iconActive: 'map', route: '/map' },
-  { label: 'Directory', icon: 'grid-outline', iconActive: 'grid', route: '/(tabs)/directory', matchPrefix: true },
+  { label: 'My Tickets',    icon: 'ticket-outline',          iconActive: 'ticket',          route: '/tickets/index' },
+  { label: 'Saved',         icon: 'bookmark-outline',        iconActive: 'bookmark',        route: '/saved' },
+  { label: 'Notifications', icon: 'notifications-outline',   iconActive: 'notifications',   route: '/notifications' },
+  { label: 'All Events',    icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events',      matchPrefix: true },
+  { label: 'Movies',        icon: 'film-outline',            iconActive: 'film',            route: '/movies',      matchPrefix: true },
+  { label: 'Dining',        icon: 'restaurant-outline',      iconActive: 'restaurant',      route: '/restaurants', matchPrefix: true },
+  { label: 'Activities',    icon: 'compass-outline',         iconActive: 'compass',         route: '/activities',  matchPrefix: true },
+  { label: 'Shopping',      icon: 'bag-outline',             iconActive: 'bag',             route: '/shopping',    matchPrefix: true },
+  { label: 'Map',           icon: 'map-outline',             iconActive: 'map',             route: '/map' },
+  { label: 'Directory',     icon: 'grid-outline',            iconActive: 'grid',            route: '/(tabs)/directory', matchPrefix: true },
 ];
 
 const ORGANIZER_NAV: NavItem[] = [
-  { label: 'Dashboard', icon: 'grid-outline', iconActive: 'grid', route: '/dashboard/organizer', matchPrefix: true },
-  { label: 'Create Event', icon: 'add-circle-outline', iconActive: 'add-circle', route: '/event/create' },
-  { label: 'Scanner', icon: 'qr-code-outline', iconActive: 'qr-code', route: '/scanner' },
-  { label: 'Widgets', icon: 'apps-outline', iconActive: 'apps', route: '/dashboard/widgets', matchPrefix: true },
+  { label: 'Dashboard',    icon: 'grid-outline',        iconActive: 'grid',        route: '/dashboard/organizer', matchPrefix: true },
+  { label: 'Create Event', icon: 'add-circle-outline',  iconActive: 'add-circle',  route: '/event/create' },
+  { label: 'Scanner',      icon: 'qr-code-outline',     iconActive: 'qr-code',     route: '/scanner' },
+  { label: 'Widgets',      icon: 'apps-outline',        iconActive: 'apps',        route: '/dashboard/widgets', matchPrefix: true },
 ];
 
 const VENUE_NAV: NavItem[] = [
@@ -147,23 +148,23 @@ const SPONSOR_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Admin Hub', icon: 'shield-half-outline', iconActive: 'shield-half', route: '/admin/dashboard', matchPrefix: false },
-  { label: 'Events', icon: 'calendar-outline', iconActive: 'calendar', route: '/admin/events', matchPrefix: true },
-  { label: 'Users', icon: 'people-outline', iconActive: 'people', route: '/admin/users', matchPrefix: true },
-  { label: 'Profiles', icon: 'id-card-outline', iconActive: 'id-card', route: '/admin/profiles', matchPrefix: true },
-  { label: 'Communities', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/admin/communities', matchPrefix: true },
-  { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/admin/perks', matchPrefix: true },
-  { label: 'Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/admin/tickets', matchPrefix: true },
-  { label: 'Moderation', icon: 'eye-outline', iconActive: 'eye', route: '/admin/moderation', matchPrefix: true },
-  { label: 'Audit Logs', icon: 'list-outline', iconActive: 'list', route: '/admin/audit-logs', matchPrefix: true },
-  { label: 'Notify', icon: 'megaphone-outline', iconActive: 'megaphone', route: '/admin/notifications', matchPrefix: true },
-  { label: 'Import', icon: 'cloud-upload-outline', iconActive: 'cloud-upload', route: '/admin/import', matchPrefix: true },
-  { label: 'Finance', icon: 'card-outline', iconActive: 'card', route: '/admin/finance', matchPrefix: true },
-  { label: 'Compliance', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/admin/data-compliance', matchPrefix: true },
-  { label: 'Discover Curation', icon: 'sparkles-outline', iconActive: 'sparkles', route: '/admin/discover', matchPrefix: true },
-  { label: 'Handles', icon: 'at-outline', iconActive: 'at', route: '/admin/handles', matchPrefix: true },
-  { label: 'Platform', icon: 'settings-outline', iconActive: 'settings', route: '/admin/platform', matchPrefix: true },
-  { label: 'Updates', icon: 'newspaper-outline', iconActive: 'newspaper', route: '/admin/updates', matchPrefix: true },
+  { label: 'Admin Hub',        icon: 'shield-half-outline',      iconActive: 'shield-half',      route: '/admin/dashboard',        matchPrefix: false },
+  { label: 'Events',           icon: 'calendar-outline',         iconActive: 'calendar',         route: '/admin/events',           matchPrefix: true },
+  { label: 'Users',            icon: 'people-outline',           iconActive: 'people',           route: '/admin/users',            matchPrefix: true },
+  { label: 'Profiles',         icon: 'id-card-outline',          iconActive: 'id-card',          route: '/admin/profiles',         matchPrefix: true },
+  { label: 'Communities',      icon: 'people-circle-outline',    iconActive: 'people-circle',    route: '/admin/communities',      matchPrefix: true },
+  { label: 'Perks',            icon: 'gift-outline',             iconActive: 'gift',             route: '/admin/perks',            matchPrefix: true },
+  { label: 'Tickets',          icon: 'ticket-outline',           iconActive: 'ticket',           route: '/admin/tickets',          matchPrefix: true },
+  { label: 'Moderation',       icon: 'eye-outline',              iconActive: 'eye',              route: '/admin/moderation',       matchPrefix: true },
+  { label: 'Audit Logs',       icon: 'list-outline',             iconActive: 'list',             route: '/admin/audit-logs',       matchPrefix: true },
+  { label: 'Notify',           icon: 'megaphone-outline',        iconActive: 'megaphone',        route: '/admin/notifications',    matchPrefix: true },
+  { label: 'Import',           icon: 'cloud-upload-outline',     iconActive: 'cloud-upload',     route: '/admin/import',           matchPrefix: true },
+  { label: 'Finance',          icon: 'card-outline',             iconActive: 'card',             route: '/admin/finance',          matchPrefix: true },
+  { label: 'Compliance',       icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/admin/data-compliance',  matchPrefix: true },
+  { label: 'Discover Curation',icon: 'sparkles-outline',         iconActive: 'sparkles',         route: '/admin/discover',         matchPrefix: true },
+  { label: 'Handles',          icon: 'at-outline',               iconActive: 'at',               route: '/admin/handles',          matchPrefix: true },
+  { label: 'Platform',         icon: 'settings-outline',         iconActive: 'settings',         route: '/admin/platform',         matchPrefix: true },
+  { label: 'Updates',          icon: 'newspaper-outline',        iconActive: 'newspaper',        route: '/admin/updates',          matchPrefix: true },
 ];
 
 const SUPERADMIN_NAV: NavItem[] = [
@@ -171,9 +172,22 @@ const SUPERADMIN_NAV: NavItem[] = [
 ];
 
 const BOTTOM_NAV: NavItem[] = [
-  { label: 'Settings', icon: 'settings-outline', iconActive: 'settings', route: '/settings' },
-  { label: 'Help', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
+  { label: 'Settings', icon: 'settings-outline',    iconActive: 'settings',    route: '/settings' },
+  { label: 'Help',     icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
 ];
+
+// ─── Profile action items — module-level constant ─────────────────────────────
+const PROFILE_ACTIONS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap; route: string }[] = [
+  { key: 'profile',       label: 'View Profile',  icon: 'person-outline',        route: '/profile/edit' },
+  { key: 'qr',            label: 'Digital ID',    icon: 'qr-code-outline',       route: '/profile/qr' },
+  { key: 'wallet',        label: 'Wallet',         icon: 'wallet-outline',        route: '/payment/wallet' },
+  { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
+  { key: 'settings',      label: 'Settings',      icon: 'settings-outline',      route: '/settings' },
+];
+
+// ─── Shared query key for notification unread count ───────────────────────────
+export const NOTIF_UNREAD_QUERY_KEY = (userId: string | null | undefined) =>
+  ['notifications', 'unread-count', userId] as const;
 
 // ─── Avatar helper ────────────────────────────────────────────────────────────
 function AvatarWithRing({
@@ -231,13 +245,274 @@ function AvatarWithRing({
   );
 }
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+type SidebarStyles = ReturnType<typeof getSidebarStyles>;
+
+function NavSection({
+  label,
+  mutedColor,
+  children,
+  styles,
+}: {
+  label: string;
+  mutedColor: string;
+  children: React.ReactNode;
+  styles: SidebarStyles['s'];
+}) {
+  return (
+    <>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionLabel, { color: mutedColor }]}>{label.toUpperCase()}</Text>
+      </View>
+      <View style={styles.navGroup}>{children}</View>
+    </>
+  );
+}
+
+function SidebarItem({
+  item,
+  active,
+  isDark,
+  onPress,
+  colors,
+  styles,
+}: {
+  item: NavItem;
+  active: boolean;
+  isDark: boolean;
+  onPress: () => void;
+  colors: ColorTheme;
+  styles: SidebarStyles['ni'];
+}) {
+  const [hovered, setHovered] = useState(false);
+  const showHover = hovered && !active;
+
+  return (
+    <Pressable
+      style={[
+        styles.item,
+        active && [styles.itemActive, { backgroundColor: colors.primarySoft }],
+        showHover && { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,12,24,0.04)' },
+      ]}
+      onPress={onPress}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      accessibilityRole="link"
+      accessibilityLabel={item.label}
+      accessibilityState={{ selected: active }}
+    >
+      {active && (
+        <View style={styles.activeBar}>
+          <LinearGradient
+            colors={[CultureTokens.indigo, CultureTokens.teal]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      )}
+      <Ionicons
+        name={active ? item.iconActive : item.icon}
+        size={18}
+        color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.60)' : 'rgba(0,22,40,0.52)')}
+      />
+      <Text
+        style={[styles.label, { color: active ? colors.primary : colors.textSecondary }, active && styles.labelActive]}
+        numberOfLines={1}
+      >
+        {item.label}
+      </Text>
+      {(item.badge ?? 0) > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{item.badge! > 99 ? '99+' : item.badge}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function SidebarProfileBlock({
+  user,
+  colors,
+  isDark,
+  border,
+  mutedColor,
+  styles,
+  onNavigate,
+  onLogout,
+}: {
+  user: { id?: string; displayName?: string; username?: string; email?: string; photoURL?: string; role?: string };
+  colors: ColorTheme;
+  isDark: boolean;
+  border: string;
+  mutedColor: string;
+  styles: SidebarStyles['s'];
+  onNavigate: (route: string) => void;
+  onLogout: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const displayName = user.displayName ?? user.username ?? user.id?.slice(0, 8) ?? 'You';
+  const initials = displayName
+    .split(' ')
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase() ?? '')
+    .join('');
+  const roleBadge = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : null;
+
+  return (
+    <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
+      <Pressable
+        onPress={() => onNavigate('/submit')}
+        style={({ pressed }) => [styles.profileCreateBtn, { marginBottom: 8 }, pressed && { opacity: 0.88 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Create submission"
+      >
+        <LinearGradient
+          colors={[CultureTokens.indigo, CultureTokens.teal]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.profileCreateGradient}
+        >
+          <Text style={styles.profileCreateText}>＋ Create</Text>
+        </LinearGradient>
+      </Pressable>
+
+      {expanded && (
+        <View
+          style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: border,
+            marginBottom: 6,
+            overflow: 'hidden',
+          }}
+        >
+          {PROFILE_ACTIONS.map((action, index) => (
+            <Pressable
+              key={action.key}
+              style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+                {
+                  flexDirection: 'row' as const,
+                  alignItems: 'center' as const,
+                  gap: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
+                  borderTopColor: border,
+                  backgroundColor:
+                    pressed || hovered
+                      ? isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'
+                      : 'transparent',
+                },
+              ]}
+              onPress={() => { setExpanded(false); onNavigate(action.route); }}
+              accessibilityRole="link"
+              accessibilityLabel={action.label}
+            >
+              <Ionicons name={action.icon} size={16} color={colors.textSecondary} />
+              <Text
+                style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 }}
+                numberOfLines={1}
+              >
+                {action.label}
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+              {
+                flexDirection: 'row' as const,
+                alignItems: 'center' as const,
+                gap: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: border,
+                backgroundColor:
+                  pressed || hovered
+                    ? isDark ? 'rgba(255,80,80,0.10)' : 'rgba(255,80,80,0.07)'
+                    : 'transparent',
+              },
+            ]}
+            onPress={() => { setExpanded(false); onLogout(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
+            <Ionicons name="log-out-outline" size={16} color={CultureTokens.coral} />
+            <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.coral, flex: 1 }}>
+              Sign Out
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      <Pressable
+        style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
+          {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            gap: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: expanded ? colors.primary + '60' : border,
+            backgroundColor: expanded
+              ? (isDark ? 'rgba(44,42,114,0.12)' : 'rgba(44,42,114,0.06)')
+              : pressed || hovered
+              ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
+              : 'transparent',
+          },
+        ]}
+        onPress={() => setExpanded((v) => !v)}
+        accessibilityRole="button"
+        accessibilityLabel="Account and profile"
+        accessibilityState={{ expanded }}
+      >
+        <AvatarWithRing
+          avatarUrl={user.photoURL}
+          initials={initials || '?'}
+          size={32}
+          ringWidth={1.5}
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 17 }}
+            numberOfLines={1}
+          >
+            {displayName}
+          </Text>
+          {(user.email || roleBadge) ? (
+            <Text
+              style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 14 }}
+              numberOfLines={1}
+            >
+              {roleBadge ?? user.email}
+            </Text>
+          ) : null}
+        </View>
+        <Ionicons
+          name={expanded ? 'chevron-down' : 'chevron-up'}
+          size={14}
+          color={mutedColor}
+        />
+      </Pressable>
+    </View>
+  );
+}
+
 // ─── Main WebSidebar Component ───────────────────────────────────────────────
 export function WebSidebar() {
   const pathname = usePathname();
   const colors = useColors();
-  const { s, r } = getSidebarStyles(colors);
   const isDark = useIsDark();
-  const { user, logout, isAuthenticated } = useAuth();
+
+  // Compute styles once — never inside sub-components
+  const { s, r, ni } = useMemo(() => getSidebarStyles(colors), [colors]);
+
+  const { user, logout, isAuthenticated, userId, isRestoring } = useAuth();
   const { isOrganizer, isAdmin, isSuperAdmin, role } = useRole();
   const isVenue = role === 'business';
   const isSponsor = role === 'sponsor';
@@ -247,7 +522,25 @@ export function WebSidebar() {
   const [now, setNow] = useState<Date>(() => new Date());
   const [weatherSummary, setWeatherSummary] = useState<string>('');
 
-  const navWithBadge: NavItem[] = MAIN_NAV;
+  // Notification unread count — shared query key with WebTopBar
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: NOTIF_UNREAD_QUERY_KEY(userId),
+    queryFn: async () => {
+      const res = await api.notifications.unreadCount();
+      return res.count ?? 0;
+    },
+    enabled: Boolean(userId) && !isRestoring,
+    refetchInterval: 60_000,
+  });
+
+  // Inject live badge into nav
+  const libraryNav = useMemo<NavItem[]>(() =>
+    LIBRARY_NAV.map((item) =>
+      item.route === '/notifications' && unreadCount > 0
+        ? { ...item, badge: unreadCount }
+        : item,
+    ),
+  [unreadCount]);
 
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) return pathname.startsWith(item.route.replace('/(tabs)', ''));
@@ -263,13 +556,13 @@ export function WebSidebar() {
   const mutedColor = isDark ? 'rgba(232,244,255,0.35)' : 'rgba(0,22,40,0.32)';
   const myCouncil = councilData?.council;
 
-  // Clock
+  // Clock — updates every 30s (minute precision display)
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
 
-  // Weather
+  // Weather — third-party open-meteo, no auth required
   useEffect(() => {
     const city = user?.city?.trim();
     if (!city) { setWeatherSummary(''); return; }
@@ -300,31 +593,57 @@ export function WebSidebar() {
   const appVersionLabel = useMemo(() => getAuVersionLabel(), []);
   const brandMetaLine = useMemo(() => {
     const city = user?.city?.trim();
-    if (city) return `${city} · Diaspora marketplace`;
-    return 'Australia · Diaspora marketplace';
+    return city ? `${city} · Diaspora marketplace` : 'Australia · Diaspora marketplace';
   }, [user?.city]);
 
-  // Collapsed rail (unchanged)
+  // ─── Collapsed rail ───────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <View style={[r.rail, { backgroundColor: bg, borderRightColor: border }]}>
-        <Pressable style={r.railTop} onPress={() => navigate('/(tabs)')} hitSlop={4} accessibilityLabel={`${APP_NAME} home`} accessibilityRole="button">
+      <View
+        style={[r.rail, { backgroundColor: bg, borderRightColor: border }]}
+        accessibilityRole="navigation"
+        accessibilityLabel="Site navigation (collapsed)"
+      >
+        <Pressable
+          style={r.railTop}
+          onPress={() => navigate('/(tabs)')}
+          hitSlop={4}
+          accessibilityLabel={`${APP_NAME} home`}
+          accessibilityRole="link"
+        >
           <LogoRayBurst size={44} borderRadius={13} imagePadding={7} />
         </Pressable>
         <View style={[r.divider, { backgroundColor: border }]} />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={r.railIcons}>
-          {[...MAIN_NAV, ...LIBRARY_NAV].map((item) => {
+          {[...MAIN_NAV, ...libraryNav].map((item) => {
             const active = isActive(item);
             return (
               <Pressable
                 key={item.route}
                 style={[r.railItem, active && { backgroundColor: colors.primarySoft }]}
                 onPress={() => navigate(item.route)}
+                accessibilityRole="link"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: active }}
               >
                 {active && (
-                  <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={r.railActiveBar} />
+                  <LinearGradient
+                    colors={[CultureTokens.indigo, CultureTokens.teal]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={r.railActiveBar}
+                  />
                 )}
-                <Ionicons name={active ? item.iconActive : item.icon} size={19} color={active ? colors.primary : mutedColor} />
+                <Ionicons
+                  name={active ? item.iconActive : item.icon}
+                  size={19}
+                  color={active ? colors.primary : mutedColor}
+                />
+                {(item.badge ?? 0) > 0 && (
+                  <View style={r.railBadge}>
+                    <Text style={r.railBadgeText}>{item.badge! > 9 ? '9+' : item.badge}</Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}
@@ -338,19 +657,41 @@ export function WebSidebar() {
               key={item.label}
               style={[r.railItem, active && { backgroundColor: colors.primarySoft }]}
               onPress={() => navigate(item.route)}
+              accessibilityRole="link"
+              accessibilityLabel={item.label}
+              accessibilityState={{ selected: active }}
             >
               {active && (
-                <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={r.railActiveBar} />
+                <LinearGradient
+                  colors={[CultureTokens.indigo, CultureTokens.teal]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={r.railActiveBar}
+                />
               )}
-              <Ionicons name={(active ? item.iconActive : item.icon) as keyof typeof Ionicons.glyphMap} size={19} color={active ? colors.primary : mutedColor} />
+              <Ionicons
+                name={(active ? item.iconActive : item.icon) as keyof typeof Ionicons.glyphMap}
+                size={19}
+                color={active ? colors.primary : mutedColor}
+              />
             </Pressable>
           );
         })}
-        <Pressable style={[r.railItem, r.railActionBtn]} onPress={() => setCollapsed(false)}>
+        <Pressable
+          style={[r.railItem, r.railActionBtn]}
+          onPress={() => setCollapsed(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Expand sidebar"
+        >
           <Ionicons name="chevron-forward-outline" size={18} color={mutedColor} />
         </Pressable>
         {isAuthenticated && (
-          <Pressable style={[r.railItem, { marginBottom: 8 }]} onPress={() => logout()}>
+          <Pressable
+            style={[r.railItem, { marginBottom: 8 }]}
+            onPress={() => logout()}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
             <Ionicons name="log-out-outline" size={18} color={mutedColor} />
           </Pressable>
         )}
@@ -358,9 +699,13 @@ export function WebSidebar() {
     );
   }
 
-  // Expanded sidebar
+  // ─── Expanded sidebar ──────────────────────────────────────────────────────
   return (
-    <View style={[s.sidebar, { backgroundColor: bg, borderRightColor: border }]}>
+    <View
+      style={[s.sidebar, { backgroundColor: bg, borderRightColor: border }]}
+      accessibilityRole="navigation"
+      accessibilityLabel="Site navigation"
+    >
       <View style={s.brandHeader}>
         <View style={[StyleSheet.absoluteFill, s.brandHeaderGlow]} pointerEvents="none" />
 
@@ -372,7 +717,7 @@ export function WebSidebar() {
           ]}
           onPress={() => navigate('/(tabs)')}
           accessibilityLabel={`${APP_NAME} home`}
-          accessibilityRole="button"
+          accessibilityRole="link"
         >
           <View style={s.brandBlackCardInner}>
             <LogoRayBurst size={68} borderRadius={18} imagePadding={11} />
@@ -430,34 +775,81 @@ export function WebSidebar() {
         style={s.gradientLine}
       />
 
-      {/* Navigation Sections - rest unchanged */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, paddingTop: 6 }}>
-        {/* ... your NavSection calls ... */}
-        <NavSection label="Discover" mutedColor={mutedColor} colors={colors}>
-          {navWithBadge.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 10, paddingTop: 6 }}
+      >
+        <NavSection label="Discover" mutedColor={mutedColor} styles={s}>
+          {MAIN_NAV.map((item) => (
+            <SidebarItem
+              key={item.route}
+              item={item}
+              active={isActive(item)}
+              isDark={isDark}
+              onPress={() => navigate(item.route)}
+              colors={colors}
+              styles={ni}
+            />
           ))}
         </NavSection>
 
-        <NavSection label="Library" mutedColor={mutedColor} colors={colors}>
-          {LIBRARY_NAV.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
+        <NavSection label="Library" mutedColor={mutedColor} styles={s}>
+          {libraryNav.map((item) => (
+            <SidebarItem
+              key={item.route}
+              item={item}
+              active={isActive(item)}
+              isDark={isDark}
+              onPress={() => navigate(item.route)}
+              colors={colors}
+              styles={ni}
+            />
           ))}
         </NavSection>
 
-        {isOrganizer && <NavSection label="Organiser Tools" mutedColor={mutedColor} colors={colors}>{ORGANIZER_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isVenue && <NavSection label="Venue" mutedColor={mutedColor} colors={colors}>{VENUE_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isSponsor && <NavSection label="Sponsor" mutedColor={mutedColor} colors={colors}>{SPONSOR_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isAdmin && <NavSection label="Admin" mutedColor={mutedColor} colors={colors}>{ADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isSuperAdmin && <NavSection label="SuperAdmin" mutedColor={mutedColor} colors={colors}>{SUPERADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isOrganizer && (
+          <NavSection label="Organiser Tools" mutedColor={mutedColor} styles={s}>
+            {ORGANIZER_NAV.map((item) => (
+              <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} styles={ni} />
+            ))}
+          </NavSection>
+        )}
+        {isVenue && (
+          <NavSection label="Venue" mutedColor={mutedColor} styles={s}>
+            {VENUE_NAV.map((item) => (
+              <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} styles={ni} />
+            ))}
+          </NavSection>
+        )}
+        {isSponsor && (
+          <NavSection label="Sponsor" mutedColor={mutedColor} styles={s}>
+            {SPONSOR_NAV.map((item) => (
+              <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} styles={ni} />
+            ))}
+          </NavSection>
+        )}
+        {isAdmin && (
+          <NavSection label="Admin" mutedColor={mutedColor} styles={s}>
+            {ADMIN_NAV.map((item) => (
+              <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} styles={ni} />
+            ))}
+          </NavSection>
+        )}
+        {isSuperAdmin && (
+          <NavSection label="SuperAdmin" mutedColor={mutedColor} styles={s}>
+            {SUPERADMIN_NAV.map((item) => (
+              <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} styles={ni} />
+            ))}
+          </NavSection>
+        )}
       </ScrollView>
 
-      {/* Council + Bottom Section (unchanged) */}
       {myCouncil && (
         <Pressable
           style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
           onPress={() => navigate('/(tabs)/directory')}
-          accessibilityRole="button"
+          accessibilityRole="link"
           accessibilityLabel={`My Council, ${myCouncil.name}`}
         >
           <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
@@ -483,22 +875,54 @@ export function WebSidebar() {
       <View style={s.bottomNavSection}>
         <View style={s.navGroup}>
           {BOTTOM_NAV.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
+            <SidebarItem
+              key={item.route}
+              item={item}
+              active={isActive(item)}
+              isDark={isDark}
+              onPress={() => navigate(item.route)}
+              colors={colors}
+              styles={ni}
+            />
           ))}
         </View>
 
         <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 6 }]} />
 
         {isAuthenticated && user ? (
-          <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={logout} />
+          <SidebarProfileBlock
+            user={user}
+            colors={colors}
+            isDark={isDark}
+            border={border}
+            mutedColor={mutedColor}
+            styles={s}
+            onNavigate={navigate}
+            onLogout={logout}
+          />
         ) : (
           <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
-            <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]} accessibilityRole="button" accessibilityLabel="Create submission">
-              <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
+            <Pressable
+              onPress={() => navigate('/submit')}
+              style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create submission"
+            >
+              <LinearGradient
+                colors={[CultureTokens.indigo, CultureTokens.teal]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={s.profileCreateGradient}
+              >
                 <Text style={s.profileCreateText}>＋ Create</Text>
               </LinearGradient>
             </Pressable>
-            <Pressable style={[s.signInBtn, { borderColor: colors.borderLight }]} onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}>
+            <Pressable
+              style={[s.signInBtn, { borderColor: colors.borderLight }]}
+              onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}
+              accessibilityRole="link"
+              accessibilityLabel="Sign in"
+            >
               <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
               <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
             </Pressable>
@@ -525,219 +949,7 @@ export function WebSidebar() {
   );
 }
 
-// Sub-components (NavSection, SidebarItem, SidebarProfileBlock) remain as in your original
-// ... (you can keep your original implementations for these)
-
-function NavSection({ label, mutedColor, children, colors }: any) {
-  const { s } = getSidebarStyles(colors);
-  return (
-    <>
-      <View style={s.sectionHeader}>
-        <Text style={[s.sectionLabel, { color: mutedColor }]}>{label.toUpperCase()}</Text>
-      </View>
-      <View style={s.navGroup}>{children}</View>
-    </>
-  );
-}
-
-function SidebarItem({ item, active, isDark, onPress, colors }: any) {
-  const { ni } = getSidebarStyles(colors);
-  const [hovered, setHovered] = useState(false);
-  const showHover = hovered && !active;
-
-  return (
-    <Pressable
-      style={[
-        ni.item,
-        active && [ni.itemActive, { backgroundColor: colors.primarySoft }],
-        showHover && { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,12,24,0.04)' },
-      ]}
-      onPress={onPress}
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
-    >
-      {active && (
-        <View style={ni.activeBar}>
-          <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-        </View>
-      )}
-      <Ionicons name={active ? item.iconActive : item.icon} size={18} color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.60)' : 'rgba(0,22,40,0.52)')} />
-      <Text style={[ni.label, { color: active ? colors.primary : colors.textSecondary }, active && ni.labelActive]} numberOfLines={1}>
-        {item.label}
-      </Text>
-      {(item.badge ?? 0) > 0 && (
-        <View style={ni.badge}>
-          <Text style={ni.badgeText}>{item.badge! > 99 ? '99+' : item.badge}</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
-function SidebarProfileBlock({
-  user,
-  colors,
-  isDark,
-  border,
-  mutedColor,
-  onNavigate,
-  onLogout,
-}: {
-  user: { id?: string; displayName?: string; username?: string; email?: string; photoURL?: string; role?: string };
-  colors: ReturnType<typeof useColors>;
-  isDark: boolean;
-  border: string;
-  mutedColor: string;
-  onNavigate: (route: string) => void;
-  onLogout: () => void;
-}) {
-  const { s } = getSidebarStyles(colors);
-  const [expanded, setExpanded] = useState(false);
-  const displayName = user.displayName ?? user.username ?? user.id?.slice(0, 8) ?? 'You';
-  const initials = displayName
-    .split(' ')
-    .slice(0, 2)
-    .map((w: string) => w[0]?.toUpperCase() ?? '')
-    .join('');
-  const roleBadge = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : null;
-
-  const PROFILE_ACTIONS = [
-    { key: 'profile', label: 'View Profile', icon: 'person-outline' as const, route: '/profile/edit' },
-    { key: 'qr', label: 'Digital ID', icon: 'qr-code-outline' as const, route: '/profile/qr' },
-    { key: 'wallet', label: 'Wallet', icon: 'wallet-outline' as const, route: '/payment/wallet' },
-    { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' as const, route: '/notifications' },
-    { key: 'settings', label: 'Settings', icon: 'settings-outline' as const, route: '/settings' },
-  ];
-
-  return (
-    <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
-      <Pressable
-        onPress={() => onNavigate('/submit')}
-        style={({ pressed }) => [s.profileCreateBtn, { marginBottom: 8 }, pressed && { opacity: 0.88 }]}
-        accessibilityRole="button"
-        accessibilityLabel="Create submission"
-      >
-        <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
-          <Text style={s.profileCreateText}>＋ Create</Text>
-        </LinearGradient>
-      </Pressable>
-
-      {/* Expanded quick links */}
-      {expanded && (
-        <View
-          style={{
-            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-            borderRadius: 12,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: border,
-            marginBottom: 6,
-            overflow: 'hidden',
-          }}
-        >
-          {PROFILE_ACTIONS.map((action, index) => (
-            <Pressable
-              key={action.key}
-              style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
-                {
-                  flexDirection: 'row' as const,
-                  alignItems: 'center' as const,
-                  gap: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
-                  borderTopColor: border,
-                  backgroundColor: pressed || hovered
-                    ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)')
-                    : 'transparent',
-                },
-              ]}
-              onPress={() => { setExpanded(false); onNavigate(action.route); }}
-              accessibilityRole="button"
-              accessibilityLabel={action.label}
-            >
-              <Ionicons name={action.icon} size={16} color={colors.textSecondary} />
-              <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 }} numberOfLines={1}>
-                {action.label}
-              </Text>
-            </Pressable>
-          ))}
-          <Pressable
-            style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
-              {
-                flexDirection: 'row' as const,
-                alignItems: 'center' as const,
-                gap: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: border,
-                backgroundColor: pressed || hovered
-                  ? (isDark ? 'rgba(255,80,80,0.10)' : 'rgba(255,80,80,0.07)')
-                  : 'transparent',
-              },
-            ]}
-            onPress={() => { setExpanded(false); onLogout(); }}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out"
-          >
-            <Ionicons name="log-out-outline" size={16} color="#FF5E5B" />
-            <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FF5E5B', flex: 1 }}>
-              Sign Out
-            </Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Profile row button */}
-      <Pressable
-        style={({ pressed, hovered }: { pressed?: boolean; hovered?: boolean }) => [
-          {
-            flexDirection: 'row' as const,
-            alignItems: 'center' as const,
-            gap: 10,
-            paddingHorizontal: 10,
-            paddingVertical: 8,
-            borderRadius: 12,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: expanded ? colors.primary + '60' : border,
-            backgroundColor: expanded
-              ? (isDark ? 'rgba(44,42,114,0.12)' : 'rgba(44,42,114,0.06)')
-              : pressed || hovered
-              ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
-              : 'transparent',
-          },
-        ]}
-        onPress={() => setExpanded((v) => !v)}
-        accessibilityRole="button"
-        accessibilityLabel="Account and profile"
-      >
-        <AvatarWithRing
-          avatarUrl={user.photoURL}
-          initials={initials || '?'}
-          size={32}
-          ringWidth={1.5}
-        />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 17 }} numberOfLines={1}>
-            {displayName}
-          </Text>
-          {(user.email || roleBadge) ? (
-            <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 14 }} numberOfLines={1}>
-              {roleBadge ?? user.email}
-            </Text>
-          ) : null}
-        </View>
-        <Ionicons
-          name={expanded ? 'chevron-down' : 'chevron-up'}
-          size={14}
-          color={mutedColor}
-        />
-      </Pressable>
-    </View>
-  );
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles — created once per theme change, never inside render ──────────────
 const getSidebarStyles = (colors: ColorTheme) => {
   const s = StyleSheet.create({
     sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
@@ -897,6 +1109,19 @@ const getSidebarStyles = (colors: ColorTheme) => {
     railItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     railActionBtn: { backgroundColor: 'transparent' },
     railActiveBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
+    railBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      minWidth: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: Colors.error,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 2,
+    },
+    railBadgeText: { fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 10 },
   });
 
   const ni = StyleSheet.create({

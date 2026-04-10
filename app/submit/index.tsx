@@ -297,7 +297,7 @@ export default function SubmitScreen() {
       const uploaded = await api.uploads.image(formData);
       return uploaded.imageUrl;
     } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (__DEV__) {
         console.error('[uploadCoverIfNeeded] Failed to upload cover image', { imageUri, error: err });
       }
       return null;
