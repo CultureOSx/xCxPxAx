@@ -113,23 +113,18 @@ const { numColumns, hPad, columnWidth } = useLayout();
 
 **Single import point**: `import { ... } from '@/constants/theme'`
 
-### Brand Colors (Updated with 2025–2026 Industry Trends)
+### Brand Colors
 
 ```typescript
 import { CultureTokens } from '@/constants/theme';
 
-CultureTokens.indigo   // #0066CC — CulturePass Blue (core brand; see `constants/colors.ts`)
-CultureTokens.coral    // #FF5E5B — Movement Coral — action energy, alerts (enhanced saturation for 2026 dopamine/vibrant trends)
-CultureTokens.teal     // #2EC4B6 — Ocean Teal — free badges, live states, belonging (now with electric teal influence for modern event apps)
+CultureTokens.indigo   // #0066CC — CulturePass Blue (see `constants/colors.ts`; design docs may cite alternate legacy indigo)
+CultureTokens.coral    // #FF5E5B — Movement Coral — action energy, alerts
+CultureTokens.teal     // #2EC4B6 — Ocean Teal — free badges, live states, belonging
 CultureTokens.gold     // #FFC857 — Temple Gold — INDIGENOUS CONTENT ONLY
-
-// NEW 2025–2026 Industry Accents (hyper-saturated & jewel-tone trends for festivals/culture apps)
-CultureTokens.electricBlue  // #00BFFF — High-energy accents, CTAs, live highlights (Pinterest/2026 electric trends)
-CultureTokens.vividPlum     // #8E4585 — Rich jewel tone for depth, community, premium events (plum noir influence)
-CultureTokens.neonMint      // #39FF9E — Fresh vibrant pop for success states, new content (wasabi/neon green trends)
 ```
 
-### Badge & Chip Color Rules (unchanged except for new accents where appropriate)
+### Badge & Chip Color Rules
 
 
 | Use case                       | Token                  | Reason                                 |
@@ -142,16 +137,16 @@ CultureTokens.neonMint      // #39FF9E — Fresh vibrant pop for success states,
 | Indigenous section accents     | `CultureTokens.gold`   | Cultural design choice — keep gold     |
 
 
-> **Rule**: Gold (#FFC857) is **reserved exclusively for indigenous content**. Use teal everywhere else. New electric accents (`electricBlue`, `neonMint`) are for high-energy non-indigenous highlights only.
+> **Rule**: Gold (#FFC857) is **reserved exclusively for indigenous content**. Use teal everywhere else.
 
-### Functional Category Tokens (Updated)
+### Functional Category Tokens
 
 ```typescript
 CultureTokens.event      // Saffron — event listing cards
-CultureTokens.artist     // Coral — artist profile cards (or Coral + ElectricBlue mix for energy)
+CultureTokens.artist     // Coral — artist profile cards
 CultureTokens.venue      // Teal — venue cards
-CultureTokens.movie      // Gold — movie cards (non-indigenous use teal/electric variants)
-CultureTokens.community  // Bright Blue -> now enhanced with ElectricBlue — community cards
+CultureTokens.movie      // Gold — movie cards
+CultureTokens.community  // Bright Blue — community cards
 ```
 
 ### Component Tokens
@@ -193,18 +188,16 @@ colors.border · colors.borderLight · colors.divider · colors.primaryGlow
 > Dark mode = default on native (night festival aesthetic).
 > Web always returns light theme from `useColors()`.
 
-### Gradients (Updated with new industry vibrancy)
+### Gradients
 
 ```typescript
 import { gradients } from '@/constants/theme';
 
-gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners, CTAs (optionally layer ElectricBlue)
-gradients.primary           // [Indigo, Blue] — tab bar active pill (enhanced with ElectricBlue)
-gradients.aurora            // light blue/purple — backgrounds (now richer with VividPlum)
-gradients.sunset            // warm orange/coral — event cards (punchier for 2026 trends)
-gradients.midnight          // deep indigo — dark backgrounds
-// NEW
-gradients.electricVibe      // [ElectricBlue, NeonMint, Coral] — live events, high-energy sections
+gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners, CTAs
+gradients.primary           // [Indigo, Blue] — tab bar active pill
+gradients.aurora            // light blue/purple — backgrounds
+gradients.sunset            // warm orange/coral — event cards
+gradients.midnight          // deep indigo — dark backgrounds 
 ```
 
 ### Animations
@@ -240,8 +233,6 @@ const topInset = Platform.OS === 'web' ? 0 : insets.top;
 ```
 
 ---
-
-> **Scope note**: Sections after this point (Local web + Cloud Functions CORS, API/data fetching, route pattern, authentication, platform specifics, performance, security checklist, key files, and test commands) remain unchanged.
 
 ## Local web + Cloud Functions (CORS)
 

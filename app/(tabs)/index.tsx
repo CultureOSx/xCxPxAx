@@ -111,6 +111,8 @@ export default function DiscoverScreen() {
 
   const d = useDiscoverData();
   const s = useKeralaScoping(keralaDomain, d);
+  const startNowFallback = s.popular.filter((item) => typeof item !== 'string').slice(0, 6);
+  const startNowData = s.soon.length > 0 ? s.soon : startNowFallback;
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
@@ -144,14 +146,14 @@ export default function DiscoverScreen() {
       {/* ② Search (removed) */}
 
 
-      {/* ③ Starting Soon — always visible */}
+      {/* ③ Start Now — always visible */}
       <EventRail
-        title="Starting Soon"
-        subtitle="Grab your spot before they start"
+        title="Start Now"
+        subtitle={s.soon.length > 0 ? 'Grab your spot before they start' : 'Popular events you can join today'}
         data={
-          d.eventsLoading && s.soon.length === 0
+          d.eventsLoading && startNowData.length === 0
             ? ['sk1', 'sk2', 'sk3']
-            : s.soon
+            : startNowData
         }
         isLoading={d.eventsLoading}
         schedulingMode="live_and_countdown"

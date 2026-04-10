@@ -4,6 +4,7 @@ Project guide for AI agents. Read before touching code.
 
 > **Design Principles**: `[docs/DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md)` — five core laws (Cultural Minimalism, Token Integrity, Platform Parity, Approachable Complexity, Technical Craftsmanship).
 > **Coding rules & UI patterns**: `[culturepass-rules.md](culturepass-rules.md)` — NEVER/ALWAYS, design tokens, events.tsx standard, API patterns.
+> **AI implementation style sheet**: `[docs/AI_AGENT_STYLE_SHEET.md](docs/AI_AGENT_STYLE_SHEET.md)` — agent code quality, UI contract, change discipline, and definition of done.
 
 ---
 
