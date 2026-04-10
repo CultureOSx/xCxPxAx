@@ -5,9 +5,8 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
-  ScrollView,
 } from 'react-native';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -128,7 +127,7 @@ export default function SignUpScreen() {
 
       {/* Main Headline */}
       <Animated.Text
-        entering={enter(80)}
+        entering={enter(30)}
         style={[s.title, { color: colors.text }]}
       >
         Belong anywhere.
@@ -237,7 +236,12 @@ export default function SignUpScreen() {
           placeholder="you@example.com"
           leftIcon="mail-outline"
           value={email}
-          onChangeText={(v) => { setEmail(v); clearErrors(); }}
+          onChangeText={(v) => {
+            // Prevent spaces in email input
+            const noSpaces = v.replace(/\s+/g, '');
+            setEmail(noSpaces);
+            clearErrors();
+          }}
           autoCapitalize="none"
           autoComplete="email"
           textContentType="username"
@@ -354,31 +358,26 @@ export default function SignUpScreen() {
         />
       )}
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollViewCompat
         style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-        enabled
+        contentContainerStyle={[
+          s.scrollContent,
+          isDesktop && s.scrollContentDesktop,
+          { paddingBottom: padBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            { paddingBottom: padBottom },
-          ]}
-        >
-          {isWeb && isDesktop ? (
-            <View style={s.webRow}>
-              {/* Marketing Column */}
-              <View style={s.webLeft}>
-                <Animated.View entering={enter(40)} style={s.webKickerRow}>
-                  <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
-                  <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
-                </Animated.View>
+        {isWeb && isDesktop ? (
+          <View style={s.webRow}>
+            {/* Marketing Column */}
+            <View style={s.webLeft}>
+              <Animated.View entering={enter(40)} style={s.webKickerRow}>
+                <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
+                <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
+              </Animated.View>
 
-                <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
+              <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>...
                   Your cultural home,{'\n'}anywhere.
                 </Animated.Text>
 
@@ -417,8 +416,8 @@ export default function SignUpScreen() {
               {formContent}
             </Animated.View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {/* End KeyboardAwareScrollViewCompat */}
+      </KeyboardAwareScrollViewCompat>
     </View>
   );
 }

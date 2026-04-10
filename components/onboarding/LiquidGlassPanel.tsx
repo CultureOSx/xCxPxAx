@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { LiquidGlassTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
@@ -44,6 +44,17 @@ export function LiquidGlassPanel({
       web: { boxShadow: '0 2px 14px rgba(0,0,0,0.08)' },
     }) ?? {};
 
+  // Helper: wrap string/number children in <Text>
+  const renderChildren = (child: React.ReactNode) => {
+    if (typeof child === 'string' || typeof child === 'number') {
+      return <Text>{child}</Text>;
+    }
+    if (Array.isArray(child)) {
+      return child.map((c, i) => <React.Fragment key={i}>{renderChildren(c)}</React.Fragment>);
+    }
+    return child;
+  };
+
   return (
     <View
       style={[
@@ -57,7 +68,7 @@ export function LiquidGlassPanel({
         style,
       ]}
     >
-      <View style={[{ flex: 1 }, contentStyle]}>{children}</View>
+      <View style={[{ flex: 1 }, contentStyle]}>{renderChildren(children)}</View>
     </View>
   );
 }

@@ -97,6 +97,20 @@ function LogoRayBurst({
           contentFit="contain"
         />
       </View>
+
+      {/* Floating Settings Button for all users */}
+      <View style={{ position: 'fixed', right: 32, bottom: 36, zIndex: 200 }}>
+        <Button
+          variant="primary"
+          leftIcon="settings-outline"
+          style={{ backgroundColor: CultureTokens.coral, borderRadius: 22, minWidth: 140, boxShadow: '0 4px 24px rgba(255,94,91,0.18)' }}
+          textStyle={{ color: '#fff', fontWeight: '700', letterSpacing: 0.1 }}
+          onPress={() => router.navigate('/settings')}
+          accessibilityLabel="Open Settings"
+        >
+          Settings
+        </Button>
+      </View>
     </View>
   );
 }
@@ -130,6 +144,8 @@ const LIBRARY_NAV: NavItem[] = [
   { label: 'Shopping',      icon: 'bag-outline',             iconActive: 'bag',             route: '/shopping',    matchPrefix: true },
   { label: 'Map',           icon: 'map-outline',             iconActive: 'map',             route: '/map' },
   { label: 'Directory',     icon: 'grid-outline',            iconActive: 'grid',            route: '/(tabs)/directory', matchPrefix: true },
+  { label: 'Help',          icon: 'help-circle-outline',     iconActive: 'help-circle',     route: '/help' },
+  { label: 'Settings',      icon: 'settings-outline',        iconActive: 'settings',        route: '/settings' },
 ];
 
 const ORGANIZER_NAV: NavItem[] = [
@@ -173,7 +189,6 @@ const SUPERADMIN_NAV: NavItem[] = [
 
 const BOTTOM_NAV: NavItem[] = [
   { label: 'Settings', icon: 'settings-outline',    iconActive: 'settings',    route: '/settings' },
-  { label: 'Help',     icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
 ];
 
 // ─── Profile action items — module-level constant ─────────────────────────────
@@ -700,6 +715,7 @@ export function WebSidebar() {
   }
 
   // ─── Expanded sidebar ──────────────────────────────────────────────────────
+
   return (
     <View
       style={[s.sidebar, { backgroundColor: bg, borderRightColor: border }]}
@@ -808,6 +824,16 @@ export function WebSidebar() {
           ))}
         </NavSection>
 
+        {/* Custom: Add Australia · Diaspora marketplace and version below Library */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 0 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Poppins_500Medium', marginBottom: 2 }}>
+            Australia · Diaspora marketplace
+          </Text>
+          <Text style={{ color: colors.textTertiary, fontSize: 12, fontFamily: 'Poppins_400Regular' }}>
+            v1.0.0 · CulturePass AU
+          </Text>
+        </View>
+
         {isOrganizer && (
           <NavSection label="Organiser Tools" mutedColor={mutedColor} styles={s}>
             {ORGANIZER_NAV.map((item) => (
@@ -902,30 +928,6 @@ export function WebSidebar() {
           />
         ) : (
           <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
-            <Pressable
-              onPress={() => navigate('/submit')}
-              style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Create submission"
-            >
-              <LinearGradient
-                colors={[CultureTokens.indigo, CultureTokens.teal]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={s.profileCreateGradient}
-              >
-                <Text style={s.profileCreateText}>＋ Create</Text>
-              </LinearGradient>
-            </Pressable>
-            <Pressable
-              style={[s.signInBtn, { borderColor: colors.borderLight }]}
-              onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}
-              accessibilityRole="link"
-              accessibilityLabel="Sign in"
-            >
-              <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
-              <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
-            </Pressable>
             <Button
               variant="gradient"
               size="md"
@@ -940,10 +942,7 @@ export function WebSidebar() {
           </View>
         )}
 
-        <Text style={[s.footerMarketLine, { color: colors.textSecondary }]} numberOfLines={2}>
-          {brandMetaLine}
-        </Text>
-        <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
+        {/* Removed duplicate market line and version from bottom, now shown below Library */}
       </View>
     </View>
   );

@@ -193,6 +193,7 @@ export default function AccountSettingsScreen() {
         { icon: 'ticket-outline',   label: 'My Tickets',     sub: 'Upcoming and past events',  color: CultureTokens.gold,  route: '/tickets' },
         { icon: 'bookmark-outline', label: 'Saved Items',    sub: 'Events, perks, businesses', color: CultureTokens.coral, route: '/saved' },
         { icon: 'people-outline',   label: 'My Communities', sub: "Groups you've joined",       color: CultureTokens.teal,  route: '/(tabs)/community' },
+        { icon: 'help-circle-outline', label: 'Help Center', sub: 'FAQs, guides, tutorials', color: CultureTokens.gold, route: '/help' },
       ],
     },
     ...(isOrganizer ? [{
@@ -200,7 +201,7 @@ export default function AccountSettingsScreen() {
       items: [
         { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',                color: CultureTokens.indigo, route: '/dashboard/organizer' },
         { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',                 color: CultureTokens.gold,   route: '/scanner' },
-        { icon: 'add-circle-outline', label: 'Create & submit',     sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/submit' },
+        // { icon: 'add-circle-outline', label: 'Create & submit',     sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/submit' },
         ...(canTargetCampaigns ? [{ icon: 'megaphone-outline',      label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: CultureTokens.gold,    route: '/admin/notifications' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'document-text-outline',  label: 'Campaign Audit Logs', sub: 'Review admin send history',    color: CultureTokens.warning, route: '/admin/audit-logs' }] : []),
       ] as SettingItem[],
@@ -215,7 +216,7 @@ export default function AccountSettingsScreen() {
     {
       title: 'Help & Support',
       items: [
-        { icon: 'help-circle-outline', label: 'Help Center',      sub: 'FAQs, guides, tutorials',  color: CultureTokens.gold,    route: '/help' },
+        // { icon: 'help-circle-outline', label: 'Help Center',      sub: 'FAQs, guides, tutorials',  color: CultureTokens.gold,    route: '/help' },
         { icon: 'mail-outline',        label: 'Contact Us',       sub: EMAIL_SUPPORT,  color: CultureTokens.teal,   action: () => Linking.openURL(`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(`${APP_NAME} Support`)}`) },
         { icon: 'flag-outline',        label: 'Report a Problem', sub: 'Something not working?',  color: CultureTokens.warning, action: () => Linking.openURL(`mailto:${EMAIL_BUGS}?subject=${encodeURIComponent('Bug Report')}`) },
         { icon: 'star-half-outline',   label: 'Rate CulturePass', sub: 'Share your feedback',     color: CultureTokens.coral,   action: () => Linking.openURL(Platform.OS === 'android' ? 'market://details?id=au.culturepass.app' : 'https://apps.apple.com/app/culturepass/id6742686059') },
@@ -256,7 +257,7 @@ export default function AccountSettingsScreen() {
     {
       title: 'Help & Support',
       items: [
-        { icon: 'help-circle-outline', label: 'Help Center',  sub: 'FAQs, guides, tutorials', color: CultureTokens.gold,  route: '/help' },
+        // { icon: 'help-circle-outline', label: 'Help Center',  sub: 'FAQs, guides, tutorials', color: CultureTokens.gold,  route: '/help' },
         { icon: 'mail-outline',        label: 'Contact Us',   sub: EMAIL_SUPPORT, color: CultureTokens.teal, action: () => Linking.openURL(`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(`${APP_NAME} Support`)}`) },
       ],
     },
@@ -421,44 +422,39 @@ export default function AccountSettingsScreen() {
             </View>
           </Animated.View>
         ) : (
-          <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}>
-            <LiquidGlassPanel
-              borderRadius={28}
-              style={[s.guestCardOuter, isDesktopWeb && s.webSection]}
-              contentStyle={s.guestCardInner}
-            >
-              <View style={s.guestIconWrap}>
-                <LinearGradient
-                  colors={[CultureTokens.indigo + '30', CultureTokens.teal + '10'] as [string, string]}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <Ionicons name="person-circle" size={56} color={CultureTokens.indigo + '80'} />
-              </View>
-              <Text style={s.guestTitle}>Welcome to CulturePass</Text>
-              <Text style={s.guestSub}>
-                Sign in to access your profile, tickets, wallet, and exclusive cultural events.
-              </Text>
-              <Button
-                variant="primary"
-                fullWidth
-                onPress={() => navigate('/(onboarding)/login')}
-                leftIcon="log-in-outline"
+          <>
+            <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}>
+              <LiquidGlassPanel
+                borderRadius={28}
+                style={[s.guestCardOuter, isDesktopWeb && s.webSection]}
+                contentStyle={s.guestCardInner}
               >
-                Sign In
-              </Button>
-              <Pressable
-                style={({ pressed }) => [s.guestSignUpBtn, pressed && { opacity: 0.75 }]}
-                onPress={() => navigate('/(onboarding)/signup')}
-              >
-                <Text style={s.guestSignUpText}>
-                  Don&apos;t have an account?{' '}
-                  <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_700Bold' }}>
-                    Create one free
-                  </Text>
+                <View style={s.guestIconWrap}>
+                  <LinearGradient
+                    colors={[CultureTokens.indigo + '30', CultureTokens.teal + '10'] as [string, string]}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Ionicons name="person-circle" size={56} color={CultureTokens.indigo + '80'} />
+                </View>
+                <Text style={s.guestTitle}>Welcome to CulturePass</Text>
+                <Text style={s.guestSub}>
+                  Join CulturePass to access your profile, tickets, wallet, and exclusive cultural events.
                 </Text>
-              </Pressable>
-            </LiquidGlassPanel>
-          </Animated.View>
+              </LiquidGlassPanel>
+            </Animated.View>
+            {/* Floating Action Button for guests */}
+            <View style={s.fabWrap} pointerEvents="box-none">
+              <Button
+                variant="gold"
+                leftIcon="person-add-outline"
+                style={s.fabBtn}
+                onPress={() => navigate('/(onboarding)/signup')}
+                accessibilityLabel="Join CulturePass"
+              >
+                Join CulturePass
+              </Button>
+            </View>
+          </>
         )}
 
         {/* ── Settings sections ───────────────────────────────── */}
@@ -521,7 +517,7 @@ export default function AccountSettingsScreen() {
         {hiddenSectionsCount > 0 && (
           <Animated.View
             entering={reducedMotion ? undefined : FadeInDown.delay(220).springify().damping(18).stiffness(110)}
-            style={[s.section, isDesktopWeb && s.webSection]}
+            style={[s.section, isDesktopWeb && s.webSection, { alignItems: 'center', marginTop: 18, marginBottom: 18 }]}
           >
             {showAdvancedSections ? (
               <Text style={s.advancedHint}>Advanced and admin sections</Text>
@@ -529,8 +525,10 @@ export default function AccountSettingsScreen() {
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
                 s.showMoreBtn,
-                hovered && { backgroundColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.04)' },
-                pressed && { opacity: 0.75, transform: [{ scale: 0.99 }] },
+                { paddingVertical: 14, paddingHorizontal: 32, borderRadius: 22, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surfaceSecondary },
+                hovered && { backgroundColor: isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.06)' },
+                pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 220, justifyContent: 'center' },
               ]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -541,10 +539,11 @@ export default function AccountSettingsScreen() {
             >
               <Ionicons
                 name={showAdvancedSections ? 'chevron-up-outline' : 'chevron-down-outline'}
-                size={16}
-                color={colors.textSecondary}
+                size={20}
+                color={CultureTokens.indigo}
+                style={{ marginRight: 8 }}
               />
-              <Text style={s.showMoreText}>
+              <Text style={[s.showMoreText, { fontSize: 16, fontWeight: '600', color: CultureTokens.indigo }] }>
                 {showAdvancedSections ? 'Show fewer settings' : `Show ${hiddenSectionsCount} more sections`}
               </Text>
             </Pressable>
@@ -553,26 +552,30 @@ export default function AccountSettingsScreen() {
 
         {/* ── Sign out ─────────────────────────────────────────── */}
         {isAuthenticated && (
-          <Animated.View
-            entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + sections.length * 55, 450)).springify().damping(18)}
-            style={[s.section, isDesktopWeb && s.webSection, { marginBottom: 20 }]}
-          >
-            <Pressable
-              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
-                s.signOutBtn,
-                hovered && { backgroundColor: isDark ? 'rgba(255,94,91,0.14)' : 'rgba(255,94,91,0.11)', borderColor: CultureTokens.coral + '44' },
-                pressed && { opacity: 0.72, transform: [{ scale: 0.98 }] },
-              ]}
-              onPress={handleSignOut}
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
+          <>
+            <View style={{ height: 18 }} />
+            <Animated.View
+              entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + sections.length * 55, 450)).springify().damping(18)}
+              style={[s.section, isDesktopWeb && s.webSection, { marginBottom: 20 }]}
             >
-              <Ionicons name="log-out-outline" size={17} color={CultureTokens.coral} />
-              <Text style={s.signOutText}>Sign Out</Text>
-            </Pressable>
-          </Animated.View>
+              <Pressable
+                style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                  s.signOutBtn,
+                  hovered && { backgroundColor: isDark ? 'rgba(255,94,91,0.14)' : 'rgba(255,94,91,0.11)', borderColor: CultureTokens.coral + '44' },
+                  pressed && { opacity: 0.72, transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={handleSignOut}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+              >
+                <Ionicons name="log-out-outline" size={17} color={CultureTokens.coral} />
+                <Text style={s.signOutText}>Sign Out</Text>
+              </Pressable>
+            </Animated.View>
+          </>
         )}
 
+        {/* Bottom Help Center button removed */}
         <Text style={s.footer}>
           {`${APP_NAME_AU} · v${appVersion}${'\n'}Available in ${PRIMARY_REGION}`}
         </Text>
@@ -793,6 +796,24 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
     },
 
     webSection: { maxWidth: 800, width: '100%', alignSelf: 'center' },
+
+    fabWrap: {
+      position: 'absolute',
+      right: 24,
+      bottom: 34,
+      zIndex: 100,
+      alignItems: 'flex-end',
+      pointerEvents: 'box-none',
+    },
+    fabBtn: {
+      borderRadius: 22,
+      minWidth: 170,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.13,
+      shadowRadius: 12,
+    },
   });
 
 const settingsAmbient = StyleSheet.create({

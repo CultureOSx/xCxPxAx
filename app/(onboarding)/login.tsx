@@ -5,9 +5,8 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
-  ScrollView,
 } from 'react-native';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -266,31 +265,26 @@ export default function LoginScreen() {
         />
       )}
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollViewCompat
         style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-        enabled
+        contentContainerStyle={[
+          s.scrollContent,
+          isDesktop && s.scrollContentDesktop,
+          { paddingBottom: padBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            { paddingBottom: padBottom },
-          ]}
-        >
-          {isWeb && isDesktop ? (
-            <View style={s.webRow}>
-              {/* Left marketing column */}
-              <View style={s.webLeft}>
-                <Animated.View entering={enter(40)} style={s.webKickerRow}>
-                  <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
-                  <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
-                </Animated.View>
+        {isWeb && isDesktop ? (
+          <View style={s.webRow}>
+            {/* Left marketing column */}
+            <View style={s.webLeft}>
+              <Animated.View entering={enter(40)} style={s.webKickerRow}>
+                <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
+                <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
+              </Animated.View>
 
-                <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
+              <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>...
                   Belong anywhere.
                 </Animated.Text>
 
@@ -338,8 +332,8 @@ export default function LoginScreen() {
               </AuthLiquidFormCard>
             </Animated.View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {/* End KeyboardAwareScrollViewCompat */}
+      </KeyboardAwareScrollViewCompat>
     </View>
   );
 }
