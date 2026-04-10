@@ -20,6 +20,12 @@ interface TabPrimaryHeaderProps {
   withGlobalNav?: boolean;
   /** Controls the divider under the chrome row (not the shell border). */
   showChromeHairline?: boolean;
+  /**
+   * When true, `children` renders outside the padded container — full-width
+   * edge-to-edge inside the shell. Useful for filter chip rows that need to
+   * overflow to the screen edges with their own internal padding.
+   */
+  childrenFullBleed?: boolean;
 }
 
 export function TabPrimaryHeader({
@@ -33,6 +39,7 @@ export function TabPrimaryHeader({
   topInset = 0,
   withGlobalNav = true,
   showChromeHairline = false,
+  childrenFullBleed = false,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
@@ -53,11 +60,15 @@ export function TabPrimaryHeader({
     <View style={styles.toolbarRow}>{rightActions}</View>
   ) : null;
 
+  const inlineChildren = children && !childrenFullBleed
+    ? <View style={styles.extra}>{children}</View>
+    : null;
+
   const body = (
     <>
       {chrome}
       {toolbar}
-      {children ? <View style={styles.extra}>{children}</View> : null}
+      {inlineChildren}
     </>
   );
 
@@ -75,16 +86,20 @@ export function TabPrimaryHeader({
             boxShadow: '0px 2px 12px rgba(0,0,0,0.07)',
           } as object,
         ]}
-        contentStyle={[styles.wrapWeb, { paddingHorizontal: hPad, paddingTop: webTopPad }]}
+        contentStyle={[styles.wrapWeb, { paddingTop: webTopPad }]}
       >
-        <View style={styles.chromeContainer}>{body}</View>
+        <View style={[styles.chromeContainer, { paddingHorizontal: hPad }]}>{body}</View>
+        {childrenFullBleed && children ? children : null}
       </LiquidGlassPanel>
     );
   }
 
   return (
     <TabHeaderNativeShell hPad={hPad}>
-      <View style={styles.wrapNative}>{body}</View>
+      <View style={styles.wrapNative}>
+        {body}
+      </View>
+      {childrenFullBleed && children ? children : null}
     </TabHeaderNativeShell>
   );
 }
@@ -102,6 +117,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MAIN_TAB_UI.chromeMaxWidth,
     alignSelf: 'center',
+    paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
   },
   toolbarRow: {
     flexDirection: 'row',

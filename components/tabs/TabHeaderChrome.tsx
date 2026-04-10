@@ -1,11 +1,12 @@
 /**
- * Tab header chrome: home logo + page title + global actions (search, notifications, account menu).
+ * Tab header chrome: home logo + page title + global actions (search, notifications, profile avatar).
  * One pattern for Discover, Feed, Events, Community, Perks, and Profile (in-tab).
  */
 import React, { useCallback, type ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
@@ -106,6 +107,47 @@ export function BrandMark({
   );
 }
 
+/** Circular avatar button — shows user photo or fallback person icon. Navigates to profile. */
+function ProfileAvatarButton() {
+  const colors = useColors();
+  const isDark = useIsDark();
+  const { user, isAuthenticated } = useAuth();
+
+  const ringBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
+  const ringBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.1)';
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        markStyles.avatarBtn,
+        { borderColor: isAuthenticated ? CultureTokens.indigo + '60' : ringBorder, backgroundColor: ringBg },
+        pressed && { opacity: 0.75 },
+      ]}
+      onPress={() => {
+        haptic();
+        router.push('/(tabs)/profile' as const);
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={isAuthenticated ? 'View your profile' : 'Sign in'}
+      accessibilityHint="Open profile and settings"
+    >
+      {isAuthenticated && user?.avatarUrl ? (
+        <Image
+          source={{ uri: user.avatarUrl }}
+          style={markStyles.avatarImg}
+          contentFit="cover"
+        />
+      ) : (
+        <Ionicons
+          name={isAuthenticated ? 'person-circle' : 'person-circle-outline'}
+          size={22}
+          color={isAuthenticated ? CultureTokens.indigo : colors.textSecondary}
+        />
+      )}
+    </Pressable>
+  );
+}
+
 export function GlobalNavActions({
   showMenu = true,
   leadingAction,
@@ -129,7 +171,6 @@ export function GlobalNavActions({
 
   const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
   const chipBorder = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.08)';
-  const menuBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.1)';
 
   return (
     <View style={markStyles.actions}>
@@ -137,7 +178,7 @@ export function GlobalNavActions({
       <Pressable
         style={({ pressed }) => [
           markStyles.iconBtn,
-          { backgroundColor: chipBg, borderColor: chipBorder },
+          { backgroundColor: colors.primarySoft, borderColor: CultureTokens.indigo + '30' },
           pressed && { opacity: 0.7 },
         ]}
         onPress={() => {
@@ -148,7 +189,7 @@ export function GlobalNavActions({
         accessibilityLabel="Search"
         accessibilityHint="Open search"
       >
-        <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
+        <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={CultureTokens.indigo} />
       </Pressable>
       <Pressable
         style={({ pressed }) => [
@@ -168,29 +209,12 @@ export function GlobalNavActions({
         <ActionBadge count={unreadCount} />
       </Pressable>
 
-      {showMenu ? (
-        <Pressable
-          style={({ pressed }) => [
-            markStyles.iconBtn,
-            { backgroundColor: chipBg, borderColor: menuBorder },
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => {
-            haptic();
-            router.push('/menu' as const);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Account and profile menu"
-          accessibilityHint="Open app menu"
-        >
-          <Ionicons name="menu" size={MAIN_TAB_UI.iconSize.lg} color={colors.text} />
-        </Pressable>
-      ) : null}
+      {showMenu ? <ProfileAvatarButton /> : null}
     </View>
   );
 }
 
-/** Page-first header: logo | title | search · notifications · account menu */
+/** Page-first header: logo | title | search · notifications · profile avatar */
 export function TabPageChromeRow({
   title,
   subtitle: _subtitle,
@@ -209,32 +233,42 @@ export function TabPageChromeRow({
   const colors = useColors();
 
   return (
-    <View
-      style={[
-        markStyles.pageChromeRow,
-        !showHairline && markStyles.chromeRowPlain,
-        showHairline && { borderBottomColor: colors.borderLight },
-      ]}
-    >
-      <HomeLogoMark compact />
-      <View style={markStyles.pageTitleCol}>
-        <Text
-          style={[markStyles.pageTitle, { color: colors.text }]}
-          numberOfLines={1}
-          accessibilityRole="header"
-        >
-          {title}
-        </Text>
-        {locationLabel ? (
-          <View style={markStyles.locationInline}>
-            <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
-            <Text style={[markStyles.pageLocation, { color: colors.textTertiary }]} numberOfLines={1}>
-              {locationLabel}
-            </Text>
-          </View>
-        ) : null}
+    <View style={markStyles.chromeWrapper}>
+      <View
+        style={[
+          markStyles.pageChromeRow,
+          !showHairline && markStyles.chromeRowPlain,
+          showHairline && { borderBottomColor: colors.borderLight },
+        ]}
+      >
+        <HomeLogoMark compact />
+        <View style={markStyles.pageTitleCol}>
+          <Text
+            style={[markStyles.pageTitle, { color: colors.text }]}
+            numberOfLines={1}
+            accessibilityRole="header"
+          >
+            {title}
+          </Text>
+          {locationLabel ? (
+            <View style={markStyles.locationInline}>
+              <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
+              <Text style={[markStyles.pageLocation, { color: colors.textTertiary }]} numberOfLines={1}>
+                {locationLabel}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
       </View>
-      <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
+      {/* Brand gradient accent strip */}
+      <LinearGradient
+        colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={markStyles.brandStrip}
+        pointerEvents="none"
+      />
     </View>
   );
 }
@@ -404,8 +438,8 @@ const markStyles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 4,
-    minWidth: 15,
-    height: 15,
+    minWidth: 16,
+    height: 16,
     borderRadius: 8,
     backgroundColor: CultureTokens.coral,
     alignItems: 'center',
@@ -417,5 +451,29 @@ const markStyles = StyleSheet.create({
     fontSize: 8,
     lineHeight: 10,
     fontFamily: 'Poppins_700Bold',
+  },
+  avatarBtn: {
+    width: MAIN_TAB_UI.minTouchTarget,
+    height: MAIN_TAB_UI.minTouchTarget,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+  },
+  chromeWrapper: {
+    position: 'relative',
+  },
+  brandStrip: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1.5,
   },
 });

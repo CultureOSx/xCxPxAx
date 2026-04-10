@@ -24,14 +24,15 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { View, Text, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
-import { CategoryColors, CultureTokens } from '@/constants/theme';
+import { CategoryColors, CultureTokens, FontFamily } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
 import type { EventData, Community } from '@/shared/schema';
 
@@ -121,6 +122,7 @@ export default function DiscoverScreen() {
   return (
     <DiscoverScrollShell
       scrollBottomPad={scrollBottomPad}
+      stickyHeaderIndices={[1]}
       contentContainerStyle={
         isDesktop ? { width: contentWidth, alignSelf: 'center' } : undefined
       }
@@ -142,6 +144,25 @@ export default function DiscoverScreen() {
         isAuthenticated={d.isAuthenticated}
         onRefresh={d.handleRefresh}
       />
+
+      {/* ② Sticky search bar — stays pinned as user scrolls */}
+      <View style={[discoverStyles.searchSticky, { backgroundColor: colors.background }]}>
+        <Pressable
+          style={[
+            discoverStyles.searchBar,
+            { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
+          ]}
+          onPress={() => router.push('/search')}
+          accessibilityRole="search"
+          accessibilityLabel="Search events, communities, places"
+          accessibilityHint="Opens the search screen"
+        >
+          <Ionicons name="search" size={16} color={colors.textTertiary} />
+          <Text style={[discoverStyles.searchPlaceholder, { color: colors.textTertiary }]} numberOfLines={1}>
+            Search events, communities, places…
+          </Text>
+        </Pressable>
+      </View>
 
       {/* ② Search (removed) */}
 
@@ -304,3 +325,24 @@ export default function DiscoverScreen() {
     </DiscoverScrollShell>
   );
 }
+
+const discoverStyles = StyleSheet.create({
+  searchSticky: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: FontFamily.regular,
+  },
+});

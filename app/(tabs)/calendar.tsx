@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +26,7 @@ import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EventRow } from '@/components/calendar/EventRow';
 import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
@@ -258,10 +258,44 @@ export default function CalendarScreen() {
   if (isLoading) {
     return (
       <ErrorBoundary>
-        <View style={[styles.loadingRoot, { backgroundColor: colors.background }]}>
-          <View style={[styles.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>Building your events calendar…</Text>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+          <LinearGradient
+            colors={gradients.culturepassBrand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.ambientMesh}
+            pointerEvents="none"
+          />
+          <TabPrimaryHeader
+            title="Events"
+            hPad={hPad}
+            topInset={topInset}
+            showChromeHairline={false}
+          />
+          <View style={[styles.skeletonRoot, { paddingHorizontal: hPad }]}>
+            {/* Month header */}
+            <View style={styles.skeletonMonthRow}>
+              <Skeleton width={140} height={28} borderRadius={8} />
+              <View style={styles.skeletonMonthActions}>
+                <Skeleton width={32} height={32} borderRadius={10} />
+                <Skeleton width={64} height={32} borderRadius={10} />
+                <Skeleton width={32} height={32} borderRadius={10} />
+              </View>
+            </View>
+            {/* Day headers */}
+            <View style={styles.skeletonDayRow}>
+              {['S','M','T','W','T','F','S'].map((_, i) => (
+                <Skeleton key={i} width="13%" height={14} borderRadius={4} />
+              ))}
+            </View>
+            {/* Calendar grid — 5 rows × 7 cells */}
+            {[0,1,2,3,4].map((row) => (
+              <View key={row} style={styles.skeletonWeekRow}>
+                {[0,1,2,3,4,5,6].map((col) => (
+                  <Skeleton key={col} width="13%" height={40} borderRadius={10} />
+                ))}
+              </View>
+            ))}
           </View>
         </View>
       </ErrorBoundary>
@@ -404,18 +438,6 @@ export default function CalendarScreen() {
                       accessibilityLabel="Jump to today"
                     >
                       <Text style={[styles.todayBtnText, { color: colors.text }]}>Today</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => router.push('/settings/calendar-sync')}
-                      style={[styles.monthControlBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Open calendar sync settings"
-                    >
-                      <Ionicons
-                        name={calPrefs.deviceConnected ? 'calendar' : 'calendar-outline'}
-                        size={14}
-                        color={calPrefs.deviceConnected ? CultureTokens.indigo : colors.text}
-                      />
                     </Pressable>
                     <Pressable
                       onPress={nextMonth}
@@ -607,9 +629,11 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
-  loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
-  loadingText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  skeletonRoot: { paddingTop: 16, gap: 10 },
+  skeletonMonthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  skeletonMonthActions: { flexDirection: 'row', gap: 8 },
+  skeletonDayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  skeletonWeekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
 
   topHeaderSyncBtn: {
     width: 42,
