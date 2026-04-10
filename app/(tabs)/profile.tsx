@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-  Platform, Share, Linking, Alert, RefreshControl, ActivityIndicator,
+  Platform, Linking, Alert, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,7 @@ import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/schema';
 import QRCode from 'react-native-qrcode-svg';
+import { shareLinkContent } from '@/lib/shareContent';
 import { ProfileScanner } from '@/components/scanner/ProfileScanner';
 
 import {
@@ -141,13 +142,9 @@ export default function ProfileScreen() {
     const shareUrl = handle
       ? `https://culturepass.app/@${handle}`
       : `https://culturepass.app/profile/${userId}`;
-    const message  = `Check out ${name}'s profile on CulturePass!\n\n${shareUrl}`;
+    const message  = `Check out ${name}'s profile on CulturePass!`;
     try {
-      if (Platform.OS === 'web' && navigator.share) {
-        await navigator.share({ title: `${name} on CulturePass`, text: message, url: shareUrl });
-      } else {
-        await Share.share({ message, url: shareUrl });
-      }
+      await shareLinkContent({ title: `${name} on CulturePass`, message, url: shareUrl });
     } catch { /* user cancelled */ }
   }, [displayUser?.displayName, displayUser?.username, displayUser?.handle, userId]);
 

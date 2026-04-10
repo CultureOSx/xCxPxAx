@@ -21,7 +21,6 @@ import {
 } from '../services/firestore';
 import { isFirestoreConfigured, db } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
-import type { UserRole } from '../../../shared/schema';
 import type { FirestoreEvent } from '../services/firestore';
 import { isAllowedHttpsImageUrl, MAX_IMAGE_URL_LENGTH, sanitizeStoredImagePointer } from '../utils/httpsImageUrl';
 
@@ -30,8 +29,6 @@ export const feedRouter = Router();
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-const STORY_POST_ROLES: UserRole[] = ['organizer', 'business', 'admin', 'platformAdmin'];
 
 interface CommunityPost {
   id: string;
@@ -42,7 +39,7 @@ interface CommunityPost {
   authorName: string;
   body: string;
   imageUrl?: string | null;
-  /** 'story' = tall story-style status (only org / business / admin may create). */
+  /** 'story' = short status-style update (280 chars; optional portrait image). */
   postStyle?: 'standard' | 'story';
   likesCount: number;
   commentsCount: number;
@@ -364,9 +361,6 @@ feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) 
   }
   const trimmed = body.trim();
   if (postStyle === 'story') {
-    if (!STORY_POST_ROLES.includes(req.user!.role)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
     if (trimmed.length > 280) {
       return res.status(400).json({ error: 'Story must be 280 characters or less' });
     }

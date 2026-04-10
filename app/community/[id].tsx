@@ -35,7 +35,6 @@ import type { Community, EventData } from '@/shared/schema';
 import { confirmAndReport } from '@/lib/reporting';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens, CardTokens , TextStyles } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import { Button } from '@/components/ui/Button';
@@ -1135,7 +1134,6 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     accessibilityRole="button"
                     accessibilityLabel={communityBookmarked ? 'Remove community bookmark' : 'Save community for later'}
                   >
-                    <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
                     <Ionicons
                       name={communityBookmarked ? 'bookmark' : 'bookmark-outline'}
                       size={20}
@@ -1148,7 +1146,6 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Report community"
                   >
-                    <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
                     <Ionicons name="flag-outline" size={20} color={colors.textInverse} />
                   </Pressable>
                 </View>
@@ -1302,15 +1299,15 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
           style={[StyleSheet.absoluteFillObject, { pointerEvents: 'none' } as never]}
         />
         <View style={{ overflow: 'hidden', borderRadius: 24, marginHorizontal: 20 }}>
-          {isWeb ? (
-            <View style={[s.floatingBottomBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <CommunityBottomBarInner />
-            </View>
-          ) : (
-            <BlurView intensity={30} tint="dark" style={[s.floatingBottomBar, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 }]}>
-              <CommunityBottomBarInner />
-            </BlurView>
-          )}
+          <View
+            style={[
+              s.floatingBottomBar,
+              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+              isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%', bottom: 0 },
+            ]}
+          >
+            <CommunityBottomBarInner />
+          </View>
         </View>
       </View>
     </View>

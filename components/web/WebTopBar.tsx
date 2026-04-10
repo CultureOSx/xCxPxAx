@@ -411,8 +411,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       web: {
-        boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(20px) saturate(1.5)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.08), 0 6px 28px rgba(0,0,0,0.45)',
       },
       default: {
         shadowColor: '#000',

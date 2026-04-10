@@ -17,7 +17,6 @@ import {
   Spacing,
   IconSize,
 } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -114,15 +113,17 @@ export default function CultureMatchScreen() {
           contentContainerStyle={[s.scrollContent, isDesktop && s.scrollContentDesktop, !isDesktop && { paddingTop: 20 }]}
         >
           <Animated.View entering={FadeInUp.springify().damping(16).duration(600)} style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView
-                intensity={isDesktop ? 80 : 60}
-                tint="dark"
-                style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]}
-              />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(20,20,35,0.85)', borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]} />
-            )}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                s.formBlur,
+                {
+                  backgroundColor: 'rgba(20,20,35,0.94)',
+                  borderRadius: 32,
+                  borderColor: 'rgba(255,255,255,0.15)',
+                },
+              ]}
+            />
 
             <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               {/* Step indicator dots */}

@@ -16,7 +16,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
-      "buildNumber": "2",
       "appleTeamId": "26WGXSNG58",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
@@ -52,7 +51,6 @@
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -152,7 +150,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "16.0"
+            "deploymentTarget": "16.2"
           },
           "android": {
             "minSdkVersion": 26,
@@ -161,7 +159,38 @@
         }
       ],
       "expo-image",
-      "expo-widgets"
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.au.culturepass.app",
+          "widgets": [
+            {
+              "name": "CultureSpotlightWidget",
+              "displayName": "Spotlight",
+              "description": "Featured cultural pick from CulturePass Discover",
+              "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureNearYouWidget",
+              "displayName": "Near You",
+              "description": "Upcoming events near your city",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureIdentityQRWidget",
+              "displayName": "Culture ID",
+              "description": "Your CulturePass name and ID",
+              "supportedFamilies": ["systemSmall", "systemMedium"]
+            },
+            {
+              "name": "CultureUpcomingTicketWidget",
+              "displayName": "Next Ticket",
+              "description": "Your next ticketed event",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,

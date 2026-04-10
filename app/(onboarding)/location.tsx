@@ -34,7 +34,6 @@ import {
   IconSize,
 } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import {
   getCountryForCity,
@@ -244,15 +243,17 @@ export default function LocationScreen() {
           ]}
         >
           <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView
-                intensity={80}
-                tint="dark"
-                style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32, borderColor: 'rgba(255,255,255,0.15)' }]}
-              />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(20,20,35,0.9)', borderRadius: 32 }]} />
-            )}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                s.formBlur,
+                {
+                  backgroundColor: 'rgba(20,20,35,0.94)',
+                  borderRadius: 32,
+                  borderColor: 'rgba(255,255,255,0.15)',
+                },
+              ]}
+            />
 
             <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               <View style={s.headerBlock}>

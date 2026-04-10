@@ -22,11 +22,8 @@ import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
 import { CultureTokens } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
-
-const isWeb = Platform.OS === 'web';
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -292,7 +289,6 @@ export default function AllEventsScreen() {
             {isRefetching
               ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
               : <Ionicons name="refresh" size={18} color={colors.text} />}
-            {!isWeb && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
           </Pressable>
         </Animated.View>
 

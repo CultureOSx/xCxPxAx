@@ -198,6 +198,12 @@ export default function CultureFeedScreen() {
             if (!IS_WEB) Haptics.selectionAsync().catch(() => {});
             gate(() => openComposer('standard'));
           }}
+          onLongPress={() => {
+            if (!isAuthenticated || !canPostStoryStatus) return;
+            if (!IS_WEB) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            gate(() => openComposer('story'));
+          }}
+          delayLongPress={380}
           style={({ pressed }) => [
             styles.fab,
             {
@@ -209,7 +215,7 @@ export default function CultureFeedScreen() {
           ]}
           accessibilityRole="button"
           accessibilityLabel="Create post"
-          accessibilityHint="Opens the post composer"
+          accessibilityHint="Opens the post composer. Long press for a short story-style status."
           android_ripple={Platform.OS === 'android' ? { color: 'rgba(255,255,255,0.22)', borderless: false } : undefined}
         >
           <Ionicons name="add" size={20} color={colors.textOnBrandGradient} />

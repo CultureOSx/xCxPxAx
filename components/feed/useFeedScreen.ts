@@ -9,8 +9,6 @@ import { uploadPostImage } from '@/lib/storage';
 
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
-import { useRole } from '@/hooks/useRole';
-
 import { feedKeys, communityKeys } from '@/hooks/queries/keys';
 
 import type { Community, EventData } from '@/shared/schema';
@@ -97,10 +95,10 @@ function mapServerItemToPost(item: Record<string, any>): FeedPost {
 export function useFeedScreen({ isDesktop }: { isDesktop: boolean }) {
   const { state } = useOnboarding();
   const { user: authUser, isAuthenticated } = useAuth();
-  const { hasRole } = useRole();
   const queryClient = useQueryClient();
 
-  const canPostStoryStatus = hasRole('organizer', 'business', 'admin', 'platformAdmin');
+  /** Short story-style status (280 chars + optional portrait photo) — any signed-in member. */
+  const canPostStoryStatus = Boolean(isAuthenticated);
 
   const [refreshing, setRefreshing] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);

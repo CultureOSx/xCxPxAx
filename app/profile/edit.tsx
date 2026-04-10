@@ -29,7 +29,6 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
-import { BlurView } from 'expo-blur';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -192,28 +191,20 @@ function SectionCard({
     </>
   );
 
-  const iosBlur = isDark && Platform.OS === 'ios';
-
   return (
     <Animated.View entering={FadeInDown.delay(70 + index * 35).duration(380)} style={sc.cardRoot}>
-      {iosBlur ? (
-        <BlurView intensity={28} tint="dark" style={[borderStyle, { backgroundColor: 'rgba(18,24,38,0.55)' }]}>
-          {inner}
-        </BlurView>
-      ) : (
-        <View
-          style={[
-            borderStyle,
-            {
-              backgroundColor: isDark ? colors.card : colors.surface,
-              ...(Platform.OS === 'web' ? shadows.small : {}),
-              ...sectionCardShadow(isDark),
-            },
-          ]}
-        >
-          {inner}
-        </View>
-      )}
+      <View
+        style={[
+          borderStyle,
+          {
+            backgroundColor: isDark ? colors.card : colors.surface,
+            ...(Platform.OS === 'web' ? shadows.small : {}),
+            ...sectionCardShadow(isDark),
+          },
+        ]}
+      >
+        {inner}
+      </View>
     </Animated.View>
   );
 }

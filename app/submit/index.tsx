@@ -1651,12 +1651,6 @@ const s = StyleSheet.create({
   headerGradient: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth,
-    ...Platform.select({
-      web: {
-        backdropFilter: 'saturate(140%) blur(12px)',
-      } as object,
-      default: {},
-    }),
   },
   backBtn: {
     width: 36, height: 36, borderRadius: 18,

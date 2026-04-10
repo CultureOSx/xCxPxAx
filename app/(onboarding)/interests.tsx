@@ -20,7 +20,6 @@ import {
 } from '@/constants/onboardingInterests';
 
 import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { useInterestsSelection } from '@/hooks/useInterestsSelection';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -171,9 +170,6 @@ export default function InterestsScreen() {
         ]}
       >
         <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
-          {Platform.OS === 'ios' && isDesktop && (
-            <BlurView intensity={25} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />
-          )}
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
@@ -384,10 +380,10 @@ const s = StyleSheet.create({
   },
 
   desktopCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(22,24,36,0.96)',
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: 'rgba(255,255,255,0.1)',
     padding: Spacing.xl,
     marginTop: Spacing.sm,
   },

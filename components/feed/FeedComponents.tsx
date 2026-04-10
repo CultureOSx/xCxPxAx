@@ -5,13 +5,14 @@ import React, {
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
   Platform, ActivityIndicator, Modal,
-  TextInput, KeyboardAvoidingView, Keyboard, Share, Animated, useColorScheme,
+  TextInput, Keyboard, Animated, useColorScheme,
   type ViewStyle,
 } from 'react-native';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Reanimated intentionally NOT imported — interpolateColor worklet crashes iOS (SIGABRT via worklets::UIScheduler)
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +31,7 @@ import {
   type FeedComment, type PostCollection,
 } from '@/lib/feedService';
 import type { Community } from '@/shared/schema';
+import { shareLinkContent } from '@/lib/shareContent';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -289,7 +291,7 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
             )}
           </View>
           <Text style={[st.name, { color: colors.textSecondary }]} numberOfLines={1}>
-            {isAuthenticated ? 'Your Post' : 'Sign In'}
+            {isAuthenticated ? 'Post' : 'Sign In'}
           </Text>
         </Pressable>
 
@@ -630,7 +632,7 @@ function CommentsSheet({ visible, onClose, post, colors }: {
       <View style={csh.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
           enabled={Platform.OS !== 'web'}
           style={csh.kav}
         >
@@ -814,14 +816,10 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
       ? `https://culturepass.app/event/${post.event.id}`
       : `https://culturepass.app/community/${post.community.id}`;
     const message  = isEvent
-      ? `Check out "${post.event.title}" on CulturePass!\n\n${shareUrl}`
-      : `Check out this update from ${post.community.name} on CulturePass!\n\n${shareUrl}`;
+      ? `Check out "${post.event.title}" on CulturePass!`
+      : `Check out this update from ${post.community.name} on CulturePass!`;
     try {
-      if (Platform.OS === 'web' && navigator.share) {
-        await navigator.share({ title, text: message, url: shareUrl });
-      } else {
-        await Share.share({ title, message, url: shareUrl });
-      }
+      await shareLinkContent({ title, message, url: shareUrl });
     } catch { /* user cancelled */ }
   }, [post]);
 
@@ -1048,15 +1046,15 @@ function PostCardInner({ post, colorIdx }: { post: FeedPost; colorIdx: number })
               />
 
               {/* Top-left: category / date badge */}
-              <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={pcd.datePill}>
+              <View style={[pcd.datePill, { backgroundColor: 'rgba(18,18,28,0.88)' }]}>
                 <Ionicons name="calendar-outline" size={10} color="rgba(255,255,255,0.9)" />
                 <Text style={pcd.datePillText}>{dateLabel}</Text>
-              </BlurView>
+              </View>
 
               {/* Top-right: price pill */}
-              <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={[pcd.pricePill, { backgroundColor: isFree ? CultureTokens.teal + 'AA' : accent + 'AA' }]}>
+              <View style={[pcd.pricePill, { backgroundColor: isFree ? CultureTokens.teal : accent }]}>
                 <Text style={pcd.pricePillText}>{isFree ? 'Free' : ev.priceLabel ?? 'Tickets'}</Text>
-              </BlurView>
+              </View>
 
               {/* Bottom-left: venue + city */}
               <View style={pcd.eventFooter}>
@@ -1424,6 +1422,7 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors, mode
   communities: Community[]; colors: ReturnType<typeof useColors>;
   mode?: 'standard' | 'story';
 }) {
+  const insets = useSafeAreaInsets();
   const [body,         setBody]         = useState('');
   const [selectedComm, setSelectedComm] = useState<Community | null>(null);
   const [imageUri,     setImageUri]     = useState<string | null>(null);
@@ -1488,93 +1487,126 @@ function CreatePostModal({ visible, onClose, onSubmit, communities, colors, mode
   const remaining = maxChars - body.length;
   const canPost   = body.trim().length > 0 && selectedComm !== null;
 
+  const scrollBottomPad = Math.max(insets.bottom, 12);
+
+  const formBody = (
+    <>
+      <View style={[cpm.handle, { backgroundColor: colors.border }]} />
+      <View style={[cpm.header, { borderBottomColor: colors.borderLight }]}>
+        <Button variant="ghost" size="sm" onPress={handleClose}>Cancel</Button>
+        <Text style={[cpm.title, { color: colors.text }]}>
+          {mode === 'story' ? 'Story' : 'Create post'}
+        </Text>
+        <Button variant="primary" size="sm" onPress={handleSubmit} disabled={!canPost} loading={submitting}>Post</Button>
+      </View>
+
+      {communities.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={cpm.commScroll} contentContainerStyle={cpm.commRow}>
+          {communities.slice(0, 8).map((c) => {
+            const active = selectedComm?.id === c.id;
+            return (
+              <Pressable
+                key={c.id}
+                style={[cpm.chip, {
+                  borderColor:     active ? CultureTokens.indigo : colors.border,
+                  backgroundColor: active ? CultureTokens.indigo : colors.background,
+                }]}
+                onPress={() => setSelectedComm(c)}
+              >
+                <Text style={[cpm.chipText, { color: active ? '#fff' : colors.textSecondary }]} numberOfLines={1}>{c.name}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      <TextInput
+        style={[cpm.input, { color: colors.text }]}
+        placeholder={
+          mode === 'story'
+            ? `Quick status for ${selectedComm?.name ?? 'your community'} (280 chars)…`
+            : `Share an update with ${selectedComm?.name ?? 'your community'}…`
+        }
+        placeholderTextColor={colors.textTertiary}
+        value={body}
+        onChangeText={(t) => { setBody(t); setError(''); }}
+        multiline
+        maxLength={maxChars}
+        autoFocus
+        textAlignVertical="top"
+      />
+
+      {imageUri && (
+        <View style={mode === 'story' ? cpm.imgPreviewWrapStory : cpm.imgPreviewWrap}>
+          <Image source={{ uri: imageUri }} style={cpm.imgPreview} contentFit="cover" />
+          <Pressable style={cpm.removeImg} onPress={() => setImageUri(null)}>
+            <Ionicons name="close-circle" size={24} color="#fff" />
+          </Pressable>
+        </View>
+      )}
+
+      <View style={[cpm.toolbar, { borderTopColor: colors.borderLight }]}>
+        <Pressable style={[cpm.toolbarBtn, { backgroundColor: CultureTokens.indigo + '12' }]} onPress={pickImage}>
+          <Ionicons name="image-outline" size={20} color={CultureTokens.indigo} />
+          <Text style={[cpm.toolbarText, { color: CultureTokens.indigo }]}>Photo</Text>
+        </Pressable>
+      </View>
+
+      <View style={[cpm.footer, { paddingBottom: scrollBottomPad }]}>
+        {error
+          ? <Text style={[cpm.error, { color: CultureTokens.coral }]}>{error}</Text>
+          : <View />}
+        <Text style={[cpm.charCount, { color: remaining < 50 ? CultureTokens.coral : colors.textTertiary }]}>{remaining}</Text>
+      </View>
+    </>
+  );
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        enabled={Platform.OS !== 'web'}
-      >
-        <View style={[cpm.backdrop]}>
-          <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} onPress={Keyboard.dismiss} />
-          <View style={[cpm.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[cpm.handle, { backgroundColor: colors.border }]} />
-            <View style={[cpm.header, { borderBottomColor: colors.borderLight }]}>
-              <Button variant="ghost" size="sm" onPress={handleClose}>Cancel</Button>
-              <Text style={[cpm.title, { color: colors.text }]}>
-                {mode === 'story' ? 'Story status' : 'Create Post'}
-              </Text>
-              <Button variant="primary" size="sm" onPress={handleSubmit} disabled={!canPost} loading={submitting}>Post</Button>
-            </View>
-
-            {communities.length > 1 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={cpm.commScroll} contentContainerStyle={cpm.commRow}>
-                {communities.slice(0, 8).map((c) => {
-                  const active = selectedComm?.id === c.id;
-                  return (
-                    <Pressable
-                      key={c.id}
-                      style={[cpm.chip, {
-                        borderColor:     active ? CultureTokens.indigo : colors.border,
-                        backgroundColor: active ? CultureTokens.indigo : colors.background,
-                      }]}
-                      onPress={() => setSelectedComm(c)}
-                    >
-                      <Text style={[cpm.chipText, { color: active ? '#fff' : colors.textSecondary }]} numberOfLines={1}>{c.name}</Text>
-                    </Pressable>
-                  );
-                })}
+      <View style={cpm.backdrop}>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} onPress={Keyboard.dismiss} />
+        <KeyboardAvoidingView
+          behavior="padding"
+          enabled={Platform.OS !== 'web'}
+          style={cpm.kavOuter}
+        >
+          <View style={[
+            cpm.sheet,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              paddingBottom: 0,
+              maxHeight: '92%',
+            },
+          ]}
+          >
+            {Platform.OS === 'web' ? (
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={cpm.scrollInner}>
+                {formBody}
               </ScrollView>
+            ) : (
+              <KeyboardAwareScrollView
+                bottomOffset={insets.bottom + 52}
+                extraKeyboardSpace={28}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={cpm.scrollInner}
+              >
+                {formBody}
+              </KeyboardAwareScrollView>
             )}
-
-            <TextInput
-              style={[cpm.input, { color: colors.text }]}
-              placeholder={
-                mode === 'story'
-                  ? `Short story for ${selectedComm?.name ?? 'your community'}…`
-                  : `Share something with ${selectedComm?.name ?? 'your community'}…`
-              }
-              placeholderTextColor={colors.textTertiary}
-              value={body}
-              onChangeText={(t) => { setBody(t); setError(''); }}
-              multiline
-              maxLength={maxChars}
-              autoFocus
-              textAlignVertical="top"
-            />
-
-            {imageUri && (
-              <View style={mode === 'story' ? cpm.imgPreviewWrapStory : cpm.imgPreviewWrap}>
-                <Image source={{ uri: imageUri }} style={cpm.imgPreview} contentFit="cover" />
-                <Pressable style={cpm.removeImg} onPress={() => setImageUri(null)}>
-                  <Ionicons name="close-circle" size={24} color="#fff" />
-                </Pressable>
-              </View>
-            )}
-
-            <View style={[cpm.toolbar, { borderTopColor: colors.borderLight }]}>
-              <Pressable style={[cpm.toolbarBtn, { backgroundColor: CultureTokens.indigo + '12' }]} onPress={pickImage}>
-                <Ionicons name="image-outline" size={20} color={CultureTokens.indigo} />
-                <Text style={[cpm.toolbarText, { color: CultureTokens.indigo }]}>Photo</Text>
-              </Pressable>
-            </View>
-
-            <View style={cpm.footer}>
-              {error
-                ? <Text style={[cpm.error, { color: CultureTokens.coral }]}>{error}</Text>
-                : <View />}
-              <Text style={[cpm.charCount, { color: remaining < 50 ? CultureTokens.coral : colors.textTertiary }]}>{remaining}</Text>
-            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const cpm = StyleSheet.create({
   backdrop:    { flex: 1, justifyContent: 'flex-end' },
-  sheet:       { borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, paddingBottom: 34, minHeight: 340 },
+  kavOuter:    { width: '100%' },
+  scrollInner: { flexGrow: 1 },
+  sheet:       { borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, minHeight: 340 },
   handle:      { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 4 },
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   title:       { fontSize: 16, fontFamily: 'Poppins_600SemiBold', lineHeight: 22 },
@@ -1590,7 +1622,7 @@ const cpm = StyleSheet.create({
   toolbar:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   toolbarBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   toolbarText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 18 },
-  footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 8 },
+  footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 4 },
   error:       { fontSize: 12, fontFamily: 'Poppins_500Medium', flex: 1, lineHeight: 17 },
   charCount:   { fontSize: 11, fontFamily: 'Poppins_400Regular', lineHeight: 15 },
 });

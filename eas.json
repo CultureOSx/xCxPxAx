@@ -40,6 +40,9 @@
       "ios": {
         "simulator": false
       },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://us-central1-culturepass-4f264.cloudfunctions.net/api/",
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDjAJFTdTfkP63pjuQd7j41DNEKYAYYupw",

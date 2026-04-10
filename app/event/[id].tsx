@@ -1,5 +1,5 @@
 import {
-  View, Text, Pressable, ScrollView, Platform, Share, Modal, Alert,
+  View, Text, Pressable, ScrollView, Platform, Modal, Alert,
   ActivityIndicator, Linking, StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -42,6 +42,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTagRow } from '@/components/ui/CultureTag';
 import { captureEvent } from '@/lib/analytics';
 import { eventListImageUrl } from '@/lib/eventImage';
+import { shareLinkContent } from '@/lib/shareContent';
 
 // Third-party brand colours — not part of the CulturePass token system
 const GOOGLE_BRAND_COLOR = '#4285F4';
@@ -389,23 +390,14 @@ function EventDetail({ event, insets, adminMode }: { event: EventData; insets: E
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const shareUrl = `https://culturepass.app/event/${event.id}`;
-      const message = `${event.title}\n📅 ${formatDate(event.date)}\n📍 ${event.venue}\n\nJoin us on CulturePass: ${shareUrl}`;
-      
-      if (Platform.OS === 'web' && navigator.share) {
-        await navigator.share({
-          title: event.title,
-          text: event.description || `Check out ${event.title} on CulturePass`,
-          url: shareUrl
-        });
-      } else {
-        await Share.share({ 
-          title: event.title, 
-          message: message,
-          url: shareUrl 
-        });
-      }
+      const message = `${event.title}\n📅 ${formatDate(event.date)}\n📍 ${event.venue}\n\nJoin us on CulturePass`;
+      await shareLinkContent({
+        title: event.title,
+        message,
+        url: shareUrl,
+      });
     } catch {}
-  }, [event.id, event.title, event.venue, event.date, event.description]);
+  }, [event.id, event.title, event.venue, event.date]);
 
   const handleSave = useCallback(() => {
     if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

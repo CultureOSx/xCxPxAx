@@ -12,7 +12,6 @@ import {
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { 
@@ -93,7 +92,7 @@ export default function ArtistBackstagePortal() {
       </View>
 
       {/* Chat & Interaction Portal */}
-      <BlurView intensity={30} tint="dark" style={[styles.interactionPortal, { paddingBottom: insets.bottom + 20 }]}>
+      <View style={[styles.interactionPortal, { paddingBottom: insets.bottom + 20, backgroundColor: 'rgba(18,18,26,0.97)' }]}>
         <ScrollView style={styles.chatFeed} showsVerticalScrollIndicator={false} contentContainerStyle={styles.chatScroll}>
           {chat.map((m, idx) => (
             <Animated.View key={m.id} entering={FadeInLeft.delay(idx * 100).springify()} style={[styles.msgContainer, { borderLeftColor: m.color }]}>
@@ -124,7 +123,7 @@ export default function ArtistBackstagePortal() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
     </View>
   );
 }

@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 
 export default function CommunitiesScreen() {
@@ -104,15 +103,17 @@ export default function CommunitiesScreen() {
           ]}
         >
           <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView
-                intensity={isDesktop ? 60 : 40}
-                tint="dark"
-                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]}
-              />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            )}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.formBlur,
+                {
+                  backgroundColor: glass.dark.backgroundColor,
+                  borderRadius: CardTokens.radiusLarge,
+                  borderColor: colors.borderLight,
+                },
+              ]}
+            />
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               {/* Header */}

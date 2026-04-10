@@ -67,27 +67,34 @@ export function CultureHubLocationModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.sheet, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
-        <View style={styles.headerRow}>
-          <Text style={[TextStyles.title3, { color: colors.text, flex: 1 }]}>Where to look</Text>
-          <Pressable
-            onPress={() => {
-              haptic();
-              onClose();
-            }}
-            hitSlop={12}
-            accessibilityLabel="Close"
-            accessibilityRole="button"
-          >
-            <Ionicons name="close" size={28} color={colors.textSecondary} />
-          </Pressable>
+      <View style={[styles.sheet, { backgroundColor: colors.background, paddingTop: insets.top + 8 }]}>
+        <View style={styles.sheetHandleWrap}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.borderLight }]} />
         </View>
-        <Text style={[TextStyles.caption, { color: colors.textTertiary, marginBottom: 16, paddingHorizontal: 4 }]}>
-          Choose a country (e.g. all Kerala or Gujarati events in Australia or the US). Optionally narrow to a state or
-          region.
-        </Text>
+        <View style={[styles.headerCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[TextStyles.title3, { color: colors.text }]}>Where to look</Text>
+              <Text style={[TextStyles.caption, { color: colors.textTertiary, marginTop: 6, lineHeight: 18 }]}>
+                Pick a country and optional region. This country & Near me use these settings.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                haptic();
+                onClose();
+              }}
+              hitSlop={12}
+              style={[styles.closeBtn, { backgroundColor: colors.backgroundSecondary }]}
+              accessibilityLabel="Close"
+              accessibilityRole="button"
+            >
+              <Ionicons name="close" size={22} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+        </View>
 
-        <Text style={[TextStyles.callout, { color: colors.text, marginBottom: 8 }]}>Country</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>Country</Text>
         <ScrollView
           style={{ maxHeight: 200 }}
           nestedScrollEnabled
@@ -121,9 +128,7 @@ export function CultureHubLocationModal({
           })}
         </ScrollView>
 
-        <Text style={[TextStyles.callout, { color: colors.text, marginTop: 20, marginBottom: 8 }]}>
-          State / region
-        </Text>
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary, marginTop: 20 }]}>State / region</Text>
         <ScrollView
           style={{ flex: 1, maxHeight: 320 }}
           nestedScrollEnabled
@@ -195,7 +200,7 @@ export function CultureHubLocationModal({
           accessibilityRole="button"
         >
           <Text style={[TextStyles.callout, { color: colors.textOnBrandGradient, fontFamily: 'Poppins_600SemiBold' }]}>
-            Apply
+            Apply location
           </Text>
         </Pressable>
       </View>
@@ -205,18 +210,41 @@ export function CultureHubLocationModal({
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, paddingHorizontal: 20 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  sheetHandleWrap: { alignItems: 'center', paddingBottom: 10 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2 },
+  headerCard: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    padding: 16,
+    marginBottom: 18,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 0.45,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth * 2,
     marginBottom: 8,
   },
   applyBtn: {
-    marginTop: 16,
+    marginTop: 12,
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',

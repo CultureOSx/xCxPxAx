@@ -307,8 +307,7 @@ export const BorderTokens = {
 };
 
 /**
- * Liquid Glass–aligned radii and fallback blur strengths.
- * Native liquid glass uses `expo-glass-effect` when the API is available; otherwise expo-blur / CSS.
+ * Panel radii (legacy name LiquidGlassTokens). Surfaces are solid; blurFallback is unused but kept for API stability.
  */
 export const LiquidGlassTokens = {
   blurFallback: {

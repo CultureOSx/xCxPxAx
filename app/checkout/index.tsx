@@ -24,7 +24,6 @@ import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 import { useAuth } from '@/lib/auth';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { BlurView } from 'expo-blur';
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
@@ -113,7 +112,7 @@ export default function CheckoutPage() {
     return (
       <View style={styles.screen}>
         <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.58)' }]} />
         </Pressable>
         <Animated.View
           entering={SlideInDown.springify().damping(20)}
@@ -151,7 +150,7 @@ export default function CheckoutPage() {
         accessibilityRole="button"
         accessibilityLabel="Dismiss"
       >
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.58)' }]} />
       </Pressable>
 
       <Animated.View

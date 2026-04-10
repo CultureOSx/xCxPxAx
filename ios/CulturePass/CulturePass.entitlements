@@ -13,5 +13,9 @@
       <string>applinks:culturepass.app</string>
       <string>webcredentials:culturepass.app</string>
     </array>
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>group.au.culturepass.app</string>
+    </array>
   </dict>
 </plist>

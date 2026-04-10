@@ -3,7 +3,6 @@ import { View, Text, Pressable, StyleSheet, FlatList, Platform } from 'react-nat
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -75,7 +74,7 @@ function HeroCarouselComponent({ events }: HeroCarouselProps) {
         />
 
         <View style={styles.heroCardBadge}>
-          <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
           <Text style={styles.heroCardBadgeText}>FEATURED</Text>
         </View>
 

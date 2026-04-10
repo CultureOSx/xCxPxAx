@@ -11,8 +11,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { GlassView } from 'expo-glass-effect';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens, EntityTypeColors } from '@/constants/theme';
@@ -112,7 +110,6 @@ export function FeaturedRail({
               accessibilityRole="button"
               accessibilityLabel={`View ${p.name} profile`}
             >
-              <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
               {p.imageUrl ? (
                 <Image source={{ uri: p.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
               ) : (
@@ -238,9 +235,15 @@ export function DirectoryEventCard({
         accessibilityRole="link"
         accessibilityLabel={`View event: ${event.title}`}
       >
-        <GlassView 
-          glassEffectStyle="regular" 
-          style={[StyleSheet.absoluteFill, { borderColor: colors.borderLight, borderWidth: StyleSheet.hairlineWidth, backgroundColor: colors.surface + '80' }]} 
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+              borderWidth: StyleSheet.hairlineWidth,
+            },
+          ]}
         />
         <View style={s.eventCardInner}>
           {/* Left: image thumbnail with date overlay, or plain date block */}
@@ -259,14 +262,10 @@ export function DirectoryEventCard({
               </View>
             </View>
           ) : (
-            <BlurView
-              intensity={Platform.OS === 'ios' ? 30 : 60}
-              tint="dark"
-              style={[s.eventDateBlock, { backgroundColor: categoryColor + 'AA' }]}
-            >
+            <View style={[s.eventDateBlock, { backgroundColor: categoryColor }]}>
               <Text style={s.eventDateDay}>{dayNum}</Text>
               <Text style={s.eventDateMonth}>{monthStr.toUpperCase().slice(0, 3)}</Text>
-            </BlurView>
+            </View>
           )}
 
           {/* Content */}
@@ -308,13 +307,18 @@ export function DirectoryEventCard({
         hitSlop={15}
       >
         <Animated.View style={animatedHeart}>
-          <GlassView glassEffectStyle="regular" style={s.heartGlassBox}>
+          <View
+            style={[
+              s.heartGlassBox,
+              { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
+            ]}
+          >
             <Ionicons
               name={isSaved ? 'heart' : 'heart-outline'}
               size={18}
               color={isSaved ? CultureTokens.coral : colors.text}
             />
-          </GlassView>
+          </View>
         </Animated.View>
       </Pressable>
     </View>
@@ -360,20 +364,19 @@ export function DirectoryCard({
       accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
       accessibilityLabel={`View ${profile.name} profile`}
     >
-      <GlassView 
-        glassEffectStyle="regular"
+      <View
         style={[
-          StyleSheet.absoluteFill, 
-          { 
-            backgroundColor: colors.surface + '60',
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: colors.surface,
             borderWidth: (isCouncil || isProfessional) ? 1.5 : StyleSheet.hairlineWidth,
             borderColor: isProfessional
-              ? CultureTokens.gold + '60'
+              ? CultureTokens.gold + '99'
               : isCouncil
-              ? CultureTokens.indigo + '60'
-              : colors.borderLight,
-          }
-        ]} 
+                ? CultureTokens.indigo + '99'
+                : colors.borderLight,
+          },
+        ]}
       />
       {(isCouncil || isProfessional) && (
         <LinearGradient
@@ -704,7 +707,6 @@ export const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
 
   // ── Profile card ──

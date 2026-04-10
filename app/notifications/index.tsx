@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -197,7 +196,7 @@ export default function NotificationsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <BlurView intensity={Platform.OS === 'ios' ? 20 : 0} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
           <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
 

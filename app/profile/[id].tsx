@@ -1024,12 +1024,11 @@ const u = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(28,28,36,0.88)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
-    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
   },
   heroBody: {
     alignItems: 'center',

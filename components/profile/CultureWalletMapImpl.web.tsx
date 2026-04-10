@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 
@@ -17,7 +16,7 @@ export function CultureWalletMap({ cultures: _cultures }: { cultures: CultureWal
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
       />
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
       <View style={styles.overlay}>
         <Ionicons name="map-outline" size={40} color="#fff" style={{ opacity: 0.5 }} />
         <Text style={styles.text}>Interactive Map on App</Text>

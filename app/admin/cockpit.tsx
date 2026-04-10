@@ -7,7 +7,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { GlassContainer, GlassView } from 'expo-glass-effect';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -19,12 +18,11 @@ import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
 const isWeb = Platform.OS === 'web';
 
-// Cockpit Data Card using Liquid Glass
 function CockpitCard({ title, value, icon, color, delay }: { title: string, value: string | number, icon: keyof typeof Ionicons.glyphMap, color: string, delay: number }) {
   const colors = useColors();
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify().damping(20)} style={styles.cardWrapper}>
-      <GlassView style={[styles.card, { borderColor: colors.borderLight }]}>
+      <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
         <View style={[styles.cardIconWrap, { backgroundColor: color + '15' }]}>
           <Ionicons name={icon} size={18} color={color} />
         </View>
@@ -32,17 +30,24 @@ function CockpitCard({ title, value, icon, color, delay }: { title: string, valu
           <Text style={[styles.cardValue, { color: colors.text }]}>{value}</Text>
           <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>
         </View>
-      </GlassView>
+      </View>
     </Animated.View>
   );
 }
 
-// Action Item using Liquid Glass (Tile version)
 function ActionItem({ title, description, icon, color, danger, onPress, pending, delay = 0 }: { title: string, description: string, icon: keyof typeof Ionicons.glyphMap, color: string, danger?: boolean, onPress: () => void, pending?: boolean, delay?: number }) {
   const colors = useColors();
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.actionGridItem}>
-      <GlassView style={[styles.actionCard, { borderColor: danger ? color + '40' : colors.borderLight }]}>
+      <View
+        style={[
+          styles.actionCard,
+          {
+            borderColor: danger ? color + '40' : colors.borderLight,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
         <Pressable
           style={({ pressed }) => [
             styles.actionItem,
@@ -67,7 +72,7 @@ function ActionItem({ title, description, icon, color, danger, onPress, pending,
             <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
           )}
         </Pressable>
-      </GlassView>
+      </View>
     </Animated.View>
   );
 }
@@ -158,7 +163,7 @@ export default function SuperAdminCockpit() {
           style={{ paddingTop: topInset, zIndex: 10, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
         >
           <Animated.View entering={FadeInUp.duration(300)} style={[styles.header, { paddingHorizontal: hPad }]}>
-            <GlassView style={styles.headerControlGlass}>
+            <View style={[styles.headerControlGlass, { backgroundColor: 'rgba(24,28,48,0.92)' }]}>
               <Pressable
                 onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
                 style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
@@ -166,19 +171,19 @@ export default function SuperAdminCockpit() {
               >
                 <Ionicons name="chevron-back" size={20} color={colors.text} />
               </Pressable>
-            </GlassView>
+            </View>
             
             <View style={{ flex: 1, marginLeft: 12 }}>
               <BrandWordmark size="sm" withTagline={false} light />
               <Text style={[styles.headerSub, { color: CultureTokens.gold }]}>Root Control & System Oversight</Text>
             </View>
 
-            <GlassView style={styles.headerControlGlass}>
+            <View style={[styles.headerControlGlass, { backgroundColor: 'rgba(24,28,48,0.92)' }]}>
               <View style={styles.badgeWrap}>
                 <Ionicons name="shield-checkmark" size={12} color={CultureTokens.gold} />
                 <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>ROOT</Text>
               </View>
-            </GlassView>
+            </View>
           </Animated.View>
         </LinearGradient>
 
@@ -196,7 +201,7 @@ export default function SuperAdminCockpit() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Platform Metrics</Text>
           </View>
           
-          <GlassContainer spacing={10}>
+          <View style={{ gap: 10 }}>
             <View style={[styles.grid, { gap: columnGap }]}>
               <View style={{ width: columnWidth(2) }}>
                 <CockpitCard 
@@ -235,7 +240,7 @@ export default function SuperAdminCockpit() {
                 />
               </View>
             </View>
-          </GlassContainer>
+          </View>
 
           {/* ── System Ops & Infrastructure ──────────────────────────────── */}
           <View style={[styles.sectionHeader, { marginTop: 12 }]}>

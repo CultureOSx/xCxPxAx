@@ -310,31 +310,28 @@ export const shadows = {
 };
 
 /**
- * Glassmorphism and futuristic surface presets.
- * Use these on cards/modals for a modern frosted-glass feel.
+ * Solid surface presets (legacy name `glass` kept for imports).
+ * Prefer `useColors().surface` / `surfaceElevated` in new code.
  */
 export const glass = {
   light: {
-    backgroundColor: "rgba(255,255,255,0.72)",
-    borderColor: "rgba(255,255,255,0.35)",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
   },
   dark: {
-    backgroundColor: "rgba(28,28,30,0.72)",
-    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#1C1C1E",
+    borderColor: "#38383A",
   },
-  /** Semi-transparent overlay for modals/popovers */
   overlay: {
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  /** Ultra-clear glass — for hero sections and featured cards */
   ultraLight: {
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderColor: "rgba(255,255,255,0.5)",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E8EDF5",
   },
-  /** Deep dark glass — for dark mode hero sections */
   ultraDark: {
-    backgroundColor: "rgba(0,0,0,0.82)",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "#121218",
+    borderColor: "#2C2C2E",
   },
 } as const;
 
