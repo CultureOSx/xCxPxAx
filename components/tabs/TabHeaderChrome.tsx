@@ -8,9 +8,12 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuery } from '@tanstack/react-query';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 
 export const BRAND_TAGLINE_SHORT = 'Discover culture · Belong anywhere';
 
@@ -18,6 +21,15 @@ const isWeb = Platform.OS === 'web';
 
 function haptic() {
   if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
+
+function ActionBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <View style={markStyles.actionBadge}>
+      <Text style={markStyles.actionBadgeText}>{count > 9 ? '9+' : String(count)}</Text>
+    </View>
+  );
 }
 
 /** Logo only — tap returns to Discover home. */
@@ -103,6 +115,17 @@ export function GlobalNavActions({
 }) {
   const colors = useColors();
   const isDark = useIsDark();
+  const { userId } = useAuth();
+
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ['notifications', 'unread-count', userId, 'tab-header-chrome'],
+    queryFn: async () => {
+      const res = await api.notifications.unreadCount();
+      return res.count ?? 0;
+    },
+    enabled: Boolean(userId),
+    refetchInterval: 60_000,
+  });
 
   const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
   const chipBorder = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.08)';
@@ -126,6 +149,23 @@ export function GlobalNavActions({
         accessibilityHint="Open search"
       >
         <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          markStyles.iconBtn,
+          { backgroundColor: chipBg, borderColor: chipBorder },
+          pressed && { opacity: 0.7 },
+        ]}
+        onPress={() => {
+          haptic();
+          router.push('/notifications' as const);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Notifications"
+        accessibilityHint="Open notifications"
+      >
+        <Ionicons name="notifications-outline" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
+        <ActionBadge count={unreadCount} />
       </Pressable>
 
       {showMenu ? (
@@ -359,5 +399,23 @@ const markStyles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 4,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: CultureTokens.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  actionBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    lineHeight: 10,
+    fontFamily: 'Poppins_700Bold',
   },
 });

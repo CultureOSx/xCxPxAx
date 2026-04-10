@@ -7,7 +7,7 @@
  * - Spring scale animation on press
  * - Haptic feedback (iOS/Android)
  * - Notification badge on Feed tab
- * - LiquidGlassPanel (iOS glass / blur fallback / web backdrop-filter)
+ * - Solid elevated panel shell (tokenized surface + border + shadow)
  * - Hidden on desktop web (sidebar takes over)
  */
 
@@ -348,7 +348,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isFeedTab = tab.name === 'city';
+          const isMenuTab = tab.name === 'menu';
           return (
             <TabItem
               key={route.key}
@@ -357,7 +357,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               isDark={isDark}
               colors={colors}
               reduceMotion={reduceMotion}
-              badgeCount={isFeedTab ? notifCount : undefined}
+              badgeCount={isMenuTab ? notifCount : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',

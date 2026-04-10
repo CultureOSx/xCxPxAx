@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, usePathname } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { useQuery } from '@tanstack/react-query';
 import { useColors } from "@/hooks/useColors";
 import { CultureTokens } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
@@ -13,6 +14,7 @@ import { useLayout } from "@/hooks/useLayout";
 import { routeWithRedirect } from "@/lib/routes";
 import { BrandLockup } from "@/components/ui/BrandLockup";
 import { getAppVersionWithBuild } from "@/lib/app-meta";
+import { api } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TabItem {
@@ -66,7 +68,7 @@ const MENU_SECTIONS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 export function WebTopBar() {
   const colors = useColors();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, userId, logout } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const { isDesktop } = useLayout();
   const pathname = usePathname();
@@ -84,6 +86,16 @@ export function WebTopBar() {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
   };
+
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ['notifications', 'unread-count', userId, 'web-top-bar'],
+    queryFn: async () => {
+      const res = await api.notifications.unreadCount();
+      return res.count ?? 0;
+    },
+    enabled: Boolean(userId),
+    refetchInterval: 60_000,
+  });
 
   return (
     <View style={styles.container}>
@@ -198,6 +210,11 @@ export function WebTopBar() {
           onPress={() => handleNav('/notifications')}
         >
           <Ionicons name="notifications-outline" size={19} color="rgba(255,255,255,0.85)" />
+          {unreadCount > 0 ? (
+            <View style={styles.notifBadge}>
+              <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : String(unreadCount)}</Text>
+            </View>
+          ) : null}
         </Pressable>
 
         <Pressable
@@ -532,9 +549,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
+    position: 'relative',
   },
   iconBtnHovered: {
     backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -3,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: CultureTokens.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    lineHeight: 10,
+    fontFamily: 'Poppins_700Bold',
   },
   signInBtn: {
     flexDirection: 'row',
