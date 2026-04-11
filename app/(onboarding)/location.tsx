@@ -4,23 +4,26 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ScrollView,
   Platform,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useLocations } from '@/hooks/useLocations';
 import { useNearestCity } from '@/hooks/useNearestCity';
+
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
+
 import {
   CultureTokens,
   gradients,
@@ -33,6 +36,7 @@ import {
   TextStyles,
   IconSize,
 } from '@/constants/theme';
+
 import * as Haptics from 'expo-haptics';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import {
@@ -50,7 +54,6 @@ export default function LocationScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
 
@@ -72,6 +75,7 @@ export default function LocationScreen() {
     [pendingCountry, states],
   );
 
+  // Pre-fill from existing state
   useEffect(() => {
     if (!state.city) return;
     const c = state.country || getCountryForCity(state.city) || 'Australia';
@@ -88,6 +92,7 @@ export default function LocationScreen() {
     setPendingCountry(countryName);
     setCitySearch('');
     const regs = getRegionsForCountry(countryName, states);
+
     if (countryName === 'Australia') {
       setPendingState('');
       setStep('region');
@@ -125,10 +130,8 @@ export default function LocationScreen() {
       setPendingCountry('Australia');
       void syncUserMarketplaceLocation(user?.id, 'Australia', r.city);
       const stateCode = getStateForCity(r.city);
-      if (stateCode) {
-        setPendingState(stateCode);
-        setStep('city');
-      }
+      if (stateCode) setPendingState(stateCode);
+      setStep('city');
     } else {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       if (detectStatus === 'denied') {
@@ -153,10 +156,12 @@ export default function LocationScreen() {
     () => regions.find((r) => r.code === pendingState),
     [regions, pendingState],
   );
+
   const allCitiesForState = useMemo(
     () => pendingRegionMeta?.cities ?? [],
     [pendingRegionMeta],
   );
+
   const citiesToShow = useMemo(() => {
     if (!citySearch.trim()) return allCitiesForState;
     const q = citySearch.trim().toLowerCase();
@@ -166,8 +171,9 @@ export default function LocationScreen() {
   const goBackWithinFlow = () => {
     if (step === 'city') {
       setCitySearch('');
-      if (pendingCountry === 'Australia') setStep('region');
-      else {
+      if (pendingCountry === 'Australia') {
+        setStep('region');
+      } else {
         setStep('country');
         setPendingState('');
         setPendingCountry('');
@@ -180,6 +186,9 @@ export default function LocationScreen() {
       setPendingCountry('');
     }
   };
+
+  const enter = (delay: number) =>
+    FadeInDown.delay(delay).springify().damping(20).stiffness(120);
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -197,12 +206,13 @@ export default function LocationScreen() {
         </>
       )}
 
+      {/* Desktop Back Button */}
       {isDesktop && (
         <View style={s.desktopBackRow}>
           <Pressable
             onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
-            hitSlop={Spacing.sm}
             style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            hitSlop={Spacing.sm}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
@@ -212,8 +222,9 @@ export default function LocationScreen() {
         </View>
       )}
 
+      {/* Mobile Header */}
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm + 4 }]}>
+        <View style={[s.mobileHeader, { paddingTop: insets.top + Spacing.sm + 4 }]}>
           <Pressable
             onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
             hitSlop={12}
@@ -226,273 +237,258 @@ export default function LocationScreen() {
         </View>
       )}
 
-      <KeyboardAvoidingView
-        style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ScrollView
+        style={s.scrollView}
+        contentContainerStyle={[
+          s.scrollContent,
+          isDesktop && s.scrollContentDesktop,
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-          contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            !isDesktop && { paddingTop: 20 },
-            Platform.OS !== 'web' && { paddingBottom: 60 + insets.bottom },
-          ]}
-        >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop, { borderRadius: 32 }]}>
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                s.formBlur,
-                {
-                  backgroundColor: 'rgba(20,20,35,0.94)',
-                  borderRadius: 32,
-                  borderColor: 'rgba(255,255,255,0.15)',
-                },
-              ]}
-            />
+        <Animated.View entering={enter(40)} style={[s.formContainer, isDesktop && s.formContainerDesktop]}>
+          {/* Glass Card Background */}
+          <View style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32 }]} />
 
-            <View style={[s.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
-              <View style={s.headerBlock}>
-                <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}15` }]}>
-                  <Ionicons
-                    name={step === 'country' ? 'earth' : step === 'region' ? 'compass' : 'location'}
-                    size={36}
-                    color={CultureTokens.teal}
-                  />
-                </View>
-                <Text style={[s.title, { color: colors.textInverse }]}>
-                  {step === 'country'
-                    ? 'Choose your country'
-                    : step === 'region'
-                      ? pendingCountry === 'Australia'
-                        ? 'Your home state'
-                        : 'Your region'
-                      : 'Select your city'}
-                </Text>
-                <Text style={s.subtitle}>
-                  {step === 'country'
-                    ? 'CulturePass is scoped to your country first — then city. Change anytime in Settings → Location.'
-                    : step === 'region'
-                      ? `We'll find cultural events and communities near you.`
-                      : `Pick your city and we'll show you what's happening nearby.`}
-                </Text>
-              </View>
-
-              {step === 'country' ? (
-                <CountrySelectList
-                  key={step}
-                  countries={countries}
-                  selectedName={state.country || undefined}
-                  onSelect={selectMarketplaceCountry}
-                  variant="onboarding"
-                  colors={colors}
-                  showFooterHint={false}
+          <View style={s.formContent}>
+            <View style={s.headerBlock}>
+              <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}15` }]}>
+                <Ionicons
+                  name={step === 'country' ? 'earth' : step === 'region' ? 'compass' : 'location'}
+                  size={36}
+                  color={CultureTokens.teal}
                 />
-              ) : null}
+              </View>
+              <Text style={[s.title, { color: colors.textInverse }]}>
+                {step === 'country'
+                  ? 'Choose your country'
+                  : step === 'region'
+                    ? pendingCountry === 'Australia'
+                      ? 'Your home state'
+                      : 'Your region'
+                    : 'Select your city'}
+              </Text>
+              <Text style={s.subtitle}>
+                {step === 'country'
+                  ? 'CulturePass is scoped to your country first — then city. Change anytime in Settings → Location.'
+                  : step === 'region'
+                    ? `We'll find cultural events and communities near you.`
+                    : `Pick your city and we'll show you what's happening nearby.`}
+              </Text>
+            </View>
 
-              {step === 'region' ? (
-                <View>
-                  {pendingCountry === 'Australia' ? (
-                    <Pressable
-                      style={({ pressed }) => [
-                        s.detectBtn,
-                        { backgroundColor: pressed ? `${CultureTokens.gold}33` : `${CultureTokens.gold}1A`, borderColor: `${CultureTokens.gold}80` },
-                        isDetecting && { opacity: 0.7 },
-                      ]}
-                      onPress={handleDetectLocation}
-                      disabled={isDetecting}
-                      accessibilityLabel={isDetecting ? 'Detecting location' : 'Use current location'}
-                      accessibilityRole="button"
-                      {...(Platform.OS === 'android'
-                        ? { android_ripple: { color: `${CultureTokens.gold}40`, borderless: false } }
-                        : {})}
-                    >
-                      {isDetecting ? (
-                        <ActivityIndicator size="small" color={CultureTokens.gold} />
-                      ) : (
-                        <Ionicons name="navigate" size={IconSize.md - 2} color={CultureTokens.gold} />
-                      )}
-                      <Text style={[s.detectBtnText, { color: CultureTokens.gold }]}>
-                        {isDetecting ? 'Detecting location...' : 'Use my location (Australia)'}
-                      </Text>
-                    </Pressable>
-                  ) : null}
+            {/* Country Step */}
+            {step === 'country' && (
+              <CountrySelectList
+                key={step}
+                countries={countries}
+                selectedName={state.country || undefined}
+                onSelect={selectMarketplaceCountry}
+                variant="onboarding"
+                colors={colors}
+                showFooterHint={false}
+              />
+            )}
 
-                  {pendingCountry === 'Australia' && locationsLoading && (
-                    <ActivityIndicator size="large" color={CultureTokens.indigo} style={{ paddingVertical: 20 }} />
-                  )}
+            {/* Region Step */}
+            {step === 'region' && (
+              <View>
+                {pendingCountry === 'Australia' && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      s.detectBtn,
+                      {
+                        backgroundColor: pressed ? `${CultureTokens.gold}33` : `${CultureTokens.gold}1A`,
+                        borderColor: `${CultureTokens.gold}80`,
+                      },
+                      isDetecting && { opacity: 0.7 },
+                    ]}
+                    onPress={handleDetectLocation}
+                    disabled={isDetecting}
+                    accessibilityLabel={isDetecting ? 'Detecting location' : 'Use current location'}
+                    accessibilityRole="button"
+                  >
+                    {isDetecting ? (
+                      <ActivityIndicator size="small" color={CultureTokens.gold} />
+                    ) : (
+                      <Ionicons name="navigate" size={IconSize.md - 2} color={CultureTokens.gold} />
+                    )}
+                    <Text style={[s.detectBtnText, { color: CultureTokens.gold }]}>
+                      {isDetecting ? 'Detecting location...' : 'Use my location (Australia)'}
+                    </Text>
+                  </Pressable>
+                )}
 
-                  {pendingCountry === 'Australia' && !!locationsError && (
-                    <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
-                      <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
-                      <Text style={[s.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
-                    </View>
-                  )}
+                {pendingCountry === 'Australia' && locationsLoading && (
+                  <ActivityIndicator size="large" color={CultureTokens.indigo} style={{ paddingVertical: 20 }} />
+                )}
 
-                  <View style={s.cityStepHeader}>
-                    <Pressable
-                      onPress={goBackWithinFlow}
-                      style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
-                      hitSlop={12}
-                      accessibilityRole="button"
-                      accessibilityLabel="Back"
-                    >
-                      <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
-                      <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
-                    </Pressable>
+                {pendingCountry === 'Australia' && !!locationsError && (
+                  <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
+                    <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
+                    <Text style={[s.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
                   </View>
+                )}
 
-                  <View style={s.stateGrid}>
-                    {regions.map((st) => (
-                      <Pressable
-                        key={st.code}
-                        style={({ pressed }) => [
-                          s.stateCard,
-                          {
-                            backgroundColor: pressed ? `${CultureTokens.teal}18` : 'rgba(255,255,255,0.05)',
-                            borderColor: pressed ? `${CultureTokens.teal}50` : 'rgba(255,255,255,0.12)',
-                          },
-                        ]}
-                        onPress={() => selectRegion(st.code)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
-                        {...(Platform.OS === 'android'
-                          ? { android_ripple: { color: `${CultureTokens.teal}35`, borderless: false } }
-                          : {})}
-                      >
-                        <Text style={s.stateEmoji}>{st.emoji}</Text>
-                        <Text style={[s.stateName, { color: colors.textInverse }]}>{st.name}</Text>
-                        <Text style={[s.cityCount, { color: colors.textSecondary }]}>{st.cities.length} cities</Text>
-                      </Pressable>
-                    ))}
+                <View style={s.cityStepHeader}>
+                  <Pressable
+                    onPress={goBackWithinFlow}
+                    style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back"
+                  >
+                    <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
+                    <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
+                  </Pressable>
+                </View>
+
+                <View style={s.stateGrid}>
+                  {regions.map((st) => (
+                    <Pressable
+                      key={st.code}
+                      style={({ pressed }) => [
+                        s.stateCard,
+                        {
+                          backgroundColor: pressed ? `${CultureTokens.teal}18` : 'rgba(255,255,255,0.05)',
+                          borderColor: pressed ? `${CultureTokens.teal}50` : 'rgba(255,255,255,0.12)',
+                        },
+                      ]}
+                      onPress={() => selectRegion(st.code)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
+                    >
+                      <Text style={s.stateEmoji}>{st.emoji}</Text>
+                      <Text style={[s.stateName, { color: colors.textInverse }]}>{st.name}</Text>
+                      <Text style={[s.cityCount, { color: colors.textSecondary }]}>{st.cities.length} cities</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* City Step */}
+            {step === 'city' && (
+              <View>
+                <View style={s.cityStepHeader}>
+                  <Pressable
+                    onPress={goBackWithinFlow}
+                    style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back"
+                  >
+                    <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
+                    <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
+                  </Pressable>
+
+                  <View style={[s.selectedStatePill, { backgroundColor: `${CultureTokens.indigo}25`, borderColor: `${CultureTokens.indigo}50` }]}>
+                    <Text style={s.stateEmojiSmall}>{pendingRegionMeta?.emoji}</Text>
+                    <Text style={[s.selectedStatePillText, { color: colors.textInverse }]} numberOfLines={1}>
+                      {pendingRegionMeta?.name}
+                    </Text>
                   </View>
                 </View>
-              ) : null}
 
-              {step === 'city' ? (
-                <View>
-                  <View style={s.cityStepHeader}>
-                    <Pressable
-                      onPress={goBackWithinFlow}
-                      style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
-                      hitSlop={12}
-                      accessibilityRole="button"
-                      accessibilityLabel="Back"
-                    >
-                      <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
-                      <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
+                <View style={[s.searchRow, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)' }]}>
+                  <Ionicons name="search" size={IconSize.sm + 2} color={colors.textSecondary} />
+                  <TextInput
+                    style={[s.searchInput, { color: colors.textInverse }]}
+                    placeholder={`Search ${allCitiesForState.length} cities…`}
+                    placeholderTextColor={colors.textSecondary}
+                    value={citySearch}
+                    onChangeText={setCitySearch}
+                    autoCorrect={false}
+                    autoCapitalize="words"
+                    returnKeyType="search"
+                    clearButtonMode="while-editing"
+                    selectionColor={CultureTokens.gold}
+                    underlineColorAndroid="transparent"
+                  />
+                  {citySearch.length > 0 && Platform.OS !== 'ios' && (
+                    <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
+                      <Ionicons name="close-circle" size={IconSize.sm + 2} color={colors.textSecondary} />
                     </Pressable>
-                    <View style={[s.selectedStatePill, { backgroundColor: `${CultureTokens.indigo}25`, borderColor: `${CultureTokens.indigo}50` }]}>
-                      <Text style={s.stateEmojiSmall}>{pendingRegionMeta?.emoji}</Text>
-                      <Text style={[s.selectedStatePillText, { color: colors.textInverse }]} numberOfLines={1}>
-                        {pendingRegionMeta?.name}
-                      </Text>
-                    </View>
-                  </View>
+                  )}
+                </View>
 
-                  <View style={[s.searchRow, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)' }]}>
-                    <Ionicons name="search" size={IconSize.sm + 2} color={colors.textSecondary} />
-                    <TextInput
-                      style={[s.searchInput, { color: colors.textInverse }]}
-                      placeholder={`Search ${allCitiesForState.length} cities…`}
-                      placeholderTextColor={colors.textSecondary}
-                      value={citySearch}
-                      onChangeText={setCitySearch}
-                      autoCorrect={false}
-                      autoCapitalize="words"
-                      returnKeyType="search"
-                      clearButtonMode="while-editing"
-                      accessibilityLabel="Search cities"
-                      selectionColor={CultureTokens.gold}
-                      underlineColorAndroid="transparent"
-                      {...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {})}
-                    />
-                    {citySearch.length > 0 && Platform.OS !== 'ios' && (
-                      <Pressable onPress={() => setCitySearch('')} hitSlop={8} accessibilityLabel="Clear search">
-                        <Ionicons name="close-circle" size={IconSize.sm + 2} color={colors.textSecondary} />
-                      </Pressable>
-                    )}
+                {citiesToShow.length === 0 ? (
+                  <View style={s.noResults}>
+                    <Ionicons name="search-outline" size={36} color={colors.textSecondary} />
+                    <Text style={[s.noResultsText, { color: colors.textSecondary }]}>
+                      {`No cities match "${citySearch}"`}
+                    </Text>
+                    <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
+                      <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
+                    </Pressable>
                   </View>
-
-                  {citiesToShow.length === 0 ? (
-                    <View style={s.noResults}>
-                      <Ionicons name="search-outline" size={36} color={colors.textSecondary} />
-                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>No cities match &quot;{citySearch}&quot;</Text>
-                      <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
-                        <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <View style={s.cityGrid}>
-                      {citiesToShow.map((city) => {
-                        const isActive = state.city === city;
-                        return (
-                          <Pressable
-                            key={city}
-                            style={({ pressed }) => [
-                              s.cityCard,
+                ) : (
+                  <View style={s.cityGrid}>
+                    {citiesToShow.map((city) => {
+                      const isActive = state.city === city;
+                      return (
+                        <Pressable
+                          key={city}
+                          style={({ pressed }) => [
+                            s.cityCard,
+                            {
+                              backgroundColor: isActive
+                                ? CultureTokens.indigo
+                                : pressed
+                                  ? `${CultureTokens.indigo}20`
+                                  : 'rgba(255,255,255,0.05)',
+                              borderColor: isActive ? CultureTokens.indigo : 'rgba(255,255,255,0.12)',
+                            },
+                          ]}
+                          onPress={() => selectCity(city)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isActive }}
+                        >
+                          {isActive ? (
+                            <Ionicons name="checkmark-circle" size={IconSize.md - 2} color={colors.textInverse} />
+                          ) : (
+                            <Ionicons name="location-outline" size={IconSize.md - 2} color={colors.textSecondary} />
+                          )}
+                          <Text
+                            style={[
+                              s.cityName,
                               {
-                                backgroundColor: isActive
-                                  ? CultureTokens.indigo
-                                  : pressed ? `${CultureTokens.indigo}20` : 'rgba(255,255,255,0.05)',
-                                borderColor: isActive ? CultureTokens.indigo : 'rgba(255,255,255,0.12)',
+                                color: isActive ? colors.textInverse : colors.text,
+                                fontFamily: isActive ? FontFamily.semibold : FontFamily.medium,
                               },
                             ]}
-                            onPress={() => selectCity(city)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ selected: isActive }}
-                            accessibilityLabel={city}
-                            {...(Platform.OS === 'android'
-                              ? {
-                                  android_ripple: {
-                                    color: isActive ? 'rgba(255,255,255,0.22)' : `${CultureTokens.indigo}28`,
-                                    borderless: false,
-                                  },
-                                }
-                              : {})}
+                            numberOfLines={1}
                           >
-                            {isActive ? (
-                              <Ionicons name="checkmark-circle" size={IconSize.md - 2} color={colors.textInverse} />
-                            ) : (
-                              <Ionicons name="location-outline" size={IconSize.md - 2} color={colors.textSecondary} />
-                            )}
-                            <Text style={[s.cityName, { color: isActive ? colors.textInverse : colors.text, fontFamily: isActive ? FontFamily.semibold : FontFamily.medium }]} numberOfLines={1}>{city}</Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              ) : null}
+                            {city}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            )}
 
-              <View style={s.spacer} />
+            <View style={s.spacer} />
 
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                rightIcon="arrow-forward"
-                disabled={!state.country || !state.city}
-                onPress={handleNext}
-                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
-              >
-                Continue
-              </Button>
-            </View>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              rightIcon="arrow-forward"
+              disabled={!state.country || !state.city}
+              onPress={handleNext}
+              style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
+            >
+              Continue
+            </Button>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles — static StyleSheet
-// ---------------------------------------------------------------------------
 const s = StyleSheet.create({
   container: { flex: 1 },
   gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
@@ -501,12 +497,30 @@ const s = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    ...Platform.select({
-      web: { filter: 'blur(50px)' } as Record<string, string>,
-      default: {},
-    }),
+    ...Platform.select({ web: { filter: 'blur(50px)' } as any }),
   },
-  keyboardAvoid: { flex: 1 },
+
+  scrollView: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 80,
+    justifyContent: 'center',
+  },
+  scrollContentDesktop: { paddingVertical: 80 },
+
+  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
+  desktopBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderRadius: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
+
   mobileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -520,23 +534,23 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  desktopBackRow: { position: 'absolute', top: Spacing.xl, left: Spacing.xxl, zIndex: 10 },
-  desktopBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    borderRadius: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    borderWidth: 1,
+
+  formContainer: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderRadius: 32,
   },
-  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
-  scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 520 },
-  formBlur: { borderWidth: 1 },
-  formContent: { paddingTop: Spacing.xxl },
+
+  formBlur: {
+    backgroundColor: 'rgba(20,20,35,0.94)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
+  formContent: { padding: CardTokens.paddingLarge * 2 },
 
   headerBlock: { alignItems: 'center', marginBottom: 28 },
   iconWrapper: {
@@ -584,28 +598,15 @@ const s = StyleSheet.create({
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  stateGrid: {
+  cityStepHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  stateCard: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: CardTokens.radius,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    width: '47.5%',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
   },
-  stateEmoji: { fontSize: 34 },
-  stateName: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, textAlign: 'center' },
-  cityCount: { fontFamily: FontFamily.regular, fontSize: FontSize.chip, textAlign: 'center' },
-
-  cityStepHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
-  backToStateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  backToStateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   backToStateText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+
   selectedStatePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -635,15 +636,26 @@ const s = StyleSheet.create({
     padding: 0,
   },
 
+  stateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  stateCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: CardTokens.radius,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    width: '47.5%',
+  },
+  stateEmoji: { fontSize: 34 },
+  stateName: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, textAlign: 'center' },
+  cityCount: { fontFamily: FontFamily.regular, fontSize: FontSize.chip, textAlign: 'center' },
+
   noResults: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
   noResultsText: { fontFamily: FontFamily.regular, fontSize: FontSize.body2, textAlign: 'center' },
   noResultsClear: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, marginTop: 4 },
 
-  cityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
+  cityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cityCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -655,6 +667,7 @@ const s = StyleSheet.create({
     width: '47.5%',
   },
   cityName: { flex: 1, fontSize: FontSize.body2 },
+
   spacer: { height: Spacing.xl },
   submitBtn: { height: 60, borderRadius: 20 },
 });

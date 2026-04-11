@@ -5,6 +5,16 @@ import { routeWithRedirect } from '@/lib/routes';
 
 export const isWeb = Platform.OS === 'web';
 
+/** Title-case a kebab/snake_case or spaced string. Returns null if falsy. */
+export function startCaseLabel(value?: string | null): string | null {
+  if (!value) return null;
+  return value
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function safeIcsFilenameBase(title: string): string {
   const t = title.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').trim();
   return (t || 'culturepass-event').slice(0, 80);

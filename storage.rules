@@ -4,14 +4,19 @@ rules_version = '2';
  * CulturePass AU — Firebase Storage Rules
  *
  * Bucket layout:
- *   avatars/{userId}/{filename}      — user profile photos
- *   events/{eventId}/{filename}      — event banner images
- *   profiles/{profileId}/{filename}  — community/business/venue images
- *   uploads/{userId}/{filename}      — general user uploads (temp staging)
+ *   events/{uploaderId|eventId}/{filename}   — event banner/hero images
+ *   profiles/{profileId}/{filename}          — artist / venue / business images
+ *   communities/{communityId}/{filename}     — community cover images
+ *   users/{userId}/{filename}                — user avatars (direct upload path)
+ *   avatars/{userId}/{filename}              — user avatars (legacy path)
+ *   posts/{userId}/{filename}                — feed post images
+ *   perks/{perkId}/{filename}                — perk cover images (admin-managed)
+ *   featuredCities/{cityId}/{filename}       — city hero images (admin-managed)
+ *   uploads/{userId}/{filename}              — Cloud Functions staging (Admin SDK only)
  *
- * All writes flow through the Cloud Functions upload endpoint which uses
- * the Admin SDK — those bypass these rules.
- * Direct client uploads are allowed only for avatars (own user folder).
+ * Role claims are set on the Firebase Auth ID token via Admin SDK (setCustomUserClaims).
+ * Direct client uploads are allowed per the rules below; everything else uses Cloud
+ * Functions (Admin SDK) which bypasses these rules entirely.
  */
 
 service firebase.storage {
@@ -26,34 +31,101 @@ service firebase.storage {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // ── Public reads — event and profile images are public ──────────────────
-    match /events/{uploaderId}/{filename} {
-      allow read: if true;
-      allow write: if isOwner(uploaderId)
-                   && request.resource.size < 10 * 1024 * 1024  // max 10 MB
-                   && request.resource.contentType.matches('image/.*');
+    function role() {
+      return isSignedIn() && request.auth.token.role is string
+        ? request.auth.token.role
+        : '';
     }
 
-    match /profiles/{profileId}/{filename} {
-      allow read: if true;
-      allow write: if false; // Cloud Functions only
+    function isAdminLike() {
+      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator'];
     }
 
-    // ── Avatar uploads — user can write to their own folder ─────────────────
-    match /avatars/{userId}/{filename} {
-      allow read:  if true;
+    function isOrganizerLike() {
+      return role() in ['organizer', 'business', 'sponsor', 'admin', 'platformAdmin', 'cityAdmin'];
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function underMB(mb) {
+      return request.resource.size < mb * 1024 * 1024;
+    }
+
+    // ── Events ──────────────────────────────────────────────────────────────
+    // Covers both create flow (events/{userId}/…) and edit flow (events/{eventId}/…).
+    // Organisers can write to any event folder; read is public.
+    match /events/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOrganizerLike()
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── Profiles (artist / venue / business / community profile) ────────────
+    match /profiles/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOrganizerLike()
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── Communities ─────────────────────────────────────────────────────────
+    match /communities/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOrganizerLike()
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── User avatars — direct upload path used by profile/edit.tsx ──────────
+    match /users/{userId}/{filename} {
+      allow read: if true;
       allow write: if isOwner(userId)
-                   && request.resource.size < 5 * 1024 * 1024   // max 5 MB
-                   && request.resource.contentType.matches('image/.*');
+                   && underMB(5)
+                   && isValidImage();
     }
 
-    // ── User uploads (Cloud Functions — public URLs for listing images) ────
+    // ── User avatars — legacy path ───────────────────────────────────────────
+    match /avatars/{userId}/{filename} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                   && underMB(5)
+                   && isValidImage();
+    }
+
+    // ── Feed post images ─────────────────────────────────────────────────────
+    match /posts/{userId}/{filename} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── Perks — admin-managed content ───────────────────────────────────────
+    match /perks/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdminLike()
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── Featured cities — admin-managed content ──────────────────────────────
+    match /featuredCities/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdminLike()
+                   && underMB(10)
+                   && isValidImage();
+    }
+
+    // ── Cloud Functions staging — Admin SDK writes only ──────────────────────
     match /uploads/{userId}/{filename} {
       allow read:  if true;
-      allow write: if false; // Admin SDK / Cloud Functions only
+      allow write: if false;
     }
 
-    // ── Deny everything else ────────────────────────────────────────────────
+    // ── Deny everything else ─────────────────────────────────────────────────
     match /{allPaths=**} {
       allow read, write: if false;
     }

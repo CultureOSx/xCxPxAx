@@ -129,3 +129,6 @@ codecov.SHA256SUM.sig
 
 # everything-claude-code (third-party tooling — not part of the app)
 everything-claude-code/
+
+# stryker temp files
+.stryker-tmp

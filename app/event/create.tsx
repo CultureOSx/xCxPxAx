@@ -23,6 +23,7 @@ import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
 import { useAuth } from '@/lib/auth';
+import { useRole } from '@/hooks/useRole';
 
 import { getStyles } from '@/components/event-create/styles';
 import {
@@ -122,6 +123,7 @@ export default function CreateEventScreen() {
   const s = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const { isOrganizer, isLoading: roleLoading, isAuthenticated } = useRole();
   const queryClient = useQueryClient();
   const { state: onboardingState } = useOnboarding();
 
@@ -386,6 +388,49 @@ export default function CreateEventScreen() {
     haptic();
     setStepIndex((i) => i - 1);
   }, [stepIndex]);
+
+  // ── Role Guard ────────────────────────────────────────────────────────────
+  if (!roleLoading && isAuthenticated && !isOrganizer) {
+    return (
+      <View style={[s.root, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={[CultureTokens.coral + 'CC', colors.background]}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+        <View style={[s.topBar, { paddingTop: topInset + 8 }]}>
+          <Pressable
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+            hitSlop={12} style={s.backBtn}
+            accessibilityRole="button" accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.text} />
+          </Pressable>
+          <View style={s.topCenter}>
+            <Text style={[TextStyles.title3, { color: colors.text }]}>Create Event</Text>
+          </View>
+          <View style={s.backBtn} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+          <Ionicons name="lock-closed-outline" size={56} color={CultureTokens.coral} style={{ marginBottom: 20 }} />
+          <Text style={[TextStyles.title2, { color: colors.text, textAlign: 'center', marginBottom: 12 }]}>
+            Organiser Account Required
+          </Text>
+          <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 }]}>
+            Creating events requires an organiser or business account. Contact support to upgrade your account.
+          </Text>
+          <Button
+            variant="primary" size="lg" fullWidth
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+            style={{ backgroundColor: CultureTokens.coral }}
+          >
+            Go Back
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   // ── Success Screen ────────────────────────────────────────────────────────
   if (publishedEvent) {

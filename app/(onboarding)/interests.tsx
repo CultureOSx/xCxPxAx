@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
 
 import {
   interestCategories,
@@ -19,10 +20,10 @@ import {
   popularInterestsSydney,
 } from '@/constants/onboardingInterests';
 
-import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
 import { useInterestsSelection } from '@/hooks/useInterestsSelection';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
+
 import {
   CultureTokens,
   gradients,
@@ -39,20 +40,24 @@ import { useLayout } from '@/hooks/useLayout';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   cultural: '🎭',
-  arts:     '🎨',
-  food:     '🍛',
+  arts: '🎨',
+  food: '🍛',
   business: '💼',
-  family:   '👨‍👩‍👧',
-  civic:    '🏙️',
+  family: '👨‍👩‍👧',
+  civic: '🏙️',
   wellness: '🧘',
-  format:   '🎟️',
+  format: '🎟️',
 };
 
 // ---------------------------------------------------------------------------
-// InterestChip
+// InterestChip Component
 // ---------------------------------------------------------------------------
 const InterestChip = React.memo(function InterestChip({
-  interest, icon, isSelected, accentColor, onPress,
+  interest,
+  icon,
+  isSelected,
+  accentColor,
+  onPress,
 }: {
   interest: string;
   icon: string;
@@ -95,7 +100,7 @@ const InterestChip = React.memo(function InterestChip({
 });
 
 // ---------------------------------------------------------------------------
-// Main screen
+// Main Screen
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
   const colors = useColors();
@@ -116,7 +121,7 @@ export default function InterestsScreen() {
     toggle,
     toggleAll,
     toggleSection,
-    handleFinish: handleFinishHook
+    handleFinish: handleFinishHook,
   } = useInterestsSelection();
 
   const handleFinish = async () => {
@@ -134,10 +139,9 @@ export default function InterestsScreen() {
 
   return (
     <View style={s.root}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <LinearGradient colors={gradients.culturepassBrand} style={StyleSheet.absoluteFillObject} />
+
+      {/* Decorative Orbs (Web) */}
       {Platform.OS === 'web' && (
         <>
           <View style={[s.orb, { top: -80, right: -60, backgroundColor: CultureTokens.indigo }]} />
@@ -148,7 +152,7 @@ export default function InterestsScreen() {
       {/* Header */}
       <View style={[s.header, { paddingTop: topInset + 14 }]}>
         <Pressable
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities'))}
           style={s.backBtn}
           hitSlop={12}
           accessibilityRole="button"
@@ -156,8 +160,10 @@ export default function InterestsScreen() {
         >
           <Ionicons name="chevron-back" size={IconSize.lg} color={colors.textSecondary} />
         </Pressable>
+
         <Text style={[s.stepLabel, { color: colors.textSecondary }]}>STEP 4 OF 4</Text>
-        <View style={s.backBtn} />
+
+        <View style={s.backBtn} /> {/* Spacer for centering */}
       </View>
 
       <ScrollView
@@ -166,7 +172,7 @@ export default function InterestsScreen() {
         contentContainerStyle={[
           s.scrollContent,
           isDesktop && s.scrollContentDesktop,
-          { paddingBottom: bottomInset + 130 },
+          { paddingBottom: bottomInset + 140 },
         ]}
       >
         <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
@@ -178,7 +184,7 @@ export default function InterestsScreen() {
             </Text>
           </View>
 
-          {/* Progress bar */}
+          {/* Progress Bar */}
           <Animated.View entering={FadeInDown.springify().damping(15).delay(150)} style={s.progressBlock}>
             <View style={[s.progressTrack, { backgroundColor: colors.borderLight }]}>
               <View
@@ -196,14 +202,15 @@ export default function InterestsScreen() {
             </Text>
           </Animated.View>
 
-          {/* Popular picks */}
+          {/* Popular Interests */}
           <Animated.View entering={FadeInDown.springify().damping(15).delay(200)} style={s.section}>
             <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Popular near you</Text>
             <View style={s.chipWrap}>
-              {popularInterestsSydney.map(interest => {
+              {popularInterestsSydney.map((interest) => {
                 const cat = categoryByInterest.get(interest);
                 const accent = cat?.accentColor ?? CultureTokens.gold;
                 const icon = interestIcons[interest] ?? 'star';
+
                 return (
                   <InterestChip
                     key={interest}
@@ -220,11 +227,11 @@ export default function InterestsScreen() {
 
           <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
 
-          {/* Category accordions */}
-          {interestCategories.map(category => {
+          {/* Category Sections */}
+          {interestCategories.map((category) => {
             const isOpen = expanded[category.id] ?? false;
-            const countInCat = category.interests.filter(i => selectedSet.has(i)).length;
-            const allSelected = category.interests.every(i => selectedSet.has(i));
+            const countInCat = category.interests.filter((i) => selectedSet.has(i)).length;
+            const allSelected = category.interests.every((i) => selectedSet.has(i));
             const accent = category.accentColor;
             const emoji = CATEGORY_EMOJI[category.id] ?? '•';
 
@@ -244,16 +251,17 @@ export default function InterestsScreen() {
                     <View style={s.categoryTitleBlock}>
                       <Text style={[s.categoryTitle, { color: colors.text }]}>{category.title}</Text>
                       {countInCat > 0 && (
-                        <Text style={[s.categoryCount, { color: accent }]}>
-                          {countInCat} selected
-                        </Text>
+                        <Text style={[s.categoryCount, { color: accent }]}>{countInCat} selected</Text>
                       )}
                     </View>
                   </Pressable>
 
                   {isOpen && (
                     <Pressable
-                      onPress={e => { e.stopPropagation?.(); toggleAll(category); }}
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        toggleAll(category);
+                      }}
                       style={[s.selectAllBtn, { backgroundColor: `${accent}18`, borderColor: `${accent}35` }]}
                       hitSlop={Spacing.sm}
                       accessibilityRole="button"
@@ -275,8 +283,12 @@ export default function InterestsScreen() {
                 </View>
 
                 {isOpen && (
-                  <Animated.View entering={FadeInUp.springify().damping(18)} layout={Layout.springify().damping(16)} style={s.chipWrap}>
-                    {category.interests.map(interest => {
+                  <Animated.View
+                    entering={FadeInUp.springify().damping(18)}
+                    layout={Layout.springify().damping(16)}
+                    style={s.chipWrap}
+                  >
+                    {category.interests.map((interest) => {
                       const icon = interestIcons[interest] ?? 'star';
                       return (
                         <InterestChip
@@ -299,18 +311,19 @@ export default function InterestsScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Sticky bottom CTA */}
-      <LinearGradient
-        colors={['transparent', gradients.culturepassBrand[0]]}
-        style={s.bottomFade}
-        pointerEvents="none"
-      />
-      <Animated.View entering={FadeInDown.springify().damping(20).delay(250)} style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}>
+      {/* Sticky Bottom CTA */}
+      <LinearGradient colors={['transparent', gradients.culturepassBrand[0]]} style={s.bottomFade} pointerEvents="none" />
+
+      <Animated.View
+        entering={FadeInDown.springify().damping(20).delay(250)}
+        style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}
+      >
         {!isReady && (
           <Text style={[s.remainingText, { color: colors.textSecondary }]}>
             {remaining === 1 ? '1 more interest to go' : `${remaining} more interests to go`}
           </Text>
         )}
+
         <Button
           variant="primary"
           size="lg"
@@ -318,11 +331,7 @@ export default function InterestsScreen() {
           rightIcon={isReady ? 'sparkles' : undefined}
           disabled={!isReady || isSubmitting}
           onPress={handleFinish}
-          style={[
-            s.ctaBtn,
-            isReady && { backgroundColor: CultureTokens.gold },
-            shadows.large,
-          ]}
+          style={[s.ctaBtn, isReady && { backgroundColor: CultureTokens.gold }, shadows.large]}
         >
           {isSubmitting ? 'Starting...' : isReady ? 'Start Exploring' : `Select ${remaining} more`}
         </Button>
@@ -332,7 +341,7 @@ export default function InterestsScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// Styles — static StyleSheet (no per-render recreation)
+// Styles
 // ---------------------------------------------------------------------------
 const s = StyleSheet.create({
   root: { flex: 1 },
@@ -343,10 +352,7 @@ const s = StyleSheet.create({
     height: 320,
     borderRadius: 160,
     opacity: 0.35,
-    ...Platform.select({
-      web: { filter: 'blur(80px)' } as Record<string, string>,
-      default: {},
-    }),
+    ...Platform.select({ web: { filter: 'blur(80px)' } as any }),
   },
 
   header: {
@@ -388,10 +394,7 @@ const s = StyleSheet.create({
     marginTop: Spacing.sm,
   },
 
-  titleBlock: {
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
-  },
+  titleBlock: { marginBottom: Spacing.lg, gap: Spacing.sm },
   title: {
     ...TextStyles.hero,
     fontSize: 36,
@@ -425,18 +428,13 @@ const s = StyleSheet.create({
     textAlign: 'right',
   },
 
-  section: {
-    marginBottom: Spacing.lg,
-  },
+  section: { marginBottom: Spacing.lg },
   sectionLabel: {
     ...TextStyles.badgeCaps,
     letterSpacing: 1.6,
     marginBottom: 14,
   },
-  divider: {
-    height: 1,
-    marginBottom: Spacing.sm,
-  },
+  divider: { height: 1, marginBottom: Spacing.sm },
 
   chipWrap: {
     flexDirection: 'row',
@@ -458,9 +456,7 @@ const s = StyleSheet.create({
     fontSize: FontSize.chip,
   },
 
-  categoryBlock: {
-    marginBottom: Spacing.xs,
-  },
+  categoryBlock: { marginBottom: Spacing.xs },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -482,34 +478,18 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  categoryEmoji: {
-    fontSize: FontSize.title2,
-  },
-  categoryTitleBlock: {
-    flex: 1,
-    gap: 2,
-  },
-  categoryTitle: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.body,
-  },
-  categoryCount: {
-    fontFamily: FontFamily.medium,
-    fontSize: FontSize.caption,
-  },
+  categoryEmoji: { fontSize: FontSize.title2 },
+  categoryTitleBlock: { flex: 1, gap: 2 },
+  categoryTitle: { fontFamily: FontFamily.semibold, fontSize: FontSize.body },
+  categoryCount: { fontFamily: FontFamily.medium, fontSize: FontSize.caption },
   selectAllBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: Spacing.sm,
     borderWidth: 1,
   },
-  selectAllText: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.caption,
-  },
-  chevronBtn: {
-    paddingLeft: Spacing.sm + 4,
-  },
+  selectAllText: { fontFamily: FontFamily.bold, fontSize: FontSize.caption },
+  chevronBtn: { paddingLeft: Spacing.sm + 4 },
   categoryDivider: {
     height: 1,
     marginTop: 10,

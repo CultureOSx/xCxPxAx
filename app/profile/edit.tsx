@@ -48,10 +48,10 @@ const AVATAR = 104;
 
 type EditTab = 'personal' | 'culture' | 'social';
 
-const TABS: { id: EditTab; label: string }[] = [
-  { id: 'personal', label: 'Basics' },
-  { id: 'culture', label: 'Culture' },
-  { id: 'social', label: 'Social & privacy' },
+const TABS: { id: EditTab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'personal', label: 'Basics', icon: 'person-circle-outline' },
+  { id: 'culture', label: 'Culture', icon: 'earth-outline' },
+  { id: 'social', label: 'Social & privacy', icon: 'shield-checkmark-outline' },
 ];
 
 function sectionCardShadow(isDark: boolean): ViewStyle {
@@ -226,6 +226,72 @@ function FieldRow({
   );
 }
 
+function TabContextCard({
+  activeTab,
+  colors,
+  completionPct,
+  socialLinksCount,
+  isPublicProfile,
+}: {
+  activeTab: EditTab;
+  colors: ColorTheme;
+  completionPct: number;
+  socialLinksCount: number;
+  isPublicProfile: boolean;
+}) {
+  const copyByTab: Record<EditTab, { title: string; subtitle: string }> = {
+    personal: {
+      title: 'Make your first impression count',
+      subtitle: 'Strong basics help people trust your profile and discover your story faster.',
+    },
+    culture: {
+      title: 'Shape your cultural relevance',
+      subtitle: 'Languages, communities, and interests drive better recommendations and matches.',
+    },
+    social: {
+      title: 'Control visibility with confidence',
+      subtitle: 'Choose exactly what is public, then connect socials only when you are ready.',
+    },
+  };
+  const completionTone =
+    completionPct >= 80 ? CultureTokens.teal : completionPct >= 50 ? CultureTokens.gold : CultureTokens.coral;
+
+  return (
+    <View style={[meta.contextCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+      <View style={meta.contextTop}>
+        <View style={{ flex: 1 }}>
+          <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_700Bold' }]}>
+            {copyByTab[activeTab].title}
+          </Text>
+          <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 4, lineHeight: 18 }]}>
+            {copyByTab[activeTab].subtitle}
+          </Text>
+        </View>
+        <View style={[meta.visibilityPill, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}>
+          <Ionicons name={isPublicProfile ? 'globe-outline' : 'lock-closed-outline'} size={13} color={colors.textSecondary} />
+          <Text style={[meta.visibilityText, { color: colors.textSecondary }]}>
+            {isPublicProfile ? 'Public' : 'Private'}
+          </Text>
+        </View>
+      </View>
+
+      <View style={meta.statsRow}>
+        <View style={[meta.statChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+          <Text style={[meta.statLabel, { color: colors.textTertiary }]}>Profile strength</Text>
+          <Text style={[meta.statValue, { color: completionTone }]}>{completionPct}%</Text>
+        </View>
+        <View style={[meta.statChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+          <Text style={[meta.statLabel, { color: colors.textTertiary }]}>Social links</Text>
+          <Text style={[meta.statValue, { color: colors.text }]}>{socialLinksCount}</Text>
+        </View>
+      </View>
+      <View style={[meta.progressTrack, { backgroundColor: colors.borderLight }]}>
+        <View style={[meta.progressFill, { backgroundColor: completionTone, width: `${Math.max(8, completionPct)}%` }]} />
+      </View>
+    </View>
+  );
+}
+
 function IdentityPills({
   user,
   onCopied,
@@ -327,6 +393,67 @@ const id = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
     color: 'rgba(255,255,255,0.95)',
     maxWidth: 200,
+  },
+});
+
+const meta = StyleSheet.create({
+  contextCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 8,
+    marginBottom: 12,
+    gap: 10,
+  },
+  contextTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  visibilityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  visibilityText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
   },
 });
 
@@ -523,7 +650,7 @@ export default function EditProfileScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
-  const { uploadImage, deleteImage, uploading } = useImageUpload();
+  const { uploadImage, uploadFromUri, deleteImage, uploading, progress } = useImageUpload();
   const isBusy = updateMutation.isPending || uploading;
 
   const handleChoosePhoto = async () => {
@@ -559,13 +686,38 @@ export default function EditProfileScreen() {
     event.preventDefault?.();
     const dt = event?.dataTransfer || event?.nativeEvent?.dataTransfer;
     const file = dt?.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarUri(String(reader.result));
-    };
-    reader.readAsDataURL(file);
+    if (!file || !userId) return;
+    const objectUrl = URL.createObjectURL(file);
+    void (async () => {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      try {
+        if (user?.avatarUrl?.startsWith('http')) {
+          await deleteImage('users', userId, user.avatarUrl, 'avatarUrl');
+        }
+        const { downloadURL } = await uploadFromUri(objectUrl, 'users', userId, 'avatarUrl');
+        setAvatarUri(downloadURL);
+      } catch (err) {
+        Alert.alert('Upload Failed', String(err));
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    })();
   };
+
+  const handleRemovePhoto = useCallback(async () => {
+    if (!userId || !avatarUri) return;
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      if (avatarUri.startsWith('http')) {
+        await deleteImage('users', userId, avatarUri, 'avatarUrl');
+      }
+      setAvatarUri(null);
+    } catch (err) {
+      Alert.alert('Remove failed', String(err));
+    }
+  }, [avatarUri, deleteImage, userId]);
 
   const handleSave = async () => {
     if (!form.displayName.trim()) {
@@ -627,6 +779,37 @@ export default function EditProfileScreen() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+  const socialLinksCount = useMemo(() => {
+    const entries = [form.website, form.instagram, form.twitter, form.tiktok, form.youtube, form.linkedin, form.facebook];
+    return entries.filter((value) => value.trim().length > 0).length;
+  }, [form.website, form.instagram, form.twitter, form.tiktok, form.youtube, form.linkedin, form.facebook]);
+  const completionPct = useMemo(() => {
+    const checks = [
+      form.displayName.trim().length > 1,
+      form.email.trim().length > 3,
+      form.bio.trim().length >= 20,
+      form.city.trim().length > 0,
+      form.country.trim().length > 0,
+      form.languages.trim().length > 0,
+      selectedCommunities.length > 0,
+      selectedInterests.length > 0,
+      socialLinksCount > 0,
+      Boolean(avatarUri),
+    ];
+    const completed = checks.filter(Boolean).length;
+    return Math.round((completed / checks.length) * 100);
+  }, [
+    avatarUri,
+    form.bio,
+    form.city,
+    form.country,
+    form.displayName,
+    form.email,
+    form.languages,
+    selectedCommunities.length,
+    selectedInterests.length,
+    socialLinksCount,
+  ]);
 
   const inputStyle = [
     s.input,
@@ -799,6 +982,29 @@ export default function EditProfileScreen() {
               {Platform.OS === 'web' ? 'Tap or drop a photo to update' : 'Tap to update your photo'}
             </Text>
 
+            {uploading ? (
+              <View style={s.uploadMetaWrap}>
+                <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.76)' }]}>
+                  Uploading {Math.max(1, Math.min(100, Math.round(progress)))}%
+                </Text>
+                <View style={s.uploadTrack}>
+                  <View style={[s.uploadFill, { width: `${Math.max(4, Math.min(100, progress))}%` }]} />
+                </View>
+              </View>
+            ) : null}
+
+            {avatarUri ? (
+              <Pressable
+                onPress={() => void handleRemovePhoto()}
+                style={[s.removePhotoBtn, { borderColor: 'rgba(255,255,255,0.32)', backgroundColor: 'rgba(0,0,0,0.26)' }]}
+                accessibilityRole="button"
+                accessibilityLabel="Remove profile photo"
+              >
+                <Ionicons name="trash-outline" size={14} color="#fff" />
+                <Text style={s.removePhotoText}>Remove photo</Text>
+              </Pressable>
+            ) : null}
+
             <IdentityPills user={user} onCopied={onIdentityCopied} />
           </Animated.View>
 
@@ -827,6 +1033,12 @@ export default function EditProfileScreen() {
                       ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
                       : {})}
                   >
+                    <Ionicons
+                      name={tab.icon}
+                      size={14}
+                      color={active ? PRIMARY : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text
                       style={[
                         s.tabLabel,
@@ -870,6 +1082,12 @@ export default function EditProfileScreen() {
                       ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
                       : {})}
                   >
+                    <Ionicons
+                      name={tab.icon}
+                      size={14}
+                      color={active ? PRIMARY : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text
                       style={[
                         s.tabLabel,
@@ -886,6 +1104,13 @@ export default function EditProfileScreen() {
           )}
 
           <View style={[s.body, { paddingHorizontal: hPad }, isDesktop && s.bodyDesktop]}>
+            <TabContextCard
+              activeTab={activeTab}
+              colors={colors}
+              completionPct={completionPct}
+              socialLinksCount={socialLinksCount}
+              isPublicProfile={form.isPublicProfile}
+            />
             {activeTab === 'personal' ? (
               <>
                 <SectionCard
@@ -1314,8 +1539,8 @@ const s = StyleSheet.create({
   },
   heroWrap: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingTop: 36,
+    paddingBottom: 30,
     overflow: 'hidden',
   },
   heroOrb: {
@@ -1380,10 +1605,14 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   tabBtnDesktop: {
     flex: 1,
@@ -1394,7 +1623,7 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
   },
-  body: { paddingTop: 8, gap: 0, paddingBottom: 8 },
+  body: { paddingTop: 12, gap: 10, paddingBottom: 16 },
   bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center' },
   input: {
     height: 52,
@@ -1444,6 +1673,40 @@ const s = StyleSheet.create({
       android: { elevation: 6 },
       default: { elevation: 6 },
     }),
+  },
+  uploadMetaWrap: {
+    width: 170,
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 2,
+    alignItems: 'center',
+  },
+  uploadTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    overflow: 'hidden',
+  },
+  uploadFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: CultureTokens.gold,
+  },
+  removePhotoBtn: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  removePhotoText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
 

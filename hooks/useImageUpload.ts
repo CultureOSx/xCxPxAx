@@ -21,47 +21,45 @@ export const useImageUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  /**
-   * Automatically compresses the selected image, uploads it securely into Firebase Storage,
-   * inside the specific {collection}/{docId} directory, and immediately writes the returned
-   * URL back to the Firestore document field.
-   */
-  const uploadImage = async (
-    pickerResult: ImagePicker.ImagePickerResult,
+  const uploadFromUri = async (
+    rawUri: string,
     collectionName: string,
     docId: string,
     fieldName: string = 'coverUrl',
     skipDbUpdate: boolean = false
   ): Promise<UploadResult> => {
-    if (pickerResult.canceled || !pickerResult.assets?.[0]) {
-      throw new Error('No image provided');
-    }
+    if (!rawUri) throw new Error('No image provided');
 
     setUploading(true);
     setProgress(0);
 
     try {
-      const asset = pickerResult.assets[0];
+      let uploadUri = rawUri;
+      try {
+        const manipulated = await ImageManipulator.manipulateAsync(
+          rawUri,
+          [{ resize: { width: 1200 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        uploadUri = manipulated.uri;
+      } catch {
+        // Some web URI schemes are not compatible with the manipulator.
+      }
 
-      // 1. Client-Side Image Compression (Save Bandwidth & Storage)
-      const manipulated = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 1200 } }], // Ideal max width preserving AR
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // 80% JPEG compression
-      );
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = 'blob';
+        xhr.onload = () => resolve(xhr.response as Blob);
+        xhr.onerror = () => reject(new Error('Failed to load image file'));
+        xhr.open('GET', uploadUri);
+        xhr.send();
+      });
 
-      const response = await fetch(manipulated.uri);
-      const blob = await response.blob();
-
-      // 2. Upload to path hierarchy structure (e.g. users/123/1643...-abc.jpg)
-      // Including Date.now() guarantees cache-busting when replacing avatars via Expo Image
       const timestamp = Date.now();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
       const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
-
       const uploadTask = uploadBytesResumable(storageRef, blob);
 
-      // Listen to streaming upload progress
       await new Promise<void>((resolve, reject) => {
         uploadTask.on(
           'state_changed',
@@ -77,13 +75,16 @@ export const useImageUpload = () => {
       const downloadURL = await getDownloadURL(storageRef);
 
       if (!skipDbUpdate) {
-        // 3. Atomically update Firestore with new remote URL
         const { setDoc } = await import('firebase/firestore');
         const docRef = doc(db, collectionName, docId);
-        await setDoc(docRef, {
-          [fieldName]: downloadURL,
-          updatedAt: new Date(),
-        }, { merge: true });
+        await setDoc(
+          docRef,
+          {
+            [fieldName]: downloadURL,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
       }
 
       return { downloadURL };
@@ -91,6 +92,25 @@ export const useImageUpload = () => {
       setUploading(false);
       setProgress(0);
     }
+  };
+
+  /**
+   * Automatically compresses the selected image, uploads it securely into Firebase Storage,
+   * inside the specific {collection}/{docId} directory, and immediately writes the returned
+   * URL back to the Firestore document field.
+   */
+  const uploadImage = async (
+    pickerResult: ImagePicker.ImagePickerResult,
+    collectionName: string,
+    docId: string,
+    fieldName: string = 'coverUrl',
+    skipDbUpdate: boolean = false
+  ): Promise<UploadResult> => {
+    if (pickerResult.canceled || !pickerResult.assets?.[0]) {
+      throw new Error('No image provided');
+    }
+    const asset = pickerResult.assets[0];
+    return uploadFromUri(asset.uri, collectionName, docId, fieldName, skipDbUpdate);
   };
 
   /**
@@ -115,5 +135,5 @@ export const useImageUpload = () => {
     }
   };
 
-  return { uploadImage, deleteImage, uploading, progress };
+  return { uploadImage, uploadFromUri, deleteImage, uploading, progress };
 };

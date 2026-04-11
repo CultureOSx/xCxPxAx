@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
@@ -28,6 +28,7 @@ import {
   getAppVersion,
   getAppVersionWithBuild,
 } from '@/lib/app-meta';
+import { getTravelModeEnabled } from '@/lib/storage';
 
 interface SettingItem {
   icon: string;
@@ -55,6 +56,18 @@ export default function AccountSettingsScreen() {
   const canTargetCampaigns = hasMinRole('cityAdmin');
   const appVersion = getAppVersion();
   const appVersionWithBuild = getAppVersionWithBuild();
+  const [travelModeEnabled, setTravelModeEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const enabled = await getTravelModeEnabled(user?.id);
+      if (!cancelled) setTravelModeEnabled(enabled);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const tier      = user?.subscriptionTier ?? 'free';
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
@@ -153,6 +166,14 @@ export default function AccountSettingsScreen() {
       title: 'App',
       items: [
         { icon: 'color-palette-outline', label: 'Appearance',       sub: 'Theme and visual style',            color: CultureTokens.indigo, route: '/settings/appearance' },
+        {
+          icon: 'airplane-outline',
+          label: 'Travel Mode',
+          sub: 'Reorganize Discover for workers constantly on the move',
+          color: CultureTokens.teal,
+          route: '/settings/travel-mode',
+          rightText: travelModeEnabled ? 'On' : 'Off',
+        },
         { icon: 'location-outline',      label: 'Location & City',  sub: 'Country, region & city for local content', color: CultureTokens.teal, route: '/settings/location' },
         { icon: 'calendar-outline',      label: 'Calendar Sync',    sub: 'Apple, Google, Outlook & device',   color: CultureTokens.indigo, route: '/settings/calendar-sync' },
       ],
@@ -246,6 +267,14 @@ export default function AccountSettingsScreen() {
       title: 'App',
       items: [
         { icon: 'color-palette-outline', label: 'Appearance', sub: 'Theme and visual style', color: CultureTokens.indigo, route: '/settings/appearance' },
+        {
+          icon: 'airplane-outline',
+          label: 'Travel Mode',
+          sub: 'Reorganize Discover for workers constantly on the move',
+          color: CultureTokens.teal,
+          route: '/settings/travel-mode',
+          rightText: travelModeEnabled ? 'On' : 'Off',
+        },
       ],
     },
     {

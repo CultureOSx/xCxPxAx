@@ -72,6 +72,9 @@ export function Input({
   containerStyle,
   inputStyle,
   secureTextEntry,
+  autoCapitalize,
+  autoCorrect,
+  spellCheck,
   onFocus,
   onBlur,
   ...rest
@@ -157,8 +160,9 @@ export function Input({
             },
             inputStyle,
           ]}
-          autoCapitalize="none"
-          autoCorrect={false}
+          autoCapitalize={autoCapitalize ?? 'none'}
+          autoCorrect={autoCorrect ?? false}
+          spellCheck={spellCheck ?? autoCorrect ?? false}
           accessibilityLabel={label}
         />
 

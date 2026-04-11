@@ -107,7 +107,6 @@ export default function SignUpScreen() {
           .damping(LiquidGlassTokens.entranceSpring.damping)
           .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
 
-  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
   const padBottom = isWeb ? 40 : 64 + insets.bottom;
 
   const formContent = (
@@ -126,16 +125,15 @@ export default function SignUpScreen() {
       </Animated.View>
 
       {/* Main Headline */}
-      <Animated.Text
-        entering={enter(30)}
-        style={[s.title, { color: colors.text }]}
-      >
-        Belong anywhere.
-      </Animated.Text>
+      <Animated.View entering={enter(30)}>
+        <Text style={[s.title, { color: colors.text }]}>Belong anywhere.</Text>
+      </Animated.View>
 
-      <Animated.Text entering={enter(110)} style={[s.subtitle, { color: colors.textSecondary }]}>
-        Join the cultural community built for diaspora cities.
-      </Animated.Text>
+      <Animated.View entering={enter(110)}>
+        <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+          Join the cultural community built for diaspora cities.
+        </Text>
+      </Animated.View>
 
       {/* Benefits */}
       <Animated.View
@@ -237,9 +235,7 @@ export default function SignUpScreen() {
           leftIcon="mail-outline"
           value={email}
           onChangeText={(v) => {
-            // Prevent spaces in email input
-            const noSpaces = v.replace(/\s+/g, '');
-            setEmail(noSpaces);
+            setEmail(v);
             clearErrors();
           }}
           autoCapitalize="none"
@@ -370,53 +366,57 @@ export default function SignUpScreen() {
       >
         {isWeb && isDesktop ? (
           <View style={s.webRow}>
-            {/* Marketing Column */}
+            {/* Marketing Column - Left Side */}
             <View style={s.webLeft}>
               <Animated.View entering={enter(40)} style={s.webKickerRow}>
                 <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
                 <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
               </Animated.View>
 
-              <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>...
+              <Animated.View entering={enter(70)}>
+                <Text style={[s.webHeadline, { color: colors.text }]}>
                   Your cultural home,{'\n'}anywhere.
-                </Animated.Text>
+                </Text>
+              </Animated.View>
 
-                <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
+              <Animated.View entering={enter(100)}>
+                <Text style={[s.webLead, { color: colors.textSecondary }]}>
                   The premium marketplace for diaspora communities — events, local businesses, and exclusive member perks in your city.
-                </Animated.Text>
+                </Text>
+              </Animated.View>
 
-                <Animated.View entering={enter(130)} style={s.webValueGrid}>
-                  {VALUE_PROPS.map((item) => (
-                    <View
-                      key={item.title}
-                      style={[
-                        s.webValueCard,
-                        { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
-                        <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
-                        <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
-                      </View>
+              <Animated.View entering={enter(130)} style={s.webValueGrid}>
+                {VALUE_PROPS.map((item) => (
+                  <View
+                    key={item.title}
+                    style={[
+                      s.webValueCard,
+                      { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                    ]}
+                  >
+                    <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
+                      <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
                     </View>
-                  ))}
-                </Animated.View>
-              </View>
-
-              {/* Form Card */}
-              <Animated.View entering={enterUp} style={s.cardWrap}>
-                {formContent}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
+                      <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
+                    </View>
+                  </View>
+                ))}
               </Animated.View>
             </View>
-          ) : (
+
+            {/* Form Card - Right Side on Desktop */}
             <Animated.View entering={enterUp} style={s.cardWrap}>
               {formContent}
             </Animated.View>
-          )}
-        {/* End KeyboardAwareScrollViewCompat */}
+          </View>
+        ) : (
+          /* Mobile / non-desktop */
+          <Animated.View entering={enterUp} style={s.cardWrap}>
+            {formContent}
+          </Animated.View>
+        )}
       </KeyboardAwareScrollViewCompat>
     </View>
   );
