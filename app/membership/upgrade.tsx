@@ -30,11 +30,6 @@ const FEATURES = [
 ];
 
 const isWeb = Platform.OS === 'web';
-const PREMIUM_BLACK = '#0A0A0B';
-const PREMIUM_CHARCOAL = '#141417';
-const PREMIUM_SILVER = '#C7CCD6';
-const PREMIUM_WHITE = '#F5F7FA';
-const PREMIUM_LINE = '#2A2D33';
 const IS_ANDROID = Platform.OS === 'android';
 const IS_WEB = Platform.OS === 'web';
 
@@ -139,8 +134,8 @@ export default function UpgradeScreen() {
         >
           {/* Hero Section - Locked State */}
           <View style={s.heroSection}>
-            <View style={[s.lockedIconWrap, { backgroundColor: PREMIUM_SILVER + '20' }]}>
-              <Ionicons name="globe" size={44} color={PREMIUM_SILVER} />
+            <View style={[s.lockedIconWrap, { backgroundColor: colors.textSecondary + '20' }]}>
+              <Ionicons name="globe" size={44} color={colors.textSecondary} />
             </View>
             <Text style={s.heroTitle}>Sign In to Unlock</Text>
             <Text style={s.heroTagline}>Premium cultural experiences await</Text>
@@ -153,10 +148,10 @@ export default function UpgradeScreen() {
           <View style={s.benefitsPreview}>
             <Text style={s.sectionTitle}>What You&apos;ll Get</Text>
             {[
-              { icon: 'cash-outline', title: '2% Cashback', desc: 'Earn rewards on every ticket', color: PREMIUM_SILVER },
-              { icon: 'time-outline', title: '48h Early Access', desc: 'First to buy hot tickets', color: PREMIUM_SILVER },
-              { icon: 'gift-outline', title: 'Exclusive Perks', desc: 'Members-only deals & discounts', color: PREMIUM_SILVER },
-              { icon: 'shield-checkmark-outline', title: 'Plus Badge', desc: 'Stand out in the community', color: PREMIUM_SILVER },
+              { icon: 'cash-outline', title: '2% Cashback', desc: 'Earn rewards on every ticket', color: colors.textSecondary },
+              { icon: 'time-outline', title: '48h Early Access', desc: 'First to buy hot tickets', color: colors.textSecondary },
+              { icon: 'gift-outline', title: 'Exclusive Perks', desc: 'Members-only deals & discounts', color: colors.textSecondary },
+              { icon: 'shield-checkmark-outline', title: 'Plus Badge', desc: 'Stand out in the community', color: colors.textSecondary },
             ].map((benefit) => (
               <View key={benefit.title} style={[s.benefitItem, { borderLeftColor: benefit.color }]}>
                 <View style={[s.benefitIconWrap, { backgroundColor: benefit.color + '15' }]}>
@@ -179,7 +174,7 @@ export default function UpgradeScreen() {
                 style={s.socialProofGlass}
                 contentStyle={s.socialProofInner}
               >
-                <Ionicons name="people" size={16} color={PREMIUM_SILVER} />
+                <Ionicons name="people" size={16} color={colors.textSecondary} />
                 <Text style={s.socialProofText}>
                   Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
                 </Text>
@@ -219,7 +214,7 @@ export default function UpgradeScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top + webTop }]}>
       <LinearGradient
-        colors={[PREMIUM_BLACK, PREMIUM_CHARCOAL]}
+        colors={[colors.background, colors.surface]}
         style={[StyleSheet.absoluteFillObject, { opacity: 0.6 }]}
       />
       <LinearGradient
@@ -259,7 +254,7 @@ export default function UpgradeScreen() {
           style={s.heroSection}
         >
           <View style={s.heroIconWrap}>
-            <Ionicons name="globe" size={44} color={PREMIUM_SILVER} />
+            <Ionicons name="globe" size={44} color={colors.textSecondary} />
           </View>
           <Text style={s.heroTitle}>CulturePass+</Text>
           <Text style={s.heroTagline}>Access. Advantage. Influence.</Text>
@@ -279,7 +274,7 @@ export default function UpgradeScreen() {
                 </Text>
               </View>
               <View style={[s.integrationPill, { backgroundColor: isPlus ? CultureTokens.success + '20' : colors.surface }]}>
-                <Text style={[s.integrationPillText, { color: isPlus ? PREMIUM_WHITE : colors.textSecondary }]}>
+                <Text style={[s.integrationPillText, { color: isPlus ? colors.text : colors.textSecondary }]}>
                   {isPlus ? 'ACTIVE' : 'FREE'}
                 </Text>
               </View>
@@ -312,7 +307,7 @@ export default function UpgradeScreen() {
               style={s.socialProofGlass}
               contentStyle={s.socialProofInner}
             >
-              <Ionicons name="people" size={16} color={PREMIUM_SILVER} />
+              <Ionicons name="people" size={16} color={colors.textSecondary} />
               <Text style={s.socialProofText}>
                 Join {memberCount.toLocaleString()}+ members already enjoying CulturePass+
               </Text>
@@ -403,7 +398,7 @@ export default function UpgradeScreen() {
                 }
               </View>
               <View style={[s.compCheck, s.compCheckPlus]}>
-                <Ionicons name="checkmark-circle" size={20} color={PREMIUM_SILVER} />
+                <Ionicons name="checkmark-circle" size={20} color={colors.textSecondary} />
               </View>
             </View>
           ))}
@@ -413,9 +408,9 @@ export default function UpgradeScreen() {
         {/* Highlights */}
         <View style={s.highlightsSection}>
           {[
-            { bg: '#2D323A', color: PREMIUM_SILVER, icon: 'cash',  title: '2% Cashback',    desc: 'Every ticket purchase earns you cashback, automatically credited to your wallet.' },
-            { bg: PREMIUM_SILVER + '20', color: PREMIUM_SILVER, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
-            { bg: '#2D323A', color: PREMIUM_SILVER, icon: 'gift',  title: 'Exclusive Perks', desc: 'Access members-only deals and discounts from restaurants, shops, and cultural venues.' },
+            { bg: colors.card, color: colors.textSecondary, icon: 'cash',  title: '2% Cashback',    desc: 'Every ticket purchase earns you cashback, automatically credited to your wallet.' },
+            { bg: colors.textSecondary + '20', color: colors.textSecondary, icon: 'flash', title: '48h Early Access', desc: 'Get a 48-hour head start on hot event tickets before they go on sale to everyone.' },
+            { bg: colors.card, color: colors.textSecondary, icon: 'gift',  title: 'Exclusive Perks', desc: 'Access members-only deals and discounts from restaurants, shops, and cultural venues.' },
           ].map((h, i) => (
             <Animated.View
               entering={reducedMotion ? undefined : FadeInDown.springify().damping(14).delay(400 + i * 100)}
@@ -468,7 +463,7 @@ export default function UpgradeScreen() {
               variant="gradient"
               gradientColors={['#E5E7EB', '#9CA3AF']}
               style={{ width: '100%', marginBottom: 12 }}
-              labelStyle={{ color: PREMIUM_BLACK }}
+              labelStyle={{ color: colors.background }}
             >
               Get CulturePass+ for {price}{billingPeriod === 'yearly' ? '/yr' : '/mo'}
             </Button>
@@ -480,93 +475,107 @@ export default function UpgradeScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container:          { flex: 1, backgroundColor: PREMIUM_BLACK },
-  header:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: PREMIUM_LINE },
-  headerTitle:        { fontSize: IS_WEB ? 20 : 18, fontFamily: 'Poppins_700Bold', color: PREMIUM_WHITE },
-  scroll:             { flex: 1 },
-  scrollContent:      { paddingHorizontal: 20, flexGrow: 1 },
-  heroSection:        { alignItems: 'center', paddingTop: 24, paddingBottom: 12 },
-  heroIconWrap:       { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 20, backgroundColor: PREMIUM_SILVER + '20' },
-  lockedIconWrap:     { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  heroTitle:          { fontSize: IS_WEB ? 38 : IS_ANDROID ? 34 : 32, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: PREMIUM_WHITE, textAlign: 'center' },
-  heroTagline:        { fontSize: IS_WEB ? 15 : 14, fontFamily: 'Poppins_700Bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, color: PREMIUM_SILVER, textAlign: 'center' },
-  heroDesc:           { fontSize: IS_WEB ? 17 : 16, fontFamily: 'Poppins_500Medium', textAlign: 'center', lineHeight: IS_WEB ? 27 : 24, paddingHorizontal: 10, color: '#E5E7EB' },
-  socialProofOuter:   { marginTop: 16, marginBottom: 32, alignSelf: 'center' },
-  socialProofGlass:   { borderWidth: 1, borderColor: '#9CA3AF44' },
-  socialProofInner:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20 },
-  socialProofText:    { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_600SemiBold', marginLeft: 10, color: PREMIUM_WHITE },
-  benefitsPreview:    { marginVertical: 24 },
-  benefitItem:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 20, marginBottom: 12, backgroundColor: PREMIUM_CHARCOAL, borderWidth: 1, borderColor: PREMIUM_LINE, borderLeftWidth: 4 },
-  benefitIconWrap:    { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexShrink: 0 },
-  benefitTitle:       { fontSize: IS_WEB ? 17 : 16, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: PREMIUM_WHITE },
-  benefitDesc:        { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_500Medium', color: '#D1D5DB', lineHeight: 20 },
-  pricingSection:     { marginTop: 16 },
-  toggleRow:          { flexDirection: 'row', borderRadius: 16, padding: 4, marginBottom: 24, backgroundColor: PREMIUM_CHARCOAL, borderWidth: 1, borderColor: PREMIUM_LINE },
-  toggleBtn:          { flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 12, flexDirection: 'row', justifyContent: 'center' },
-  toggleActive:       { backgroundColor: '#1C1F24', shadowColor: 'black', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 },
-  toggleText:         { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: 0.5 },
-  saveBadge:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8, backgroundColor: '#374151' },
-  saveBadgeText:      { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'white' },
-  priceCard:          {
-    ...Platform.select({
-      web: { boxShadow: '0px 8px 28px rgba(0,0,0,0.12)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8 },
-    }),
-  },
-  priceCardInner:     { alignItems: 'center', paddingVertical: IS_WEB ? 36 : 32 },
-  priceAmount:        { fontSize: IS_WEB ? 62 : 56, fontFamily: 'Poppins_700Bold', color: PREMIUM_WHITE, letterSpacing: -1 },
-  pricePeriod:        { fontSize: 13, fontFamily: 'Poppins_700Bold', marginTop: -4, color: colors.textTertiary, letterSpacing: 1 },
-  breakdownBadge:     { marginTop: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: '#1F2937', borderWidth: 1, borderColor: '#6B7280' },
-  priceBreakdown:     { fontSize: 12, fontFamily: 'Poppins_700Bold', color: PREMIUM_SILVER },
-  sectionTitle:       { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, color: '#D1D5DB', textAlign: 'center' },
-  comparisonSectionOuter: { marginTop: 32, marginBottom: 24 },
-  comparisonSectionGlass: {
-    ...Platform.select({
-      web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
-    }),
-  },
-  comparisonSectionInner: { paddingVertical: 20 },
-  comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingRight: 4, paddingHorizontal: 16 },
-  compColHeader:      { width: 60, alignItems: 'center', paddingVertical: 6 },
-  compColPlus:        { width: 70, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: PREMIUM_SILVER, shadowColor: '#9CA3AF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 6 },
-  compColLabel:       { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#D1D5DB' },
-  compRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#2A2D3380', paddingHorizontal: 16 },
-  compFeature:        { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  compFeatureTitle:   { fontSize: IS_WEB ? 15 : 14, fontFamily: 'Poppins_700Bold', color: PREMIUM_WHITE },
-  compFeatureDesc:    { fontSize: IS_WEB ? 13 : 12, fontFamily: 'Poppins_500Medium', marginTop: 2, color: '#9CA3AF', lineHeight: 18 },
-  compCheck:          { width: 60, alignItems: 'center' },
-  compCheckPlus:      { width: 70 },
-  highlightsSection:  { marginBottom: 32, gap: 12 },
-  highlightCardOuter: {},
-  highlightCardGlass: {
-    ...Platform.select({
-      web: { boxShadow: '0px 4px 20px rgba(0,0,0,0.06)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 },
-    }),
-  },
-  highlightCardInner: { padding: 20 },
-  highlightIcon:      { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  highlightTitle:     { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: PREMIUM_WHITE },
-  highlightDesc:      { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_500Medium', lineHeight: 22, color: '#D1D5DB' },
-  activeSection:      { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
-  activeBadge:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 99, marginBottom: 20, backgroundColor: '#1C1F24', borderWidth: 1, borderColor: PREMIUM_LINE },
-  activeText:         { fontSize: 15, fontFamily: 'Poppins_700Bold', marginLeft: 10, color: PREMIUM_WHITE },
-  activeSubtext:      { fontSize: 14, fontFamily: 'Poppins_500Medium', marginBottom: 32, textAlign: 'center', color: '#D1D5DB', lineHeight: 22 },
-  ctaSection:         { paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center' },
-  ctaFine:            { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#D1D5DB', marginTop: 16, textAlign: 'center' },
-  statusBanner:       { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginTop: 14 },
-  statusText:         { fontSize: 12, fontFamily: 'Poppins_500Medium', flex: 1 },
-  integrationCardWrap:{ marginBottom: 22 },
-  integrationCard:    { borderWidth: 1, borderColor: PREMIUM_LINE, ...Platform.select({ web: { boxShadow: '0px 6px 22px rgba(0,0,0,0.25)' }, default: {} }) },
-  integrationHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingTop: 14 },
-  integrationTitle:   { fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.text },
-  integrationSub:     { fontSize: 12, fontFamily: 'Poppins_500Medium', color: '#D1D5DB', marginTop: 2 },
-  integrationPill:    { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-  integrationPillText:{ fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.6 },
-  integrationStats:   { flexDirection: 'row', gap: 8, padding: 14 },
-  integrationStatItem:{ flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8 },
-  integrationStatLabel:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: '#9CA3AF', marginBottom: 3, textTransform: 'uppercase' },
-  integrationStatValue:{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: PREMIUM_WHITE },
-});
+const getStyles = (colors: ReturnType<typeof useColors>) => {
+  // Theme-aware premium palette — adapts to light and dark mode automatically.
+  // Previously hardcoded as PREMIUM_BLACK/CHARCOAL/SILVER/WHITE/LINE constants.
+  const bg         = colors.background;         // was PREMIUM_BLACK
+  const surface    = colors.surface;            // was PREMIUM_CHARCOAL
+  const muted      = colors.textSecondary;      // was PREMIUM_SILVER
+  const bodyText   = colors.text;               // was PREMIUM_WHITE
+  const line       = colors.border;             // was PREMIUM_LINE
+  const cardBg     = colors.card;               // was '#1C1F24' / '#2D323A'
+  const dimText    = colors.textSecondary;      // was '#D1D5DB' / '#E5E7EB'
+  const faintest   = colors.textTertiary;       // was '#9CA3AF' / '#A1A1AA'
+  const surfaceSec = colors.surfaceSecondary;   // was '#374151'
+
+  return StyleSheet.create({
+    container:          { flex: 1, backgroundColor: bg },
+    header:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: line },
+    headerTitle:        { fontSize: IS_WEB ? 20 : 18, fontFamily: 'Poppins_700Bold', color: bodyText },
+    scroll:             { flex: 1 },
+    scrollContent:      { paddingHorizontal: 20, flexGrow: 1 },
+    heroSection:        { alignItems: 'center', paddingTop: 24, paddingBottom: 12 },
+    heroIconWrap:       { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 20, backgroundColor: muted + '20' },
+    lockedIconWrap:     { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+    heroTitle:          { fontSize: IS_WEB ? 38 : IS_ANDROID ? 34 : 32, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: bodyText, textAlign: 'center' },
+    heroTagline:        { fontSize: IS_WEB ? 15 : 14, fontFamily: 'Poppins_700Bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, color: muted, textAlign: 'center' },
+    heroDesc:           { fontSize: IS_WEB ? 17 : 16, fontFamily: 'Poppins_500Medium', textAlign: 'center', lineHeight: IS_WEB ? 27 : 24, paddingHorizontal: 10, color: dimText },
+    socialProofOuter:   { marginTop: 16, marginBottom: 32, alignSelf: 'center' },
+    socialProofGlass:   { borderWidth: 1, borderColor: line },
+    socialProofInner:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20 },
+    socialProofText:    { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_600SemiBold', marginLeft: 10, color: bodyText },
+    benefitsPreview:    { marginVertical: 24 },
+    benefitItem:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 20, marginBottom: 12, backgroundColor: surface, borderWidth: 1, borderColor: line, borderLeftWidth: 4 },
+    benefitIconWrap:    { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexShrink: 0 },
+    benefitTitle:       { fontSize: IS_WEB ? 17 : 16, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: bodyText },
+    benefitDesc:        { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_500Medium', color: dimText, lineHeight: 20 },
+    pricingSection:     { marginTop: 16 },
+    toggleRow:          { flexDirection: 'row', borderRadius: 16, padding: 4, marginBottom: 24, backgroundColor: surface, borderWidth: 1, borderColor: line },
+    toggleBtn:          { flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 12, flexDirection: 'row', justifyContent: 'center' },
+    toggleActive:       { backgroundColor: cardBg, shadowColor: 'black', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 },
+    toggleText:         { fontSize: 13, fontFamily: 'Poppins_700Bold', color: faintest, textTransform: 'uppercase', letterSpacing: 0.5 },
+    saveBadge:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8, backgroundColor: surfaceSec },
+    saveBadgeText:      { fontSize: 10, fontFamily: 'Poppins_700Bold', color: bodyText },
+    priceCard:          {
+      ...Platform.select({
+        web: { boxShadow: '0px 8px 28px rgba(0,0,0,0.12)' },
+        default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8 },
+      }),
+    },
+    priceCardInner:     { alignItems: 'center', paddingVertical: IS_WEB ? 36 : 32 },
+    priceAmount:        { fontSize: IS_WEB ? 62 : 56, fontFamily: 'Poppins_700Bold', color: bodyText, letterSpacing: -1 },
+    pricePeriod:        { fontSize: 13, fontFamily: 'Poppins_700Bold', marginTop: -4, color: colors.textTertiary, letterSpacing: 1 },
+    breakdownBadge:     { marginTop: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: cardBg, borderWidth: 1, borderColor: line },
+    priceBreakdown:     { fontSize: 12, fontFamily: 'Poppins_700Bold', color: muted },
+    sectionTitle:       { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, color: dimText, textAlign: 'center' },
+    comparisonSectionOuter: { marginTop: 32, marginBottom: 24 },
+    comparisonSectionGlass: {
+      ...Platform.select({
+        web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.08)' },
+        default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
+      }),
+    },
+    comparisonSectionInner: { paddingVertical: 20 },
+    comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingRight: 4, paddingHorizontal: 16 },
+    compColHeader:      { width: 60, alignItems: 'center', paddingVertical: 6 },
+    compColPlus:        { width: 70, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: muted, shadowColor: muted, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 6 },
+    compColLabel:       { fontSize: 12, fontFamily: 'Poppins_700Bold', color: dimText },
+    compRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: line + '80', paddingHorizontal: 16 },
+    compFeature:        { flex: 1, flexDirection: 'row', alignItems: 'center' },
+    compFeatureTitle:   { fontSize: IS_WEB ? 15 : 14, fontFamily: 'Poppins_700Bold', color: bodyText },
+    compFeatureDesc:    { fontSize: IS_WEB ? 13 : 12, fontFamily: 'Poppins_500Medium', marginTop: 2, color: faintest, lineHeight: 18 },
+    compCheck:          { width: 60, alignItems: 'center' },
+    compCheckPlus:      { width: 70 },
+    highlightsSection:  { marginBottom: 32, gap: 12 },
+    highlightCardOuter: {},
+    highlightCardGlass: {
+      ...Platform.select({
+        web: { boxShadow: '0px 4px 20px rgba(0,0,0,0.06)' },
+        default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 },
+      }),
+    },
+    highlightCardInner: { padding: 20 },
+    highlightIcon:      { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+    highlightTitle:     { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: bodyText },
+    highlightDesc:      { fontSize: IS_WEB ? 14 : 13, fontFamily: 'Poppins_500Medium', lineHeight: 22, color: dimText },
+    activeSection:      { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+    activeBadge:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 99, marginBottom: 20, backgroundColor: cardBg, borderWidth: 1, borderColor: line },
+    activeText:         { fontSize: 15, fontFamily: 'Poppins_700Bold', marginLeft: 10, color: bodyText },
+    activeSubtext:      { fontSize: 14, fontFamily: 'Poppins_500Medium', marginBottom: 32, textAlign: 'center', color: dimText, lineHeight: 22 },
+    ctaSection:         { paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center' },
+    ctaFine:            { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: dimText, marginTop: 16, textAlign: 'center' },
+    statusBanner:       { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginTop: 14 },
+    statusText:         { fontSize: 12, fontFamily: 'Poppins_500Medium', flex: 1 },
+    integrationCardWrap:{ marginBottom: 22 },
+    integrationCard:    { borderWidth: 1, borderColor: line, ...Platform.select({ web: { boxShadow: '0px 6px 22px rgba(0,0,0,0.25)' }, default: {} }) },
+    integrationHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingTop: 14 },
+    integrationTitle:   { fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.text },
+    integrationSub:     { fontSize: 12, fontFamily: 'Poppins_500Medium', color: dimText, marginTop: 2 },
+    integrationPill:    { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+    integrationPillText:{ fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.6 },
+    integrationStats:   { flexDirection: 'row', gap: 8, padding: 14 },
+    integrationStatItem:{ flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8 },
+    integrationStatLabel:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: faintest, marginBottom: 3, textTransform: 'uppercase' },
+    integrationStatValue:{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: bodyText },
+  });
+};

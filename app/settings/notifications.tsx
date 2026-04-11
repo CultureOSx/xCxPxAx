@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { goBackOrReplace } from '@/lib/navigation';
 
@@ -110,16 +110,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
   headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
-  headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
+  headerTitle:  { ...TextStyles.title3, fontSize: 17, color: colors.text },
 
   section:      { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
+  sectionTitle: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  settingDesc:  { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
+  settingLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingDesc:  { ...TextStyles.chip, marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
   divider:      { height: 1, marginLeft: 74, backgroundColor: colors.borderLight, opacity: 0.5 },
 
   note:         { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 20, marginTop: 8 },
-  noteText:     { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18, color: colors.textTertiary },
+  noteText:     { ...TextStyles.caption, flex: 1, lineHeight: 18, color: colors.textTertiary },
 });

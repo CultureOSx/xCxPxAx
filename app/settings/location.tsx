@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { LayoutRules, Spacing, gradients } from '@/constants/theme';
+import { LayoutRules, Spacing, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { LocationPicker } from '@/components/LocationPicker';
 
@@ -86,33 +86,29 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: 'transparent',
   },
   headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title3,
   },
   cardInner: {
     padding: LayoutRules.cardPaddingMax,
     gap: LayoutRules.iconTextGap,
   },
   label: {
-    fontSize: 13,
+    ...TextStyles.chip,
     fontFamily: 'Poppins_600SemiBold',
   },
   current: {
-    fontSize: 16,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.bodyMedium,
   },
   pickerCue: {
-    fontSize: 13,
+    ...TextStyles.chip,
     lineHeight: 19,
-    fontFamily: 'Poppins_400Regular',
   },
   pickerWrap: {
     marginTop: Spacing.sm,
   },
   help: {
+    ...TextStyles.chip,
     marginTop: Spacing.sm,
-    fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Poppins_400Regular',
   },
 });

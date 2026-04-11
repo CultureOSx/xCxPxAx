@@ -138,7 +138,7 @@ export default function CultureMatchScreen() {
                   >
                     {i === stepIndex && (
                       <LinearGradient
-                        colors={[CultureTokens.gold, '#FFD700']}
+                        colors={[CultureTokens.gold, CultureTokens.gold]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={StyleSheet.absoluteFill}

@@ -204,7 +204,7 @@ function OrganizerDashboardContent() {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           });
           // Only refetch if user completed the flow (not dismissed)
-          if (result.type === 'opened' || result.type === 'success') {
+          if (result.type === 'opened' || (result as { type: string }).type === 'success') {
             await refetchConnect();
             queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
           }

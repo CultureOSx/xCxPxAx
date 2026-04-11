@@ -15,7 +15,7 @@ import { useLocations } from '@/hooks/useLocations';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useEventsList } from '@/hooks/queries/useEvents';
-import { CultureTokens, CategoryColors, gradients } from '@/constants/theme';
+import { CultureTokens, CategoryColors, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { captureEvent } from '@/lib/analytics';
 import { isIndigenousEvent } from '@/lib/indigenous';
@@ -678,13 +678,11 @@ const s = StyleSheet.create({
     gap: 4,
   },
   headerTitle: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 28,
+    ...TextStyles.hero,
     letterSpacing: -0.5,
   },
   headerSub: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: 14,
+    ...TextStyles.cardBody,
   },
   searchIconBtn: {
     width: 44,
@@ -705,8 +703,7 @@ const s = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.callout,
     padding: 0,
   },
   catsWrap: {
@@ -731,17 +728,15 @@ const s = StyleSheet.create({
     borderRadius: 3,
   },
   sectionTitle: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 20,
+    ...TextStyles.title2,
     letterSpacing: -0.3,
   },
   seeAll: {
+    ...TextStyles.chip,
     fontFamily: 'Poppins_600SemiBold',
-    fontSize: 13,
   },
   resultCount: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 12,
+    ...TextStyles.captionSemibold,
   },
   loadingWrap: {
     marginTop: 60,
@@ -749,8 +744,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 14,
+    ...TextStyles.label,
   },
   emptyWrap: {
     alignItems: 'center',
@@ -767,13 +761,11 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.title3,
     marginBottom: 8,
   },
   emptySub: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
     textAlign: 'center',
   },
 
@@ -795,13 +787,13 @@ const s = StyleSheet.create({
     borderRadius: 2,
   },
   indigenousBannerTitle: {
+    ...TextStyles.callout,
     fontFamily: 'Poppins_700Bold',
-    fontSize: 15,
     marginBottom: 3,
   },
   indigenousBannerSub: {
+    ...TextStyles.chip,
     fontFamily: 'Poppins_400Regular',
-    fontSize: 13,
   },
   acknowledgementWrap: {
     padding: 24,

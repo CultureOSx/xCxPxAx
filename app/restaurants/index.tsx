@@ -4,7 +4,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage';
 import { useMemo } from 'react';
@@ -118,11 +118,11 @@ const styles = StyleSheet.create({
   itemExtra:  { gap: 8, marginTop: 4 },
   featureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   featurePill:{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  featureText:{ fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  featureText:{ ...TextStyles.badge },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   locRow:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locText:    { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  locText:    { ...TextStyles.caption },
   actionRow:  { flexDirection: 'row', gap: 8 },
   actionPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  actionText: { ...TextStyles.captionSemibold },
 });

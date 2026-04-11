@@ -5,7 +5,7 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage';
 import type { ShopData, ShopDeal } from '@/shared/schema';
 
@@ -79,12 +79,11 @@ export default function ShoppingScreen() {
             <Ionicons name="pricetag" size={12} color={colors.primary} />
             <Text
               style={{
-                fontSize: 12,
-                fontFamily: 'Poppins_500Medium',
+                ...TextStyles.caption,
                 color: colors.text,
               }}
             >
-              {deal.title}: <Text style={{ fontFamily: 'Poppins_700Bold', color: colors.primary }}>{deal.discount}</Text>
+              {deal.title}: <Text style={{ ...TextStyles.captionSemibold, color: colors.primary }}>{deal.discount}</Text>
             </Text>
           </View>
         ))}

@@ -28,3 +28,9 @@ export { BackButton } from './BackButton';
 
 export { DatePickerInput } from './DatePickerInput';
 export type { ISODateString } from './DatePickerInput';
+
+// Layout & composition
+export { ScreenShell } from './ScreenShell';
+export { HeroPanel } from './HeroPanel';
+export { EmptyState } from './EmptyState';
+export { SectionDivider } from './SectionDivider';

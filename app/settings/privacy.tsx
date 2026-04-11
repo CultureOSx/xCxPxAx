@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { goBackOrReplace } from '@/lib/navigation';
 
@@ -221,37 +221,37 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
   headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
-  headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
+  headerTitle:  { ...TextStyles.title3, fontSize: 17, color: colors.text },
 
   section:      { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
+  sectionTitle: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  settingDesc:  { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
+  settingLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingDesc:  { ...TextStyles.chip, marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
   divider:      { height: 1, marginLeft: 74, backgroundColor: colors.borderLight, opacity: 0.5 },
   statusBadge:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 74, marginBottom: 14, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   statusDot:    { width: 8, height: 8, borderRadius: 4 },
-  statusText:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+  statusText:   { ...TextStyles.captionSemibold, color: colors.textSecondary },
 
   deleteBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: CultureTokens.coral + '30', backgroundColor: CultureTokens.coral + '08' },
-  deleteBtnText:{ fontSize: 14, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
-  dangerNote:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 12, lineHeight: 18, color: colors.textTertiary, textAlign: 'center', paddingHorizontal: 10 },
+  deleteBtnText:{ ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+  dangerNote:   { ...TextStyles.caption, marginTop: 12, lineHeight: 18, color: colors.textTertiary, textAlign: 'center', paddingHorizontal: 10 },
 
-  deleteConfirmCard:     { 
+  deleteConfirmCard:     {
     borderRadius: 20, padding: 20, borderWidth: 1, backgroundColor: colors.surface, borderColor: CultureTokens.coral + '40' ,
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(255, 94, 91, 0.12)' },
       default: { shadowColor: CultureTokens.coral, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 4 },
     }),
   },
-  deleteConfirmTitle:    { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: CultureTokens.coral },
-  deleteConfirmDesc:     { fontSize: 14, fontFamily: 'Poppins_400Regular', marginBottom: 16, lineHeight: 20, color: colors.textSecondary },
-  passwordInput:         { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, marginBottom: 12 },
-  deleteError:           { fontSize: 12, fontFamily: 'Poppins_600SemiBold', marginBottom: 10, color: CultureTokens.coral },
+  deleteConfirmTitle:    { ...TextStyles.title3, fontSize: 17, marginBottom: 8, color: CultureTokens.coral },
+  deleteConfirmDesc:     { ...TextStyles.cardBody, marginBottom: 16, lineHeight: 20, color: colors.textSecondary },
+  passwordInput:         { ...TextStyles.callout, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, marginBottom: 12 },
+  deleteError:           { ...TextStyles.captionSemibold, marginBottom: 10, color: CultureTokens.coral },
   deleteConfirmRow:      { flexDirection: 'row', gap: 12, marginTop: 4 },
   cancelBtn:             { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, borderWidth: 1 },
-  cancelBtnText:         { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  cancelBtnText:         { ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold' },
   deleteConfirmBtn:      { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, backgroundColor: CultureTokens.coral },
-  deleteConfirmBtnText:  { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  deleteConfirmBtnText:  { ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold', color: '#fff' },
 });

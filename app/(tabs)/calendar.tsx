@@ -30,7 +30,7 @@ import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { EventRow } from '@/components/calendar/EventRow';
 import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { DAY_LETTERS, MONTHS, formatDateKey, getDaysInMonth, getFirstDayOfMonth, toSafeDateKey } from '@/components/calendar/utils';
 import type { EventData, Ticket } from '@/shared/schema';
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
 
   loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
-  loadingText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  loadingText: { ...TextStyles.cardTitle },
 
   topHeaderSyncBtn: {
     width: 42,
@@ -630,12 +630,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthCenter: { alignItems: 'center', flex: 1 },
-  monthTitle: { fontFamily: 'Poppins_700Bold', fontSize: 17, lineHeight: 21 },
-  monthSub: { fontFamily: 'Poppins_400Regular', fontSize: 12 },
+  monthTitle: { ...TextStyles.title3, lineHeight: 21 },
+  monthSub: { ...TextStyles.caption },
 
   statsRow: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   statPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  statPillText: { fontFamily: 'Poppins_700Bold', fontSize: 11 },
+  statPillText: { ...TextStyles.badge },
   compactFilterRail: { gap: 8, paddingTop: 10, paddingBottom: 2 },
   compactStatChip: {
     borderWidth: 1,
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  compactStatText: { fontFamily: 'Poppins_700Bold', fontSize: 12 },
+  compactStatText: { ...TextStyles.captionSemibold },
   compactChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 7,
   },
-  compactChipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  compactChipText: { ...TextStyles.captionSemibold },
 
   desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 28, marginTop: 4 },
   leftCol: { flex: 1.4 },
@@ -663,31 +663,31 @@ const styles = StyleSheet.create({
 
   calendarTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   calendarTopActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  calendarTopLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.7 },
-  monthYearHeading: { fontFamily: 'Poppins_700Bold', fontSize: 22, lineHeight: 28, letterSpacing: -0.25 },
+  calendarTopLabel: { ...TextStyles.captionSemibold, textTransform: 'uppercase', letterSpacing: 0.7 },
+  monthYearHeading: { ...TextStyles.title, lineHeight: 28, letterSpacing: -0.25 },
   todayBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   monthControlBtn: { width: 32, height: 32, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  todayBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  todayBtnText: { ...TextStyles.captionSemibold },
 
   dayHeaderRow: { flexDirection: 'row', marginBottom: 8 },
-  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_700Bold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 },
+  dayHeaderText: { flex: 1, textAlign: 'center', ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.8 },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCellEmpty: { width: '14.28%', minHeight: 40 },
   dayCell: { width: '14.28%', minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 10, marginVertical: 2 },
-  dayText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  dayText: { ...TextStyles.cardTitle },
   dotRow: { flexDirection: 'row', gap: 3, marginTop: 2 },
   dot: { width: 5, height: 5, borderRadius: 3 },
 
   section: { paddingTop: MAIN_TAB_UI.sectionGapLarge },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 },
-  sectionTitle: { flex: 1, fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
-  sectionCount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
-  linkText: { fontFamily: 'Poppins_700Bold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: { flex: 1, ...TextStyles.headline, lineHeight: 22 },
+  sectionCount: { ...TextStyles.chip },
+  linkText: { ...TextStyles.captionSemibold, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   personalRow: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
   personalStripe: { width: 4 },
-  personalTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
-  personalTime: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 16 },
+  personalTitle: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
+  personalTime: { ...TextStyles.caption, lineHeight: 16 },
 
   addCalendarBtn: {
     alignSelf: 'flex-end',
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginRight: 4,
   },
-  addCalendarText: { fontFamily: 'Poppins_600SemiBold', fontSize: 11 },
+  addCalendarText: { ...TextStyles.badge },
 
   upcomingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: MAIN_TAB_UI.sectionGapSmall },
 });

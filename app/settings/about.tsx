@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { LayoutRules, Spacing, gradients } from '@/constants/theme';
+import { LayoutRules, Spacing, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -171,38 +171,38 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
   headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
   backBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  headerTitle:  { ...TextStyles.title3 },
 
   logoSection:  { alignItems: 'center', paddingVertical: Spacing.xl },
   logoGradient: { width: 82, height: 82, borderRadius: Spacing.lg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
-  appName:      { fontSize: 28, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.xs },
-  version:      { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  appName:      { ...TextStyles.hero, marginBottom: Spacing.xs },
+  version:      { ...TextStyles.chip },
 
   section:      { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing },
-  sectionTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
+  sectionTitle: { ...TextStyles.title3, fontSize: 17, marginBottom: Spacing.sm },
   missionCard:  { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1 },
-  missionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
-  missionText:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
+  missionTitle: { ...TextStyles.headline, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
+  missionText:  { ...TextStyles.cardBody, lineHeight: 22 },
   brandCard:    { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1, gap: Spacing.sm },
-  brandTitle:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  brandBody:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
+  brandTitle:   { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
+  brandBody:    { ...TextStyles.chip, lineHeight: 20 },
   brandTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   brandTag:     { borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },
-  brandTagText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  brandTagText: { ...TextStyles.captionSemibold },
 
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: LayoutRules.betweenCards },
   featureCard:  { width: '48%' as never, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMin, borderWidth: 1 },
   featureIcon:  { width: 48, height: 48, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
-  featureLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: Spacing.xs },
-  featureDesc:  { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
+  featureLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', marginBottom: Spacing.xs },
+  featureDesc:  { ...TextStyles.caption, lineHeight: 17 },
 
   socialCard:   { borderRadius: LayoutRules.borderRadius, borderWidth: 1, overflow: 'hidden' },
   socialItem:   { flexDirection: 'row', alignItems: 'center', padding: LayoutRules.cardPaddingMin, gap: LayoutRules.iconTextGap },
   socialIcon:   { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center' },
-  socialLabel:  { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium' },
+  socialLabel:  { ...TextStyles.callout, flex: 1 },
   divider:      { height: StyleSheet.hairlineWidth, marginLeft: 66 },
 
   taglineSection:{ alignItems: 'center', paddingVertical: Spacing.xl, paddingHorizontal: Spacing.xxl, gap: Spacing.sm },
-  tagline:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
-  copyright:    { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  tagline:      { ...TextStyles.cardTitle, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
+  copyright:    { ...TextStyles.caption },
 });

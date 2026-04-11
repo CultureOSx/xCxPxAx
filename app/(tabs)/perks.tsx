@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -925,21 +925,21 @@ const s = StyleSheet.create({
 
   filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
   clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+  clearBtnText:   { ...TextStyles.captionSemibold, lineHeight: 17 },
 
   toggleWrap:     { flexDirection: 'row', padding: 5, borderRadius: 18, marginBottom: 20, gap: 4 },
   toggleBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 14, overflow: 'hidden' },
   toggleBtnActive:{},
-  toggleText:     { fontSize: 13, fontFamily: 'Poppins_700Bold' },
+  toggleText:     { ...TextStyles.chip, fontFamily: 'Poppins_700Bold' },
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  sectionLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  sectionLabel:   { ...TextStyles.captionSemibold, textTransform: 'uppercase', letterSpacing: 0.8 },
   statsRow: { flexDirection: 'row', gap: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  statPillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  statPillText: { ...TextStyles.captionSemibold },
   dynamicSectionHeader: { marginTop: 10, marginBottom: 2 },
-  dynamicSectionTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  dynamicSectionSubtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  dynamicSectionTitle: { ...TextStyles.callout, fontFamily: 'Poppins_700Bold' },
+  dynamicSectionSubtitle: { ...TextStyles.caption },
 
   list:           { paddingTop: MAIN_TAB_UI.sectionGapSmall, gap: MAIN_TAB_UI.sectionGapSmall },
   listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
