@@ -46,6 +46,6 @@ const config = {
     configFile: 'jest.config.js',
     enableFindRelatedTests: true,
   },
-  checkers: ['typescript'],
+  checkers: [],
 };
 export default config;

@@ -175,9 +175,6 @@ const SUPERADMIN_NAV: NavItem[] = [
   { label: 'Cockpit (Root)', icon: 'rocket-outline', iconActive: 'rocket', route: '/admin/cockpit', matchPrefix: true },
 ];
 
-const BOTTOM_NAV: NavItem[] = [
-  { label: 'Settings', icon: 'settings-outline', iconActive: 'settings', route: '/settings' },
-];
 
 const PROFILE_ACTIONS = [
   { key: 'profile', label: 'View Profile', icon: 'person-outline' as const, route: '/profile/edit' },
@@ -260,7 +257,7 @@ function NavSection({
       <View style={s.sectionHeader}>
         <Text style={[s.sectionLabel, { color: mutedColor }]}>{label.toUpperCase()}</Text>
       </View>
-      <View style={s.navGroup}>{children}</View>
+      <View style={{ paddingHorizontal: 10, gap: 2 }}>{children}</View>
     </>
   );
 }
@@ -474,23 +471,6 @@ export function WebSidebar() {
 
         <View style={[r.divider, { backgroundColor: border }]} />
 
-        {BOTTOM_NAV.map((item) => {
-          const active = isActive(item);
-          return (
-            <Pressable
-              key={item.label}
-              style={[r.railItem, active && { backgroundColor: colors.primarySoft }]}
-              onPress={() => navigate(item.route)}
-              accessibilityRole="link"
-              accessibilityLabel={item.label}
-              accessibilityState={{ selected: active }}
-            >
-              {active && <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} style={r.railActiveBar} />}
-              <Ionicons name={active ? item.iconActive : item.icon} size={19} color={active ? colors.primary : mutedColor} />
-            </Pressable>
-          );
-        })}
-
         {isAuthenticated && (
           <Pressable style={[r.railItem, { marginBottom: 8 }]} onPress={() => void logout()} accessibilityRole="button" accessibilityLabel="Sign out">
             <Ionicons name="log-out-outline" size={18} color={mutedColor} />
@@ -623,14 +603,6 @@ export function WebSidebar() {
       <View style={[s.thinDivider, { backgroundColor: border }]} />
 
       <View style={s.bottomNavSection}>
-        <View style={s.navGroup}>
-          {BOTTOM_NAV.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
-          ))}
-        </View>
-
-        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 6 }]} />
-
         {isAuthenticated && user ? (
           <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={() => void logout()} />
         ) : (
@@ -796,8 +768,6 @@ const s = StyleSheet.create({
 
   sectionHeader: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 6 },
   sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 1.15 },
-
-  navGroup: { paddingHorizontal: 10, gap: 2 },
 
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, minHeight: 46, paddingVertical: 4, paddingHorizontal: 14, position: 'relative', overflow: 'hidden' },
   itemActive: { borderRadius: 12 },

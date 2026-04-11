@@ -487,7 +487,7 @@ export default function AccountSettingsScreen() {
         )}
 
         {/* ── Settings sections ───────────────────────────────── */}
-        {visibleSections.map((section, idx) => (
+        {isAuthenticated && visibleSections.map((section, idx) => (
           <Animated.View
             entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(80 + idx * 55, 400)).springify().damping(18).stiffness(110)}
             key={section.title}
@@ -543,7 +543,7 @@ export default function AccountSettingsScreen() {
           </Animated.View>
         ))}
 
-        {hiddenSectionsCount > 0 && (
+        {isAuthenticated && hiddenSectionsCount > 0 && (
           <Animated.View
             entering={reducedMotion ? undefined : FadeInDown.delay(220).springify().damping(18).stiffness(110)}
             style={[s.section, isDesktopWeb && s.webSection, { alignItems: 'center', marginTop: 18, marginBottom: 18 }]}

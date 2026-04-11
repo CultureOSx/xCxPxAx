@@ -33,7 +33,7 @@ export function DiscoverySection({
             <View style={s.discoverSectionHeader}>
               <Text style={s.sectionTitle}>More in {event.city}</Text>
               <Pressable
-                onPress={() => router.push({ pathname: '/(tabs)/index' })}
+                onPress={() => router.push({ pathname: '/' })}
                 hitSlop={10}
                 accessibilityRole="link"
               >
@@ -62,7 +62,7 @@ export function DiscoverySection({
             <View style={s.discoverSectionHeader}>
               <Text style={s.sectionTitle}>Related Communities</Text>
               <Pressable
-                onPress={() => router.push({ pathname: '/(tabs)/community' })}
+                onPress={() => router.push({ pathname: '/community' })}
                 hitSlop={10}
                 accessibilityRole="link"
               >
