@@ -28,7 +28,7 @@
     "lint:fix": "npx expo lint --fix",
     "typecheck": "tsc --noEmit",
     "test:native-intent": "tsx scripts/test-native-intent.ts",
-    "test:unit": "tsx scripts/tests/unit-services-middleware.ts && tsx scripts/tests/unit-locations.ts && tsx scripts/tests/unit-functions-authz-policy.ts",
+    "test:unit": "tsx scripts/tests/unit-services-middleware.ts && tsx scripts/tests/unit-feeds.ts && tsx scripts/tests/unit-locations.ts && tsx scripts/tests/unit-functions-authz-policy.ts",
     "test:integration": "tsx scripts/tests/integration-api-routes.ts",
     "test:web:route-hygiene": "tsx scripts/tests/validate-web-route-hygiene.ts",
     "test:e2e:smoke": "tsx scripts/tests/e2e-critical-smoke.ts",

@@ -36,6 +36,7 @@ interface MenuEntry {
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
   requiresSuperAdmin?: boolean;
+  requiresNative?: boolean;
 }
 
 interface MenuSection {
@@ -66,6 +67,7 @@ const SECTIONS: MenuSection[] = [
       { id: 'shopping',    label: 'Shopping',     icon: 'bag-outline',         route: '/shopping' },
       { id: 'directory',   label: 'Directory',    icon: 'grid-outline',        route: '/(tabs)/directory' },
       { id: 'community',   label: 'Communities',  icon: 'people-outline',      route: '/(tabs)/community' },
+      { id: 'meet',        label: 'Meet (Beta)',  icon: 'heart-outline',       route: '/(tabs)/meet',     color: CultureTokens.coral, requiresNative: true },
       { id: 'perks',       label: 'Perks',        icon: 'gift-outline',        route: '/(tabs)/perks',    color: CultureTokens.indigo },
     ],
   },
@@ -221,6 +223,7 @@ export default function MenuScreen() {
           if (item.requiresAuth  && !isAuthenticated) return false;
           if (item.requiresAdmin && !isAdmin)         return false;
           if (item.requiresSuperAdmin && !isSuperAdmin) return false;
+          if (item.requiresNative && Platform.OS === 'web') return false;
           return true;
         }),
       }))

@@ -86,6 +86,7 @@ const ADMIN_TOOLS: AdminTool[] = [
   { id: 'users',      label: 'Users',             icon: 'people-outline',            route: '/admin/users',           color: CultureTokens.indigo },
   { id: 'profiles',   label: 'Profiles',          icon: 'id-card-outline',           route: '/admin/profiles',        color: CultureTokens.teal },
   { id: 'communities',label: 'Communities',       icon: 'people-circle-outline',     route: '/admin/communities',     color: CultureTokens.indigo },
+  { id: 'meet',       label: 'Meet (Beta)',       icon: 'heart-circle-outline',      route: '/admin/meet',            color: CultureTokens.coral },
   { id: 'perks',      label: 'Perks',             icon: 'gift-outline',              route: '/admin/perks',           color: CultureTokens.coral },
   { id: 'tickets',    label: 'Tickets',           icon: 'ticket-outline',            route: '/admin/tickets',         color: CultureTokens.purple },
   { id: 'audit',      label: 'Audit Logs',         icon: 'list-outline',              route: '/admin/audit-logs' },

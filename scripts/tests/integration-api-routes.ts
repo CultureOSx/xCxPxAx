@@ -60,6 +60,17 @@ async function run() {
     const search = await searchRes.json();
     assert.ok(typeof search === 'object' && search !== null, 'search response should be an object');
 
+    // Feed routes
+    const rssRes = await fetch(`${base}/api/feeds/city/${encodeURIComponent('Sydney')}.rss?country=${encodeURIComponent('Australia')}`);
+    assert.equal(rssRes.ok, true, 'GET /api/feeds/city/:value.rss should return 200');
+    const rssText = await rssRes.text();
+    assert.ok(rssText.includes('<rss version="2.0"'), 'rss feed should be XML');
+
+    const icalRes = await fetch(`${base}/api/feeds/ical/tag/${encodeURIComponent('culture')}`);
+    assert.equal(icalRes.ok, true, 'GET /api/feeds/ical/tag/:value should return 200');
+    const icalText = await icalRes.text();
+    assert.ok(icalText.includes('BEGIN:VCALENDAR'), 'ical feed should be VCALENDAR');
+
     console.log('integration api route checks passed');
   } finally {
     proc.kill('SIGTERM');

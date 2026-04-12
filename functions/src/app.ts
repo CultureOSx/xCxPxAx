@@ -34,6 +34,7 @@ import { ingestRouter } from './routes/ingest';
 import { calendarRouter } from './routes/calendar';
 import { offeringsRouter } from './routes/offerings';
 import { uploadsRouter } from './routes/uploads';
+import { feedsRouter } from './routes/feeds';
 
 export const app = express();
 
@@ -268,6 +269,7 @@ mount('/', ingestRouter);
 mount('/', calendarRouter);
 mount('/', offeringsRouter);
 mount('/', uploadsRouter);
+mount('/', feedsRouter);
 app.use('/api/ingest', ingestRouter);
 
 // Special handling for factory routers

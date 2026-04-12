@@ -65,6 +65,10 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* Meet (CultraMeet) route is ready; kept off tab bar for phased rollout.
+          Future swap: replace the Perks tab entry with this Meet entry. */}
+      <Tabs.Screen name="meet" options={{ href: null }} />
+
       {/* Profile — primary destination in tab bar. Shows user avatar when authenticated. */}
       <Tabs.Screen
         name="profile"

@@ -71,6 +71,7 @@ interface ExtendedProfile {
   handle?: string;
   username?: string;
   avatarUrl?: string;
+  imageUrl?: string;
   coverImageUrl?: string;
   bio?: string;
   description?: string;
@@ -1294,7 +1295,7 @@ function EntityPublicProfile({
   const tags = profile.tags ?? [];
   const showLocation = profile.privacySettings?.locationVisible !== false;
   const locationText = showLocation ? [profile.city, profile.country].filter(Boolean).join(', ') : '';
-  const heroImage = profile.coverImageUrl ?? profile.avatarUrl;
+  const heroImage = profile.coverImageUrl ?? profile.avatarUrl ?? profile.imageUrl;
   const accentColor = CultureTokens.indigo;
 
   return (

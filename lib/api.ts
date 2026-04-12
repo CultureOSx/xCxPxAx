@@ -554,6 +554,9 @@ const notifications = {
   markRead: (notificationId: string) =>
     request<{ success: boolean }>('PUT', `api/notifications/${notificationId}/read`),
 
+  remove: (notificationId: string) =>
+    request<{ success: boolean }>('DELETE', `api/notifications/${notificationId}`),
+
   markAllRead: () =>
     request<{ success: boolean }>('POST', 'api/notifications/mark-all-read'),
 

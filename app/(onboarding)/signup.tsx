@@ -271,14 +271,14 @@ export default function SignUpScreen() {
           onToggle={(v) => { setAgreed(v); clearErrors(); }}
           label={
             <Text style={[s.checkText, { color: colors.text }]}>
-              I agree to the{' '}
+              I confirm that I am 18 years of age or older and agree to the{' '}
               <Text
                 style={[s.linkText, { color: colors.primary }]}
                 onPress={() => router.push('/legal/terms')}
               >
-                Terms
+                Terms of Service
               </Text>
-              {' & '}
+              {' and '}
               <Text
                 style={[s.linkText, { color: colors.primary }]}
                 onPress={() => router.push('/legal/privacy')}
