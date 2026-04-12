@@ -470,7 +470,7 @@ export default function CityScreen() {
               centerLabel={stateCode ? `${stateCode} · ${cityCountry}` : cityCountry}
               onBack={() => {
                 haptic();
-                router.back();
+                if (router.canGoBack()) router.back(); else router.replace('/(tabs)');
               }}
               onShare={() => {
                 void handleShare();

@@ -67,7 +67,8 @@ export default function ArtistBackstagePortal() {
         <LinearGradient colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
         
         {/* Back Button */}
-        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 16 }]} onPress={() => router.back()}>
+        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 16 }]} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
+
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
 

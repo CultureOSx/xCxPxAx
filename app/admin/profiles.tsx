@@ -132,7 +132,7 @@ export default function AdminProfilesScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <LinearGradient colors={gradients.midnight as unknown as [string, string]} style={{ paddingTop: topInset, zIndex: 10 }}>
           <View style={[styles.header, { paddingHorizontal: hPad }]}>
-            <Pressable onPress={() => router.back()} style={styles.backBtn}><Ionicons name="chevron-back" size={20} color="#fff" /></Pressable>
+            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')} style={styles.backBtn}><Ionicons name="chevron-back" size={20} color="#fff" /></Pressable>
             <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle}>Profiles & Entities</Text>
               <Text style={styles.headerSub}>Manage Artists, Venues, and Businesses</Text>

@@ -153,7 +153,7 @@ function HandlesContent() {
           style={styles.backBtn} 
           onPress={() => {
             if(!isWeb) Haptics.selectionAsync();
-            router.back();
+            if (router.canGoBack()) router.back(); else router.replace('/admin/dashboard');
           }} 
           accessibilityRole="button" 
           accessibilityLabel="Go back"

@@ -555,7 +555,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
               centerLabel={locationChip}
               onBack={() => {
                 haptic();
-                router.back();
+                if (router.canGoBack()) router.back(); else router.replace('/(tabs)');
               }}
               onShare={() => {
                 void handleShare();

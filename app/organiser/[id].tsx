@@ -45,7 +45,7 @@ export default function OrganiserProfilePage() {
     return (
       <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: colors.text }}>Organiser not found</Text>
-        <Button variant="outline" onPress={() => router.back()} style={{ marginTop: 20 }}>
+        <Button variant="outline" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={{ marginTop: 20 }}>
           Go Back
         </Button>
       </View>
@@ -55,7 +55,7 @@ export default function OrganiserProfilePage() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <View style={s.headerBar}>
-        <Button variant="ghost" size="sm" onPress={() => router.back()}>
+        <Button variant="ghost" size="sm" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Button>
         <Text style={[TextStyles.headline, { color: colors.text }]}>Organiser Profile</Text>

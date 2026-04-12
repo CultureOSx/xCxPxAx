@@ -111,7 +111,7 @@ export default function CheckoutPage() {
   if (eventLoading) {
     return (
       <View style={styles.screen}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.58)' }]} />
         </Pressable>
         <Animated.View
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
     <View style={styles.screen}>
       <Pressable
         style={StyleSheet.absoluteFill}
-        onPress={() => router.back()}
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
         accessibilityRole="button"
         accessibilityLabel="Dismiss"
       >
@@ -162,7 +162,7 @@ export default function CheckoutPage() {
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Confirm Order</Text>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
             style={styles.closeBtn}
             accessibilityRole="button"
             accessibilityLabel="Close"

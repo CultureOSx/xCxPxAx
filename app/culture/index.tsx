@@ -86,7 +86,7 @@ export default function CultureHubIndexScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
             style={styles.backRow}
             accessibilityRole="button"
             accessibilityLabel="Go back"

@@ -129,7 +129,7 @@ export default function AdminTaxonomyScreen() {
           <Animated.View entering={FadeInUp.duration(300)} style={[styles.header, { paddingHorizontal: hPad }]}>
             <View style={[styles.headerControlGlass, { backgroundColor: 'rgba(24,28,48,0.92)' }]}>
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
                 style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
                 accessibilityRole="button" accessibilityLabel="Go back"
               >

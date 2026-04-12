@@ -26,8 +26,10 @@ console.log('[fix-metro-core] metro-core/src/index.js missing — re-extracting 
 
 try {
   const tmp = require('os').tmpdir();
-  execSync('npm pack metro-core@0.83.3', { cwd: tmp, stdio: 'ignore' });
-  const tgz = path.join(tmp, 'metro-core-0.83.3.tgz');
+  const pkg = require('../node_modules/metro-core/package.json');
+  const version = pkg.version;
+  execSync(`npm pack metro-core@${version}`, { cwd: tmp, stdio: 'ignore' });
+  const tgz = path.join(tmp, `metro-core-${version}.tgz`);
   execSync(`tar -xzf "${tgz}" package/src/`, { cwd: tmp, stdio: 'ignore' });
   const extracted = path.join(tmp, 'package', 'src');
   // Copy everything extracted into node_modules/metro-core/src/

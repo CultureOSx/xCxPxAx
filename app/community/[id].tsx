@@ -44,7 +44,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { BackButton } from '@/components/ui/BackButton';
 import CultureImage from '@/components/ui/CultureImage';
 import { eventListImageUrl } from '@/lib/eventImage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, deleteDoc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
@@ -207,25 +208,6 @@ function buildLinks(community: Community): { title: string; url: string; icon: s
 
 // ─── Reactions bar (same as culturefeed) ─────────────────────────────────────
 
-const LIKES_STORAGE_KEY = '@community_detail:likes';
-
-async function loadLikedPosts(): Promise<Record<string, boolean>> {
-  try {
-    const raw = await AsyncStorage.getItem(LIKES_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
-  } catch {
-    return {};
-  }
-}
-
-async function saveLikedPosts(liked: Record<string, boolean>): Promise<void> {
-  try {
-    await AsyncStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(liked));
-  } catch {
-    // ignore storage errors
-  }
-}
-
 function ReactionsBar({
   postId,
   communityId,
@@ -239,28 +221,36 @@ function ReactionsBar({
   initialLikes: number;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { user } = useAuth();
   const [liked,    setLiked]   = useState(false);
   const [likes,    setLikes]   = useState(initialLikes);
   const [comments]             = useState(() => Math.floor(Math.random() * 18));
   const [shared,   setShared]  = useState(false);
 
   useEffect(() => {
-    loadLikedPosts().then(stored => {
-      if (stored[postId]) setLiked(true);
+    if (!user?.id) return;
+    const likeRef = doc(db, 'users', user.id, 'communityPostLikes', postId);
+    getDoc(likeRef).then(snap => {
+      if (snap.exists()) setLiked(true);
     });
-  }, [postId]);
+  }, [postId, user?.id]);
 
   const handleLike = useCallback(() => {
+    if (!user?.id) return;
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const nextLiked = !liked;
     setLiked(nextLiked);
     setLikes(v => nextLiked ? v + 1 : Math.max(0, v - 1));
-    loadLikedPosts().then(stored => {
-      const updated = { ...stored, [postId]: nextLiked };
-      if (!nextLiked) delete updated[postId];
-      saveLikedPosts(updated);
-    });
-  }, [liked, postId]);
+    const likeRef = doc(db, 'users', user.id, 'communityPostLikes', postId);
+    const countRef = doc(db, 'communities', communityId, 'postLikeCounts', postId);
+    if (nextLiked) {
+      setDoc(likeRef, { likedAt: serverTimestamp() });
+      setDoc(countRef, { count: increment(1) }, { merge: true });
+    } else {
+      deleteDoc(likeRef);
+      updateDoc(countRef, { count: increment(-1) }).catch(() => {});
+    }
+  }, [liked, postId, communityId, user?.id]);
 
   return (
     <View style={[rb.wrap, { borderTopColor: colors.borderLight }]}>

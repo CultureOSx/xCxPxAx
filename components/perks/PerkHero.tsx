@@ -21,7 +21,7 @@ export function PerkHero({ perk, topInset, typeInfo, isIndigenous, onShare }: Pe
       style={[styles.hero, { paddingTop: topInset + 12 }]}
     >
       <View style={styles.heroNav}>
-        <Pressable style={styles.navButton} onPress={() => router.back()}>
+        <Pressable style={styles.navButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
           <Ionicons name="chevron-back" size={22} color="#FFF" />
         </Pressable>
         <Pressable style={styles.navButton} onPress={onShare}>

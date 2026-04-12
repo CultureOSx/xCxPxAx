@@ -175,7 +175,7 @@ function UpdatesAdminContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 12, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable style={styles.backBtn} onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <View style={{ flex: 1 }}>

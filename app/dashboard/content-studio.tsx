@@ -28,7 +28,7 @@ export default function ContentStudioScreen() {
     >
       <View style={styles.headerRow}>
         <Pressable 
-          onPress={() => router.back()} 
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
           style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
         >
           <Ionicons name="chevron-back" size={20} color="#fff" />

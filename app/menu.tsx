@@ -258,7 +258,7 @@ export default function MenuScreen() {
         <View style={[styles.topBar, { paddingTop: insets.top, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
           <Text style={[styles.screenTitle, { color: colors.text }]}>Account</Text>
           <Pressable
-            onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.back(); }}
+            onPress={() => { if (!isWeb) Haptics.selectionAsync(); if (router.canGoBack()) router.back(); else router.replace('/(tabs)'); }}
             style={[styles.closeBtn, { backgroundColor: colors.surface + 'CC', borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Close menu"

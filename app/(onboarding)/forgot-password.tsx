@@ -108,12 +108,12 @@ export default function ForgotPasswordScreen() {
       {isDesktop ? (
         <AuthDesktopBackPill
           label="Back to Sign In"
-          onPress={() => router.back()}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/login')}
         />
       ) : (
         <AuthMobileHeader
           variant="back-only"
-          onPress={() => router.back()}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/login')}
         />
       )}
 
@@ -177,7 +177,7 @@ export default function ForgotPasswordScreen() {
                 {!isDesktop && (
                   <Pressable
                     style={s.backRow}
-                    onPress={() => router.back()}
+                    onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/login')}
                     hitSlop={12}
                     accessibilityRole="link"
                     accessibilityLabel="Back to Sign In"

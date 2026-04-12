@@ -79,7 +79,7 @@ export function AuthGuard({
       >
         {showBack ? (
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Go back"

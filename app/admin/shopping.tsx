@@ -246,7 +246,7 @@ export default function AdminShoppingScreen() {
         {/* Header */}
         <View style={[styles.header, { paddingTop: topInset + 12, paddingHorizontal: hPad }]}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/admin/dashboard')}
             style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
             accessibilityLabel="Go back"
             accessibilityRole="button"
