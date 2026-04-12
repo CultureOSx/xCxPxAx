@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   handle: { width: 44, height: 5, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 3, alignSelf: 'center', marginTop: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingBottom: 16 },
-  headerTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold' },
+  headerTitle: { ...TextStyles.title },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' },
   content: { padding: 24, paddingTop: 0 },
   steps: { flexDirection: 'row', alignItems: 'center', marginBottom: 28, alignSelf: 'center' },
@@ -285,21 +285,21 @@ const styles = StyleSheet.create({
   eventInfo: { flexDirection: 'row', gap: 16, marginBottom: 24 },
   eventThumb: { width: 80, height: 80, borderRadius: 16 },
   eventText: { flex: 1, justifyContent: 'center' },
-  eventTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  eventMeta: { fontSize: 13, fontFamily: 'Poppins_500Medium', marginTop: 4 },
+  eventTitle: { ...TextStyles.title3 },
+  eventMeta: { ...TextStyles.chip, marginTop: 4 },
   summaryCard: { borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.02)' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  value: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  label: { ...TextStyles.label },
+  value: { ...TextStyles.cardTitle },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 16 },
   promoWrap: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  promoInput: { flex: 1, height: 52, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, fontFamily: 'Poppins_500Medium' },
+  promoInput: { flex: 1, height: 52, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, ...TextStyles.label },
   promoBtn: { borderRadius: 12 },
   footer: { marginTop: 32 },
-  totalLabel: { fontSize: 28, fontFamily: 'Poppins_700Bold' },
-  totalValue: { fontSize: 28, fontFamily: 'Poppins_800ExtraBold' },
-  discountTag: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.teal, marginTop: 4 },
+  totalLabel: { ...TextStyles.hero },
+  totalValue: { ...TextStyles.hero },
+  discountTag: { ...TextStyles.captionSemibold, color: CultureTokens.teal, marginTop: 4 },
   payBtn: { marginTop: 24, height: 60, borderRadius: 20 },
-  payBtnText: { color: '#fff', fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  secureText: { textAlign: 'center', marginTop: 16, fontSize: 11, fontFamily: 'Poppins_600SemiBold', opacity: 0.6 },
+  payBtnText: { color: '#fff', ...TextStyles.title3 },
+  secureText: { textAlign: 'center', marginTop: 16, ...TextStyles.badge, opacity: 0.6 },
 });

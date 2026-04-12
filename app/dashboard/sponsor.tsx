@@ -18,7 +18,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -89,8 +89,8 @@ const mc = StyleSheet.create({
     })
   },
   icon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  val:  { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  lbl:  { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
+  val:  { ...TextStyles.title3 },
+  lbl:  { ...TextStyles.badge, textAlign: 'center' },
 });
 
 // ─── Event card ───────────────────────────────────────────────────────────────
@@ -186,13 +186,13 @@ const evc = StyleSheet.create({
   tierBar:   { width: 4 },
   inner:     { flex: 1, padding: 14, gap: 10 },
   thumb:     { width: 52, height: 52, borderRadius: 9, overflow: 'hidden' },
-  title:     { fontSize: 14, fontFamily: 'Poppins_600SemiBold', lineHeight: 20 },
-  meta:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  title:     { ...TextStyles.cardTitle, lineHeight: 20 },
+  meta:      { ...TextStyles.caption, marginTop: 2 },
   tierBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1 },
-  tierText:  { fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  tierText:  { ...TextStyles.badge },
   statsRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingTop: 8, borderTopWidth: 1 },
   statItem:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statText:  { fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  statText:  { ...TextStyles.caption },
   barBg:     { height: 4, borderRadius: 2, overflow: 'hidden' },
   barFill:   { height: '100%', borderRadius: 2 },
 });
@@ -229,10 +229,10 @@ const tl = StyleSheet.create({
       android: { elevation: 1 }
     })
   },
-  header: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 4 },
+  header: { ...TextStyles.badge, letterSpacing: 1.2, marginBottom: 4 },
   row:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dot:    { width: 10, height: 10, borderRadius: 5 },
-  label:  { fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  label:  { ...TextStyles.chip },
 });
 
 function SponsorDashboardSkeleton() {
@@ -426,12 +426,12 @@ const sd = StyleSheet.create({
   header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
   backBtn:      { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   headerTitle:  { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  headerSub:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  headerSub:    { ...TextStyles.caption, marginTop: 1 },
   roleBadge:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  roleBadgeText:{ fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  roleBadgeText:{ ...TextStyles.badge },
 
   section:      { paddingHorizontal: 20, marginTop: 24 },
-  sectionHeader:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 12 },
+  sectionHeader:{ ...TextStyles.badge, letterSpacing: 1.2, marginBottom: 12 },
   card:         { 
     borderRadius: 12, 
     borderWidth: 1, 
@@ -449,6 +449,6 @@ const sd = StyleSheet.create({
   },
   divider:      { height: 1 },
   toolRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  toolLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  toolSub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  toolLabel:    { ...TextStyles.cardTitle },
+  toolSub:      { ...TextStyles.caption, marginTop: 1 },
 });

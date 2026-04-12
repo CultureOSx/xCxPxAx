@@ -13,7 +13,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
 
@@ -524,14 +524,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title2,
     letterSpacing: -0.5,
     marginBottom: -2,
   },
   headerSub: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badge,
     letterSpacing: 0.2,
     textTransform: 'uppercase',
     opacity: 0.9,
@@ -544,8 +542,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badgeText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.tabLabel,
     letterSpacing: 1.5,
   },
   content: {
@@ -557,8 +554,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.cardTitle,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
   },
@@ -589,13 +585,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardValue: {
-    fontSize: 17,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title3,
     marginBottom: 0,
   },
   cardTitle: {
-    fontSize: 10,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.tabLabel,
   },
   actionGridItem: {
     marginBottom: 0,
@@ -619,12 +613,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionTitle: {
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.cardTitle,
     marginBottom: 0,
   },
   actionDesc: {
-    fontSize: 11,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.badge,
   },
 });

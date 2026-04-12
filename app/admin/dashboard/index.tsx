@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { api } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -328,24 +328,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerAdminBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badge,
     letterSpacing: 0.5,
   },
   headerGreeting: {
-    fontSize: 26,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.hero,
     letterSpacing: -0.4,
   },
   headerSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.chip,
   },
 
   // Section labels
   sectionTitle: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.badge,
     letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 4,
@@ -373,17 +369,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statValue: {
-    fontSize: 22,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title,
     letterSpacing: -0.5,
   },
   statLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
   },
   statChange: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badge,
     marginTop: 2,
   },
 
@@ -412,13 +405,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   quickActionLabel: {
-    fontSize: 15,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.callout,
     letterSpacing: -0.2,
   },
   quickActionDesc: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
   },
 
   // All tools list
@@ -445,8 +436,7 @@ const styles = StyleSheet.create({
   },
   toolLabel: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.label,
   },
   toolDivider: {
     height: StyleSheet.hairlineWidth,
@@ -467,12 +457,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dangerLabel: {
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.cardTitle,
     marginBottom: 2,
   },
   dangerDesc: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
   },
 });

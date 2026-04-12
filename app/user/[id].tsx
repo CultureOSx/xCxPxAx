@@ -23,6 +23,7 @@ import UserProfileSocial from '@/components/user/UserProfileSocial';
 import UserProfileDetails from '@/components/user/UserProfileDetails';
 import UserProfileIdentity from '@/components/user/UserProfileIdentity';
 import { CP, SOCIAL_ICONS, TIER_CONFIG, formatMemberDate, getInitials } from '@/components/user/profileUtils';
+import { TextStyles } from '@/constants/theme';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -152,9 +153,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: CP.bg },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  errorText:        { fontSize: 16, fontFamily: 'Poppins_500Medium', color: CP.muted },
+  errorText:        { ...TextStyles.bodyMedium, color: CP.muted },
   goBackButton:     { marginTop: 16, paddingHorizontal: 24, paddingVertical: 11, borderRadius: 14, backgroundColor: CP.purple },
-  goBackButtonText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFF' },
+  goBackButtonText: { ...TextStyles.callout, color: '#FFF' },
 
   hero: { paddingBottom: 30, overflow: 'hidden' },
 });

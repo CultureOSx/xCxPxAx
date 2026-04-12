@@ -21,7 +21,7 @@ import { useAuth } from '@/lib/auth';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
@@ -151,7 +151,7 @@ function FilterChip({
 
 const fc = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+  text: { ...TextStyles.captionSemibold, lineHeight: 17 },
 });
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
@@ -485,8 +485,8 @@ const s = StyleSheet.create({
   header:        { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   backBtn:       { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
   iconBtn:       { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden' },
-  headerTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', lineHeight: 26 },
-  headerSub:     { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
+  headerTitle:   { ...TextStyles.title2, lineHeight: 26 },
+  headerSub:     { ...TextStyles.chip, lineHeight: 18 },
 
   shell:         { flex: 1 },
   shellDesktop:  { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
@@ -496,17 +496,17 @@ const s = StyleSheet.create({
   filterRow:     { flexDirection: 'row', alignItems: 'center', gap: 7 },
   filterRowDate: { paddingBottom: 4 },
   clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+  clearBtnText:  { ...TextStyles.captionSemibold, lineHeight: 17 },
 
   list:          { paddingTop: 20, gap: 20 },
   listFooter:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
-  listFooterText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
+  listFooterText:{ ...TextStyles.cardTitle, textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
   endLine:       { flex: 1, height: 1, opacity: 0.5 },
 
   emptyState:    { alignItems: 'center', paddingVertical: 100, paddingHorizontal: 40, gap: 14 },
   emptyIcon:     { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8 },
-  emptyTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
-  emptyDesc:     { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  emptyTitle:    { ...TextStyles.title3, lineHeight: 24 },
+  emptyDesc:     { ...TextStyles.callout, textAlign: 'center', lineHeight: 22, opacity: 0.8 },
   resetBtn:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
-  resetBtnText:  { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
+  resetBtnText:  { ...TextStyles.cardTitle, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
 });

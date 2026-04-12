@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import * as Haptics from 'expo-haptics';
@@ -39,9 +39,9 @@ function MetricCard({ icon, label, value, sub, accent, index = 0 }: {
 const mc = StyleSheet.create({
   card:     { flex: 1, minWidth: 140, borderRadius: 16, borderWidth: 1, padding: 16, gap: 5, alignItems: 'center', overflow: 'hidden' },
   iconWrap: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  value:    { fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
-  label:    { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
-  sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 1 },
+  value:    { ...TextStyles.title, letterSpacing: -0.5 },
+  label:    { ...TextStyles.badge, textAlign: 'center' },
+  sub:      { ...TextStyles.badge, textAlign: 'center', marginTop: 1 },
   bar:      { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3 },
 });
 
@@ -65,8 +65,8 @@ function InfoRow({ icon, label, value, accent, index = 0 }: {
 const ir = StyleSheet.create({
   row:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
   iconWrap:{ width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  label:   { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  value:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  label:   { flex: 1, ...TextStyles.label },
+  value:   { ...TextStyles.cardTitle },
 });
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 const sh = StyleSheet.create({
-  text: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 1.4, marginBottom: 12 },
+  text: { ...TextStyles.badge, letterSpacing: 1.4, marginBottom: 12 },
 });
 
 // ─── Main Content ─────────────────────────────────────────────────────────────
@@ -284,17 +284,17 @@ export default function AdminFinanceScreen() {
 const s = StyleSheet.create({
   fill:        { flex: 1 },
   header:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.2 },
-  headerSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  headerTitle: { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
+  headerSub:   { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
   backBtn:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   scroll:      { paddingTop: 20 },
   section:     { marginBottom: 28 },
   metricsRow:  { flexDirection: 'row', gap: 10 },
   card:        { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 4, overflow: 'hidden' },
   infoBox:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 14, borderWidth: 1, padding: 13, marginTop: 10 },
-  infoText:    { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  infoText:    { flex: 1, ...TextStyles.caption, lineHeight: 18 },
   stripeBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 12 },
-  stripeBtnText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  stripeBtnText:{ ...TextStyles.cardTitle, color: '#fff' },
   loadingWrap: { alignItems: 'center', gap: 12, paddingVertical: 80 },
-  loadingText: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  loadingText: { ...TextStyles.cardBody },
 });

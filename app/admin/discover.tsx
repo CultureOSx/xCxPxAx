@@ -20,7 +20,7 @@ import { queryClient } from '@/lib/query-client';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type {
   DiscoverCurationConfig,
@@ -655,13 +655,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title2,
     letterSpacing: -0.3,
   },
   headerSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.chip,
     marginTop: 2,
   },
   sourceBadge: {
@@ -670,8 +668,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   sourceBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.badge,
   },
   content: {
     paddingTop: 20,
@@ -684,8 +681,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
   },
   actionsCard: {
     borderRadius: 18,
@@ -694,12 +690,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionsTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.headline,
   },
   actionsSub: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.chip,
     lineHeight: 19,
   },
   actionsRow: {
@@ -717,8 +711,7 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     color: 'white',
-    fontSize: 14,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.cardTitle,
   },
   secondaryBtn: {
     minHeight: 48,
@@ -729,20 +722,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   secondaryBtnText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.cardTitle,
   },
   sectionLabelWrap: {
     gap: 4,
   },
   sectionLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.badge,
     letterSpacing: 1.4,
   },
   sectionSub: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
     lineHeight: 18,
   },
   panel: {
@@ -763,12 +753,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selectorTitle: {
-    fontSize: 13,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.chip,
   },
   selectorSub: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
   },
   inlineActions: {
     flexDirection: 'row',
@@ -786,8 +774,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   smallActionText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.captionSemibold,
   },
   formGrid: {
     gap: 12,
@@ -797,12 +784,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 46,
     paddingHorizontal: 12,
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
   },
   fieldLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.captionSemibold,
   },
   chipWrap: {
     flexDirection: 'row',
@@ -818,7 +803,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.captionSemibold,
   },
 });

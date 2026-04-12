@@ -13,7 +13,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { Community } from '@/shared/schema';
@@ -198,11 +198,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, paddingBottom: 8 },
   backBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  headerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)' },
+  headerTitle: { ...TextStyles.title2, color: '#fff' },
+  headerSub: { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)' },
   searchBox: { paddingBottom: 16, paddingTop: 8 },
   searchInputWrap: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 44, borderRadius: 12, gap: 10 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  searchInput: { flex: 1, color: '#fff', ...TextStyles.cardBody },
   list: { paddingVertical: 10 },
   rowContainer: {
     flexDirection: 'row',
@@ -231,12 +231,12 @@ const styles = StyleSheet.create({
   communityInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   imageWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   image: { width: 44, height: 44 },
-  imageLetter: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  title: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  imageLetter: { ...TextStyles.headline },
+  title: { ...TextStyles.callout },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  subtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  subtitle: { ...TextStyles.caption },
   modeBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
   modeText: { fontSize: 8, fontFamily: 'Poppins_700Bold' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 100, gap: 12 },
-  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  emptyText: { ...TextStyles.cardBody },
 });

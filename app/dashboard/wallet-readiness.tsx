@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAuth } from '@/lib/auth';
@@ -271,13 +271,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', 
       backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' 
     },
-    headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff' },
-    headerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+    headerTitle: { ...TextStyles.title2, color: '#fff' },
+    headerSub: { ...TextStyles.chip, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
     readyBadge: { 
       flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, 
       borderRadius: 10, backgroundColor: 'rgba(46,196,182,0.3)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' 
     },
-    readyBadgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#fff' },
+    readyBadgeText: { ...TextStyles.badge, color: '#fff' },
 
     // Status Card
     statusCard: { 
@@ -295,8 +295,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
     },
     statusIconRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     statusIconWrap: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    statusTitle: { color: colors.text, fontSize: 18, fontFamily: 'Poppins_700Bold' },
-    statusSub: { color: colors.textSecondary, fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 4, lineHeight: 18 },
+    statusTitle: { color: colors.text, ...TextStyles.title3 },
+    statusSub: { color: colors.textSecondary, ...TextStyles.chip, marginTop: 4, lineHeight: 18 },
 
     // Grid
     grid: { gap: 16 },
@@ -319,12 +319,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       })
     },
     groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-    groupTitle: { color: colors.text, fontSize: 15, fontFamily: 'Poppins_700Bold', flex: 1 },
+    groupTitle: { color: colors.text, ...TextStyles.callout, flex: 1 },
     dot: { width: 8, height: 8, borderRadius: 4 },
-    groupState: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 14 },
+    groupState: { ...TextStyles.chip, marginBottom: 14 },
     missingList: { gap: 8 },
     missingItemRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    missingItemText: { color: colors.textSecondary, fontSize: 12, fontFamily: 'Poppins_400Regular' },
+    missingItemText: { color: colors.textSecondary, ...TextStyles.caption },
 
     // Actions
     actions: { flexDirection: 'row', gap: 12, marginTop: 10 },
@@ -336,9 +336,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       justifyContent: 'center',
       gap: 10,
     },
-    actionText: { color: '#0B0B14', fontFamily: 'Poppins_700Bold', fontSize: 14 },
-    footerNote: { 
-      color: colors.textTertiary, fontSize: 12, fontFamily: 'Poppins_400Regular', 
-      textAlign: 'center', paddingHorizontal: 20, lineHeight: 18 
+    actionText: { color: '#0B0B14', ...TextStyles.cardTitle },
+    footerNote: {
+      color: colors.textTertiary, ...TextStyles.caption,
+      textAlign: 'center', paddingHorizontal: 20, lineHeight: 18
     },
   });

@@ -20,7 +20,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData, Profile } from '@/shared/schema';
@@ -586,8 +586,8 @@ const dashboardStyles = StyleSheet.create({
   container: { flex: 1 },
   ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
   headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  greeting: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4, textTransform: 'uppercase' },
-  userName: { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.4, marginTop: 4 },
+  greeting: { ...TextStyles.captionSemibold, letterSpacing: 0.4, textTransform: 'uppercase' },
+  userName: { ...TextStyles.title2, letterSpacing: -0.4, marginTop: 4 },
   createBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   headerTabs: {
     flexDirection: 'row',
@@ -604,7 +604,7 @@ const dashboardStyles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     borderColor: 'transparent',
   },
-  tabText: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 0.2 },
+  tabText: { ...TextStyles.captionSemibold, letterSpacing: 0.2 },
   
   performanceGrid: { gap: 16 },
   analyticsRow: { flexDirection: 'row', gap: 16 },
@@ -627,9 +627,9 @@ const dashboardStyles = StyleSheet.create({
   analyticsTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   analyticsIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.03)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 },
-  trendText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
-  analyticsValue: { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
-  analyticsLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
+  trendText: { ...TextStyles.tabLabel },
+  analyticsValue: { ...TextStyles.title2, letterSpacing: -0.5 },
+  analyticsLabel: { ...TextStyles.tabLabel, letterSpacing: 0.5 },
   
   premiumBanner: { 
     flexDirection: 'row', 
@@ -651,8 +651,8 @@ const dashboardStyles = StyleSheet.create({
     })
   },
   bannerIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: CultureTokens.gold + '15', alignItems: 'center', justifyContent: 'center' },
-  bannerTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  bannerSub: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  bannerTitle: { ...TextStyles.headline },
+  bannerSub: { ...TextStyles.caption },
   
   eventsSection: { gap: 16 },
   payoutCard: {
@@ -673,8 +673,8 @@ const dashboardStyles = StyleSheet.create({
     }),
   },
   payoutCardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  payoutTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  payoutSub: { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 4, lineHeight: 17 },
+  payoutTitle: { ...TextStyles.headline },
+  payoutSub: { ...TextStyles.caption, marginTop: 4, lineHeight: 17 },
   profileChipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
   profileChip: {
     paddingHorizontal: 14,
@@ -683,19 +683,19 @@ const dashboardStyles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     maxWidth: 200,
   },
-  profileChipText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  payoutStatus: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  profileChipText: { ...TextStyles.captionSemibold },
+  payoutStatus: { ...TextStyles.chip },
   payoutCta: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
-  payoutCtaText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  payoutCtaText: { ...TextStyles.cardTitle, color: '#FFFFFF' },
   statsOverview: { flexDirection: 'row', alignItems: 'center', padding: 24 },
   quickStat: { flex: 1, alignItems: 'center' },
-  quickStatValue: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  quickStatLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing:0.5 },
+  quickStatValue: { ...TextStyles.title2 },
+  quickStatLabel: { ...TextStyles.tabLabel, letterSpacing: 0.5 },
   statDivider: { width: 1, height: 32, marginHorizontal: 20 },
   
   filterRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-  filterBtnText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
+  filterBtnText: { ...TextStyles.tabLabel },
   
   eventRow: { 
     flexDirection: 'row', 
@@ -716,18 +716,18 @@ const dashboardStyles = StyleSheet.create({
     })
   },
   eventInfo: { flex: 1, gap: 2 },
-  eventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
-  eventMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  eventTitle: { ...TextStyles.headline },
+  eventMeta: { ...TextStyles.caption },
   eventRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   
   empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  emptyText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  emptyText: { ...TextStyles.cardBody },
   
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  sectionTitle: { ...TextStyles.title3 },
   addSmallBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: CultureTokens.indigo + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  addSmallText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
+  addSmallText: { ...TextStyles.captionSemibold, color: CultureTokens.indigo },
   
   contentRow: { 
     flexDirection: 'row', 
@@ -752,7 +752,7 @@ const dashboardStyles = StyleSheet.create({
   contentThumbPlaceholder: { opacity: 0.5 },
   
   tipsCard: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 16, marginTop: 12 },
-  tipsText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  tipsText: { flex: 1, ...TextStyles.caption, lineHeight: 18 },
 
   fab: { 
     position: 'absolute', 

@@ -357,7 +357,7 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
     justifyContent: 'center',
     paddingHorizontal: 5,
   },
-  unreadBadgeText: { color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  unreadBadgeText: { color: '#fff', ...TextStyles.badge },
   markAllBtn: {
     width: 80,
     flexDirection: 'row',
@@ -379,15 +379,14 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
     borderRadius: 999,
     boxShadow: isDark ? '0px 2px 6px rgba(0,0,0,0.3)' : '0px 2px 6px rgba(0,0,0,0.05)',
   },
-  filterTabText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  filterTabText:  { ...TextStyles.chip },
   filterCount:    { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  filterCountText:{ fontSize: 10, fontFamily: 'Poppins_700Bold' },
+  filterCountText:{ ...TextStyles.tabLabel },
 
   // Grouped list
   list:       { paddingHorizontal: 20, paddingTop: 4 },
   groupLabel: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badge,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 20,
@@ -434,7 +433,7 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   notifMsg:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
   metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
   typePill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  typePillText:{ fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
+  typePillText:{ ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.4 },
   timeText:    { fontSize: 11, fontFamily: 'Poppins_500Medium' },
 
   // Empty / loading

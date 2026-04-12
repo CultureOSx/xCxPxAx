@@ -21,7 +21,7 @@ import type { Ticket as ApiTicket } from '@/shared/schema';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { AppHeaderBar } from '@/components/AppHeaderBar';
 import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -680,8 +680,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   flashBannerText: {
     flex: 1,
-    fontSize: 12,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.caption,
     color: colors.text,
   },
 
@@ -715,18 +714,18 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
   },
-  membershipLabel:    { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase' },
-  membershipTier:     { fontSize: 24, fontFamily: 'Poppins_700Bold', marginTop: 4, color: '#fff' },
+  membershipLabel:    { ...TextStyles.badge, letterSpacing: 1.2, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase' },
+  membershipTier:     { ...TextStyles.title, marginTop: 4, color: '#fff' },
   membershipMetaRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' },
-  membershipMetaText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
+  membershipMetaText: { ...TextStyles.caption, color: 'rgba(255,255,255,0.85)' },
   cycleBadge:         { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  cycleBadgeText:     { fontSize: 11, fontFamily: 'Poppins_700Bold' },
+  cycleBadgeText:     { ...TextStyles.badge },
   membershipIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)' },
   cycleTrack:         { height: 8, borderRadius: 999, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.2)', marginBottom: 16 },
   cycleFill:          { height: '100%', borderRadius: 999 },
   membershipBottom:   { flexDirection: 'row', gap: 32 },
-  membershipStatLabel:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' },
-  membershipStatValue:{ fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 2, color: '#fff' },
+  membershipStatLabel:{ ...TextStyles.tabLabel, letterSpacing: 0.8, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' },
+  membershipStatValue:{ ...TextStyles.title3, marginTop: 2, color: '#fff' },
 
   // Rewards strip
   rewardsStrip: {
@@ -748,11 +747,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   rewardsLeft:    { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
   rewardsIconWrap:{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.gold + '18' },
-  rewardsTitle:   { fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 2 },
-  rewardsSub:     { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  rewardsTitle:   { ...TextStyles.cardTitle, color: colors.text, marginBottom: 2 },
+  rewardsSub:     { ...TextStyles.caption, color: colors.textSecondary },
   rewardsPointsWrap: { alignItems: 'flex-end', justifyContent: 'center' },
-  rewardsPoints:  { fontSize: 24, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold, lineHeight: 26 },
-  rewardsPointsLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold, opacity: 0.8, marginTop: 2 },
+  rewardsPoints:  { ...TextStyles.title, color: CultureTokens.gold, lineHeight: 26 },
+  rewardsPointsLabel: { ...TextStyles.badge, color: CultureTokens.gold, opacity: 0.8, marginTop: 2 },
 
   // Upgrade prompt
   upgradePrompt: {
@@ -768,7 +767,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: CultureTokens.gold + '15',
     borderColor: CultureTokens.gold + '40',
   },
-  upgradePromptText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.gold },
+  upgradePromptText: { flex: 1, ...TextStyles.cardTitle, color: CultureTokens.gold },
 
   // Stats
   statsRow: {
@@ -787,8 +786,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   statBox:      { flex: 1, alignItems: 'center', paddingVertical: 18 },
   statIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  statValue:    { fontSize: 22, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
-  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 4, color: colors.textSecondary },
+  statValue:    { ...TextStyles.title2, color: CultureTokens.indigo },
+  statLabel:    { ...TextStyles.caption, marginTop: 4, color: colors.textSecondary },
   statsDivider: { width: 1, marginVertical: 14, backgroundColor: colors.borderLight },
 
   // Digital wallet
@@ -807,16 +806,16 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
       default: { elevation: 2 },
     }),
   },
-  walletPassText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  walletPassSoon: { fontSize: 11, fontFamily: 'Poppins_500Medium', marginTop: 2, color: colors.textSecondary },
-  walletPassTextLight: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-  walletPassSoonLight: { fontSize: 11, fontFamily: 'Poppins_500Medium', marginTop: 2, color: 'rgba(255,255,255,0.85)' },
+  walletPassText: { ...TextStyles.callout, color: colors.text },
+  walletPassSoon: { ...TextStyles.badge, marginTop: 2, color: colors.textSecondary },
+  walletPassTextLight: { ...TextStyles.callout, color: '#fff' },
+  walletPassSoonLight: { ...TextStyles.badge, marginTop: 2, color: 'rgba(255,255,255,0.85)' },
   walletPassDisabled: { opacity: 0.6 },
 
   // Tabs
   tabsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 10, marginBottom: 20 },
   tab:     { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.borderLight },
-  tabText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  tabText: { ...TextStyles.cardTitle },
 
   // Ticket list
   ticketList: { paddingHorizontal: 20, gap: 14 },
@@ -843,13 +842,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
 
   ticketStatusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 2 },
-  ticketTitle:     { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },
+  ticketTitle:     { ...TextStyles.headline, marginBottom: 4, color: colors.text },
   ticketMeta:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  ticketMetaText:  { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  ticketMetaText:  { ...TextStyles.chip, color: colors.textSecondary },
   ticketMetaDot:   { fontSize: 12, color: colors.textTertiary, marginHorizontal: 2 },
   tierPill:        { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  tierPillText:    { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase' },
-  quantityText:    { fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
+  tierPillText:    { ...TextStyles.tabLabel, textTransform: 'uppercase' },
+  quantityText:    { ...TextStyles.chip, color: colors.textSecondary },
   ticketWalletActions: {
     position: 'absolute',
     right: 14,
@@ -869,8 +868,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 6,
   },
   ticketWalletBtnText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.badge,
     color: colors.text,
   },
 
@@ -898,12 +896,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     }),
   },
   businessCardHeader: { gap: 4 },
-  businessCardTitle: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
-  businessCardSub: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  businessCardTitle: { ...TextStyles.captionSemibold, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
+  businessCardSub: { ...TextStyles.chip, color: colors.textSecondary },
   businessCardBody: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 20, marginTop: 8 },
   businessCardMeta: { flex: 1, gap: 8 },
-  businessCardName: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
-  businessCardId: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo, letterSpacing: 1.2 },
+  businessCardName: { ...TextStyles.title2, color: colors.text },
+  businessCardId: { ...TextStyles.cardTitle, color: CultureTokens.indigo, letterSpacing: 1.2 },
   businessCardQrWrap: {
     width: 104,
     height: 104,
@@ -918,12 +916,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 56, gap: 12 },
-  emptyTitle: { fontSize: 19, fontFamily: 'Poppins_700Bold', marginTop: 12, color: colors.text },
-  emptySubtitle: { fontSize: 15, fontFamily: 'Poppins_500Medium', textAlign: 'center', paddingHorizontal: 40, color: colors.textSecondary, lineHeight: 22 },
+  emptyTitle: { ...TextStyles.title3, marginTop: 12, color: colors.text },
+  emptySubtitle: { ...TextStyles.callout, textAlign: 'center', paddingHorizontal: 40, color: colors.textSecondary, lineHeight: 22 },
   browseBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, backgroundColor: CultureTokens.indigo },
-  browseBtnText: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  browseBtnText: { ...TextStyles.headline, color: '#fff' },
 
   // View all
   viewAllBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 24, marginTop: 12 },
-  viewAllBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
+  viewAllBtnText: { ...TextStyles.callout, color: CultureTokens.indigo },
 });

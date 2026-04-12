@@ -93,8 +93,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: LayoutRules.iconTextGap,
   },
   label: {
-    ...TextStyles.chip,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.captionSemibold,
+    fontSize: 13,
   },
   current: {
     ...TextStyles.bodyMedium,

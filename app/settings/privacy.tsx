@@ -227,7 +227,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   sectionTitle: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingLabel: { ...TextStyles.headline, color: colors.text },
   settingDesc:  { ...TextStyles.chip, marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
   divider:      { height: 1, marginLeft: 74, backgroundColor: colors.borderLight, opacity: 0.5 },
   statusBadge:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 74, marginBottom: 14, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
@@ -235,7 +235,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   statusText:   { ...TextStyles.captionSemibold, color: colors.textSecondary },
 
   deleteBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: CultureTokens.coral + '30', backgroundColor: CultureTokens.coral + '08' },
-  deleteBtnText:{ ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+  deleteBtnText:{ ...TextStyles.headline, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
   dangerNote:   { ...TextStyles.caption, marginTop: 12, lineHeight: 18, color: colors.textTertiary, textAlign: 'center', paddingHorizontal: 10 },
 
   deleteConfirmCard:     {
@@ -251,7 +251,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   deleteError:           { ...TextStyles.captionSemibold, marginBottom: 10, color: CultureTokens.coral },
   deleteConfirmRow:      { flexDirection: 'row', gap: 12, marginTop: 4 },
   cancelBtn:             { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, borderWidth: 1 },
-  cancelBtnText:         { ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold' },
+  cancelBtnText:         { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
   deleteConfirmBtn:      { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, backgroundColor: CultureTokens.coral },
-  deleteConfirmBtnText:  { ...TextStyles.cardTitle, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  deleteConfirmBtnText:  { ...TextStyles.headline, fontFamily: 'Poppins_700Bold', color: '#fff' },
 });

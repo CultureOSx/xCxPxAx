@@ -14,7 +14,7 @@ import { useLayout } from '@/hooks/useLayout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { EventData } from '@/shared/schema';
@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  subtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)' },
+  title: { ...TextStyles.title2, color: '#fff' },
+  subtitle: { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)' },
   
   searchBox: { paddingBottom: 16, paddingTop: 8 },
   searchInputWrap: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 10,
   },
-  searchInput: { flex: 1, color: '#fff', fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  searchInput: { flex: 1, color: '#fff', ...TextStyles.cardBody },
 
   list: { paddingVertical: 10 },
   rowContainer: {
@@ -295,10 +295,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
-  eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  dateText: { ...TextStyles.badge, textAlign: 'center' },
+  eventTitle: { ...TextStyles.callout },
   eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  eventSub: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  eventSub: { ...TextStyles.caption },
   featuredBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,10 +307,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
   },
-  featuredText: { fontSize: 9, fontFamily: 'Poppins_700Bold' },
+  featuredText: { ...TextStyles.tabLabel, fontSize: 9 },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 100, gap: 12 },
-  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  emptyText: { ...TextStyles.cardBody },
 
   fab: {
     position: 'absolute',

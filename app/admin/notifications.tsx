@@ -23,7 +23,7 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
@@ -100,7 +100,7 @@ function NotificationPreview({ title, message }: { title: string; message: strin
 const np = StyleSheet.create({
   phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
   phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
-  phoneLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 1.1 },
+  phoneLabel: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.1 },
   notifCard:  { 
     width: '100%', 
     borderRadius: 14, 
@@ -120,10 +120,10 @@ const np = StyleSheet.create({
   },
   notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
   notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-  notifApp:   { flex: 1, fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  notifTime:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  notifTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  notifBody:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19 },
+  notifApp:   { flex: 1, ...TextStyles.captionSemibold },
+  notifTime:  { ...TextStyles.badge },
+  notifTitle: { ...TextStyles.cardTitle },
+  notifBody:  { ...TextStyles.chip, lineHeight: 19 },
 });
 
 // ─── Char counter badge ─────────────────────────────────────────────────────
@@ -137,14 +137,14 @@ function CharCount({ value, max }: { value: string; max: number }) {
     </Text>
   );
 }
-const cc = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'right', marginTop: -4 } });
+const cc = StyleSheet.create({ label: { ...TextStyles.badge, textAlign: 'right', marginTop: -4 } });
 
 // ─── Section header ─────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: string }) {
   const colors = useColors();
   return <Text style={[sh.label, { color: colors.textTertiary }]}>{children}</Text>;
 }
-const sh = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
+const sh = StyleSheet.create({ label: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
 
 // ─── Quick-link row ─────────────────────────────────────────────────────────
 function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label: string; sub: string; accent: string; onPress: () => void }) {
@@ -191,8 +191,8 @@ const ql = StyleSheet.create({
     })
   },
   iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  label:    { ...TextStyles.chip },
+  sub:      { ...TextStyles.badge, marginTop: 1 },
 });
 
 function NotificationsSkeleton() {
@@ -750,14 +750,14 @@ const s = StyleSheet.create({
     paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn:          { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerSub:        { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  headerTitle:      { ...TextStyles.title3 },
+  headerSub:        { ...TextStyles.caption, marginTop: 1 },
 
   audiencePill:     {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
   },
-  audiencePillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  audiencePillText: { ...TextStyles.captionSemibold },
 
   scroll:           { paddingTop: 16 },
   contentCol:       { paddingHorizontal: 16 },
@@ -792,17 +792,17 @@ const s = StyleSheet.create({
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
   filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  filterBadgeText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: "white", textTransform: 'uppercase' },
+  filterBadgeText:  { ...TextStyles.tabLabel, color: "white", textTransform: 'uppercase' },
 
   typeLabelRow:     { marginTop: 4 },
-  typeLabel:        { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 8 },
+  typeLabel:        { ...TextStyles.caption, marginBottom: 8 },
   typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip:         {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 7,
     borderRadius: 20, borderWidth: 1,
   },
-  typeChipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
+  typeChipText:     { ...TextStyles.captionSemibold, textTransform: 'capitalize' },
 
   row2:             { gap: 12 },
   row2Desktop:      { flexDirection: 'row' },
@@ -825,9 +825,9 @@ const s = StyleSheet.create({
     })
   },
   approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  approvalBannerTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  approvalBannerSub:{ fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  approvalCountdown:{ fontSize: 20, fontFamily: 'Poppins_700Bold', tabularNums: true } as any,
+  approvalBannerTitle: { ...TextStyles.cardTitle },
+  approvalBannerSub:{ ...TextStyles.caption, marginTop: 2 },
+  approvalCountdown:{ ...TextStyles.title2, tabularNums: true } as any,
   approvalBarTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   approvalBarFill:  { height: 4, borderRadius: 2 },
 
@@ -835,7 +835,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     borderRadius: 12, borderWidth: 1, padding: 12,
   },
-  approvalHintText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  approvalHintText: { flex: 1, ...TextStyles.caption, lineHeight: 18 },
 
   // Action buttons
   actionsRow:       { flexDirection: 'row', gap: 10 },
@@ -843,12 +843,12 @@ const s = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1,
   },
-  dryRunBtnText:    { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  dryRunBtnText:    { ...TextStyles.cardTitle },
   sendBtn:          {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 7, paddingVertical: 13, borderRadius: 12,
   },
-  sendBtnText:      { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  sendBtnText:      { ...TextStyles.cardTitle },
 
   // Results / stats
   statsCard:        { 
@@ -867,31 +867,31 @@ const s = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  statsCardTitle:   { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  statsCardTitle:   { ...TextStyles.callout },
   statRow:          { flexDirection: 'row', gap: 10 },
   statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },
-  statNum:          { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  statLabel:        { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statNum:          { ...TextStyles.title3 },
+  statLabel:        { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   replayBadge:      {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderRadius: 10, borderWidth: 1, padding: 10,
   },
-  replayText:       { flex: 1, fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  replayText:       { flex: 1, ...TextStyles.caption },
 
   // Audience table
-  previewTableTitle:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', marginBottom: 8 },
+  previewTableTitle:{ ...TextStyles.captionSemibold, marginBottom: 8 },
   tableHeader:      { flexDirection: 'row', paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth },
-  thCell:           { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  thCell:           { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.8 },
   tableRow:         {
     flexDirection: 'row', paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tdCell:           { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  tdCell:           { ...TextStyles.caption },
 
   emptyAudience:    {
     alignItems: 'center', gap: 6, padding: 24,
     borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginTop: 4,
   },
-  emptyAudienceText:{ fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  emptyAudienceText:{ ...TextStyles.chip },
 });

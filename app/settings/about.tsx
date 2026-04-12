@@ -181,10 +181,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   section:      { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing },
   sectionTitle: { ...TextStyles.title3, fontSize: 17, marginBottom: Spacing.sm },
   missionCard:  { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1 },
-  missionTitle: { ...TextStyles.headline, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
+  missionTitle: { ...TextStyles.title3, fontSize: 16, marginBottom: Spacing.sm },
   missionText:  { ...TextStyles.cardBody, lineHeight: 22 },
   brandCard:    { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, borderWidth: 1, gap: Spacing.sm },
-  brandTitle:   { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
+  brandTitle:   { ...TextStyles.title3, fontSize: 16 },
   brandBody:    { ...TextStyles.chip, lineHeight: 20 },
   brandTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   brandTag:     { borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 5 },
@@ -193,7 +193,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: LayoutRules.betweenCards },
   featureCard:  { width: '48%' as never, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMin, borderWidth: 1 },
   featureIcon:  { width: 48, height: 48, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
-  featureLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', marginBottom: Spacing.xs },
+  featureLabel: { ...TextStyles.headline, fontSize: 15, marginBottom: Spacing.xs },
   featureDesc:  { ...TextStyles.caption, lineHeight: 17 },
 
   socialCard:   { borderRadius: LayoutRules.borderRadius, borderWidth: 1, overflow: 'hidden' },
@@ -203,6 +203,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   divider:      { height: StyleSheet.hairlineWidth, marginLeft: 66 },
 
   taglineSection:{ alignItems: 'center', paddingVertical: Spacing.xl, paddingHorizontal: Spacing.xxl, gap: Spacing.sm },
-  tagline:      { ...TextStyles.cardTitle, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
+  tagline:      { ...TextStyles.cardTitle, textAlign: 'center' },
   copyright:    { ...TextStyles.caption },
 });

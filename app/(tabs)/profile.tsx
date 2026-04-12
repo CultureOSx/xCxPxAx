@@ -20,7 +20,7 @@ import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
 import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
@@ -774,8 +774,7 @@ const profileGlass = StyleSheet.create({
   },
   errorBannerText: {
     flex: 1,
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.chip,
     lineHeight: 18,
   },
   culturePills: {

@@ -24,7 +24,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 
 type ResultType = 'event' | 'movie' | 'restaurant' | 'activity' | 'shopping' | 'community' | 'person';
 
@@ -466,8 +466,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 14,
+    ...TextStyles.label,
     paddingVertical: 0,
   },
 
@@ -481,12 +480,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 7,
   },
-  filterText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  filterText: { ...TextStyles.captionSemibold },
 
   section: { paddingTop: 20 },
   sectionLabel: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 11,
+    ...TextStyles.badge,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 10,
@@ -501,11 +499,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  trendingText: { fontFamily: 'Poppins_500Medium', fontSize: 13 },
+  trendingText: { ...TextStyles.chip },
 
   centerState: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 8 },
-  emptyTitle: { fontFamily: 'Poppins_700Bold', fontSize: 18 },
-  emptySub: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center' },
+  emptyTitle: { ...TextStyles.title3 },
+  emptySub: { ...TextStyles.cardBody, textAlign: 'center' },
 
   resultsWrap: { paddingTop: 12, gap: 10 },
   resultCard: {
@@ -521,8 +519,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resultTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
-  resultSub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 1 },
+  resultTitle: { ...TextStyles.cardTitle },
+  resultSub: { ...TextStyles.caption, marginTop: 1 },
 
   hubEntry: {
     flexDirection: 'row',
@@ -533,7 +531,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  hubEntryTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
-  hubEntrySub: { fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 2 },
+  hubEntryTitle: { ...TextStyles.callout },
+  hubEntrySub: { ...TextStyles.caption, marginTop: 2 },
 });
 

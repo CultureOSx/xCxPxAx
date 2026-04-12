@@ -24,7 +24,7 @@ import { routeWithRedirect } from '@/lib/routes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ticket } from '@shared/schema';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CardTokens, CultureTokens, gradients } from '@/constants/theme';
+import { CardTokens, CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
@@ -491,10 +491,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   desktopShell:    { width: '100%', maxWidth: 640 },
 
   loadingState:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText:        { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  loadingText:        { ...TextStyles.callout, color: colors.textSecondary },
   emptyIconContainer: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
   emptyTitle:         { fontSize: 17, fontFamily: 'Poppins_700Bold', marginTop: 8, color: colors.text },
-  backLink:           { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 8, color: CultureTokens.indigo },
+  backLink:           { ...TextStyles.callout, marginTop: 8, color: CultureTokens.indigo },
 
   ticketContainer: { 
     marginHorizontal: CardTokens.padding + 4, 
@@ -518,7 +518,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   ticketTop:       { height: 120, justifyContent: 'center', position: 'relative' },
   ticketTopOverlay:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, zIndex: 1 },
   statusBadge:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  statusText:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  statusText:      { ...TextStyles.chip },
 
   ticketNotchContainer: { position: 'relative', height: 20, marginTop: -10, marginBottom: -10, zIndex: 2 },
   ticketNotchBackground: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, opacity: 0 },
@@ -543,12 +543,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: CultureTokens.indigo + '14',
     marginBottom: 16,
   },
-  cpidText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
+  cpidText: { ...TextStyles.captionSemibold, color: CultureTokens.indigo },
   infoGrid:     { gap: 16 },
   infoItem:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
   infoIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   infoLabel:    { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textSecondary },
-  infoValue:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  infoValue:    { ...TextStyles.callout, color: colors.text },
   divider:      { height: 1, backgroundColor: colors.borderLight, marginVertical: 20 },
   detailsRow:   { flexDirection: 'row', justifyContent: 'space-between' },
   detailItem:   { alignItems: 'center', flex: 1 },
@@ -556,23 +556,23 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   detailValue:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text },
 
   qrSection:        { alignItems: 'center', gap: 16 },
-  qrTitle:          { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  qrTitle:          { ...TextStyles.cardTitle, color: colors.text },
   qrImageContainer: { padding: CardTokens.padding, backgroundColor: '#FFFFFF', borderRadius: CardTokens.radius, borderWidth: 1, borderColor: colors.borderLight },
   qrImage:          { width: 220, height: 220 },
   scannedOverlay:   { alignItems: 'center', gap: 6, paddingVertical: 16 },
-  scannedText:      { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
+  scannedText:      { ...TextStyles.headline, color: colors.textSecondary },
   scannedTime:      { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
-  ticketCodeText:   { fontSize: 20, fontFamily: 'Poppins_700Bold', letterSpacing: 3, color: CultureTokens.indigo, marginTop: 4 },
+  ticketCodeText:   { ...TextStyles.title2, letterSpacing: 3, color: CultureTokens.indigo, marginTop: 4 },
 
   walletSection: { marginHorizontal: CardTokens.padding + 4, marginTop: 24 },
-  walletTitle:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', marginBottom: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textTertiary },
+  walletTitle:   { ...TextStyles.badge, marginBottom: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textTertiary },
   walletButtons: { flexDirection: 'row', gap: 12 },
   walletBtn:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 10, paddingVertical: 13 },
-  walletBtnTextApple: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
-  walletBtnTextGoogle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
+  walletBtnTextApple: { ...TextStyles.callout, color: colors.background },
+  walletBtnTextGoogle: { ...TextStyles.callout, color: colors.background },
 
   actionsSection: { marginHorizontal: CardTokens.padding + 4, marginTop: 24, borderRadius: CardTokens.radius, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 16, padding: CardTokens.padding, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   actionIcon:     { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  actionText:     { flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  actionText:     { flex: 1, ...TextStyles.callout, color: colors.text },
 });

@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import type { AppUpdate, UpdateCategory } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
@@ -133,22 +133,22 @@ const styles = StyleSheet.create({
   container:    { flex: 1 },
   header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottomWidth: 1 },
   backBtn:      { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
-  headerTitle:  { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  headerSub:    { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  headerTitle:  { ...TextStyles.title2 },
+  headerSub:    { ...TextStyles.chip, marginTop: 1 },
   loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText:    { fontSize: 15, fontFamily: 'Poppins_500Medium' },
+  emptyText:    { ...TextStyles.callout },
   list:         { paddingTop: 20, gap: 14 },
 
   card:         { borderRadius: 16, borderWidth: 1, padding: 16, gap: 8 },
   cardHeader:   { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   catBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  catText:      { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  catText:      { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.5 },
   versionPill:  { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  versionText:  { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-  dateText:     { fontSize: 11, fontFamily: 'Poppins_400Regular', marginLeft: 'auto' },
-  cardTitle:    { fontSize: 16, fontFamily: 'Poppins_700Bold', lineHeight: 22 },
-  cardBody:     { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
+  versionText:  { ...TextStyles.badge },
+  dateText:     { ...TextStyles.badge, marginLeft: 'auto' },
+  cardTitle:    { ...TextStyles.headline, lineHeight: 22 },
+  cardBody:     { ...TextStyles.chip, lineHeight: 20 },
   readMore:     { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
-  readMoreText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  readMoreText: { ...TextStyles.captionSemibold },
 });

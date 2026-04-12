@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { TextStyles } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
@@ -1667,7 +1668,7 @@ const s = StyleSheet.create({
       default: {},
     }),
   },
-  headerSub:   { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 2, opacity: 0.95 },
+  headerSub:   { ...TextStyles.captionSemibold, marginTop: 2, opacity: 0.95 },
   headerTypeBadge: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1,
@@ -1693,22 +1694,19 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
   },
   asideOverline: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.tabLabel,
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     marginBottom: 6,
     opacity: 0.95,
   },
   asideTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title2,
     letterSpacing: -0.4,
     lineHeight: 26,
   },
   asideSubtitle: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.chip,
     lineHeight: 19,
     marginTop: 4,
     opacity: 0.92,
@@ -1732,13 +1730,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   asideRowTitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.callout,
     letterSpacing: -0.2,
   },
   asideRowDesc: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
     lineHeight: 16,
     marginTop: 2,
   },
@@ -1756,13 +1752,11 @@ const s = StyleSheet.create({
   typeSection: { marginBottom: 20 },
   railHeader: { marginBottom: 12 },
   railTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title3,
     letterSpacing: -0.35,
   },
   railHint: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.caption,
     lineHeight: 17,
     marginTop: 4,
     opacity: 0.95,
@@ -1790,13 +1784,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   typeCardLabelPremium: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.callout,
     letterSpacing: -0.25,
   },
   typeCardDescPremium: {
-    fontSize: 11,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.badge,
     lineHeight: 15,
   },
 
@@ -1809,7 +1801,7 @@ const s = StyleSheet.create({
     }),
   },
   noticeStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-  noticeText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', flex: 1, lineHeight: 18 },
+  noticeText:  { ...TextStyles.chip, flex: 1, lineHeight: 18 },
 
   // Cover photo
   mediaPrevieFull: {
@@ -1822,22 +1814,22 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
   },
-  mediaReplaceBtnText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  mediaReplaceBtnText: { color: '#fff', ...TextStyles.captionSemibold },
   mediaEmpty: {
     height: 200, borderRadius: 14, borderWidth: 2,
     borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center',
     gap: 8, marginBottom: 12,
   },
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  mediaEmptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  mediaEmptySub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  mediaEmptyTitle: { ...TextStyles.callout },
+  mediaEmptySub:   { ...TextStyles.caption, marginTop: 1 },
 
-  input:    { borderRadius: 12, padding: 14, fontSize: 14, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
+  input:    { borderRadius: 12, padding: 14, ...TextStyles.cardBody, borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },
 
   inputWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12 },
-  inputInner:    { flex: 1, fontSize: 14, fontFamily: 'Poppins_400Regular', padding: 0 },
-  inputPrefix:   { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  inputInner:    { flex: 1, ...TextStyles.cardBody, padding: 0 },
+  inputPrefix:   { ...TextStyles.chip },
 
   row: { flexDirection: 'row', gap: 10 },
 
@@ -1846,12 +1838,12 @@ const s = StyleSheet.create({
     padding: 14, marginVertical: 8,
   },
   toggleIconWrap: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  toggleLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  toggleSub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  toggleLabel:    { ...TextStyles.cardTitle },
+  toggleSub:      { ...TextStyles.badge, marginTop: 1 },
 
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
-  chipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  chipText: { ...TextStyles.chip },
 
   submitWrap: { marginTop: 4, marginBottom: 8 },
   submitBtn:  {
@@ -1862,9 +1854,9 @@ const s = StyleSheet.create({
       default: { shadowColor: 'black', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
     }),
   },
-  submitBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  submitBtnText: { ...TextStyles.headline, color: '#fff' },
   submitNoteRow: { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 10 },
-  submitNote:    { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  submitNote:    { ...TextStyles.caption, lineHeight: 18 },
 
   // Success screen
   successRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
@@ -1886,11 +1878,11 @@ const s = StyleSheet.create({
     width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     position: 'absolute', top: 26, left: '50%' as never, marginLeft: 16,
   },
-  successTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginTop: 4 },
-  successSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, paddingHorizontal: 8, marginBottom: 8 },
+  successTitle: { ...TextStyles.title, textAlign: 'center', marginTop: 4 },
+  successSub:   { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, paddingHorizontal: 8, marginBottom: 8 },
   successBtn:        { width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
-  successBtnText:    { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  successBtnText:    { ...TextStyles.callout, color: '#fff' },
   successBtnOutline: { width: '100%', paddingVertical: 12, borderRadius: 14, alignItems: 'center', borderWidth: 1, marginTop: 4 },
-  successBtnOutlineText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  successTagline: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 8 },
+  successBtnOutlineText: { ...TextStyles.callout },
+  successTagline: { ...TextStyles.caption, marginTop: 8 },
 });

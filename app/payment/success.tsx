@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { TextStyles } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
@@ -171,24 +172,20 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 6,
   },
   title: {
-    fontSize: 26,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.hero,
     textAlign: 'center',
     marginBottom: 4,
   },
   eventTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.title3,
     textAlign: 'center',
   },
   eventMeta: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins_400Regular',
+    ...TextStyles.callout,
     textAlign: 'center',
     lineHeight: 22,
   },

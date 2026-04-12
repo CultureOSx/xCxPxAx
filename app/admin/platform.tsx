@@ -10,7 +10,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
 
@@ -68,11 +68,11 @@ function FeatureFlagRow({ featureKey, enabled, index = 0 }: {
 const ff = StyleSheet.create({
   row:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   iconWrap:{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  sub:     { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  label:   { ...TextStyles.cardTitle },
+  sub:     { ...TextStyles.badge, marginTop: 1 },
   pill:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
   dot:     { width: 6, height: 6, borderRadius: 3 },
-  pillText:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  pillText:{ ...TextStyles.captionSemibold },
 });
 
 // ─── Phase Selector ───────────────────────────────────────────────────────────

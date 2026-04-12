@@ -17,7 +17,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import type { UserRole } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
@@ -114,7 +114,7 @@ function RoleBadge({ role, size = 'sm' }: { role?: UserRole; size?: 'sm' | 'md' 
 const rb = StyleSheet.create({
   wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  text:   { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.3 },
+  text:   { ...TextStyles.tabLabel, letterSpacing: 0.3 },
   textMd: { fontSize: 12 },
 });
 
@@ -252,17 +252,17 @@ const ms = StyleSheet.create({
   },
   handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   userRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
-  userName:     { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  userEmail:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
+  userName:     { ...TextStyles.callout },
+  userEmail:    { ...TextStyles.caption, marginTop: 2 },
+  sectionLabel: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
   roleRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
   roleIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  roleLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  roleDesc:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  roleLabel:    { ...TextStyles.cardTitle },
+  roleDesc:     { ...TextStyles.caption, marginTop: 1 },
   currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  currentText:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  currentText:  { ...TextStyles.badge },
   cancelBtn:    { marginTop: 6, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  cancelText:   { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  cancelText:   { ...TextStyles.callout },
 });
 
 // ─── User Card (mobile) ───────────────────────────────────────────────────────
@@ -377,17 +377,17 @@ const uc = StyleSheet.create({
   card:      { borderRadius: 16, borderWidth: 1, padding: 14, gap: 12 },
   topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   nameRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flexShrink: 1 },
-  email:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  meta:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  name:      { ...TextStyles.cardTitle, flexShrink: 1 },
+  email:     { ...TextStyles.caption, marginTop: 2 },
+  meta:      { ...TextStyles.badge, marginTop: 1 },
   badges:    { alignItems: 'flex-end', gap: 5 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
   metaRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  metaText:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
+  metaText:  { ...TextStyles.badge },
   metaDot:   { fontSize: 11 },
   actions:   { flexDirection: 'row', gap: 8 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
-  actionText:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  actionText:{ ...TextStyles.badge },
 });
 
 // ─── Desktop Table Row ────────────────────────────────────────────────────────
@@ -471,12 +471,12 @@ const tr = StyleSheet.create({
   tdLoc:    { flex: 1.2, paddingRight: 8, minWidth: 0 },
   tdJoined: { flex: 1, minWidth: 80 },
   tdAction: { width: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
-  name:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  subXs:    { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  name:     { ...TextStyles.chip },
+  sub:      { ...TextStyles.caption, marginTop: 1 },
+  subXs:    { ...TextStyles.tabLabel, marginTop: 1 },
   iconBtn:  { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   editBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  editText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  editText: { ...TextStyles.badge },
 });
 
 // ─── Table Header ─────────────────────────────────────────────────────────────
@@ -503,7 +503,7 @@ function TableHeader() {
 }
 const th = StyleSheet.create({
   row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  cell: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.9 },
+  cell: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.9 },
 });
 
 // ─── Stat Chip ────────────────────────────────────────────────────────────────
@@ -522,13 +522,13 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-  chip: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8, 
-    paddingHorizontal: 12, 
-    paddingVertical: 10, 
-    borderRadius: 14, 
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
     ...Platform.select({
       web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
@@ -542,8 +542,8 @@ const sp = StyleSheet.create({
     })
   },
   icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+  val:  { ...TextStyles.headline },
+  lbl:  { ...TextStyles.tabLabel },
 });
 
 function AdminUsersSkeleton() {
@@ -878,8 +878,8 @@ const s = StyleSheet.create({
 
   // Header
   header:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.2 },
-  headerSub:    { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  headerTitle:  { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
+  headerSub:    { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
   backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   headerBtn:    { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
 
@@ -896,26 +896,26 @@ const s = StyleSheet.create({
 
   // Search
   searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
-  searchInput:  { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, padding: 0 },
+  searchInput:  { flex: 1, ...TextStyles.cardBody, padding: 0 },
 
   // Role chips
   chips:        { gap: 8, paddingVertical: 2 },
   chip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  chipText:     { ...TextStyles.captionSemibold },
   chipCount:    { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
-  chipCountText:{ fontSize: 10, fontFamily: 'Poppins_700Bold' },
+  chipCountText:{ ...TextStyles.tabLabel },
 
   // Desktop table
   tableWrap:    { borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, overflow: 'hidden' },
 
   // Empty / loading
   emptyWrap:    { alignItems: 'center', gap: 10, paddingVertical: 60 },
-  emptyTitle:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  emptyText:    { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
+  emptyTitle:   { ...TextStyles.headline },
+  emptyText:    { ...TextStyles.chip, textAlign: 'center' },
 
   // Footer
   footer:       { alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 20 },
-  footerText:   { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  footerText:   { ...TextStyles.caption },
   loadMore:     { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-  loadMoreText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  loadMoreText: { ...TextStyles.chip },
 });

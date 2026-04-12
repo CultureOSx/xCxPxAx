@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, LayoutRules } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules, TextStyles } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
@@ -93,13 +93,13 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  headerTitle:  { ...TextStyles.title3, fontSize: 18 },
   intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center' },
   iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.indigo + '15' },
-  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text, textAlign: 'center' },
-  introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
-  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
+  introTitle:   { ...TextStyles.title2, marginBottom: 4, color: colors.text, textAlign: 'center' },
+  introDate:    { ...TextStyles.caption, marginBottom: 14, color: CultureTokens.indigo },
+  introPara:    { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
   section:      { marginHorizontal: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, letterSpacing: 0.3 },
-  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
+  sectionTitle: { ...TextStyles.headline, marginBottom: 8, color: colors.text, letterSpacing: 0.3 },
+  sectionBody:  { ...TextStyles.cardBody, lineHeight: 24, color: colors.textSecondary },
 });

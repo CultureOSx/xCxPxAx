@@ -25,7 +25,7 @@ import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import type { EventData, Ticket } from '@/shared/schema';
 
 const IS_WEB = Platform.OS === 'web';
@@ -356,8 +356,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroTitle: { fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
-  heroSub: { marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 17 },
+  heroTitle: { ...TextStyles.headline, lineHeight: 22 },
+  heroSub: { ...TextStyles.caption, marginTop: 2, lineHeight: 17 },
 
   card: { paddingVertical: 4 },
   row: {
@@ -375,9 +375,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 19 },
-  rowSub: { marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 16 },
-  badge: { fontFamily: 'Poppins_700Bold', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.4 },
+  rowTitle: { ...TextStyles.cardTitle, lineHeight: 19 },
+  rowSub: { ...TextStyles.caption, marginTop: 2, lineHeight: 16 },
+  badge: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   divider: { height: 1, marginLeft: 66, opacity: 0.55 },
   actionBtn: {
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
   },
-  actionBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  actionBtnText: { ...TextStyles.captionSemibold },
 
   actionsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
   secondaryBtn: {
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  secondaryBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  secondaryBtnText: { ...TextStyles.captionSemibold },
   primaryBtn: {
     flex: 1.2,
     minHeight: 40,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  primaryBtnText: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 12 },
+  primaryBtnText: { ...TextStyles.captionSemibold, color: '#fff', fontFamily: 'Poppins_700Bold' },
 
   syncOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -432,6 +432,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  syncText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  syncText: { ...TextStyles.chip },
 });
 

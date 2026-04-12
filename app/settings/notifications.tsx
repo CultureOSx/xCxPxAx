@@ -116,7 +116,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   sectionTitle: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4, color: colors.textTertiary },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
   settingIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingLabel: { ...TextStyles.headline, color: colors.text },
   settingDesc:  { ...TextStyles.chip, marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
   divider:      { height: 1, marginLeft: 74, backgroundColor: colors.borderLight, opacity: 0.5 },
 

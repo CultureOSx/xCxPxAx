@@ -34,8 +34,7 @@ import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { TextStyles } from '@/constants/typography';
-import { CultureTokens, gradients, shadows, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, shadows, TextStyles, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -306,7 +305,7 @@ const sc = StyleSheet.create({
 
 const fr = StyleSheet.create({
   wrap: { gap: 8 },
-  label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
+  label: { ...TextStyles.badge, letterSpacing: 0.4 },
 });
 
 const id = StyleSheet.create({
@@ -332,8 +331,7 @@ const id = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   pillText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.captionSemibold,
     color: 'rgba(255,255,255,0.95)',
     maxWidth: 200,
   },
@@ -1399,8 +1397,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   tabLabel: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.chip,
     textAlign: 'center',
   },
   body: { paddingTop: 8, gap: 0, paddingBottom: 8 },
@@ -1409,8 +1406,7 @@ const s = StyleSheet.create({
     height: 52,
     borderRadius: 14,
     paddingHorizontal: 16,
-    fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.callout,
     borderWidth: 1,
   },
   bioInput: { height: 108, paddingTop: 14, paddingBottom: 14 },

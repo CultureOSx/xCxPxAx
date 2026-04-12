@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -78,8 +78,8 @@ const sp = StyleSheet.create({
     })
   },
   icon:  { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  val:   { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  lbl:   { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
+  val:   { ...TextStyles.title3 },
+  lbl:   { ...TextStyles.badge, textAlign: 'center' },
 });
 
 // ─── Event row ───────────────────────────────────────────────────────────────
@@ -128,12 +128,12 @@ function EventRow({ event }: { event: VenueEvent }) {
 const er = StyleSheet.create({
   row:      { flexDirection: 'row', gap: 12, padding: 14, borderBottomWidth: 1, alignItems: 'flex-start' },
   thumb:    { width: 56, height: 56, borderRadius: 10, overflow: 'hidden' },
-  title:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  meta:     { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  title:    { ...TextStyles.cardTitle },
+  meta:     { ...TextStyles.caption },
   barBg:    { height: 4, borderRadius: 2, overflow: 'hidden' },
   barFill:  { height: '100%', borderRadius: 2 },
   badge:    { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeText:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  badgeText:{ ...TextStyles.badge },
 });
 
 function VenueDashboardSkeleton() {
@@ -370,10 +370,10 @@ const vc = StyleSheet.create({
   backBtn:     { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   editBtn:     { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   headerTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  headerSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  headerSub:   { ...TextStyles.caption, marginTop: 1 },
 
   section:     { paddingHorizontal: 20, marginTop: 24 },
-  sectionHeader: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.2, marginBottom: 10 },
+  sectionHeader: { ...TextStyles.badge, letterSpacing: 1.2, marginBottom: 10 },
   card:        { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
 
   venueCard:   { 
@@ -395,8 +395,8 @@ const vc = StyleSheet.create({
   },
   venueImage:  { width: '100%', height: 120 },
   venueInfo:   { padding: 14 },
-  venueName:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  venueMeta:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  venueName:   { ...TextStyles.headline },
+  venueMeta:   { ...TextStyles.chip, marginTop: 2 },
 
   qBtn:        { 
     flex: 1, 
@@ -416,6 +416,6 @@ const vc = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  qBtnText:    { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  qBtnText:    { ...TextStyles.captionSemibold },
   ctaBtn:      { flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
 });

@@ -163,7 +163,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
 
     optionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, gap: 14 },
     optionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    optionTitle: { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+    optionTitle: { ...TextStyles.headline, color: colors.text },
     optionSub: { ...TextStyles.chip, marginTop: 2, lineHeight: 18, color: colors.textTertiary, width: '90%' },
     divider: { height: 1, marginLeft: 74, backgroundColor: colors.borderLight, opacity: 0.5 },
 
@@ -181,7 +181,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
     },
     previewModeText: { ...TextStyles.badge, color: CultureTokens.indigo },
     previewCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 6 },
-    previewTitle: { ...TextStyles.callout, fontFamily: 'Poppins_700Bold' },
+    previewTitle: { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
     previewSub: { ...TextStyles.caption, lineHeight: 18 },
     previewChip: {
       alignSelf: 'flex-start',

@@ -5,7 +5,7 @@ import { router, usePathname } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { api, type WalletTransaction } from '@/lib/api';
 import { routeWithRedirect } from '@/lib/routes';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -185,33 +185,33 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
   backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  headerTitle:  { ...TextStyles.title3, color: colors.text },
   scrollContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   summaryRow:   { flexDirection: 'row', paddingHorizontal: 20, gap: 14, marginBottom: 20 },
   summaryCard:  { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
-  summaryLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
-  summaryAmount:{ fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  summaryLabel: { ...TextStyles.chip, color: colors.textSecondary },
+  summaryAmount:{ ...TextStyles.title3 },
   txCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
   txIcon:       { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  txDescription:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  txDescription:{ ...TextStyles.callout, color: colors.text },
   txMeta:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  txDate:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
-  txDot:        { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
-  txCategory:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  txDate:       { ...TextStyles.caption, color: colors.textSecondary },
+  txDot:        { ...TextStyles.caption, color: 'rgba(255,255,255,0.4)' },
+  txCategory:   { ...TextStyles.caption, color: colors.textSecondary },
   txRight:      { alignItems: 'flex-end', gap: 6 },
-  txAmount:     { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  txAmount:     { ...TextStyles.headline },
   statusBadge:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusText:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' as const },
+  statusText:   { ...TextStyles.badge, textTransform: 'capitalize' as const },
   emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 40 },
   emptyIcon:    { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: colors.surface },
-  emptyTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text },
-  emptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
-  
+  emptyTitle:   { ...TextStyles.title2, marginBottom: 8, color: colors.text },
+  emptySubtitle:{ ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
+
   authEmptyIcon: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: CultureTokens.indigo + '15' },
-  authEmptyTitle:{ fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, textAlign: 'center' },
-  authEmptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary, marginBottom: 32 },
+  authEmptyTitle:{ ...TextStyles.title2, marginBottom: 8, color: colors.text, textAlign: 'center' },
+  authEmptySubtitle:{ ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, color: colors.textSecondary, marginBottom: 32 },
   signInBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', backgroundColor: CultureTokens.indigo },
-  signInBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  signInBtnText:{ ...TextStyles.callout, color: colors.text },
   backHomeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', marginTop: 12, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
-  backHomeBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  backHomeBtnText: { ...TextStyles.callout, color: colors.text },
 });

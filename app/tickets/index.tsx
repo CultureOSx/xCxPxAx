@@ -28,7 +28,7 @@ import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { ticketKeys } from '@/hooks/queries/keys';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import type { Ticket } from '@/shared/schema';
 
 const IS_WEB = Platform.OS === 'web';
@@ -303,8 +303,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 22 },
   sectionLabel: {
     marginBottom: 10,
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 12,
+    ...TextStyles.captionSemibold,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -321,20 +320,20 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   statusPill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-  statusText: { fontFamily: 'Poppins_700Bold', fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase' },
-  price: { fontFamily: 'Poppins_700Bold', fontSize: 16 },
-  title: { marginTop: 8, fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 },
+  statusText: { ...TextStyles.tabLabel, letterSpacing: 0.4, textTransform: 'uppercase' },
+  price: { ...TextStyles.headline },
+  title: { marginTop: 8, ...TextStyles.headline, lineHeight: 22 },
   metaList: { marginTop: 10, gap: 6 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  metaText: { fontFamily: 'Poppins_400Regular', fontSize: 12, flex: 1 },
+  metaText: { ...TextStyles.caption, flex: 1 },
   divider: { height: 1, marginVertical: 10, opacity: 0.55 },
   small: { fontFamily: 'Poppins_500Medium', fontSize: 12 },
   actionsInline: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconBtn: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { fontFamily: 'Poppins_700Bold', fontSize: 12 },
+  cancelText: { ...TextStyles.captionSemibold },
 
   stateWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 90, gap: 10 },
   stateTitle: { fontFamily: 'Poppins_700Bold', fontSize: 19 },
-  stateSub: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
+  stateSub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
 });
 

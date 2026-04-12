@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, LayoutRules } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { EMAIL_PRIVACY } from '@/lib/app-meta';
 
@@ -111,26 +111,26 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: LayoutRules.iconTextGap,
   },
   headerTitle:  {
+    ...TextStyles.title3,
     flex: 1,
     fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
     textAlign: 'center',
   },
   intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center' },
   iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.gold + '15' },
-  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },
-  introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
-  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
+  introTitle:   { ...TextStyles.title2, marginBottom: 4, color: colors.text },
+  introDate:    { ...TextStyles.caption, marginBottom: 14, color: CultureTokens.indigo },
+  introPara:    { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
   cookieSection:     { paddingHorizontal: 20, marginBottom: 24 },
-  cookieSectionTitle:{ fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 12, color: colors.text, letterSpacing: 0.3 },
+  cookieSectionTitle:{ ...TextStyles.headline, marginBottom: 12, color: colors.text, letterSpacing: 0.3 },
   cookieCard:        { borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, marginBottom: 10 },
   cookieHeader:      { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
   cookieIcon:        { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cookieName:        { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  cookieName:        { ...TextStyles.callout, color: colors.text },
   requiredBadge:     { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start', marginTop: 4 },
-  requiredText:      { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  cookieDesc:        { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: colors.textSecondary },
+  requiredText:      { ...TextStyles.badge },
+  cookieDesc:        { ...TextStyles.cardBody, lineHeight: 22, color: colors.textSecondary },
   section:      { marginHorizontal: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, letterSpacing: 0.3 },
-  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
+  sectionTitle: { ...TextStyles.headline, marginBottom: 8, color: colors.text, letterSpacing: 0.3 },
+  sectionBody:  { ...TextStyles.cardBody, lineHeight: 24, color: colors.textSecondary },
 });

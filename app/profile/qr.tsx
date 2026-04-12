@@ -31,7 +31,7 @@ import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useMemo, useState } from 'react';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens , gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AppHeaderBar } from '@/components/AppHeaderBar';
 import { api } from '@/lib/api';
@@ -400,8 +400,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   identityBrandTitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.callout,
   },
   identityBrandSub: {
     fontSize: 11,
@@ -417,8 +416,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   tierPillText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.tabLabel,
     letterSpacing: 0.2,
   },
   identityMainRow: {
@@ -457,8 +455,7 @@ const s = StyleSheet.create({
     letterSpacing: -0.4,
   },
   handleText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_500Medium',
+    ...TextStyles.chip,
   },
   locationPill: {
     marginTop: 4,
@@ -489,14 +486,12 @@ const s = StyleSheet.create({
     gap: 2,
   },
   infoLabel: {
-    fontSize: 10,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.tabLabel,
     textTransform: 'uppercase',
     letterSpacing: 1.1,
   },
   infoValue: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.chip,
   },
   cpidBtn: {
     minWidth: 154,
@@ -510,15 +505,13 @@ const s = StyleSheet.create({
     gap: 8,
   },
   cpidBtnLabel: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.tabLabel,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   cpidBtnValue: {
     flex: 1,
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.captionSemibold,
     letterSpacing: 0.2,
   },
 
@@ -542,8 +535,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   qrTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.title3,
     color: '#0B1221',
   },
   qrSub: {
@@ -563,8 +555,7 @@ const s = StyleSheet.create({
   },
   qrFooter: {
     marginTop: 6,
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
+    ...TextStyles.captionSemibold,
     letterSpacing: 1.4,
     color: '#111827',
   },
@@ -581,10 +572,10 @@ const s = StyleSheet.create({
     }),
   },
   actionIcon:  { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  actionLabel: { ...TextStyles.captionSemibold, color: '#fff' },
 
   walletSection:   { gap: 12, marginTop: 10 },
-  walletHeading:   { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginLeft: 4 },
+  walletHeading:   { ...TextStyles.badge, letterSpacing: 2, marginLeft: 4 },
   walletBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     paddingVertical: 18, paddingHorizontal: 22,
@@ -599,11 +590,11 @@ const s = StyleSheet.create({
   walletBtnGoogle: {},
   walletBtnText:   { flex: 1, gap: 2 },
   walletBtnSub:    { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.65)', letterSpacing: 0.5 },
-  walletBtnTitle:  { fontSize: 18, fontFamily: 'Poppins_800ExtraBold', color: '#FFFFFF', letterSpacing: -0.3 },
+  walletBtnTitle:  { ...TextStyles.title3, color: '#FFFFFF', letterSpacing: -0.3 },
 
   tagsSection: { gap: 12, marginTop: 10 },
-  tagsHeading: { fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 2, marginLeft: 4 },
+  tagsHeading: { ...TextStyles.badge, letterSpacing: 2, marginLeft: 4 },
   tagsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tag:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, backgroundColor: 'rgba(0,102,204,0.1)', borderColor: 'rgba(0,102,204,0.3)' },
-  tagText:     { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  tagText:     { ...TextStyles.chip, color: '#fff' },
 });

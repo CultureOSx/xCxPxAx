@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 
 const RULES = [
@@ -96,11 +96,11 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
   },
-  title:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  lead:       { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20, color: colors.textSecondary, textAlign: 'center' },
+  title:      { ...TextStyles.title3, fontSize: 18 },
+  lead:       { ...TextStyles.cardBody, lineHeight: 22, marginBottom: 20, color: colors.textSecondary, textAlign: 'center' },
   card:       { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
-  cardTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
-  cardBody:   { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: colors.textSecondary },
+  cardTitle:  { ...TextStyles.headline, marginBottom: 6, color: colors.text },
+  cardBody:   { ...TextStyles.cardBody, lineHeight: 22, color: colors.textSecondary },
   footerCard: { marginTop: 12, borderRadius: 16, padding: 16, flexDirection: 'row', gap: 12, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '30' },
-  footerText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium', lineHeight: 20, color: colors.textSecondary },
+  footerText: { ...TextStyles.label, lineHeight: 20, color: colors.textSecondary },
 });

@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import type { AppUpdate, UpdateCategory } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -171,19 +171,19 @@ const styles = StyleSheet.create({
     })
   },
   backBtn:      { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
-  headerTitle:  { flex: 1, fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  headerTitle:  { flex: 1, ...TextStyles.title3 },
   loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText:    { fontSize: 15, fontFamily: 'Poppins_500Medium' },
+  emptyText:    { ...TextStyles.callout },
 
   content:      { paddingTop: 24, gap: 0 },
   metaRow:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   catBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  catText:      { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  catText:      { ...TextStyles.captionSemibold, textTransform: 'uppercase', letterSpacing: 0.5 },
   versionPill:  { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 7 },
-  versionText:  { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-  title:        { fontSize: 24, fontFamily: 'Poppins_700Bold', lineHeight: 32, marginBottom: 10 },
+  versionText:  { ...TextStyles.captionSemibold },
+  title:        { ...TextStyles.title, lineHeight: 32, marginBottom: 10 },
   byline:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
-  bylineText:   { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  bylineText:   { ...TextStyles.caption },
   divider:      { height: 1, marginBottom: 20 },
-  body:         { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 26 },
+  body:         { ...TextStyles.callout, lineHeight: 26 },
 });

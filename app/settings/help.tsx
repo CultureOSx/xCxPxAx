@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { LayoutRules, Radius, Spacing, gradients } from '@/constants/theme';
+import { LayoutRules, Radius, Spacing, gradients, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -149,26 +149,26 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
   headerInner:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
   backBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  headerTitle:  { ...TextStyles.title3, fontSize: 18 },
 
   heroCard:     { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMax, alignItems: 'center' },
   heroIconWrap: { width: 60, height: 60, borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
-  heroTitle:    { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.xs },
-  heroSub:      { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 18 },
+  heroTitle:    { ...TextStyles.title2, marginBottom: Spacing.xs },
+  heroSub:      { ...TextStyles.chip, textAlign: 'center', lineHeight: 18 },
 
   section:      { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing },
-  sectionTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: Spacing.sm },
+  sectionTitle: { ...TextStyles.title3, fontSize: 17, marginBottom: Spacing.sm },
 
   faqCard:      { borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMin, borderWidth: 1, marginBottom: LayoutRules.betweenCards },
   faqHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: LayoutRules.iconTextGap },
-  faqQuestion:  { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1, lineHeight: 20 },
-  faqAnswer:    { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: Spacing.sm, lineHeight: 20 },
+  faqQuestion:  { ...TextStyles.cardTitle, flex: 1, lineHeight: 20 },
+  faqAnswer:    { ...TextStyles.chip, marginTop: Spacing.sm, lineHeight: 20 },
 
   contactCard:  { borderRadius: LayoutRules.borderRadius, borderWidth: 1, overflow: 'hidden' },
   contactItem:  { flexDirection: 'row', alignItems: 'center', padding: LayoutRules.cardPaddingMin, gap: LayoutRules.iconTextGap },
   contactIcon:  { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center' },
-  contactLabel: { fontSize: 15, fontFamily: 'Poppins_500Medium' },
-  contactSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: Spacing.xs },
+  contactLabel: { ...TextStyles.callout },
+  contactSub:   { ...TextStyles.caption, marginTop: Spacing.xs },
   divider:      { height: StyleSheet.hairlineWidth, marginLeft: 66 },
 
   guidelinesCard:{ flexDirection: 'row', alignItems: 'center', gap: LayoutRules.iconTextGap, borderRadius: LayoutRules.borderRadius, padding: LayoutRules.cardPaddingMin, borderWidth: 1 },

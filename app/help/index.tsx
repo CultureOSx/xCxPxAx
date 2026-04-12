@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens, CategoryColors } from '@/constants/theme';
+import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens, CategoryColors, TextStyles } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo } from 'react';
@@ -418,7 +418,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  headerTitle: { ...TextStyles.title3, fontSize: 18 },
 
   // Hero
   heroCard: {
@@ -443,9 +443,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.textInverse },
+  heroTitle: { ...TextStyles.title, marginBottom: 8, color: colors.textInverse },
   heroSub: {
-    fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.92)',
+    ...TextStyles.callout, color: 'rgba(255,255,255,0.92)',
     textAlign: 'center', lineHeight: 24, paddingHorizontal: 12,
   },
 
@@ -459,7 +459,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderWidth: 1,
   },
   searchInput: {
-    flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.text,
+    ...TextStyles.callout, flex: 1, color: colors.text,
   },
 
   // Quick links
@@ -470,7 +470,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 16, borderWidth: 1, borderColor: colors.borderLight,
   },
   quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  quickLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, textAlign: 'center' },
+  quickLabel: { ...TextStyles.chip, color: colors.text, textAlign: 'center' },
 
   // Category pills
   pillsRow: { paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingBottom: 12, gap: 10, flexDirection: 'row', marginBottom: 6 },
@@ -481,16 +481,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderWidth: 1, borderColor: colors.borderLight,
   },
   pillActive: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  pillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+  pillText: { ...TextStyles.chip, color: colors.textSecondary },
   pillTextActive: { color: colors.textInverse },
 
   // Section
   section: { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: 28 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 14 },
+  sectionTitle: { ...TextStyles.title3, fontSize: 18, color: colors.text, marginBottom: 14 },
   catHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   catIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   catCount: {
-    marginLeft: 'auto', fontSize: 13, fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.chip,
+    marginLeft: 'auto',
     color: colors.textTertiary,
   },
 
@@ -504,22 +505,22 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     alignItems: 'flex-start', gap: 16,
   },
   faqQuestion: {
-    fontSize: 15, fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold',
     color: colors.text, flex: 1, lineHeight: 22,
   },
   faqAnswer: {
-    fontSize: 14, fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
     color: colors.textSecondary, marginTop: 12, lineHeight: 24,
   },
 
   // Empty search
   emptySearch: { alignItems: 'center', paddingVertical: 56, paddingHorizontal: 40 },
   emptyTitle: {
-    fontSize: 18, fontFamily: 'Poppins_600SemiBold',
+    ...TextStyles.title3, fontSize: 18,
     color: colors.text, marginTop: 16, marginBottom: 8, textAlign: 'center',
   },
   emptySub: {
-    fontSize: 14, fontFamily: 'Poppins_400Regular',
+    ...TextStyles.cardBody,
     color: colors.textTertiary, textAlign: 'center', lineHeight: 22,
   },
 
@@ -530,9 +531,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   contactItem: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
   contactIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  contactLabel: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  contactLabel: { ...TextStyles.headline, color: colors.text },
   contactSub: {
-    fontSize: 13, fontFamily: 'Poppins_400Regular',
+    ...TextStyles.chip,
     color: colors.textSecondary, marginTop: 2,
   },
   divider: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 74 },
@@ -547,17 +548,17 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: CultureTokens.indigo + '15',
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  aboutName: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
+  aboutName: { ...TextStyles.title2, fontSize: 22, color: colors.text },
   aboutVersion: {
-    fontSize: 13, fontFamily: 'Poppins_500Medium',
+    ...TextStyles.chip,
     color: colors.textTertiary, marginBottom: 12,
   },
   aboutTagline: {
-    fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22,
+    ...TextStyles.cardBody, lineHeight: 22,
     color: colors.textSecondary, textAlign: 'center', marginBottom: 6,
   },
   aboutCountries: {
-    fontSize: 12, fontFamily: 'Poppins_500Medium',
+    ...TextStyles.caption,
     color: colors.textTertiary,
     textAlign: 'center',
   },

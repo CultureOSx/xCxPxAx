@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import * as Haptics from 'expo-haptics';
@@ -146,13 +146,13 @@ const getStyles = (colors: ColorTheme) => StyleSheet.create({
     width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', 
     backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' 
   },
-  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  headerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  headerTitle: { ...TextStyles.title2, color: '#fff' },
+  headerSub: { ...TextStyles.chip, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
   studioBadge: { 
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, 
     borderRadius: 10, backgroundColor: 'rgba(255,200,87,0.15)', borderWidth: 1, borderColor: CultureTokens.gold + '60' 
   },
-  studioBadgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
+  studioBadgeText: { ...TextStyles.badge, color: CultureTokens.gold },
 
   // Tabs
   tabsContainer: { flexDirection: 'row', gap: 12, marginBottom: 8 },
@@ -160,7 +160,7 @@ const getStyles = (colors: ColorTheme) => StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, 
     paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: 'transparent' 
   },
-  tabText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  tabText: { ...TextStyles.cardTitle },
 
   // Content
   content: { flex: 1 },
@@ -173,6 +173,6 @@ const getStyles = (colors: ColorTheme) => StyleSheet.create({
     }),
   },
   iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginTop: 12, marginBottom: 8, textAlign: 'center' },
-  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 24 },
+  emptyTitle: { ...TextStyles.title, marginTop: 12, marginBottom: 8, textAlign: 'center' },
+  emptyDesc: { ...TextStyles.callout, textAlign: 'center', lineHeight: 24 },
 });

@@ -18,8 +18,7 @@ import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
-import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
-import { TextStyles } from '@/constants/typography';
+import { CultureTokens, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 function WidgetsDashboardContent() {
@@ -231,8 +230,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets) =>
       paddingHorizontal: 4,
     },
     sectionTitle: {
-      fontSize: 14,
-      fontFamily: 'Poppins_700Bold',
+      ...TextStyles.cardTitle,
       color: colors.text,
       textTransform: 'uppercase',
       letterSpacing: 1.2,
@@ -258,8 +256,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets) =>
     },
     emptyText: {
       color: colors.textTertiary,
-      fontSize: 13,
-      fontFamily: 'Poppins_400Regular',
+      ...TextStyles.chip,
     },
     footerInfo: {
       flexDirection: 'row',
@@ -270,8 +267,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets) =>
     },
     footerNote: {
       flex: 1,
-      fontSize: 12,
-      fontFamily: 'Poppins_400Regular',
+      ...TextStyles.caption,
       color: colors.textTertiary,
       lineHeight: 18,
     },
@@ -282,8 +278,7 @@ const getStyles = (colors: ColorTheme, insets: EdgeInsets) =>
       gap: 14,
     },
     loadingText: {
-      fontSize: 15,
-      fontFamily: 'Poppins_600SemiBold',
+      ...TextStyles.callout,
       color: colors.textSecondary,
     },
   });

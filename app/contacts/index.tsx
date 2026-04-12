@@ -16,7 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useContacts, SavedContact, PhoneContact } from '@/contexts/ContactsContext';
@@ -1046,8 +1046,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerCount: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  headerTitle: { ...TextStyles.title3 },
+  headerCount: { ...TextStyles.caption, marginTop: 1 },
   headerRight: { flexDirection: 'row', gap: 8 },
 
   // Tab bar
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBadgeText: { fontSize: 9, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  tabLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  tabLabel: { ...TextStyles.badge },
 
   // Search
   searchBar: {
@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  searchInput: { flex: 1, ...TextStyles.cardBody },
 
   // Contact item
   contactItem: {
@@ -1116,7 +1116,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
   },
-  contactInitials: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  contactInitials: { ...TextStyles.callout },
   phoneBadge: {
     position: 'absolute',
     bottom: 0,
@@ -1129,7 +1129,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contactInfo: { flex: 1 },
-  contactName: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  contactName: { ...TextStyles.callout },
   contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
   cpidMini: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cpidMiniText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: CultureTokens.indigo },
@@ -1171,7 +1171,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  onCPBadgeText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.success },
+  onCPBadgeText: { ...TextStyles.tabLabel, color: CultureTokens.success },
   syncActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1180,7 +1180,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
   },
-  syncActionBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  syncActionBtnText: { ...TextStyles.captionSemibold, color: '#fff' },
 
   // Sync stats
   syncStats: {
@@ -1214,11 +1214,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 12,
   },
-  importAllBtnText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  importAllBtnText: { ...TextStyles.cardTitle, color: '#fff' },
 
   // Syncing state
   syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  syncingText: { fontSize: 15, fontFamily: 'Poppins_400Regular' },
+  syncingText: { ...TextStyles.callout },
 
   // Permission banner
   permissionContainer: {
@@ -1242,7 +1242,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   permissionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
-  permissionSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+  permissionSub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
   permissionBullets: { gap: 10, width: '100%', marginTop: 8 },
   bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bulletText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flex: 1, lineHeight: 20 },
@@ -1255,7 +1255,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginTop: 16,
   },
-  permissionBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  permissionBtnText: { ...TextStyles.callout, color: '#fff' },
 
   // Empty state
   emptyState: {
@@ -1275,8 +1275,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { ...TextStyles.title2 },
+  emptySub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
   emptyActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   emptyBtn: {
     flexDirection: 'row',
@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
   },
-  emptyBtnText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  emptyBtnText: { ...TextStyles.cardTitle, color: '#fff' },
 
   // Clear all
   clearAllBtn: {
@@ -1310,7 +1310,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  clearAllText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  clearAllText: { ...TextStyles.chip },
 
   // Discover / suggestions
   inviteBanner: {
@@ -1324,7 +1324,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inviteBannerLeft: { flex: 1 },
-  inviteBannerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  inviteBannerTitle: { ...TextStyles.title3, color: '#fff' },
   inviteBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   inviteBannerIcon: {
     width: 52,
@@ -1335,8 +1335,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   discoverSection: { marginBottom: 12 },
-  discoverSectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  discoverSectionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  discoverSectionTitle: { ...TextStyles.headline },
+  discoverSectionSub: { ...TextStyles.caption, marginTop: 2 },
   suggestionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1353,14 +1353,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  suggestionTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  suggestionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  suggestionTitle: { ...TextStyles.cardTitle },
+  suggestionSub: { ...TextStyles.caption, marginTop: 2 },
   suggestionTag: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  suggestionTagText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
+  suggestionTagText: { ...TextStyles.tabLabel },
   interestSection: { marginTop: 16, marginBottom: 16 },
   interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   interestChip: {
@@ -1372,7 +1372,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
   },
-  interestLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  interestLabel: { ...TextStyles.chip },
 
   // Add Contact Modal
   modalContainer: { flex: 1 },
@@ -1384,9 +1384,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  modalCancel: { fontSize: 16, fontFamily: 'Poppins_400Regular' },
+  modalCancel: { ...TextStyles.body },
   modalTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  modalDone: { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
+  modalDone: { ...TextStyles.headline },
   modalContent: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 60, gap: 16 },
   modalAvatarRow: { alignItems: 'center', gap: 10, marginBottom: 8 },
   modalAvatar: {
@@ -1405,7 +1405,7 @@ const styles = StyleSheet.create({
   },
   formField: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   formFieldIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  formInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular' },
+  formInput: { flex: 1, ...TextStyles.callout },
   formDivider: { height: 1, marginLeft: 64 },
   addContactBtn: {
     flexDirection: 'row',
@@ -1416,5 +1416,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 8,
   },
-  addContactBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
+  addContactBtnText: { ...TextStyles.callout, color: '#fff' },
 });

@@ -13,10 +13,9 @@ import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useRole } from '@/hooks/useRole';
 import { Button } from '@/components/ui/Button';
-import { CultureTokens, LayoutRules, Spacing, gradients, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, LayoutRules, Spacing, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BackButton } from '@/components/ui/BackButton';
-import { TextStyles } from '@/constants/typography';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -649,16 +648,16 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       width: 76, height: 76, borderRadius: 38,
       alignItems: 'center', justifyContent: 'center',
     },
-    avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.textOnBrandGradient },
+    avatarLetter: { ...TextStyles.title3, fontSize: 26, color: colors.textOnBrandGradient },
 
-    profileName:  { fontSize: 19, fontFamily: 'Poppins_700Bold', color: colors.textOnBrandGradient, letterSpacing: -0.3 },
-    profileEmail: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textOnBrandGradient, opacity: 0.55 },
+    profileName:  { ...TextStyles.title3, fontSize: 19, color: colors.textOnBrandGradient, letterSpacing: -0.3 },
+    profileEmail: { ...TextStyles.caption, color: colors.textOnBrandGradient, opacity: 0.55 },
     tierBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
       alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4,
       borderRadius: 20, borderWidth: 1,
     },
-    tierText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+    tierText: { ...TextStyles.badge },
 
     editBtnGlass: { alignSelf: 'flex-start' },
     editBtnInner: {
@@ -668,7 +667,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       paddingHorizontal: 12,
       height: 36,
     },
-    editBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+    editBtnText: { ...TextStyles.captionSemibold },
 
     locationRow: {
       flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14,
@@ -677,7 +676,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderRadius: 10, alignSelf: 'flex-start',
       borderWidth: 1, borderColor: 'rgba(46,196,182,0.22)',
     },
-    locationText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textOnBrandGradient, opacity: 0.75 },
+    locationText: { ...TextStyles.badge, color: colors.textOnBrandGradient, opacity: 0.75 },
 
     verifyBanner: {
       flexDirection: 'row',
@@ -692,9 +691,8 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       borderRadius: 10,
     },
     verifyBannerText: {
+      ...TextStyles.badge,
       flex: 1,
-      fontSize: 11,
-      fontFamily: 'Poppins_400Regular',
       color: CultureTokens.warning,
       lineHeight: 16,
     },
@@ -713,10 +711,10 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden', marginBottom: 16,
     },
-    guestTitle:   { fontSize: 21, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center', color: colors.text },
-    guestSub:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, marginBottom: 24, color: colors.textSecondary },
+    guestTitle:   { ...TextStyles.title2, fontSize: 21, marginBottom: 8, textAlign: 'center', color: colors.text },
+    guestSub:     { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22, marginBottom: 24, color: colors.textSecondary },
     guestSignUpBtn: { paddingVertical: Spacing.xs, marginTop: 12 },
-    guestSignUpText: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
+    guestSignUpText: { ...TextStyles.cardBody, color: colors.textSecondary, textAlign: 'center' },
 
     // Sections
     section: { paddingHorizontal: 20, marginBottom: 20 },
@@ -730,7 +728,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       backgroundColor: CultureTokens.indigo,
     },
     sectionTitle: {
-      fontSize: 11, fontFamily: 'Poppins_700Bold',
+      ...TextStyles.badge,
       color: colors.textTertiary,
       textTransform: 'uppercase', letterSpacing: 1.6,
     },
@@ -744,9 +742,9 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       width: 42, height: 42, borderRadius: 13,
       alignItems: 'center', justifyContent: 'center',
     },
-    settingLabel:     { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 20 },
-    settingSub:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 17 },
-    settingRightText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
+    settingLabel:     { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 20 },
+    settingSub:       { ...TextStyles.caption, color: colors.textSecondary, lineHeight: 17 },
+    settingRightText: { ...TextStyles.chip, color: colors.textTertiary },
 
     divider: {
       height: StyleSheet.hairlineWidth,
@@ -761,7 +759,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       backgroundColor: isDark ? 'rgba(255,94,91,0.09)' : 'rgba(255,94,91,0.07)',
       borderWidth: 1, borderColor: CultureTokens.coral + '28',
     },
-    signOutText: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+    signOutText: { ...TextStyles.callout, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
     showMoreBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -774,20 +772,19 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
     },
     showMoreText: {
-      fontSize: 13,
-      fontFamily: 'Poppins_600SemiBold',
+      ...TextStyles.chip,
       color: colors.textSecondary,
     },
     advancedHint: {
-      fontSize: 11,
-      fontFamily: 'Poppins_500Medium',
+      ...TextStyles.badge,
       color: colors.textTertiary,
       marginBottom: 8,
       marginLeft: 4,
     },
 
     footer: {
-      textAlign: 'center', fontSize: 11, fontFamily: 'Poppins_500Medium',
+      ...TextStyles.badge,
+      textAlign: 'center',
       marginTop: 16, marginBottom: 60, lineHeight: 20,
       color: colors.textTertiary, opacity: 0.45,
     },
