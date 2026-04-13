@@ -1,0 +1,1044 @@
+// @ts-nocheck
+// app/(tabs)/perks.tsx
+import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  Platform,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
+import Animated, {
+  FadeInDown, SlideInDown, useReducedMotion,
+} from 'react-native-reanimated';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+
+import { CultureTokens } from '@/constants/theme';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
+import { PerkCard } from '@/components/perks/PerkCard';
+import { usePerks } from '@/hooks/queries/usePerks';
+import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/lib/auth';
+import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_CARD_SHADOW_STRONG, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
+import { api, type RewardsSummary } from '@/lib/api';
+import type { PerkData, Ticket } from '@/shared/schema';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+// Tier thresholds — keep aligned with functions/src/routes/rewards.ts
+
+const REWARDS_GOLD_AT = 500;
+const REWARDS_DIAMOND_AT = 2500;
+const TICKET_QUEST_GOAL = 5;
+const PERK_REDEEM_QUEST_GOAL = 3;
+
+type QuestCta = 'wallet' | 'tickets' | 'perks' | 'explore';
+
+type ActiveQuest = {
+  id: string;
+  title: string;
+  task: string;
+  progress: number;
+  total: number;
+  reward: string;
+  color: string;
+  icon: string;
+  image?: string;
+  cta: QuestCta;
+};
+
+type PerkFeedItem =
+  | { kind: 'section'; id: string; title: string; subtitle: string }
+  | { kind: 'perk'; id: string; perk: PerkData };
+
+function tierJourneyQuestProgress(rewards: RewardsSummary): { progress: number; total: number } {
+  const p = rewards.points;
+  if (rewards.tier === 'diamond') return { progress: 1, total: 1 };
+  if (rewards.tier === 'gold') {
+    const total = REWARDS_DIAMOND_AT - REWARDS_GOLD_AT;
+    const progress = Math.max(0, Math.min(total, p - REWARDS_GOLD_AT));
+    return { progress, total };
+  }
+  const total = REWARDS_GOLD_AT;
+  const progress = Math.max(0, Math.min(total, p));
+  return { progress, total };
+}
+
+function buildActiveQuests(
+  rewards: RewardsSummary,
+  tickets: Ticket[],
+  perks: PerkData[],
+  city: string | undefined,
+): ActiveQuest[] {
+  const { progress: tierProgress, total: tierTotal } = tierJourneyQuestProgress(rewards);
+
+  const ticketCount = tickets.filter((t) => t.status === 'confirmed' || t.status === 'used').length;
+  const ticketProgress = Math.min(ticketCount, TICKET_QUEST_GOAL);
+
+  const redeemed = rewards.perksRedeemed ?? 0;
+  const perkProgress = Math.min(redeemed, PERK_REDEEM_QUEST_GOAL);
+
+  const localPerks = city ? perks.filter((p) => !p.city || p.city === city) : perks;
+  const perkCover = localPerks.find((p) => p.coverUrl)?.coverUrl;
+
+  return [
+    {
+      id: 'rewards-tier',
+      title: 'Rewards trail',
+      task:
+        rewards.nextTierLabel != null
+          ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
+          : 'You are at the top rewards tier',
+      progress: tierProgress,
+      total: tierTotal,
+      reward: rewards.nextTierLabel ? `${rewards.nextTierLabel} tier` : 'Max tier',
+      color: CultureTokens.gold,
+      icon: 'trending-up',
+      cta: 'wallet',
+    },
+    {
+      id: 'event-tickets',
+      title: 'Culture calendar',
+      task: `Collect ${TICKET_QUEST_GOAL} active tickets to events you love`,
+      progress: ticketProgress,
+      total: TICKET_QUEST_GOAL,
+      reward: 'Ticket explorer',
+      color: CultureTokens.teal,
+      icon: 'ticket',
+      cta: 'tickets',
+    },
+    {
+      id: 'perk-redemptions',
+      title: 'Perk pioneer',
+      task: `Redeem ${PERK_REDEEM_QUEST_GOAL} member perks${city ? ` near ${city}` : ''}`,
+      progress: perkProgress,
+      total: PERK_REDEEM_QUEST_GOAL,
+      reward: 'Local insider',
+      color: CultureTokens.coral,
+      icon: 'gift',
+      image: perkCover,
+      cta: 'perks',
+    },
+  ];
+}
+
+const PERK_CATEGORIES = [
+  { id: 'All',      label: 'All Perks', icon: 'gift-outline'      },
+  { id: 'tickets',  label: 'Tickets',   icon: 'ticket-outline'    },
+  { id: 'dining',   label: 'Dining',    icon: 'restaurant-outline' },
+  { id: 'shopping', label: 'Shopping',  icon: 'bag-outline'       },
+  { id: 'arts',     label: 'Arts',      icon: 'brush-outline'     },
+  { id: 'wellness', label: 'Wellness',  icon: 'leaf-outline'      },
+];
+
+const isWeb = Platform.OS === 'web';
+
+// FilterChip imported from @/components/ui/AnimatedFilterChip
+
+function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
+}
+
+// ─── Perk Card Skeleton ───────────────────────────────────────────────────────
+
+function PerkCardSkeleton({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return (
+    <View style={[pk.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+      <View style={[pk.image, { backgroundColor: colors.surfaceElevated }]} />
+      <View style={pk.body}>
+        <View style={[pk.line, { width: '65%', backgroundColor: colors.surfaceElevated }]} />
+        <View style={[pk.line, { width: '45%', backgroundColor: colors.surfaceElevated, marginTop: 6 }]} />
+        <View style={[pk.pill, { backgroundColor: colors.surfaceElevated, marginTop: 8 }]} />
+      </View>
+    </View>
+  );
+}
+
+const pk = StyleSheet.create({
+  card:  { borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
+  image: { height: 100 },
+  body:  { padding: 12 },
+  line:  { height: 12, borderRadius: 6 },
+  pill:  { height: 20, width: 70, borderRadius: 10 },
+});
+
+// ─── Quest Card ───────────────────────────────────────────────────────────────
+
+function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () => void }) {
+  const colors = useColors();
+  const safeTotal = Math.max(1, quest.total);
+  const progressPct = Math.min(100, (quest.progress / safeTotal) * 100);
+  const isComplete = quest.total > 0 && quest.progress >= quest.total;
+
+  return (
+    <Animated.View
+      entering={!isWeb ? FadeInDown.duration(400).springify() : undefined}
+      style={[qs.questCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+    >
+      <View style={qs.questImageStrip}>
+        {quest.image ? (
+          <Image source={{ uri: quest.image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: quest.color + '33' }]} />
+        )}
+        <LinearGradient
+          colors={['transparent', quest.color + 'CC']}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        />
+        <View style={[qs.questIconOnImage, { backgroundColor: quest.color }]}>
+          <Ionicons name={quest.icon as keyof typeof Ionicons.glyphMap} size={MAIN_TAB_UI.iconSize.md} color="#fff" />
+        </View>
+      </View>
+
+      <View style={qs.questCardContent}>
+        <View style={qs.questRewardBadge}>
+          <Ionicons name="trophy" size={MAIN_TAB_UI.iconSize.xs} color={CultureTokens.gold} />
+          <Text style={qs.questRewardText}>{quest.reward}</Text>
+        </View>
+
+        <Text style={[qs.questTitle, { color: colors.text }]} numberOfLines={1}>
+          {quest.title}
+        </Text>
+        <Text style={[qs.questTask, { color: colors.textSecondary }]} numberOfLines={2}>
+          {quest.task}
+        </Text>
+
+        <View style={qs.progressSection}>
+          <View style={[qs.progressTrack, { backgroundColor: colors.borderLight }]}>
+            <LinearGradient
+              colors={[CultureTokens.indigo, CultureTokens.teal]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[qs.progressFill, { width: `${progressPct}%` as `${number}%` }]}
+            />
+          </View>
+          <Text style={[qs.progressLabel, { color: colors.textTertiary }]}>
+            {quest.progress} of {quest.total}
+          </Text>
+        </View>
+
+        {isComplete ? (
+          <Animated.View
+            entering={!isWeb ? SlideInDown.springify() : undefined}
+            style={qs.completedRow}
+          >
+            <View style={[qs.completedBadge, { backgroundColor: colors.success + '18' }]}>
+              <Ionicons name="checkmark-circle" size={MAIN_TAB_UI.iconSize.sm} color={colors.success} />
+              <Text style={[qs.completedText, { color: colors.success }]}>Completed!</Text>
+            </View>
+            <Pressable
+              style={[qs.shareBtn, { borderColor: CultureTokens.gold }]}
+              onPress={() => {
+                if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/(tabs)/community');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Post to community feed"
+            >
+              <Ionicons name="share-social" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.gold} />
+              <Text style={qs.shareText}>Share</Text>
+            </Pressable>
+          </Animated.View>
+        ) : (
+          <Pressable
+            onPress={onContinue}
+            style={({ pressed }) => [
+              qs.checkInBtn,
+              { backgroundColor: quest.color, opacity: pressed ? 0.85 : 1 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Continue this quest"
+          >
+            <Ionicons name="arrow-forward" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />
+            <Text style={qs.checkInText}>Continue</Text>
+          </Pressable>
+        )}
+      </View>
+    </Animated.View>
+  );
+}
+
+const qs = StyleSheet.create({
+  questCard: { 
+    flexDirection: 'row', 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    overflow: 'hidden', 
+    marginBottom: 14, 
+    height: 160,
+    ...MAIN_TAB_CARD_SHADOW,
+  },
+  questImageStrip: { width: 160, position: 'relative' },
+  questIconOnImage: { position: 'absolute', top: 12, left: 12, width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  questCardContent: { flex: 1, padding: 14, justifyContent: 'space-between' },
+  questRewardBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: CultureTokens.gold + '18', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: CultureTokens.gold + '40', marginBottom: 4 },
+  questRewardText: { color: CultureTokens.gold, fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
+  questTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', lineHeight: 21 },
+  questTask: { fontSize: 12, fontFamily: 'Poppins_500Medium', lineHeight: 17 },
+  progressSection: { gap: 4 },
+  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2 },
+  progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+  checkInBtn: { height: 36, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  checkInText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  completedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flex: 1 },
+  completedText: { fontSize: 12, fontFamily: 'Poppins_700Bold' },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1.5, backgroundColor: CultureTokens.gold + '08' },
+  shareText: { color: CultureTokens.gold, fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+});
+
+// ─── Explorer Badge ───────────────────────────────────────────────────────────
+
+function ExplorerBadge({
+  colors,
+  signedIn,
+  loading,
+  rewards,
+  rewardsError,
+  onRetryRewards,
+}: {
+  colors: ReturnType<typeof useColors>;
+  signedIn: boolean;
+  loading: boolean;
+  rewards: RewardsSummary | undefined;
+  rewardsError: boolean;
+  onRetryRewards: () => void;
+}) {
+  const reducedMotionBadge = useReducedMotion();
+  if (!signedIn) {
+    return (
+      <Animated.View
+        entering={reducedMotionBadge || isWeb ? undefined : FadeInDown.duration(350)}
+        style={[eb.explorerCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}
+      >
+        <LinearGradient
+          colors={[CultureTokens.indigo + '18', 'transparent']}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={[eb.ringContainer, { backgroundColor: colors.surfaceElevated, borderRadius: 32 }]}>
+            <Ionicons name="person-circle-outline" size={28} color={CultureTokens.indigo} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+          <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>
+            Sign in to sync reward points and quests.
+          </Text>
+          <Pressable
+            onPress={() => {
+              if (!isWeb) Haptics.selectionAsync();
+              router.push({ pathname: '/(onboarding)/login', params: { redirectTo: '/(tabs)/perks' } });
+            }}
+            style={({ pressed }) => [eb.signInBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: CultureTokens.indigo }]}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to track rewards"
+          >
+            <Text style={eb.signInBtnText}>Sign in</Text>
+            <Ionicons name="arrow-forward" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={[eb.explorerCard, { backgroundColor: colors.surface, justifyContent: 'center', minHeight: 92 }]}>
+        <ActivityIndicator color={CultureTokens.indigo} />
+      </View>
+    );
+  }
+
+  if (rewardsError || !rewards) {
+    return (
+      <View style={[eb.explorerCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary, marginBottom: 10 }]}>
+          Rewards summary unavailable. Pull to refresh or try again.
+        </Text>
+        <Pressable
+          onPress={onRetryRewards}
+          style={({ pressed }) => [eb.signInBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: CultureTokens.indigo, marginTop: 0 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading rewards"
+        >
+          <Text style={eb.signInBtnText}>Retry</Text>
+          <Ionicons name="refresh" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />
+        </Pressable>
+      </View>
+    );
+  }
+
+  const expProgress = Math.min(1, Math.max(0, (rewards.progressPercent ?? 0) / 100));
+  const subtitle = rewards.nextTierLabel
+    ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
+    : 'Top rewards tier unlocked';
+
+  const tierColors: Record<string, string> = {
+    silver: CultureTokens.indigo,
+    gold: CultureTokens.gold,
+    diamond: CultureTokens.teal,
+  };
+  const tierColor = tierColors[rewards.tier] ?? CultureTokens.indigo;
+
+  // SVG circular progress ring
+  const RING_SIZE = 64;
+  const STROKE = 5;
+  const RADIUS = (RING_SIZE - STROKE) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - expProgress);
+
+  return (
+    <Animated.View
+      entering={reducedMotionBadge || isWeb ? undefined : FadeInDown.duration(350)}
+      style={[eb.explorerCard, { backgroundColor: colors.surface }]}
+    >
+      <LinearGradient
+        colors={[CultureTokens.indigo + '14', 'transparent']}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      {/* Progress ring */}
+      <View style={eb.ringContainer}>
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          <Defs>
+            <SvgLinearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor={CultureTokens.indigo} />
+              <Stop offset="1" stopColor={CultureTokens.teal} />
+            </SvgLinearGradient>
+          </Defs>
+          {/* Track */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke={colors.borderLight}
+            strokeWidth={STROKE}
+            fill="none"
+          />
+          {/* Fill */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke="url(#ring-grad)"
+            strokeWidth={STROKE}
+            fill="none"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            rotation="-90"
+            origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+          />
+        </Svg>
+        <View style={eb.ringCenter}>
+          <Text style={[eb.ringPct, { color: colors.text }]}>
+            {Math.round(expProgress * 100)}
+          </Text>
+          <Text style={[eb.ringPctLabel, { color: colors.textTertiary }]}>%</Text>
+        </View>
+      </View>
+
+      <View style={{ flex: 1, gap: 4 }}>
+        <View style={eb.tierRow}>
+          <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+          <View style={[eb.tierBadge, { backgroundColor: tierColor + '18', borderColor: tierColor + '40' }]}>
+            <Text style={[eb.tierBadgeText, { color: tierColor }]}>{rewards.tierLabel}</Text>
+          </View>
+        </View>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
+        <Text style={[eb.pointsText, { color: colors.textTertiary }]}>
+          {rewards.points.toLocaleString()} pts total
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const eb = StyleSheet.create({
+  explorerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 18,
+    borderRadius: 24,
+    marginBottom: 24,
+    overflow: 'hidden',
+    ...MAIN_TAB_CARD_SHADOW,
+  },
+  ringContainer: {
+    width: 64,
+    height: 64,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  ringCenter: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+  },
+  ringPct: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 20,
+  },
+  ringPctLabel: {
+    fontSize: 9,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tierBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  tierBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  explorerTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.8 },
+  pointsText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  signInBtn: {
+    marginTop: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  signInBtnText: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+});
+
+// ─── Membership Upgrade Banner ────────────────────────────────────────────────
+
+function MembershipUpgradeBanner() {
+  const reducedMotionBanner = useReducedMotion();
+  return (
+    <Animated.View
+      entering={reducedMotionBanner || isWeb ? undefined : FadeInDown.duration(400).delay(100)}
+      style={{ marginBottom: 20 }}
+    >
+      <LinearGradient
+        colors={[CultureTokens.indigo, CultureTokens.teal]}
+        style={mb.banner}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={mb.headline}>Unlock 3x More Perks</Text>
+          <Text style={mb.sub}>Upgrade to CulturePass Plus</Text>
+        </View>
+        <Pressable
+          onPress={() => {
+            if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push('/membership/upgrade');
+          }}
+          style={({ pressed }) => [mb.btn, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to CulturePass Plus"
+        >
+          <Text style={mb.btnText}>Upgrade Now →</Text>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+const mb = StyleSheet.create({
+  banner: { 
+    borderRadius: 20, 
+    padding: 18, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    gap: 12, 
+    overflow: 'hidden',
+    ...MAIN_TAB_CARD_SHADOW_STRONG,
+  },
+  headline: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 2 },
+  sub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)' },
+  btn: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
+  btnText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
+export default function PerksTabScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { hPad, isDesktop, isTablet } = useLayout();
+  const { state } = useOnboarding();
+  const queryClient = useQueryClient();
+  const { userId, isAuthenticated } = useAuth();
+
+  const topInset    = isWeb ? 0 : insets.top;
+  const bottomInset = isWeb ? 0 : insets.bottom;
+
+  const reducedMotion = useReducedMotion();
+  const [viewMode, setViewMode]           = useState<'quests' | 'perks'>('quests');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const { data: perks = [], refetch, isRefetching, isLoading: perksLoading } = usePerks({
+    city: state.city || undefined,
+    country: state.country || undefined,
+    status: 'active',
+    pageSize: 150,
+  });
+
+  const { data: rewards, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
+    queryKey: ['rewards', userId],
+    queryFn: () => api.rewards.get(userId!),
+    enabled: !!userId,
+  });
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet', userId],
+    queryFn: () => api.wallet.get(userId!),
+    enabled: !!userId,
+  });
+  const { data: redemptions } = useQuery({
+    queryKey: ['perk-redemptions', userId],
+    queryFn: () => api.perks.redemptions(),
+    enabled: !!userId,
+  });
+
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: ['/api/tickets', userId],
+    queryFn: () => api.tickets.forUser(userId!),
+    enabled: !!userId,
+  });
+
+  const activeQuests = useMemo(() => {
+    if (!userId || !rewards) return [];
+    return buildActiveQuests(rewards, tickets, perks, state.city || undefined);
+  }, [userId, rewards, tickets, perks, state.city]);
+
+  const questsLoading = !!userId && (rewardsLoading || ticketsLoading);
+
+  const filteredPerks = useMemo(() => {
+    if (selectedCategory === 'All') return perks;
+    return perks.filter((p) => p.categories?.includes(selectedCategory));
+  }, [perks, selectedCategory]);
+
+  const sectionedPerkFeed = useMemo<PerkFeedItem[]>(() => {
+    const now = Date.now();
+    const list = filteredPerks;
+    const featured = list.filter((p) => p.status === 'featured');
+    const nearby = list.filter((p) => !state.city || !p.city || p.city === state.city);
+    const expiring = list
+      .filter((p) => p.expiresAt && Date.parse(p.expiresAt) > now)
+      .sort((a, b) => Date.parse(a.expiresAt || '') - Date.parse(b.expiresAt || ''))
+      .slice(0, 8);
+    const forYou = list
+      .filter((p) => {
+        const pointsCost = Number(p.pointsCost ?? 0);
+        return pointsCost <= Number(rewards?.points ?? 0) || pointsCost === 0;
+      })
+      .slice(0, 10);
+
+    const buckets = [
+      { key: 'featured', title: 'Featured Offers', subtitle: 'Editor-picked right now', items: featured },
+      { key: 'nearby', title: 'Nearby Offers', subtitle: state.city ? `Around ${state.city}` : 'Around your area', items: nearby },
+      { key: 'expiring', title: 'Ending Soon', subtitle: 'Redeem before expiry', items: expiring },
+      { key: 'for-you', title: 'For You', subtitle: 'Based on your rewards balance', items: forYou },
+    ].filter((bucket) => bucket.items.length > 0);
+
+    const out: PerkFeedItem[] = [];
+    buckets.forEach((bucket) => {
+      out.push({ kind: 'section', id: `section-${bucket.key}`, title: bucket.title, subtitle: bucket.subtitle });
+      bucket.items.slice(0, 4).forEach((perk) => out.push({ kind: 'perk', id: `${bucket.key}-${perk.id}`, perk }));
+    });
+    return out;
+  }, [filteredPerks, state.city, rewards?.points]);
+
+  const numPerkColumns = isDesktop || isTablet ? 2 : 1;
+  const colGap = isDesktop ? 20 : 12;
+
+  const locationLabel = state.city
+    ? `${state.city}${state.country ? `, ${state.country}` : ''}`
+    : state.country || 'your region';
+
+  const filtersActive = selectedCategory !== 'All';
+
+  const clearFilters = useCallback(() => {
+    setSelectedCategory('All');
+  }, []);
+
+  const handleQuestContinue = useCallback((quest: ActiveQuest) => {
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    switch (quest.cta) {
+      case 'wallet':
+        router.push('/payment/wallet');
+        break;
+      case 'tickets':
+        router.push('/tickets');
+        break;
+      case 'perks':
+        setViewMode('perks');
+        break;
+      case 'explore':
+        router.push('/(tabs)/explore');
+        break;
+      default:
+        break;
+    }
+  }, []);
+
+  const renderQuestItem = useCallback(({ item, index }: { item: ActiveQuest; index: number }) => (
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+    >
+      <QuestCard quest={item} onContinue={() => handleQuestContinue(item)} />
+    </Animated.View>
+  ), [handleQuestContinue, reducedMotion]);
+
+  const renderPerkItem = useCallback(({ item, index }: { item: PerkFeedItem; index: number }) => {
+    if (item.kind === 'section') {
+      return (
+        <View style={s.dynamicSectionHeader}>
+          <Text style={[s.dynamicSectionTitle, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[s.dynamicSectionSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
+        </View>
+      );
+    }
+    return (
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(Math.min(index * 60, 400)).springify().damping(18)}
+        style={{ flex: 1 }}
+      >
+        <PerkCard perk={item.perk} />
+      </Animated.View>
+    );
+  }, [reducedMotion, colors.text, colors.textSecondary]);
+
+  const renderHeader = useCallback(() => (
+    <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
+      <ExplorerBadge
+        colors={colors}
+        signedIn={isAuthenticated && !!userId}
+        loading={!!userId && rewardsLoading}
+        rewards={rewards}
+        rewardsError={!!userId && rewardsError && !rewardsLoading}
+        onRetryRewards={() => {
+          if (userId) void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+        }}
+      />
+
+      {/* View mode toggle */}
+      <View style={[s.toggleWrap, { backgroundColor: colors.surface }]}>
+        {(['quests', 'perks'] as const).map((mode) => (
+          <Pressable
+            key={mode}
+            onPress={() => {
+              if (!isWeb) Haptics.selectionAsync();
+              setViewMode(mode);
+            }}
+            style={({ pressed }) => [
+              s.toggleBtn,
+              viewMode === mode && s.toggleBtnActive,
+              pressed && { opacity: 0.8 },
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: viewMode === mode }}
+            accessibilityLabel={mode === 'quests' ? 'Rewards Progress' : 'Offers'}
+          >
+            {viewMode === mode && (
+              <LinearGradient
+                colors={[CultureTokens.indigo, '#6B21A8']}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+            )}
+            <Ionicons
+              name={mode === 'quests' ? 'map' : 'gift'}
+              size={MAIN_TAB_UI.iconSize.sm}
+              color={viewMode === mode ? '#fff' : colors.textSecondary}
+            />
+            <Text style={[s.toggleText, { color: viewMode === mode ? '#fff' : colors.textSecondary }]}>
+              {mode === 'quests' ? 'Rewards Progress' : 'Offers'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Category filter chips — perks mode only */}
+      {viewMode === 'perks' && (
+        <LiquidGlassPanel
+          borderRadius={MAIN_TAB_UI.cardRadius}
+          style={{ marginBottom: 16 }}
+          contentStyle={{ paddingTop: 4, paddingBottom: 8 }}
+        >
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[s.filterRow]}
+            accessibilityRole="tablist"
+            accessibilityLabel="Perk category filters"
+          >
+            {PERK_CATEGORIES.map(cat => (
+              <AnimatedFilterChip
+                key={cat.id}
+                label={cat.label}
+                active={selectedCategory === cat.id}
+                onPress={() => setSelectedCategory(cat.id)}
+                icon={cat.icon}
+              />
+            ))}
+            {filtersActive && (
+              <>
+                <FilterDivider colors={colors} />
+                <Pressable
+                  onPress={clearFilters}
+                  style={[s.clearBtn, { borderColor: colors.borderLight }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear category filter"
+                >
+                  <Ionicons name="close" size={MAIN_TAB_UI.iconSize.sm} color={colors.textTertiary} />
+                  <Text style={[s.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
+        </LiquidGlassPanel>
+      )}
+
+      {viewMode === 'perks' && <MembershipUpgradeBanner />}
+      {viewMode === 'perks' && !!userId && (
+        <View style={[s.statsRow, { marginBottom: 14 }]}>
+          <View style={[s.statPill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Ionicons name="wallet-outline" size={14} color={CultureTokens.indigo} />
+            <Text style={[s.statPillText, { color: colors.text }]}>{wallet?.balance ?? 0} AUD</Text>
+          </View>
+          <View style={[s.statPill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Ionicons name="gift-outline" size={14} color={CultureTokens.teal} />
+            <Text style={[s.statPillText, { color: colors.text }]}>{redemptions?.redemptions?.length ?? 0} redeemed</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={s.sectionHeaderRow}>
+        <Ionicons
+          name={viewMode === 'quests' ? 'map-outline' : 'gift-outline'}
+          size={MAIN_TAB_UI.iconSize.sm}
+          color={colors.textTertiary}
+        />
+        <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>
+          {viewMode === 'quests'
+            ? (!userId ? 'Sign in for rewards' : `${activeQuests.length} rewards in progress`)
+            : `Offers · ${filteredPerks.length} available`}
+        </Text>
+      </View>
+    </View>
+  ), [
+    colors,
+    hPad,
+    viewMode,
+    selectedCategory,
+    filteredPerks.length,
+    filtersActive,
+    clearFilters,
+    userId,
+    activeQuests.length,
+    isAuthenticated,
+    rewards,
+    rewardsLoading,
+    rewardsError,
+    queryClient,
+    wallet?.balance,
+    redemptions?.redemptions?.length,
+  ]);
+
+  return (
+    <ErrorBoundary>
+      <View style={[s.screen, { backgroundColor: colors.background }]}>
+        {/* ── Header ── */}
+        <TabPrimaryHeader
+          title="Offers & Rewards"
+          subtitle={`Offers and rewards in ${locationLabel}`}
+          locationLabel={undefined}
+          hPad={hPad}
+          topInset={topInset}
+        />
+
+        {/* ── Content shell ── */}
+        <View style={[s.shell, isDesktop && s.shellDesktop]}>
+          {viewMode === 'quests' ? (
+            <FlatList
+              data={activeQuests}
+              keyExtractor={(item) => item.id}
+              renderItem={renderQuestItem}
+              ListHeaderComponent={renderHeader}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad }]}
+              ListEmptyComponent={
+                !userId ? (
+                  <View style={[s.emptyState, { paddingVertical: 48 }]}>
+                    <Text style={[s.emptyDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
+                      Create an account to track reward points, tickets, and perk redemptions.
+                    </Text>
+                  </View>
+                ) : questsLoading ? (
+                  <ActivityIndicator style={{ marginTop: 32 }} color={CultureTokens.indigo} />
+                ) : rewardsError ? (
+                  <View style={[s.emptyState, { paddingVertical: 48 }]}>
+                    <Text style={[s.emptyDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
+                      Could not load your quests. Check your connection and pull to refresh.
+                    </Text>
+                  </View>
+                ) : null
+              }
+              ListFooterComponent={() => (
+                <View style={s.listFooter}>
+                  <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                  <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
+                    {!userId ? 'Sign in to sync progress' : `${activeQuests.length} active quests`}
+                  </Text>
+                  <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                </View>
+              )}
+            />
+          ) : perksLoading ? (
+            // Perks loading skeleton
+            <>
+              {renderHeader()}
+              <FlatList
+                key={`skeleton-${numPerkColumns}`}
+                data={Array.from({ length: 6 })}
+                renderItem={() => <View style={{ flex: 1, paddingBottom: 14 }}><PerkCardSkeleton colors={colors} /></View>}
+                keyExtractor={(_, i) => `sk-${i}`}
+                numColumns={numPerkColumns}
+                columnWrapperStyle={numPerkColumns > 1 ? { gap: colGap } : undefined}
+                contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap }]}
+                scrollEnabled={false}
+              />
+            </>
+          ) : (
+            // Perks grid
+            <FlatList
+              key={`perks-${numPerkColumns}`}
+              data={sectionedPerkFeed}
+              keyExtractor={(item) => item.id}
+              renderItem={renderPerkItem}
+              ListHeaderComponent={renderHeader}
+              numColumns={1}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: colGap, paddingBottom: bottomInset + MAIN_TAB_UI.scrollBottomPad }]}
+              showsVerticalScrollIndicator={false}
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              ListFooterComponent={() => {
+                if (sectionedPerkFeed.length > 0) return (
+                  <View style={s.listFooter}>
+                    <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                    <Text style={[s.listFooterText, { color: colors.textTertiary }]}>
+                      {filteredPerks.length} offer{filteredPerks.length !== 1 ? 's' : ''} indexed
+                    </Text>
+                    <View style={[s.endLine, { backgroundColor: colors.divider }]} />
+                  </View>
+                );
+                return null;
+              }}
+              ListEmptyComponent={
+                <View style={s.emptyState}>
+                  <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Ionicons name="gift-outline" size={28} color={colors.textTertiary} />
+                  </View>
+                  <Text style={[s.emptyTitle, { color: colors.text }]}>No offers available</Text>
+                  <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
+                    {filtersActive
+                      ? 'Try a different category.'
+                      : 'Check back soon for exclusive offers.'}
+                  </Text>
+                  {filtersActive && (
+                    <Pressable
+                      style={[s.resetBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '40' }]}
+                      onPress={clearFilters}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="refresh-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
+                      <Text style={[s.resetBtnText, { color: CultureTokens.indigo }]}>Reset filters</Text>
+                    </Pressable>
+                  )}
+                </View>
+              }
+            />
+          )}
+        </View>
+      </View>
+    </ErrorBoundary>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  screen:         { flex: 1 },
+
+  shell:          { flex: 1 },
+  shellDesktop:   { maxWidth: 1200, width: '100%', alignSelf: 'center' as const },
+
+  headerSection:  { paddingTop: MAIN_TAB_UI.sectionGapLarge },
+
+  filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+
+  toggleWrap:     { flexDirection: 'row', padding: 5, borderRadius: 18, marginBottom: 20, gap: 4 },
+  toggleBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 14, overflow: 'hidden' },
+  toggleBtnActive:{},
+  toggleText:     { fontSize: 13, fontFamily: 'Poppins_700Bold' },
+
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+  sectionLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  statsRow: { flexDirection: 'row', gap: 8 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  statPillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  dynamicSectionHeader: { marginTop: 10, marginBottom: 2 },
+  dynamicSectionTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  dynamicSectionSubtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+
+  list:           { paddingTop: MAIN_TAB_UI.sectionGapSmall, gap: MAIN_TAB_UI.sectionGapSmall },
+  listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
+  listFooterText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
+  endLine:        { flex: 1, height: 1, opacity: 0.5 },
+
+  emptyState:     { alignItems: 'center', paddingVertical: 80, paddingHorizontal: 40, gap: 14 },
+  emptyIcon:      { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8 },
+  emptyTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
+  emptyDesc:      { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
+  resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
+});

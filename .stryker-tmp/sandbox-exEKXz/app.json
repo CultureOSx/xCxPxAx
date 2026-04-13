@@ -1,0 +1,245 @@
+{
+  "expo": {
+    "name": "CulturePass",
+    "slug": "culturepass",
+    "version": "1.1.0",
+    "description": "CulturePass — Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "culturepass",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0B14"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "au.culturepass.app",
+      "appleTeamId": "26WGXSNG58",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSLocationWhenInUseUsageDescription": "CulturePass uses your location to show events and communities near you.",
+        "NSCameraUsageDescription": "CulturePass uses the camera to update your profile photo and scan event tickets.",
+        "NSPhotoLibraryUsageDescription": "CulturePass accesses your photo library to update your profile photo.",
+        "NSPhotoLibraryAddUsageDescription": "CulturePass saves images to your photo library.",
+        "NSContactsUsageDescription": "CulturePass accesses your contacts to help you connect with friends on the platform.",
+        "NSFaceIDUsageDescription": "CulturePass uses Face ID for quick and secure sign-in.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
+      },
+      "config": {
+        "googleMapsApiKey": "$(EXPO_PUBLIC_GOOGLE_MAPS_KEY)"
+      },
+      "associatedDomains": [
+        "applinks:culturepass.app",
+        "webcredentials:culturepass.app"
+      ],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "au.culturepass.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0B14",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "culturepass.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "name": "CulturePass — Celebrate Your Culture, Connect Your Community",
+      "shortName": "CulturePass",
+      "description": "Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place.",
+      "lang": "en-AU",
+      "themeColor": "#0B0B14",
+      "backgroundColor": "#0B0B14",
+      "display": "standalone",
+      "orientation": "portrait",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://culturepass.app"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin/app.plugin.js",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.$(EXPO_PUBLIC_GOOGLE_REVERSED_CLIENT_ID)"
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CulturePass uses your location to show events and communities near you."
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "CulturePass accesses your calendar to sync cultural events you're attending.",
+          "remindersPermission": "CulturePass uses Reminders to add event alerts to your schedule."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CulturePass uses the camera to scan event QR codes and update your profile photo."
+        }
+      ],
+      "expo-localization",
+      "@bacons/apple-targets",
+      [
+        "react-native-maps",
+        {
+          "googleMaps": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.2"
+          },
+          "android": {
+            "minSdkVersion": 26,
+            "targetSdkVersion": 35
+          }
+        }
+      ],
+      "expo-image",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.au.culturepass.app",
+          "widgets": [
+            {
+              "name": "CultureSpotlightWidget",
+              "displayName": "Spotlight",
+              "description": "Featured cultural pick from CulturePass Discover",
+              "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureNearYouWidget",
+              "displayName": "Near You",
+              "description": "Upcoming events near your city",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureIdentityQRWidget",
+              "displayName": "Culture ID",
+              "description": "Your CulturePass name and ID",
+              "supportedFamilies": ["systemSmall", "systemMedium"]
+            },
+            {
+              "name": "CultureUpcomingTicketWidget",
+              "displayName": "Next Ticket",
+              "description": "Your next ticketed event",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            }
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://culturepass.app"
+      },
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "au.culturepass.app.widget",
+                  "targetName": "widget",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.spotlight",
+                  "targetName": "spotlight",
+                  "entitlements": {}
+                },
+                {
+                  "bundleIdentifier": "au.culturepass.app.smart-card",
+                  "targetName": "smartcard",
+                  "entitlements": {}
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "au.culturepass.app.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.au.culturepass.app"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "12d9b987-9269-4eae-b5c1-70eb25ee2abf"
+      }
+    },
+    "owner": "culturestudios",
+    "runtimeVersion": "1.1.0",
+    "updates": {
+      "url": "https://u.expo.dev/12d9b987-9269-4eae-b5c1-70eb25ee2abf"
+    }
+  }
+}

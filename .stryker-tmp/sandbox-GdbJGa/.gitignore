@@ -1,0 +1,134 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+static-build/
+server_dist/
+
+# Next.js build (web app)
+web/.next/
+web/out/
+
+# Native generated artifacts (ios/ and android/ are bare-workflow native dirs — tracked)
+# Each directory has its own .gitignore that excludes Pods, build, .gradle, etc.
+*.orig.*
+
+# EAS local build artifacts
+*.aab
+*.apk
+*.ipa
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+coverage/
+codecov
+codecov.SHA256SUM
+codecov.SHA256SUM.sig
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# Editor / AI / IDE local tooling (not app source — do not commit)
+.agent/
+.agents/
+.claude/
+.claude-flow/
+.codebuddy/
+.codex/
+.continue/
+.cursor/skills/
+.gemini/
+.idea/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
+
+# Firebase build cache
+.firebase/
+
+# Google Play service account key (sensitive)
+google-play-service-account.json
+
+# Firebase service account keys (sensitive — never commit these)
+*firebase-adminsdk*.json
+
+# Legacy Next.js web project (NOT deployed — use dist/ instead)
+# web/ directory is a legacy project that should be removed or ignored
+# Correct web build goes to dist/ via npx expo export --platform web
+# See docs/WEB_DEPLOYMENT_GUIDE.md for details
+*service-account*.json
+
+# typescript
+*.tsbuildinfo
+.vercel
+
+.env
+functions/.env
+functions/.env.*
+!functions/.env.example
+
+# Firebase project config (update .firebaserc with your new project ID)
+# .firebaserc is tracked — do NOT commit project IDs if open-sourcing
+
+# Mac & IDE
+.DS_Store
+.vscode/
+
+# Expo & Dependencies
+.expo/
+node_modules/
+dist/
+
+# Backups and dev artifacts
+*_backup.*
+*.bak
+google-play-service-account.json
+*.swp
+firebase-debug.log
+node_modules 2/
+
+# Dev/temp files
+lint_results.txt
+pr_description.md
+profile_full.txt
+skills-lock.json
+store.config.json
+tmp.auth-ui.spec.ts
+get_sections.py
+read_file_full.py
+split_components.py
+test_review.js
+
+# Codecov CLI binary
+codecov
+codecov.SHA256SUM
+codecov.SHA256SUM.sig
+
+# everything-claude-code (third-party tooling — not part of the app)
+everything-claude-code/
+
+# stryker temp files
+.stryker-tmp

@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function role() {
+      return isSignedIn() && request.auth.token.role is string
+        ? request.auth.token.role
+        : '';
+    }
+
+    function isAdminLike() {
+      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator'];
+    }
+
+    function isOrganizerLike() {
+      return role() in ['organizer', 'admin', 'platformAdmin', 'cityAdmin'];
+    }
+
+    // User profiles: each user can read/write their own record.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdminLike();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdminLike();
+      allow delete: if isAdminLike();
+    }
+
+    // Events: public can read only published/non-deleted events.
+    // Writes: organizer role + (owner of event or admin). Mutations should prefer Cloud Functions API.
+    match /events/{eventId} {
+      allow read: if resource.data.status == 'published' && !(resource.data.deletedAt is timestamp);
+      allow create: if isOrganizerLike()
+        && (request.resource.data.organizerId == request.auth.uid || isAdminLike());
+      allow update, delete: if isOrganizerLike()
+        && (resource.data.organizerId == request.auth.uid || isAdminLike());
+    }
+
+    // Tickets: owners can read their tickets; writes happen via Cloud Functions.
+    match /tickets/{ticketId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Profiles (community/business/venue/artist/etc.): public read, owner/admin write.
+    match /profiles/{profileId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdminLike() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // Communities: public read; organizers can create; owner or admin can update/delete.
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isOrganizerLike();
+      allow update: if isOrganizerLike()
+        && (resource.data.ownerId == request.auth.uid || isAdminLike());
+      allow delete: if isAdminLike();
+    }
+
+    // Perks: public read; admin-managed writes.
+    match /perks/{perkId} {
+      allow read: if true;
+      allow write: if isAdminLike();
+    }
+
+    // Featured cities: public read; admin/cityAdmin managed.
+    match /featuredCities/{cityId} {
+      allow read: if true;
+      allow write: if isAdminLike();
+    }
+
+    // Councils are public reference data; admin-managed.
+    match /councils/{councilId} {
+      allow read: if true;
+      allow write: if isAdminLike();
+    }
+
+    // Default deny-all for everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

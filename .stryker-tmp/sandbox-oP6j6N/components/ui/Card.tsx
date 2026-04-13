@@ -1,0 +1,142 @@
+/**
+ * Card — surface container with optional press, shadow, and elevated “glass” (solid) styling.
+ */
+// @ts-nocheck
+
+
+import React from 'react';
+import {
+  Pressable,
+  View,
+  StyleSheet,
+  type StyleProp,
+  type ViewStyle,
+  Platform,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { shadows, CardTokens, SpringConfig } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
+import { useColorScheme } from 'react-native';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface CardProps {
+  onPress?: () => void;
+  disabled?: boolean;
+  shadow?: keyof typeof shadows;
+  /** Elevated solid surface (lighter/darker than default card) */
+  glass?: boolean;
+  /** Enable subtle haptic feedback when card is pressed */
+  haptic?: boolean;
+  /** Override internal padding */
+  padding?: number;
+  /** Override border radius */
+  radius?: number;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}
+
+export function Card({
+  onPress,
+  disabled = false,
+  shadow: shadowKey = 'medium',
+  glass: isGlass = false,
+  haptic = true,
+  padding = CardTokens.padding,
+  radius = CardTokens.radius,
+  accessibilityLabel,
+  accessibilityHint,
+  style,
+  children,
+}: CardProps) {
+  const colors = useColors();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+
+  const glassStyle: { backgroundColor: string; borderColor?: string } = isGlass
+    ? {
+        backgroundColor: isDark ? colors.surfaceElevated : colors.surface,
+        borderColor: colors.borderLight,
+      }
+    : { backgroundColor: colors.card };
+
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const cardStyle = [
+    styles.card,
+    shadows[shadowKey],
+    glassStyle,
+    {
+      borderRadius: radius,
+      padding,
+      borderColor: isGlass ? glassStyle.borderColor : colors.cardBorder,
+      borderWidth: 1,
+      opacity: disabled ? 0.6 : 1,
+    },
+    Platform.OS === 'web' && onPress && !disabled ? (styles.webHover as object) : undefined,
+    style,
+  ];
+
+  if (onPress) {
+    const handleCardPress = () => {
+      if (haptic && Platform.OS !== 'web') {
+        Haptics.selectionAsync().catch(() => undefined);
+      }
+      onPress();
+    };
+
+    const handlePressIn = () => {
+      scale.value = withSpring(0.97, SpringConfig.snappy);
+    };
+
+    const handlePressOut = () => {
+      scale.value = withSpring(1, SpringConfig.smooth);
+    };
+
+    return (
+      <AnimatedPressable
+        onPress={handleCardPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[animatedStyle, cardStyle] as StyleProp<ViewStyle>}
+        accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled }}
+      >
+        {children}
+      </AnimatedPressable>
+    );
+  }
+
+  return (
+    <View style={cardStyle}>
+      {children}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    overflow: 'hidden',
+  },
+  webHover: Platform.OS === 'web'
+    ? {
+        //  — web-only hover effect
+        transition: 'transform 150ms ease, box-shadow 150ms ease',
+        cursor: 'pointer',
+      }
+    : {},
+});
