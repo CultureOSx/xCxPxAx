@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,17 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  FadeInLeft,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -50,6 +60,27 @@ import { CountrySelectList } from '@/components/location/CountrySelectList';
 
 type LocStep = 'country' | 'region' | 'city';
 
+const STEPS: LocStep[] = ['country', 'region', 'city'];
+const STEP_LABELS = ['Country', 'State', 'City'];
+
+const STEP_ICON: Record<LocStep, string> = {
+  country: 'earth',
+  region: 'compass',
+  city: 'location',
+};
+
+const STEP_TITLE: Record<LocStep, (country?: string) => string> = {
+  country: () => 'Where are you based?',
+  region: (c) => (c === 'Australia' ? 'Your home state' : 'Your region'),
+  city: () => 'Choose your city',
+};
+
+const STEP_SUBTITLE: Record<LocStep, string> = {
+  country: 'CulturePass shows events, communities and deals tailored to your location.',
+  region: 'We\'ll surface cultural events and communities near you.',
+  city: 'Pick your city and we\'ll show what\'s happening nearby.',
+};
+
 export default function LocationScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
@@ -64,9 +95,25 @@ export default function LocationScreen() {
   const isDetecting = detectStatus === 'requesting';
 
   const [step, setStep] = useState<LocStep>('country');
+  const [stepDir, setStepDir] = useState<'forward' | 'back'>('forward');
   const [pendingCountry, setPendingCountry] = useState('');
   const [pendingState, setPendingState] = useState('');
   const [citySearch, setCitySearch] = useState('');
+
+  // Animated progress bar width for active segment
+  const progressWidth = useSharedValue(0);
+  const stepIndex = STEPS.indexOf(step);
+
+  useEffect(() => {
+    progressWidth.value = withTiming((stepIndex + 1) / STEPS.length, {
+      duration: 350,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [stepIndex, progressWidth]);
+
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value * 100}%` as any,
+  }));
 
   const countries = useMemo(() => listMarketplaceCountries(), []);
 
@@ -87,6 +134,11 @@ export default function LocationScreen() {
     }
   }, [state.city, state.country, getStateForCity]);
 
+  const goToStep = (next: LocStep, dir: 'forward' | 'back') => {
+    setStepDir(dir);
+    setStep(next);
+  };
+
   const selectMarketplaceCountry = (countryName: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
     setPendingCountry(countryName);
@@ -95,13 +147,13 @@ export default function LocationScreen() {
 
     if (countryName === 'Australia') {
       setPendingState('');
-      setStep('region');
+      goToStep('region', 'forward');
     } else if (regs.length === 1) {
       setPendingState(regs[0].code);
-      setStep('city');
+      goToStep('city', 'forward');
     } else {
       setPendingState('');
-      setStep('region');
+      goToStep('region', 'forward');
     }
   };
 
@@ -109,7 +161,7 @@ export default function LocationScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
     setPendingState(stateCode);
     setCitySearch('');
-    setStep('city');
+    goToStep('city', 'forward');
   };
 
   const selectCity = (city: string) => {
@@ -131,7 +183,7 @@ export default function LocationScreen() {
       void syncUserMarketplaceLocation(user?.id, 'Australia', r.city);
       const stateCode = getStateForCity(r.city);
       if (stateCode) setPendingState(stateCode);
-      setStep('city');
+      goToStep('city', 'forward');
     } else {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       if (detectStatus === 'denied') {
@@ -172,23 +224,53 @@ export default function LocationScreen() {
     if (step === 'city') {
       setCitySearch('');
       if (pendingCountry === 'Australia') {
-        setStep('region');
+        goToStep('region', 'back');
       } else {
-        setStep('country');
+        goToStep('country', 'back');
         setPendingState('');
         setPendingCountry('');
       }
       return;
     }
     if (step === 'region') {
-      setStep('country');
+      goToStep('country', 'back');
       setPendingState('');
       setPendingCountry('');
     }
   };
 
+  const stepEntering = stepDir === 'forward'
+    ? FadeInRight.duration(260).springify().damping(22).stiffness(130)
+    : FadeInLeft.duration(260).springify().damping(22).stiffness(130);
+
   const enter = (delay: number) =>
     FadeInDown.delay(delay).springify().damping(20).stiffness(120);
+
+  // Breadcrumb segments for display
+  const breadcrumbItems = useMemo(() => {
+    const items: { label: string; active: boolean; done: boolean }[] = [
+      {
+        label: pendingCountry || 'Country',
+        active: step === 'country',
+        done: step !== 'country' && !!pendingCountry,
+      },
+    ];
+    if (step !== 'country') {
+      items.push({
+        label: pendingRegionMeta?.name || 'State',
+        active: step === 'region',
+        done: step === 'city' && !!pendingState,
+      });
+    }
+    if (step === 'city') {
+      items.push({
+        label: state.city || 'City',
+        active: step === 'city',
+        done: false,
+      });
+    }
+    return items;
+  }, [step, pendingCountry, pendingRegionMeta, pendingState, state.city]);
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -211,13 +293,13 @@ export default function LocationScreen() {
         <View style={s.desktopBackRow}>
           <Pressable
             onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)}
-            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: 'rgba(255,255,255,0.20)' }]}
             hitSlop={Spacing.sm}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.textInverse} />
-            <Text style={[s.desktopBackText, { color: colors.textInverse }]}>Back</Text>
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color="#FFFFFF" />
+            <Text style={[s.desktopBackText, { color: '#FFFFFF' }]}>Back</Text>
           </Pressable>
         </View>
       )}
@@ -230,10 +312,18 @@ export default function LocationScreen() {
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            style={s.mobileBackBtn}
           >
-            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
+            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
           </Pressable>
-          <Text style={[s.stepText, { color: colors.textSecondary }]}>1 of 4</Text>
+
+          {/* Step indicator: 1 of 4 with visual bar */}
+          <View style={s.stepIndicatorWrap}>
+            <Text style={[s.stepText, { color: 'rgba(255,255,255,0.6)' }]}>Step 1 of 4</Text>
+            <View style={s.progressTrack}>
+              <Animated.View style={[s.progressFill, progressBarStyle]} />
+            </View>
+          </View>
         </View>
       )}
 
@@ -251,222 +341,307 @@ export default function LocationScreen() {
           <View style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32 }]} />
 
           <View style={s.formContent}>
+
+            {/* Breadcrumb path — shown after country is chosen */}
+            {step !== 'country' && (
+              <Animated.View entering={FadeIn.duration(240)} style={s.breadcrumbRow}>
+                {breadcrumbItems.map((item, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.35)" />
+                    )}
+                    <Text
+                      style={[
+                        s.breadcrumbSegment,
+                        item.done && s.breadcrumbDone,
+                        item.active && s.breadcrumbActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.label}
+                    </Text>
+                  </React.Fragment>
+                ))}
+              </Animated.View>
+            )}
+
+            {/* Desktop step progress dots */}
+            {isDesktop && (
+              <Animated.View entering={enter(0)} style={s.desktopStepRow}>
+                {STEPS.map((st, i) => {
+                  const isDone = i < stepIndex;
+                  const isActive = i === stepIndex;
+                  return (
+                    <React.Fragment key={st}>
+                      <View style={s.desktopStepItem}>
+                        <View style={[
+                          s.desktopStepDot,
+                          isDone && { backgroundColor: CultureTokens.teal, borderColor: CultureTokens.teal },
+                          isActive && { borderColor: CultureTokens.gold, borderWidth: 2.5 },
+                        ]}>
+                          {isDone
+                            ? <Ionicons name="checkmark" size={10} color="#fff" />
+                            : <View style={[s.desktopDotInner, isActive && { backgroundColor: CultureTokens.gold }]} />
+                          }
+                        </View>
+                        <Text style={[s.desktopStepLabel, isActive && { color: 'rgba(255,255,255,0.9)' }]}>
+                          {STEP_LABELS[i]}
+                        </Text>
+                      </View>
+                      {i < STEPS.length - 1 && (
+                        <View style={[s.desktopStepLine, isDone && { backgroundColor: CultureTokens.teal }]} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </Animated.View>
+            )}
+
             <View style={s.headerBlock}>
-              <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}15` }]}>
-                <Ionicons
-                  name={step === 'country' ? 'earth' : step === 'region' ? 'compass' : 'location'}
-                  size={36}
-                  color={CultureTokens.teal}
-                />
+              <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}18` }]}>
+                <Animated.View key={step} entering={FadeIn.duration(200)}>
+                  <Ionicons
+                    name={STEP_ICON[step] as any}
+                    size={34}
+                    color={CultureTokens.teal}
+                  />
+                </Animated.View>
               </View>
-              <Text style={[s.title, { color: colors.textInverse }]}>
-                {step === 'country'
-                  ? 'Choose your country'
-                  : step === 'region'
-                    ? pendingCountry === 'Australia'
-                      ? 'Your home state'
-                      : 'Your region'
-                    : 'Select your city'}
+              <Text style={[s.title, { color: '#FFFFFF' }]}>
+                {STEP_TITLE[step](pendingCountry)}
               </Text>
               <Text style={s.subtitle}>
-                {step === 'country'
-                  ? 'CulturePass is scoped to your country first — then city. Change anytime in Settings → Location.'
-                  : step === 'region'
-                    ? `We'll find cultural events and communities near you.`
-                    : `Pick your city and we'll show you what's happening nearby.`}
+                {STEP_SUBTITLE[step]}
               </Text>
             </View>
 
-            {/* Country Step */}
-            {step === 'country' && (
-              <CountrySelectList
-                key={step}
-                countries={countries}
-                selectedName={state.country || undefined}
-                onSelect={selectMarketplaceCountry}
-                variant="onboarding"
-                colors={colors}
-                showFooterHint={false}
-              />
-            )}
+            {/* Step content — keyed to drive animation */}
+            <Animated.View key={step} entering={stepEntering}>
 
-            {/* Region Step */}
-            {step === 'region' && (
-              <View>
-                {pendingCountry === 'Australia' && (
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.detectBtn,
-                      {
-                        backgroundColor: pressed ? `${CultureTokens.gold}33` : `${CultureTokens.gold}1A`,
-                        borderColor: `${CultureTokens.gold}80`,
-                      },
-                      isDetecting && { opacity: 0.7 },
-                    ]}
-                    onPress={handleDetectLocation}
-                    disabled={isDetecting}
-                    accessibilityLabel={isDetecting ? 'Detecting location' : 'Use current location'}
-                    accessibilityRole="button"
-                  >
-                    {isDetecting ? (
-                      <ActivityIndicator size="small" color={CultureTokens.gold} />
-                    ) : (
-                      <Ionicons name="navigate" size={IconSize.md - 2} color={CultureTokens.gold} />
-                    )}
-                    <Text style={[s.detectBtnText, { color: CultureTokens.gold }]}>
-                      {isDetecting ? 'Detecting location...' : 'Use my location (Australia)'}
-                    </Text>
-                  </Pressable>
-                )}
+              {/* Country Step */}
+              {step === 'country' && (
+                <CountrySelectList
+                  countries={countries}
+                  selectedName={state.country || undefined}
+                  onSelect={selectMarketplaceCountry}
+                  variant="onboarding"
+                  colors={colors}
+                  showFooterHint={false}
+                />
+              )}
 
-                {pendingCountry === 'Australia' && locationsLoading && (
-                  <ActivityIndicator size="large" color={CultureTokens.indigo} style={{ paddingVertical: 20 }} />
-                )}
-
-                {pendingCountry === 'Australia' && !!locationsError && (
-                  <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
-                    <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
-                    <Text style={[s.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
-                  </View>
-                )}
-
-                <View style={s.cityStepHeader}>
-                  <Pressable
-                    onPress={goBackWithinFlow}
-                    style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel="Back"
-                  >
-                    <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
-                    <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
-                  </Pressable>
-                </View>
-
-                <View style={s.stateGrid}>
-                  {regions.map((st) => (
+              {/* Region Step */}
+              {step === 'region' && (
+                <View>
+                  {pendingCountry === 'Australia' && (
                     <Pressable
-                      key={st.code}
                       style={({ pressed }) => [
-                        s.stateCard,
+                        s.detectBtn,
                         {
-                          backgroundColor: pressed ? `${CultureTokens.teal}18` : 'rgba(255,255,255,0.05)',
-                          borderColor: pressed ? `${CultureTokens.teal}50` : 'rgba(255,255,255,0.12)',
+                          backgroundColor: pressed ? `${CultureTokens.gold}2E` : `${CultureTokens.gold}14`,
+                          borderColor: pressed ? `${CultureTokens.gold}90` : `${CultureTokens.gold}55`,
                         },
+                        isDetecting && { opacity: 0.65 },
                       ]}
-                      onPress={() => selectRegion(st.code)}
+                      onPress={handleDetectLocation}
+                      disabled={isDetecting}
+                      accessibilityLabel={isDetecting ? 'Detecting location' : 'Detect my location'}
                       accessibilityRole="button"
-                      accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
                     >
-                      <Text style={s.stateEmoji}>{st.emoji}</Text>
-                      <Text style={[s.stateName, { color: colors.textInverse }]}>{st.name}</Text>
-                      <Text style={[s.cityCount, { color: colors.textSecondary }]}>{st.cities.length} cities</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* City Step */}
-            {step === 'city' && (
-              <View>
-                <View style={s.cityStepHeader}>
-                  <Pressable
-                    onPress={goBackWithinFlow}
-                    style={({ pressed }) => [s.backToStateRow, { opacity: pressed ? 0.7 : 1 }]}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel="Back"
-                  >
-                    <Ionicons name="arrow-back" size={IconSize.sm} color={CultureTokens.gold} />
-                    <Text style={[s.backToStateText, { color: CultureTokens.gold }]}>Back</Text>
-                  </Pressable>
-
-                  <View style={[s.selectedStatePill, { backgroundColor: `${CultureTokens.indigo}25`, borderColor: `${CultureTokens.indigo}50` }]}>
-                    <Text style={s.stateEmojiSmall}>{pendingRegionMeta?.emoji}</Text>
-                    <Text style={[s.selectedStatePillText, { color: colors.textInverse }]} numberOfLines={1}>
-                      {pendingRegionMeta?.name}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[s.searchRow, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)' }]}>
-                  <Ionicons name="search" size={IconSize.sm + 2} color={colors.textSecondary} />
-                  <TextInput
-                    style={[s.searchInput, { color: colors.textInverse }]}
-                    placeholder={`Search ${allCitiesForState.length} cities…`}
-                    placeholderTextColor={colors.textSecondary}
-                    value={citySearch}
-                    onChangeText={setCitySearch}
-                    autoCorrect={false}
-                    autoCapitalize="words"
-                    returnKeyType="search"
-                    clearButtonMode="while-editing"
-                    selectionColor={CultureTokens.gold}
-                    underlineColorAndroid="transparent"
-                  />
-                  {citySearch.length > 0 && Platform.OS !== 'ios' && (
-                    <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
-                      <Ionicons name="close-circle" size={IconSize.sm + 2} color={colors.textSecondary} />
+                      {isDetecting ? (
+                        <ActivityIndicator size="small" color={CultureTokens.gold} />
+                      ) : (
+                        <Ionicons name="navigate-circle" size={22} color={CultureTokens.gold} />
+                      )}
+                      <View style={s.detectBtnTextWrap}>
+                        <Text style={[s.detectBtnPrimary, { color: CultureTokens.gold }]}>
+                          {isDetecting ? 'Detecting…' : 'Use my location'}
+                        </Text>
+                        {!isDetecting && (
+                          <Text style={[s.detectBtnSub, { color: `${CultureTokens.gold}99` }]}>
+                            Auto-detect your nearest city
+                          </Text>
+                        )}
+                      </View>
+                      {!isDetecting && (
+                        <Ionicons name="chevron-forward" size={16} color={`${CultureTokens.gold}80`} />
+                      )}
                     </Pressable>
                   )}
-                </View>
 
-                {citiesToShow.length === 0 ? (
-                  <View style={s.noResults}>
-                    <Ionicons name="search-outline" size={36} color={colors.textSecondary} />
-                    <Text style={[s.noResultsText, { color: colors.textSecondary }]}>
-                      {`No cities match "${citySearch}"`}
-                    </Text>
-                    <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
-                      <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <View style={s.cityGrid}>
-                    {citiesToShow.map((city) => {
-                      const isActive = state.city === city;
+                  {pendingCountry === 'Australia' && locationsLoading && (
+                    <ActivityIndicator size="large" color={CultureTokens.indigo} style={{ paddingVertical: 20 }} />
+                  )}
+
+                  {pendingCountry === 'Australia' && !!locationsError && (
+                    <View style={[s.errorBanner, { backgroundColor: `${CultureTokens.coral}20`, borderColor: `${CultureTokens.coral}50` }]}>
+                      <Ionicons name="alert-circle" size={IconSize.md} color={CultureTokens.coral} />
+                      <Text style={[s.errorText, { color: CultureTokens.coral }]}>Failed to load locations.</Text>
+                    </View>
+                  )}
+
+                  {/* Divider */}
+                  {pendingCountry === 'Australia' && !locationsLoading && (
+                    <View style={s.orDivider}>
+                      <View style={s.orDividerLine} />
+                      <Text style={s.orDividerText}>or choose a state</Text>
+                      <View style={s.orDividerLine} />
+                    </View>
+                  )}
+
+                  <View style={s.stateGrid}>
+                    {regions.map((st) => {
+                      const isSelected = st.code === pendingState;
                       return (
                         <Pressable
-                          key={city}
+                          key={st.code}
                           style={({ pressed }) => [
-                            s.cityCard,
+                            s.stateCard,
                             {
-                              backgroundColor: isActive
-                                ? CultureTokens.indigo
+                              backgroundColor: isSelected
+                                ? `${CultureTokens.teal}20`
                                 : pressed
-                                  ? `${CultureTokens.indigo}20`
+                                  ? `${CultureTokens.teal}12`
                                   : 'rgba(255,255,255,0.05)',
-                              borderColor: isActive ? CultureTokens.indigo : 'rgba(255,255,255,0.12)',
+                              borderColor: isSelected
+                                ? `${CultureTokens.teal}80`
+                                : pressed
+                                  ? `${CultureTokens.teal}40`
+                                  : 'rgba(255,255,255,0.12)',
+                              borderWidth: isSelected ? 1.5 : 1,
                             },
                           ]}
-                          onPress={() => selectCity(city)}
+                          onPress={() => selectRegion(st.code)}
                           accessibilityRole="radio"
-                          accessibilityState={{ selected: isActive }}
+                          accessibilityState={{ selected: isSelected }}
+                          accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
                         >
-                          {isActive ? (
-                            <Ionicons name="checkmark-circle" size={IconSize.md - 2} color={colors.textInverse} />
-                          ) : (
-                            <Ionicons name="location-outline" size={IconSize.md - 2} color={colors.textSecondary} />
-                          )}
-                          <Text
-                            style={[
-                              s.cityName,
-                              {
-                                color: isActive ? colors.textInverse : colors.text,
-                                fontFamily: isActive ? FontFamily.semibold : FontFamily.medium,
-                              },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {city}
+                          <Text style={s.stateEmoji}>{st.emoji}</Text>
+                          <Text style={[s.stateName, { color: isSelected ? CultureTokens.teal : '#FFFFFF' }]}>
+                            {st.name}
                           </Text>
+                          <Text style={[s.cityCount, { color: 'rgba(255,255,255,0.50)' }]}>
+                            {st.cities.length} cities
+                          </Text>
+                          {isSelected && (
+                            <View style={[s.stateCheckBadge, { backgroundColor: CultureTokens.teal }]}>
+                              <Ionicons name="checkmark" size={10} color="#fff" />
+                            </View>
+                          )}
                         </Pressable>
                       );
                     })}
                   </View>
-                )}
-              </View>
+                </View>
+              )}
+
+              {/* City Step */}
+              {step === 'city' && (
+                <View>
+                  <View style={[s.searchRow, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)' }]}>
+                    <Ionicons name="search" size={IconSize.sm + 2} color="rgba(255,255,255,0.45)" />
+                    <TextInput
+                      style={[s.searchInput, { color: '#FFFFFF' }]}
+                      placeholder={`Search ${allCitiesForState.length} cities…`}
+                      placeholderTextColor="rgba(255,255,255,0.38)"
+                      value={citySearch}
+                      onChangeText={setCitySearch}
+                      autoCorrect={false}
+                      autoCapitalize="words"
+                      returnKeyType="search"
+                      clearButtonMode="while-editing"
+                      selectionColor={CultureTokens.gold}
+                      underlineColorAndroid="transparent"
+                    />
+                    {citySearch.length > 0 && Platform.OS !== 'ios' && (
+                      <Pressable onPress={() => setCitySearch('')} hitSlop={8} accessibilityLabel="Clear search">
+                        <Ionicons name="close-circle" size={IconSize.sm + 2} color="rgba(255,255,255,0.45)" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {citiesToShow.length === 0 ? (
+                    <View style={s.noResults}>
+                      <Ionicons name="search-outline" size={36} color="rgba(255,255,255,0.35)" />
+                      <Text style={[s.noResultsText, { color: 'rgba(255,255,255,0.55)' }]}>
+                        {`No cities match "${citySearch}"`}
+                      </Text>
+                      <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
+                        <Text style={[s.noResultsClear, { color: CultureTokens.gold }]}>Clear search</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <View style={s.cityGrid}>
+                      {citiesToShow.map((city) => {
+                        const isActive = state.city === city;
+                        return (
+                          <Pressable
+                            key={city}
+                            style={({ pressed }) => [
+                              s.cityCard,
+                              {
+                                backgroundColor: isActive
+                                  ? CultureTokens.indigo
+                                  : pressed
+                                    ? `${CultureTokens.indigo}22`
+                                    : 'rgba(255,255,255,0.05)',
+                                borderColor: isActive
+                                  ? CultureTokens.indigo
+                                  : pressed
+                                    ? `${CultureTokens.indigo}55`
+                                    : 'rgba(255,255,255,0.12)',
+                                borderWidth: isActive ? 1.5 : 1,
+                              },
+                            ]}
+                            onPress={() => selectCity(city)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: isActive }}
+                            accessibilityLabel={city}
+                          >
+                            {isActive ? (
+                              <Ionicons name="checkmark-circle" size={IconSize.md - 2} color="#fff" />
+                            ) : (
+                              <Ionicons name="location-outline" size={IconSize.md - 2} color="rgba(255,255,255,0.40)" />
+                            )}
+                            <Text
+                              style={[
+                                s.cityName,
+                                {
+                                  color: isActive ? '#fff' : 'rgba(255,255,255,0.90)',
+                                  fontFamily: isActive ? FontFamily.semibold : FontFamily.medium,
+                                },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {city}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
+            </Animated.View>
+
+            {/* Back-within-flow link — shown on region and city steps */}
+            {step !== 'country' && (
+              <Animated.View entering={FadeIn.duration(200)} style={s.backLinkRow}>
+                <Pressable
+                  onPress={goBackWithinFlow}
+                  style={({ pressed }) => [s.backLink, { opacity: pressed ? 0.6 : 1 }]}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Back to ${step === 'city' ? (pendingCountry === 'Australia' ? 'state' : 'country') : 'country'}`}
+                >
+                  <Ionicons name="arrow-back" size={14} color={`${CultureTokens.gold}CC`} />
+                  <Text style={[s.backLinkText, { color: `${CultureTokens.gold}CC` }]}>
+                    {step === 'city'
+                      ? `Back to ${pendingCountry === 'Australia' ? 'states' : 'countries'}`
+                      : 'Back to countries'}
+                  </Text>
+                </Pressable>
+              </Animated.View>
             )}
 
             <View style={s.spacer} />
@@ -482,6 +657,12 @@ export default function LocationScreen() {
             >
               Continue
             </Button>
+
+            {(!state.country || !state.city) && (
+              <Text style={s.continueHint}>
+                {step === 'country' ? 'Select a country to continue' : step === 'region' ? 'Select your state to continue' : 'Choose a city to continue'}
+              </Text>
+            )}
           </View>
         </Animated.View>
       </ScrollView>
@@ -527,12 +708,79 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: Spacing.sm + 4,
+    gap: 12,
+  },
+  mobileBackBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -8,
+  },
+  stepIndicatorWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 6,
   },
   stepText: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.chip,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  progressTrack: {
+    width: 80,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: CultureTokens.gold,
+  },
+
+  // Desktop step stepper
+  desktopStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+    gap: 0,
+  },
+  desktopStepItem: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  desktopStepDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  desktopDotInner: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  desktopStepLabel: {
+    fontFamily: FontFamily.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: 0.3,
+  },
+  desktopStepLine: {
+    width: 40,
+    height: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginBottom: 18,
+    marginHorizontal: 6,
   },
 
   formContainer: {
@@ -550,13 +798,35 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
   },
 
-  formContent: { padding: CardTokens.paddingLarge * 2 },
+  formContent: { padding: 28 },
 
-  headerBlock: { alignItems: 'center', marginBottom: 28 },
+  // Breadcrumb
+  breadcrumbRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.md,
+    flexWrap: 'nowrap',
+  },
+  breadcrumbSegment: {
+    fontFamily: FontFamily.medium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.35)',
+    flexShrink: 1,
+  },
+  breadcrumbDone: {
+    color: CultureTokens.teal,
+  },
+  breadcrumbActive: {
+    color: 'rgba(255,255,255,0.85)',
+    fontFamily: FontFamily.semibold,
+  },
+
+  headerBlock: { alignItems: 'center', marginBottom: 24 },
   iconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
@@ -564,27 +834,50 @@ const s = StyleSheet.create({
   },
   title: {
     ...TextStyles.display,
-    fontSize: 32,
+    fontSize: 28,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
-    ...TextStyles.callout,
+    fontFamily: FontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.65)',
+    maxWidth: 320,
   },
 
+  // Detect button — richer layout
   detectBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: Spacing.md,
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
     borderRadius: CardTokens.radius,
     borderWidth: 1.5,
-    marginBottom: Spacing.lg,
+    marginBottom: 16,
+    minHeight: 64,
   },
-  detectBtnText: { fontFamily: FontFamily.bold, fontSize: FontSize.body2, letterSpacing: 1 },
+  detectBtnTextWrap: { flex: 1 },
+  detectBtnPrimary: { fontFamily: FontFamily.bold, fontSize: FontSize.body2, letterSpacing: 0.3 },
+  detectBtnSub: { fontFamily: FontFamily.regular, fontSize: 12, marginTop: 2 },
+
+  // Or divider
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  orDividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  orDividerText: {
+    fontFamily: FontFamily.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.35)',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
 
   errorBanner: {
     flexDirection: 'row',
@@ -598,27 +891,51 @@ const s = StyleSheet.create({
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  cityStepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+  // Back link (within flow)
+  backLinkRow: {
+    marginTop: Spacing.md,
+    alignItems: 'flex-start',
   },
-  backToStateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backToStateText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
-
-  selectedStatePill: {
+  backLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 5,
+    minHeight: 36,
+  },
+  backLinkText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: 13,
+  },
+
+  // State grid
+  stateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  stateCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: CardTokens.radius,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
     borderWidth: 1,
+    width: '47.5%',
+    position: 'relative',
+    minHeight: 90,
   },
-  stateEmojiSmall: { fontSize: 16 },
-  selectedStatePillText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
+  stateEmoji: { fontSize: 32 },
+  stateName: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, textAlign: 'center' },
+  cityCount: { fontFamily: FontFamily.regular, fontSize: FontSize.chip, textAlign: 'center' },
+  stateCheckBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
+  // Search
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -628,6 +945,7 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Platform.OS === 'ios' ? 14 : 10,
     marginBottom: Spacing.md,
+    minHeight: 50,
   },
   searchInput: {
     flex: 1,
@@ -636,38 +954,35 @@ const s = StyleSheet.create({
     padding: 0,
   },
 
-  stateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  stateCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: CardTokens.radius,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    width: '47.5%',
-  },
-  stateEmoji: { fontSize: 34 },
-  stateName: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, textAlign: 'center' },
-  cityCount: { fontFamily: FontFamily.regular, fontSize: FontSize.chip, textAlign: 'center' },
-
+  // No results
   noResults: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
   noResultsText: { fontFamily: FontFamily.regular, fontSize: FontSize.body2, textAlign: 'center' },
   noResultsClear: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, marginTop: 4 },
 
+  // City grid
   cityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cityCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     borderRadius: CardTokens.radius,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
     borderWidth: 1,
     width: '47.5%',
+    minHeight: 48,
   },
   cityName: { flex: 1, fontSize: FontSize.body2 },
 
-  spacer: { height: Spacing.xl },
-  submitBtn: { height: 60, borderRadius: 20 },
+  spacer: { height: Spacing.lg },
+  submitBtn: { height: 58, borderRadius: 20 },
+
+  // Continue hint
+  continueHint: {
+    textAlign: 'center',
+    fontFamily: FontFamily.regular,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.35)',
+    marginTop: 10,
+  },
 });

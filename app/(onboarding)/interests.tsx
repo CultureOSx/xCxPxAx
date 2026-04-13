@@ -52,6 +52,13 @@ const CATEGORY_EMOJI: Record<string, string> = {
 // ---------------------------------------------------------------------------
 // InterestChip Component
 // ---------------------------------------------------------------------------
+// The interests screen always renders on a dark gradient background.
+// All text/chip colors are white-based regardless of system theme.
+const CHIP_UNSELECTED_BG = 'rgba(255,255,255,0.08)';
+const CHIP_UNSELECTED_BG_PRESSED = 'rgba(255,255,255,0.14)';
+const CHIP_UNSELECTED_BORDER = 'rgba(255,255,255,0.15)';
+const CHIP_TEXT_UNSELECTED = 'rgba(255,255,255,0.88)';
+
 const InterestChip = React.memo(function InterestChip({
   interest,
   icon,
@@ -65,8 +72,6 @@ const InterestChip = React.memo(function InterestChip({
   accentColor: string;
   onPress: () => void;
 }) {
-  const colors = useColors();
-
   return (
     <Pressable
       onPress={onPress}
@@ -75,8 +80,8 @@ const InterestChip = React.memo(function InterestChip({
         isSelected
           ? { backgroundColor: accentColor, borderColor: 'transparent' }
           : {
-              backgroundColor: pressed ? `${colors.text}12` : `${colors.text}0A`,
-              borderColor: `${colors.text}21`,
+              backgroundColor: pressed ? CHIP_UNSELECTED_BG_PRESSED : CHIP_UNSELECTED_BG,
+              borderColor: CHIP_UNSELECTED_BORDER,
             },
         pressed && !isSelected && { transform: [{ scale: 0.97 }] },
       ]}
@@ -87,13 +92,13 @@ const InterestChip = React.memo(function InterestChip({
       <Ionicons
         name={icon as keyof typeof Ionicons.glyphMap}
         size={FontSize.body2}
-        color={isSelected ? colors.background : accentColor}
+        color={isSelected ? '#FFFFFF' : accentColor}
       />
-      <Text style={[s.chipText, { color: isSelected ? colors.background : `${colors.text}CC` }]}>
+      <Text style={[s.chipText, { color: isSelected ? '#FFFFFF' : CHIP_TEXT_UNSELECTED }]}>
         {interest}
       </Text>
       {isSelected && (
-        <Ionicons name="checkmark" size={FontSize.micro} color={`${colors.background}A6`} />
+        <Ionicons name="checkmark" size={FontSize.micro} color="rgba(255,255,255,0.80)" />
       )}
     </Pressable>
   );
@@ -158,10 +163,10 @@ export default function InterestsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={IconSize.lg} color={colors.textSecondary} />
+          <Ionicons name="chevron-back" size={IconSize.lg} color="rgba(255,255,255,0.70)" />
         </Pressable>
 
-        <Text style={[s.stepLabel, { color: colors.textSecondary }]}>STEP 4 OF 4</Text>
+        <Text style={[s.stepLabel, { color: 'rgba(255,255,255,0.60)' }]}>STEP 4 OF 4</Text>
 
         <View style={s.backBtn} /> {/* Spacer for centering */}
       </View>
@@ -178,7 +183,7 @@ export default function InterestsScreen() {
         <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
           {/* Title */}
           <View style={s.titleBlock}>
-            <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
+            <Text style={[s.title, { color: '#FFFFFF' }]}>What interests{'\n'}you?</Text>
             <Text style={s.subtitle}>
               Pick at least {MIN_REQUIRED} to personalise your CulturePass feed
             </Text>
@@ -186,7 +191,7 @@ export default function InterestsScreen() {
 
           {/* Progress Bar */}
           <Animated.View entering={FadeInDown.springify().damping(15).delay(150)} style={s.progressBlock}>
-            <View style={[s.progressTrack, { backgroundColor: colors.borderLight }]}>
+            <View style={[s.progressTrack, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
               <View
                 style={[
                   s.progressFill,
@@ -197,14 +202,14 @@ export default function InterestsScreen() {
                 ]}
               />
             </View>
-            <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : colors.textSecondary }]}>
+            <Text style={[s.progressLabel, { color: isReady ? CultureTokens.teal : 'rgba(255,255,255,0.55)' }]}>
               {isReady ? `${selected.length} selected` : `${selected.length} / ${MIN_REQUIRED}`}
             </Text>
           </Animated.View>
 
           {/* Popular Interests */}
           <Animated.View entering={FadeInDown.springify().damping(15).delay(200)} style={s.section}>
-            <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Popular near you</Text>
+            <Text style={[s.sectionLabel, { color: 'rgba(255,255,255,0.55)' }]}>Popular near you</Text>
             <View style={s.chipWrap}>
               {popularInterestsSydney.map((interest) => {
                 const cat = categoryByInterest.get(interest);
@@ -225,7 +230,7 @@ export default function InterestsScreen() {
             </View>
           </Animated.View>
 
-          <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
+          <View style={[s.divider, { backgroundColor: 'rgba(255,255,255,0.10)' }]} />
 
           {/* Category Sections */}
           {interestCategories.map((category) => {
@@ -249,7 +254,7 @@ export default function InterestsScreen() {
                       <Text style={s.categoryEmoji}>{emoji}</Text>
                     </View>
                     <View style={s.categoryTitleBlock}>
-                      <Text style={[s.categoryTitle, { color: colors.text }]}>{category.title}</Text>
+                      <Text style={[s.categoryTitle, { color: '#FFFFFF' }]}>{category.title}</Text>
                       {countInCat > 0 && (
                         <Text style={[s.categoryCount, { color: accent }]}>{countInCat} selected</Text>
                       )}
@@ -277,7 +282,7 @@ export default function InterestsScreen() {
                     <Ionicons
                       name={isOpen ? 'chevron-up' : 'chevron-down'}
                       size={IconSize.sm}
-                      color={colors.textTertiary}
+                      color="rgba(255,255,255,0.40)"
                     />
                   </Pressable>
                 </View>
@@ -304,7 +309,7 @@ export default function InterestsScreen() {
                   </Animated.View>
                 )}
 
-                <View style={[s.categoryDivider, { backgroundColor: colors.borderLight }]} />
+                <View style={[s.categoryDivider, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
               </View>
             );
           })}
@@ -319,7 +324,7 @@ export default function InterestsScreen() {
         style={[s.bottomBar, { paddingBottom: bottomInset + Spacing.md }]}
       >
         {!isReady && (
-          <Text style={[s.remainingText, { color: colors.textSecondary }]}>
+          <Text style={[s.remainingText, { color: 'rgba(255,255,255,0.60)' }]}>
             {remaining === 1 ? '1 more interest to go' : `${remaining} more interests to go`}
           </Text>
         )}

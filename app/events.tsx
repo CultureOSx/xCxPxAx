@@ -6,7 +6,6 @@ import {
 import { router } from 'expo-router';
 import Animated, {
   FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring,
-  interpolateColor, withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -119,40 +118,56 @@ function FilterChip({
 }) {
   const colors = useColors();
   const scale = useSharedValue(1);
-  const bg = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
-        : [colors.surface, colors.surfaceElevated],
-    ),
   }));
   return (
     <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
+      onPressIn={() => { scale.value = withSpring(0.93, { damping: 18 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 18 }); }}
       onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
-        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
+      <Animated.View
+        style={[
+          fc.chip,
+          active
+            ? { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo }
+            : { backgroundColor: colors.surface, borderColor: colors.border },
+          animStyle,
+        ]}
+      >
+        {icon
+          ? <Ionicons
+              name={icon as keyof typeof Ionicons.glyphMap}
+              size={13}
+              color={active ? '#fff' : colors.textSecondary}
+            />
+          : null}
+        <Text style={[fc.text, { color: active ? '#fff' : colors.text }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );
 }
 
 const fc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+    minHeight: 38,
+  },
   text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 });
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
-  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
+  return <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 2, alignSelf: 'center', opacity: 0.6 }} />;
 }
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -293,7 +308,7 @@ export default function AllEventsScreen() {
         >
           <BackButton
             fallback="/(tabs)"
-            style={[s.backBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+            style={[s.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
           />
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: colors.text }]}>Events</Text>
@@ -309,7 +324,10 @@ export default function AllEventsScreen() {
           </View>
           <Pressable
             onPress={() => refetch()}
-            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
+            style={({ pressed }) => [
+              s.iconBtn,
+              { backgroundColor: pressed ? colors.surface : colors.surfaceElevated, borderColor: colors.border },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Refresh events"
           >
@@ -444,8 +462,8 @@ export default function AllEventsScreen() {
               }}
               ListEmptyComponent={
                 <View style={s.emptyState}>
-                  <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-                    <Ionicons name="search-outline" size={28} color={colors.textTertiary} />
+                  <View style={[s.emptyIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <Ionicons name="search-outline" size={28} color={colors.textSecondary} />
                   </View>
                   <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
                   <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
@@ -472,28 +490,18 @@ export default function AllEventsScreen() {
       <Pressable
         onPress={() => router.push('/event/create')}
         style={({ pressed }) => [
+          s.fab,
           {
-            position: 'absolute',
-            right: isDesktop ? hPad + 32 : 24,
-            bottom: isDesktop ? 48 : 24,
-            zIndex: 100,
-            backgroundColor: CultureTokens.indigo,
-            borderRadius: 32,
-            width: 64,
-            height: 64,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.18,
-            shadowRadius: 12,
-            opacity: pressed ? 0.8 : 1,
+            right: isDesktop ? hPad + 32 : 20,
+            bottom: isDesktop ? 48 : bottomInset + 20,
+            opacity: pressed ? 0.85 : 1,
           },
         ]}
         accessibilityRole="button"
         accessibilityLabel="Create new event"
       >
-        <Ionicons name="add-circle" size={40} color="#fff" />
+        <Ionicons name="add" size={28} color="#fff" />
+        {isDesktop && <Text style={s.fabLabel}>New Event</Text>}
       </Pressable>
       </View>
     </ErrorBoundary>
@@ -518,8 +526,26 @@ const s = StyleSheet.create({
   filterBlock:   { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
   filterRow:     { flexDirection: 'row', alignItems: 'center', gap: 7 },
   filterRowDate: { paddingBottom: 4 },
-  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, borderWidth: 1, minHeight: 38 },
   clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+
+  fab: {
+    position: 'absolute',
+    zIndex: 100,
+    backgroundColor: CultureTokens.indigo,
+    borderRadius: 28,
+    height: 56,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: CultureTokens.indigo,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    ...Platform.select({ android: { elevation: 8 } }),
+  },
+  fabLabel: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 14, lineHeight: 19 },
 
   list:          { paddingTop: 20, gap: 20 },
   listFooter:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },

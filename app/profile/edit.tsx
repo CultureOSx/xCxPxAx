@@ -85,6 +85,7 @@ interface UserData {
   country: string | null;
   location: string | null;
   avatarUrl?: string | null;
+  coverUrl?: string | null;
   website: string | null;
   socialLinks: {
     instagram?: string;
@@ -213,15 +214,28 @@ function FieldRow({
   label,
   colors,
   children,
+  error,
+  required,
 }: {
   label: string;
   colors: ColorTheme;
   children: React.ReactNode;
+  error?: string;
+  required?: boolean;
 }) {
   return (
     <View style={fr.wrap}>
-      <Text style={[fr.label, { color: colors.textTertiary }]}>{label}</Text>
+      <View style={fr.labelRow}>
+        <Text style={[fr.label, { color: colors.textTertiary }]}>{label}</Text>
+        {required && <Text style={[fr.requiredDot, { color: colors.error }]}>*</Text>}
+      </View>
       {children}
+      {error ? (
+        <View style={fr.errorRow}>
+          <Ionicons name="alert-circle" size={12} color={colors.error} />
+          <Text style={[fr.error, { color: colors.error }]}>{error}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -355,15 +369,19 @@ function IdentityPills({
 }
 
 const sc = StyleSheet.create({
-  cardRoot: { marginBottom: 14 },
-  cardHeader: { paddingHorizontal: 18, paddingVertical: 14 },
+  cardRoot: { marginBottom: 0 },
+  cardHeader: { paddingHorizontal: 20, paddingVertical: 16 },
   gemAccent: { width: 3, height: 36, borderRadius: 2, marginTop: 2 },
-  cardBody: { paddingHorizontal: 18, paddingVertical: 16, gap: 14 },
+  cardBody: { paddingHorizontal: 20, paddingVertical: 18, gap: 18 },
 });
 
 const fr = StyleSheet.create({
-  wrap: { gap: 8 },
+  wrap: { gap: 6 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
+  requiredDot: { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 15 },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  error: { fontSize: 11, fontFamily: 'Poppins_500Medium', flex: 1 },
 });
 
 const id = StyleSheet.create({
@@ -515,6 +533,7 @@ export default function EditProfileScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { userId, user: authUser, isRestoring } = useAuth();
   const [copyToast, setCopyToast] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
 
   useEffect(() => {
     if (!copyToast) return;
@@ -565,6 +584,7 @@ export default function EditProfileScreen() {
   const [selectedCommunities, setSelectedCommunities] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [coverUri, setCoverUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -598,6 +618,7 @@ export default function EditProfileScreen() {
       setSelectedCommunities(user.communities ?? []);
       setSelectedInterests(user.interests ?? []);
       setAvatarUri(user.avatarUrl || null);
+      setCoverUri(user.coverUrl || null);
     }
   }, [user]);
 
@@ -681,6 +702,31 @@ export default function EditProfileScreen() {
     }
   };
 
+  const handleChooseCoverPhoto = async () => {
+    if (Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission needed', 'Please allow photo access to upload a cover image.');
+        return;
+      }
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+      aspect: [3, 1],
+    });
+    if (!result.canceled && result.assets[0]?.uri && userId) {
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      try {
+        const { downloadURL } = await uploadImage(result, 'users', userId, 'coverUrl');
+        setCoverUri(downloadURL);
+      } catch (err) {
+        Alert.alert('Upload Failed', String(err));
+      }
+    }
+  };
+
   const handleDrop = (event: { preventDefault?: () => void; dataTransfer?: { files?: FileList }; nativeEvent?: { dataTransfer?: { files?: FileList } } }) => {
     if (Platform.OS !== 'web') return;
     event.preventDefault?.();
@@ -720,10 +766,93 @@ export default function EditProfileScreen() {
   }, [avatarUri, deleteImage, userId]);
 
   const handleSave = async () => {
-    if (!form.displayName.trim()) {
-      Alert.alert('Required', 'Please enter your display name.');
+    // ── Validation ────────────────────────────────────────────────────────────
+    const errors: Partial<Record<string, string>> = {};
+    let firstErrorTab: EditTab | null = null;
+    const markTab = (t: EditTab) => { if (!firstErrorTab) firstErrorTab = t; };
+
+    // --- Personal ---
+    const name = form.displayName.trim();
+    if (!name) {
+      errors.displayName = 'Display name is required';
+      markTab('personal');
+    } else if (name.length < 2) {
+      errors.displayName = 'Must be at least 2 characters';
+      markTab('personal');
+    } else if (name.length > 80) {
+      errors.displayName = 'Must be 80 characters or less';
+      markTab('personal');
+    }
+
+    const email = form.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Enter a valid email address';
+      markTab('personal');
+    }
+
+    const phone = form.phone.trim();
+    if (phone && !/^[+\d\s\-().]{6,20}$/.test(phone)) {
+      errors.phone = 'Enter a valid phone number';
+      markTab('personal');
+    }
+
+    if (form.bio.length > 280) {
+      errors.bio = 'Bio must be 280 characters or less';
+      markTab('personal');
+    }
+
+    const state = form.state.trim().toUpperCase();
+    if (state && !/^[A-Z]{2,4}$/.test(state)) {
+      errors.state = 'Enter a valid state code (e.g. NSW, VIC)';
+      markTab('personal');
+    }
+
+    const postcode = form.postcode.trim();
+    if (postcode && !/^\d{4}$/.test(postcode)) {
+      errors.postcode = 'Enter a valid 4-digit postcode';
+      markTab('personal');
+    }
+
+    const country = form.country.trim();
+    if (!country) {
+      errors.country = 'Country is required';
+      markTab('personal');
+    }
+
+    // --- Culture ---
+    if (form.ethnicityText.trim().length > 200) {
+      errors.ethnicityText = 'Must be 200 characters or less';
+      markTab('culture');
+    }
+
+    // --- Social ---
+    const website = form.website.trim();
+    if (website && !/^https?:\/\/.+/.test(website)) {
+      errors.website = 'Must start with https://';
+      markTab('social');
+    }
+
+    const urlOnlyFields: Array<{ key: keyof typeof form; label: string }> = [
+      { key: 'youtube', label: 'YouTube' },
+      { key: 'linkedin', label: 'LinkedIn' },
+      { key: 'facebook', label: 'Facebook' },
+    ];
+    for (const { key, label } of urlOnlyFields) {
+      const val = (form[key] as string).trim();
+      if (val && !val.startsWith('@') && !/^https?:\/\/.+/.test(val)) {
+        errors[key] = `${label} must be https:// URL or @username`;
+        markTab('social');
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      if (firstErrorTab && firstErrorTab !== activeTab) setActiveTab(firstErrorTab);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    setFieldErrors({});
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const city = form.city.trim();
@@ -745,6 +874,7 @@ export default function EditProfileScreen() {
       country,
       location: city ? `${city}, ${country}` : null,
       avatarUrl: avatarUri,
+      coverUrl: coverUri,
       website: form.website.trim() || null,
       socialLinks: {
         instagram: formatLink(form.instagram, 'instagram.com'),
@@ -771,7 +901,10 @@ export default function EditProfileScreen() {
     });
   };
 
-  const field = (f: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [f]: v }));
+  const field = (f: keyof typeof form) => (v: string) => {
+    setForm((p) => ({ ...p, [f]: v }));
+    if (fieldErrors[f]) setFieldErrors((prev) => ({ ...prev, [f]: undefined }));
+  };
 
   const initials = (form.displayName || user?.username || 'U')
     .split(' ')
@@ -917,74 +1050,111 @@ export default function EditProfileScreen() {
           ) : null}
 
           <Animated.View entering={FadeInUp.duration(480)} style={s.heroWrap}>
-            <LinearGradient
-              colors={gradients.midnight as unknown as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.25)']}
-              style={StyleSheet.absoluteFillObject}
-              start={{ x: 0.5, y: 0.6 }}
-              end={{ x: 0.5, y: 1 }}
-            />
-            <View style={[s.heroOrb, { backgroundColor: `${CultureTokens.teal}22` }]} />
-            <View style={[s.heroOrbSecondary, { backgroundColor: `${CultureTokens.gold}18` }]} />
-
-            <Pressable
-              style={s.avatarBtn}
-              onPress={handleChoosePhoto}
-              accessibilityRole="button"
-              accessibilityLabel="Change profile photo"
-              {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
-                : {})}
-              {...(Platform.OS === 'web'
-                ? {
-                    onDrop: handleDrop,
-                    onDragOver: (e: { preventDefault: () => void }) => e.preventDefault(),
-                  }
-                : {})}
-            >
+            {/* ── Cover image ───────────────────────────── */}
+            <View style={s.coverSection}>
+              {coverUri ? (
+                <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel="Cover photo" />
+              ) : (
+                <>
+                  <LinearGradient
+                    colors={gradients.midnight as unknown as [string, string]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[s.heroOrb, { backgroundColor: `${CultureTokens.teal}30` }]} />
+                  <View style={[s.heroOrbSecondary, { backgroundColor: `${CultureTokens.gold}22` }]} />
+                </>
+              )}
+              {/* Scrim for avatar overlap */}
               <LinearGradient
-                colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={s.avatarRingOuter}
+                colors={['transparent', 'rgba(0,0,0,0.35)']}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0.5, y: 0.4 }}
+                end={{ x: 0.5, y: 1 }}
+              />
+              {/* Cover edit button */}
+              <Pressable
+                style={s.coverEditBtn}
+                onPress={handleChooseCoverPhoto}
+                accessibilityRole="button"
+                accessibilityLabel={coverUri ? 'Change cover photo' : 'Add cover photo'}
               >
-                <View style={[s.avatarRing, { borderColor: GEM_RING, backgroundColor: 'rgba(0,0,0,0.2)' }]}>
-                  {avatarUri ? (
-                    <Image
-                      source={{ uri: avatarUri }}
-                      style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2 }}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <LinearGradient colors={['#1A3D70', '#0E2040']} style={StyleSheet.absoluteFill}>
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={[TextStyles.title, { color: colors.textOnBrandGradient }]}>{initials}</Text>
-                      </View>
-                    </LinearGradient>
-                  )}
+                {uploading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="camera-outline" size={16} color="#fff" />
+                )}
+              </Pressable>
+              {coverUri && !uploading && (
+                <Pressable
+                  style={s.coverRemoveBtn}
+                  onPress={() => setCoverUri(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove cover photo"
+                >
+                  <Ionicons name="close" size={14} color="#fff" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* ── Avatar ───────────────────────────────── */}
+            <View style={s.avatarArea}>
+              <Pressable
+                style={s.avatarBtn}
+                onPress={handleChoosePhoto}
+                accessibilityRole="button"
+                accessibilityLabel="Change profile photo"
+                {...(Platform.OS === 'android'
+                  ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
+                  : {})}
+                {...(Platform.OS === 'web'
+                  ? {
+                      onDrop: handleDrop,
+                      onDragOver: (e: { preventDefault: () => void }) => e.preventDefault(),
+                    }
+                  : {})}
+              >
+                <LinearGradient
+                  colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={s.avatarRingOuter}
+                >
+                  <View style={[s.avatarRing, { borderColor: GEM_RING, backgroundColor: 'rgba(0,0,0,0.2)' }]}>
+                    {avatarUri ? (
+                      <Image
+                        source={{ uri: avatarUri }}
+                        style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <LinearGradient colors={['#1A3D70', '#0E2040']} style={StyleSheet.absoluteFill}>
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={[TextStyles.title, { color: colors.textOnBrandGradient }]}>{initials}</Text>
+                        </View>
+                      </LinearGradient>
+                    )}
+                  </View>
+                </LinearGradient>
+
+                <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
+                  {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
                 </View>
-              </LinearGradient>
+              </Pressable>
+            </View>
 
-              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
-                {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
-              </View>
-            </Pressable>
-
-            <Text style={[TextStyles.title2, { color: colors.textOnBrandGradient, textAlign: 'center' }]}>
+            {/* ── Name + caption ───────────────────────── */}
+            <Text style={[TextStyles.title2, { color: colors.text, textAlign: 'center', marginTop: 12 }]}>
               {form.displayName || user?.username || 'Your name'}
             </Text>
-            <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.65)', textAlign: 'center', marginTop: 4 }]}>
-              {Platform.OS === 'web' ? 'Tap or drop a photo to update' : 'Tap to update your photo'}
+            <Text style={[TextStyles.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
+              {Platform.OS === 'web' ? 'Tap photo or cover to update' : 'Tap photo or cover to update'}
             </Text>
 
             {uploading ? (
               <View style={s.uploadMetaWrap}>
-                <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.76)' }]}>
+                <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
                   Uploading {Math.max(1, Math.min(100, Math.round(progress)))}%
                 </Text>
                 <View style={s.uploadTrack}>
@@ -996,12 +1166,12 @@ export default function EditProfileScreen() {
             {avatarUri ? (
               <Pressable
                 onPress={() => void handleRemovePhoto()}
-                style={[s.removePhotoBtn, { borderColor: 'rgba(255,255,255,0.32)', backgroundColor: 'rgba(0,0,0,0.26)' }]}
+                style={[s.removePhotoBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
                 accessibilityRole="button"
                 accessibilityLabel="Remove profile photo"
               >
-                <Ionicons name="trash-outline" size={14} color="#fff" />
-                <Text style={s.removePhotoText}>Remove photo</Text>
+                <Ionicons name="trash-outline" size={14} color={colors.error} />
+                <Text style={[s.removePhotoText, { color: colors.error }]}>Remove photo</Text>
               </Pressable>
             ) : null}
 
@@ -1120,9 +1290,9 @@ export default function EditProfileScreen() {
                   isDark={isDark}
                   index={0}
                 >
-                  <FieldRow label="Display name *" colors={colors}>
+                  <FieldRow label="Display name" colors={colors} required error={fieldErrors.displayName}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.displayName && { borderColor: colors.error }]}
                       value={form.displayName}
                       onChangeText={field('displayName')}
                       placeholder="Your name"
@@ -1132,9 +1302,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Email" colors={colors}>
+                  <FieldRow label="Email" colors={colors} error={fieldErrors.email}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.email && { borderColor: colors.error }]}
                       value={form.email}
                       onChangeText={field('email')}
                       placeholder="your@email.com"
@@ -1146,9 +1316,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Phone" colors={colors}>
+                  <FieldRow label="Phone" colors={colors} error={fieldErrors.phone}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.phone && { borderColor: colors.error }]}
                       value={form.phone}
                       onChangeText={field('phone')}
                       placeholder="+61 400 000 000"
@@ -1169,9 +1339,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Bio" colors={colors}>
+                  <FieldRow label="Bio" colors={colors} error={fieldErrors.bio}>
                     <TextInput
-                      style={[inputStyle, s.bioInput]}
+                      style={[inputStyle, s.bioInput, fieldErrors.bio && { borderColor: colors.error }]}
                       value={form.bio}
                       onChangeText={field('bio')}
                       placeholder="A short line about what you love in culture and community…"
@@ -1182,7 +1352,7 @@ export default function EditProfileScreen() {
                       accessibilityLabel="Bio"
                       {...bioInputExtras}
                     />
-                    <Text style={[s.charCount, { color: colors.textTertiary }]}>
+                    <Text style={[s.charCount, { color: form.bio.length > 260 ? colors.error : colors.textTertiary }]}>
                       {form.bio.length}/280
                     </Text>
                   </FieldRow>
@@ -1539,9 +1709,14 @@ const s = StyleSheet.create({
   },
   heroWrap: {
     alignItems: 'center',
-    paddingTop: 36,
-    paddingBottom: 30,
+    paddingBottom: 24,
     overflow: 'hidden',
+  },
+  coverSection: {
+    width: '100%',
+    height: 160,
+    overflow: 'hidden',
+    position: 'relative',
   },
   heroOrb: {
     position: 'absolute',
@@ -1559,7 +1734,38 @@ const s = StyleSheet.create({
     height: 160,
     borderRadius: 80,
   },
-  avatarBtn: { position: 'relative', marginBottom: 12 },
+  coverEditBtn: {
+    position: 'absolute',
+    bottom: 10,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  coverRemoveBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.30)',
+  },
+  avatarArea: {
+    marginTop: -44,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  avatarBtn: { position: 'relative' },
   avatarRingOuter: {
     padding: 3,
     borderRadius: 999,
@@ -1623,7 +1829,7 @@ const s = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
   },
-  body: { paddingTop: 12, gap: 10, paddingBottom: 16 },
+  body: { paddingTop: 16, gap: 16, paddingBottom: 16 },
   bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center' },
   input: {
     height: 52,
@@ -1685,7 +1891,7 @@ const s = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.10)',
     overflow: 'hidden',
   },
   uploadFill: {
@@ -1700,11 +1906,11 @@ const s = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 36,
   },
   removePhotoText: {
-    color: '#fff',
     fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
   },

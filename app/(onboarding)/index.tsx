@@ -221,7 +221,7 @@ export default function WelcomeScreen() {
                 />
               </View>
 
-              <BrandWordmark size="xl" withTagline={false} centered light />
+              <BrandWordmark size="xl" withTagline centered light />
 
               <Text style={[s.subtitle, { color: colors.textSecondary }]}>
                 One trusted place for cultural discovery, tickets, and community — built for diaspora cities worldwide.

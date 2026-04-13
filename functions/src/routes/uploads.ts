@@ -4,7 +4,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
 import { requireAuth } from '../middleware/auth';
 import { slidingWindowRateLimit } from '../middleware/rateLimit';
@@ -23,25 +23,45 @@ const upload = multer({
 const INGEST_MAX_BYTES = 8 * 1024 * 1024;
 const INGEST_TIMEOUT_MS = 20_000;
 
-uploadsRouter.post('/uploads/image', requireAuth, upload.single('image'), async (req: Request, res: Response) => {
-  if (!storageBucket) {
-    return res.status(503).json({ error: 'Storage is not configured for this environment' });
-  }
-  const file = req.file;
-  if (!file?.buffer?.length) {
-    return res.status(400).json({ error: 'Missing image file (field name: image)' });
-  }
-  const uid = req.user!.id;
-  const id = `${Date.now()}-${randomBytes(6).toString('hex')}`;
+uploadsRouter.post(
+  '/uploads/image',
+  requireAuth,
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single('image')(req, res, (multerErr) => {
+      if (multerErr instanceof multer.MulterError) {
+        const msg =
+          multerErr.code === 'LIMIT_FILE_SIZE'
+            ? 'Image exceeds the 8 MB size limit'
+            : `Upload error: ${multerErr.message}`;
+        return res.status(400).json({ error: msg });
+      }
+      if (multerErr) {
+        captureRouteError(multerErr, 'POST /uploads/image (multer)');
+        return res.status(500).json({ error: 'Failed to receive image' });
+      }
+      next();
+    });
+  },
+  async (req: Request, res: Response) => {
+    if (!storageBucket) {
+      return res.status(503).json({ error: 'Storage is not configured for this environment' });
+    }
+    const file = req.file;
+    if (!file?.buffer?.length) {
+      return res.status(400).json({ error: 'Missing image file (field name: image)' });
+    }
+    const uid = req.user!.id;
+    const id = `${Date.now()}-${randomBytes(6).toString('hex')}`;
 
-  try {
-    const out = await processBufferToJpegAndStore(file.buffer, uid, id);
-    return res.status(201).json(out);
-  } catch (err) {
-    captureRouteError(err, 'POST /uploads/image');
-    return res.status(500).json({ error: 'Failed to process or store image' });
-  }
-});
+    try {
+      const out = await processBufferToJpegAndStore(file.buffer, uid, id);
+      return res.status(201).json(out);
+    } catch (err) {
+      captureRouteError(err, 'POST /uploads/image');
+      return res.status(500).json({ error: 'Failed to process or store image' });
+    }
+  },
+);
 
 uploadsRouter.post(
   '/uploads/ingest-url',

@@ -74,15 +74,35 @@ export const useImageUpload = () => {
       const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
       const uploadTask = uploadBytesResumable(storageRef, blob, { contentType });
 
+      const UPLOAD_TIMEOUT_MS = 60_000;
       await new Promise<void>((resolve, reject) => {
+        let settled = false;
+
+        const timeoutId = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          uploadTask.cancel();
+          reject(new Error('Upload timed out. Please check your connection and try again.'));
+        }, UPLOAD_TIMEOUT_MS);
+
         uploadTask.on(
           'state_changed',
           (snapshot) => {
             const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             setProgress(currentProgress);
           },
-          (error) => reject(error),
-          () => resolve()
+          (error) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            resolve();
+          },
         );
       });
 

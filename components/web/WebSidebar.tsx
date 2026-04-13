@@ -15,7 +15,8 @@ import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { Image } from 'expo-image';
 import Svg, { Line } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';
-import { APP_NAME, APP_WEB_TAGLINE, getAuVersionLabel } from '@/lib/app-meta';
+import { BrandWordmark } from '@/components/ui/BrandWordmark';
+import { APP_NAME, getAuVersionLabel } from '@/lib/app-meta';
 import { api } from '@/lib/api';
 
 const LOGO_RAY_COUNT = 28;
@@ -493,9 +494,7 @@ export function WebSidebar() {
           <View style={s.brandBlackCardInner}>
             <LogoRayBurst size={68} borderRadius={18} imagePadding={11} />
             <View style={s.brandTextBlock}>
-              <Text style={s.brandTitleOnDark}>{APP_NAME}</Text>
-              <View style={s.brandTitleAccent} />
-              <Text style={s.brandTaglineBlock}>{APP_WEB_TAGLINE}</Text>
+              <BrandWordmark size="sm" withTagline centered light />
             </View>
           </View>
         </Pressable>
