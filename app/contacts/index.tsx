@@ -16,24 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-<<<<<<< HEAD
 import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens, gradients } from '@/constants/theme';
-=======
-import {
-  CardTokens,
-  Colors,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  gradients,
-  IconSize,
-  LineHeight,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useContacts, SavedContact, PhoneContact } from '@/contexts/ContactsContext';
@@ -1068,15 +1051,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-<<<<<<< HEAD
   headerTitle: { ...TextStyles.title3 },
   headerCount: { ...TextStyles.caption, marginTop: 1 },
   headerRight: { flexDirection: 'row', gap: 8 },
-||||||| 7dc71c1
   headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
   headerCount: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
   headerRight: { flexDirection: 'row', gap: 8 },
-=======
   headerTitle: { ...TextStyles.title3 },
   headerCount: { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
   headerRight: { flexDirection: 'row', gap: Spacing.sm },

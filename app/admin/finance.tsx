@@ -356,16 +356,7 @@ const s = StyleSheet.create({
   infoBox:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 14, borderWidth: 1, padding: 13, marginTop: 10 },
   infoText:    { flex: 1, ...TextStyles.caption, lineHeight: 18 },
   stripeBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 12 },
-<<<<<<< HEAD
   stripeBtnText:{ ...TextStyles.cardTitle, color: '#fff' },
-||||||| 7dc71c1
-  stripeBtnText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
-  stripeBtnText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-  actionsRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionBtn:   { minHeight: 42, borderRadius: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
-  actionBtnText:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
->>>>>>> cursor/onboarding-brand-lint-fixes
   loadingWrap: { alignItems: 'center', gap: 12, paddingVertical: 80 },
   loadingText: { ...TextStyles.cardBody },
 });

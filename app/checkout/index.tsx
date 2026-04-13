@@ -16,13 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useIsDark } from '@/hooks/useColors';
-<<<<<<< HEAD
 import { CultureTokens, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens } from '@/constants/theme';
-=======
-import { CultureTokens, gradients } from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';

@@ -1,22 +1,9 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Platform,
-  TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  FadeInDown,
-  FadeInRight,
-  FadeOutLeft,
-  FadeInUp,
-  FadeIn,
+                    )}
+                  </View>
+                ))}
+              </View>
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -183,41 +170,7 @@ export default function CultureMatchScreen() {
                         end={{ x: 1, y: 1 }}
                         style={StyleSheet.absoluteFill}
                       />
-                      <LinearGradient
-                        colors={[CultureTokens.gold, '#FFD700']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                      />
-=======
-          <View style={s.stepIndicatorWrap}>
-            <Text style={s.stepText}>Step 3 of 4</Text>
-            {/* Outer progress bar: step 3/4 = 75% */}
-            <View style={s.progressTrack}>
-              <View style={[s.progressFill, { width: '75%' }]} />
-            </View>
-          </View>
-        </View>
-      )}
-
-      <ScrollView
-        style={s.scrollView}
-        contentContainerStyle={[s.scrollContent, isDesktop && s.scrollContentDesktop]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Animated.View
-          entering={FadeInUp.springify().damping(16).duration(600)}
-          style={[s.formContainer, isDesktop && s.formContainerDesktop]}
-        >
-          {/* Glass card */}
-          <View style={[StyleSheet.absoluteFill, s.formBlur]} />
-
-          <View style={s.formContent}>
-
-            {/* Sub-step progress segments */}
-            <View style={s.subStepRow}>
-              {STEPS.map((st, i) => {
+                    )}
                 const isDone = i < stepIndex;
                 const isActive = i === stepIndex;
                 return (
@@ -407,39 +360,26 @@ export default function CultureMatchScreen() {
 
                 {availableCultures.length === 0 && (
                   <Text style={s.emptyNote}>
-                    No specific cultures listed — tap Continue to proceed.
-                  </Text>
-                )}
-              </Animated.View>
-            )}
-
-            {/* ── Language Step ── */}
-            {step === 'language' && (
-              <Animated.View entering={FadeInRight.springify().damping(15)} exiting={FadeOutLeft}>
-                {/* Selected language pills */}
-                {selectedLanguageObjects.length > 0 && (
-                  <View style={s.selectedLangWrap}>
-                    {selectedLanguageObjects.map((lang) => (
-                      <Pressable
-                        key={lang.id}
-                        style={s.selectedLangPill}
-                        onPress={() => removeLanguage(lang.id)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Remove ${lang.name}`}
-                      >
-                        <Text style={s.selectedLangText}>{lang.name}</Text>
-                        <Ionicons name="close" size={13} color={CultureTokens.gold} />
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-
-                <View style={s.searchWrap}>
-                  <Ionicons name="search" size={18} color={ON_DARK.textDim} />
-                  <TextInput
-                    value={languageQuery}
-                    onChangeText={setLanguageQuery}
-                    placeholder="Search languages…"
+                          {(['nationality', 'culture', 'language'] as Step[]).map((st, i) => (
+                            <View
+                              key={st}
+                              style={[
+                                s.dot,
+                                i === stepIndex && s.dotActive,
+                                i < stepIndex && { backgroundColor: `${CultureTokens.gold}80` },
+                              ]}
+                            >
+                              {i === stepIndex && (
+                                <LinearGradient
+                                  colors={[CultureTokens.gold, CultureTokens.gold]}
+                                  start={{ x: 0, y: 0 }}
+                                  end={{ x: 1, y: 1 }}
+                                  style={StyleSheet.absoluteFill}
+                                />
+                              )}
+                            </View>
+                          ))}
+                        </View>
                     placeholderTextColor={ON_DARK.placeholder}
                     style={s.searchInput}
                     autoCapitalize="words"
@@ -493,20 +433,7 @@ export default function CultureMatchScreen() {
                   onPress={goBack}
                   style={s.backBtn}
                 >
-                  Back
-                </Button>
-              )}
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth={step === 'nationality'}
-                rightIcon={step === 'language' ? undefined : 'arrow-forward'}
-                onPress={goNext}
-                style={[s.submitBtn, shadows.medium, { backgroundColor: CultureTokens.gold }]}
-              >
-                {step === 'language' ? 'Continue' : 'Next'}
-              </Button>
-            </View>
+                    )}
 
             {/* Skip */}
             <Animated.View entering={FadeInDown.springify().damping(16).delay(250)}>

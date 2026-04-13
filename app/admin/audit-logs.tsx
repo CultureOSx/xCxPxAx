@@ -14,23 +14,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
 import { api, type AdminAuditLog } from '@/lib/api';
-<<<<<<< HEAD
 import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens, gradients } from '@/constants/theme';
-=======
-import {
-  CardTokens,
-  ChipTokens,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  gradients,
-  IconSize,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // ─── Action meta ─────────────────────────────────────────────────────────────
@@ -112,17 +96,14 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-<<<<<<< HEAD
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
   icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   val:  { ...TextStyles.headline },
   lbl:  { ...TextStyles.tabLabel },
-||||||| 7dc71c1
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
   icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
-=======
   chip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: Spacing.sm + 2, borderRadius: CardTokens.radius - 2, borderWidth: 1 },
   icon: { width: IconSize.lg + 6, height: IconSize.lg + 6, borderRadius: Spacing.sm + 1, alignItems: 'center', justifyContent: 'center' },
   val:  { fontSize: FontSize.body, fontFamily: FontFamily.bold },

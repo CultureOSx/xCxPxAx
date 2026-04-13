@@ -664,21 +664,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
-<<<<<<< HEAD
   loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
   loadingText: { ...TextStyles.cardTitle },
-||||||| 7dc71c1
-  loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
-  loadingText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
-=======
-  skeletonRoot: { paddingTop: 16, gap: 10 },
-  skeletonMonthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  skeletonMonthActions: { flexDirection: 'row', gap: 8 },
-  skeletonDayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  skeletonWeekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   topHeaderSyncBtn: {
     width: 42,

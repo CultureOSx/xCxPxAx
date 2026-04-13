@@ -23,23 +23,7 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
-<<<<<<< HEAD
 import { CultureTokens, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens } from '@/constants/theme';
-=======
-import {
-  CardTokens,
-  ChipTokens,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  IconSize,
-  LineHeight,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
@@ -120,15 +104,12 @@ function NotificationPreview({ title, message }: { title: string; message: strin
 }
 
 const np = StyleSheet.create({
-<<<<<<< HEAD
   phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
   phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
   phoneLabel: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.1 },
-||||||| 7dc71c1
   phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
   phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
   phoneLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 1.1 },
-=======
   phone:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: CardTokens.padding, gap: Spacing.md - 4, alignItems: 'center' },
   phoneDot:   { width: IconSize.xxl - 4, height: Spacing.sm - 3, borderRadius: Spacing.xs - 1, backgroundColor: 'rgba(128,128,128,0.25)' },
   phoneLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 1.1 },

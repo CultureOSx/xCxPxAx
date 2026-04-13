@@ -19,7 +19,6 @@ import { communityGroups, communityFlags } from '@/constants/onboardingCommuniti
 
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
-<<<<<<< HEAD
 import { CultureTokens, gradients, CardTokens, glass, shadows, TextStyles } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
@@ -250,18 +249,6 @@ export default function CommunitiesScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-<<<<<<< HEAD
-  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
-  keyboardAvoid: { flex: 1 },
-  mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText: { ...TextStyles.captionSemibold, letterSpacing: 1, textTransform: 'uppercase' },
-||||||| 7dc71c1
-  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
-  keyboardAvoid: { flex: 1 },
-  mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1, textTransform: 'uppercase' },
-=======
-
   orb: {
     position: 'absolute',
     width: 300,
@@ -269,80 +256,15 @@ const s = StyleSheet.create({
     borderRadius: 150,
     ...Platform.select({ web: { filter: 'blur(50px)' } as any }),
   },
-
-  scrollView: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 80, justifyContent: 'center' },
-  scrollContentDesktop: { paddingVertical: 80 },
-
-  // Desktop back
->>>>>>> cursor/onboarding-brand-lint-fixes
+  keyboardAvoid: { flex: 1 },
+  mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
+  stepText: { ...TextStyles.captionSemibold, letterSpacing: 1, textTransform: 'uppercase' },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-<<<<<<< HEAD
   desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
   desktopBackText: { ...TextStyles.label },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
   formContainer: { width: '100%', maxWidth: 600, alignSelf: 'center', overflow: 'hidden' },
-||||||| 7dc71c1
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
-  scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 600, alignSelf: 'center', overflow: 'hidden' },
-=======
-  desktopBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1,
-  },
-  desktopBackText: { fontSize: FontSize.body2, fontFamily: FontFamily.medium },
-
-  // Mobile header
-  mobileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    gap: 12,
-  },
-  mobileBackBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -8,
-  },
-  stepIndicatorWrap: { flex: 1, alignItems: 'flex-end', gap: 6 },
-  stepText: {
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.chip,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.60)',
-  },
-  progressTrack: {
-    width: 80,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', borderRadius: 2, backgroundColor: CultureTokens.gold },
-
-  // Form card
-  formContainer: {
-    width: '100%',
-    maxWidth: 600,
-    alignSelf: 'center',
-    overflow: 'hidden',
-    borderRadius: CardTokens.radiusLarge,
-  },
->>>>>>> cursor/onboarding-brand-lint-fixes
   formContainerDesktop: { maxWidth: 660 },
   formBlur: {
     backgroundColor: glass.dark.backgroundColor,
@@ -353,45 +275,10 @@ const s = StyleSheet.create({
 
   // Header
   headerBlock: { alignItems: 'center', marginBottom: 28 },
-<<<<<<< HEAD
   iconWrapper: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5 },
   headerEmoji: { fontSize: 32 },
   title: { fontSize: 30, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 21, color: colors.textSecondary },
-||||||| 7dc71c1
-  iconWrapper: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5 },
-  headerEmoji: { fontSize: 32 },
-  title: { fontSize: 30, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 21, color: 'rgba(255,255,255,0.75)' },
-=======
-  iconWrapper: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1.5,
-    backgroundColor: `${CultureTokens.teal}18`,
-    borderColor: CultureTokens.teal,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: FontFamily.bold,
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.5,
-    color: ON_DARK.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: FontFamily.regular,
-    textAlign: 'center',
-    lineHeight: 21,
-    color: 'rgba(255,255,255,0.65)',
-    maxWidth: 320,
-  },
->>>>>>> cursor/onboarding-brand-lint-fixes
+  subtitle: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 21, color: '#FFFFFFB2' },
 
   // Community group sections
   section: { marginBottom: 24 },
@@ -402,19 +289,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   sectionEmoji: { fontSize: 15 },
-<<<<<<< HEAD
   sectionLabel: { ...TextStyles.captionSemibold, letterSpacing: 0.8, textTransform: 'uppercase' },
-||||||| 7dc71c1
-  sectionLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, textTransform: 'uppercase' },
-=======
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: FontFamily.semibold,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: ON_DARK.textMuted,
-  },
->>>>>>> cursor/onboarding-brand-lint-fixes
   sectionLine: { flex: 1, height: 1 },
 
   // Chips
@@ -430,19 +305,7 @@ const s = StyleSheet.create({
     minHeight: 44,
   },
   chipFlag: { fontSize: 15 },
-<<<<<<< HEAD
   chipText: { ...TextStyles.chip, flexShrink: 1 },
-||||||| 7dc71c1
-  chipText: { fontSize: 13, fontFamily: 'Poppins_500Medium', flexShrink: 1 },
-=======
-  chipText: {
-    fontSize: FontSize.chip,
-    fontFamily: FontFamily.medium,
-    flexShrink: 1,
-    color: ON_DARK.chipText,
-  },
-  chipTextSelected: { color: '#FFFFFF', fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   spacer: { height: 24 },
 
@@ -459,17 +322,6 @@ const s = StyleSheet.create({
     marginBottom: 16,
     minHeight: 44,
   },
-<<<<<<< HEAD
   selectedCount: { ...TextStyles.label },
-||||||| 7dc71c1
-  selectedCount: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-=======
-  selectedCount: {
-    fontSize: FontSize.body2,
-    fontFamily: FontFamily.medium,
-    color: ON_DARK.text,
-  },
-
->>>>>>> cursor/onboarding-brand-lint-fixes
   submitBtn: { height: 56, borderRadius: 16 },
 });

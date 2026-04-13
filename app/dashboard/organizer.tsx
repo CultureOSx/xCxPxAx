@@ -205,16 +205,8 @@ function OrganizerDashboardContent() {
           const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           });
-<<<<<<< HEAD
-          // Only refetch if user completed the flow (not dismissed)
-          if (result.type === 'opened' || (result as { type: string }).type === 'success') {
-||||||| 7dc71c1
           // Only refetch if user completed the flow (not dismissed)
           if (result.type === 'opened' || result.type === 'success') {
-=======
-          // WebBrowser returns OPENED when the external browser launches.
-          if (result.type === WebBrowser.WebBrowserResultType.OPENED) {
->>>>>>> cursor/onboarding-brand-lint-fixes
             await refetchConnect();
             queryClient.invalidateQueries({ queryKey: ['/api/profiles/my'] });
           }

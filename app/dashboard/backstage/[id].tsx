@@ -5,7 +5,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-<<<<<<< HEAD
 import { CultureTokens, TextStyles } from '@/constants/theme';
 
 const MOCK_MESSAGES = [
@@ -13,20 +12,6 @@ const MOCK_MESSAGES = [
   { id: '2', user: 'SukiFan_99', text: 'Suki is on fire tonight! 🔥', color: '#CD2E3A' },
   { id: '3', user: 'TablaKing', text: 'The rhythm section is so tight.', color: '#FF9933' },
 ];
-||||||| 7dc71c1
-import { CultureTokens } from '@/constants/theme';
-
-const MOCK_MESSAGES = [
-  { id: '1', user: 'CultureEnthusiast', text: 'This performance is incredible! Loving the visuals.', color: CultureTokens.indigo },
-  { id: '2', user: 'SukiFan_99', text: 'Suki is on fire tonight! 🔥', color: '#CD2E3A' },
-  { id: '3', user: 'TablaKing', text: 'The rhythm section is so tight.', color: '#FF9933' },
-];
-=======
-import { gradients } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
-import { TextStyles } from '@/constants/typography';
-import { Button } from '@/components/ui/Button';
->>>>>>> cursor/onboarding-brand-lint-fixes
 
 export default function ArtistBackstagePortal() {
   const insets = useSafeAreaInsets();
@@ -69,7 +54,6 @@ export default function ArtistBackstagePortal() {
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   root: { flex: 1, backgroundColor: '#000' },
   videoContainer: { flex: 0.65, position: 'relative' },
   backBtn: { position: 'absolute', left: 24, zIndex: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
@@ -96,7 +80,6 @@ const styles = StyleSheet.create({
   sendIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   giftBtn: { width: 56, height: 56, borderRadius: 20, overflow: 'hidden' },
   giftFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-||||||| 7dc71c1
   root: { flex: 1, backgroundColor: '#000' },
   videoContainer: { flex: 0.65, position: 'relative' },
   backBtn: { position: 'absolute', left: 24, zIndex: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
@@ -123,7 +106,6 @@ const styles = StyleSheet.create({
   sendIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   giftBtn: { width: 56, height: 56, borderRadius: 20, overflow: 'hidden' },
   giftFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-=======
   root: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: 24 },
   body: { flex: 1, justifyContent: 'center', gap: 16, maxWidth: 520 },

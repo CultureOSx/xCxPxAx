@@ -622,19 +622,9 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
     paddingVertical: Spacing.sm - 1,
     borderRadius: ChipTokens.radius,
   },
-<<<<<<< HEAD
   filterTabText:  { ...TextStyles.chip },
   filterCount:    { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   filterCountText:{ ...TextStyles.tabLabel },
-||||||| 7dc71c1
-  filterTabText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  filterCount:    { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  filterCountText:{ fontSize: 10, fontFamily: 'Poppins_700Bold' },
-=======
-  filterTabText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  filterCount: { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  filterCountText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   groupLabel: {
     ...TextStyles.badge,
@@ -682,7 +672,6 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   },
   notifBody: { flex: 1, justifyContent: 'center' },
   notifTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 3 },
-<<<<<<< HEAD
   notifTitle:  { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
   unreadDot:   { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
   notifMsg:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
@@ -690,7 +679,6 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   typePill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   typePillText:{ ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.4 },
   timeText:    { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-||||||| 7dc71c1
   notifTitle:  { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
   unreadDot:   { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
   notifMsg:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
@@ -698,7 +686,6 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   typePill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   typePillText:{ fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
   timeText:    { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-=======
   notifTitle: { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
   unreadDot: { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
   notifMsg: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },

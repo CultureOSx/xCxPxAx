@@ -17,24 +17,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
-<<<<<<< HEAD
 import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens, gradients } from '@/constants/theme';
-=======
-import {
-  CardTokens,
-  ChipTokens,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  gradients,
-  IconSize,
-  SheetTokens,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import type { UserRole } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
@@ -139,17 +122,14 @@ function RoleBadge({ role, size = 'sm' }: { role?: UserRole; size?: 'sm' | 'md' 
   );
 }
 const rb = StyleSheet.create({
-<<<<<<< HEAD
   wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   text:   { ...TextStyles.tabLabel, letterSpacing: 0.3 },
   textMd: { fontSize: 12 },
-||||||| 7dc71c1
   wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   text:   { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.3 },
   textMd: { fontSize: 12 },
-=======
   wrap:   { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 1, borderRadius: Spacing.sm, borderWidth: 1 },
   wrapMd: { paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: CardTokens.radius - 6 },
   text:   { fontSize: FontSize.tab, fontFamily: FontFamily.bold, letterSpacing: 0.3 },

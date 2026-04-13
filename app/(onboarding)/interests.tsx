@@ -108,7 +108,7 @@ const InterestChip = React.memo(function InterestChip({
 // Main Screen
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
-  const colors = useColors();
+  // const colors = useColors();
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;

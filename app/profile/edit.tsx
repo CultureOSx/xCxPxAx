@@ -375,20 +375,8 @@ const sc = StyleSheet.create({
 });
 
 const fr = StyleSheet.create({
-<<<<<<< HEAD
   wrap: { gap: 8 },
   label: { ...TextStyles.badge, letterSpacing: 0.4 },
-||||||| 7dc71c1
-  wrap: { gap: 8 },
-  label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
-=======
-  wrap: { gap: 6 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
-  requiredDot: { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 15 },
-  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  error: { fontSize: 11, fontFamily: 'Poppins_500Medium', flex: 1 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 const id = StyleSheet.create({
@@ -838,7 +826,7 @@ export default function EditProfileScreen() {
       markTab('social');
     }
 
-    const urlOnlyFields: Array<{ key: keyof typeof form; label: string }> = [
+    const urlOnlyFields: { key: keyof typeof form; label: string }[] = [
       { key: 'youtube', label: 'YouTube' },
       { key: 'linkedin', label: 'LinkedIn' },
       { key: 'facebook', label: 'Facebook' },

@@ -21,14 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-<<<<<<< HEAD
 import { CultureTokens, TextStyles } from '@/constants/theme';
-||||||| 7dc71c1
-import { CultureTokens } from '@/constants/theme';
-=======
-import { CultureTokens } from '@/constants/theme';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -297,15 +290,12 @@ const qs = StyleSheet.create({
   questTitle: { ...TextStyles.headline, lineHeight: 21 },
   questTask: { ...TextStyles.caption, lineHeight: 17 },
   progressSection: { gap: 4 },
-<<<<<<< HEAD
   progressTrack: { height: 6, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
   progressLabel: { ...TextStyles.tabLabel },
-||||||| 7dc71c1
   progressTrack: { height: 6, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
   progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
-=======
   progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 2 },
   progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
@@ -500,23 +490,63 @@ const eb = StyleSheet.create({
     overflow: 'hidden',
     ...MAIN_TAB_CARD_SHADOW,
   },
-<<<<<<< HEAD
-  levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  levelText: { color: '#fff', ...TextStyles.title3, lineHeight: 22 },
-  levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
-  explorerTitle: { ...TextStyles.headline, marginBottom: 2 },
-  explorerSub: { ...TextStyles.caption, marginBottom: 10, opacity: 0.8 },
-  expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  expBarFill: { height: '100%', borderRadius: 3 },
-||||||| 7dc71c1
-  levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  levelText: { color: '#fff', fontSize: 18, fontFamily: 'Poppins_800ExtraBold', lineHeight: 22 },
-  levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
-  explorerTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 2 },
-  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 10, opacity: 0.8 },
-  expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  expBarFill: { height: '100%', borderRadius: 3 },
-=======
+  ringContainer: {
+    width: 64,
+    height: 64,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  ringCenter: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+  },
+  ringPct: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 20,
+  },
+  ringPctLabel: {
+    fontSize: 9,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tierBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  tierBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  explorerTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.8 },
+  pointsText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  signInBtn: {
+    marginTop: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  signInBtnText: { color: '#fff', ...TextStyles.chip },
+});
   ringContainer: {
     width: 64,
     height: 64,

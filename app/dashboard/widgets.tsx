@@ -14,14 +14,11 @@ import TabScreenShell from '@/components/tabs/TabScreenShell';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
-<<<<<<< HEAD
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import { CultureTokens, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
-||||||| 7dc71c1
 import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
-=======
 import { useCultureWidgetSnapshot } from '@/hooks/useCultureWidgetSnapshot';
 import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';

@@ -1916,23 +1916,8 @@ const s = StyleSheet.create({
     gap: 8, marginBottom: 12,
   },
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-<<<<<<< HEAD
   mediaEmptyTitle: { ...TextStyles.callout },
   mediaEmptySub:   { ...TextStyles.caption, marginTop: 1 },
-||||||| 7dc71c1
-  mediaEmptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  mediaEmptySub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-=======
-  mediaEmptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  mediaEmptySub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  coverImageError: {
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 18,
-    marginTop: -4,
-    marginBottom: 12,
-  },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   input:    { borderRadius: 12, padding: 14, ...TextStyles.cardBody, borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },

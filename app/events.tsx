@@ -17,18 +17,6 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import EventCard from '@/components/EventCard';
 import { useAuth } from '@/lib/auth';
-import { EventCardSkeleton } from '@/components/EventCardSkeleton';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
-<<<<<<< HEAD
-import { CultureTokens, TextStyles } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
-||||||| 7dc71c1
-import { CultureTokens } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
-=======
-import { CultureTokens } from '@/constants/theme';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
 
@@ -161,25 +149,8 @@ function FilterChip({
 }
 
 const fc = StyleSheet.create({
-<<<<<<< HEAD
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
   text: { ...TextStyles.captionSemibold, lineHeight: 17 },
-||||||| 7dc71c1
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-=======
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1,
-    minHeight: 38,
-  },
-  text: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
