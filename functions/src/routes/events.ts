@@ -6,7 +6,6 @@
  * circular import.
  */
 
-import { randomUUID } from 'node:crypto';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireRole, isOwnerOrAdmin } from '../middleware/auth';
@@ -15,14 +14,16 @@ import { moderationCheck } from '../middleware/moderation';
 import {
   eventsService,
   eventFeedbackService,
-  type FirestoreEvent,
+  normalizeEventImageForClient,
+  normalizeEventListForClient,
 } from '../services/firestore';
 import { nowIso, qparam, qstr, generateSecureId, resolveAustralianLocation, type ResolvedLocation,
   captureRouteError,
 } from './utils';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../admin';
+import { db, isFirestoreConfigured } from '../admin';
 import { validatePublisherProfileLink, validateVenueProfileLink } from '../services/eventProfileLinks';
+import { zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 // ---------------------------------------------------------------------------
 // Shared types (inlined to avoid circular import with app.ts)
@@ -81,6 +82,28 @@ type DevFeedbackEntry = {
   createdAt: string;
 };
 
+type EventContactRequestDoc = {
+  id: string;
+  eventId: string;
+  eventTitle?: string | null;
+  organizerId: string;
+  requesterId: string;
+  requesterHandle?: string | null;
+  requesterEmail?: string | null;
+  message: string;
+  contactMethod?: 'in_app' | 'email' | 'phone';
+  status?: 'new' | 'replied' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+  thread?: {
+    id: string;
+    authorId: string;
+    authorRole: 'requester' | 'organizer';
+    message: string;
+    createdAt: string;
+  }[];
+};
+
 
 
 // ---------------------------------------------------------------------------
@@ -98,21 +121,42 @@ const eventTierSchema = z.object({
   available:  z.coerce.number().int().min(0),
 });
 
+const ADDRESS_ALLOWED_CHARS = /^[A-Za-z0-9\s,'./#()-]+$/;
+const PLACE_ALLOWED_CHARS = /^[A-Za-z\s'.-]+$/;
+
+const optionalAddressField = z
+  .string()
+  .max(500)
+  .optional()
+  .transform((value) => value?.replace(/\s+/g, ' ').trim())
+  .refine((value) => !value || (value.length >= 6 && ADDRESS_ALLOWED_CHARS.test(value)), {
+    message: 'address must be at least 6 chars and use valid characters',
+  });
+
+const optionalPlaceField = z
+  .string()
+  .max(100)
+  .optional()
+  .transform((value) => value?.replace(/\s+/g, ' ').trim())
+  .refine((value) => !value || (value.length >= 2 && PLACE_ALLOWED_CHARS.test(value)), {
+    message: 'location field contains invalid characters',
+  });
+
 const createEventSchema = z.object({
   title:       z.string().min(1, 'title is required').max(200),
   description: z.string().max(5000).optional(),
   date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
   time:        z.string().max(20).optional(),
-  venue:       z.string().max(200).optional(),
-  address:     z.string().max(500).optional(),
-  city:        z.string().max(100).optional(),
+  venue:       z.string().max(200).optional().transform((value) => value?.replace(/\s+/g, ' ').trim()),
+  address:     optionalAddressField,
+  city:        optionalPlaceField,
   state:       z.string().max(10).optional(),
   postcode:    z.coerce.number().int().min(200).max(9999).optional(),
-  country:     z.string().max(100).optional(),
+  country:     optionalPlaceField,
   latitude:    z.coerce.number().optional(),
   longitude:   z.coerce.number().optional(),
   communityId: z.string().max(100).optional(),
-  imageUrl:    z.string().url('imageUrl must be a valid URL').optional().or(z.literal('')),
+  imageUrl:    zOptionalHttpsImageUrl,
   imageColor:  z.string().max(20).optional(),
   priceCents:  z.coerce.number().int().min(0).optional(),
   priceLabel:  z.string().max(50).optional(),
@@ -145,18 +189,18 @@ const createEventSchema = z.object({
   entryType:   z.enum(['ticketed', 'free_open']).optional(),
   endDate:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
   endTime:     z.string().max(20).optional(),
-  heroImageUrl: z.string().url().optional().or(z.literal('')),
+  heroImageUrl: zOptionalHttpsImageUrl,
   artists: z.array(z.object({
     profileId: z.string().optional(),
     name:      z.string().min(1).max(200),
     role:      z.string().max(50).optional(),
-    imageUrl:  z.string().url().optional().or(z.literal('')),
+    imageUrl:  zOptionalHttpsImageUrl,
   })).max(20).optional(),
   eventSponsors: z.array(z.object({
     profileId:  z.string().optional(),
     name:       z.string().min(1).max(200),
     tier:       z.enum(['title', 'gold', 'silver', 'bronze']),
-    logoUrl:    z.string().url().optional().or(z.literal('')),
+    logoUrl:    zOptionalHttpsImageUrl,
     websiteUrl: z.string().url().optional().or(z.literal('')),
   })).max(20).optional(),
   hostInfo: z.object({
@@ -209,6 +253,7 @@ export function createEventsRouter() {
       const time        = qstr(req.query.time).trim() || undefined;
       const publisherProfileId = qstr(req.query.publisherProfileId).trim() || undefined;
       const venueProfileId = qstr(req.query.venueProfileId).trim() || undefined;
+      const includeOngoing = qstr(req.query.includeOngoing) === 'true';
 
       const centerLatStr  = qstr(req.query.centerLat).trim();
       const centerLngStr  = qstr(req.query.centerLng).trim();
@@ -239,12 +284,13 @@ export function createEventsRouter() {
           time,
           publisherProfileId,
           venueProfileId,
+          includeOngoing,
         },
         { page, pageSize },
       );
 
       return res.json({
-        events:      result.items,
+        events:      normalizeEventListForClient(result.items),
         total:       result.total,
         page:        result.page,
         pageSize:    result.pageSize,
@@ -261,7 +307,7 @@ export function createEventsRouter() {
     try {
       const result = await eventsService.list({ status: 'published' }, { page: 1, pageSize: 50 });
       const cross = result.items.filter((e) => (e.cultureTag?.length ?? 0) >= 2);
-      return res.json(cross);
+      return res.json(normalizeEventListForClient(cross));
     } catch (err) {
       captureRouteError(err, 'GET /api/events/cross-community');
       return res.status(500).json({ error: 'Failed to fetch events' });
@@ -289,7 +335,7 @@ export function createEventsRouter() {
         { page: 1, pageSize },
       );
       return res.json({
-        events: result.items,
+        events: normalizeEventListForClient(result.items),
         total: result.total,
         radiusKm: radius,
       });
@@ -306,12 +352,210 @@ export function createEventsRouter() {
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
       }
-      return res.json(event);
+      return res.json(normalizeEventImageForClient(event));
     } catch (err) {
       captureRouteError(err, 'GET /api/events/:id');
       return res.status(500).json({ error: 'Failed to fetch event' });
     }
   });
+
+  // ── POST /api/events/:id/contact-organizer ────────────────────────────────
+  router.post(
+    '/events/:id/contact-organizer',
+    requireAuth,
+    moderationCheck,
+    slidingWindowRateLimit(60000, 20),
+    async (req: Request, res: Response) => {
+      const payloadResult = z.object({
+        message: z.string().min(5).max(1200),
+        contactMethod: z.enum(['in_app', 'email', 'phone']).optional(),
+      }).safeParse(req.body ?? {});
+      if (!payloadResult.success) {
+        return res.status(400).json({ error: payloadResult.error.errors.map((e) => e.message).join(', ') });
+      }
+
+      try {
+        const eventId = qparam(req.params.id);
+        const event = await eventsService.getById(eventId);
+        if (!event) return res.status(404).json({ error: 'Event not found' });
+        if (!event.organizerId) return res.status(400).json({ error: 'Event organizer is not available' });
+        if (event.organizerId === req.user!.id) {
+          return res.status(400).json({ error: 'You are the organizer of this event' });
+        }
+
+        if (!isFirestoreConfigured) {
+          return res.json({ success: true });
+        }
+
+        const now = nowIso();
+        const requestRef = db.collection('eventContactRequests').doc();
+        const contact = payloadResult.data;
+        await requestRef.set({
+          id: requestRef.id,
+          eventId: event.id,
+          eventTitle: event.title ?? null,
+          organizerId: event.organizerId,
+          requesterId: req.user!.id,
+          requesterHandle: req.user?.username ?? null,
+          requesterEmail: req.user?.email ?? null,
+          message: contact.message.trim(),
+          contactMethod: contact.contactMethod ?? 'in_app',
+          status: 'new',
+          thread: [
+            {
+              id: generateSecureId('ecr'),
+              authorId: req.user!.id,
+              authorRole: 'requester',
+              message: contact.message.trim(),
+              createdAt: now,
+            },
+          ],
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        const fromDisplay = req.user?.username || req.user?.email || 'A CulturePass member';
+        await db.collection('notifications').add({
+          userId: event.organizerId,
+          type: 'event',
+          title: 'New event enquiry',
+          message: `${fromDisplay} contacted you about "${event.title}".`,
+          entityType: 'event',
+          entityId: event.id,
+          metadata: {
+            requestId: requestRef.id,
+            requesterId: req.user!.id,
+            contactMethod: contact.contactMethod ?? 'in_app',
+          },
+          isRead: false,
+          read: false,
+          createdAt: now,
+        });
+
+        return res.json({ success: true, requestId: requestRef.id });
+      } catch (err) {
+        captureRouteError(err, 'POST /api/events/:id/contact-organizer');
+        return res.status(500).json({ error: 'Failed to contact organizer' });
+      }
+    },
+  );
+
+  // ── GET /api/events/contact-requests/organizer ─────────────────────────────
+  router.get(
+    '/events/contact-requests/organizer',
+    requireAuth,
+    requireRole('organizer', 'admin', 'platformAdmin'),
+    async (req: Request, res: Response) => {
+      if (!isFirestoreConfigured) return res.json({ requests: [] });
+      const statusFilter = qstr(req.query.status)?.trim().toLowerCase();
+      try {
+        const query = db
+          .collection('eventContactRequests')
+          .where('organizerId', '==', req.user!.id)
+          .limit(50);
+        const snapshot = await query.get();
+        const requests = snapshot.docs
+          .map((doc) => doc.data() as EventContactRequestDoc)
+          .filter((request) => !statusFilter || request.status === statusFilter)
+          .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+        return res.json({ requests });
+      } catch (err) {
+        captureRouteError(err, 'GET /api/events/contact-requests/organizer');
+        return res.status(500).json({ error: 'Failed to load organizer enquiries' });
+      }
+    },
+  );
+
+  // ── GET /api/events/contact-requests/:requestId ────────────────────────────
+  router.get(
+    '/events/contact-requests/:requestId',
+    requireAuth,
+    async (req: Request, res: Response) => {
+      if (!isFirestoreConfigured) return res.status(404).json({ error: 'Enquiry not found' });
+      try {
+        const requestId = qparam(req.params.requestId);
+        const snap = await db.collection('eventContactRequests').doc(requestId).get();
+        if (!snap.exists) return res.status(404).json({ error: 'Enquiry not found' });
+        const request = snap.data() as EventContactRequestDoc;
+        const canView = request.organizerId === req.user!.id || request.requesterId === req.user!.id;
+        if (!canView) return res.status(403).json({ error: 'Not allowed to view this enquiry' });
+        return res.json({ request });
+      } catch (err) {
+        captureRouteError(err, 'GET /api/events/contact-requests/:requestId');
+        return res.status(500).json({ error: 'Failed to load enquiry' });
+      }
+    },
+  );
+
+  // ── POST /api/events/contact-requests/:requestId/reply ─────────────────────
+  router.post(
+    '/events/contact-requests/:requestId/reply',
+    requireAuth,
+    moderationCheck,
+    async (req: Request, res: Response) => {
+      const payloadResult = z.object({
+        message: z.string().min(2).max(1200),
+      }).safeParse(req.body ?? {});
+      if (!payloadResult.success) {
+        return res.status(400).json({ error: payloadResult.error.errors.map((e) => e.message).join(', ') });
+      }
+      if (!isFirestoreConfigured) return res.json({ success: true });
+      try {
+        const requestId = qparam(req.params.requestId);
+        const ref = db.collection('eventContactRequests').doc(requestId);
+        const snap = await ref.get();
+        if (!snap.exists) return res.status(404).json({ error: 'Enquiry not found' });
+        const request = snap.data() as EventContactRequestDoc;
+        const isOrganizer = request.organizerId === req.user!.id;
+        const isRequester = request.requesterId === req.user!.id;
+        if (!isOrganizer && !isRequester) {
+          return res.status(403).json({ error: 'Not allowed to reply to this enquiry' });
+        }
+
+        const now = nowIso();
+        const threadEntry = {
+          id: generateSecureId('ecr'),
+          authorId: req.user!.id,
+          authorRole: (isOrganizer ? 'organizer' : 'requester') as 'organizer' | 'requester',
+          message: payloadResult.data.message.trim(),
+          createdAt: now,
+        };
+
+        await ref.update({
+          status: isOrganizer ? 'replied' : 'new',
+          updatedAt: now,
+          thread: FieldValue.arrayUnion(threadEntry),
+        });
+
+        const notifyUserId = isOrganizer ? request.requesterId : request.organizerId;
+        const notifyTitle = isOrganizer ? 'Organiser replied' : 'New attendee reply';
+        const notifyMessage = isOrganizer
+          ? `Reply received for "${request.eventTitle ?? 'your enquiry'}".`
+          : `${req.user?.username || req.user?.email || 'An attendee'} replied about "${request.eventTitle ?? 'your event'}".`;
+
+        await db.collection('notifications').add({
+          userId: notifyUserId,
+          type: 'event',
+          title: notifyTitle,
+          message: notifyMessage,
+          entityType: 'event',
+          entityId: request.eventId,
+          metadata: {
+            requestId,
+            fromUserId: req.user!.id,
+          },
+          isRead: false,
+          read: false,
+          createdAt: now,
+        });
+
+        return res.json({ success: true });
+      } catch (err) {
+        captureRouteError(err, 'POST /api/events/contact-requests/:requestId/reply');
+        return res.status(500).json({ error: 'Failed to send organiser reply' });
+      }
+    },
+  );
 
   // ── POST /api/events ───────────────────────────────────────────────────────
   router.post(
@@ -426,7 +670,7 @@ export function createEventsRouter() {
           ...(b.publisherProfileId ? { publisherProfileId: String(b.publisherProfileId) } : {}),
           ...(b.venueProfileId ? { venueProfileId: String(b.venueProfileId) } : {}),
         });
-        return res.status(201).json(event);
+        return res.status(201).json(normalizeEventImageForClient(event));
       } catch (err) {
         captureRouteError(err, 'POST /api/events');
         return res.status(500).json({ error: 'Failed to create event' });
@@ -448,6 +692,10 @@ export function createEventsRouter() {
       }
 
       const b = parseResult.data;
+      const nextStartDate = b.date ?? existing.date;
+      if (b.endDate && nextStartDate && b.endDate < nextStartDate) {
+        return res.status(400).json({ error: 'endDate cannot be before start date' });
+      }
 
       if (b.publisherProfileId !== undefined && b.publisherProfileId !== '') {
         const pv = await validatePublisherProfileLink(req.user!, b.publisherProfileId);
@@ -495,6 +743,7 @@ export function createEventsRouter() {
         ...(loc && { longitude: loc.longitude }),
         ...(loc && { country:   loc.country }),
         ...(b.imageUrl     != null && { imageUrl:    String(b.imageUrl) }),
+        ...(b.heroImageUrl != null && { heroImageUrl: String(b.heroImageUrl) }),
         ...(b.priceCents   != null && { priceCents:  Number(b.priceCents) }),
         ...(b.priceLabel   != null && { priceLabel:  String(b.priceLabel) }),
         ...(b.capacity     != null && { capacity:    Number(b.capacity) }),
@@ -513,7 +762,8 @@ export function createEventsRouter() {
           venueProfileId: b.venueProfileId === '' ? FieldValue.delete() : String(b.venueProfileId),
         }),
       });
-      return res.json(updated);
+      if (!updated) return res.status(500).json({ error: 'Failed to update event' });
+      return res.json(normalizeEventImageForClient(updated));
     } catch (err) {
       captureRouteError(err, 'PUT /api/events/:id');
       return res.status(500).json({ error: 'Failed to update event' });
@@ -549,7 +799,8 @@ export function createEventsRouter() {
           return res.status(403).json({ error: 'Forbidden: you do not own this event' });
         }
         const published = await eventsService.publish(qparam(req.params.id));
-        return res.json(published);
+        if (!published) return res.status(500).json({ error: 'Failed to publish event' });
+        return res.json(normalizeEventImageForClient(published));
       } catch (err) {
         captureRouteError(err, 'POST /api/events/:id/publish');
         return res.status(500).json({ error: 'Failed to publish event' });

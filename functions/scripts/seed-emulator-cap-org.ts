@@ -184,7 +184,7 @@ async function main(): Promise<void> {
       priceLabel: i % 2 === 0 ? 'Free' : `$${(15 + i * 2.5).toFixed(0)}`,
       capacity: 80 + i * 10,
       attending: 0,
-      imageUrl: `https://picsum.photos/seed/cap${i}/800/450`,
+      imageUrl: '',
       imageColor: '#0066CC',
       cpid: cpid('EVT'),
       metadata: { seedBatch: SEED_BATCH },

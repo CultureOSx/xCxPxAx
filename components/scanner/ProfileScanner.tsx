@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
@@ -44,7 +43,7 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
       if (onSuccess) onSuccess(targetId);
       onClose();
     } catch (err) {
-      console.error('Failed to follow user:', err);
+      if (__DEV__) console.error('Failed to follow user:', err);
       // Reset after 2 seconds to allow another scan
       setTimeout(() => {
         setScanned(false);
@@ -68,14 +67,14 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
 
         {/* Overlay */}
         <View style={styles.overlay}>
-          <BlurView intensity={30} tint="dark" style={styles.header}>
+          <View style={[styles.header, { backgroundColor: 'rgba(0,0,0,0.72)' }]}>
             <View style={styles.headerContent}>
               <Text style={styles.title}>Scan Identity</Text>
               <Pressable style={styles.closeBtn} onPress={onClose}>
                 <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
-          </BlurView>
+          </View>
 
           <View style={styles.finderContainer}>
             <View style={styles.finder}>
@@ -88,10 +87,10 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
           </View>
 
           {processing && (
-            <BlurView intensity={80} tint="dark" style={styles.loadingOverlay}>
+            <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0,0,0,0.82)' }]}>
               <ActivityIndicator size="large" color={CultureTokens.teal} />
               <Text style={styles.loadingText}>Saving contact...</Text>
-            </BlurView>
+            </View>
           )}
         </View>
       </View>

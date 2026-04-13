@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { EventData } from '@shared/schema';
 import { formatEventDateTimeBadge } from '@/lib/dateUtils';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 interface WebEventRailCardProps {
   event: EventData;
@@ -17,6 +18,7 @@ function WebEventRailCard({ event }: WebEventRailCardProps) {
   const colors = useColors();
   const dateChip = formatEventDateTimeBadge(event.date ?? '', event.time);
   const category = event.category || event.communityId || 'Event';
+  const railUri = eventListImageUrl(event);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -28,7 +30,11 @@ function WebEventRailCard({ event }: WebEventRailCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`${event.title}${event.date ? `, ${event.date}` : ''}${event.venue ? `, ${event.venue}` : ''}`}
     >
-      <Image source={{ uri: event.imageUrl }} style={styles.webRailImage} contentFit="cover" />
+      {railUri ? (
+        <Image source={{ uri: railUri }} style={styles.webRailImage} contentFit="cover" />
+      ) : (
+        <View style={[styles.webRailImage, { backgroundColor: colors.backgroundSecondary }]} />
+      )}
       <LinearGradient
         colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.88)']}
         locations={[0.3, 0.6, 1]}

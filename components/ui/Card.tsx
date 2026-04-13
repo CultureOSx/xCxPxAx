@@ -1,10 +1,5 @@
 /**
- * Card — surface container with optional press, shadow, and glassmorphism.
- *
- * Usage:
- *   <Card>...</Card>
- *   <Card onPress={handlePress} shadow="medium">...</Card>
- *   <Card glass>...</Card>
+ * Card — surface container with optional press, shadow, and elevated “glass” (solid) styling.
  */
 
 import React from 'react';
@@ -22,7 +17,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { shadows, glass, CardTokens, SpringConfig } from '@/constants/theme';
+import { shadows, CardTokens, SpringConfig } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useColorScheme } from 'react-native';
 
@@ -32,7 +27,7 @@ interface CardProps {
   onPress?: () => void;
   disabled?: boolean;
   shadow?: keyof typeof shadows;
-  /** Enable glassmorphism background */
+  /** Elevated solid surface (lighter/darker than default card) */
   glass?: boolean;
   /** Enable subtle haptic feedback when card is pressed */
   haptic?: boolean;
@@ -63,9 +58,11 @@ export function Card({
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
-  const glassPreset = isDark ? glass.dark : glass.light;
   const glassStyle: { backgroundColor: string; borderColor?: string } = isGlass
-    ? glassPreset
+    ? {
+        backgroundColor: isDark ? colors.surfaceElevated : colors.surface,
+        borderColor: colors.borderLight,
+      }
     : { backgroundColor: colors.card };
 
   const scale = useSharedValue(1);
@@ -81,9 +78,7 @@ export function Card({
     {
       borderRadius: radius,
       padding,
-      borderColor: isGlass
-        ? glassStyle.borderColor
-        : colors.cardBorder,
+      borderColor: isGlass ? glassStyle.borderColor : colors.cardBorder,
       borderWidth: 1,
       opacity: disabled ? 0.6 : 1,
     },

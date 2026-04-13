@@ -200,7 +200,7 @@ function VenueDashboardContent() {
     queryKey: ['/api/events', 'venue', userId],
     queryFn: async () => {
       try {
-        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 50 });
+        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 50, includePast: true });
         return { events: (res.events ?? []) as VenueEvent[] };
       } catch {
         return { events: [] };

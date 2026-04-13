@@ -1,4 +1,5 @@
-import type { CultureHubScope } from '@/lib/cultureDestinationScope';
+import type { CultureHubNearRadiusKm, CultureHubScope } from '@/lib/cultureDestinationScope';
+import { clampCultureHubNearRadiusKm } from '@/lib/cultureDestinationScope';
 
 function firstParam(v: string | string[] | undefined): string | undefined {
   if (v === undefined) return undefined;
@@ -12,6 +13,7 @@ export function mapScopeString(raw: string | undefined): CultureHubScope | undef
   const x = raw.toLowerCase().trim();
   if (['single', 'country', 'local', 'singlecountry'].includes(x)) return 'singleCountry';
   if (['diaspora', 'world', 'worldwide', 'global', 'hub'].includes(x)) return 'diaspora';
+  if (['near', 'nearyou', 'nearme', 'nearby', 'localradius', 'gps'].includes(x)) return 'nearYou';
   return undefined;
 }
 
@@ -26,7 +28,8 @@ export function cultureHubRouteKey(raw?: Record<string, string | string[] | unde
   let st: string;
   if (raw.state === undefined) st = '\x00';
   else st = firstParam(raw.state) ?? '';
-  return `${c}\n${s}\n${st}`;
+  const r = raw.radius !== undefined ? (firstParam(raw.radius) ?? '') : '\x00';
+  return `${c}\n${s}\n${st}\n${r}`;
 }
 
 /**
@@ -34,7 +37,12 @@ export function cultureHubRouteKey(raw?: Record<string, string | string[] | unde
  */
 export function cultureHubHasUrlOverrides(raw?: Record<string, string | string[] | undefined>): boolean {
   if (!raw) return false;
-  return raw.country !== undefined || raw.scope !== undefined || raw.state !== undefined;
+  return (
+    raw.country !== undefined ||
+    raw.scope !== undefined ||
+    raw.state !== undefined ||
+    raw.radius !== undefined
+  );
 }
 
 export type CultureHubUrlApply = {
@@ -43,6 +51,8 @@ export type CultureHubUrlApply = {
   /** When true, caller should set `focusStateCode` to `stateCode` (possibly undefined). */
   applyState: boolean;
   stateCode?: string;
+  /** `?radius=` for Near me (km), snapped to a preset. */
+  nearRadiusKm?: CultureHubNearRadiusKm;
 };
 
 /** Parse query keys when `cultureHubHasUrlOverrides` is true. */
@@ -71,6 +81,16 @@ export function parseCultureHubUrlApply(raw?: Record<string, string | string[] |
     }
   }
 
+  if (raw.radius !== undefined) {
+    const v = firstParam(raw.radius);
+    if (v) {
+      const parsed = Number.parseInt(v, 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        out.nearRadiusKm = clampCultureHubNearRadiusKm(parsed);
+      }
+    }
+  }
+
   return out;
 }
 
@@ -79,11 +99,18 @@ export function appendCultureHubQuerySuffix(params: {
   country: string;
   scope: CultureHubScope;
   stateCode?: string;
+  /** Included when scope is Near me so shared links preserve search distance. */
+  nearRadiusKm?: number;
 }): string {
   const q = new URLSearchParams();
   if (params.country.trim()) q.set('country', params.country.trim());
-  q.set('scope', params.scope === 'singleCountry' ? 'single' : 'diaspora');
+  const scopeQ =
+    params.scope === 'singleCountry' ? 'single' : params.scope === 'nearYou' ? 'near' : 'diaspora';
+  q.set('scope', scopeQ);
   if (params.stateCode?.trim()) q.set('state', params.stateCode.trim());
+  if (params.scope === 'nearYou' && params.nearRadiusKm != null) {
+    q.set('radius', String(params.nearRadiusKm));
+  }
   const s = q.toString();
   return s ? `?${s}` : '';
 }
@@ -91,7 +118,7 @@ export function appendCultureHubQuerySuffix(params: {
 export function buildCultureHubShareUrl(
   origin: string,
   publicPath: string,
-  params: { country: string; scope: CultureHubScope; stateCode?: string },
+  params: { country: string; scope: CultureHubScope; stateCode?: string; nearRadiusKm?: number },
 ): string {
   const path = publicPath.startsWith('/') ? publicPath : `/${publicPath}`;
   const cleanOrigin = origin.replace(/\/$/, '');
@@ -101,12 +128,13 @@ export function buildCultureHubShareUrl(
 /** Link from hub index / menus with optional onboarding defaults. */
 export function cultureHubIndexLinkPath(
   publicPath: string,
-  prefs: { country?: string; stateCode?: string; scope?: CultureHubScope },
+  prefs: { country?: string; stateCode?: string; scope?: CultureHubScope; nearRadiusKm?: number },
 ): string {
   const path = publicPath.startsWith('/') ? publicPath : `/${publicPath}`;
   return `${path}${appendCultureHubQuerySuffix({
     country: prefs.country?.trim() || 'Australia',
     scope: prefs.scope ?? 'singleCountry',
     stateCode: prefs.stateCode,
+    nearRadiusKm: prefs.nearRadiusKm,
   })}`;
 }

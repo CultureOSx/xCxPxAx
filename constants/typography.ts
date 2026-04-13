@@ -4,11 +4,11 @@ import { Platform } from 'react-native';
  * Typography scale for CulturePassAU.
  *
  * Design rules:
- *  - Font family: Inter exclusively (loaded in app/_layout.tsx)
+ *  - Font family: Poppins (loaded in app/_layout.tsx)
  *  - Base body: 16px / 24px line-height (1.5 ratio)
- *  - Display text: tighter leading (~1.2–1.3×) — large sizes read better compressed
+ *  - Display text: tighter leading (~1.05–1.2×) — large sizes read better compressed
  *  - All sizes and line-heights are multiples of 4 (aligns with the 4-point spacing grid)
- *  - Letter spacing follows Apple HIG conventions adapted for Inter
+ *  - Letter spacing follows Apple HIG–style tight display tracking, adapted for Poppins
  *
  * Usage:
  *   import { TextStyles, FontFamily, FontSize } from '@/constants/typography';
@@ -251,6 +251,23 @@ export const DesktopTextStyles = {
   hero:    { fontSize: 36, lineHeight: 44 },
   title:   { fontSize: 28, lineHeight: 36 },
   title2:  { fontSize: 24, lineHeight: 32 },
+} as const;
+
+/**
+ * Large marketing / storytelling type — use on web (especially ≥1024px).
+ * Spread over `TextStyles.hero` or `TextStyles.display` so fontFamily/weight stay consistent.
+ *
+ * Example:
+ *   <Text style={[TextStyles.hero, isDesktop && DesktopMarketingTextStyles.heroLg, { color: colors.text }]} />
+ */
+export const DesktopMarketingTextStyles = {
+  heroSm: { fontSize: 48, lineHeight: 52, letterSpacing: -0.4 },
+  heroMd: { fontSize: 56, lineHeight: 60, letterSpacing: -0.6 },
+  heroLg: { fontSize: 72, lineHeight: 76, letterSpacing: -0.9 },
+  heroXl: { fontSize: 88, lineHeight: 92, letterSpacing: -1.1 },
+  sectionTitle: { fontSize: 40, lineHeight: 48, letterSpacing: -0.3 },
+  sectionTitleLg: { fontSize: 48, lineHeight: 56, letterSpacing: -0.4 },
+  lead: { fontSize: 21, lineHeight: 32 },
 } as const;
 
 // ---------------------------------------------------------------------------

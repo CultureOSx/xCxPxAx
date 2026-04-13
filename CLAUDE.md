@@ -1,9 +1,11 @@
-# CulturePass AU — CLAUDE.md
+# CulturePass — CLAUDE.md
 
 Project guide for AI agents. Read before touching code.
 
-> **Design Principles**: [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md) — five core laws (Cultural Minimalism, Token Integrity, Platform Parity, Approachable Complexity, Technical Craftsmanship).
-> **Coding rules & UI patterns**: [`culturepass-rules.md`](culturepass-rules.md) — NEVER/ALWAYS, design tokens, events.tsx standard, API patterns.
+> **Design Principles**: `[docs/DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md)` — five core laws (Cultural Minimalism, Token Integrity, Platform Parity, Approachable Complexity, Technical Craftsmanship).  
+> **UI system (tokens + marketing layout)**: `[docs/UI_SYSTEM.md](docs/UI_SYSTEM.md)` — import from `constants/theme.ts` only.
+> **Coding rules & UI patterns**: `[culturepass-rules.md](culturepass-rules.md)` — NEVER/ALWAYS, design tokens, events.tsx standard, API patterns.
+> **AI implementation style sheet**: `[docs/AI_AGENT_STYLE_SHEET.md](docs/AI_AGENT_STYLE_SHEET.md)` — agent code quality, UI contract, change discipline, and definition of done.
 
 ---
 
@@ -149,11 +151,13 @@ dataconnect/  Firebase DataConnect GraphQL schema (exploratory)
 
 ## Web Layout Architecture
 
-| Breakpoint | Layout |
-|-----------|--------|
-| Desktop ≥1024px | 240px left sidebar (`WebSidebar.tsx`), no top bar, `topInset = 0` |
-| Tablet 768–1023px | Bottom tab bar, `topInset = 0` |
-| Mobile native | Bottom tab bar 84px (glassmorphism on iOS), `topInset = insets.top` |
+
+| Breakpoint        | Layout                                                              |
+| ----------------- | ------------------------------------------------------------------- |
+| Desktop ≥1024px   | 240px left sidebar (`WebSidebar.tsx`), no top bar, `topInset = 0`   |
+| Tablet 768–1023px | Bottom tab bar, `topInset = 0`                                      |
+| Mobile native     | Bottom tab bar 84px (glassmorphism on iOS), `topInset = insets.top` |
+
 
 ```typescript
 const { isDesktop, isTablet, isMobile, numColumns, hPad, sidebarWidth, columnWidth } = useLayout();
@@ -186,14 +190,16 @@ Council = **location attribute only**. No governance, no detail pages, no user c
 
 ## State Management
 
-| Concern | Solution |
-|---------|----------|
-| Server data | TanStack React Query (`useQuery`, `useMutation`) |
-| Auth state | `AuthProvider` + `useAuth()` |
-| Onboarding | `OnboardingContext` (city, country, interests, isComplete) |
-| Saved items | `SavedContext` (savedEvents, joinedCommunities) |
-| Contacts | `ContactsContext` |
-| UI state | `useState` / `useReducer` local to component |
+
+| Concern     | Solution                                                   |
+| ----------- | ---------------------------------------------------------- |
+| Server data | TanStack React Query (`useQuery`, `useMutation`)           |
+| Auth state  | `AuthProvider` + `useAuth()`                               |
+| Onboarding  | `OnboardingContext` (city, country, interests, isComplete) |
+| Saved items | `SavedContext` (savedEvents, joinedCommunities)            |
+| Contacts    | `ContactsContext`                                          |
+| UI state    | `useState` / `useReducer` local to component               |
+
 
 ---
 
@@ -265,10 +271,12 @@ APP_URL=https://culturepass.app
 # Connect marketplace fee (optional; default 1000 bps = 10%)
 STRIPE_CONNECT_PLATFORM_FEE_BPS=1000
 ```
- 
+
 # Local development seeding only
-SEED_TEST_EMAIL=testuser@example.com   # for local development seeding only
+
+SEED_TEST_EMAIL=[testuser@example.com](mailto:testuser@example.com)   # for local development seeding only
 SEED_TEST_PASSWORD=supersecret        # for local development seeding only
+
 # Used by: npm run emulator:seed:cap
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
@@ -313,18 +321,19 @@ cd functions && npm run build && cd .. && firebase deploy --only functions
 
 ## Pending — Pre-Launch Blockers (April 15 target)
 
-- [ ] GeoHash backfill: geocode events missing `latitude`/`longitude`/`geoHash`
-- [ ] Council LGA auto-select from GPS on onboarding (`/api/councils/nearest`)
+- GeoHash backfill: geocode events missing `latitude`/`longitude`/`geoHash`
+- Council LGA auto-select from GPS on onboarding (`/api/councils/nearest`)
 
 ## Pending — Post-Launch (April–June 2026)
 
-- [ ] Organiser event analytics dashboard (`dashboard/event-analytics/[eventId]`)
-- [ ] Promotional codes (`promoCodes/` collection, checkout validation)
-- [ ] Organiser attendee messaging (FCM multicast + email queue)
-- [ ] Community posts (`communities/{id}/posts/`, feature-flagged)
-- [ ] Rewards points redemption UI (Perks tab balance chip + checkout toggle)
-- [ ] Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
-- [ ] Push notification deep links + per-category opt-out
-- [ ] NZ + UAE city grouping on onboarding
-- [ ] Wallet top-up + Apple/Google Pay UI
-- [ ] Firebase DataConnect migration (exploratory)
+- Organiser event analytics dashboard (`dashboard/event-analytics/[eventId]`)
+- Promotional codes (`promoCodes/` collection, checkout validation)
+- Organiser attendee messaging (FCM multicast + email queue)
+- Community posts (`communities/{id}/posts/`, feature-flagged)
+- Rewards points redemption UI (Perks tab balance chip + checkout toggle)
+- Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
+- Push notification deep links + per-category opt-out
+- NZ + UAE city grouping on onboarding
+- Wallet top-up + Apple/Google Pay UI
+- Firebase DataConnect migration (exploratory)
+

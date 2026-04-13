@@ -10,6 +10,7 @@ import { updateDiscoverCurationConfig, getDiscoverCurationConfig } from '../serv
 import { systemConfigService } from '../services/systemConfig';
 import { taxonomyService } from '../services/taxonomy';
 import { z } from 'zod';
+import { zHttpsImageUrlRequired, zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 export const adminRouter = Router();
 
@@ -19,7 +20,7 @@ const featuredArtistSchema = z.object({
   name: z.string().min(1).optional(),
   subtitle: z.string().min(1).optional(),
   meta: z.string().min(1).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: zOptionalHttpsImageUrl,
   accentColor: z.string().min(1).optional(),
   focus: z.enum(DISCOVER_FOCUS_OPTIONS).optional(),
   ctaLabel: z.string().min(1).optional(),
@@ -33,7 +34,7 @@ const heritagePlaylistSchema = z.object({
   title: z.string().min(1),
   artist: z.string().min(1),
   culture: z.string().min(1),
-  imageUrl: z.string().url(),
+  imageUrl: zHttpsImageUrlRequired,
   typeLabel: z.enum(HERITAGE_PLAYLIST_TYPES),
   accentColor: z.string().min(1),
   focus: z.enum(DISCOVER_FOCUS_OPTIONS),

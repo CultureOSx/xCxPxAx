@@ -17,6 +17,9 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 import { captureEvent, identifyUser } from '@/lib/analytics';
 import { HapticManager } from '@/lib/haptics';
+import { mapFirebaseAuthError, normalizeAuthEmail } from '@/lib/authErrors';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function useSignup() {
   const searchParams = useLocalSearchParams();
@@ -35,11 +38,11 @@ export function useSignup() {
 
   const [loading, setLoading] = useState(false);
 
-  const normalizedName = useMemo(() => name.trim(), [name]);
-  const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
+  const normalizedName = useMemo(() => name.trim().replace(/\s+/g, ' '), [name]);
+  const normalizedEmail = useMemo(() => normalizeAuthEmail(email), [email]);
 
   const isValid = useMemo(() => {
-    return normalizedName.length > 1 && normalizedEmail.includes('@') && password.length >= 6 && agreed;
+    return normalizedName.length > 1 && EMAIL_RE.test(normalizedEmail) && password.length >= 6 && agreed;
   }, [normalizedName, normalizedEmail, password, agreed]);
 
   const clearErrors = useCallback(() => {
@@ -55,11 +58,17 @@ export function useSignup() {
       setNameError('Please enter your full name.');
       valid = false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!normalizedEmail) {
+      setEmailError('Email is required.');
+      valid = false;
+    } else if (!EMAIL_RE.test(normalizedEmail)) {
       setEmailError('Please enter a valid email address.');
       valid = false;
     }
-    if (password.length < 6) {
+    if (!password) {
+      setPasswordError('Password is required.');
+      valid = false;
+    } else if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters.');
       valid = false;
     }
@@ -78,7 +87,25 @@ export function useSignup() {
     }
   }, [role]);
 
+  const finalizeSocialSignup = useCallback(async () => {
+    const currentUser = firebaseAuth.currentUser;
+    if (!currentUser) return;
+    const inferredDisplayName =
+      currentUser.displayName?.trim() ||
+      normalizedName ||
+      currentUser.email?.split('@')[0] ||
+      undefined;
+
+    if (inferredDisplayName && inferredDisplayName !== currentUser.displayName) {
+      await updateProfile(currentUser, { displayName: inferredDisplayName });
+    }
+
+    await currentUser.getIdToken(true);
+    await api.auth.register({ displayName: inferredDisplayName, role });
+  }, [normalizedName, role]);
+
   const handleGoogleSignUp = useCallback(async () => {
+    if (loading) return;
     setLoading(true);
     clearErrors();
     try {
@@ -95,23 +122,30 @@ export function useSignup() {
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);
       }
+      try {
+        await finalizeSocialSignup();
+      } catch (syncError) {
+        if (__DEV__) {
+          console.warn('[signup] social profile sync fallback:', syncError);
+        }
+      }
       trackSignup('google');
       await HapticManager.success();
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
     } catch (e: unknown) {
-      const err = e as Record<string, unknown>;
-      const code = err?.code as string | undefined;
-      if (!code || !['auth/popup-closed-by-user', 'auth/cancelled-popup-request', '-5'].includes(code)) {
-        setGlobalError('Google sign-up failed. Please try again.');
+      const msg = mapFirebaseAuthError(e, 'Google sign-up failed. Please try again.');
+      if (msg) {
+        setGlobalError(msg);
         await HapticManager.error();
       }
     } finally {
       setLoading(false);
     }
-  }, [clearErrors, trackSignup, redirectTo]);
+  }, [clearErrors, finalizeSocialSignup, loading, trackSignup, redirectTo]);
 
   const handleAppleSignUp = useCallback(async () => {
     if (Platform.OS !== 'ios') return;
+    if (loading) return;
     setLoading(true);
     clearErrors();
     try {
@@ -127,21 +161,29 @@ export function useSignup() {
         rawNonce: credential.authorizationCode ?? '',
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
+      try {
+        await finalizeSocialSignup();
+      } catch (syncError) {
+        if (__DEV__) {
+          console.warn('[signup] apple profile sync fallback:', syncError);
+        }
+      }
       trackSignup('apple');
       await HapticManager.success();
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
     } catch (e: unknown) {
-      const err = e as Record<string, unknown>;
-      if (err?.code !== 'ERR_REQUEST_CANCELED') {
-        setGlobalError('Apple sign-up failed. Please try again.');
+      const msg = mapFirebaseAuthError(e, 'Apple sign-up failed. Please try again.');
+      if (msg) {
+        setGlobalError(msg);
         await HapticManager.error();
       }
     } finally {
       setLoading(false);
     }
-  }, [clearErrors, trackSignup, redirectTo]);
+  }, [clearErrors, finalizeSocialSignup, loading, trackSignup, redirectTo]);
 
   const handleSignUp = useCallback(async () => {
+    if (loading) return;
     clearErrors();
     if (!validate()) {
       await HapticManager.error();
@@ -164,14 +206,11 @@ export function useSignup() {
       await HapticManager.success();
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
     } catch (e: unknown) {
-      const err = e as Record<string, unknown>;
-      const code = err?.code as string | undefined;
-      if (code === 'auth/email-already-in-use') {
-        setEmailError('An account with this email already exists.');
-      } else if (code === 'auth/invalid-email') {
-        setEmailError('Please enter a valid email address.');
-      } else if (code === 'auth/weak-password') {
-        setPasswordError('Password must be at least 6 characters.');
+      const msg = mapFirebaseAuthError(e, 'Registration failed. Please try again.');
+      if (msg === 'An account with this email already exists.' || msg === 'Please enter a valid email address.') {
+        setEmailError(msg);
+      } else if (msg === 'Password must be at least 6 characters.') {
+        setPasswordError(msg);
       } else {
         setGlobalError('Registration failed. Please try again.');
       }
@@ -179,7 +218,7 @@ export function useSignup() {
     } finally {
       setLoading(false);
     }
-  }, [clearErrors, validate, normalizedEmail, password, normalizedName, role, redirectTo]);
+  }, [clearErrors, validate, normalizedEmail, password, normalizedName, role, redirectTo, loading]);
 
   return {
     name, setName,

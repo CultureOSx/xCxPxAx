@@ -17,6 +17,11 @@ import { api, ApiError } from '@/lib/api';
 import type { User, UserRole } from '@/shared/schema';
 import { logError } from '@/lib/reporting';
 
+const AUTH_EMAIL_ACTION_SETTINGS = {
+  url: `${(process.env.EXPO_PUBLIC_APP_URL ?? 'https://culturepass.app').replace(/\/+$/, '')}/login`,
+  handleCodeInApp: false,
+};
+
 /**
  * CulturePassAU Auth — Firebase Auth SDK
  */
@@ -364,7 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = firebaseAuth.currentUser;
     if (!user) throw new Error('No authenticated user');
     if (user.emailVerified) return;
-    await sendEmailVerification(user);
+    await sendEmailVerification(user, AUTH_EMAIL_ACTION_SETTINGS);
   }, []);
 
   const checkEmailVerified = useCallback(async (): Promise<boolean> => {

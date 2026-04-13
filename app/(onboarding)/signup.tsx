@@ -5,9 +5,8 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
-  ScrollView,
 } from 'react-native';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -108,46 +107,23 @@ export default function SignUpScreen() {
           .damping(LiquidGlassTokens.entranceSpring.damping)
           .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
 
-  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
   const padBottom = isWeb ? 40 : 64 + insets.bottom;
 
   const formContent = (
     <AuthLiquidFormCard isDesktop={isDesktop}>
       {/* Brand */}
       <Animated.View entering={enter(40)} style={s.brandBlock}>
-        <View
-          style={[
-            s.brandIcon,
-            { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-          ]}
-        >
-          <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
-        </View>
-        <BrandWordmark size="lg" withTagline centered />
+        <BrandWordmark size="lg" centered />
       </Animated.View>
 
       {/* Main Headline */}
-      <Animated.Text
-        entering={enter(80)}
-        style={[s.title, { color: colors.text }]}
-      >
-        Belong anywhere.
-      </Animated.Text>
+      <Animated.View entering={enter(30)}>
+        <Text style={[s.title, { color: colors.text }]}>Belong anywhere.</Text>
+      </Animated.View>
 
-      <Animated.Text entering={enter(110)} style={[s.subtitle, { color: colors.textSecondary }]}>
-        Join the cultural community built for diaspora cities.
-      </Animated.Text>
-
-      {/* Benefits */}
-      <Animated.View
-        entering={enter(140)}
-        style={[
-          s.benefitsPill,
-          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-        ]}
-      >
-        <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
-          Free Events · Communities · Exclusive Perks
+      <Animated.View entering={enter(110)}>
+        <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+          Join the cultural community built for diaspora cities.
         </Text>
       </Animated.View>
 
@@ -230,6 +206,7 @@ export default function SignUpScreen() {
           autoComplete="name"
           returnKeyType="next"
           error={nameError}
+          onBlur={() => setName((prev) => prev.trim().replace(/\s+/g, ' '))}
         />
 
         <Input
@@ -237,13 +214,17 @@ export default function SignUpScreen() {
           placeholder="you@example.com"
           leftIcon="mail-outline"
           value={email}
-          onChangeText={(v) => { setEmail(v); clearErrors(); }}
+          onChangeText={(v) => {
+            setEmail(v);
+            clearErrors();
+          }}
           autoCapitalize="none"
           autoComplete="email"
           textContentType="username"
           keyboardType="email-address"
           returnKeyType="next"
           error={emailError}
+          onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
         />
 
         <View style={s.passwordGroup}>
@@ -271,14 +252,14 @@ export default function SignUpScreen() {
           onToggle={(v) => { setAgreed(v); clearErrors(); }}
           label={
             <Text style={[s.checkText, { color: colors.text }]}>
-              I agree to the{' '}
+              I confirm that I am 18 years of age or older and agree to the{' '}
               <Text
                 style={[s.linkText, { color: colors.primary }]}
                 onPress={() => router.push('/legal/terms')}
               >
-                Terms
+                Terms of Service
               </Text>
-              {' & '}
+              {' and '}
               <Text
                 style={[s.linkText, { color: colors.primary }]}
                 onPress={() => router.push('/legal/privacy')}
@@ -354,71 +335,70 @@ export default function SignUpScreen() {
         />
       )}
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollViewCompat
         style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-        enabled
+        contentContainerStyle={[
+          s.scrollContent,
+          isDesktop && s.scrollContentDesktop,
+          { paddingBottom: padBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
-            { paddingBottom: padBottom },
-          ]}
-        >
-          {isWeb && isDesktop ? (
-            <View style={s.webRow}>
-              {/* Marketing Column */}
-              <View style={s.webLeft}>
-                <Animated.View entering={enter(40)} style={s.webKickerRow}>
-                  <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
-                  <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
-                </Animated.View>
+        {isWeb && isDesktop ? (
+          <View style={s.webRow}>
+            {/* Marketing Column - Left Side */}
+            <View style={s.webLeft}>
+              <Animated.View entering={enter(40)} style={s.webKickerRow}>
+                <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
+                <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
+              </Animated.View>
 
-                <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
+              <Animated.View entering={enter(70)}>
+                <Text style={[s.webHeadline, { color: colors.text }]}>
                   Your cultural home,{'\n'}anywhere.
-                </Animated.Text>
+                </Text>
+              </Animated.View>
 
-                <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
+              <Animated.View entering={enter(100)}>
+                <Text style={[s.webLead, { color: colors.textSecondary }]}>
                   The premium marketplace for diaspora communities — events, local businesses, and exclusive member perks in your city.
-                </Animated.Text>
+                </Text>
+              </Animated.View>
 
-                <Animated.View entering={enter(130)} style={s.webValueGrid}>
-                  {VALUE_PROPS.map((item) => (
-                    <View
-                      key={item.title}
-                      style={[
-                        s.webValueCard,
-                        { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-                      ]}
-                    >
-                      <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
-                        <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
-                        <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
-                      </View>
+              <Animated.View entering={enter(130)} style={s.webValueGrid}>
+                {VALUE_PROPS.map((item) => (
+                  <View
+                    key={item.title}
+                    style={[
+                      s.webValueCard,
+                      { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                    ]}
+                  >
+                    <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
+                      <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
                     </View>
-                  ))}
-                </Animated.View>
-              </View>
-
-              {/* Form Card */}
-              <Animated.View entering={enterUp} style={s.cardWrap}>
-                {formContent}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
+                      <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
+                    </View>
+                  </View>
+                ))}
               </Animated.View>
             </View>
-          ) : (
+
+            {/* Form Card - Right Side on Desktop */}
             <Animated.View entering={enterUp} style={s.cardWrap}>
               {formContent}
             </Animated.View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </View>
+        ) : (
+          /* Mobile / non-desktop */
+          <Animated.View entering={enterUp} style={s.cardWrap}>
+            {formContent}
+          </Animated.View>
+        )}
+      </KeyboardAwareScrollViewCompat>
     </View>
   );
 }
@@ -498,48 +478,24 @@ const s = StyleSheet.create({
   },
 
   /* Form Styles */
-  brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
-  brandIcon: {
-    width: 69,
-    height: 69,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
+  brandBlock: { alignItems: 'center', marginBottom: 16, gap: 4 },
 
   title: {
     ...TextStyles.display,
-    fontSize: 48,
+    fontSize: 30,
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: -1.2,
-    lineHeight: 54,
+    marginBottom: 6,
+    letterSpacing: -0.6,
+    lineHeight: 36,
   },
   subtitle: {
-    ...TextStyles.title2,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.body2,
     textAlign: 'center',
-    maxWidth: 369,
+    maxWidth: 340,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
     lineHeight: 22,
-  },
-
-  benefitsPill: {
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    marginBottom: 24,
-  },
-  benefitsText: {
-    ...TextStyles.caption,
-    textAlign: 'center',
-    fontFamily: FontFamily.semibold,
-    letterSpacing: 0.2,
   },
 
   errorBanner: {
@@ -554,7 +510,7 @@ const s = StyleSheet.create({
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  roleGroup: { marginBottom: 24 },
+  roleGroup: { marginBottom: 18 },
   roleLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.body2,
@@ -569,14 +525,14 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: 14,
     borderRadius: CardTokens.radius,
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderWidth: 1.5,
   },
   roleOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  form: { gap: 18, marginBottom: 8 },
+  form: { gap: 16, marginBottom: 8 },
   passwordGroup: { gap: Spacing.sm },
 
-  optionsRow: { marginTop: 8, marginBottom: 24 },
+  optionsRow: { marginTop: 8, marginBottom: 18 },
   checkText: {
     flex: 1,
     fontFamily: FontFamily.regular,
@@ -591,20 +547,20 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginTop: 24,
-    marginBottom: 20,
+    marginTop: 18,
+    marginBottom: 16,
   },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
+  divLine: { flex: 1, height: 1 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
   socialRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: 24,
+    marginBottom: 18,
     justifyContent: 'center',
   },
 
-  switchRow: { alignItems: 'center', paddingVertical: 12 },
+  switchRow: { alignItems: 'center', paddingVertical: 10 },
   switchText: {
     fontFamily: FontFamily.regular,
     fontSize: FontSize.callout,

@@ -274,7 +274,7 @@ export function JobsTab() {
                       <Pressable
                         style={[s.retryBtn, { backgroundColor: CultureTokens.indigo + '14', borderColor: CultureTokens.indigo + '30' }]}
                         onPress={(e) => { e.stopPropagation?.(); retryMutation.mutate(job.id); }}
-                        accessibilityRole="button" accessibilityLabel="Retry job"
+                        accessibilityLabel="Retry job"
                       >
                         {retryMutation.isPending
                           ? <ActivityIndicator size="small" color={CultureTokens.indigo} />

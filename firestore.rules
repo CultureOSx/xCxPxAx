@@ -2,6 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
@@ -17,51 +19,198 @@ service cloud.firestore {
     }
 
     function isAdminLike() {
-      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator'];
+      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator', 'superAdmin'];
     }
 
     function isOrganizerLike() {
-      return role() in ['organizer', 'admin', 'platformAdmin', 'cityAdmin'];
+      return role() in ['organizer', 'business', 'sponsor', 'admin', 'platformAdmin', 'cityAdmin', 'superAdmin'];
     }
 
-    // User profiles: each user can read/write their own record.
+    /** Privileged fields on users/{uid} — only Admin SDK / admins may change */
+    function userPrivilegedFieldsUnchanged() {
+      return request.resource.data.get('role', null) == resource.data.get('role', null)
+        && request.resource.data.get('culturePassId', null) == resource.data.get('culturePassId', null)
+        && request.resource.data.get('stripeCustomerId', null) == resource.data.get('stripeCustomerId', null)
+        && request.resource.data.get('stripeSubscriptionId', null) == resource.data.get('stripeSubscriptionId', null);
+    }
+
+    function eventIsPublicVisible() {
+      return resource.data.status == 'published'
+        && !(resource.data.deletedAt is timestamp);
+    }
+
+    function profileOwnerWrites() {
+      return isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Users ───────────────────────────────────────────────────────────────
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdminLike();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid) || isAdminLike();
+      allow create: if isOwner(uid)
+        && (!('role' in request.resource.data)
+            || request.resource.data.role in ['user', 'organizer', 'business', 'sponsor'])
+        && !('culturePassId' in request.resource.data);
+      allow update: if isAdminLike()
+        || (isOwner(uid) && userPrivilegedFieldsUnchanged());
       allow delete: if isAdminLike();
     }
 
-    // Events: public can read only published/non-deleted events.
-    // Writes: organizer role + (owner of event or admin). Mutations should prefer Cloud Functions API.
-    match /events/{eventId} {
-      allow read: if resource.data.status == 'published' && !(resource.data.deletedAt is timestamp);
-      allow create: if isOrganizerLike()
-        && (request.resource.data.organizerId == request.auth.uid || isAdminLike());
-      allow update, delete: if isOrganizerLike()
-        && (resource.data.organizerId == request.auth.uid || isAdminLike());
+    match /users/{uid}/wallet/{docId} {
+      allow read: if isOwner(uid) || isAdminLike();
+      allow write: if false;
     }
 
-    // Tickets: owners can read their tickets; writes happen via Cloud Functions.
+    match /users/{uid}/membership/{docId} {
+      allow read: if isOwner(uid) || isAdminLike();
+      allow write: if false;
+    }
+
+    // ── Events ──────────────────────────────────────────────────────────────
+    match /events/{eventId} {
+      allow read: if eventIsPublicVisible()
+        || isAdminLike()
+        || (isOrganizerLike() && resource.data.organizerId == request.auth.uid);
+
+      allow create: if isOrganizerLike()
+        && (request.resource.data.organizerId == request.auth.uid || isAdminLike())
+        && (!('status' in request.resource.data)
+            || request.resource.data.status in ['draft', 'published', 'cancelled']);
+
+      allow update: if isOrganizerLike()
+        && (resource.data.organizerId == request.auth.uid || isAdminLike())
+        && (request.resource.data.organizerId == resource.data.organizerId || isAdminLike());
+
+      allow delete: if isAdminLike()
+        || (isOrganizerLike() && resource.data.organizerId == request.auth.uid);
+    }
+
+    // Optional engagement subcollections when collection=`events` in social API
+    match /events/{eventId}/reactions/{userId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /events/{eventId}/comments/{commentId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Tickets (server-side writes) ───────────────────────────────────────
     match /tickets/{ticketId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 
-    // Profiles (community/business/venue/artist/etc.): public read, owner/admin write.
+    // ── Profiles (communities, venues, artists, … live in `profiles`) ─────
     match /profiles/{profileId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isAdminLike() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && 'name' in request.resource.data
+        && 'entityType' in request.resource.data
+        && (!('isVerified' in request.resource.data) || request.resource.data.isVerified == false)
+        && (!('status' in request.resource.data)
+            || request.resource.data.status in ['draft', 'published']);
+
+      allow update: if isAdminLike()
+        || (profileOwnerWrites()
+            && request.resource.data.ownerId == resource.data.ownerId);
+
+      allow delete: if isAdminLike() || profileOwnerWrites();
     }
 
-    // Councils are public reference data; admin-managed.
+    // ── Legacy `communities` collection (if present) ───────────────────────
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isOrganizerLike()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isOrganizerLike()
+        && (resource.data.ownerId == request.auth.uid || isAdminLike())
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isAdminLike();
+    }
+
+    // ── Curated / reference data ───────────────────────────────────────────
+    match /perks/{perkId} {
+      allow read: if true;
+      allow write: if isAdminLike();
+    }
+
+    match /featuredCities/{cityId} {
+      allow read: if true;
+      allow write: if isAdminLike();
+    }
+
     match /councils/{councilId} {
       allow read: if true;
       allow write: if isAdminLike();
     }
 
-    // Default deny-all for everything else.
+    // ── Discover feed (synced by Cloud Functions) ─────────────────────────
+    match /feed/{feedId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Notifications (API + Admin SDK) ─────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── Community membership index (API writes) ────────────────────────────
+    match /communityMembers/{memberId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdminLike());
+      allow write: if false;
+    }
+
+    // ── Invitation + email queue (server only) ──────────────────────────────
+    match /communityInvitations/{invitationId} {
+      allow read, write: if false;
+    }
+
+    match /mail/{mailId} {
+      allow read, write: if false;
+    }
+
+    // ── Moderation queue (server / admin) ───────────────────────────────────
+    match /reports/{reportId} {
+      allow read: if isAdminLike();
+      allow write: if false;
+    }
+
+    // ── Community posts + engagement (API / Admin SDK writes) ────────────────
+    match /communityPosts/{postId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /communityPosts/{postId}/reactions/{userId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /communityPosts/{postId}/comments/{commentId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Social graph (API writes) ───────────────────────────────────────────
+    match /follows/{followId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdminLike());
+      allow write: if false;
+    }
+
+    match /rsvps/{rsvpId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdminLike());
+      allow write: if false;
+    }
+
+    // ── Default deny ────────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

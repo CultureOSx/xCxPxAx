@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -77,9 +77,9 @@ function EventRow({ event, onPress, onToggleFeatured, onDelete, index }: {
         </Pressable>
         <Pressable 
           onPress={onDelete} 
-          style={[styles.actionBtn, { backgroundColor: '#FF5E5B20' }]}
+          style={[styles.actionBtn, { backgroundColor: colors.error + '20' }]}
         >
-          <Ionicons name="trash-outline" size={18} color="#FF5E5B" />
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
         </Pressable>
       </View>
     </Animated.View>
@@ -100,7 +100,7 @@ export default function AdminEventsScreen() {
   // Fetch events via shared API
   const { data, isLoading, isPlaceholderData } = useQuery({
     queryKey: ['admin-events', search, page],
-    queryFn: () => api.events.list({ search, page, pageSize: 20 }),
+    queryFn: () => api.events.list({ search, page, pageSize: 20, includePast: true }),
     placeholderData: (previousData) => previousData,
     enabled: isSuperAdmin || isAdmin,
   });
@@ -123,11 +123,13 @@ export default function AdminEventsScreen() {
     },
   });
 
+  useEffect(() => {
+    if (!roleLoading && !isSuperAdmin && !isAdmin) {
+      router.replace('/(tabs)');
+    }
+  }, [isAdmin, isSuperAdmin, roleLoading]);
   if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
+  if (!isSuperAdmin && !isAdmin) return null;
 
   const events = data?.events ?? [];
 

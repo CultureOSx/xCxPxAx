@@ -1,4 +1,4 @@
-import { fetch } from 'expo/fetch';
+import { fetch as expoFetch } from 'expo/fetch';
 import { Platform } from 'react-native';
 import { QueryClient, QueryFunction } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
@@ -222,14 +222,14 @@ export async function apiRequest(
 
   let res: Response;
   try {
-    res = await fetch(url.toString(), {
+    res = await expoFetch(url.toString(), {
       ...safeOptions,
       method,
       headers,
       body: data !== undefined ? JSON.stringify(data) : undefined,
       credentials,
       signal,
-    } as Parameters<typeof fetch>[1]);
+    } as Parameters<typeof expoFetch>[1]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
@@ -288,16 +288,21 @@ export async function apiRequestMultipart(
     }
   }
 
+  // Web: use native fetch so FormData keeps the browser boundary + file parts.
+  // expo/fetch re-encodes FormData to Uint8Array; that path can yield empty/malformed
+  // multipart bodies that multer rejects (400 "Missing image file").
+  const requestFetch = Platform.OS === 'web' ? globalThis.fetch.bind(globalThis) : expoFetch;
+
   let res: Response;
   try {
-    res = await fetch(url.toString(), {
+    res = await requestFetch(url.toString(), {
       ...safeOptions,
       method,
       headers,
       body: formData,
       credentials,
       signal,
-    } as Parameters<typeof fetch>[1]);
+    } as RequestInit);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
@@ -346,7 +351,7 @@ export const getQueryFn: <T>(
   options: { on401: UnauthorizedBehavior }
 ) => QueryFunction<T> = ({ on401 }) => async ({ queryKey }) => {
   const route = Array.isArray(queryKey) ? queryKey.join('/') : String(queryKey);
-  const res = await fetch(buildApiUrl(route), {
+  const res = await expoFetch(buildApiUrl(route), {
     headers: _accessToken ? { Authorization: `Bearer ${_accessToken}` } : undefined,
     credentials: Platform.OS === 'web' ? 'omit' : undefined,
   });

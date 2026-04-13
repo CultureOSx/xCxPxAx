@@ -3,7 +3,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import type { ReactNode } from 'react';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
-import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { HEADER_CHROME_TOKENS, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 
@@ -20,6 +20,16 @@ interface TabPrimaryHeaderProps {
   withGlobalNav?: boolean;
   /** Controls the divider under the chrome row (not the shell border). */
   showChromeHairline?: boolean;
+  /** Controls shell bottom border line on web/native. */
+  showShellBorder?: boolean;
+  /** Controls brand accent strip line on web/native. */
+  showBrandStrip?: boolean;
+  /**
+   * When true, `children` renders outside the padded container — full-width
+   * edge-to-edge inside the shell. Useful for filter chip rows that need to
+   * overflow to the screen edges with their own internal padding.
+   */
+  childrenFullBleed?: boolean;
 }
 
 export function TabPrimaryHeader({
@@ -33,6 +43,9 @@ export function TabPrimaryHeader({
   topInset = 0,
   withGlobalNav = true,
   showChromeHairline = false,
+  showShellBorder = false,
+  showBrandStrip = false,
+  childrenFullBleed = false,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
@@ -46,6 +59,7 @@ export function TabPrimaryHeader({
       locationLabel={locationLabel}
       topHeaderAction={topHeaderAction}
       showHairline={showChromeHairline}
+      showBrandStrip={showBrandStrip}
     />
   ) : null;
 
@@ -53,11 +67,15 @@ export function TabPrimaryHeader({
     <View style={styles.toolbarRow}>{rightActions}</View>
   ) : null;
 
+  const inlineChildren = children && !childrenFullBleed
+    ? <View style={styles.extra}>{children}</View>
+    : null;
+
   const body = (
     <>
       {chrome}
       {toolbar}
-      {children ? <View style={styles.extra}>{children}</View> : null}
+      {inlineChildren}
     </>
   );
 
@@ -68,23 +86,31 @@ export function TabPrimaryHeader({
         bordered={false}
         style={[
           {
-            borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-            borderBottomColor: colors.border,
+            borderBottomWidth: showShellBorder ? MAIN_TAB_UI.headerBorderWidth : 0,
+            borderBottomColor: showShellBorder ? colors.border : 'transparent',
           },
           {
-            boxShadow: '0px 2px 12px rgba(0,0,0,0.07)',
+            boxShadow: HEADER_CHROME_TOKENS.webChromeShadow,
           } as object,
         ]}
-        contentStyle={[styles.wrapWeb, { paddingHorizontal: hPad, paddingTop: webTopPad }]}
+        contentStyle={[styles.wrapWeb, { paddingTop: webTopPad }]}
       >
-        <View style={styles.chromeContainer}>{body}</View>
+        <View style={[styles.chromeContainer, { paddingHorizontal: hPad }]}>{body}</View>
+        {childrenFullBleed && children ? children : null}
       </LiquidGlassPanel>
     );
   }
 
   return (
-    <TabHeaderNativeShell hPad={hPad}>
-      <View style={styles.wrapNative}>{body}</View>
+    <TabHeaderNativeShell
+      hPad={hPad}
+      showBottomBorder={showShellBorder}
+      showBrandStrip={showBrandStrip}
+    >
+      <View style={styles.wrapNative}>
+        {body}
+      </View>
+      {childrenFullBleed && children ? children : null}
     </TabHeaderNativeShell>
   );
 }
@@ -102,6 +128,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MAIN_TAB_UI.chromeMaxWidth,
     alignSelf: 'center',
+    paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
   },
   toolbarRow: {
     flexDirection: 'row',

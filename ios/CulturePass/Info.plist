@@ -48,6 +48,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>2</string>
+	<key>ExpoWidgetsAppGroupIdentifier</key>
+	<string>group.au.culturepass.app</string>
+	<key>ExpoWidgets_EnablePushNotifications</key>
+	<false/>
 	<key>GMSApiKey</key>
 	<string>$(EXPO_PUBLIC_GOOGLE_MAPS_KEY)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -97,6 +101,8 @@
 	<string>CulturePass uses Reminders to add event alerts to your schedule.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<false/>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

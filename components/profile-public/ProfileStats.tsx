@@ -1,7 +1,7 @@
 import React from 'react';
 import { useColors } from '@/hooks/useColors';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { Colors, FontFamily } from '@/constants/theme';
 
 interface ProfileStatsProps {
   stats: { label: string; value: number }[];
@@ -49,12 +49,12 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   statNum: {
     fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: FontFamily.bold,
     color: Colors.text,
   },
   statLabel: {
     fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: FontFamily.medium,
     color: Colors.textSecondary,
   },
 });

@@ -16,7 +16,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
-      "buildNumber": "2",
       "appleTeamId": "26WGXSNG58",
       "infoPlist": {
         "NSSupportsLiveActivities": true,
@@ -52,7 +51,6 @@
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -85,7 +83,6 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ]
@@ -152,7 +149,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "16.0"
+            "deploymentTarget": "16.2"
           },
           "android": {
             "minSdkVersion": 26,
@@ -161,7 +158,38 @@
         }
       ],
       "expo-image",
-      "expo-widgets"
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.au.culturepass.app",
+          "widgets": [
+            {
+              "name": "CultureSpotlightWidget",
+              "displayName": "Spotlight",
+              "description": "Featured cultural pick from CulturePass Discover",
+              "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureNearYouWidget",
+              "displayName": "Near You",
+              "description": "Upcoming events near your city",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            },
+            {
+              "name": "CultureIdentityQRWidget",
+              "displayName": "Culture ID",
+              "description": "Your CulturePass name and ID",
+              "supportedFamilies": ["systemSmall", "systemMedium"]
+            },
+            {
+              "name": "CultureUpcomingTicketWidget",
+              "displayName": "Next Ticket",
+              "description": "Your next ticketed event",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,
@@ -172,7 +200,6 @@
         "origin": "https://culturepass.app"
       },
       "eas": {
-        "projectId": "01dab28f-0531-42aa-8f76-c3dc0e13216e",
         "build": {
           "experimental": {
             "ios": {
@@ -191,17 +218,27 @@
                   "bundleIdentifier": "au.culturepass.app.smart-card",
                   "targetName": "smartcard",
                   "entitlements": {}
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "au.culturepass.app.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.au.culturepass.app"
+                    ]
+                  }
                 }
               ]
             }
           }
-        }
+        },
+        "projectId": "12d9b987-9269-4eae-b5c1-70eb25ee2abf"
       }
     },
-    "owner": "cultureoss-organization",
-      "runtimeVersion": { "policy": "appVersion" },
+    "owner": "culturestudios",
+    "runtimeVersion": "1.1.0",
     "updates": {
-      "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"
+      "url": "https://u.expo.dev/12d9b987-9269-4eae-b5c1-70eb25ee2abf"
     }
   }
 }

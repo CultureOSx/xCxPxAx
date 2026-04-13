@@ -86,13 +86,14 @@ const ADMIN_TOOLS: AdminTool[] = [
   { id: 'users',      label: 'Users',             icon: 'people-outline',            route: '/admin/users',           color: CultureTokens.indigo },
   { id: 'profiles',   label: 'Profiles',          icon: 'id-card-outline',           route: '/admin/profiles',        color: CultureTokens.teal },
   { id: 'communities',label: 'Communities',       icon: 'people-circle-outline',     route: '/admin/communities',     color: CultureTokens.indigo },
+  { id: 'meet',       label: 'Meet (Beta)',       icon: 'heart-circle-outline',      route: '/admin/meet',            color: CultureTokens.coral },
   { id: 'perks',      label: 'Perks',             icon: 'gift-outline',              route: '/admin/perks',           color: CultureTokens.coral },
   { id: 'tickets',    label: 'Tickets',           icon: 'ticket-outline',            route: '/admin/tickets',         color: CultureTokens.purple },
   { id: 'audit',      label: 'Audit Logs',         icon: 'list-outline',              route: '/admin/audit-logs' },
   { id: 'notify',     label: 'Notifications',      icon: 'megaphone-outline',         route: '/admin/notifications',   color: CultureTokens.coral },
   { id: 'finance',    label: 'Finance',            icon: 'card-outline',              route: '/admin/finance',         color: CultureTokens.teal },
-  { id: 'compliance', label: 'Data Compliance',    icon: 'shield-checkmark-outline',  route: '/admin/data-compliance', color: '#10B981' },
-  { id: 'discover',   label: 'Discover Curation',  icon: 'sparkles-outline',          route: '/admin/discover',        color: '#8B5CF6' },
+  { id: 'compliance', label: 'Data Compliance',    icon: 'shield-checkmark-outline',  route: '/admin/data-compliance', color: CultureTokens.teal },
+  { id: 'discover',   label: 'Discover Curation',  icon: 'sparkles-outline',          route: '/admin/discover',        color: CultureTokens.purple },
   { id: 'handles',    label: 'Handles',            icon: 'at-outline',                route: '/admin/handles' },
   { id: 'platform',   label: 'Platform Settings',  icon: 'settings-outline',          route: '/admin/platform' },
   { id: 'updates',    label: 'Updates',            icon: 'newspaper-outline',         route: '/admin/updates' },
@@ -110,7 +111,7 @@ function StatTile({ stat }: { stat: StatCard }) {
       <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
       <Text style={[styles.statLabel, { color: colors.textSecondary }]} numberOfLines={1}>{stat.label}</Text>
       {stat.change && (
-        <Text style={[styles.statChange, { color: stat.change.startsWith('+') ? '#10B981' : colors.textTertiary }]}>
+        <Text style={[styles.statChange, { color: stat.change.startsWith('+') ? colors.success : colors.textTertiary }]}>
           {stat.change}
         </Text>
       )}
@@ -142,8 +143,8 @@ export default function AdminDashboard() {
     { id: 'users',   label: 'Total Users',      value: '—', icon: 'people-outline',      color: CultureTokens.indigo, route: '/admin/users' },
     { id: 'events',  label: 'Live Events',       value: '—', icon: 'calendar-outline',    color: CultureTokens.teal,   route: '/events' },
     { id: 'tickets', label: 'Tickets Issued',    value: '—', icon: 'ticket-outline',      color: CultureTokens.coral },
-    { id: 'revenue', label: 'Revenue (30d)',     value: '—', icon: 'card-outline',         color: '#10B981', route: '/admin/finance' },
-    { id: 'pending', label: 'Pending Review',    value: '—', icon: 'eye-outline',          color: '#F59E0B', route: '/admin/moderation' },
+    { id: 'revenue', label: 'Revenue (30d)',     value: '—', icon: 'card-outline',         color: colors.success,         route: '/admin/finance' },
+    { id: 'pending', label: 'Pending Review',    value: '—', icon: 'eye-outline',          color: CultureTokens.gold,     route: '/admin/moderation' },
     { id: 'reports', label: 'Open Reports',      value: '—', icon: 'flag-outline',         color: CultureTokens.error },
   ]);
 

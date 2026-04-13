@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import { useCouncil } from '../useCouncil';
 
 // ---------------------------------------------------------------------------
@@ -41,20 +41,27 @@ jest.mock('../../lib/api', () => ({
 }));
 
 jest.mock('@shared/location/australian-postcodes', () => ({
-  getPostcodesByPlace: jest.fn(() => [
-    { postcode: 2000, place_name: 'Sydney', state_code: 'NSW' },
-  ]),
+  getPostcodesByPlace: jest.fn((city: string) => {
+    if (city === 'Melbourne') {
+      return [{ postcode: 3000, place_name: 'Melbourne', state_code: 'VIC' }];
+    }
+    return [{ postcode: 2000, place_name: 'Sydney', state_code: 'NSW' }];
+  }),
 }));
 
 const { useQuery } = require('@tanstack/react-query');
+const { useQueryClient } = require('@tanstack/react-query');
 const { useOnboarding } = require('../../contexts/OnboardingContext');
 const { useAuth } = require('../../lib/auth');
+const { api } = require('../../lib/api');
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('useCouncil hook', () => {
+  const mockInvalidateQueries = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     (useQuery as jest.Mock).mockReturnValue({
@@ -62,6 +69,9 @@ describe('useCouncil hook', () => {
       isLoading: false,
       isError: false,
       refetch: mockRefetch,
+    });
+    (useQueryClient as jest.Mock).mockReturnValue({
+      invalidateQueries: mockInvalidateQueries,
     });
     (useOnboarding as jest.Mock).mockReturnValue({
       state: { city: 'Sydney', country: 'Australia' },
@@ -126,6 +136,74 @@ describe('useCouncil hook', () => {
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         queryKey: ['/api/council/my', 'Sydney', 2000, 'NSW'],
+      }),
+    );
+  });
+
+  it('should default country to Australia when onboarding country is empty', async () => {
+    (useOnboarding as jest.Mock).mockReturnValue({
+      state: { city: 'Sydney', country: '' },
+    });
+
+    renderHook(() => useCouncil());
+    const [{ queryFn }] = (useQuery as jest.Mock).mock.calls[0];
+    await queryFn();
+
+    expect(api.council.my).toHaveBeenCalledWith(
+      expect.objectContaining({
+        country: 'Australia',
+      }),
+    );
+  });
+
+  it('should invalidate council query when reload is called', async () => {
+    const { result } = renderHook(() => useCouncil());
+
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['/api/council/my'],
+    });
+  });
+
+  it('should recompute query key when city/country changes across renders', () => {
+    (useOnboarding as jest.Mock)
+      .mockReturnValueOnce({
+        state: { city: 'Sydney', country: 'Australia' },
+      })
+      .mockReturnValueOnce({
+        state: { city: 'Melbourne', country: 'Australia' },
+      });
+
+    const { rerender } = renderHook(() => useCouncil());
+    rerender({});
+
+    expect((useQuery as jest.Mock).mock.calls[0][0].queryKey).toEqual([
+      '/api/council/my',
+      'Sydney',
+      2000,
+      'NSW',
+    ]);
+    expect((useQuery as jest.Mock).mock.calls[1][0].queryKey).toEqual([
+      '/api/council/my',
+      'Melbourne',
+      3000,
+      'VIC',
+    ]);
+  });
+
+  it('should safely build params when city is missing', () => {
+    (useOnboarding as jest.Mock).mockReturnValue({
+      state: { city: '', country: 'Australia' },
+    });
+
+    expect(() => renderHook(() => useCouncil())).not.toThrow();
+
+    expect(useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['/api/council/my', undefined, undefined, undefined],
       }),
     );
   });

@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +26,7 @@ import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EventRow } from '@/components/calendar/EventRow';
 import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
@@ -41,6 +41,41 @@ type CalendarFilter = 'All' | 'Today' | 'This Week' | 'My Tickets' | 'Free' | 'C
 
 function toDateFromKey(key: string): Date {
   return new Date(`${key}T00:00:00`);
+}
+
+function eventRangeKeys(event: Pick<EventData, 'date' | 'endDate'>, maxDays = 45): string[] {
+  const startKey = toSafeDateKey(event.date);
+  if (!startKey) return [];
+  const endKey = toSafeDateKey(event.endDate ?? event.date) ?? startKey;
+
+  const start = toDateFromKey(startKey);
+  const end = toDateFromKey(endKey);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [startKey];
+
+  const first = start.getTime() <= end.getTime() ? start : end;
+  const last = start.getTime() <= end.getTime() ? end : start;
+  const out: string[] = [];
+  const cursor = new Date(first);
+  let count = 0;
+  while (cursor.getTime() <= last.getTime() && count < maxDays) {
+    out.push(formatDateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()));
+    cursor.setDate(cursor.getDate() + 1);
+    count += 1;
+  }
+  return out;
+}
+
+function eventOverlapsRange(
+  event: Pick<EventData, 'date' | 'endDate'>,
+  rangeStart: Date,
+  rangeEnd: Date,
+): boolean {
+  const startKey = toSafeDateKey(event.date);
+  if (!startKey) return false;
+  const endKey = toSafeDateKey(event.endDate ?? event.date) ?? startKey;
+  const eventStart = toDateFromKey(startKey);
+  const eventEnd = toDateFromKey(endKey);
+  return eventEnd.getTime() >= rangeStart.getTime() && eventStart.getTime() <= rangeEnd.getTime();
 }
 
 export default function CalendarScreen() {
@@ -97,20 +132,20 @@ export default function CalendarScreen() {
   const filteredEvents = useMemo(() => {
     const now = new Date();
     const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = toDateFromKey(todayKey);
     const weekEnd = new Date(now);
     weekEnd.setDate(now.getDate() + 7);
 
     return allEvents.filter((event) => {
       const key = toSafeDateKey(event.date);
       if (!key) return false;
-      const dateObj = toDateFromKey(key);
       switch (activeFilter) {
         case 'All':
           return true;
         case 'Today':
-          return key === todayKey;
+          return eventRangeKeys(event).includes(todayKey);
         case 'This Week':
-          return dateObj >= toDateFromKey(todayKey) && dateObj <= weekEnd;
+          return eventOverlapsRange(event, todayStart, weekEnd);
         case 'My Tickets':
           return isAuthenticated && ticketedEventIds.has(event.id);
         case 'Free':
@@ -124,22 +159,21 @@ export default function CalendarScreen() {
   }, [allEvents, activeFilter, isAuthenticated, ticketedEventIds]);
 
   const eventsInCurrentMonth = useMemo(() => {
+    const monthStart = new Date(currentYear, currentMonth, 1);
+    const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
     return filteredEvents.filter((event) => {
-      const key = toSafeDateKey(event.date);
-      if (!key) return false;
-      const d = toDateFromKey(key);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return eventOverlapsRange(event, monthStart, monthEnd);
     });
   }, [filteredEvents, currentMonth, currentYear]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventData[]>();
     for (const event of filteredEvents) {
-      const key = toSafeDateKey(event.date);
-      if (!key) continue;
-      const arr = map.get(key) ?? [];
-      arr.push(event);
-      map.set(key, arr);
+      for (const key of eventRangeKeys(event)) {
+        const arr = map.get(key) ?? [];
+        arr.push(event);
+        map.set(key, arr);
+      }
     }
     return map;
   }, [filteredEvents]);
@@ -155,9 +189,10 @@ export default function CalendarScreen() {
   const ticketDates = useMemo(() => {
     const set = new Set<string>();
     for (const event of allEvents) {
-      const key = toSafeDateKey(event.date);
-      if (!key) continue;
-      if (ticketedEventIds.has(event.id)) set.add(key);
+      if (!ticketedEventIds.has(event.id)) continue;
+      for (const key of eventRangeKeys(event)) {
+        set.add(key);
+      }
     }
     return set;
   }, [allEvents, ticketedEventIds]);
@@ -179,9 +214,9 @@ export default function CalendarScreen() {
     const now = new Date();
     return filteredEvents
       .filter((event) => {
-        const key = toSafeDateKey(event.date);
-        if (!key) return false;
-        return toDateFromKey(key).getTime() >= now.getTime();
+        const endKey = toSafeDateKey(event.endDate ?? event.date);
+        if (!endKey) return false;
+        return toDateFromKey(endKey).getTime() >= now.getTime();
       })
       .sort((a, b) => {
         const aKey = toSafeDateKey(a.date);
@@ -258,10 +293,44 @@ export default function CalendarScreen() {
   if (isLoading) {
     return (
       <ErrorBoundary>
-        <View style={[styles.loadingRoot, { backgroundColor: colors.background }]}>
-          <View style={[styles.loadingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>Building your events calendar…</Text>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+          <LinearGradient
+            colors={gradients.culturepassBrand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.ambientMesh}
+            pointerEvents="none"
+          />
+          <TabPrimaryHeader
+            title="Events"
+            hPad={hPad}
+            topInset={topInset}
+            showChromeHairline={false}
+          />
+          <View style={[styles.skeletonRoot, { paddingHorizontal: hPad }]}>
+            {/* Month header */}
+            <View style={styles.skeletonMonthRow}>
+              <Skeleton width={140} height={28} borderRadius={8} />
+              <View style={styles.skeletonMonthActions}>
+                <Skeleton width={32} height={32} borderRadius={10} />
+                <Skeleton width={64} height={32} borderRadius={10} />
+                <Skeleton width={32} height={32} borderRadius={10} />
+              </View>
+            </View>
+            {/* Day headers */}
+            <View style={styles.skeletonDayRow}>
+              {['S','M','T','W','T','F','S'].map((_, i) => (
+                <Skeleton key={i} width="13%" height={14} borderRadius={4} />
+              ))}
+            </View>
+            {/* Calendar grid — 5 rows × 7 cells */}
+            {[0,1,2,3,4].map((row) => (
+              <View key={row} style={styles.skeletonWeekRow}>
+                {[0,1,2,3,4,5,6].map((col) => (
+                  <Skeleton key={col} width="13%" height={40} borderRadius={10} />
+                ))}
+              </View>
+            ))}
           </View>
         </View>
       </ErrorBoundary>
@@ -404,18 +473,6 @@ export default function CalendarScreen() {
                       accessibilityLabel="Jump to today"
                     >
                       <Text style={[styles.todayBtnText, { color: colors.text }]}>Today</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => router.push('/settings/calendar-sync')}
-                      style={[styles.monthControlBtn, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Open calendar sync settings"
-                    >
-                      <Ionicons
-                        name={calPrefs.deviceConnected ? 'calendar' : 'calendar-outline'}
-                        size={14}
-                        color={calPrefs.deviceConnected ? CultureTokens.indigo : colors.text}
-                      />
                     </Pressable>
                     <Pressable
                       onPress={nextMonth}
@@ -607,9 +664,21 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   ambientMesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 
+<<<<<<< HEAD
   loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
   loadingText: { ...TextStyles.cardTitle },
+||||||| 7dc71c1
+  loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
+  loadingText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+=======
+  skeletonRoot: { paddingTop: 16, gap: 10 },
+  skeletonMonthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  skeletonMonthActions: { flexDirection: 'row', gap: 8 },
+  skeletonDayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  skeletonWeekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
+>>>>>>> cursor/onboarding-brand-lint-fixes
 
   topHeaderSyncBtn: {
     width: 42,

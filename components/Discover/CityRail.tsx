@@ -92,7 +92,15 @@ function CityCardSkeleton({ width }: { width: number }) {
 // CityRail — 2-column wrapped grid on native, horizontal scroll on web
 // ---------------------------------------------------------------------------
 
-function CityRailComponent() {
+interface CityRailProps {
+  title?: string;
+  subtitle?: string;
+}
+
+function CityRailComponent({
+  title = 'Explore Cities',
+  subtitle = 'Discover culture nationwide',
+}: CityRailProps) {
   const { hPad, vPad } = useLayout();
   const { headerPadStyle, scrollPadStyle } = useDiscoverRailInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -117,7 +125,7 @@ function CityRailComponent() {
     return (
       <View style={[s.container, { marginBottom: vPad }]}>
         <View style={headerPadStyle}>
-          <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
+          <SectionHeader title={title} subtitle={subtitle} onSeeAll={() => {}} />
         </View>
 
         {isError && !isLoading && cities.length === 0 ? (
@@ -150,7 +158,7 @@ function CityRailComponent() {
   return (
     <View style={[s.container, { marginBottom: vPad }]}>
       <View style={headerPadStyle}>
-        <SectionHeader title="Explore Cities" subtitle="Discover culture nationwide" onSeeAll={() => {}} />
+        <SectionHeader title={title} subtitle={subtitle} onSeeAll={() => {}} />
       </View>
 
       {isError && !isLoading && cities.length === 0 ? (

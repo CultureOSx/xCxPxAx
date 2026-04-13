@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { restaurantsService } from '../services/restaurants';
 import { wrap, captureRouteError } from './utils';
+import { RestaurantInputSchema } from './validation';
+import type { RestaurantInput } from '../../../shared/schema';
 
 export const restaurantsRouter = Router();
 
@@ -37,7 +39,11 @@ restaurantsRouter.get('/restaurants/:id', wrap(async (req, res) => {
 // Private: Create restaurant (organizer or admin only)
 restaurantsRouter.post('/restaurants', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const item = await restaurantsService.create(req.body);
+    const parse = RestaurantInputSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
+    }
+    const item = await restaurantsService.create(parse.data as RestaurantInput);
     res.status(201).json(item);
   } catch (err) {
     captureRouteError(err, 'POST /restaurants');
@@ -48,7 +54,11 @@ restaurantsRouter.post('/restaurants', requireAuth, requireRole('organizer', 'ad
 // Private: Update restaurant (organizer or admin only)
 restaurantsRouter.put('/restaurants/:id', requireAuth, requireRole('organizer', 'admin', 'platformAdmin'), wrap(async (req, res) => {
   try {
-    const item = await restaurantsService.update(String(req.params.id), req.body);
+    const parse = RestaurantInputSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parse.error.errors });
+    }
+    const item = await restaurantsService.update(String(req.params.id), parse.data as Partial<RestaurantInput>);
     if (!item) return res.status(404).json({ error: 'Restaurant not found' });
     res.json(item);
   } catch (err) {

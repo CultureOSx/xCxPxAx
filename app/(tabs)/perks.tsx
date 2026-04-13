@@ -21,7 +21,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+<<<<<<< HEAD
 import { CultureTokens, TextStyles } from '@/constants/theme';
+||||||| 7dc71c1
+import { CultureTokens } from '@/constants/theme';
+=======
+import { CultureTokens } from '@/constants/theme';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+>>>>>>> cursor/onboarding-brand-lint-fixes
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -219,15 +226,15 @@ function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () =
 
         <View style={qs.progressSection}>
           <View style={[qs.progressTrack, { backgroundColor: colors.borderLight }]}>
-            <View
-              style={[
-                qs.progressFill,
-                { width: `${progressPct}%` as `${number}%`, backgroundColor: quest.color },
-              ]}
+            <LinearGradient
+              colors={[CultureTokens.indigo, CultureTokens.teal]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[qs.progressFill, { width: `${progressPct}%` as `${number}%` }]}
             />
           </View>
           <Text style={[qs.progressLabel, { color: colors.textTertiary }]}>
-            {quest.progress}/{quest.total} completed
+            {quest.progress} of {quest.total}
           </Text>
         </View>
 
@@ -290,9 +297,19 @@ const qs = StyleSheet.create({
   questTitle: { ...TextStyles.headline, lineHeight: 21 },
   questTask: { ...TextStyles.caption, lineHeight: 17 },
   progressSection: { gap: 4 },
+<<<<<<< HEAD
   progressTrack: { height: 6, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
   progressLabel: { ...TextStyles.tabLabel },
+||||||| 7dc71c1
+  progressTrack: { height: 6, borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 4 },
+  progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+=======
+  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2 },
+  progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
+>>>>>>> cursor/onboarding-brand-lint-fixes
   checkInBtn: { height: 36, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   checkInText: { ...TextStyles.captionSemibold, color: '#fff' },
   completedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -332,7 +349,7 @@ function ExplorerBadge({
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-        <View style={[eb.levelCircle, { backgroundColor: colors.surfaceElevated }]}>
+        <View style={[eb.ringContainer, { backgroundColor: colors.surfaceElevated, borderRadius: 32 }]}>
             <Ionicons name="person-circle-outline" size={28} color={CultureTokens.indigo} />
         </View>
         <View style={{ flex: 1 }}>
@@ -385,11 +402,24 @@ function ExplorerBadge({
     );
   }
 
-  const tierLevel = rewards.tier === 'silver' ? 1 : rewards.tier === 'gold' ? 2 : 3;
   const expProgress = Math.min(1, Math.max(0, (rewards.progressPercent ?? 0) / 100));
   const subtitle = rewards.nextTierLabel
     ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
     : 'Top rewards tier unlocked';
+
+  const tierColors: Record<string, string> = {
+    silver: CultureTokens.indigo,
+    gold: CultureTokens.gold,
+    diamond: CultureTokens.teal,
+  };
+  const tierColor = tierColors[rewards.tier] ?? CultureTokens.indigo;
+
+  // SVG circular progress ring
+  const RING_SIZE = 64;
+  const STROKE = 5;
+  const RADIUS = (RING_SIZE - STROKE) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - expProgress);
 
   return (
     <Animated.View
@@ -397,42 +427,80 @@ function ExplorerBadge({
       style={[eb.explorerCard, { backgroundColor: colors.surface }]}
     >
       <LinearGradient
-        colors={[CultureTokens.gold + '22', 'transparent']}
+        colors={[CultureTokens.indigo + '14', 'transparent']}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      <LinearGradient colors={[CultureTokens.gold, '#F4A100']} style={eb.levelCircle}>
-        <Text style={eb.levelText}>{tierLevel}</Text>
-        <Text style={eb.levelLabel}>LVL</Text>
-      </LinearGradient>
-      <View style={{ flex: 1 }}>
-        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer · {rewards.tierLabel}</Text>
-        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
-        <View style={[eb.expBarTrack, { backgroundColor: colors.borderLight }]}>
-          <LinearGradient
-            colors={[CultureTokens.gold, '#F4A100']}
-            style={[eb.expBarFill, { width: `${expProgress * 100}%` as `${number}%` }]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+      {/* Progress ring */}
+      <View style={eb.ringContainer}>
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          <Defs>
+            <SvgLinearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor={CultureTokens.indigo} />
+              <Stop offset="1" stopColor={CultureTokens.teal} />
+            </SvgLinearGradient>
+          </Defs>
+          {/* Track */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke={colors.borderLight}
+            strokeWidth={STROKE}
+            fill="none"
           />
+          {/* Fill */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke="url(#ring-grad)"
+            strokeWidth={STROKE}
+            fill="none"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            rotation="-90"
+            origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+          />
+        </Svg>
+        <View style={eb.ringCenter}>
+          <Text style={[eb.ringPct, { color: colors.text }]}>
+            {Math.round(expProgress * 100)}
+          </Text>
+          <Text style={[eb.ringPctLabel, { color: colors.textTertiary }]}>%</Text>
         </View>
+      </View>
+
+      <View style={{ flex: 1, gap: 4 }}>
+        <View style={eb.tierRow}>
+          <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+          <View style={[eb.tierBadge, { backgroundColor: tierColor + '18', borderColor: tierColor + '40' }]}>
+            <Text style={[eb.tierBadgeText, { color: tierColor }]}>{rewards.tierLabel}</Text>
+          </View>
+        </View>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
+        <Text style={[eb.pointsText, { color: colors.textTertiary }]}>
+          {rewards.points.toLocaleString()} pts total
+        </Text>
       </View>
     </Animated.View>
   );
 }
 
 const eb = StyleSheet.create({
-  explorerCard: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 16, 
-    padding: 18, 
-    borderRadius: 24, 
-    marginBottom: 24, 
+  explorerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 18,
+    borderRadius: 24,
+    marginBottom: 24,
     overflow: 'hidden',
     ...MAIN_TAB_CARD_SHADOW,
   },
+<<<<<<< HEAD
   levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   levelText: { color: '#fff', ...TextStyles.title3, lineHeight: 22 },
   levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
@@ -440,6 +508,60 @@ const eb = StyleSheet.create({
   explorerSub: { ...TextStyles.caption, marginBottom: 10, opacity: 0.8 },
   expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   expBarFill: { height: '100%', borderRadius: 3 },
+||||||| 7dc71c1
+  levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  levelText: { color: '#fff', fontSize: 18, fontFamily: 'Poppins_800ExtraBold', lineHeight: 22 },
+  levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
+  explorerTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 2 },
+  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 10, opacity: 0.8 },
+  expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  expBarFill: { height: '100%', borderRadius: 3 },
+=======
+  ringContainer: {
+    width: 64,
+    height: 64,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  ringCenter: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+  },
+  ringPct: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 20,
+  },
+  ringPctLabel: {
+    fontSize: 9,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tierBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  tierBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  explorerTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.8 },
+  pointsText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
+>>>>>>> cursor/onboarding-brand-lint-fixes
   signInBtn: {
     marginTop: 10,
     borderRadius: 12,

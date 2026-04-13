@@ -29,7 +29,6 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
-import { BlurView } from 'expo-blur';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -48,10 +47,10 @@ const AVATAR = 104;
 
 type EditTab = 'personal' | 'culture' | 'social';
 
-const TABS: { id: EditTab; label: string }[] = [
-  { id: 'personal', label: 'Basics' },
-  { id: 'culture', label: 'Culture' },
-  { id: 'social', label: 'Social & privacy' },
+const TABS: { id: EditTab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'personal', label: 'Basics', icon: 'person-circle-outline' },
+  { id: 'culture', label: 'Culture', icon: 'earth-outline' },
+  { id: 'social', label: 'Social & privacy', icon: 'shield-checkmark-outline' },
 ];
 
 function sectionCardShadow(isDark: boolean): ViewStyle {
@@ -85,6 +84,7 @@ interface UserData {
   country: string | null;
   location: string | null;
   avatarUrl?: string | null;
+  coverUrl?: string | null;
   website: string | null;
   socialLinks: {
     instagram?: string;
@@ -191,28 +191,20 @@ function SectionCard({
     </>
   );
 
-  const iosBlur = isDark && Platform.OS === 'ios';
-
   return (
     <Animated.View entering={FadeInDown.delay(70 + index * 35).duration(380)} style={sc.cardRoot}>
-      {iosBlur ? (
-        <BlurView intensity={28} tint="dark" style={[borderStyle, { backgroundColor: 'rgba(18,24,38,0.55)' }]}>
-          {inner}
-        </BlurView>
-      ) : (
-        <View
-          style={[
-            borderStyle,
-            {
-              backgroundColor: isDark ? colors.card : colors.surface,
-              ...(Platform.OS === 'web' ? shadows.small : {}),
-              ...sectionCardShadow(isDark),
-            },
-          ]}
-        >
-          {inner}
-        </View>
-      )}
+      <View
+        style={[
+          borderStyle,
+          {
+            backgroundColor: isDark ? colors.card : colors.surface,
+            ...(Platform.OS === 'web' ? shadows.small : {}),
+            ...sectionCardShadow(isDark),
+          },
+        ]}
+      >
+        {inner}
+      </View>
     </Animated.View>
   );
 }
@@ -221,15 +213,94 @@ function FieldRow({
   label,
   colors,
   children,
+  error,
+  required,
 }: {
   label: string;
   colors: ColorTheme;
   children: React.ReactNode;
+  error?: string;
+  required?: boolean;
 }) {
   return (
     <View style={fr.wrap}>
-      <Text style={[fr.label, { color: colors.textTertiary }]}>{label}</Text>
+      <View style={fr.labelRow}>
+        <Text style={[fr.label, { color: colors.textTertiary }]}>{label}</Text>
+        {required && <Text style={[fr.requiredDot, { color: colors.error }]}>*</Text>}
+      </View>
       {children}
+      {error ? (
+        <View style={fr.errorRow}>
+          <Ionicons name="alert-circle" size={12} color={colors.error} />
+          <Text style={[fr.error, { color: colors.error }]}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function TabContextCard({
+  activeTab,
+  colors,
+  completionPct,
+  socialLinksCount,
+  isPublicProfile,
+}: {
+  activeTab: EditTab;
+  colors: ColorTheme;
+  completionPct: number;
+  socialLinksCount: number;
+  isPublicProfile: boolean;
+}) {
+  const copyByTab: Record<EditTab, { title: string; subtitle: string }> = {
+    personal: {
+      title: 'Make your first impression count',
+      subtitle: 'Strong basics help people trust your profile and discover your story faster.',
+    },
+    culture: {
+      title: 'Shape your cultural relevance',
+      subtitle: 'Languages, communities, and interests drive better recommendations and matches.',
+    },
+    social: {
+      title: 'Control visibility with confidence',
+      subtitle: 'Choose exactly what is public, then connect socials only when you are ready.',
+    },
+  };
+  const completionTone =
+    completionPct >= 80 ? CultureTokens.teal : completionPct >= 50 ? CultureTokens.gold : CultureTokens.coral;
+
+  return (
+    <View style={[meta.contextCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+      <View style={meta.contextTop}>
+        <View style={{ flex: 1 }}>
+          <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_700Bold' }]}>
+            {copyByTab[activeTab].title}
+          </Text>
+          <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 4, lineHeight: 18 }]}>
+            {copyByTab[activeTab].subtitle}
+          </Text>
+        </View>
+        <View style={[meta.visibilityPill, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}>
+          <Ionicons name={isPublicProfile ? 'globe-outline' : 'lock-closed-outline'} size={13} color={colors.textSecondary} />
+          <Text style={[meta.visibilityText, { color: colors.textSecondary }]}>
+            {isPublicProfile ? 'Public' : 'Private'}
+          </Text>
+        </View>
+      </View>
+
+      <View style={meta.statsRow}>
+        <View style={[meta.statChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+          <Text style={[meta.statLabel, { color: colors.textTertiary }]}>Profile strength</Text>
+          <Text style={[meta.statValue, { color: completionTone }]}>{completionPct}%</Text>
+        </View>
+        <View style={[meta.statChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+          <Text style={[meta.statLabel, { color: colors.textTertiary }]}>Social links</Text>
+          <Text style={[meta.statValue, { color: colors.text }]}>{socialLinksCount}</Text>
+        </View>
+      </View>
+      <View style={[meta.progressTrack, { backgroundColor: colors.borderLight }]}>
+        <View style={[meta.progressFill, { backgroundColor: completionTone, width: `${Math.max(8, completionPct)}%` }]} />
+      </View>
     </View>
   );
 }
@@ -297,15 +368,27 @@ function IdentityPills({
 }
 
 const sc = StyleSheet.create({
-  cardRoot: { marginBottom: 14 },
-  cardHeader: { paddingHorizontal: 18, paddingVertical: 14 },
+  cardRoot: { marginBottom: 0 },
+  cardHeader: { paddingHorizontal: 20, paddingVertical: 16 },
   gemAccent: { width: 3, height: 36, borderRadius: 2, marginTop: 2 },
-  cardBody: { paddingHorizontal: 18, paddingVertical: 16, gap: 14 },
+  cardBody: { paddingHorizontal: 20, paddingVertical: 18, gap: 18 },
 });
 
 const fr = StyleSheet.create({
+<<<<<<< HEAD
   wrap: { gap: 8 },
   label: { ...TextStyles.badge, letterSpacing: 0.4 },
+||||||| 7dc71c1
+  wrap: { gap: 8 },
+  label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
+=======
+  wrap: { gap: 6 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.4 },
+  requiredDot: { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 15 },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  error: { fontSize: 11, fontFamily: 'Poppins_500Medium', flex: 1 },
+>>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 const id = StyleSheet.create({
@@ -334,6 +417,67 @@ const id = StyleSheet.create({
     ...TextStyles.captionSemibold,
     color: 'rgba(255,255,255,0.95)',
     maxWidth: 200,
+  },
+});
+
+const meta = StyleSheet.create({
+  contextCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 8,
+    marginBottom: 12,
+    gap: 10,
+  },
+  contextTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  visibilityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  visibilityText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
   },
 });
 
@@ -395,6 +539,7 @@ export default function EditProfileScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { userId, user: authUser, isRestoring } = useAuth();
   const [copyToast, setCopyToast] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
 
   useEffect(() => {
     if (!copyToast) return;
@@ -445,6 +590,7 @@ export default function EditProfileScreen() {
   const [selectedCommunities, setSelectedCommunities] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [coverUri, setCoverUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -478,6 +624,7 @@ export default function EditProfileScreen() {
       setSelectedCommunities(user.communities ?? []);
       setSelectedInterests(user.interests ?? []);
       setAvatarUri(user.avatarUrl || null);
+      setCoverUri(user.coverUrl || null);
     }
   }, [user]);
 
@@ -530,7 +677,7 @@ export default function EditProfileScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
-  const { uploadImage, deleteImage, uploading } = useImageUpload();
+  const { uploadImage, uploadFromUri, deleteImage, uploading, progress } = useImageUpload();
   const isBusy = updateMutation.isPending || uploading;
 
   const handleChoosePhoto = async () => {
@@ -561,28 +708,161 @@ export default function EditProfileScreen() {
     }
   };
 
+  const handleChooseCoverPhoto = async () => {
+    if (Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission needed', 'Please allow photo access to upload a cover image.');
+        return;
+      }
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+      aspect: [3, 1],
+    });
+    if (!result.canceled && result.assets[0]?.uri && userId) {
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      try {
+        const { downloadURL } = await uploadImage(result, 'users', userId, 'coverUrl');
+        setCoverUri(downloadURL);
+      } catch (err) {
+        Alert.alert('Upload Failed', String(err));
+      }
+    }
+  };
+
   const handleDrop = (event: { preventDefault?: () => void; dataTransfer?: { files?: FileList }; nativeEvent?: { dataTransfer?: { files?: FileList } } }) => {
     if (Platform.OS !== 'web') return;
     event.preventDefault?.();
     const dt = event?.dataTransfer || event?.nativeEvent?.dataTransfer;
     const file = dt?.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarUri(String(reader.result));
-    };
-    reader.readAsDataURL(file);
+    if (!file || !userId) return;
+    const objectUrl = URL.createObjectURL(file);
+    void (async () => {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      try {
+        if (user?.avatarUrl?.startsWith('http')) {
+          await deleteImage('users', userId, user.avatarUrl, 'avatarUrl');
+        }
+        const { downloadURL } = await uploadFromUri(objectUrl, 'users', userId, 'avatarUrl');
+        setAvatarUri(downloadURL);
+      } catch (err) {
+        Alert.alert('Upload Failed', String(err));
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    })();
   };
 
+  const handleRemovePhoto = useCallback(async () => {
+    if (!userId || !avatarUri) return;
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      if (avatarUri.startsWith('http')) {
+        await deleteImage('users', userId, avatarUri, 'avatarUrl');
+      }
+      setAvatarUri(null);
+    } catch (err) {
+      Alert.alert('Remove failed', String(err));
+    }
+  }, [avatarUri, deleteImage, userId]);
+
   const handleSave = async () => {
-    if (!form.displayName.trim()) {
-      Alert.alert('Required', 'Please enter your display name.');
+    // ── Validation ────────────────────────────────────────────────────────────
+    const errors: Partial<Record<string, string>> = {};
+    let firstErrorTab: EditTab | null = null;
+    const markTab = (t: EditTab) => { if (!firstErrorTab) firstErrorTab = t; };
+
+    // --- Personal ---
+    const name = form.displayName.trim();
+    if (!name) {
+      errors.displayName = 'Display name is required';
+      markTab('personal');
+    } else if (name.length < 2) {
+      errors.displayName = 'Must be at least 2 characters';
+      markTab('personal');
+    } else if (name.length > 80) {
+      errors.displayName = 'Must be 80 characters or less';
+      markTab('personal');
+    }
+
+    const email = form.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Enter a valid email address';
+      markTab('personal');
+    }
+
+    const phone = form.phone.trim();
+    if (phone && !/^[+\d\s\-().]{6,20}$/.test(phone)) {
+      errors.phone = 'Enter a valid phone number';
+      markTab('personal');
+    }
+
+    if (form.bio.length > 280) {
+      errors.bio = 'Bio must be 280 characters or less';
+      markTab('personal');
+    }
+
+    const state = form.state.trim().toUpperCase();
+    if (state && !/^[A-Z]{2,4}$/.test(state)) {
+      errors.state = 'Enter a valid state code (e.g. NSW, VIC)';
+      markTab('personal');
+    }
+
+    const postcode = form.postcode.trim();
+    if (postcode && !/^\d{4}$/.test(postcode)) {
+      errors.postcode = 'Enter a valid 4-digit postcode';
+      markTab('personal');
+    }
+
+    const country = form.country.trim();
+    if (!country) {
+      errors.country = 'Country is required';
+      markTab('personal');
+    }
+
+    // --- Culture ---
+    if (form.ethnicityText.trim().length > 200) {
+      errors.ethnicityText = 'Must be 200 characters or less';
+      markTab('culture');
+    }
+
+    // --- Social ---
+    const website = form.website.trim();
+    if (website && !/^https?:\/\/.+/.test(website)) {
+      errors.website = 'Must start with https://';
+      markTab('social');
+    }
+
+    const urlOnlyFields: Array<{ key: keyof typeof form; label: string }> = [
+      { key: 'youtube', label: 'YouTube' },
+      { key: 'linkedin', label: 'LinkedIn' },
+      { key: 'facebook', label: 'Facebook' },
+    ];
+    for (const { key, label } of urlOnlyFields) {
+      const val = (form[key] as string).trim();
+      if (val && !val.startsWith('@') && !/^https?:\/\/.+/.test(val)) {
+        errors[key] = `${label} must be https:// URL or @username`;
+        markTab('social');
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      if (firstErrorTab && firstErrorTab !== activeTab) setActiveTab(firstErrorTab);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    setFieldErrors({});
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const city = form.city.trim();
-    const country = form.country.trim() || 'Australia';
+    const saveCountry = form.country.trim() || authUser?.country || 'Australia';
     const formatLink = (url: string, domain: string) => {
       if (!url.trim()) return undefined;
       const clean = url.trim().replace(/^@/, '');
@@ -597,9 +877,10 @@ export default function EditProfileScreen() {
       city: city || null,
       state: form.state.trim().toUpperCase() || null,
       postcode: form.postcode.trim() ? Number(form.postcode.trim()) : null,
-      country,
-      location: city ? `${city}, ${country}` : null,
+      country: saveCountry,
+      location: city ? `${city}, ${saveCountry}` : null,
       avatarUrl: avatarUri,
+      coverUrl: coverUri,
       website: form.website.trim() || null,
       socialLinks: {
         instagram: formatLink(form.instagram, 'instagram.com'),
@@ -626,7 +907,10 @@ export default function EditProfileScreen() {
     });
   };
 
-  const field = (f: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [f]: v }));
+  const field = (f: keyof typeof form) => (v: string) => {
+    setForm((p) => ({ ...p, [f]: v }));
+    if (fieldErrors[f]) setFieldErrors((prev) => ({ ...prev, [f]: undefined }));
+  };
 
   const initials = (form.displayName || user?.username || 'U')
     .split(' ')
@@ -634,6 +918,37 @@ export default function EditProfileScreen() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+  const socialLinksCount = useMemo(() => {
+    const entries = [form.website, form.instagram, form.twitter, form.tiktok, form.youtube, form.linkedin, form.facebook];
+    return entries.filter((value) => value.trim().length > 0).length;
+  }, [form.website, form.instagram, form.twitter, form.tiktok, form.youtube, form.linkedin, form.facebook]);
+  const completionPct = useMemo(() => {
+    const checks = [
+      form.displayName.trim().length > 1,
+      form.email.trim().length > 3,
+      form.bio.trim().length >= 20,
+      form.city.trim().length > 0,
+      form.country.trim().length > 0,
+      form.languages.trim().length > 0,
+      selectedCommunities.length > 0,
+      selectedInterests.length > 0,
+      socialLinksCount > 0,
+      Boolean(avatarUri),
+    ];
+    const completed = checks.filter(Boolean).length;
+    return Math.round((completed / checks.length) * 100);
+  }, [
+    avatarUri,
+    form.bio,
+    form.city,
+    form.country,
+    form.displayName,
+    form.email,
+    form.languages,
+    selectedCommunities.length,
+    selectedInterests.length,
+    socialLinksCount,
+  ]);
 
   const inputStyle = [
     s.input,
@@ -741,70 +1056,130 @@ export default function EditProfileScreen() {
           ) : null}
 
           <Animated.View entering={FadeInUp.duration(480)} style={s.heroWrap}>
-            <LinearGradient
-              colors={gradients.midnight as unknown as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.25)']}
-              style={StyleSheet.absoluteFillObject}
-              start={{ x: 0.5, y: 0.6 }}
-              end={{ x: 0.5, y: 1 }}
-            />
-            <View style={[s.heroOrb, { backgroundColor: `${CultureTokens.teal}22` }]} />
-            <View style={[s.heroOrbSecondary, { backgroundColor: `${CultureTokens.gold}18` }]} />
-
-            <Pressable
-              style={s.avatarBtn}
-              onPress={handleChoosePhoto}
-              accessibilityRole="button"
-              accessibilityLabel="Change profile photo"
-              {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
-                : {})}
-              {...(Platform.OS === 'web'
-                ? {
-                    onDrop: handleDrop,
-                    onDragOver: (e: { preventDefault: () => void }) => e.preventDefault(),
-                  }
-                : {})}
-            >
+            {/* ── Cover image ───────────────────────────── */}
+            <View style={s.coverSection}>
+              {coverUri ? (
+                <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel="Cover photo" />
+              ) : (
+                <>
+                  <LinearGradient
+                    colors={gradients.midnight as unknown as [string, string]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[s.heroOrb, { backgroundColor: `${CultureTokens.teal}30` }]} />
+                  <View style={[s.heroOrbSecondary, { backgroundColor: `${CultureTokens.gold}22` }]} />
+                </>
+              )}
+              {/* Scrim for avatar overlap */}
               <LinearGradient
-                colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={s.avatarRingOuter}
+                colors={['transparent', 'rgba(0,0,0,0.35)']}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0.5, y: 0.4 }}
+                end={{ x: 0.5, y: 1 }}
+              />
+              {/* Cover edit button */}
+              <Pressable
+                style={s.coverEditBtn}
+                onPress={handleChooseCoverPhoto}
+                accessibilityRole="button"
+                accessibilityLabel={coverUri ? 'Change cover photo' : 'Add cover photo'}
               >
-                <View style={[s.avatarRing, { borderColor: GEM_RING, backgroundColor: 'rgba(0,0,0,0.2)' }]}>
-                  {avatarUri ? (
-                    <Image
-                      source={{ uri: avatarUri }}
-                      style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2 }}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <LinearGradient colors={['#1A3D70', '#0E2040']} style={StyleSheet.absoluteFill}>
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={[TextStyles.title, { color: colors.textOnBrandGradient }]}>{initials}</Text>
-                      </View>
-                    </LinearGradient>
-                  )}
+                {uploading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="camera-outline" size={16} color="#fff" />
+                )}
+              </Pressable>
+              {coverUri && !uploading && (
+                <Pressable
+                  style={s.coverRemoveBtn}
+                  onPress={() => setCoverUri(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove cover photo"
+                >
+                  <Ionicons name="close" size={14} color="#fff" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* ── Avatar ───────────────────────────────── */}
+            <View style={s.avatarArea}>
+              <Pressable
+                style={s.avatarBtn}
+                onPress={handleChoosePhoto}
+                accessibilityRole="button"
+                accessibilityLabel="Change profile photo"
+                {...(Platform.OS === 'android'
+                  ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
+                  : {})}
+                {...(Platform.OS === 'web'
+                  ? {
+                      onDrop: handleDrop,
+                      onDragOver: (e: { preventDefault: () => void }) => e.preventDefault(),
+                    }
+                  : {})}
+              >
+                <LinearGradient
+                  colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={s.avatarRingOuter}
+                >
+                  <View style={[s.avatarRing, { borderColor: GEM_RING, backgroundColor: 'rgba(0,0,0,0.2)' }]}>
+                    {avatarUri ? (
+                      <Image
+                        source={{ uri: avatarUri }}
+                        style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <LinearGradient colors={['#1A3D70', '#0E2040']} style={StyleSheet.absoluteFill}>
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={[TextStyles.title, { color: colors.textOnBrandGradient }]}>{initials}</Text>
+                        </View>
+                      </LinearGradient>
+                    )}
+                  </View>
+                </LinearGradient>
+
+                <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
+                  {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
                 </View>
-              </LinearGradient>
+              </Pressable>
+            </View>
 
-              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
-                {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
-              </View>
-            </Pressable>
-
-            <Text style={[TextStyles.title2, { color: colors.textOnBrandGradient, textAlign: 'center' }]}>
+            {/* ── Name + caption ───────────────────────── */}
+            <Text style={[TextStyles.title2, { color: colors.text, textAlign: 'center', marginTop: 12 }]}>
               {form.displayName || user?.username || 'Your name'}
             </Text>
-            <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.65)', textAlign: 'center', marginTop: 4 }]}>
-              {Platform.OS === 'web' ? 'Tap or drop a photo to update' : 'Tap to update your photo'}
+            <Text style={[TextStyles.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
+              {Platform.OS === 'web' ? 'Tap photo or cover to update' : 'Tap photo or cover to update'}
             </Text>
+
+            {uploading ? (
+              <View style={s.uploadMetaWrap}>
+                <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                  Uploading {Math.max(1, Math.min(100, Math.round(progress)))}%
+                </Text>
+                <View style={s.uploadTrack}>
+                  <View style={[s.uploadFill, { width: `${Math.max(4, Math.min(100, progress))}%` }]} />
+                </View>
+              </View>
+            ) : null}
+
+            {avatarUri ? (
+              <Pressable
+                onPress={() => void handleRemovePhoto()}
+                style={[s.removePhotoBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                accessibilityRole="button"
+                accessibilityLabel="Remove profile photo"
+              >
+                <Ionicons name="trash-outline" size={14} color={colors.error} />
+                <Text style={[s.removePhotoText, { color: colors.error }]}>Remove photo</Text>
+              </Pressable>
+            ) : null}
 
             <IdentityPills user={user} onCopied={onIdentityCopied} />
           </Animated.View>
@@ -834,6 +1209,12 @@ export default function EditProfileScreen() {
                       ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
                       : {})}
                   >
+                    <Ionicons
+                      name={tab.icon}
+                      size={14}
+                      color={active ? PRIMARY : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text
                       style={[
                         s.tabLabel,
@@ -877,6 +1258,12 @@ export default function EditProfileScreen() {
                       ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
                       : {})}
                   >
+                    <Ionicons
+                      name={tab.icon}
+                      size={14}
+                      color={active ? PRIMARY : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text
                       style={[
                         s.tabLabel,
@@ -893,6 +1280,13 @@ export default function EditProfileScreen() {
           )}
 
           <View style={[s.body, { paddingHorizontal: hPad }, isDesktop && s.bodyDesktop]}>
+            <TabContextCard
+              activeTab={activeTab}
+              colors={colors}
+              completionPct={completionPct}
+              socialLinksCount={socialLinksCount}
+              isPublicProfile={form.isPublicProfile}
+            />
             {activeTab === 'personal' ? (
               <>
                 <SectionCard
@@ -902,9 +1296,9 @@ export default function EditProfileScreen() {
                   isDark={isDark}
                   index={0}
                 >
-                  <FieldRow label="Display name *" colors={colors}>
+                  <FieldRow label="Display name" colors={colors} required error={fieldErrors.displayName}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.displayName && { borderColor: colors.error }]}
                       value={form.displayName}
                       onChangeText={field('displayName')}
                       placeholder="Your name"
@@ -914,9 +1308,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Email" colors={colors}>
+                  <FieldRow label="Email" colors={colors} error={fieldErrors.email}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.email && { borderColor: colors.error }]}
                       value={form.email}
                       onChangeText={field('email')}
                       placeholder="your@email.com"
@@ -928,9 +1322,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Phone" colors={colors}>
+                  <FieldRow label="Phone" colors={colors} error={fieldErrors.phone}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.phone && { borderColor: colors.error }]}
                       value={form.phone}
                       onChangeText={field('phone')}
                       placeholder="+61 400 000 000"
@@ -951,9 +1345,9 @@ export default function EditProfileScreen() {
                     />
                   </FieldRow>
 
-                  <FieldRow label="Bio" colors={colors}>
+                  <FieldRow label="Bio" colors={colors} error={fieldErrors.bio}>
                     <TextInput
-                      style={[inputStyle, s.bioInput]}
+                      style={[inputStyle, s.bioInput, fieldErrors.bio && { borderColor: colors.error }]}
                       value={form.bio}
                       onChangeText={field('bio')}
                       placeholder="A short line about what you love in culture and community…"
@@ -964,7 +1358,7 @@ export default function EditProfileScreen() {
                       accessibilityLabel="Bio"
                       {...bioInputExtras}
                     />
-                    <Text style={[s.charCount, { color: colors.textTertiary }]}>
+                    <Text style={[s.charCount, { color: form.bio.length > 260 ? colors.error : colors.textTertiary }]}>
                       {form.bio.length}/280
                     </Text>
                   </FieldRow>
@@ -986,14 +1380,15 @@ export default function EditProfileScreen() {
                       </FieldRow>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="State" colors={colors}>
+                      <FieldRow label="State" colors={colors} error={fieldErrors.state}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.state && { borderColor: colors.error }]}
                           value={form.state}
                           onChangeText={field('state')}
                           placeholder="NSW"
                           placeholderTextColor={colors.textTertiary}
                           autoCapitalize="characters"
+                          maxLength={4}
                           accessibilityLabel="State"
                           {...inputExtras}
                         />
@@ -1002,23 +1397,24 @@ export default function EditProfileScreen() {
                   </View>
                   <View style={s.twoCol}>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="Postcode" colors={colors}>
+                      <FieldRow label="Postcode" colors={colors} error={fieldErrors.postcode}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.postcode && { borderColor: colors.error }]}
                           value={form.postcode}
                           onChangeText={field('postcode')}
                           placeholder="2000"
                           placeholderTextColor={colors.textTertiary}
                           keyboardType="number-pad"
+                          maxLength={4}
                           accessibilityLabel="Postcode"
                           {...inputExtras}
                         />
                       </FieldRow>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="Country" colors={colors}>
+                      <FieldRow label="Country" colors={colors} required error={fieldErrors.country}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.country && { borderColor: colors.error }]}
                           value={form.country}
                           onChangeText={field('country')}
                           placeholder="Australia"
@@ -1042,9 +1438,9 @@ export default function EditProfileScreen() {
                   isDark={isDark}
                   index={0}
                 >
-                  <FieldRow label="Languages" colors={colors}>
+                  <FieldRow label="Languages" colors={colors} error={fieldErrors.languages}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.languages && { borderColor: colors.error }]}
                       value={form.languages}
                       onChangeText={field('languages')}
                       placeholder="Comma-separated, e.g. English, Hindi"
@@ -1053,16 +1449,20 @@ export default function EditProfileScreen() {
                       {...inputExtras}
                     />
                   </FieldRow>
-                  <FieldRow label="Cultural background" colors={colors}>
+                  <FieldRow label="Cultural background" colors={colors} error={fieldErrors.ethnicityText}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.ethnicityText && { borderColor: colors.error }]}
                       value={form.ethnicityText}
                       onChangeText={field('ethnicityText')}
                       placeholder="Optional — however you describe your heritage"
                       placeholderTextColor={colors.textTertiary}
+                      maxLength={200}
                       accessibilityLabel="Cultural background"
                       {...inputExtras}
                     />
+                    <Text style={[s.charCount, { color: form.ethnicityText.length > 180 ? colors.error : colors.textTertiary }]}>
+                      {form.ethnicityText.length}/200
+                    </Text>
                   </FieldRow>
                 </SectionCard>
 
@@ -1234,30 +1634,53 @@ export default function EditProfileScreen() {
                 </SectionCard>
 
                 <SectionCard title="Social & web" subtitle="Optional — only shown if you enable social links." colors={colors} isDark={isDark} index={2}>
-                  {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => (
-                    <View key={f} style={s.socialRow}>
-                      <View style={[s.socialIcon, { backgroundColor: color + '18' }]}>
-                        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={color} />
+                  {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => {
+                    const err = fieldErrors[f];
+                    return (
+                      <View key={f} style={s.socialRow}>
+                        <View style={[s.socialIcon, { backgroundColor: color + '18', borderWidth: err ? 1 : 0, borderColor: colors.error }]}>
+                          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={err ? colors.error : color} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[fr.label, { color: err ? colors.error : colors.textTertiary, marginBottom: 4 }]}>{label}</Text>
+                          <TextInput
+                            style={[inputStyle, err && { borderColor: colors.error }]}
+                            value={form[f]}
+                            onChangeText={(v) => {
+                              setForm((p) => ({ ...p, [f]: v }));
+                              if (fieldErrors[f]) setFieldErrors((prev) => ({ ...prev, [f]: undefined }));
+                            }}
+                            placeholder={placeholder}
+                            placeholderTextColor={colors.textTertiary}
+                            autoCapitalize="none"
+                            keyboardType="url"
+                            accessibilityLabel={label}
+                            {...inputExtras}
+                          />
+                          {err ? (
+                            <View style={[fr.errorRow, { marginTop: 4 }]}>
+                              <Ionicons name="alert-circle" size={12} color={colors.error} />
+                              <Text style={[fr.error, { color: colors.error }]}>{err}</Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[fr.label, { color: colors.textTertiary, marginBottom: 4 }]}>{label}</Text>
-                        <TextInput
-                          style={inputStyle}
-                          value={form[f]}
-                          onChangeText={(v) => setForm((p) => ({ ...p, [f]: v }))}
-                          placeholder={placeholder}
-                          placeholderTextColor={colors.textTertiary}
-                          autoCapitalize="none"
-                          keyboardType="url"
-                          accessibilityLabel={label}
-                          {...inputExtras}
-                        />
-                      </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </SectionCard>
               </>
             ) : null}
+
+            {Object.keys(fieldErrors).length > 0 && (
+              <View style={[s.errorBanner, { backgroundColor: colors.error + '12', borderColor: colors.error + '40' }]}>
+                <Ionicons name="alert-circle" size={16} color={colors.error} />
+                <Text style={[TextStyles.caption, { color: colors.error, flex: 1, fontFamily: 'Poppins_600SemiBold' }]}>
+                  {Object.keys(fieldErrors).length === 1
+                    ? 'Fix 1 field before saving'
+                    : `Fix ${Object.keys(fieldErrors).length} fields before saving`}
+                </Text>
+              </View>
+            )}
 
             <Animated.View entering={FadeInDown.delay(200).duration(420)}>
               <Button
@@ -1321,9 +1744,14 @@ const s = StyleSheet.create({
   },
   heroWrap: {
     alignItems: 'center',
-    paddingTop: 32,
     paddingBottom: 24,
     overflow: 'hidden',
+  },
+  coverSection: {
+    width: '100%',
+    height: 160,
+    overflow: 'hidden',
+    position: 'relative',
   },
   heroOrb: {
     position: 'absolute',
@@ -1341,7 +1769,38 @@ const s = StyleSheet.create({
     height: 160,
     borderRadius: 80,
   },
-  avatarBtn: { position: 'relative', marginBottom: 12 },
+  coverEditBtn: {
+    position: 'absolute',
+    bottom: 10,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  coverRemoveBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.30)',
+  },
+  avatarArea: {
+    marginTop: -44,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  avatarBtn: { position: 'relative' },
   avatarRingOuter: {
     padding: 3,
     borderRadius: 999,
@@ -1387,10 +1846,14 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   tabBtnDesktop: {
     flex: 1,
@@ -1400,7 +1863,7 @@ const s = StyleSheet.create({
     ...TextStyles.chip,
     textAlign: 'center',
   },
-  body: { paddingTop: 8, gap: 0, paddingBottom: 8 },
+  body: { paddingTop: 16, gap: 16, paddingBottom: 16 },
   bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center' },
   input: {
     height: 52,
@@ -1429,6 +1892,16 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     gap: 12,
   },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 4,
+  },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1449,6 +1922,40 @@ const s = StyleSheet.create({
       android: { elevation: 6 },
       default: { elevation: 6 },
     }),
+  },
+  uploadMetaWrap: {
+    width: 170,
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 2,
+    alignItems: 'center',
+  },
+  uploadTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.10)',
+    overflow: 'hidden',
+  },
+  uploadFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: CultureTokens.gold,
+  },
+  removePhotoBtn: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 36,
+  },
+  removePhotoText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
 
