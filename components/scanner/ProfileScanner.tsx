@@ -70,7 +70,7 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
           <View style={[styles.header, { backgroundColor: 'rgba(0,0,0,0.72)' }]}>
             <View style={styles.headerContent}>
               <Text style={styles.title}>Scan Identity</Text>
-              <Pressable style={styles.closeBtn} onPress={onClose}>
+              <Pressable style={styles.closeBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close scanner">
                 <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
