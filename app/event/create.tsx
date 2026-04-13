@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CultureTokens } from '@/constants/theme';
@@ -22,6 +21,7 @@ import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '
 import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
+import { HapticManager } from '@/lib/haptics';
 import { normalizeAddressText, validateAddressLine, validatePlaceName } from '@/lib/addressValidation';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
@@ -239,7 +239,7 @@ export default function CreateEventScreen() {
     },
     onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      HapticManager.success();
       setPublishedEvent(event);
     },
     onError: (err) => {
@@ -254,7 +254,7 @@ export default function CreateEventScreen() {
   });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const haptic = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
+  const haptic = () => { HapticManager.light(); };
 
   const setField = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -351,7 +351,12 @@ export default function CreateEventScreen() {
     if (step === 'basics') {
       if (!form.title.trim()) return 'Event title is required.';
       if (form.title.trim().length < 5) return 'Title must be at least 5 characters.';
+      if (!form.eventType) return 'Please select an event type.';
       if (!form.description.trim()) return 'Description is required.';
+      if (form.description.trim().length < 20) return 'Description must be at least 20 characters.';
+    }
+    if (step === 'publishing') {
+      if (!form.publisherProfileId.trim()) return 'Please select a profile to publish as.';
     }
     if (step === 'location') {
       const cityError = validatePlaceName(form.city, 'City');
@@ -374,17 +379,46 @@ export default function CreateEventScreen() {
     }
     if (step === 'datetime') {
       if (!form.date) return 'Date is required.';
+      if (!form.time) return 'Start time is required.';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return 'Date format must be YYYY-MM-DD.';
       if (form.endDate && form.endDate < form.date) return 'End date cannot be before start date.';
     }
-    if (step === 'tickets' && form.tiers.length === 0 && !form.priceCents)
-      return 'Add at least one ticket tier or a price.';
+    if (step === 'entry') {
+      if (!form.entryType) return 'Please select an entry type.';
+    }
+    if (step === 'tickets') {
+      if (form.tiers.length === 0) {
+        const price = parseFloat(form.priceCents || '0');
+        if (isNaN(price) || price < 0) return 'Please provide a valid ticket price.';
+      } else {
+        for (const tier of form.tiers) {
+          if (!tier.name.trim()) return 'All ticket tiers must have a name.';
+          const price = parseFloat(tier.priceCents || '0');
+          if (isNaN(price) || price < 0) return `Invalid price for tier: ${tier.name}`;
+        }
+      }
+    }
+    if (step === 'team') {
+      if (form.hostInfo.contactEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(form.hostInfo.contactEmail.trim())) {
+          return 'Please enter a valid host contact email.';
+        }
+      }
+    }
+    if (step === 'culture') {
+      if (form.cultureTagIds.length === 0) return 'Please select at least one culture tag.';
+    }
     return null;
   }, [step, form]);
 
   const goNext = useCallback(() => {
     const err = validateStep();
-    if (err) { setStepError(err); return; }
+    if (err) { 
+      setStepError(err); 
+      HapticManager.error();
+      return; 
+    }
     setStepError(null);
     setPublishError(null);
     if (step === 'review') { createEvent(); return; }
