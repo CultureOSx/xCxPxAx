@@ -43,6 +43,41 @@ function toDateFromKey(key: string): Date {
   return new Date(`${key}T00:00:00`);
 }
 
+function eventRangeKeys(event: Pick<EventData, 'date' | 'endDate'>, maxDays = 45): string[] {
+  const startKey = toSafeDateKey(event.date);
+  if (!startKey) return [];
+  const endKey = toSafeDateKey(event.endDate ?? event.date) ?? startKey;
+
+  const start = toDateFromKey(startKey);
+  const end = toDateFromKey(endKey);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [startKey];
+
+  const first = start.getTime() <= end.getTime() ? start : end;
+  const last = start.getTime() <= end.getTime() ? end : start;
+  const out: string[] = [];
+  const cursor = new Date(first);
+  let count = 0;
+  while (cursor.getTime() <= last.getTime() && count < maxDays) {
+    out.push(formatDateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()));
+    cursor.setDate(cursor.getDate() + 1);
+    count += 1;
+  }
+  return out;
+}
+
+function eventOverlapsRange(
+  event: Pick<EventData, 'date' | 'endDate'>,
+  rangeStart: Date,
+  rangeEnd: Date,
+): boolean {
+  const startKey = toSafeDateKey(event.date);
+  if (!startKey) return false;
+  const endKey = toSafeDateKey(event.endDate ?? event.date) ?? startKey;
+  const eventStart = toDateFromKey(startKey);
+  const eventEnd = toDateFromKey(endKey);
+  return eventEnd.getTime() >= rangeStart.getTime() && eventStart.getTime() <= rangeEnd.getTime();
+}
+
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -97,20 +132,20 @@ export default function CalendarScreen() {
   const filteredEvents = useMemo(() => {
     const now = new Date();
     const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = toDateFromKey(todayKey);
     const weekEnd = new Date(now);
     weekEnd.setDate(now.getDate() + 7);
 
     return allEvents.filter((event) => {
       const key = toSafeDateKey(event.date);
       if (!key) return false;
-      const dateObj = toDateFromKey(key);
       switch (activeFilter) {
         case 'All':
           return true;
         case 'Today':
-          return key === todayKey;
+          return eventRangeKeys(event).includes(todayKey);
         case 'This Week':
-          return dateObj >= toDateFromKey(todayKey) && dateObj <= weekEnd;
+          return eventOverlapsRange(event, todayStart, weekEnd);
         case 'My Tickets':
           return isAuthenticated && ticketedEventIds.has(event.id);
         case 'Free':
@@ -124,22 +159,21 @@ export default function CalendarScreen() {
   }, [allEvents, activeFilter, isAuthenticated, ticketedEventIds]);
 
   const eventsInCurrentMonth = useMemo(() => {
+    const monthStart = new Date(currentYear, currentMonth, 1);
+    const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
     return filteredEvents.filter((event) => {
-      const key = toSafeDateKey(event.date);
-      if (!key) return false;
-      const d = toDateFromKey(key);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return eventOverlapsRange(event, monthStart, monthEnd);
     });
   }, [filteredEvents, currentMonth, currentYear]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventData[]>();
     for (const event of filteredEvents) {
-      const key = toSafeDateKey(event.date);
-      if (!key) continue;
-      const arr = map.get(key) ?? [];
-      arr.push(event);
-      map.set(key, arr);
+      for (const key of eventRangeKeys(event)) {
+        const arr = map.get(key) ?? [];
+        arr.push(event);
+        map.set(key, arr);
+      }
     }
     return map;
   }, [filteredEvents]);
@@ -155,9 +189,10 @@ export default function CalendarScreen() {
   const ticketDates = useMemo(() => {
     const set = new Set<string>();
     for (const event of allEvents) {
-      const key = toSafeDateKey(event.date);
-      if (!key) continue;
-      if (ticketedEventIds.has(event.id)) set.add(key);
+      if (!ticketedEventIds.has(event.id)) continue;
+      for (const key of eventRangeKeys(event)) {
+        set.add(key);
+      }
     }
     return set;
   }, [allEvents, ticketedEventIds]);
@@ -179,9 +214,9 @@ export default function CalendarScreen() {
     const now = new Date();
     return filteredEvents
       .filter((event) => {
-        const key = toSafeDateKey(event.date);
-        if (!key) return false;
-        return toDateFromKey(key).getTime() >= now.getTime();
+        const endKey = toSafeDateKey(event.endDate ?? event.date);
+        if (!endKey) return false;
+        return toDateFromKey(endKey).getTime() >= now.getTime();
       })
       .sort((a, b) => {
         const aKey = toSafeDateKey(a.date);

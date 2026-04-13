@@ -10,7 +10,7 @@ import { calculateDistance, getPostcodesByPlace } from '@shared/location/austral
 import type { DiscoverCurationResponse, EventData, Community, RestaurantData, ShopData, MovieData, PerkData } from '@/shared/schema';
 import type { PreviewItem } from '@/components/Discover/PreviewRail';
 import { CultureTokens } from '@/constants/theme';
-import { isEventInDiscoverLiveWindow, parseEventStartMs } from '@/lib/dateUtils';
+import { parseEventRangeMs, parseEventStartMs } from '@/lib/dateUtils';
 
 export interface DiscoverFeed {
   trendingEvents?: EventData[];
@@ -107,6 +107,7 @@ export function useDiscoverData() {
         city: state.city || undefined,
         pageSize: 50,
         dateFrom: today,
+        includeOngoing: true,
       });
       return Array.isArray(result.events) ? result.events : [];
     },
@@ -258,20 +259,30 @@ export function useDiscoverData() {
     const laterTonight: EventData[] = [];
 
     allEvents.forEach((event) => {
-      if (!event.time) return;
-      const [h, m] = event.time.split(':').map(Number);
-      const eventMinutes = h * 60 + m;
+      const range = parseEventRangeMs(event);
+      if (!range) return;
 
-      // Happening Now: Started in the last 2 hours OR starting in the next 30 mins
-      if (eventMinutes <= nowTotalMinutes + 30 && eventMinutes >= nowTotalMinutes - 120) {
+      const startsInMs = range.startMs - now.getTime();
+      const isActive = range.startMs <= now.getTime() && now.getTime() <= range.endMs;
+
+      if (isActive) {
         happeningNow.push(event);
+        return;
       }
-      // Starting Soon: Starting in 30-120 mins
-      else if (eventMinutes > nowTotalMinutes + 30 && eventMinutes <= nowTotalMinutes + 120) {
+
+      if (startsInMs > 0 && startsInMs <= 120 * 60 * 1000) {
         startingSoon.push(event);
+        return;
       }
-      // Later Tonight: Starting after 120 mins but before midnight
-      else if (eventMinutes > nowTotalMinutes + 120) {
+
+      const eventMinutes = (() => {
+        const start = parseEventStartMs(event.date, event.time);
+        if (start == null) return null;
+        const startDate = new Date(start);
+        return startDate.getHours() * 60 + startDate.getMinutes();
+      })();
+
+      if (eventMinutes != null && eventMinutes > nowTotalMinutes + 120) {
         laterTonight.push(event);
       }
     });
@@ -300,8 +311,10 @@ export function useDiscoverData() {
       if (ta == null && tb == null) return 0;
       if (ta == null) return 1;
       if (tb == null) return -1;
-      const aLive = isEventInDiscoverLiveWindow(ta, now);
-      const bLive = isEventInDiscoverLiveWindow(tb, now);
+      const aRange = parseEventRangeMs(a);
+      const bRange = parseEventRangeMs(b);
+      const aLive = Boolean(aRange && aRange.startMs <= now && now <= aRange.endMs);
+      const bLive = Boolean(bRange && bRange.startMs <= now && now <= bRange.endMs);
       if (aLive !== bLive) return aLive ? -1 : 1;
       return ta - tb;
     });

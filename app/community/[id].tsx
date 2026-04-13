@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Pressable, Platform,
   ActivityIndicator, useWindowDimensions, Linking, Alert, Share,
+  Modal, KeyboardAvoidingView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { routeWithRedirect } from '@/lib/routes';
 import { getQueryFn } from '@/lib/query-client';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { FlashList } from '@shopify/flash-list';
 import {
   getCommunityActivityMeta,
@@ -39,6 +40,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { formatEventDateTime } from '@/lib/dateUtils';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import * as ImagePicker from 'expo-image-picker';
 import { BackButton } from '@/components/ui/BackButton';
@@ -48,6 +50,75 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
+
+const SIMPLE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidInviteEmail(value: string): boolean {
+  return SIMPLE_EMAIL_RE.test(value.trim().toLowerCase());
+}
+
+function getInviteModalStyles(colors: ReturnType<typeof useColors>) {
+  return StyleSheet.create({
+    inviteModalRoot: { flex: 1 },
+    inviteModalBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
+    },
+    inviteModalSheet: {
+      maxHeight: '88%',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      borderWidth: 1,
+      paddingHorizontal: 20,
+      paddingTop: 10,
+    },
+    inviteModalHandle: {
+      alignSelf: 'center',
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderLight,
+      marginBottom: 14,
+    },
+    inviteModalTitle: {
+      fontSize: 20,
+      fontFamily: 'Poppins_700Bold',
+      marginBottom: 6,
+    },
+    inviteModalSubtitle: {
+      fontSize: 14,
+      fontFamily: 'Poppins_400Regular',
+      lineHeight: 21,
+      marginBottom: 16,
+    },
+    inviteModalScroll: { maxHeight: 360 },
+    inviteFieldLabel: {
+      fontSize: 13,
+      fontFamily: 'Poppins_600SemiBold',
+      marginBottom: 8,
+      marginTop: 4,
+    },
+    inviteAddRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
+    inviteDraftInput: { flex: 1, minWidth: 0 },
+    inviteChipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+    inviteChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      maxWidth: '100%',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    inviteChipText: { flexShrink: 1, fontSize: 13, fontFamily: 'Poppins_500Medium' },
+    inviteHint: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 16, lineHeight: 18 },
+    inviteCharCount: { fontSize: 11, fontFamily: 'Poppins_500Medium', alignSelf: 'flex-end', marginTop: 4, marginBottom: 8 },
+    inviteModalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+    inviteModalActionBtn: { flex: 1 },
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -664,6 +735,263 @@ export default function CommunityDetailScreen() {
   );
 }
 
+// ─── Invite-by-email modal (owners + platform moderators) ───────────────────
+
+const MAX_INVITE_EMAILS = 50;
+const MAX_INVITE_MESSAGE_LEN = 600;
+
+type CommunityInviteEmailModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  communityId: string;
+  communityName: string;
+  accentColor: string;
+};
+
+function CommunityInviteEmailModal({
+  visible,
+  onClose,
+  communityId,
+  communityName,
+  accentColor,
+}: CommunityInviteEmailModalProps) {
+  const colors = useColors();
+  const s = getInviteModalStyles(colors);
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const [chips, setChips] = useState<string[]>([]);
+  const [draft, setDraft] = useState('');
+  const [message, setMessage] = useState('');
+  const [inviterName, setInviterName] = useState('');
+
+  useEffect(() => {
+    if (!visible) return;
+    setChips([]);
+    setDraft('');
+    setMessage('');
+    const name = (user?.displayName || user?.username || '').trim();
+    setInviterName(name);
+  }, [visible, user?.displayName, user?.username]);
+
+  const inviteMutation = useMutation({
+    mutationFn: () =>
+      api.communities.invite(communityId, {
+        emails: chips,
+        message: message.trim() || undefined,
+        inviterName: inviterName.trim() || undefined,
+      }),
+    onSuccess: (res) => {
+      const skippedNote = res.skipped > 0 ? ` ${res.skipped} skipped.` : '';
+      Alert.alert(
+        'Invitations queued',
+        `${res.sent} invitation email(s) queued for delivery.${skippedNote}`,
+      );
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Something went wrong';
+      Alert.alert('Could not send invites', msg);
+    },
+  });
+
+  const addFromDraft = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+
+    if (chips.length >= MAX_INVITE_EMAILS) {
+      Alert.alert('Limit reached', `You can add up to ${MAX_INVITE_EMAILS} addresses per send.`);
+      return;
+    }
+
+    const parts = trimmed.split(/[\s,;]+/).map((p) => p.trim().toLowerCase()).filter(Boolean);
+    const anyValid = parts.some((p) => isValidInviteEmail(p));
+    if (parts.length > 0 && !anyValid) {
+      Alert.alert('Invalid email', 'Please enter a valid email address.');
+      return;
+    }
+
+    const next = new Set(chips);
+    let added = 0;
+    for (const p of parts) {
+      if (!isValidInviteEmail(p)) continue;
+      if (next.size >= MAX_INVITE_EMAILS) break;
+      if (!next.has(p)) {
+        next.add(p);
+        added += 1;
+      }
+    }
+
+    const leftOut = parts.filter((p) => isValidInviteEmail(p) && !next.has(p));
+    if (leftOut.length > 0 && next.size >= MAX_INVITE_EMAILS) {
+      Alert.alert(
+        'Limit reached',
+        `You can send up to ${MAX_INVITE_EMAILS} invitations at once. Remove an address to add more.`,
+      );
+    } else if (anyValid && added === 0) {
+      Alert.alert('Already added', 'Those addresses are already in your list.');
+    }
+
+    setChips(Array.from(next));
+    setDraft('');
+  };
+
+  const removeChip = (email: string) => setChips((c) => c.filter((e) => e !== email));
+
+  const handleSend = () => {
+    if (chips.length === 0) {
+      Alert.alert('Add an email', 'Enter at least one valid email address.');
+      return;
+    }
+    inviteMutation.mutate();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
+      <KeyboardAvoidingView
+        style={s.inviteModalRoot}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={s.inviteModalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss invite modal"
+          />
+          <View
+            style={[
+              s.inviteModalSheet,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+                paddingBottom: Math.max(insets.bottom, 16),
+              },
+            ]}
+          >
+            <View style={s.inviteModalHandle} accessibilityElementsHidden />
+            <Text style={[s.inviteModalTitle, { color: colors.text }]}>Invite by email</Text>
+            <Text style={[s.inviteModalSubtitle, { color: colors.textSecondary }]} numberOfLines={2}>
+              People you invite will receive an email with a link to {communityName}.
+            </Text>
+
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={s.inviteModalScroll}
+            >
+              <Input
+                label="Your name (optional)"
+                placeholder="How your name appears in the email"
+                value={inviterName}
+                onChangeText={setInviterName}
+                maxLength={80}
+                autoCapitalize="words"
+                accessibilityLabel="Inviter display name"
+              />
+
+              <Text style={[s.inviteFieldLabel, { color: colors.text }]}>Email addresses</Text>
+              <View style={s.inviteAddRow}>
+                <Input
+                  placeholder="name@example.com"
+                  value={draft}
+                  onChangeText={setDraft}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  leftIcon="mail-outline"
+                  containerStyle={s.inviteDraftInput}
+                  onSubmitEditing={addFromDraft}
+                  returnKeyType="done"
+                  accessibilityLabel="Email address to invite"
+                />
+                <Button
+                  variant="outline"
+                  size="md"
+                  onPress={addFromDraft}
+                  disabled={!draft.trim()}
+                  accessibilityLabel="Add email to list"
+                >
+                  Add
+                </Button>
+              </View>
+              {chips.length > 0 ? (
+                <View style={s.inviteChipWrap}>
+                  {chips.map((email) => (
+                    <View
+                      key={email}
+                      style={[
+                        s.inviteChip,
+                        { backgroundColor: accentColor + '18', borderColor: accentColor + '40' },
+                      ]}
+                    >
+                      <Text style={[s.inviteChipText, { color: colors.text }]} numberOfLines={1}>
+                        {email}
+                      </Text>
+                      <Pressable
+                        onPress={() => removeChip(email)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${email}`}
+                      >
+                        <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={[s.inviteHint, { color: colors.textTertiary }]}>
+                  Add one or more addresses (comma-separated works). Max {MAX_INVITE_EMAILS} per send.
+                </Text>
+              )}
+
+              <Input
+                label="Personal message (optional)"
+                placeholder="A short note to include with the invite…"
+                value={message}
+                onChangeText={(t) => setMessage(t.slice(0, MAX_INVITE_MESSAGE_LEN))}
+                multiline
+                numberOfLines={4}
+                accessibilityLabel="Optional invitation message"
+              />
+              <Text style={[s.inviteCharCount, { color: colors.textTertiary }]}>
+                {message.length}/{MAX_INVITE_MESSAGE_LEN}
+              </Text>
+            </ScrollView>
+
+            <View style={s.inviteModalActions}>
+              <Button variant="outline" size="lg" onPress={onClose} style={s.inviteModalActionBtn}>
+                Cancel
+              </Button>
+              <Button
+                variant="gradient"
+                size="lg"
+                onPress={handleSend}
+                loading={inviteMutation.isPending}
+                leftIcon="send"
+                style={s.inviteModalActionBtn}
+                accessibilityLabel="Send email invitations"
+              >
+                Send invites
+              </Button>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 // ─── Main community view ──────────────────────────────────────────────────────
 
 interface DbViewProps {
@@ -681,9 +1009,18 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   const queryClient = useQueryClient();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userId, hasRole } = useAuth();
   const pathname = usePathname();
   const memberRole = community.memberRole;
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  const canInviteByEmail = useMemo(() => {
+    if (!isAuthenticated || !userId) return false;
+    const ownerId = community.ownerId;
+    const isOwner = !!(ownerId && ownerId === userId);
+    const isStaff = hasRole('moderator', 'admin', 'platformAdmin');
+    return isOwner || isStaff;
+  }, [community.ownerId, hasRole, isAuthenticated, userId]);
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
 
@@ -779,17 +1116,38 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
 
   // ── Helper Sub-component ──────────────────────────────────────────────────
   const CommunityBottomBarInner = () => (
-    <Button
-      variant={joined ? "outline" : "gradient"}
-      onPress={handleJoinPress}
-      loading={isMutating}
-      size="lg"
-      fullWidth
-      leftIcon={joined ? 'checkmark-circle' : 'add-circle'}
-      style={joined && { backgroundColor: color + '15', borderColor: color + '40' }}
-    >
-      {joined ? 'Joined Community' : 'Join Community'}
-    </Button>
+    <View style={canInviteByEmail ? s.floatingBottomBarRow : undefined}>
+      {canInviteByEmail ? (
+        <Button
+          variant="outline"
+          size="lg"
+          onPress={() => {
+            if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setInviteModalOpen(true);
+          }}
+          style={s.floatingBottomBarInviteBtn}
+          leftIcon="mail-outline"
+          accessibilityLabel="Invite people by email"
+        >
+          Invite
+        </Button>
+      ) : null}
+      <Button
+        variant={joined ? 'outline' : 'gradient'}
+        onPress={handleJoinPress}
+        loading={isMutating}
+        size="lg"
+        fullWidth={!canInviteByEmail}
+        leftIcon={joined ? 'checkmark-circle' : 'add-circle'}
+        style={[
+          canInviteByEmail && s.floatingBottomBarJoinBtn,
+          joined && { backgroundColor: color + '15', borderColor: color + '40' },
+        ]}
+        accessibilityLabel={joined ? 'Leave community' : 'Join community'}
+      >
+        {joined ? 'Joined Community' : 'Join Community'}
+      </Button>
+    </View>
   );
 
   // ── Tab content ───────────────────────────────────────────────────────────
@@ -890,6 +1248,24 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
       case 'about':
         return (
           <View style={{ paddingTop: 20, gap: 20 }}>
+            {canInviteByEmail ? (
+              <Card padding={20}>
+                <Text style={TextStyles.badgeCaps}>Grow this community</Text>
+                <Text style={[TextStyles.body, { color: colors.textSecondary, marginTop: 8, lineHeight: 22 }]}>
+                  Send email invitations with a link to this page. Recipients need a CulturePass account to join.
+                </Text>
+                <Button
+                  variant="outline"
+                  size="md"
+                  leftIcon="mail-outline"
+                  onPress={() => setInviteModalOpen(true)}
+                  style={{ marginTop: 14 }}
+                  accessibilityLabel="Open invite by email"
+                >
+                  Invite by email
+                </Button>
+              </Card>
+            ) : null}
             <Card padding={20}>
               <Text style={TextStyles.badgeCaps}>Community Snapshot</Text>
               <Text style={[s.snapshotHeadline, { color: colors.text }]}>{headline}</Text>
@@ -1140,6 +1516,19 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                       color={colors.textInverse}
                     />
                   </Pressable>
+                  {canInviteByEmail ? (
+                    <Pressable
+                      style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+                      onPress={() => {
+                        if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setInviteModalOpen(true);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Invite people by email"
+                    >
+                      <Ionicons name="mail-outline" size={20} color={colors.textInverse} />
+                    </Pressable>
+                  ) : null}
                   <Pressable
                     style={({ pressed }) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
                     onPress={() => confirmAndReport({ targetType: 'community', targetId: String(community.id) })}
@@ -1310,6 +1699,14 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
           </View>
         </View>
       </View>
+
+      <CommunityInviteEmailModal
+        visible={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        communityId={String(community.id)}
+        communityName={community.name}
+        accentColor={color}
+      />
     </View>
   );
 }
@@ -1484,6 +1881,14 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1, borderColor: colors.borderLight,
   },
+  floatingBottomBarRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 10,
+    width: '100%',
+  },
+  floatingBottomBarInviteBtn: { flex: 1, minWidth: 0 },
+  floatingBottomBarJoinBtn: { flex: 1.6, minWidth: 0 },
   joinButton:     {
     width: '100%', flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', gap: 10, borderRadius: 16, paddingVertical: 16,

@@ -4,10 +4,10 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
-import { LocationPicker } from '@/components/LocationPicker';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BRAND_TAGLINE_SHORT, TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
+import { LocationPicker } from '@/components/LocationPicker';
 
 interface DiscoverHeaderProps {
   currentTime: string;
@@ -37,7 +37,6 @@ function DiscoverHeaderComponent({
   const greeting = firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
 
   const mobileMetaLabel = [currentTime, weatherSummary].filter(Boolean).join(' · ');
-
   const TopBarContent = (
     <View style={[styles.topBarInner, Platform.OS === 'web' && { paddingHorizontal: hPad }]}>
       <TabPageChromeRow title="Discover" subtitle={BRAND_TAGLINE_SHORT} showHairline={false} />
@@ -52,8 +51,6 @@ function DiscoverHeaderComponent({
           bordered={false}
           style={{
             zIndex: 100,
-            borderBottomWidth: StyleSheet.hairlineWidth * 2,
-            borderBottomColor: colors.borderLight,
           }}
           contentStyle={{ paddingTop: 0 }}
         >
@@ -84,8 +81,8 @@ function DiscoverHeaderComponent({
               {`Explore festivals, communities, and events in ${city}.`}
             </Text>
           </View>
-          <View style={styles.desktopActions}>
-            <LocationPicker />
+          <View style={styles.heroDesktopRight}>
+            <LocationPicker variant="text" textColor={colors.textSecondary} />
           </View>
         </View>
       ) : (
@@ -99,12 +96,12 @@ function DiscoverHeaderComponent({
                 {greeting}
               </Text>
               <View style={styles.mobileMetaRow}>
-                <LocationPicker variant="text" />
                 {mobileMetaLabel ? (
                   <Text style={[styles.mobileMeta, { color: colors.textSecondary }]} numberOfLines={1}>
                     {mobileMetaLabel}
                   </Text>
                 ) : null}
+                <LocationPicker variant="text" textColor={colors.textSecondary} />
               </View>
             </View>
           </View>
@@ -159,6 +156,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heroDesktopLeft: { flex: 1 },
+  heroDesktopRight: {
+    alignSelf: 'flex-start',
+    alignItems: 'flex-end',
+    marginLeft: 16,
+  },
   desktopMeta: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, marginBottom: 4 },
   desktopGreeting: {
     fontSize: 32,
@@ -172,7 +174,6 @@ const styles = StyleSheet.create({
     lineHeight: LineHeight.callout,
     marginTop: 6,
   },
-  desktopActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 24 },
 });
 
 export const DiscoverHeader = React.memo(DiscoverHeaderComponent);

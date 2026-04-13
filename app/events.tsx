@@ -11,7 +11,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -216,17 +216,44 @@ export default function AllEventsScreen() {
 
 
   const { user, hasRole } = useAuth();
+  const queryClient = useQueryClient();
+
+  const deleteEventMutation = useMutation({
+    mutationFn: (id: string) => api.events.remove(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['/api/events/paginated'] });
+    },
+  });
 
   const handleEditEvent = useCallback((event: EventData) => {
     // Navigate to edit screen
     router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
   }, []);
 
-  const handleDeleteEvent = useCallback((event: EventData) => {
-    // TODO: Implement delete logic (API call, optimistic update, etc.)
-    // For now, just alert
-    Alert.alert('Delete Event', `Event "${event.title}" deleted (demo only).`);
-  }, []);
+  const handleDeleteEvent = useCallback(
+    (event: EventData) => {
+      Alert.alert(
+        'Delete event',
+        `Remove "${event.title}"? This cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              deleteEventMutation.mutate(event.id, {
+                onError: (err) => {
+                  if (__DEV__) console.error(err);
+                  Alert.alert('Could not delete', 'Try again or contact support.');
+                },
+              });
+            },
+          },
+        ],
+      );
+    },
+    [deleteEventMutation],
+  );
 
   const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
     const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));

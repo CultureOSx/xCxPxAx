@@ -163,6 +163,7 @@ export default function LoginScreen() {
           keyboardType="email-address"
           returnKeyType="next"
           error={emailError}
+          onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
         />
 
         <View style={s.passwordHeader}>

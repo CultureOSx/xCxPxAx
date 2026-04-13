@@ -16,6 +16,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { APP_NAME, getAppVersionWithBuild } from '@/lib/app-meta';
+import { goBackOrReplace } from '@/lib/navigation';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -258,7 +259,10 @@ export default function MenuScreen() {
         <View style={[styles.topBar, { paddingTop: insets.top, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
           <Text style={[styles.screenTitle, { color: colors.text }]}>Account</Text>
           <Pressable
-            onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.back(); }}
+            onPress={() => {
+              if (!isWeb) Haptics.selectionAsync();
+              goBackOrReplace('/(tabs)');
+            }}
             style={[styles.closeBtn, { backgroundColor: colors.surface + 'CC', borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Close menu"

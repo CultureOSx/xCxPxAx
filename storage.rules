@@ -1,28 +1,15 @@
 rules_version = '2';
 
 /**
- * CulturePass AU — Firebase Storage Rules
+ * CulturePass — Firebase Storage Rules
  *
- * Bucket layout:
- *   events/{uploaderId|eventId}/{filename}   — event banner/hero images
- *   profiles/{profileId}/{filename}          — artist / venue / business images
- *   communities/{communityId}/{filename}     — community cover images
- *   users/{userId}/{filename}                — user avatars (direct upload path)
- *   avatars/{userId}/{filename}              — user avatars (legacy path)
- *   posts/{userId}/{filename}                — feed post images
- *   perks/{perkId}/{filename}                — perk cover images (admin-managed)
- *   featuredCities/{cityId}/{filename}       — city hero images (admin-managed)
- *   uploads/{userId}/{filename}              — Cloud Functions staging (Admin SDK only)
- *
- * Role claims are set on the Firebase Auth ID token via Admin SDK (setCustomUserClaims).
- * Direct client uploads are allowed per the rules below; everything else uses Cloud
- * Functions (Admin SDK) which bypasses these rules entirely.
+ * Writes validate image type + size on create/update only (request.resource).
+ * Deletes use the same ownership checks without touching request.resource.
  */
 
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
@@ -38,11 +25,11 @@ service firebase.storage {
     }
 
     function isAdminLike() {
-      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator'];
+      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator', 'superAdmin'];
     }
 
     function isOrganizerLike() {
-      return role() in ['organizer', 'business', 'sponsor', 'admin', 'platformAdmin', 'cityAdmin'];
+      return role() in ['organizer', 'business', 'sponsor', 'admin', 'platformAdmin', 'cityAdmin', 'superAdmin'];
     }
 
     function isValidImage() {
@@ -50,82 +37,106 @@ service firebase.storage {
     }
 
     function underMB(mb) {
-      return request.resource.size < mb * 1024 * 1024;
+      return request.resource.size < mb * 1024 * 1024
+        && request.resource.size > 0;
     }
 
-    // ── Events ──────────────────────────────────────────────────────────────
-    // Covers both create flow (events/{userId}/…) and edit flow (events/{eventId}/…).
-    // Organisers can write to any event folder; read is public.
-    match /events/{allPaths=**} {
+    function firestoreEventOrganizer(eventId) {
+      return firestore.exists(/databases/(default)/documents/events/$(eventId))
+        && firestore.get(/databases/(default)/documents/events/$(eventId)).data.organizerId == request.auth.uid;
+    }
+
+    function canAccessEventPath(eventId) {
+      return isOrganizerLike()
+        && (request.auth.uid == eventId || firestoreEventOrganizer(eventId) || isAdminLike());
+    }
+
+    function firestoreProfileOwner(profileId) {
+      return firestore.exists(/databases/(default)/documents/profiles/$(profileId))
+        && firestore.get(/databases/(default)/documents/profiles/$(profileId)).data.ownerId == request.auth.uid;
+    }
+
+    function canAccessProfilePath(profileId) {
+      return isOrganizerLike()
+        && (firestoreProfileOwner(profileId) || isAdminLike());
+    }
+
+    // ── Events ─────────────────────────────────────────────────────────────
+    match /events/{eventId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isOrganizerLike()
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if canAccessEventPath(eventId)
+        && underMB(10)
+        && isValidImage();
+      allow delete: if canAccessEventPath(eventId);
     }
 
-    // ── Profiles (artist / venue / business / community profile) ────────────
-    match /profiles/{allPaths=**} {
+    // ── Profiles ───────────────────────────────────────────────────────────
+    match /profiles/{profileId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isOrganizerLike()
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if canAccessProfilePath(profileId)
+        && underMB(10)
+        && isValidImage();
+      allow delete: if canAccessProfilePath(profileId);
     }
 
-    // ── Communities ─────────────────────────────────────────────────────────
-    match /communities/{allPaths=**} {
+    // ── Communities (Firestore: profiles/{id}) ────────────────────────────
+    match /communities/{communityId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isOrganizerLike()
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if canAccessProfilePath(communityId)
+        && underMB(10)
+        && isValidImage();
+      allow delete: if canAccessProfilePath(communityId);
     }
 
-    // ── User avatars — direct upload path used by profile/edit.tsx ──────────
+    // ── User avatars ───────────────────────────────────────────────────────
     match /users/{userId}/{filename} {
       allow read: if true;
-      allow write: if isOwner(userId)
-                   && underMB(5)
-                   && isValidImage();
+      allow create, update: if isOwner(userId)
+        && underMB(5)
+        && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
-    // ── User avatars — legacy path ───────────────────────────────────────────
     match /avatars/{userId}/{filename} {
       allow read: if true;
-      allow write: if isOwner(userId)
-                   && underMB(5)
-                   && isValidImage();
+      allow create, update: if isOwner(userId)
+        && underMB(5)
+        && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
-    // ── Feed post images ─────────────────────────────────────────────────────
+    // ── Feed post images ───────────────────────────────────────────────────
     match /posts/{userId}/{filename} {
       allow read: if true;
-      allow write: if isOwner(userId)
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if isOwner(userId)
+        && underMB(10)
+        && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
-    // ── Perks — admin-managed content ───────────────────────────────────────
+    // ── Admin-managed ──────────────────────────────────────────────────────
     match /perks/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdminLike()
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if isAdminLike()
+        && underMB(10)
+        && isValidImage();
+      allow delete: if isAdminLike();
     }
 
-    // ── Featured cities — admin-managed content ──────────────────────────────
     match /featuredCities/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdminLike()
-                   && underMB(10)
-                   && isValidImage();
+      allow create, update: if isAdminLike()
+        && underMB(10)
+        && isValidImage();
+      allow delete: if isAdminLike();
     }
 
-    // ── Cloud Functions staging — Admin SDK writes only ──────────────────────
+    // ── Cloud Functions staging — Admin SDK only ───────────────────────────
     match /uploads/{userId}/{filename} {
-      allow read:  if true;
+      allow read: if true;
       allow write: if false;
     }
 
-    // ── Deny everything else ─────────────────────────────────────────────────
     match /{allPaths=**} {
       allow read, write: if false;
     }

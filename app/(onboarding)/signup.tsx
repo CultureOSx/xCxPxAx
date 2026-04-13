@@ -227,6 +227,7 @@ export default function SignUpScreen() {
           autoComplete="name"
           returnKeyType="next"
           error={nameError}
+          onBlur={() => setName((prev) => prev.trim().replace(/\s+/g, ' '))}
         />
 
         <Input
@@ -244,6 +245,7 @@ export default function SignUpScreen() {
           keyboardType="email-address"
           returnKeyType="next"
           error={emailError}
+          onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
         />
 
         <View style={s.passwordGroup}>

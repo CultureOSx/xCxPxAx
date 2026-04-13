@@ -254,7 +254,7 @@ export const light: ColorTheme = {
  * Color hierarchy:
  *   True black / near-black — primary background (OLED power + contrast anchor)
  *   Lifted navy surfaces — cards and chrome
- *   CulturePass Blue (#0066CC) — elevated/active surfaces and accents
+ *   CulturePass Blue (#0066CC) — primary actions, links, and accents (not default card/input fill)
  */
 export const dark: ColorTheme = {
   ...sharedBase,
@@ -271,25 +271,26 @@ export const dark: ColorTheme = {
   backgroundSecondary: "#0A0E14",
 
   surface: "#121826",
-  surfaceElevated: CultureTokens.indigo, // CulturePass Blue — active surfaces
+  // Neutral lift for inputs, nested cards, chips — not brand fill (indigo made textSecondary/tertiary illegible).
+  surfaceElevated: "#1E2D42",
   surfaceSecondary: "#0F2844",
 
-  border: "#1A2436",
-  borderLight: "#243045",
-  divider: "#1A2436",
+  border: "#2A3A52",
+  borderLight: "#354560",
+  divider: "#2A3A52",
 
   text: "#F4F4F5",
-  textSecondary: "#C9C9D6",
-  textTertiary: "#8D8D8D",
+  textSecondary: "#D6D6E0",
+  textTertiary: "#AEB4C5",
   textInverse: "#0B0B14",
   textOnBrandGradient: "#FFFFFF",
 
   card: "#151C2E",
-  cardBorder: "#243045",
+  cardBorder: "#354560",
 
   tabBar: "rgba(0, 0, 0, 0.94)",
   tabBarBorder: "rgba(36, 48, 69, 0.55)",
-  tabIconDefault: "#8D8D8D",
+  tabIconDefault: "#AEB4C5",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
@@ -350,6 +351,16 @@ export const gradients = {
     CultureTokens.coral,
   ] as [string, string],
 
+  /**
+   * Discovery arc — coral → gold → purple (energy → warmth → community).
+   * Use for: marketing heroes, campaign ribbons, web storytelling (not body text).
+   */
+  discoveryMarketing: [
+    CultureTokens.coral,
+    CultureTokens.gold,
+    CultureTokens.purple,
+  ] as [string, string, string],
+
   /** CulturePass Signature Gradient (reversed: Coral → Indigo) */
   culturepassBrandReversed: [
     CultureTokens.coral,
@@ -398,6 +409,21 @@ export const gradients = {
     "#FFCC00",
     "#FF3B30",
   ] as [string, string, string],
+} as const;
+
+/**
+ * Apple-clarity neutrals for dedicated light marketing surfaces (landing, campaigns).
+ * Does not replace `ColorTheme` — use with `useColors()` in product chrome.
+ * Import from `@/constants/theme` as `marketingSurfaces`.
+ */
+export const marketingSurfaces = {
+  page: '#FFFFFF',
+  band: '#F5F5F7',
+  text: '#111111',
+  textMuted: '#6B6B6B',
+  hairline: '#D2D2D7',
+  /** Text on saturated brand / marketing CTA fills */
+  onPrimary: '#FFFFFF',
 } as const;
 
 /**

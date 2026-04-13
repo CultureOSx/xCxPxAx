@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -46,19 +47,32 @@ export const useImageUpload = () => {
         // Some web URI schemes are not compatible with the manipulator.
       }
 
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.responseType = 'blob';
-        xhr.onload = () => resolve(xhr.response as Blob);
-        xhr.onerror = () => reject(new Error('Failed to load image file'));
-        xhr.open('GET', uploadUri);
-        xhr.send();
-      });
+      // Web: fetch handles blob:/data: URIs from picker + manipulator more reliably than XHR.
+      // Native: XHR is the usual path for file/content URIs.
+      let blob: Blob;
+      if (Platform.OS === 'web') {
+        const res = await globalThis.fetch(uploadUri);
+        if (!res.ok) throw new Error('Failed to load image file');
+        blob = await res.blob();
+      } else {
+        blob = await new Promise<Blob>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.responseType = 'blob';
+          xhr.onload = () => resolve(xhr.response as Blob);
+          xhr.onerror = () => reject(new Error('Failed to load image file'));
+          xhr.open('GET', uploadUri);
+          xhr.send();
+        });
+      }
+
+      // Storage rules require image/* — without metadata many clients send octet-stream and rules deny.
+      const contentType =
+        blob.type && /^image\//i.test(blob.type) ? blob.type : 'image/jpeg';
 
       const timestamp = Date.now();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
       const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, blob);
+      const uploadTask = uploadBytesResumable(storageRef, blob, { contentType });
 
       await new Promise<void>((resolve, reject) => {
         uploadTask.on(

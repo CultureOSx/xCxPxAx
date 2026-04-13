@@ -158,6 +158,50 @@ export function parseEventStartMs(dateStr: string, timeStr?: string | null): num
 }
 
 /**
+ * Parses event end timestamp from start/end date + time fields.
+ * Fallbacks:
+ * - multi-day with no endTime => end of endDate
+ * - single-day with no endTime => start + 3h discover window
+ */
+export function parseEventEndMs(
+  startDateStr: string,
+  startTimeStr?: string | null,
+  endDateStr?: string | null,
+  endTimeStr?: string | null,
+): number | null {
+  const startMs = parseEventStartMs(startDateStr, startTimeStr);
+  if (startMs == null) return null;
+
+  const endDate = endDateStr && endDateStr.length > 0 ? endDateStr : startDateStr;
+  const explicitEndTime = endTimeStr?.trim();
+  if (explicitEndTime) {
+    const endMs = parseEventStartMs(endDate, explicitEndTime);
+    if (endMs != null && endMs >= startMs) return endMs;
+  }
+
+  if (endDate !== startDateStr) {
+    const endOfDay = new Date(`${endDate}T23:59:59`).getTime();
+    if (Number.isFinite(endOfDay) && endOfDay >= startMs) return endOfDay;
+  }
+
+  return startMs + DISCOVER_EVENT_LIVE_WINDOW_MS;
+}
+
+export function parseEventRangeMs(event: {
+  date: string;
+  time?: string | null;
+  endDate?: string | null;
+  endTime?: string | null;
+}): { startMs: number; endMs: number } | null {
+  const startMs = parseEventStartMs(event.date, event.time);
+  if (startMs == null) return null;
+  const endMs =
+    parseEventEndMs(event.date, event.time, event.endDate, event.endTime) ??
+    (startMs + DISCOVER_EVENT_LIVE_WINDOW_MS);
+  return { startMs, endMs: Math.max(startMs, endMs) };
+}
+
+/**
  * Human-readable countdown for “Starts in …” (e.g. `1h 05m`, `12:04`).
  */
 export function formatStartsInCountdown(msUntilStart: number): string {
@@ -172,6 +216,15 @@ export function formatStartsInCountdown(msUntilStart: number): string {
 
 export function isEventInDiscoverLiveWindow(startMs: number, nowMs: number = Date.now()): boolean {
   return startMs <= nowMs && nowMs < startMs + DISCOVER_EVENT_LIVE_WINDOW_MS;
+}
+
+export function isEventActiveNow(
+  event: { date: string; time?: string | null; endDate?: string | null; endTime?: string | null },
+  nowMs: number = Date.now(),
+): boolean {
+  const range = parseEventRangeMs(event);
+  if (!range) return false;
+  return range.startMs <= nowMs && nowMs <= range.endMs;
 }
 
 export function timeAgo(date: string | Date | null | undefined): string {

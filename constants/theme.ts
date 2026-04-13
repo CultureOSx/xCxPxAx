@@ -74,11 +74,24 @@ import { SpringConfig } from './animations';
 // ---------------------------------------------------------------------------
 // Re-exports — single import surface
 // ---------------------------------------------------------------------------
-export { default as Colors, light as lightColors, dark as darkColors, shadows, glass, gradients, neon, CultureTokens, CategoryColors, EntityTypeColors } from './colors';
+export {
+  default as Colors,
+  light as lightColors,
+  dark as darkColors,
+  shadows,
+  glass,
+  gradients,
+  neon,
+  CultureTokens,
+  CategoryColors,
+  EntityTypeColors,
+  marketingSurfaces,
+} from './colors';
 export type { ColorTheme, ShadowStyle } from './colors';
 
 export {
   Spacing,
+  SectionSpacing,
   Radius,
   Breakpoints,
   Layout,
@@ -91,6 +104,7 @@ export {
   LetterSpacing,
   TextStyles,
   DesktopTextStyles,
+  DesktopMarketingTextStyles,
   Typography,          // legacy
 } from './typography';
 
@@ -143,12 +157,26 @@ export const LayoutRules = {
   screenHorizontalPadding: 16,
   cardPaddingMin: 16,
   cardPaddingMax: 20,
+  /** Default vertical gap between sections inside a screen */
   sectionSpacing: 32,
+  /** Marketing / storytelling vertical bands (larger than in-screen sections) */
+  sectionSpacingMarketing: 80,
   iconTextGap: 8,
   betweenCards: 16,
   buttonHeight: 52,
   borderRadius: 16,
 } as const;
+
+export {
+  DesignSystemVersion,
+  MarketingLayout,
+  MarketingMaxWidth,
+  ContentRhythm,
+  MarketingGrid,
+  HeroLayout,
+  MarketingShadow,
+  MarketingCTA,
+} from './designSystem';
 
 /**
  * Card component tokens.

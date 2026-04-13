@@ -5,21 +5,13 @@ import { router } from 'expo-router';
 import { TextStyles, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import type { EventData } from '@/shared/schema';
-
-interface SidebarProfile {
-  name?: string;
-  imageUrl?: string;
-}
+import type { ResolvedEventOrganizer } from './utils';
 
 interface SidebarCardProps {
   event: EventData;
-  hostName: string;
-  publisherProfile: SidebarProfile | null | undefined;
+  organizer: ResolvedEventOrganizer;
   eventTags: string[];
   goingCount: number;
-  hostEmail?: string | null;
-  hostPhone?: string | null;
-  hostWebsite?: string | null;
   handleEmailHost: () => void;
   handleCallHost: () => void;
   handleVisitWebsite: () => void;
@@ -28,23 +20,14 @@ interface SidebarCardProps {
 
 export function SidebarCard({
   event,
-  hostName,
-  publisherProfile,
+  organizer,
   eventTags,
   goingCount,
-  hostEmail,
-  hostPhone,
-  hostWebsite,
   handleEmailHost,
   handleCallHost,
   handleVisitWebsite,
   colors,
 }: SidebarCardProps) {
-  const rawPresentedBy = (event as unknown as Record<string, unknown>).presentedBy;
-  const presentedBy = typeof rawPresentedBy === 'string' && rawPresentedBy.trim().length > 0
-    ? rawPresentedBy
-    : publisherProfile?.name ?? hostName;
-
   const cardStyle = {
     borderRadius: 20,
     borderWidth: 1,
@@ -85,12 +68,12 @@ export function SidebarCard({
       <Pressable
         style={sectionStyle}
         onPress={
-          event.publisherProfileId
-            ? () => router.push({ pathname: '/profile/[id]', params: { id: event.publisherProfileId! } })
+          organizer.profileId
+            ? () => router.push({ pathname: '/profile/[id]', params: { id: organizer.profileId! } })
             : undefined
         }
-        accessibilityRole={event.publisherProfileId ? 'link' : 'none'}
-        accessibilityLabel={`Organiser: ${hostName}`}
+        accessibilityRole={organizer.profileId ? 'link' : 'none'}
+        accessibilityLabel={`Organiser: ${organizer.name}`}
       >
         <Text style={labelStyle}>Hosted by</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -105,9 +88,9 @@ export function SidebarCard({
               overflow: 'hidden',
             }}
           >
-            {publisherProfile?.imageUrl ? (
+            {organizer.imageUrl ? (
               <Image
-                source={{ uri: publisherProfile.imageUrl }}
+                source={{ uri: organizer.imageUrl }}
                 style={{ width: 44, height: 44 }}
                 contentFit="cover"
               />
@@ -120,7 +103,7 @@ export function SidebarCard({
               style={[TextStyles.headline, { color: colors.text }]}
               numberOfLines={2}
             >
-              {hostName}
+              {organizer.name}
             </Text>
             {event.city ? (
               <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
@@ -128,7 +111,7 @@ export function SidebarCard({
               </Text>
             ) : null}
           </View>
-          {event.publisherProfileId ? (
+          {organizer.profileId ? (
             <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
           ) : null}
         </View>
@@ -151,7 +134,7 @@ export function SidebarCard({
             <Ionicons name="megaphone-outline" size={16} color={CultureTokens.indigo} />
           </View>
           <Text style={[TextStyles.bodyMedium, { color: colors.text, flex: 1 }]} numberOfLines={2}>
-            {presentedBy}
+            {organizer.presentedBy}
           </Text>
         </View>
       </View>
@@ -182,11 +165,11 @@ export function SidebarCard({
       </View>
 
       {/* ── Contact the Host ─────────────────────────────────────── */}
-      {(hostEmail || hostPhone || hostWebsite) ? (
+      {(organizer.email || organizer.phone || organizer.website) ? (
         <View style={sectionStyle}>
           <Text style={labelStyle}>Contact the host</Text>
           <View style={{ gap: 8 }}>
-            {hostEmail ? (
+            {organizer.email ? (
               <Pressable
                 onPress={handleEmailHost}
                 style={({ pressed }) => [
@@ -217,12 +200,12 @@ export function SidebarCard({
                   <Ionicons name="mail-outline" size={16} color={colors.primary} />
                 </View>
                 <Text style={[TextStyles.bodyMedium, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-                  {hostEmail}
+                  {organizer.email}
                 </Text>
               </Pressable>
             ) : null}
 
-            {hostPhone ? (
+            {organizer.phone ? (
               <Pressable
                 onPress={handleCallHost}
                 style={({ pressed }) => [
@@ -253,12 +236,12 @@ export function SidebarCard({
                   <Ionicons name="call-outline" size={16} color={CultureTokens.teal} />
                 </View>
                 <Text style={[TextStyles.bodyMedium, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-                  {hostPhone}
+                  {organizer.phone}
                 </Text>
               </Pressable>
             ) : null}
 
-            {hostWebsite ? (
+            {organizer.website ? (
               <Pressable
                 onPress={handleVisitWebsite}
                 style={({ pressed }) => [
@@ -289,7 +272,7 @@ export function SidebarCard({
                   <Ionicons name="globe-outline" size={16} color={CultureTokens.indigo} />
                 </View>
                 <Text style={[TextStyles.bodyMedium, { color: colors.primary, flex: 1 }]} numberOfLines={1}>
-                  {hostWebsite.replace(/^https?:\/\//, '')}
+                  {organizer.website.replace(/^https?:\/\//, '')}
                 </Text>
               </Pressable>
             ) : null}

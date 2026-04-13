@@ -71,7 +71,7 @@ function buildFeaturedArtistHighlight(
   const subtitle = buildArtistSubtitle(artist, profile);
   const meta = buildArtistMeta(artist, profile);
   const imageUrl = buildArtistImage(artist, profile);
-  const accentColor = artist.accentColor || DEFAULT_DISCOVER_CURATION.featuredArtists[0]?.accentColor || '#2C2A72';
+  const accentColor = artist.accentColor || '#0066CC';
 
   if (profile?.id) {
     return {

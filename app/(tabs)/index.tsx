@@ -22,8 +22,8 @@
  * 18. Perks           — rewards preview
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, RefreshControl } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 
 import { useColors } from '@/hooks/useColors';
@@ -32,6 +32,7 @@ import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { CategoryColors, CultureTokens } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
+import { parseEventStartMs } from '@/lib/dateUtils';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
@@ -98,6 +99,22 @@ function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDisc
   };
 }
 
+function sortByDateTimeAsc(items: (EventData | string)[]): (EventData | string)[] {
+  const events = items.filter((item): item is EventData => typeof item !== 'string');
+  const placeholders = items.filter((item): item is string => typeof item === 'string');
+
+  events.sort((a, b) => {
+    const aStart = parseEventStartMs(a.date, a.time);
+    const bStart = parseEventStartMs(b.date, b.time);
+    if (aStart == null && bStart == null) return 0;
+    if (aStart == null) return 1;
+    if (bStart == null) return -1;
+    return aStart - bStart;
+  });
+
+  return [...events, ...placeholders];
+}
+
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
@@ -110,8 +127,10 @@ export default function DiscoverScreen() {
 
   const d = useDiscoverData();
   const s = useKeralaScoping(keralaDomain, d);
-  const startNowFallback = s.popular.filter((item) => typeof item !== 'string').slice(0, 6);
-  const startNowData = s.soon.length > 0 ? s.soon : startNowFallback;
+  const startNowFallback = sortByDateTimeAsc(
+    s.popular.filter((item) => typeof item !== 'string').slice(0, 6),
+  );
+  const startNowData = sortByDateTimeAsc(s.soon.length > 0 ? s.soon : startNowFallback);
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
@@ -146,7 +165,7 @@ export default function DiscoverScreen() {
       <SuperAppLinks />
 
       {/* ③ Hero Carousel — featured events */}
-      <HeroCarousel events={s.featured} />
+      <HeroCarousel events={s.featured} isLoading={d.eventsLoading} />
 
       {/* ④ Start Now — always visible */}
       <EventRail

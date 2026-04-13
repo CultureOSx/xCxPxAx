@@ -18,7 +18,17 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, CardTokens, gradients } from '@/constants/theme';
+import {
+  CardTokens,
+  ChipTokens,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  gradients,
+  IconSize,
+  LineHeight,
+  Spacing,
+} from '@/constants/theme';
 import { getCommunityHeadline } from '@/lib/community';
 import { Button } from '@/components/ui/Button';
 import CultureImage from '@/components/ui/CultureImage';
@@ -45,6 +55,20 @@ const ACCENT = [
   CultureTokens.gold, CultureTokens.gold, '#7C3AED', '#059669',
 ];
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+const FEED_UI = {
+  filterChipMinHeight: 46,
+  filterChipRadius: CardTokens.radius + Spacing.xs,
+  storyRingSize: 64,
+  storyInnerSize: 57,
+  storyNameMaxWidth: 68,
+  modalSheetRadius: 20,
+  commentsSheetRadius: 22,
+  createSheetRadius: 22,
+  eventImageHeightWeb: 260,
+  eventImageHeightNative: 320,
+  postImageHeight: 260,
+  storyMaxHeight: 520,
+} as const;
 
 const COUNTRY_FLAG: Record<string, string> = {
   'United States': '🇺🇸',
@@ -187,10 +211,10 @@ function FeedFilterChip({
 }
 
 const ffc = StyleSheet.create({
-  chip:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 15, paddingVertical: 11, minHeight: 46, borderRadius: 20, borderWidth: 1 },
-  text:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold', lineHeight: 19 },
-  badge:     { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  badgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', lineHeight: 14 },
+  chip:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm - 1, paddingHorizontal: ChipTokens.paddingH - 1, paddingVertical: ChipTokens.paddingV + 3, minHeight: FEED_UI.filterChipMinHeight, borderRadius: FEED_UI.filterChipRadius, borderWidth: 1 },
+  text:      { fontSize: FontSize.chip, fontFamily: FontFamily.semibold, lineHeight: LineHeight.chip - 1 },
+  badge:     { minWidth: IconSize.md - 2, height: IconSize.md - 2, borderRadius: (IconSize.md - 2) / 2, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xs },
+  badgeText: { fontSize: FontSize.tab, fontFamily: FontFamily.bold, lineHeight: LineHeight.tab + 2 },
 });
 
 function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }: {
@@ -233,8 +257,8 @@ function FeedFilterBar({ active, onChange, eventCount, commCount, colors, hPad }
 }
 
 const fb = StyleSheet.create({
-  wrap:  { paddingTop: 10, paddingBottom: 11 },
-  scroll:{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingBottom: 1 },
+  wrap:  { paddingTop: Spacing.sm + 2, paddingBottom: Spacing.sm + 3 },
+  scroll:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 1, paddingBottom: Spacing.xs - 3 },
 });
 
 // ── Stories bar ───────────────────────────────────────────────────────────────
@@ -355,15 +379,15 @@ function StoriesBar({ communities, authUser, colors, isAuthenticated, onCreatePo
 
 const st = StyleSheet.create({
   wrap:        { borderBottomWidth: StyleSheet.hairlineWidth },
-  scroll:      { paddingVertical: 13, gap: 14 },
-  item:        { alignItems: 'center', gap: 6 },
+  scroll:      { paddingVertical: Spacing.md - 3, gap: Spacing.md - 2 },
+  item:        { alignItems: 'center', gap: Spacing.sm - 2 },
   ringWrap:    { position: 'relative' },
-  ring:        { width: 64, height: 64, borderRadius: 32, padding: 2.5, alignItems: 'center', justifyContent: 'center' },
-  inner:       { width: 57, height: 57, borderRadius: 28.5, overflow: 'hidden' },
-  img:         { width: 57, height: 57 },
-  placeholder: { width: 57, height: 57, borderRadius: 28.5, alignItems: 'center', justifyContent: 'center' },
-  addDot:      { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  name:        { fontSize: 11, fontFamily: 'Poppins_500Medium', maxWidth: 68, textAlign: 'center', lineHeight: 15 },
+  ring:        { width: FEED_UI.storyRingSize, height: FEED_UI.storyRingSize, borderRadius: FEED_UI.storyRingSize / 2, padding: Spacing.xs - 1.5, alignItems: 'center', justifyContent: 'center' },
+  inner:       { width: FEED_UI.storyInnerSize, height: FEED_UI.storyInnerSize, borderRadius: FEED_UI.storyInnerSize / 2, overflow: 'hidden' },
+  img:         { width: FEED_UI.storyInnerSize, height: FEED_UI.storyInnerSize },
+  placeholder: { width: FEED_UI.storyInnerSize, height: FEED_UI.storyInnerSize, borderRadius: FEED_UI.storyInnerSize / 2, alignItems: 'center', justifyContent: 'center' },
+  addDot:      { position: 'absolute', bottom: 0, right: 0, width: IconSize.md + 4, height: IconSize.md + 4, borderRadius: (IconSize.md + 4) / 2, borderWidth: Spacing.xs - 1.5, alignItems: 'center', justifyContent: 'center' },
+  name:        { fontSize: FontSize.micro, fontFamily: FontFamily.medium, maxWidth: FEED_UI.storyNameMaxWidth, textAlign: 'center', lineHeight: LineHeight.micro - 1 },
 });
 
 // ── Guest banner ──────────────────────────────────────────────────────────────
@@ -404,12 +428,12 @@ function GuestBanner({ colors }: { colors: ReturnType<typeof useColors> }) {
 }
 
 const gst = StyleSheet.create({
-  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
-  iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  title:    { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 18 },
-  sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 15 },
-  cta:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-  ctaText:  { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
+  wrap:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4, padding: Spacing.md - 2, borderRadius: CardTokens.radius - 2, borderWidth: 1, overflow: 'hidden' },
+  iconWrap: { width: IconSize.xxl, height: IconSize.xxl, borderRadius: CardTokens.radius - 4, alignItems: 'center', justifyContent: 'center' },
+  title:    { fontSize: FontSize.chip, fontFamily: FontFamily.bold, lineHeight: LineHeight.chip - 2 },
+  sub:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3, lineHeight: LineHeight.micro - 1 },
+  cta:      { paddingHorizontal: Spacing.md - 2, paddingVertical: Spacing.sm, borderRadius: ChipTokens.radius },
+  ctaText:  { fontSize: FontSize.caption, fontFamily: FontFamily.bold, color: '#fff', lineHeight: LineHeight.caption + 1 },
 });
 
 // ── Trending interstitial ─────────────────────────────────────────────────────
@@ -455,19 +479,19 @@ const ti = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 16,
+    gap: Spacing.md - 4,
+    paddingVertical: Spacing.md - 2,
+    paddingHorizontal: CardTokens.padding,
+    borderRadius: CardTokens.radius,
     borderWidth: 1,
     overflow: 'hidden',
-    marginTop: 2,
-    marginBottom: 10,
+    marginTop: Spacing.xs - 2,
+    marginBottom: Spacing.sm + 2,
     minHeight: 74,
   },
-  iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  title:    { fontSize: 14, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
-  sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1, lineHeight: 16 },
+  iconWrap: { width: IconSize.xxl + 2, height: IconSize.xxl + 2, borderRadius: CardTokens.radius - 4, alignItems: 'center', justifyContent: 'center' },
+  title:    { fontSize: FontSize.body2, fontFamily: FontFamily.bold, lineHeight: LineHeight.body2 },
+  sub:      { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3, lineHeight: LineHeight.caption },
 });
 
 // ── Report modal ──────────────────────────────────────────────────────────────
@@ -523,15 +547,15 @@ function ReportModal({ visible, onClose, onReport, colors }: {
 }
 
 const rm = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: 20 },
-  card:    { width: '100%', maxWidth: 380, borderRadius: 18, borderWidth: 1, padding: 20, gap: 10 },
-  title:   { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
-  sub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', marginBottom: 4, lineHeight: 18 },
-  row:     { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 10, borderWidth: 1 },
-  radio:   { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  dot:     { width: 8, height: 8, borderRadius: 4 },
-  rowText: { fontSize: 14, fontFamily: 'Poppins_500Medium', flex: 1, lineHeight: 20 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: CardTokens.paddingLarge },
+  card:    { width: '100%', maxWidth: 380, borderRadius: CardTokens.radiusLarge - 2, borderWidth: 1, padding: CardTokens.paddingLarge, gap: Spacing.sm + 2 },
+  title:   { fontSize: FontSize.title3 - 1, fontFamily: FontFamily.bold, lineHeight: LineHeight.title3 - 4 },
+  sub:     { fontSize: FontSize.chip, fontFamily: FontFamily.regular, marginBottom: Spacing.xs, lineHeight: LineHeight.chip - 2 },
+  row:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4, padding: Spacing.md - 4, borderRadius: CardTokens.radius - 6, borderWidth: 1 },
+  radio:   { width: IconSize.md - 2, height: IconSize.md - 2, borderRadius: (IconSize.md - 2) / 2, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  dot:     { width: Spacing.sm, height: Spacing.sm, borderRadius: Spacing.xs },
+  rowText: { fontSize: FontSize.body2, fontFamily: FontFamily.medium, flex: 1, lineHeight: LineHeight.body2 },
+  actions: { flexDirection: 'row', gap: Spacing.sm + 2, marginTop: Spacing.sm - 2 },
 });
 
 // ── Post action sheet ─────────────────────────────────────────────────────────
@@ -573,11 +597,11 @@ function PostMoreMenu({ visible, onClose, onReport, onHide, isOwn, colors }: {
 
 const mo = StyleSheet.create({
   overlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  sheet:      { borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, paddingBottom: 28, paddingTop: 8 },
-  row:        { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  label:      { fontSize: 15, fontFamily: 'Poppins_500Medium', lineHeight: 20 },
-  cancel:     { paddingHorizontal: 20, paddingVertical: 16, alignItems: 'center' },
-  cancelText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', lineHeight: 20 },
+  sheet:      { borderTopLeftRadius: FEED_UI.modalSheetRadius, borderTopRightRadius: FEED_UI.modalSheetRadius, borderWidth: 1, paddingBottom: Spacing.xl - 4, paddingTop: Spacing.sm },
+  row:        { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 2, paddingHorizontal: CardTokens.paddingLarge, paddingVertical: CardTokens.padding, borderBottomWidth: StyleSheet.hairlineWidth },
+  label:      { fontSize: FontSize.callout, fontFamily: FontFamily.medium, lineHeight: LineHeight.callout - 2 },
+  cancel:     { paddingHorizontal: CardTokens.paddingLarge, paddingVertical: CardTokens.padding, alignItems: 'center' },
+  cancelText: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold, lineHeight: LineHeight.callout - 2 },
 });
 
 // ── Comments sheet ────────────────────────────────────────────────────────────
@@ -728,28 +752,28 @@ function CommentsSheet({ visible, onClose, post, colors }: {
 const csh = StyleSheet.create({
   overlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   kav:        { maxHeight: '90%' },
-  sheet:      { borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderBottomWidth: 0, minHeight: 320 },
-  handle:     { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 4 },
-  header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  title:      { fontSize: 16, fontFamily: 'Poppins_700Bold', lineHeight: 22 },
-  count:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 2, lineHeight: 15 },
-  closeBtn:   { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  empty:      { alignItems: 'center', paddingVertical: 36, gap: 8 },
-  emptyIcon:  { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  emptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold', lineHeight: 20 },
-  emptySub:   { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  sheet:      { borderTopLeftRadius: FEED_UI.commentsSheetRadius, borderTopRightRadius: FEED_UI.commentsSheetRadius, borderWidth: 1, borderBottomWidth: 0, minHeight: 320 },
+  handle:     { width: IconSize.xxl - 4, height: Spacing.xs, borderRadius: Spacing.xs / 2, alignSelf: 'center', marginTop: Spacing.sm + 2, marginBottom: Spacing.xs },
+  header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: CardTokens.paddingLarge - 2, paddingVertical: Spacing.md - 2, borderBottomWidth: StyleSheet.hairlineWidth },
+  title:      { fontSize: FontSize.body, fontFamily: FontFamily.bold, lineHeight: LineHeight.body - 2 },
+  count:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2, lineHeight: LineHeight.micro - 1 },
+  closeBtn:   { width: IconSize.lg + Spacing.sm - 2, height: IconSize.lg + Spacing.sm - 2, borderRadius: (IconSize.lg + Spacing.sm - 2) / 2, alignItems: 'center', justifyContent: 'center' },
+  empty:      { alignItems: 'center', paddingVertical: Spacing.xl + 4, gap: Spacing.sm },
+  emptyIcon:  { width: IconSize.xxl + Spacing.md, height: IconSize.xxl + Spacing.md, borderRadius: CardTokens.radius, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xs },
+  emptyTitle: { fontSize: FontSize.callout, fontFamily: FontFamily.bold, lineHeight: LineHeight.callout - 2 },
+  emptySub:   { fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 2 },
   list:       { maxHeight: 320 },
-  listContent:{ padding: 14, gap: 10 },
-  commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  bubble:     { flex: 1, borderRadius: 14, padding: 10, gap: 3 },
+  listContent:{ padding: Spacing.md - 2, gap: Spacing.sm + 2 },
+  commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  bubble:     { flex: 1, borderRadius: CardTokens.radius - 2, padding: Spacing.sm + 2, gap: Spacing.xs - 1 },
   bubbleHeader:{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  commName:   { fontSize: 12, fontFamily: 'Poppins_700Bold', lineHeight: 16 },
-  commBody:   { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
-  commTime:   { fontSize: 10, fontFamily: 'Poppins_400Regular', lineHeight: 14 },
-  error:      { fontSize: 12, fontFamily: 'Poppins_500Medium', paddingHorizontal: 18, paddingTop: 4, lineHeight: 17 },
-  inputRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
-  input:      { flex: 1, minHeight: 40, maxHeight: 80, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
-  sendBtn:    { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  commName:   { fontSize: FontSize.caption, fontFamily: FontFamily.bold, lineHeight: LineHeight.caption },
+  commBody:   { fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 2 },
+  commTime:   { fontSize: FontSize.tab, fontFamily: FontFamily.regular, lineHeight: LineHeight.tab + 2 },
+  error:      { fontSize: FontSize.caption, fontFamily: FontFamily.medium, paddingHorizontal: CardTokens.paddingLarge - 2, paddingTop: Spacing.xs, lineHeight: LineHeight.caption + 1 },
+  inputRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm, padding: Spacing.md - 4, borderTopWidth: StyleSheet.hairlineWidth },
+  input:      { flex: 1, minHeight: IconSize.xxl, maxHeight: 80, borderRadius: ChipTokens.radius, borderWidth: 1, paddingHorizontal: Spacing.md - 2, paddingVertical: Spacing.sm, fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 2 },
+  sendBtn:    { width: IconSize.xxl, height: IconSize.xxl, borderRadius: IconSize.xxl / 2, alignItems: 'center', justifyContent: 'center' },
 });
 
 // ── Reactions bar ─────────────────────────────────────────────────────────────
@@ -894,11 +918,11 @@ function ReactionsBar({ post, colors }: { post: FeedPost; colors: ReturnType<typ
 }
 
 const rxn = StyleSheet.create({
-  likeSummary:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth },
-  likeSummaryText: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 17 },
+  likeSummary:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3, paddingHorizontal: CardTokens.padding, paddingVertical: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  likeSummaryText: { fontSize: FontSize.caption, fontFamily: FontFamily.regular, lineHeight: LineHeight.caption + 1 },
   wrap:            { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, minHeight: 48 },
-  btnLabel:        { fontSize: 13, fontFamily: 'Poppins_500Medium', lineHeight: 18 },
+  btn:             { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm - 2, paddingVertical: Spacing.md - 2, minHeight: 48 },
+  btnLabel:        { fontSize: FontSize.chip, fontFamily: FontFamily.medium, lineHeight: LineHeight.chip - 2 },
 });
 
 // ── Post card header ──────────────────────────────────────────────────────────
@@ -968,19 +992,19 @@ function PostCardHeader({ post, accent, colors, colorIdx, onMorePress }: {
 }
 
 const ph = StyleSheet.create({
-  row:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  row:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: CardTokens.padding, paddingVertical: Spacing.md - 4, gap: Spacing.md - 4 },
   info:    { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name:    { fontSize: 14, fontFamily: 'Poppins_700Bold', flex: 1, lineHeight: 20 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-  time:    { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 16 },
-  sep:     { fontSize: 12, lineHeight: 16 },
-  pill:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  pillText:{ fontSize: 10, fontFamily: 'Poppins_600SemiBold', lineHeight: 14 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3 },
+  name:    { fontSize: FontSize.body2, fontFamily: FontFamily.bold, flex: 1, lineHeight: LineHeight.body2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3, marginTop: Spacing.xs - 2 },
+  time:    { fontSize: FontSize.caption, fontFamily: FontFamily.regular, lineHeight: LineHeight.caption },
+  sep:     { fontSize: FontSize.caption, lineHeight: LineHeight.caption },
+  pill:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs - 1, paddingHorizontal: Spacing.sm - 2, paddingVertical: Spacing.xs - 2, borderRadius: Spacing.sm - 2 },
+  pillText:{ fontSize: FontSize.tab, fontFamily: FontFamily.semibold, lineHeight: LineHeight.tab + 2 },
   moreBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: IconSize.xxl + 4,
+    height: IconSize.xxl + 4,
+    borderRadius: (IconSize.xxl + 4) / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1319,7 +1343,7 @@ const pcd = StyleSheet.create({
   card: {},
 
   // ── Event ─────────────────────────────────────────────────────────────────
-  eventImg:     { height: Platform.OS === 'web' ? 260 : 320, position: 'relative', backgroundColor: '#0D0D14' },
+  eventImg:     { height: Platform.OS === 'web' ? FEED_UI.eventImageHeightWeb : FEED_UI.eventImageHeightNative, position: 'relative', backgroundColor: '#0D0D14' },
   datePill:     { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   datePillText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.95)', lineHeight: 15 },
   pricePill:    { position: 'absolute', top: 14, right: 14, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
@@ -1335,8 +1359,8 @@ const pcd = StyleSheet.create({
   viewText:     { fontSize: 13, fontFamily: 'Poppins_700Bold', lineHeight: 18 },
 
   // ── Announcement ──────────────────────────────────────────────────────────
-  postImg:         { height: 260, width: '100%', backgroundColor: '#0D0D14' },
-  storyFrame:      { width: '100%', aspectRatio: 9 / 16, maxHeight: 520, backgroundColor: '#0D0D14', position: 'relative' },
+  postImg:         { height: FEED_UI.postImageHeight, width: '100%', backgroundColor: '#0D0D14' },
+  storyFrame:      { width: '100%', aspectRatio: 9 / 16, maxHeight: FEED_UI.storyMaxHeight, backgroundColor: '#0D0D14', position: 'relative' },
   storyImg:        { ...StyleSheet.absoluteFillObject },
   storyGradient:   { ...StyleSheet.absoluteFillObject },
   storyCaption:    { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 18 },
@@ -1668,11 +1692,11 @@ function FeedListHeader({ communities, authUser, colors, isAuthenticated, hPad, 
 }
 
 const flh = StyleSheet.create({
-  createWrap: { gap: 12, paddingTop: 10, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  divider:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  createWrap: { gap: Spacing.md - 4, paddingTop: Spacing.sm + 2, paddingBottom: Spacing.md - 2, borderBottomWidth: StyleSheet.hairlineWidth },
+  divider:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: Spacing.md - 4 },
   divLine:    { flex: 1, height: StyleSheet.hairlineWidth },
-  divPill:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  divText:    { fontSize: 10, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: 14 },
+  divPill:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs + 1, borderRadius: ChipTokens.radius },
+  divText:    { fontSize: FontSize.tab, fontFamily: FontFamily.semibold, letterSpacing: 0.8, textTransform: 'uppercase', lineHeight: LineHeight.tab + 2 },
 });
 
 // ── Main screen ───────────────────────────────────────────────────────────────

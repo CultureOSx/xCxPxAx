@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { TextStyles, CultureTokens } from '@/constants/theme';
+import { TextStyles } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,14 +7,15 @@ import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { getStyles } from './styles';
 import type { EventData } from '@/shared/schema';
+import type { ResolvedEventOrganizer } from './utils';
 
 interface HostSectionProps {
   event: EventData;
-  hostName: string;
+  organizer: ResolvedEventOrganizer;
   displayCategory: string;
-  hostEmail?: string | null;
-  hostPhone?: string | null;
-  hostWebsite?: string | null;
+  canContactOrganizer?: boolean;
+  contactPending?: boolean;
+  handleContactOrganizer: () => void;
   handleEmailHost: () => void;
   handleCallHost: () => void;
   handleVisitWebsite: () => void;
@@ -24,11 +25,11 @@ interface HostSectionProps {
 
 export function HostSection({
   event,
-  hostName,
+  organizer,
   displayCategory,
-  hostEmail,
-  hostPhone,
-  hostWebsite,
+  canContactOrganizer = false,
+  contactPending = false,
+  handleContactOrganizer,
   handleEmailHost,
   handleCallHost,
   handleVisitWebsite,
@@ -44,21 +45,21 @@ export function HostSection({
           style={s.hostCard}
           padding={18}
           onPress={
-            event.publisherProfileId
+            organizer.profileId
               ? () =>
                   router.push({
                     pathname: '/profile/[id]',
-                    params: { id: event.publisherProfileId! },
+                    params: { id: organizer.profileId! },
                   })
               : undefined
           }
           accessibilityLabel={
-            event.publisherProfileId
-              ? `Open organiser profile ${hostName}`
-              : `Organiser: ${hostName}`
+            organizer.profileId
+              ? `Open organiser profile ${organizer.name}`
+              : `Organiser: ${organizer.name}`
           }
           accessibilityHint={
-            event.publisherProfileId
+            organizer.profileId
               ? 'Opens organiser profile'
               : 'Organiser information (not interactive)'
           }
@@ -68,24 +69,40 @@ export function HostSection({
               <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
             </View>
             <View style={s.hostContent}>
-              <Text style={[TextStyles.headline, { color: colors.text }]}>{hostName}</Text>
+              <Text style={[TextStyles.headline, { color: colors.text }]}>{organizer.name}</Text>
               <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
                 {displayCategory} in {event.city}
               </Text>
             </View>
           </View>
           <View style={[s.chipRow, { marginTop: 14 }]}>
-            {hostEmail ? (
+            {canContactOrganizer ? (
+              <View>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon="chatbubble-ellipses-outline"
+                  onPress={handleContactOrganizer}
+                  loading={contactPending}
+                >
+                  Contact organiser
+                </Button>
+                <Text style={[TextStyles.caption, { color: colors.textTertiary, marginTop: 6 }]}>
+                  Sends an in-app enquiry to the organiser for this event.
+                </Text>
+              </View>
+            ) : null}
+            {organizer.email ? (
               <Button variant="outline" size="sm" leftIcon="mail-outline" onPress={handleEmailHost}>
                 Email host
               </Button>
             ) : null}
-            {hostPhone ? (
+            {organizer.phone ? (
               <Button variant="outline" size="sm" leftIcon="call-outline" onPress={handleCallHost}>
                 Call host
               </Button>
             ) : null}
-            {hostWebsite ? (
+            {organizer.website ? (
               <Button variant="outline" size="sm" leftIcon="globe-outline" onPress={handleVisitWebsite}>
                 Visit website
               </Button>

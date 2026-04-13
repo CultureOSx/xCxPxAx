@@ -22,6 +22,7 @@ const APP_LINKS: AppLink[] = [
   { id: 'movies', label: 'Movies', icon: 'film', color: CultureTokens.coral, route: '/movies' },
   { id: 'dining', label: 'Dining', icon: 'restaurant', color: CategoryColors.food, route: '/restaurants' },
   { id: 'activities', label: 'Activities', icon: 'compass', color: CultureTokens.teal, route: '/activities' },
+  { id: 'travel', label: 'Travel', icon: 'airplane-outline', color: CultureTokens.indigo, route: '/travel' },
   { id: 'shopping', label: 'Shopping', icon: 'bag-handle', color: CategoryColors.shopping, route: '/shopping' },
   { id: 'offerings', label: 'Offers', icon: 'pricetags-outline', color: CultureTokens.gold, route: '/offerings' },
   { id: 'directory', label: 'Directory', icon: 'storefront', color: CultureTokens.indigo, route: '/(tabs)/directory' },

@@ -628,8 +628,8 @@ function eventDateLines(event: FirestoreEvent): string[] {
   if (!startDate) return [];
 
   const startTime = parseTime(event.time);
-  const endDate = parseDate(event.endDate) ?? startDate;
-  const endTime = parseTime(event.endTime);
+  const endDate = parseDate(event.endDate ?? undefined) ?? startDate;
+  const endTime = parseTime(event.endTime ?? undefined);
 
   if (!startTime) {
     const exclusiveEnd = addDays(endDate, 1);

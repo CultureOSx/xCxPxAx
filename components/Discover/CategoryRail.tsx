@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
+import { useLayout } from '@/hooks/useLayout';
 import SectionHeader from './SectionHeader';
 import CategoryCard from './CategoryCard';
 import { CategoryColors } from '@/constants/theme';
@@ -21,28 +22,53 @@ const browseCategories = [
 ] as const;
 
 function CategoryRailComponent() {
-  const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
+  const { headerPadStyle, scrollPadStyle, vPad, pad } = useDiscoverRailInsets();
+  const { width } = useLayout();
+  const isWeb = Platform.OS === 'web';
+  const gap = 10;
+  const cardWidth = Math.floor((width - pad * 2 - gap * 2) / 3);
 
   return (
     <View style={[styles.container, { marginBottom: vPad }]}>
       <View style={headerPadStyle}>
         <SectionHeader title="Browse Categories" onSeeAll={() => router.push('/events')} />
       </View>
-      <View style={[styles.grid, scrollPadStyle]}>
-        {browseCategories.map((item) => (
-          <CategoryCard
-            key={item.id}
-            item={item}
-            onPress={() => router.push('/(tabs)/explore')}
-          />
-        ))}
-      </View>
+      {isWeb ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.row, scrollPadStyle]}
+        >
+          {browseCategories.map((item) => (
+            <CategoryCard
+              key={item.id}
+              item={item}
+              onPress={() => router.push('/(tabs)/explore')}
+            />
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={[styles.grid, headerPadStyle]}>
+          {browseCategories.map((item) => (
+            <CategoryCard
+              key={item.id}
+              item={item}
+              style={{ width: cardWidth }}
+              onPress={() => router.push('/(tabs)/explore')}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {},
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -100,7 +100,7 @@ export default function AdminEventsScreen() {
   // Fetch events via shared API
   const { data, isLoading, isPlaceholderData } = useQuery({
     queryKey: ['admin-events', search, page],
-    queryFn: () => api.events.list({ search, page, pageSize: 20 }),
+    queryFn: () => api.events.list({ search, page, pageSize: 20, includePast: true }),
     placeholderData: (previousData) => previousData,
     enabled: isSuperAdmin || isAdmin,
   });
@@ -123,11 +123,13 @@ export default function AdminEventsScreen() {
     },
   });
 
+  useEffect(() => {
+    if (!roleLoading && !isSuperAdmin && !isAdmin) {
+      router.replace('/(tabs)');
+    }
+  }, [isAdmin, isSuperAdmin, roleLoading]);
   if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
+  if (!isSuperAdmin && !isAdmin) return null;
 
   const events = data?.events ?? [];
 

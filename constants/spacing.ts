@@ -20,6 +20,21 @@ export const Spacing = {
   xxxl: 48,
 } as const;
 
+/**
+ * Vertical rhythm for marketing / storytelling sections (web-first, also usable natively).
+ * Apple-like “chapter” spacing — multiples of 8px.
+ */
+export const SectionSpacing = {
+  /** 64px */
+  sm: 64,
+  /** 80px */
+  md: 80,
+  /** 96px */
+  lg: 96,
+  /** 120px */
+  xl: 120,
+} as const;
+
 export const Radius = {
   /** 16px — standardized corner radius */
   xs: 16,

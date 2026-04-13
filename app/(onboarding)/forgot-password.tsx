@@ -40,6 +40,11 @@ import {
   AuthMobileHeader,
 } from '@/components/onboarding/AuthScreenPrimitives';
 
+const RESET_EMAIL_ACTION_SETTINGS = {
+  url: `${(process.env.EXPO_PUBLIC_APP_URL ?? 'https://culturepass.app').replace(/\/+$/, '')}/login`,
+  handleCodeInApp: false,
+};
+
 export default function ForgotPasswordScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
@@ -63,7 +68,7 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase(), RESET_EMAIL_ACTION_SETTINGS);
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -89,7 +94,7 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase(), RESET_EMAIL_ACTION_SETTINGS);
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }

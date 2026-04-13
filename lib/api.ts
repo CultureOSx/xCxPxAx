@@ -152,10 +152,51 @@ export interface EventListParams {
   publisherProfileId?: string;
   /** Filter by linked venue profile id */
   venueProfileId?: string;
+  /** Include events that started before dateFrom but are still running */
+  includeOngoing?: boolean;
+  /** Explicitly include historical events before today */
+  includePast?: boolean;
+}
+
+export interface EventContactThreadMessage {
+  id: string;
+  authorId: string;
+  authorRole: 'requester' | 'organizer';
+  message: string;
+  createdAt: string;
+}
+
+export interface EventContactRequest {
+  id: string;
+  eventId: string;
+  eventTitle?: string | null;
+  organizerId: string;
+  requesterId: string;
+  requesterHandle?: string | null;
+  requesterEmail?: string | null;
+  message: string;
+  contactMethod?: 'in_app' | 'email' | 'phone';
+  status?: 'new' | 'replied' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+  thread?: EventContactThreadMessage[];
 }
 
 const events = {
   list: (params: EventListParams = {}) => {
+    const todayYmd = (() => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    })();
+    const shouldDefaultToCurrentAndFuture = !params.includePast && !params.dateFrom;
+    const effectiveDateFrom = shouldDefaultToCurrentAndFuture ? todayYmd : params.dateFrom;
+    const effectiveIncludeOngoing = shouldDefaultToCurrentAndFuture
+      ? params.includeOngoing ?? true
+      : params.includeOngoing;
+
     const qs = new URLSearchParams();
     if (params.city) qs.set('city', params.city);
     if (params.country) qs.set('country', params.country);
@@ -164,7 +205,7 @@ const events = {
     if (params.page != null) qs.set('page', String(params.page));
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
     if (params.search) qs.set('search', params.search);
-    if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (effectiveDateFrom) qs.set('dateFrom', effectiveDateFrom);
     if (params.dateTo) qs.set('dateTo', params.dateTo);
     if (params.eventType) qs.set('eventType', params.eventType);
     if (params.isFeatured !== undefined) qs.set('isFeatured', String(params.isFeatured));
@@ -172,6 +213,7 @@ const events = {
     if (params.isFree !== undefined) qs.set('isFree', String(params.isFree));
     if (params.publisherProfileId) qs.set('publisherProfileId', params.publisherProfileId);
     if (params.venueProfileId) qs.set('venueProfileId', params.venueProfileId);
+    if (effectiveIncludeOngoing !== undefined) qs.set('includeOngoing', String(effectiveIncludeOngoing));
 
     const query = qs.toString();
     return request<PaginatedEventsResponse>('GET', `api/events${query ? `?${query}` : ''}`);
@@ -213,6 +255,22 @@ const events = {
 
   remove: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/events/${id}`),
+
+  contactOrganizer: (eventId: string, payload: { message: string; contactMethod?: 'in_app' | 'email' | 'phone' }) =>
+    request<{ success: boolean; requestId?: string }>('POST', `api/events/${eventId}/contact-organizer`, payload),
+
+  listContactRequests: (params: { status?: 'new' | 'replied' | 'closed' } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set('status', params.status);
+    const query = qs.toString();
+    return request<{ requests: EventContactRequest[] }>('GET', `api/events/contact-requests/organizer${query ? `?${query}` : ''}`);
+  },
+
+  getContactRequest: (requestId: string) =>
+    request<{ request: EventContactRequest }>('GET', `api/events/contact-requests/${requestId}`),
+
+  replyContactRequest: (requestId: string, message: string) =>
+    request<{ success: boolean }>('POST', `api/events/contact-requests/${requestId}/reply`, { message }),
 };
 
 // ---------------------------------------------------------------------------
@@ -1002,6 +1060,16 @@ const communities = {
 
   remove: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/communities/${id}`),
+
+  invite: (
+    id: string,
+    payload: { emails: string[]; inviterName?: string; message?: string },
+  ) =>
+    request<{ success: boolean; sent: number; skipped: number }>(
+      'POST',
+      `api/communities/${id}/invitations`,
+      payload,
+    ),
 };
 
 // ---------------------------------------------------------------------------
@@ -1425,8 +1493,22 @@ const uploads = {
     } catch (err) {
       if (err instanceof ApiError) throw err;
       if (err instanceof Error) {
-        const match = err.message.match(/^(\d{3}):\s*(.*)/s);
-        if (match) throw new ApiError(parseInt(match[1], 10), match[2]);
+        const match = err.message.match(/^(\d{3}):\s*(.+)$/s);
+        if (match) {
+          const status = parseInt(match[1], 10);
+          let body = match[2].trim();
+          const urlIdx = body.lastIndexOf(' (http');
+          if (urlIdx >= 0) body = body.slice(0, urlIdx).trim();
+          try {
+            const j = JSON.parse(body) as { error?: string };
+            if (typeof j.error === 'string' && j.error.length > 0) {
+              throw new ApiError(status, j.error, body);
+            }
+          } catch (e) {
+            if (e instanceof ApiError) throw e;
+          }
+          throw new ApiError(status, body);
+        }
       }
       throw new ApiError(0, err instanceof Error ? err.message : 'Network error');
     }

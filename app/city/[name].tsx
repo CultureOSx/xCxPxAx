@@ -39,24 +39,6 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { cityAmbient, StatPill, getCityDestinationStyles } from '@/components/city/CityDestinationStyles';
 import { scrollToChildInScrollView } from '@/lib/scrollContent';
 
-// ─── City hero images ─────────────────────────────────────────────────────────
-
-const CITY_IMAGES: Record<string, string> = {
-  sydney:    'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=2000&q=90',
-  melbourne: 'https://images.unsplash.com/photo-1514395462725-fb4566210144?auto=format&fit=crop&w=2000&q=90',
-  brisbane:  'https://images.unsplash.com/photo-1549008880-927376046f4e?auto=format&fit=crop&w=2000&q=90',
-  perth:     'https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?auto=format&fit=crop&w=2000&q=90',
-  adelaide:  'https://images.unsplash.com/photo-1550747528-cdb869422707?auto=format&fit=crop&w=2000&q=90',
-  uae:       'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=2000&q=90',
-  dubai:     'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=2000&q=90',
-  london:    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=2000&q=90',
-  toronto:   'https://images.unsplash.com/photo-1517090504586-fde19ea6066f?auto=format&fit=crop&w=2000&q=90',
-  auckland:  'https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=2000&q=90',
-};
-
-const DEFAULT_CITY_IMAGE =
-  'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=2000&q=90';
-
 // ─── Per-city metadata ────────────────────────────────────────────────────────
 
 interface CityMeta {
@@ -156,7 +138,6 @@ export default function CityScreen() {
 
   const cityName    = Array.isArray(name)    ? name[0]    : name    ?? onboarding?.city ?? 'Sydney';
   const cityCountry = Array.isArray(country) ? country[0] : country ?? onboarding?.country ?? 'Australia';
-  const heroImage   = CITY_IMAGES[cityName.toLowerCase()] ?? DEFAULT_CITY_IMAGE;
   const cityMeta    = CITY_META[cityName.toLowerCase()] ?? DEFAULT_CITY_META;
 
   // State
@@ -439,11 +420,11 @@ export default function CityScreen() {
               layoutHeights.current.hero = e.nativeEvent.layout.height;
             }}
           >
-            <Image
-              source={{ uri: heroImage }}
+            <LinearGradient
+              colors={[...gradients.midnight]}
               style={styles.heroImage}
-              contentFit="cover"
-              transition={600}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             />
 
             <LinearGradient

@@ -3,7 +3,7 @@
 > The definitive blueprint for CulturePass: architecture, tech stack, design laws, data models, and API patterns. **Read this before touching code.**
 >
 > **Last Updated**: April 2026
-> **Related Docs**: [`CLAUDE.md`](CLAUDE.md) (Quickstart), [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md), [`culturepass-rules.md`](culturepass-rules.md), [`docs/AI_AGENT_STYLE_SHEET.md`](docs/AI_AGENT_STYLE_SHEET.md).
+> **Related Docs**: [`CLAUDE.md`](CLAUDE.md) (Quickstart), [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md), [`docs/UI_SYSTEM.md`](docs/UI_SYSTEM.md) (tokens + marketing layout), [`culturepass-rules.md`](culturepass-rules.md), [`docs/AI_AGENT_STYLE_SHEET.md`](docs/AI_AGENT_STYLE_SHEET.md).
 
 ---
 

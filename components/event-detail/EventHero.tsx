@@ -1,4 +1,4 @@
-import { View, Text, Platform, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';

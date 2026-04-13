@@ -12,7 +12,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import { normalizeAddressText, validateAddressLine } from '@/lib/addressValidation';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { useRole } from '@/hooks/useRole';
@@ -26,7 +27,6 @@ import {
   CUISINE_OPTIONS,
   EVENT_CATEGORIES,
   EVENT_CULTURE_TAGS,
-  LISTING_PLACEHOLDER_IMG,
   MOVIE_GENRES,
   ORG_CATEGORIES,
   ORG_LISTING_TABS,
@@ -50,6 +50,52 @@ import { Card, Field, SectionLabel } from '@/components/submit/FormPrimitives';
 
 /** Local aside width (submit studio); separate from app sidebar */
 const SUBMIT_ASIDE_WIDTH = 288;
+
+const GENERIC_COVER_FAIL =
+  'Could not upload your image. Check your connection and try again, or remove the photo.';
+
+function coverUploadFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.isUnauthorized) return 'Sign in to upload photos.';
+    if (err.status === 403) return 'You do not have permission to upload.';
+    if (err.status === 503) return 'Uploads are temporarily unavailable. Try again later or remove the photo.';
+    if (err.status >= 500) return 'Could not save your image. Try again in a moment or remove the photo.';
+    const inner = err.message.match(/\{"error"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (inner) return inner[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    const cleaned = err.message
+      .replace(/^\d{3}:\s*/, '')
+      .replace(/\s*\([^)]+\)\s*$/, '')
+      .trim();
+    if (cleaned && cleaned.length < 280 && !cleaned.startsWith('{')) return cleaned;
+    return GENERIC_COVER_FAIL;
+  }
+  if (err instanceof Error && err.name === 'AbortError') {
+    return 'Upload timed out. Check your connection and try again.';
+  }
+  return GENERIC_COVER_FAIL;
+}
+
+function submitMutationErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const inner = err.message.match(/\{"error"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (inner) return inner[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    if (err.isUnauthorized) return 'Please sign in again.';
+    if (err.status >= 500) return 'Something went wrong. Please try again.';
+    const cleaned = err.message.replace(/^\d{3}:\s*/, '').replace(/\s*\([^)]+\)\s*$/, '').trim();
+    return cleaned.slice(0, 280) || 'Request failed.';
+  }
+  return err instanceof Error ? err.message : 'Something went wrong.';
+}
+
+type CoverUploadResult = { ok: true; url: string } | { ok: false; message: string };
+
+function reportCoverUploadFailure(
+  setFieldErrors: React.Dispatch<React.SetStateAction<FieldErrors>>,
+  message: string,
+) {
+  setFieldErrors(p => ({ ...p, coverImage: message }));
+  if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+}
 
 type SubmitStudioLayoutProps = {
   isWebDesktop: boolean;
@@ -170,7 +216,8 @@ export default function SubmitScreen() {
       setEventCultureTags([]);
       setIsFree(false);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitProfileMutation = useMutation({
@@ -185,7 +232,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitPerkMutation = useMutation({
@@ -200,7 +248,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitActivityMutation = useMutation({
@@ -213,7 +262,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitRestaurantMutation = useMutation({
@@ -226,7 +276,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitShopMutation = useMutation({
@@ -239,7 +290,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const submitMovieMutation = useMutation({
@@ -252,7 +304,8 @@ export default function SubmitScreen() {
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: (err: Error) =>
+      setFieldErrors(p => ({ ...p, name: submitMutationErrorMessage(err) })),
   });
 
   const isPending =
@@ -274,17 +327,21 @@ export default function SubmitScreen() {
       allowsEditing: true,
       quality: 1,
     });
-    if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]?.uri) {
+      setImageUri(result.assets[0].uri);
+      setFieldErrors(p => ({ ...p, coverImage: undefined }));
+    }
   };
 
-  const uploadCoverIfNeeded = async (): Promise<string | null> => {
-    if (!imageUri) return null;
+  const uploadCoverIfNeeded = async (): Promise<CoverUploadResult> => {
+    if (!imageUri) return { ok: false, message: GENERIC_COVER_FAIL };
     try {
       const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
       const formData = new FormData();
       // RN/iOS multipart: Blob in FormData often does not attach — use file descriptor (web keeps Blob).
       if (Platform.OS === 'web') {
-        const blobRes = await fetch(processed.uri);
+        const blobFetch = globalThis.fetch.bind(globalThis);
+        const blobRes = await blobFetch(processed.uri);
         const blob = await blobRes.blob();
         formData.append('image', blob, 'upload.jpg');
       } else {
@@ -295,12 +352,12 @@ export default function SubmitScreen() {
         } as unknown as Blob);
       }
       const uploaded = await api.uploads.image(formData);
-      return uploaded.imageUrl;
+      return { ok: true, url: uploaded.imageUrl };
     } catch (err) {
       if (__DEV__) {
         console.error('[uploadCoverIfNeeded] Failed to upload cover image', { imageUri, error: err });
       }
-      return null;
+      return { ok: false, message: coverUploadFailureMessage(err) };
     }
   };
 
@@ -336,7 +393,7 @@ export default function SubmitScreen() {
     if (form.website && !/^https?:\/\/.+/.test(form.website)) errors.website = 'Must start with https://';
     if (PROFILE_TABS.includes(activeTab) && !form.contactEmail.trim()) errors.contactEmail = 'Contact email is required';
     if (Object.keys(errors).length) {
-      setFieldErrors(errors);
+      setFieldErrors(p => ({ ...p, ...errors }));
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -344,19 +401,27 @@ export default function SubmitScreen() {
 
     if (isEventLike(activeTab)) {
       if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Date is required' })); return; }
+      const addressError = validateAddressLine(form.address, {
+        required: false,
+        fieldLabel: 'Street address',
+      });
+      if (addressError) { setFieldErrors(p => ({ ...p, address: addressError })); return; }
+      if (!form.venue.trim() && !normalizeAddressText(form.address)) {
+        setFieldErrors(p => ({ ...p, address: 'Add a venue name or street address.' }));
+        return;
+      }
       const location = deriveLocation();
       if (!location) return;
       let imageUrl: string | undefined;
       let heroImageUrl: string | undefined;
       if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        const coverUp = await uploadCoverIfNeeded();
+        if (!coverUp.ok) {
+          reportCoverUploadFailure(setFieldErrors, coverUp.message);
           return;
         }
-        imageUrl = url;
-        heroImageUrl = url;
+        imageUrl = coverUp.url;
+        heroImageUrl = coverUp.url;
       }
       submitEventMutation.mutate({
         title:       form.name.trim(),
@@ -402,17 +467,18 @@ export default function SubmitScreen() {
         status: 'active',
       });
     } else if (activeTab === 'activity') {
+      const addressError = validateAddressLine(form.address, { required: false, fieldLabel: 'Street address' });
+      if (addressError) { setFieldErrors(p => ({ ...p, address: addressError })); return; }
       const location = deriveLocation();
       if (!location) return;
       let imageUrl: string | undefined;
       if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        const coverUp = await uploadCoverIfNeeded();
+        if (!coverUp.ok) {
+          reportCoverUploadFailure(setFieldErrors, coverUp.message);
           return;
         }
-        imageUrl = url;
+        imageUrl = coverUp.url;
       }
       submitActivityMutation.mutate({
         name: form.name.trim(),
@@ -429,19 +495,24 @@ export default function SubmitScreen() {
         status: 'published',
       });
     } else if (activeTab === 'restaurant') {
-      if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
+      const addressError = validateAddressLine(form.address, {
+        required: true,
+        fieldLabel: 'Street address',
+        requireStreetNumber: true,
+      });
+      if (addressError) { setFieldErrors(p => ({ ...p, address: addressError })); return; }
       const location = deriveLocation();
       if (!location) return;
-      let imageUrl = LISTING_PLACEHOLDER_IMG;
-      if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+      if (!imageUri) {
+        setFieldErrors(p => ({ ...p, coverImage: 'Add a cover photo to publish this listing.' }));
+        return;
       }
+      const coverUp = await uploadCoverIfNeeded();
+      if (!coverUp.ok) {
+        reportCoverUploadFailure(setFieldErrors, coverUp.message);
+        return;
+      }
+      const imageUrl = coverUp.url;
       submitRestaurantMutation.mutate({
         name: form.name.trim(),
         cuisine: form.category || 'General',
@@ -462,19 +533,24 @@ export default function SubmitScreen() {
         deliveryAvailable: false,
       });
     } else if (activeTab === 'shop') {
-      if (!form.address.trim()) { setFieldErrors(p => ({ ...p, address: 'Street address is required' })); return; }
+      const addressError = validateAddressLine(form.address, {
+        required: true,
+        fieldLabel: 'Street address',
+        requireStreetNumber: true,
+      });
+      if (addressError) { setFieldErrors(p => ({ ...p, address: addressError })); return; }
       const location = deriveLocation();
       if (!location) return;
-      let imageUrl = LISTING_PLACEHOLDER_IMG;
-      if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+      if (!imageUri) {
+        setFieldErrors(p => ({ ...p, coverImage: 'Add a cover photo to publish this listing.' }));
+        return;
       }
+      const coverUp = await uploadCoverIfNeeded();
+      if (!coverUp.ok) {
+        reportCoverUploadFailure(setFieldErrors, coverUp.message);
+        return;
+      }
+      const imageUrl = coverUp.url;
       submitShopMutation.mutate({
         name: form.name.trim(),
         category: form.category || 'General',
@@ -496,16 +572,16 @@ export default function SubmitScreen() {
       if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Release date is required' })); return; }
       const location = deriveLocation();
       if (!location) return;
-      let posterUrl = LISTING_PLACEHOLDER_IMG;
-      if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        posterUrl = url;
+      if (!imageUri) {
+        setFieldErrors(p => ({ ...p, coverImage: 'Add a poster image to publish this film listing.' }));
+        return;
       }
+      const coverUp = await uploadCoverIfNeeded();
+      if (!coverUp.ok) {
+        reportCoverUploadFailure(setFieldErrors, coverUp.message);
+        return;
+      }
+      const posterUrl = coverUp.url;
       submitMovieMutation.mutate({
         title: form.name.trim(),
         description: form.description.trim() || '—',
@@ -528,13 +604,12 @@ export default function SubmitScreen() {
       if (!location) return;
       let imageUrl: string | undefined;
       if (imageUri) {
-        const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        const coverUp = await uploadCoverIfNeeded();
+        if (!coverUp.ok) {
+          reportCoverUploadFailure(setFieldErrors, coverUp.message);
           return;
         }
-        imageUrl = url;
+        imageUrl = coverUp.url;
       }
       const tags = form.profileTags
         .split(',')
@@ -909,7 +984,11 @@ export default function SubmitScreen() {
             {/* ── Cover Photo (standalone full-bleed section) ── */}
             {imageUri ? (
               <Pressable
-                style={[s.mediaPrevieFull, { marginHorizontal: hPad }]}
+                style={[
+                  s.mediaPrevieFull,
+                  { marginHorizontal: hPad },
+                  fieldErrors.coverImage ? { borderWidth: 2, borderColor: colors.error } : null,
+                ]}
                 onPress={uploadImage}
                 accessibilityRole="button"
                 accessibilityLabel="Replace image"
@@ -926,7 +1005,13 @@ export default function SubmitScreen() {
               </Pressable>
             ) : (
               <Pressable
-                style={[s.mediaEmpty, { borderColor: accent + '50', marginHorizontal: hPad }]}
+                style={[
+                  s.mediaEmpty,
+                  {
+                    borderColor: fieldErrors.coverImage ? colors.error : accent + '50',
+                    marginHorizontal: hPad,
+                  },
+                ]}
                 onPress={uploadImage}
                 accessibilityRole="button"
                 accessibilityLabel="Upload cover photo"
@@ -938,6 +1023,14 @@ export default function SubmitScreen() {
                 <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>16:9 recommended · high-resolution looks best</Text>
               </Pressable>
             )}
+            {fieldErrors.coverImage ? (
+              <Text
+                style={[s.coverImageError, { color: colors.error, marginHorizontal: hPad }]}
+                accessibilityRole="alert"
+              >
+                {fieldErrors.coverImage}
+              </Text>
+            ) : null}
 
             {/* ── Basic Information (name + description only) ── */}
             <Card colors={colors} hPad={hPad}>
@@ -1833,6 +1926,13 @@ const s = StyleSheet.create({
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   mediaEmptyTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
   mediaEmptySub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  coverImageError: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 18,
+    marginTop: -4,
+    marginBottom: 12,
+  },
 
   input:    { borderRadius: 12, padding: 14, fontSize: 14, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },

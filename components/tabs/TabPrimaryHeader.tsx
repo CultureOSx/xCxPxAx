@@ -3,7 +3,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import type { ReactNode } from 'react';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
-import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { HEADER_CHROME_TOKENS, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 
@@ -20,6 +20,10 @@ interface TabPrimaryHeaderProps {
   withGlobalNav?: boolean;
   /** Controls the divider under the chrome row (not the shell border). */
   showChromeHairline?: boolean;
+  /** Controls shell bottom border line on web/native. */
+  showShellBorder?: boolean;
+  /** Controls brand accent strip line on web/native. */
+  showBrandStrip?: boolean;
   /**
    * When true, `children` renders outside the padded container — full-width
    * edge-to-edge inside the shell. Useful for filter chip rows that need to
@@ -39,6 +43,8 @@ export function TabPrimaryHeader({
   topInset = 0,
   withGlobalNav = true,
   showChromeHairline = false,
+  showShellBorder = false,
+  showBrandStrip = false,
   childrenFullBleed = false,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
@@ -53,6 +59,7 @@ export function TabPrimaryHeader({
       locationLabel={locationLabel}
       topHeaderAction={topHeaderAction}
       showHairline={showChromeHairline}
+      showBrandStrip={showBrandStrip}
     />
   ) : null;
 
@@ -79,11 +86,11 @@ export function TabPrimaryHeader({
         bordered={false}
         style={[
           {
-            borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
-            borderBottomColor: colors.border,
+            borderBottomWidth: showShellBorder ? MAIN_TAB_UI.headerBorderWidth : 0,
+            borderBottomColor: showShellBorder ? colors.border : 'transparent',
           },
           {
-            boxShadow: '0px 2px 12px rgba(0,0,0,0.07)',
+            boxShadow: HEADER_CHROME_TOKENS.webChromeShadow,
           } as object,
         ]}
         contentStyle={[styles.wrapWeb, { paddingTop: webTopPad }]}
@@ -95,7 +102,11 @@ export function TabPrimaryHeader({
   }
 
   return (
-    <TabHeaderNativeShell hPad={hPad}>
+    <TabHeaderNativeShell
+      hPad={hPad}
+      showBottomBorder={showShellBorder}
+      showBrandStrip={showBrandStrip}
+    >
       <View style={styles.wrapNative}>
         {body}
       </View>

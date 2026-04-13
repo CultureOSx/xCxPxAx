@@ -19,9 +19,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/currency';
-import { formatEventDateTime } from '@/lib/dateUtils';
+import { formatEventDateTime, parseEventStartMs } from '@/lib/dateUtils';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useContacts } from '@/contexts/ContactsContext';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useImageUpload } from '@/hooks/useImageUpload';
@@ -36,16 +37,18 @@ import { HostSection } from '@/components/event-detail/HostSection';
 import { DiscoverySection } from '@/components/event-detail/DiscoverySection';
 import { SidebarCard } from '@/components/event-detail/SidebarCard';
 import { EventLiquidModalBody } from '@/components/event-detail/EventLiquidModalBody';
+import { ScreenStateCard } from '@/components/ui/ScreenState';
 import { getStyles } from '@/components/event-detail/styles';
 import {
   cityToCoordinates,
   confirmRemoveRsvp,
   promptRsvpLogin,
+  resolveEventOrganizer,
   startCaseLabel,
   toCalendarDate,
 } from '@/components/event-detail/utils';
 import { useEventTicketing } from '@/components/event-detail/useEventTicketing';
-import type { EventData, Profile } from '@/shared/schema';
+import type { EventData } from '@/shared/schema';
 
 const EMPTY_EVENT: EventData = {
   id: '',
@@ -56,7 +59,7 @@ const EMPTY_EVENT: EventData = {
   city: '',
 };
 
-function normalizeTagList(...groups: Array<string[] | undefined>): string[] {
+function normalizeTagList(...groups: (string[] | undefined)[]): string[] {
   const merged = groups.flatMap((group) => group ?? []).filter((value): value is string => Boolean(value));
   return Array.from(new Set(merged.map((item) => item.trim()).filter(Boolean)));
 }
@@ -105,6 +108,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const { isDesktop } = useLayout();
   const { userId, user } = useAuth();
+  const { contacts } = useContacts();
   const colors = useColors();
   const isDark = useIsDark();
   const s = getStyles(colors, isDark);
@@ -118,6 +122,7 @@ export default function EventDetailScreen() {
   const [saved, setSaved] = useState(false);
   const [myRsvp, setMyRsvp] = useState<'going' | 'maybe' | 'not_going' | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [expandedSnapshotCard, setExpandedSnapshotCard] = useState<'when' | 'where' | 'entry' | 'attendance' | null>(null);
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', eventId],
@@ -146,12 +151,26 @@ export default function EventDetailScreen() {
     queryKey: ['event', event?.id, 'similar', event?.city, event?.country],
     enabled: Boolean(event?.id && event?.city),
     queryFn: async () => {
+      const today = new Date().toLocaleDateString('en-CA');
       const response = await api.events.list({
         city: event!.city,
         country: event!.country,
-        pageSize: 12,
+        pageSize: 40,
+        dateFrom: today,
+        includeOngoing: true,
       });
-      return response.events.filter((candidate) => candidate.id !== event!.id).slice(0, 8);
+      const nowMs = Date.now();
+      return response.events
+        .filter((candidate) => candidate.id !== event!.id)
+        .sort((a, b) => {
+          const aStart = parseEventStartMs(a.date, a.time) ?? Number.POSITIVE_INFINITY;
+          const bStart = parseEventStartMs(b.date, b.time) ?? Number.POSITIVE_INFINITY;
+          const aFutureBias = aStart >= nowMs ? 0 : 1;
+          const bFutureBias = bStart >= nowMs ? 0 : 1;
+          if (aFutureBias !== bFutureBias) return aFutureBias - bFutureBias;
+          return aStart - bStart;
+        })
+        .slice(0, 10);
     },
   });
 
@@ -189,19 +208,10 @@ export default function EventDetailScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const hostName = useMemo(() => {
-    if (!event) return 'CulturePass host';
-    return (
-      event.hostInfo?.name ||
-      event.hostName ||
-      publisherProfile?.name ||
-      'CulturePass host'
-    );
-  }, [event, publisherProfile?.name]);
-
-  const hostEmail = event?.hostInfo?.contactEmail ?? event?.hostEmail ?? null;
-  const hostPhone = event?.hostInfo?.contactPhone ?? event?.hostPhone ?? null;
-  const hostWebsite = event?.hostInfo?.websiteUrl ?? null;
+  const organizer = useMemo(
+    () => (event ? resolveEventOrganizer(event, publisherProfile) : null),
+    [event, publisherProfile],
+  );
   const displayCategory = startCaseLabel(event?.category) ?? 'Cultural event';
   const displayCommunity = useMemo(() => {
     const first = relatedCommunities[0];
@@ -263,6 +273,12 @@ export default function EventDetailScreen() {
   const venuePrimary = event?.venue || event?.city || 'Venue TBC';
   const venueSecondary = event?.address || [event?.city, event?.country].filter(Boolean).join(', ');
   const spotsLeft = event?.capacity ? Math.max(0, event.capacity - (event.attending ?? 0)) : null;
+  const circleAttendees = useMemo(() => {
+    if (!event?.city) return contacts.slice(0, 3);
+    const city = event.city.trim().toLowerCase();
+    const matchedCity = contacts.filter((contact) => contact.city?.trim().toLowerCase() === city);
+    return (matchedCity.length > 0 ? matchedCity : contacts).slice(0, 3);
+  }, [contacts, event?.city]);
 
   const saveMutation = useMutation({
     mutationFn: (nextSaved: boolean) => api.events.favorite(eventId, nextSaved),
@@ -294,6 +310,25 @@ export default function EventDetailScreen() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+    },
+  });
+
+  const contactOrganizerMutation = useMutation({
+    mutationFn: (message: string) =>
+      api.events.contactOrganizer(eventId, { message, contactMethod: 'in_app' }),
+    onSuccess: (result) => {
+      if (result?.requestId) {
+        router.push(`/enquiries/${encodeURIComponent(result.requestId)}` as any);
+        return;
+      }
+      Alert.alert('Enquiry sent', 'The organiser has been notified and can follow up with you.');
+    },
+    onError: (mutationError) => {
+      if (mutationError instanceof ApiError && mutationError.isUnauthorized) {
+        promptRsvpLogin(pathname);
+        return;
+      }
+      Alert.alert('Could not contact organiser', 'Please try again.');
     },
   });
 
@@ -394,26 +429,40 @@ export default function EventDetailScreen() {
   }, [event]);
 
   const handleEmailHost = useCallback(() => {
-    if (!hostEmail) return;
-    Linking.openURL(`mailto:${hostEmail}?subject=${encodeURIComponent('Event enquiry')}`).catch(() => {
+    if (!organizer?.email) return;
+    Linking.openURL(`mailto:${organizer.email}?subject=${encodeURIComponent('Event enquiry')}`).catch(() => {
       Alert.alert('Could not open email', 'Please try again.');
     });
-  }, [hostEmail]);
+  }, [organizer?.email]);
 
   const handleCallHost = useCallback(() => {
-    if (!hostPhone) return;
-    Linking.openURL(`tel:${hostPhone}`).catch(() => {
+    if (!organizer?.phone) return;
+    Linking.openURL(`tel:${organizer.phone}`).catch(() => {
       Alert.alert('Could not place call', 'Please try again.');
     });
-  }, [hostPhone]);
+  }, [organizer?.phone]);
 
   const handleVisitWebsite = useCallback(() => {
-    if (!hostWebsite) return;
-    const url = /^https?:\/\//i.test(hostWebsite) ? hostWebsite : `https://${hostWebsite}`;
+    if (!organizer?.website) return;
+    const url = /^https?:\/\//i.test(organizer.website) ? organizer.website : `https://${organizer.website}`;
     Linking.openURL(url).catch(() => {
       Alert.alert('Could not open website', 'Please try again.');
     });
-  }, [hostWebsite]);
+  }, [organizer?.website]);
+
+  const canContactOrganizer = Boolean(event?.organizerId && userId && event.organizerId !== userId);
+  const handleContactOrganizer = useCallback(() => {
+    if (!userId) {
+      promptRsvpLogin(pathname);
+      return;
+    }
+    if (!canContactOrganizer) {
+      Alert.alert('Organiser unavailable', 'This event does not have a direct organiser contact flow yet.');
+      return;
+    }
+    const defaultMessage = `Hi, I am interested in "${event?.title ?? 'this event'}". Could you share more details?`;
+    contactOrganizerMutation.mutate(defaultMessage);
+  }, [canContactOrganizer, contactOrganizerMutation, event?.title, pathname, userId]);
 
   const eventForTicketing = event ?? EMPTY_EVENT;
   const {
@@ -454,20 +503,15 @@ export default function EventDetailScreen() {
 
   if (error || !event) {
     return (
-      <View style={s.emptyContainer}>
-        <Ionicons name="alert-circle-outline" size={42} color={colors.error} />
-        <Text style={s.errorText}>Event not available</Text>
-        <Text style={s.errorDesc}>
-          This event may have been removed or is currently unavailable.
-        </Text>
-        <Pressable
-          onPress={() => router.replace('/events')}
-          style={s.backActionBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to events"
-        >
-          <Text style={s.backActionText}>Back to events</Text>
-        </Pressable>
+      <View style={[s.emptyContainer, { paddingHorizontal: 20 }]}>
+        <ScreenStateCard
+          icon="alert-circle-outline"
+          title="Event not available"
+          message="This event may have been removed or is currently unavailable."
+          actionLabel="Back to events"
+          onAction={() => router.replace('/events')}
+          tone="error"
+        />
       </View>
     );
   }
@@ -493,74 +537,124 @@ export default function EventDetailScreen() {
         <StorySection
           eyebrow="At a glance"
           title="Quick event snapshot"
-          subtitle="When, where, entry, attendance, then your next move."
+          subtitle="Tap each tile to expand details, open maps, and check your circle."
           colors={colors}
         >
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-            <View
-              style={{
+            <Pressable
+              onPress={() => setExpandedSnapshotCard((current) => (current === 'when' ? null : 'when'))}
+              style={({ pressed }) => ({
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.borderLight,
+                borderColor: expandedSnapshotCard === 'when' ? colors.primary : colors.borderLight,
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-              }}
+                opacity: pressed ? 0.92 : 1,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="Event date and time"
+              accessibilityHint="Tap to expand full schedule"
             >
               <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>When</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'when' ? undefined : 1}>
                 {startsLabel}
               </Text>
-            </View>
-            <View
-              style={{
+              {expandedSnapshotCard === 'when' ? (
+                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                  {event.endDate ? `Ends ${formatEventDateTime(event.endDate, event.endTime, event.country)}` : 'Single-session event'}
+                </Text>
+              ) : null}
+            </Pressable>
+
+            <Pressable
+              onPress={() => setExpandedSnapshotCard((current) => (current === 'where' ? null : 'where'))}
+              style={({ pressed }) => ({
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.borderLight,
+                borderColor: expandedSnapshotCard === 'where' ? colors.primary : colors.borderLight,
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-              }}
+                opacity: pressed ? 0.92 : 1,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="Event venue and map"
+              accessibilityHint="Tap to expand location details"
             >
               <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Where</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'where' ? 2 : 1}>
                 {venuePrimary}
               </Text>
-              <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={1}>
+              <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={expandedSnapshotCard === 'where' ? 3 : 1}>
                 {venueSecondary}
               </Text>
-            </View>
-            <View
-              style={{
+              {expandedSnapshotCard === 'where' ? (
+                <Pressable
+                  onPress={openMap}
+                  style={({ pressed }) => ({
+                    marginTop: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    opacity: pressed ? 0.8 : 1,
+                  })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open venue on map"
+                >
+                  <Ionicons name="map-outline" size={13} color={colors.primary} />
+                  <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>Open map</Text>
+                </Pressable>
+              ) : null}
+            </Pressable>
+
+            <Pressable
+              onPress={() => setExpandedSnapshotCard((current) => (current === 'entry' ? null : 'entry'))}
+              style={({ pressed }) => ({
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.borderLight,
+                borderColor: expandedSnapshotCard === 'entry' ? colors.primary : colors.borderLight,
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-              }}
+                opacity: pressed ? 0.92 : 1,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="Entry details"
+              accessibilityHint="Tap to expand ticket or RSVP information"
             >
               <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Entry</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'entry' ? undefined : 1}>
                 {entryLabel}
               </Text>
-            </View>
-            <View
-              style={{
+              {expandedSnapshotCard === 'entry' ? (
+                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                  {isFreeOrOpen ? 'No ticket required. RSVP helps organisers plan capacity.' : 'Tap reserve below to choose tier and quantity.'}
+                </Text>
+              ) : null}
+            </Pressable>
+
+            <Pressable
+              onPress={() => setExpandedSnapshotCard((current) => (current === 'attendance' ? null : 'attendance'))}
+              style={({ pressed }) => ({
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.borderLight,
+                borderColor: expandedSnapshotCard === 'attendance' ? colors.primary : colors.borderLight,
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-              }}
+                opacity: pressed ? 0.92 : 1,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="Attendance details and your circle"
+              accessibilityHint="Tap to see who in your circle may be attending"
             >
               <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Attendance</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'attendance' ? undefined : 1}>
                 {goingCount.toLocaleString()} going
               </Text>
               {spotsLeft !== null ? (
@@ -568,10 +662,54 @@ export default function EventDetailScreen() {
                   {spotsLeft.toLocaleString()} spots left
                 </Text>
               ) : null}
-            </View>
+              {expandedSnapshotCard === 'attendance' ? (
+                <View style={{ marginTop: 6 }}>
+                  {circleAttendees.length > 0 ? (
+                    <>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                        {circleAttendees.map((contact, index) => (
+                          <View
+                            key={`${contact.cpid}-${index}`}
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 11,
+                              backgroundColor: colors.primarySoft,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginLeft: index === 0 ? 0 : -6,
+                              borderWidth: 1,
+                              borderColor: colors.surface,
+                            }}
+                          >
+                            <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>
+                              {(contact.name?.trim()?.charAt(0) || '?').toUpperCase()}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                      <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                        Your circle: {circleAttendees.map((contact) => contact.name.split(' ')[0]).join(', ')}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={[TextStyles.caption, { color: colors.textSecondary }]}>
+                      Connect contacts to see people you know around this event.
+                    </Text>
+                  )}
+                  <Pressable
+                    onPress={() => router.push('/contacts')}
+                    style={({ pressed }) => ({ marginTop: 6, opacity: pressed ? 0.8 : 1, flexDirection: 'row', alignItems: 'center', gap: 4 })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open your contacts circle"
+                  >
+                    <Ionicons name="people-outline" size={13} color={colors.primary} />
+                    <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>Open your circle</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </Pressable>
           </View>
-
-          <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary, marginBottom: 6 }]}>Your next move</Text>
 
           <PrimaryActionSection
             event={event}
@@ -634,11 +772,11 @@ export default function EventDetailScreen() {
 
           <HostSection
             event={event}
-            hostName={hostName}
+            organizer={organizer ?? resolveEventOrganizer(event)}
             displayCategory={displayCategory}
-            hostEmail={hostEmail}
-            hostPhone={hostPhone}
-            hostWebsite={hostWebsite}
+            canContactOrganizer={canContactOrganizer}
+            contactPending={contactOrganizerMutation.isPending}
+            handleContactOrganizer={handleContactOrganizer}
             handleEmailHost={handleEmailHost}
             handleCallHost={handleCallHost}
             handleVisitWebsite={handleVisitWebsite}
@@ -649,8 +787,8 @@ export default function EventDetailScreen() {
 
         <StorySection
           eyebrow="Keep exploring"
-          title="Continue your cultural journey"
-          subtitle="Related events and communities, tailored to this vibe."
+          title={`More in ${event.city} (City)`}
+          subtitle={`Related events and communities from live data in ${event.city}.`}
           colors={colors}
         >
           <DiscoverySection
@@ -668,13 +806,9 @@ export default function EventDetailScreen() {
   const sidebarContent = (
     <SidebarCard
       event={event}
-      hostName={hostName}
-      publisherProfile={publisherProfile as Profile | undefined}
+      organizer={organizer ?? resolveEventOrganizer(event)}
       eventTags={eventTags}
       goingCount={goingCount}
-      hostEmail={hostEmail}
-      hostPhone={hostPhone}
-      hostWebsite={hostWebsite}
       handleEmailHost={handleEmailHost}
       handleCallHost={handleCallHost}
       handleVisitWebsite={handleVisitWebsite}

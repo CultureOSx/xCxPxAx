@@ -167,7 +167,16 @@ export default function CultureHubIndexScreen() {
                 accessibilityLabel={`Open ${def.heroTitle} hub`}
               >
                 <View style={styles.thumbWrap}>
-                  <Image source={{ uri: def.heroImage }} style={styles.thumb} contentFit="cover" />
+                  {def.heroImage ? (
+                    <Image source={{ uri: def.heroImage }} style={styles.thumb} contentFit="cover" />
+                  ) : (
+                    <LinearGradient
+                      colors={[...gradients.midnight]}
+                      style={styles.thumb}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    />
+                  )}
                   <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.5)']}
                     style={StyleSheet.absoluteFill}

@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
-import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { HEADER_CHROME_TOKENS, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
@@ -221,6 +221,7 @@ export function TabPageChromeRow({
   locationLabel,
   showMenu = true,
   showHairline = false,
+  showBrandStrip = false,
   topHeaderAction,
 }: {
   title: string;
@@ -228,6 +229,7 @@ export function TabPageChromeRow({
   locationLabel?: string;
   showMenu?: boolean;
   showHairline?: boolean;
+  showBrandStrip?: boolean;
   topHeaderAction?: ReactNode;
 }) {
   const colors = useColors();
@@ -262,13 +264,15 @@ export function TabPageChromeRow({
         <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
       </View>
       {/* Brand gradient accent strip */}
-      <LinearGradient
-        colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={markStyles.brandStrip}
-        pointerEvents="none"
-      />
+      {showBrandStrip ? (
+        <LinearGradient
+          colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={markStyles.brandStrip}
+          pointerEvents="none"
+        />
+      ) : null}
     </View>
   );
 }
@@ -278,35 +282,35 @@ const markStyles = StyleSheet.create({
     flexShrink: 0,
   },
   logoPlain: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: HEADER_CHROME_TOKENS.logo.defaultSize,
+    height: HEADER_CHROME_TOKENS.logo.defaultSize,
+    borderRadius: HEADER_CHROME_TOKENS.logo.defaultRadius,
   },
   logoPlainCompact: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: HEADER_CHROME_TOKENS.logo.compactSize,
+    height: HEADER_CHROME_TOKENS.logo.compactSize,
+    borderRadius: HEADER_CHROME_TOKENS.logo.compactRadius,
   },
   logoBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: HEADER_CHROME_TOKENS.logo.defaultRing,
+    height: HEADER_CHROME_TOKENS.logo.defaultRing,
+    borderRadius: HEADER_CHROME_TOKENS.logo.defaultRing / 2,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoBgCompact: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: HEADER_CHROME_TOKENS.logo.compactRing,
+    height: HEADER_CHROME_TOKENS.logo.compactRing,
+    borderRadius: HEADER_CHROME_TOKENS.logo.compactRing / 2,
   },
   pageChromeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 10,
-    paddingBottom: 10,
+    gap: HEADER_CHROME_TOKENS.row.gap,
+    marginBottom: HEADER_CHROME_TOKENS.row.marginBottom,
+    paddingBottom: HEADER_CHROME_TOKENS.row.paddingBottom,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   pageTitleCol: {
@@ -316,10 +320,14 @@ const markStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 2 : 4,
   },
   pageTitle: {
-    fontSize: Platform.OS === 'web' ? 20 : 22,
-    lineHeight: Platform.OS === 'web' ? 26 : 28,
+    fontSize: Platform.OS === 'web'
+      ? HEADER_CHROME_TOKENS.title.webFontSize
+      : HEADER_CHROME_TOKENS.title.nativeFontSize,
+    lineHeight: Platform.OS === 'web'
+      ? HEADER_CHROME_TOKENS.title.webLineHeight
+      : HEADER_CHROME_TOKENS.title.nativeLineHeight,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.4,
+    letterSpacing: HEADER_CHROME_TOKENS.title.letterSpacing,
   },
   pageSubtitle: {
     marginTop: 2,
@@ -328,15 +336,15 @@ const markStyles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
   },
   locationInline: {
-    marginTop: 4,
+    marginTop: HEADER_CHROME_TOKENS.location.marginTop,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: HEADER_CHROME_TOKENS.location.gap,
   },
   pageLocation: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: HEADER_CHROME_TOKENS.location.fontSize,
+    lineHeight: HEADER_CHROME_TOKENS.location.lineHeight,
     fontFamily: 'Poppins_400Regular',
   },
   chromeRowPlain: {
@@ -427,10 +435,10 @@ const markStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 0 : 2,
   },
   iconBtn: {
-    width: MAIN_TAB_UI.minTouchTarget,
-    height: MAIN_TAB_UI.minTouchTarget,
-    borderRadius: 12,
-    borderWidth: 1,
+    width: HEADER_CHROME_TOKENS.actionButton.size,
+    height: HEADER_CHROME_TOKENS.actionButton.size,
+    borderRadius: HEADER_CHROME_TOKENS.actionButton.radius,
+    borderWidth: HEADER_CHROME_TOKENS.actionButton.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -438,9 +446,9 @@ const markStyles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: HEADER_CHROME_TOKENS.actionButton.badgeSize,
+    height: HEADER_CHROME_TOKENS.actionButton.badgeSize,
+    borderRadius: HEADER_CHROME_TOKENS.actionButton.badgeRadius,
     backgroundColor: CultureTokens.coral,
     alignItems: 'center',
     justifyContent: 'center',
@@ -448,23 +456,23 @@ const markStyles = StyleSheet.create({
   },
   actionBadgeText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: HEADER_CHROME_TOKENS.actionButton.badgeFontSize,
     lineHeight: 10,
     fontFamily: 'Poppins_700Bold',
   },
   avatarBtn: {
-    width: MAIN_TAB_UI.minTouchTarget,
-    height: MAIN_TAB_UI.minTouchTarget,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    width: HEADER_CHROME_TOKENS.actionButton.size,
+    height: HEADER_CHROME_TOKENS.actionButton.size,
+    borderRadius: HEADER_CHROME_TOKENS.actionButton.radius,
+    borderWidth: HEADER_CHROME_TOKENS.actionButton.avatarBorderWidth,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   avatarImg: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: HEADER_CHROME_TOKENS.actionButton.avatarImageSize,
+    height: HEADER_CHROME_TOKENS.actionButton.avatarImageSize,
+    borderRadius: HEADER_CHROME_TOKENS.actionButton.avatarImageRadius,
   },
   chromeWrapper: {
     position: 'relative',
@@ -474,6 +482,6 @@ const markStyles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 1.5,
+    height: HEADER_CHROME_TOKENS.stripHeight,
   },
 });

@@ -1,5 +1,12 @@
 import { Platform, type ViewStyle } from 'react-native';
-import { LiquidGlassTokens, webShadow } from '@/constants/theme';
+import {
+  LiquidGlassTokens,
+  HeaderTokens,
+  SectionTokens,
+  Spacing,
+  ZIndex,
+  webShadow,
+} from '@/constants/theme';
 
 /** Breathing room below the status bar / notch on main tab headers (native only). */
 export const TAB_HEADER_NATIVE_INSET_GAP = Platform.select({
@@ -31,6 +38,58 @@ export const MAIN_TAB_UI = {
     md: 18,
     lg: 22,
   },
+} as const;
+
+/** Shared sizing/spacing tokens for tab header chrome across web + native. */
+export const HEADER_CHROME_TOKENS = {
+  logo: {
+    compactSize: HeaderTokens.height - 14, // 34
+    compactRing: HeaderTokens.height - 8, // 40
+    defaultSize: HeaderTokens.height - 8, // 40
+    defaultRing: HeaderTokens.height - 4, // 44
+    compactRadius: 8,
+    defaultRadius: 10,
+  },
+  actionButton: {
+    size: MAIN_TAB_UI.minTouchTarget,
+    radius: 12,
+    borderWidth: 1,
+    avatarBorderWidth: 1.5,
+    avatarImageSize: 28,
+    avatarImageRadius: 8,
+    badgeSize: 16,
+    badgeRadius: 8,
+    badgeFontSize: 8,
+  },
+  title: {
+    webFontSize: SectionTokens.titleFontSize, // 20
+    nativeFontSize: 22,
+    webLineHeight: SectionTokens.titleLineHeight, // 28
+    nativeLineHeight: 28,
+    letterSpacing: -0.4,
+  },
+  location: {
+    iconSize: MAIN_TAB_UI.iconSize.sm,
+    fontSize: 11,
+    lineHeight: 15,
+    gap: Spacing.xs,
+    marginTop: 4,
+  },
+  row: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+    paddingBottom: Spacing.sm,
+  },
+  stripHeight: 1.5,
+  zIndex: ZIndex.sticky,
+  shadow: {
+    iosColor: '#000',
+    iosOpacity: 0.06,
+    iosRadius: 3,
+    iosHeight: 1,
+    androidElevation: 2,
+  },
+  webChromeShadow: '0px 2px 12px rgba(0,0,0,0.07)',
 } as const;
 
 export const MAIN_TAB_CARD_SHADOW = Platform.select<ViewStyle>({

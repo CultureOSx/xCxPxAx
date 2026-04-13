@@ -1,4 +1,5 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage } from './firebase';
 
@@ -9,17 +10,25 @@ import { storage } from './firebase';
  * @returns The download URL of the uploaded file.
  */
 export async function uploadFile(uri: string, path: string): Promise<string> {
-  // XHR is more reliable than fetch() for local file URIs on React Native
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.responseType = 'blob';
-    xhr.onload = () => resolve(xhr.response as Blob);
-    xhr.onerror = () => reject(new Error('Failed to load image file'));
-    xhr.open('GET', uri);
-    xhr.send();
-  });
+  let blob: Blob;
+  if (Platform.OS === 'web') {
+    const res = await globalThis.fetch(uri);
+    if (!res.ok) throw new Error('Failed to load image file');
+    blob = await res.blob();
+  } else {
+    blob = await new Promise<Blob>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = 'blob';
+      xhr.onload = () => resolve(xhr.response as Blob);
+      xhr.onerror = () => reject(new Error('Failed to load image file'));
+      xhr.open('GET', uri);
+      xhr.send();
+    });
+  }
+  const contentType =
+    blob.type && /^image\//i.test(blob.type) ? blob.type : 'image/jpeg';
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, blob);
+  await uploadBytes(storageRef, blob, { contentType });
   return getDownloadURL(storageRef);
 }
 

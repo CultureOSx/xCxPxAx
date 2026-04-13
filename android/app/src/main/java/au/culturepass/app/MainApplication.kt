@@ -1,4 +1,4 @@
-package com.culturepass
+package au.culturepass.app
 
 import android.app.Application
 import android.content.res.Configuration

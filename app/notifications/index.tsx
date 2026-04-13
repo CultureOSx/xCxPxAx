@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { FlashList } from '@shopify/flash-list';
@@ -12,14 +12,24 @@ import { notificationKeys } from '@/hooks/queries/keys';
 import { api, type Notification as AppNotification } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens } from '@/constants/theme';
+import { CardTokens, ChipTokens, CultureTokens, IconSize, Spacing } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useLayout } from '@/hooks/useLayout';
 import { routeWithRedirect } from '@/lib/routes';
+import { ScreenStateCard, ScreenStateLoading } from '@/components/ui/ScreenState';
 
 const isWeb = Platform.OS === 'web';
+const NOTIF_UI = {
+  headerActionWidth: 80,
+  cardRadius: CardTokens.radiusLarge - 2,
+  paneRadius: CardTokens.radius,
+  iconWrap: 44,
+  previewIcon: 40,
+  rowGap: Spacing.sm,
+  cardPadding: CardTokens.padding,
+} as const;
 
 const NOTIF_TYPE_INFO: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
   system: { icon: 'settings', color: CultureTokens.teal, label: 'System' },
@@ -111,6 +121,8 @@ function groupByDate(notifications: UINotification[]): { label: string; items: U
 function toNotificationRoute(notif: UINotification): string | null {
   const entityType = (notif.entityType ?? notif.type ?? '').toLowerCase();
   const entityId = notif.entityId ?? (typeof notif.metadata?.entityId === 'string' ? notif.metadata.entityId : undefined);
+  const requestId = typeof notif.metadata?.requestId === 'string' ? notif.metadata.requestId : undefined;
+  if (requestId) return `/enquiries/${encodeURIComponent(requestId)}`;
   if (!entityId) return null;
   if (entityType === 'event') return `/event/${entityId}`;
   if (entityType === 'community') return `/community/${entityId}`;
@@ -355,19 +367,13 @@ export default function NotificationsScreen() {
     return (
       <View style={[s.screen, { paddingTop: topPad }]}>
         <View style={[s.unauthWrap, isDesktop && { width: contentWidth, alignSelf: 'center' as const }]}>
-          <Ionicons name="notifications-outline" size={42} color={colors.textTertiary} />
-          <Text style={[s.emptyTitle, { color: colors.text }]}>Sign in to view notifications</Text>
-          <Text style={[s.emptySub, { color: colors.textSecondary }]}>
-            Alerts for events, perks, and your community appear here.
-          </Text>
-          <Pressable
-            onPress={() => router.push(routeWithRedirect('/(onboarding)/login', '/notifications') as any)}
-            style={({ pressed }) => [s.signInBtn, pressed && { opacity: 0.85 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-          >
-            <Text style={s.signInBtnText}>Sign In</Text>
-          </Pressable>
+          <ScreenStateCard
+            icon="notifications-outline"
+            title="Sign in to view notifications"
+            message="Alerts for events, perks, and your community appear here."
+            actionLabel="Sign In"
+            onAction={() => router.push(routeWithRedirect('/(onboarding)/login', '/notifications') as any)}
+          />
         </View>
       </View>
     );
@@ -402,11 +408,11 @@ export default function NotificationsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Mark all as read"
           >
-            <Ionicons name="checkmark-done" size={15} color={CultureTokens.indigo} />
+            <Ionicons name="checkmark-done" size={IconSize.sm - 1} color={CultureTokens.indigo} />
             <Text style={s.markAllText}>All read</Text>
           </Pressable>
         ) : (
-          <View style={{ width: 80 }} />
+          <View style={{ width: NOTIF_UI.headerActionWidth }} />
         )}
       </View>
 
@@ -443,18 +449,15 @@ export default function NotificationsScreen() {
       </ScrollView>
 
       {isLoading ? (
-        <View style={s.center}>
-          <ActivityIndicator size="large" color={CultureTokens.indigo} />
-        </View>
+        <ScreenStateLoading label="Loading notifications..." />
       ) : filtered.length === 0 ? (
         <View style={s.center}>
-          <View style={[s.emptyIcon, { borderColor: colors.borderLight }]}>
-            <Ionicons name="notifications-off-outline" size={48} color={colors.textSecondary} />
-          </View>
-          <Text style={[s.emptyTitle, { color: colors.text }]}>
-            {activeFilter === 'all' ? 'No notifications yet' : `No ${activeFilter} notifications`}
-          </Text>
-          <Text style={[s.emptySub, { color: colors.textSecondary }]}>We&apos;ll let you know when something happens</Text>
+          <ScreenStateCard
+            icon="notifications-off-outline"
+            title={activeFilter === 'all' ? 'No notifications yet' : `No ${activeFilter} notifications`}
+            message="We'll let you know when something happens."
+            compact
+          />
         </View>
       ) : isDesktopWeb ? (
         <View style={[s.splitWrap, { width: contentWidth, alignSelf: 'center' as const }]}>
@@ -463,7 +466,7 @@ export default function NotificationsScreen() {
               data={flatData}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ padding: 12, paddingBottom: insets.bottom + 26 }}
+              contentContainerStyle={{ padding: Spacing.sm + 4, paddingBottom: insets.bottom + Spacing.lg + 2 }}
               getItemType={(item) => ('isHeader' in item ? 'header' : 'notif')}
               renderItem={({ item }) => {
                 if ('isHeader' in item) {
@@ -532,7 +535,12 @@ export default function NotificationsScreen() {
               </>
             ) : (
               <View style={s.center}>
-                <Text style={[s.emptySub, { color: colors.textSecondary }]}>Select a notification to preview</Text>
+                <ScreenStateCard
+                  icon="mail-open-outline"
+                  title="No notification selected"
+                  message="Select a notification from the list to preview details."
+                  compact
+                />
               </View>
             )}
           </View>
@@ -543,7 +551,7 @@ export default function NotificationsScreen() {
             data={flatData}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: hPad, paddingTop: 4, paddingBottom: insets.bottom + 100 }}
+            contentContainerStyle={{ paddingHorizontal: hPad, paddingTop: Spacing.xs, paddingBottom: insets.bottom + 100 }}
             getItemType={(item) => ('isHeader' in item ? 'header' : 'notif')}
             renderItem={({ item }) => {
               if ('isHeader' in item) {
@@ -571,11 +579,11 @@ export default function NotificationsScreen() {
 
 const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm + 6 },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: NOTIF_UI.previewIcon,
+    height: NOTIF_UI.previewIcon,
+    borderRadius: NOTIF_UI.previewIcon / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface + '80',
@@ -592,15 +600,28 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
     backgroundColor: CultureTokens.coral,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: Spacing.xs + 1,
   },
   unreadBadgeText: { color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' },
-  markAllBtn: { width: 80, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
+  markAllBtn: {
+    width: NOTIF_UI.headerActionWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: Spacing.xs,
+  },
   markAllText: { ...TextStyles.captionSemibold, color: CultureTokens.indigo },
 
   filtersWrap: { maxHeight: 52 },
-  filtersRow: { gap: 8, paddingVertical: 8, alignItems: 'center' },
-  filterTab: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999 },
+  filtersRow: { gap: NOTIF_UI.rowGap, paddingVertical: Spacing.sm, alignItems: 'center' },
+  filterTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm - 2,
+    paddingHorizontal: Spacing.sm + 6,
+    paddingVertical: Spacing.sm - 1,
+    borderRadius: ChipTokens.radius,
+  },
   filterTabText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   filterCount: { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   filterCountText: { fontSize: 10, fontFamily: 'Poppins_700Bold' },
@@ -616,10 +637,10 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   },
   notifCard: {
     flexDirection: 'row',
-    gap: 14,
-    borderRadius: 18,
-    padding: 16,
-    paddingLeft: 20,
+    gap: Spacing.sm + 6,
+    borderRadius: NOTIF_UI.cardRadius,
+    padding: NOTIF_UI.cardPadding,
+    paddingLeft: CardTokens.paddingLarge,
     borderWidth: 1,
     borderColor: colors.borderLight,
     backgroundColor: colors.surface,
@@ -633,54 +654,82 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   },
   notifCardUnread: { borderColor: CultureTokens.indigo + '30', backgroundColor: CultureTokens.indigo + '08' },
   notifCardSelected: { borderColor: CultureTokens.indigo, backgroundColor: CultureTokens.indigo + '12' },
-  accentStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 },
-  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  accentStrip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: Spacing.xs,
+    borderTopLeftRadius: NOTIF_UI.cardRadius,
+    borderBottomLeftRadius: NOTIF_UI.cardRadius,
+  },
+  iconWrap: {
+    width: NOTIF_UI.iconWrap,
+    height: NOTIF_UI.iconWrap,
+    borderRadius: CardTokens.radius - 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   notifBody: { flex: 1, justifyContent: 'center' },
   notifTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 3 },
   notifTitle: { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
   unreadDot: { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
   notifMsg: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  typePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  typePill: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: ChipTokens.radius },
   typePillText: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
   timeText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
 
   swipeActionWrap: { flexDirection: 'row', alignItems: 'stretch', marginBottom: 10, marginLeft: 8 },
-  swipeActionBtn: { width: 82, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 4, marginLeft: 8 },
+  swipeActionBtn: {
+    width: 82,
+    borderRadius: CardTokens.radius - 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginLeft: Spacing.sm,
+  },
   swipeActionRead: { backgroundColor: CultureTokens.indigo },
   swipeActionDelete: { backgroundColor: CultureTokens.coral },
   swipeActionText: { color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase' },
 
-  splitWrap: { flex: 1, flexDirection: 'row', gap: 12, paddingBottom: 16, minHeight: 0 },
-  listPane: { width: 430, borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
-  previewPane: { flex: 1, borderWidth: 1, borderRadius: 16, padding: 18 },
-  previewHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  previewIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  splitWrap: { flex: 1, flexDirection: 'row', gap: Spacing.sm + 4, paddingBottom: Spacing.md, minHeight: 0 },
+  listPane: { width: 430, borderWidth: 1, borderRadius: NOTIF_UI.paneRadius, overflow: 'hidden' },
+  previewPane: { flex: 1, borderWidth: 1, borderRadius: NOTIF_UI.paneRadius, padding: CardTokens.paddingLarge - 2 },
+  previewHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, marginBottom: Spacing.sm + 2 },
+  previewIcon: {
+    width: NOTIF_UI.previewIcon,
+    height: NOTIF_UI.previewIcon,
+    borderRadius: CardTokens.radius - 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   previewTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
   previewMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 2 },
   previewMessage: { fontSize: 14, lineHeight: 22, fontFamily: 'Poppins_400Regular', marginTop: 8 },
-  previewActions: { flexDirection: 'row', gap: 8, marginTop: 18 },
+  previewActions: { flexDirection: 'row', gap: NOTIF_UI.rowGap, marginTop: CardTokens.padding + 2 },
   previewBtn: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    height: NOTIF_UI.previewIcon,
+    paddingHorizontal: Spacing.sm + 6,
+    borderRadius: CardTokens.radius - 6,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: CultureTokens.indigo,
   },
   previewBtnDelete: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    height: NOTIF_UI.previewIcon,
+    paddingHorizontal: Spacing.sm + 6,
+    borderRadius: CardTokens.radius - 6,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: CultureTokens.coral,
   },
   previewBtnText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins_700Bold' },
   previewBtnGhost: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    height: NOTIF_UI.previewIcon,
+    paddingHorizontal: Spacing.sm + 6,
+    borderRadius: CardTokens.radius - 6,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -688,20 +737,6 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   },
   previewBtnGhostText: { fontSize: 12, fontFamily: 'Poppins_700Bold' },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80, paddingHorizontal: 40 },
-  unauthWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 26, gap: 10 },
-  signInBtn: {
-    marginTop: 10,
-    height: 44,
-    minWidth: 140,
-    borderRadius: 12,
-    backgroundColor: CultureTokens.indigo,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-  },
-  signInBtnText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  emptyIcon: { width: 80, height: 80, borderRadius: 40, borderWidth: 1.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyTitle: { ...TextStyles.title2, marginBottom: 6, textAlign: 'center' },
-  emptySub: { ...TextStyles.bodyMedium, color: colors.textSecondary, textAlign: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80, paddingHorizontal: Spacing.xxl },
+  unauthWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.lg + 2, gap: Spacing.sm + 2 },
 });

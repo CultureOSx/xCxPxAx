@@ -23,7 +23,17 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
-import { CultureTokens } from '@/constants/theme';
+import {
+  CardTokens,
+  ChipTokens,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  IconSize,
+  LineHeight,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
@@ -63,6 +73,12 @@ const TYPE_OPTIONS: { value: CampaignNotificationType; icon: string; label: stri
 
 const TITLE_MAX = 65;
 const MESSAGE_MAX = 240;
+const ADMIN_NOTIF_UI = {
+  skeletonHeaderHeight: 100,
+  skeletonCardHeight: 250,
+  contentMaxWidth: 1100,
+  tableSampleMaxRows: 12,
+} as const;
 
 function parseCsv(value: string): string[] {
   return value
@@ -98,15 +114,15 @@ function NotificationPreview({ title, message }: { title: string; message: strin
 }
 
 const np = StyleSheet.create({
-  phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
-  phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
-  phoneLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 1.1 },
+  phone:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: CardTokens.padding, gap: Spacing.md - 4, alignItems: 'center' },
+  phoneDot:   { width: IconSize.xxl - 4, height: Spacing.sm - 3, borderRadius: Spacing.xs - 1, backgroundColor: 'rgba(128,128,128,0.25)' },
+  phoneLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 1.1 },
   notifCard:  { 
     width: '100%', 
-    borderRadius: 14, 
+    borderRadius: CardTokens.radius - 2, 
     borderWidth: 1, 
-    padding: 14, 
-    gap: 5 ,
+    padding: Spacing.md - 2, 
+    gap: Spacing.sm - 3 ,
     ...Platform.select({
       web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
       ios: {
@@ -118,12 +134,12 @@ const np = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
-  notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-  notifApp:   { flex: 1, fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  notifTime:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  notifTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  notifBody:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19 },
+  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 1, marginBottom: Spacing.xs },
+  notifIcon:  { width: IconSize.md + 4, height: IconSize.md + 4, borderRadius: Spacing.sm - 3, alignItems: 'center', justifyContent: 'center' },
+  notifApp:   { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
+  notifTime:  { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
+  notifTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
+  notifBody:  { fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 1 },
 });
 
 // ─── Char counter badge ─────────────────────────────────────────────────────
@@ -137,14 +153,14 @@ function CharCount({ value, max }: { value: string; max: number }) {
     </Text>
   );
 }
-const cc = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'right', marginTop: -4 } });
+const cc = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textAlign: 'right', marginTop: -4 } });
 
 // ─── Section header ─────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: string }) {
   const colors = useColors();
   return <Text style={[sh.label, { color: colors.textTertiary }]}>{children}</Text>;
 }
-const sh = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
+const sh = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: Spacing.sm + 2 } });
 
 // ─── Quick-link row ─────────────────────────────────────────────────────────
 function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label: string; sub: string; accent: string; onPress: () => void }) {
@@ -174,11 +190,11 @@ const ql = StyleSheet.create({
     flex: 1, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 12, 
-    borderRadius: 14, 
+    gap: Spacing.md - 4, 
+    borderRadius: CardTokens.radius - 2, 
     borderWidth: 1, 
-    paddingHorizontal: 14, 
-    paddingVertical: 12,
+    paddingHorizontal: Spacing.md - 2, 
+    paddingVertical: Spacing.md - 4,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' },
       ios: {
@@ -190,9 +206,9 @@ const ql = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  iconWrap: { width: IconSize.xxl - 4, height: IconSize.xxl - 4, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center' },
+  label:    { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
+  sub:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
 });
 
 function NotificationsSkeleton() {
@@ -203,14 +219,14 @@ function NotificationsSkeleton() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ height: 100, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
-      <View style={{ padding: hPad, gap: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Skeleton width="48%" height={60} borderRadius={14} />
-          <Skeleton width="48%" height={60} borderRadius={14} />
+      <View style={{ height: ADMIN_NOTIF_UI.skeletonHeaderHeight, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
+      <View style={{ padding: hPad, gap: Spacing.md }}>
+        <View style={{ flexDirection: 'row', gap: Spacing.md - 4 }}>
+          <Skeleton width="48%" height={60} borderRadius={CardTokens.radius - 2} />
+          <Skeleton width="48%" height={60} borderRadius={CardTokens.radius - 2} />
         </View>
-        <Skeleton width="100%" height={200} borderRadius={16} />
-        <Skeleton width="100%" height={250} borderRadius={16} />
+        <Skeleton width="100%" height={200} borderRadius={CardTokens.radius} />
+        <Skeleton width="100%" height={ADMIN_NOTIF_UI.skeletonCardHeight} borderRadius={CardTokens.radius} />
       </View>
     </View>
   );
@@ -552,7 +568,7 @@ export default function AdminNotificationsScreen() {
                       onPress={() => setForm(p => ({ ...p, nationalityIds: [] }))}
                       style={{ marginTop: 6, alignSelf: 'flex-start' }}
                     >
-                      <Text style={{ fontSize: 11, color: colors.textTertiary, fontFamily: 'Poppins_500Medium' }}>
+                      <Text style={{ fontSize: FontSize.micro, color: colors.textTertiary, fontFamily: FontFamily.medium }}>
                         Clear selection
                       </Text>
                     </Pressable>
@@ -739,45 +755,45 @@ export default function AdminNotificationsScreen() {
   );
 }
 
-const CONTENT_MAX = 1100;
+const CONTENT_MAX = ADMIN_NOTIF_UI.contentMaxWidth;
 
 const s = StyleSheet.create({
   container:        { flex: 1 },
   center:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header:           {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4,
+    paddingVertical: Spacing.md - 4, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn:          { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerSub:        { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+  backBtn:          { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  headerTitle:      { ...TextStyles.title3 },
+  headerSub:        { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
 
   audiencePill:     {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3,
+    paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs + 1, borderRadius: ChipTokens.radius, borderWidth: 1,
   },
-  audiencePillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  audiencePillText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
 
-  scroll:           { paddingTop: 16 },
-  contentCol:       { paddingHorizontal: 16 },
+  scroll:           { paddingTop: Spacing.md },
+  contentCol:       { paddingHorizontal: Spacing.md },
   contentColDesktop:{ maxWidth: CONTENT_MAX, width: '100%', alignSelf: 'center' as const, paddingHorizontal: 0 },
 
-  quickRow:         { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  quickRow:         { flexDirection: 'row', gap: Spacing.md - 4, marginBottom: Spacing.md },
 
-  mainArea:         { gap: 16 },
-  mainAreaDesktop:  { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  mainArea:         { gap: Spacing.md },
+  mainAreaDesktop:  { flexDirection: 'row', alignItems: 'flex-start', gap: CardTokens.paddingLarge },
 
-  formCol:          { gap: 14 },
+  formCol:          { gap: Spacing.md - 2 },
   formColDesktop:   { flex: 3 },
-  previewCol:       { gap: 14, marginTop: 4 },
+  previewCol:       { gap: Spacing.md - 2, marginTop: Spacing.xs },
   previewColDesktop:{ flex: 2 },
 
   card:             { 
-    borderRadius: 16, 
+    borderRadius: CardTokens.radius, 
     borderWidth: 1, 
-    padding: 16, 
-    gap: 12,
+    padding: CardTokens.padding, 
+    gap: Spacing.md - 4,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
       ios: {
@@ -791,28 +807,28 @@ const s = StyleSheet.create({
   },
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
-  filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  filterBadgeText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: "white", textTransform: 'uppercase' },
+  filterBadge:      { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 2, borderRadius: Spacing.sm },
+  filterBadgeText:  { fontSize: FontSize.tab, fontFamily: FontFamily.bold, color: "white", textTransform: 'uppercase' },
 
-  typeLabelRow:     { marginTop: 4 },
-  typeLabel:        { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 8 },
-  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeLabelRow:     { marginTop: Spacing.xs },
+  typeLabel:        { fontSize: FontSize.caption, fontFamily: FontFamily.medium, marginBottom: Spacing.sm },
+  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   typeChip:         {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
+    paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: ChipTokens.paddingV - 1,
+    borderRadius: ChipTokens.radius, borderWidth: 1,
   },
-  typeChipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
+  typeChipText:     { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, textTransform: 'capitalize' },
 
-  row2:             { gap: 12 },
+  row2:             { gap: Spacing.md - 4 },
   row2Desktop:      { flexDirection: 'row' },
 
   // Approval
   approvalBanner:   { 
-    borderRadius: 14, 
+    borderRadius: CardTokens.radius - 2, 
     borderWidth: 1, 
-    padding: 14, 
-    gap: 10,
+    padding: Spacing.md - 2, 
+    gap: Spacing.sm + 2,
     ...Platform.select({
       web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
       ios: {
@@ -824,38 +840,38 @@ const s = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  approvalBannerTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  approvalBannerSub:{ fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  approvalCountdown:{ fontSize: 20, fontFamily: 'Poppins_700Bold', tabularNums: true } as any,
-  approvalBarTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  approvalBarFill:  { height: 4, borderRadius: 2 },
+  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm + 2 },
+  approvalBannerTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
+  approvalBannerSub:{ fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
+  approvalCountdown:{ fontSize: FontSize.title2, fontFamily: FontFamily.bold, tabularNums: true } as any,
+  approvalBarTrack: { height: Spacing.xs, borderRadius: Spacing.xs / 2, overflow: 'hidden' },
+  approvalBarFill:  { height: Spacing.xs, borderRadius: Spacing.xs / 2 },
 
   approvalHint:     {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    borderRadius: 12, borderWidth: 1, padding: 12,
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
+    borderRadius: CardTokens.radius - 4, borderWidth: 1, padding: Spacing.md - 4,
   },
-  approvalHintText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
+  approvalHintText: { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.regular, lineHeight: LineHeight.caption + 2 },
 
   // Action buttons
-  actionsRow:       { flexDirection: 'row', gap: 10 },
+  actionsRow:       { flexDirection: 'row', gap: Spacing.sm + 2 },
   dryRunBtn:        {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1,
+    gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4, borderWidth: 1,
   },
-  dryRunBtnText:    { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  dryRunBtnText:    { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
   sendBtn:          {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 7, paddingVertical: 13, borderRadius: 12,
+    gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4,
   },
-  sendBtnText:      { fontSize: 14, fontFamily: 'Poppins_700Bold' },
+  sendBtnText:      { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
 
   // Results / stats
   statsCard:        { 
-    borderRadius: 16, 
+    borderRadius: CardTokens.radius, 
     borderWidth: 1, 
-    padding: 16, 
-    gap: 12,
+    padding: CardTokens.padding, 
+    gap: Spacing.md - 4,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
       ios: {
@@ -867,31 +883,31 @@ const s = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  statsCardTitle:   { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  statRow:          { flexDirection: 'row', gap: 10 },
-  statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },
-  statNum:          { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  statLabel:        { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statsCardTitle:   { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
+  statRow:          { flexDirection: 'row', gap: Spacing.sm + 2 },
+  statBox:          { flex: 1, borderRadius: CardTokens.radius - 4, padding: Spacing.md - 2, alignItems: 'center', gap: Spacing.xs - 2 },
+  statNum:          { fontSize: FontSize.title, fontFamily: FontFamily.bold },
+  statLabel:        { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   replayBadge:      {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderRadius: 10, borderWidth: 1, padding: 10,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
+    borderRadius: CardTokens.radius - 6, borderWidth: 1, padding: Spacing.sm + 2,
   },
-  replayText:       { flex: 1, fontSize: 12, fontFamily: 'Poppins_500Medium' },
+  replayText:       { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.medium },
 
   // Audience table
-  previewTableTitle:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', marginBottom: 8 },
-  tableHeader:      { flexDirection: 'row', paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth },
-  thCell:           { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.8 },
+  previewTableTitle:{ fontSize: FontSize.caption, fontFamily: FontFamily.semibold, marginBottom: Spacing.sm },
+  tableHeader:      { flexDirection: 'row', paddingBottom: Spacing.sm - 2, borderBottomWidth: StyleSheet.hairlineWidth },
+  thCell:           { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.8 },
   tableRow:         {
-    flexDirection: 'row', paddingVertical: 8,
+    flexDirection: 'row', paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tdCell:           { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  tdCell:           { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
 
   emptyAudience:    {
-    alignItems: 'center', gap: 6, padding: 24,
-    borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginTop: 4,
+    alignItems: 'center', gap: Spacing.sm - 2, padding: Spacing.lg,
+    borderRadius: CardTokens.radius - 4, borderWidth: 1, borderStyle: 'dashed', marginTop: Spacing.xs,
   },
-  emptyAudienceText:{ fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  emptyAudienceText:{ fontSize: FontSize.chip, fontFamily: FontFamily.medium },
 });

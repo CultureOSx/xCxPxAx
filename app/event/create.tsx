@@ -22,6 +22,7 @@ import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '
 import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
+import { normalizeAddressText, validateAddressLine, validatePlaceName } from '@/lib/addressValidation';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 
@@ -353,7 +354,20 @@ export default function CreateEventScreen() {
       if (!form.description.trim()) return 'Description is required.';
     }
     if (step === 'location') {
-      if (!form.city.trim()) return 'City is required.';
+      const cityError = validatePlaceName(form.city, 'City');
+      if (cityError) return cityError;
+      const countryError = validatePlaceName(form.country, 'Country');
+      if (countryError) return countryError;
+      const addressError = validateAddressLine(form.address, {
+        required: !form.useLinkedVenue,
+        fieldLabel: 'Street address',
+        requireStreetNumber: false,
+      });
+      if (addressError) return addressError;
+      const venueName = normalizeAddressText(form.venue);
+      if (!form.useLinkedVenue && !venueName && !normalizeAddressText(form.address)) {
+        return 'Add a venue name or street address.';
+      }
       if (form.useLinkedVenue && !form.venueProfileId.trim()) {
         return 'Select a saved venue profile, or switch to one-off address.';
       }

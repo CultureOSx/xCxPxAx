@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -110,11 +110,13 @@ export default function AdminProfilesScreen() {
     },
   });
 
+  useEffect(() => {
+    if (!roleLoading && !isSuperAdmin && !isAdmin) {
+      router.replace('/(tabs)');
+    }
+  }, [isAdmin, isSuperAdmin, roleLoading]);
   if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) {
-    router.replace('/(tabs)');
-    return null;
-  }
+  if (!isSuperAdmin && !isAdmin) return null;
 
   const handleDelete = (profile: Profile) => {
     Alert.alert(

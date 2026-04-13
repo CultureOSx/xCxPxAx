@@ -89,6 +89,9 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Production
   'https://culturepass.app',
   'https://www.culturepass.app',
+  // Firebase Hosting named site (project default URL is <projectId>.web.app)
+  'https://culturepass.web.app',
+  'https://culturepass.firebaseapp.com',
   /^https:\/\/[\w-]+\.culturepass\.app$/,          // preview/staging subdomains
   'https://culturekerala.com',
   'https://www.culturekerala.com',
