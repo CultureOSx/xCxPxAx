@@ -856,7 +856,7 @@ export default function EditProfileScreen() {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const city = form.city.trim();
-    const country = form.country.trim() || 'Australia';
+    const saveCountry = form.country.trim() || authUser?.country || 'Australia';
     const formatLink = (url: string, domain: string) => {
       if (!url.trim()) return undefined;
       const clean = url.trim().replace(/^@/, '');
@@ -871,8 +871,8 @@ export default function EditProfileScreen() {
       city: city || null,
       state: form.state.trim().toUpperCase() || null,
       postcode: form.postcode.trim() ? Number(form.postcode.trim()) : null,
-      country,
-      location: city ? `${city}, ${country}` : null,
+      country: saveCountry,
+      location: city ? `${city}, ${saveCountry}` : null,
       avatarUrl: avatarUri,
       coverUrl: coverUri,
       website: form.website.trim() || null,
@@ -1374,14 +1374,15 @@ export default function EditProfileScreen() {
                       </FieldRow>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="State" colors={colors}>
+                      <FieldRow label="State" colors={colors} error={fieldErrors.state}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.state && { borderColor: colors.error }]}
                           value={form.state}
                           onChangeText={field('state')}
                           placeholder="NSW"
                           placeholderTextColor={colors.textTertiary}
                           autoCapitalize="characters"
+                          maxLength={4}
                           accessibilityLabel="State"
                           {...inputExtras}
                         />
@@ -1390,23 +1391,24 @@ export default function EditProfileScreen() {
                   </View>
                   <View style={s.twoCol}>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="Postcode" colors={colors}>
+                      <FieldRow label="Postcode" colors={colors} error={fieldErrors.postcode}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.postcode && { borderColor: colors.error }]}
                           value={form.postcode}
                           onChangeText={field('postcode')}
                           placeholder="2000"
                           placeholderTextColor={colors.textTertiary}
                           keyboardType="number-pad"
+                          maxLength={4}
                           accessibilityLabel="Postcode"
                           {...inputExtras}
                         />
                       </FieldRow>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <FieldRow label="Country" colors={colors}>
+                      <FieldRow label="Country" colors={colors} required error={fieldErrors.country}>
                         <TextInput
-                          style={inputStyle}
+                          style={[inputStyle, fieldErrors.country && { borderColor: colors.error }]}
                           value={form.country}
                           onChangeText={field('country')}
                           placeholder="Australia"
@@ -1430,9 +1432,9 @@ export default function EditProfileScreen() {
                   isDark={isDark}
                   index={0}
                 >
-                  <FieldRow label="Languages" colors={colors}>
+                  <FieldRow label="Languages" colors={colors} error={fieldErrors.languages}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.languages && { borderColor: colors.error }]}
                       value={form.languages}
                       onChangeText={field('languages')}
                       placeholder="Comma-separated, e.g. English, Hindi"
@@ -1441,16 +1443,20 @@ export default function EditProfileScreen() {
                       {...inputExtras}
                     />
                   </FieldRow>
-                  <FieldRow label="Cultural background" colors={colors}>
+                  <FieldRow label="Cultural background" colors={colors} error={fieldErrors.ethnicityText}>
                     <TextInput
-                      style={inputStyle}
+                      style={[inputStyle, fieldErrors.ethnicityText && { borderColor: colors.error }]}
                       value={form.ethnicityText}
                       onChangeText={field('ethnicityText')}
                       placeholder="Optional — however you describe your heritage"
                       placeholderTextColor={colors.textTertiary}
+                      maxLength={200}
                       accessibilityLabel="Cultural background"
                       {...inputExtras}
                     />
+                    <Text style={[s.charCount, { color: form.ethnicityText.length > 180 ? colors.error : colors.textTertiary }]}>
+                      {form.ethnicityText.length}/200
+                    </Text>
                   </FieldRow>
                 </SectionCard>
 
@@ -1622,30 +1628,53 @@ export default function EditProfileScreen() {
                 </SectionCard>
 
                 <SectionCard title="Social & web" subtitle="Optional — only shown if you enable social links." colors={colors} isDark={isDark} index={2}>
-                  {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => (
-                    <View key={f} style={s.socialRow}>
-                      <View style={[s.socialIcon, { backgroundColor: color + '18' }]}>
-                        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={color} />
+                  {SOCIAL_FIELDS.map(({ icon, color, field: f, label, placeholder }) => {
+                    const err = fieldErrors[f];
+                    return (
+                      <View key={f} style={s.socialRow}>
+                        <View style={[s.socialIcon, { backgroundColor: color + '18', borderWidth: err ? 1 : 0, borderColor: colors.error }]}>
+                          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={err ? colors.error : color} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[fr.label, { color: err ? colors.error : colors.textTertiary, marginBottom: 4 }]}>{label}</Text>
+                          <TextInput
+                            style={[inputStyle, err && { borderColor: colors.error }]}
+                            value={form[f]}
+                            onChangeText={(v) => {
+                              setForm((p) => ({ ...p, [f]: v }));
+                              if (fieldErrors[f]) setFieldErrors((prev) => ({ ...prev, [f]: undefined }));
+                            }}
+                            placeholder={placeholder}
+                            placeholderTextColor={colors.textTertiary}
+                            autoCapitalize="none"
+                            keyboardType="url"
+                            accessibilityLabel={label}
+                            {...inputExtras}
+                          />
+                          {err ? (
+                            <View style={[fr.errorRow, { marginTop: 4 }]}>
+                              <Ionicons name="alert-circle" size={12} color={colors.error} />
+                              <Text style={[fr.error, { color: colors.error }]}>{err}</Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[fr.label, { color: colors.textTertiary, marginBottom: 4 }]}>{label}</Text>
-                        <TextInput
-                          style={inputStyle}
-                          value={form[f]}
-                          onChangeText={(v) => setForm((p) => ({ ...p, [f]: v }))}
-                          placeholder={placeholder}
-                          placeholderTextColor={colors.textTertiary}
-                          autoCapitalize="none"
-                          keyboardType="url"
-                          accessibilityLabel={label}
-                          {...inputExtras}
-                        />
-                      </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </SectionCard>
               </>
             ) : null}
+
+            {Object.keys(fieldErrors).length > 0 && (
+              <View style={[s.errorBanner, { backgroundColor: colors.error + '12', borderColor: colors.error + '40' }]}>
+                <Ionicons name="alert-circle" size={16} color={colors.error} />
+                <Text style={[TextStyles.caption, { color: colors.error, flex: 1, fontFamily: 'Poppins_600SemiBold' }]}>
+                  {Object.keys(fieldErrors).length === 1
+                    ? 'Fix 1 field before saving'
+                    : `Fix ${Object.keys(fieldErrors).length} fields before saving`}
+                </Text>
+              </View>
+            )}
 
             <Animated.View entering={FadeInDown.delay(200).duration(420)}>
               <Button
@@ -1858,6 +1887,16 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     gap: 12,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 4,
   },
   saveBtn: {
     flexDirection: 'row',

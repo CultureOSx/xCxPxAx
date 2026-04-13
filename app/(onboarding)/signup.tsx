@@ -113,15 +113,7 @@ export default function SignUpScreen() {
     <AuthLiquidFormCard isDesktop={isDesktop}>
       {/* Brand */}
       <Animated.View entering={enter(40)} style={s.brandBlock}>
-        <View
-          style={[
-            s.brandIcon,
-            { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-          ]}
-        >
-          <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
-        </View>
-        <BrandWordmark size="lg" withTagline centered />
+        <BrandWordmark size="lg" centered />
       </Animated.View>
 
       {/* Main Headline */}
@@ -132,19 +124,6 @@ export default function SignUpScreen() {
       <Animated.View entering={enter(110)}>
         <Text style={[s.subtitle, { color: colors.textSecondary }]}>
           Join the cultural community built for diaspora cities.
-        </Text>
-      </Animated.View>
-
-      {/* Benefits */}
-      <Animated.View
-        entering={enter(140)}
-        style={[
-          s.benefitsPill,
-          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-        ]}
-      >
-        <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
-          Free Events · Communities · Exclusive Perks
         </Text>
       </Animated.View>
 
@@ -499,48 +478,24 @@ const s = StyleSheet.create({
   },
 
   /* Form Styles */
-  brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
-  brandIcon: {
-    width: 69,
-    height: 69,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
+  brandBlock: { alignItems: 'center', marginBottom: 16, gap: 4 },
 
   title: {
     ...TextStyles.display,
-    fontSize: 48,
+    fontSize: 30,
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: -1.2,
-    lineHeight: 54,
+    marginBottom: 6,
+    letterSpacing: -0.6,
+    lineHeight: 36,
   },
   subtitle: {
-    ...TextStyles.title2,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.body2,
     textAlign: 'center',
-    maxWidth: 369,
+    maxWidth: 340,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
     lineHeight: 22,
-  },
-
-  benefitsPill: {
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    marginBottom: 24,
-  },
-  benefitsText: {
-    ...TextStyles.caption,
-    textAlign: 'center',
-    fontFamily: FontFamily.semibold,
-    letterSpacing: 0.2,
   },
 
   errorBanner: {
@@ -555,7 +510,7 @@ const s = StyleSheet.create({
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  roleGroup: { marginBottom: 24 },
+  roleGroup: { marginBottom: 18 },
   roleLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.body2,
@@ -570,14 +525,14 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: 14,
     borderRadius: CardTokens.radius,
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderWidth: 1.5,
   },
   roleOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
-  form: { gap: 18, marginBottom: 8 },
+  form: { gap: 16, marginBottom: 8 },
   passwordGroup: { gap: Spacing.sm },
 
-  optionsRow: { marginTop: 8, marginBottom: 24 },
+  optionsRow: { marginTop: 8, marginBottom: 18 },
   checkText: {
     flex: 1,
     fontFamily: FontFamily.regular,
@@ -592,20 +547,20 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginTop: 24,
-    marginBottom: 20,
+    marginTop: 18,
+    marginBottom: 16,
   },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
+  divLine: { flex: 1, height: 1 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
   socialRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: 24,
+    marginBottom: 18,
     justifyContent: 'center',
   },
 
-  switchRow: { alignItems: 'center', paddingVertical: 12 },
+  switchRow: { alignItems: 'center', paddingVertical: 10 },
   switchText: {
     fontFamily: FontFamily.regular,
     fontSize: FontSize.callout,

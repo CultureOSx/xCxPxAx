@@ -207,33 +207,35 @@ export const light: ColorTheme = {
   primary: CultureTokens.indigo,
   primaryLight: "#3385D6",
   primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.12)",
-  primarySoft: "rgba(0, 102, 204, 0.06)",
+  primaryGlow: "rgba(0, 102, 204, 0.14)",
+  primarySoft: "rgba(0, 102, 204, 0.07)",
 
-  // Backgrounds - true light mode (clear visual difference from dark)
-  background: "#F7F9FC",
-  backgroundSecondary: "#EEF3FA",
+  // Backgrounds — warm white base; clear layering hierarchy
+  background: "#F8FAFC",          // near-white, neutral cool
+  backgroundSecondary: "#EFF3FA", // slightly tinted for sections
 
-  surface: "#FFFFFF",
-  surfaceElevated: "#F3F7FF",
-  surfaceSecondary: "#E9F0FA",
+  surface: "#FFFFFF",             // pure white cards
+  surfaceElevated: "#F1F5FB",     // input fill — neutral, not brand-tinted
+  surfaceSecondary: "#E8EFF9",    // nested panels
 
-  border: "#D7E1EE",
-  borderLight: "#C7D5E7",
-  divider: "#D7E1EE",
+  // Borders — 3-step hierarchy: card → divider → hairline
+  border: "#CBD5E4",              // card outlines, input rings (stronger)
+  borderLight: "#E2E8F3",         // internal dividers, hairlines (subtle)
+  divider: "#DCE4F0",             // full-width row separators
 
-  text: "#0F172A",
-  textSecondary: "#334155",
-  textTertiary: "#64748B",
-  textInverse: "#0B0B14",
+  // Text — WCAG AA at all three levels
+  text: "#0D1626",                // 100% opacity near-black (was #0F172A)
+  textSecondary: "#374151",       // 80% — subheadings, labels (was #334155)
+  textTertiary: "#6B7280",        // 60% — placeholders, captions (was #64748B)
+  textInverse: "#FFFFFF",
   textOnBrandGradient: "#FFFFFF",
 
   card: "#FFFFFF",
-  cardBorder: "#D7E1EE",
+  cardBorder: "#CBD5E4",
 
-  tabBar: "rgba(255,255,255,0.96)",
-  tabBarBorder: "rgba(199,213,231,0.9)",
-  tabIconDefault: "#64748B",
+  tabBar: "rgba(255,255,255,0.97)",
+  tabBarBorder: "rgba(203,213,228,0.85)",
+  tabIconDefault: "#6B7280",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
@@ -248,49 +250,57 @@ export const light: ColorTheme = {
 
 /**
  * Dark Theme Tokens
- * Native default — “Night Festival” + OLED-friendly base (ui-ux-pro-max: deep black,
- * layered greys, brand accents; still CultureTokens-driven, not generic purple templates).
+ * Native default — "Night Festival" OLED-first (ui-ux-pro-max Dark Mode OLED).
  *
- * Color hierarchy:
- *   True black / near-black — primary background (OLED power + contrast anchor)
- *   Lifted navy surfaces — cards and chrome
- *   CulturePass Blue (#0066CC) — primary actions, links, and accents (not default card/input fill)
+ * Hierarchy:
+ *   #000000 — true OLED black (page background)
+ *   #0C1018 — backgroundSecondary (sections, tab content areas)
+ *   #111827 — surface (card fill — warm-neutral, not saturated navy)
+ *   #1A2436 — surfaceElevated (inputs, nested chips — subtle lift)
+ *   #0D1929 — surfaceSecondary (deeply recessed panels)
+ *
+ * Border hierarchy (3 steps):
+ *   #263345 — border (card outlines — most visible)
+ *   #1B2840 — borderLight (internal hairlines — subtle)
+ *   #182336 — divider (full-width separators — most subtle)
  */
 export const dark: ColorTheme = {
   ...sharedBase,
 
-  // Primary - CulturePass Blue (Dark Mode Variant)
+  // Primary - CulturePass Blue
   primary: CultureTokens.indigo,
   primaryLight: "#3385D6",
   primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.25)",
-  primarySoft: "rgba(0, 102, 204, 0.12)",
+  primaryGlow: "rgba(0, 102, 204, 0.22)",
+  primarySoft: "rgba(0, 102, 204, 0.11)",
 
-  // Backgrounds — OLED base + festival navy lift on surfaces
+  // Backgrounds — true OLED black base with layered lifts
   background: "#000000",
-  backgroundSecondary: "#0A0E14",
+  backgroundSecondary: "#0C1018",
 
-  surface: "#121826",
-  // Neutral lift for inputs, nested cards, chips — not brand fill (indigo made textSecondary/tertiary illegible).
-  surfaceElevated: "#1E2D42",
-  surfaceSecondary: "#0F2844",
+  // Surfaces — warm-neutral dark (not over-saturated navy)
+  surface: "#111827",            // main card fill (was #121826 — slightly warmer)
+  surfaceElevated: "#1A2436",    // inputs, chips (was #1E2D42 — less saturated)
+  surfaceSecondary: "#0D1929",   // deep nested panels (was #0F2844 — tighter)
 
-  border: "#2A3A52",
-  borderLight: "#354560",
-  divider: "#2A3A52",
+  // Borders — clear 3-step hierarchy
+  border: "#263345",             // card outlines (was #2A3A52)
+  borderLight: "#1B2840",        // inner hairlines — subtle (was #354560 which was TOO light)
+  divider: "#182336",            // full-width row dividers — most subtle
 
-  text: "#F4F4F5",
-  textSecondary: "#D6D6E0",
-  textTertiary: "#AEB4C5",
-  textInverse: "#0B0B14",
+  // Text — high contrast OLED hierarchy
+  text: "#F5F5F6",               // near-white primary (was #F4F4F5)
+  textSecondary: "#C8CDD8",      // supporting text — clear step down (was #D6D6E0)
+  textTertiary: "#8892A4",       // placeholders, disabled (was #AEB4C5)
+  textInverse: "#0D1626",
   textOnBrandGradient: "#FFFFFF",
 
-  card: "#151C2E",
-  cardBorder: "#354560",
+  card: "#111827",               // matches surface for consistency (was #151C2E)
+  cardBorder: "#263345",         // matches border
 
-  tabBar: "rgba(0, 0, 0, 0.94)",
-  tabBarBorder: "rgba(36, 48, 69, 0.55)",
-  tabIconDefault: "#AEB4C5",
+  tabBar: "rgba(0, 0, 0, 0.96)",
+  tabBarBorder: "rgba(38, 51, 69, 0.6)",
+  tabIconDefault: "#8892A4",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
