@@ -1,3 +1,16 @@
+/**
+ * Integration smoke: spawns `npm run server:dev` (Express from `functions/src/app.ts` via tsx).
+ *
+ * Firestore is optional for a green run:
+ * - Without `FIRESTORE_EMULATOR_HOST` / `GOOGLE_APPLICATION_CREDENTIALS` / Cloud runtime,
+ *   routes return empty data and RSS/ICS feeds are still valid XML (no live Firestore reads).
+ *
+ * To exercise real Firestore reads locally:
+ * 1. `firebase emulators:start --only firestore` (default host `127.0.0.1:8080`)
+ * 2. In the same shell: `export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`
+ * 3. Optionally `export FIREBASE_PROJECT_ID=culturepass-4f264` (Admin init also defaults this)
+ * 4. `npm run test:integration` (this repo uses **npm**, not pnpm, for scripts)
+ */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 

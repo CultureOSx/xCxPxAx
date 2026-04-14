@@ -1,3 +1,4 @@
+import { isFirestoreConfigured } from '../admin';
 import { DEFAULT_AU_STATES } from './locations';
 import {
   eventsService,
@@ -379,19 +380,26 @@ function clampLimit(limit: number | undefined): number {
 }
 
 async function fetchPublishedEvents(scanLimit: number): Promise<FirestoreEvent[]> {
+  if (!isFirestoreConfigured) return [];
+
   const items: FirestoreEvent[] = [];
   let page = 1;
   let hasNextPage = true;
 
-  while (hasNextPage && items.length < scanLimit) {
-    const pageSize = Math.min(PAGE_SIZE, scanLimit - items.length);
-    const result = await eventsService.list(
-      { status: 'published' },
-      { page, pageSize },
-    );
-    items.push(...result.items);
-    hasNextPage = result.hasNextPage;
-    page += 1;
+  try {
+    while (hasNextPage && items.length < scanLimit) {
+      const pageSize = Math.min(PAGE_SIZE, scanLimit - items.length);
+      const result = await eventsService.list(
+        { status: 'published' },
+        { page, pageSize },
+      );
+      items.push(...result.items);
+      hasNextPage = result.hasNextPage;
+      page += 1;
+    }
+  } catch (err) {
+    console.warn('[feeds] fetchPublishedEvents failed (empty feed):', err);
+    return [];
   }
 
   return items;
