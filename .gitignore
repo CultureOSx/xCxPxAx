@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# Lockfile policy: npm + package-lock.json only (root, functions/, server/).
+# Agent tooling sometimes emits pnpm locks; committing them causes noisy merges with main.
+pnpm-lock.yaml
+
 # Expo
 .expo/
 dist/
