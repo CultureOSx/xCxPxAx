@@ -543,25 +543,34 @@ function NavSection({ label, mutedColor, children, colors }: any) {
 function SidebarItem({ item, active, isDark, onPress, colors }: any) {
   const { ni } = getSidebarStyles(colors);
   const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const showHover = hovered && !active;
+  const iconColor = active ? colors.primary : (isDark ? 'rgba(232,244,255,0.68)' : 'rgba(0,22,40,0.58)');
+  const showFocus = focused && !active;
 
   return (
     <Pressable
       style={[
         ni.item,
-        active && [ni.itemActive, { backgroundColor: colors.primarySoft }],
+        active && [ni.itemActive, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '36' }],
         showHover && { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,12,24,0.04)' },
+        showFocus && { borderColor: colors.primary + '55', backgroundColor: colors.primarySoft },
       ]}
       onPress={onPress}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      accessibilityState={{ selected: active }}
     >
       {active && (
         <View style={ni.activeBar}>
           <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
         </View>
       )}
-      <Ionicons name={active ? item.iconActive : item.icon} size={18} color={active ? colors.primary : (isDark ? 'rgba(232,244,255,0.60)' : 'rgba(0,22,40,0.52)')} />
+      <Ionicons name={active ? item.iconActive : item.icon} size={18} color={iconColor} />
       <Text style={[ni.label, { color: active ? colors.primary : colors.textSecondary }, active && ni.labelActive]} numberOfLines={1}>
         {item.label}
       </Text>
@@ -900,8 +909,30 @@ const getSidebarStyles = (colors: ColorTheme) => {
   });
 
   const ni = StyleSheet.create({
-    item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, minHeight: 46, paddingVertical: 4, paddingHorizontal: 14, position: 'relative', overflow: 'hidden' },
-    itemActive: { borderRadius: 12 },
+    item: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderRadius: 12,
+      minHeight: 46,
+      paddingVertical: 4,
+      paddingHorizontal: 14,
+      position: 'relative',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'transparent',
+      ...Platform.select({
+        web: { transitionDuration: '140ms' } as object,
+        default: {},
+      }),
+    },
+    itemActive: {
+      borderRadius: 12,
+      ...Platform.select({
+        web: { boxShadow: '0 8px 20px rgba(0, 102, 204, 0.12)' } as object,
+        default: {},
+      }),
+    },
     activeBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2, overflow: 'hidden' },
     label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flex: 1 },
     labelActive: { fontFamily: 'Poppins_700Bold' },
