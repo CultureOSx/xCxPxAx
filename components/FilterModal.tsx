@@ -42,7 +42,12 @@ export default function FilterModal({
             <View style={[styles.modalView, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Filter Events</Text>
-                <Pressable onPress={onClose} style={styles.closeButton}>
+                <Pressable
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close filter modal"
+                >
                   <Ionicons name="close" size={24} color={Colors.text} />
                 </Pressable>
               </View>
@@ -52,6 +57,8 @@ export default function FilterModal({
                   <Pressable
                     style={[styles.dateOption, selectedDateFilter === 'today' && styles.dateOptionSelected]}
                     onPress={() => onDateFilterChange('today')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Filter by today"
                   >
                     <Text style={[styles.dateOptionText, selectedDateFilter === 'today' && styles.dateOptionTextSelected]}>
                       Today
@@ -60,6 +67,8 @@ export default function FilterModal({
                   <Pressable
                     style={[styles.dateOption, selectedDateFilter === 'this_weekend' && styles.dateOptionSelected]}
                     onPress={() => onDateFilterChange('this_weekend')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Filter by this weekend"
                   >
                     <Text style={[styles.dateOptionText, selectedDateFilter === 'this_weekend' && styles.dateOptionTextSelected]}>
                       This Weekend
@@ -68,10 +77,20 @@ export default function FilterModal({
                 </View>
               </View>
               <View style={styles.footer}>
-                <Pressable style={[styles.button, styles.clearButton]} onPress={handleClear}>
+                <Pressable
+                  style={[styles.button, styles.clearButton]}
+                  onPress={handleClear}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear filters"
+                >
                   <Text style={styles.clearButtonText}>Clear</Text>
                 </Pressable>
-                <Pressable style={[styles.button, styles.applyButton]} onPress={handleApply}>
+                <Pressable
+                  style={[styles.button, styles.applyButton]}
+                  onPress={handleApply}
+                  accessibilityRole="button"
+                  accessibilityLabel="Apply filters"
+                >
                   <Text style={styles.applyButtonText}>Apply Filters</Text>
                 </Pressable>
               </View>

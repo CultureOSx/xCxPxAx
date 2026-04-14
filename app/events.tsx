@@ -221,6 +221,11 @@ export default function AllEventsScreen() {
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
+  const handleEditEvent = useCallback((event: EventData) => {
+    // Navigate to edit screen
+    router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
+  }, []);
+
   const deleteMutation = useMutation({
     mutationFn: (eventId: string) => api.events.remove(eventId),
     onMutate: async (eventId) => {
@@ -244,7 +249,7 @@ export default function AllEventsScreen() {
 
       return { previousEvents };
     },
-    onError: (err, eventId, context) => {
+    onError: (err, _eventId, context) => {
       // Rollback to the previous value if there's an error
       if (context?.previousEvents) {
         queryClient.setQueryData(queryKey, context.previousEvents);
@@ -260,11 +265,6 @@ export default function AllEventsScreen() {
     },
   });
 
-  const handleEditEvent = useCallback((event: EventData) => {
-    // Navigate to edit screen
-    router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
-  }, []);
-
   const handleDeleteEvent = useCallback((event: EventData) => {
     Alert.alert(
       'Delete Event',
@@ -274,7 +274,7 @@ export default function AllEventsScreen() {
         { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(event.id) },
       ]
     );
-  }, [deleteMutation]);
+  }, [deleteMutation.mutate]);
 
   const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
     const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));
