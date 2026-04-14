@@ -2,7 +2,7 @@
 
 > The definitive blueprint for CulturePass: architecture, tech stack, design laws, data models, and API patterns. **Read this before touching code.**
 >
-> **Last Updated**: April 2026
+> **Last Updated**: 14 April 2026
 > **Related Docs**: [`CLAUDE.md`](CLAUDE.md) (Quickstart), [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md), [`docs/UI_SYSTEM.md`](docs/UI_SYSTEM.md) (tokens + marketing layout), [`culturepass-rules.md`](culturepass-rules.md), [`docs/AI_AGENT_STYLE_SHEET.md`](docs/AI_AGENT_STYLE_SHEET.md).
 
 ---
@@ -148,7 +148,7 @@ We use a **Namespace Pattern** in `lib/api.ts`:
 
 1. **Functions First**: Deploy backend before app when adding new endpoints.
 2. **Environment**: `EXPO_PUBLIC_*` vars are baked into bundles.
-3. **QA**: Run `npm run qa:solid` (Lint + Typecheck + Integration tests).
+3. **QA**: Run `npm run qa:solid` (lint, typecheck, `qa:all` — package.json + deeplinks + unit + integration + e2e smoke — then `functions:build`, `build-web`, `test:web:route-hygiene`). For a lighter pass that still covers web export and API integration, run the commands in **Cursor Cloud → Full automated QA checklist** below.
 4. **Deploy Web**: `npm run deploy-web` (Expo Export → Hosting).
 5. **Deploy Native**: `eas build --platform ios --profile production`.
 
@@ -164,6 +164,20 @@ We use a **Namespace Pattern** in `lib/api.ts`:
 ---
 
 ## Cursor Cloud specific instructions
+
+These notes apply to **Cursor Cloud / agent VMs** and any environment where services start from a clean workspace. They complement `CLAUDE.md` local-dev steps.
+
+### VM / workspace bootstrap (cold start)
+
+Run once after clone or when the VM image starts without `node_modules` / `functions/lib`:
+
+```bash
+npm install
+cd functions && npm install && npm run build && cd ..
+```
+
+- Root `npm install` runs `postinstall` (`patch-package`, Metro fix script).
+- **`functions` must be built** before `firebase emulators:start`; the emulator serves compiled output from `functions/lib/`.
 
 ### Services overview
 
@@ -184,15 +198,37 @@ We use a **Namespace Pattern** in `lib/api.ts`:
 - **Functions must be compiled**: The emulator loads from `functions/lib/`. Always run `cd functions && npm run build` after changing backend code. The `build:watch` script (`npm run build:watch` inside `functions/`) is useful for iterative backend development.
 - **`postinstall` runs `patch-package`**: The root `npm install` automatically runs `patch-package` and `scripts/fix-metro-core.js`. If patches fail, check the `patches/` directory.
 - **Protected routes**: Calendar, Community, Perks, and Profile tabs require authentication (`AuthGuard`). The Discover page and public event/profile detail pages are accessible without login.
-- **`test:web:route-hygiene` needs a build**: This test validates the `dist/` output. Run `npm run build-web` first if `dist/` doesn't exist.
+- **`test:web:route-hygiene` needs a build**: This test validates the `dist/` output. Run `npm run build-web` first if `dist/` doesn't exist. The number of scanned HTML files matches the static route list from `expo export` and will change when routes are added or removed.
+- **Firebase Emulator UI**: When emulators are running, open `http://localhost:4000` for the suite UI (Firestore, Auth, Functions, Storage tabs).
+
+### Full automated QA checklist (recommended before merge)
+
+Run in order (same shape as a typical Cloud agent verification pass):
+
+1. `npm run lint`
+2. `npm run typecheck`
+3. `npm run test:unit`
+4. `npm run test:integration`
+5. `npm run functions:build` (or `cd functions && npm run build`)
+6. `npm run build-web`
+7. `npm run test:web:route-hygiene`
+
+Stricter repo gate: `npm run qa:solid` (adds package.json validation, deeplink test, and e2e smoke on top of the above pattern).
+
+### Manual smoke (web + emulators)
+
+- Expo web: Discover loads with **desktop sidebar**, content rails, and city cards (`npx expo start --web --port 8081`).
+- With emulators up: **Emulator UI** at `http://localhost:4000`.
 
 ### Commands quick reference
 
-See `CLAUDE.md` "Local Development" section for full commands. Key ones:
+See `CLAUDE.md` "Local Development" section for emulator seeding and native commands. Key scripts:
 
 - **Lint**: `npm run lint`
 - **Typecheck**: `npm run typecheck`
 - **Unit tests**: `npm run test:unit`
 - **Integration tests**: `npm run test:integration`
-- **Full QA**: `npm run qa:solid` (lint + typecheck + all tests + web build + route hygiene)
-- **Web build**: `npm run build-web`
+- **Functions compile**: `npm run functions:build`
+- **Web export**: `npm run build-web`
+- **Static HTML hygiene**: `npm run test:web:route-hygiene`
+- **Full QA**: `npm run qa:solid`

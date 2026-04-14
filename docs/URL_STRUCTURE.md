@@ -24,12 +24,22 @@ This document defines canonical public routes and where legacy remaps must be ma
 - `/users/:id` -> `/user/:id`
 - `/businesses/:id` -> `/business/:id`
 
+## Syndication & calendar (API — not SPA routes)
+
+Public **RSS and ICS** URLs are served by Cloud Functions, not static HTML files:
+
+- Pattern: `/api/feeds/<scope>/<value>.rss` and `.ics` (see `docs/API_ENDPOINTS.md`).
+- Global community update feeds: `/api/feeds/status.rss`, `/api/feeds/story.rss` (optional `communityId` query).
+- Scoped: `/api/feeds/community/<communityId>/status.rss`, `.../story.rss`.
+
+Document new feed paths in `docs/API_ENDPOINTS.md` and extend `scripts/tests/integration-api-routes.ts` when adding handlers.
+
 ## Sources Of Truth
 
 - `app/+native-intent.tsx` for native and deep-link remaps
 - `firebase.json` for hosting rewrites
 - Expo Router route files in `app/`
-- Route smoke coverage in repo test scripts
+- Route smoke coverage in repo test scripts (`npm run test:web:route-hygiene` after `npm run build-web`)
 
 ## Guardrails
 
