@@ -219,7 +219,6 @@ export default function AllEventsScreen() {
 
 
   const { user, hasRole } = useAuth();
-  const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
     mutationFn: (eventId: string) => api.events.remove(eventId),
