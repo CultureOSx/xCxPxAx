@@ -31,6 +31,7 @@ import {
   generateSecureId,
   buildMembershipResponse,
   awardRewardsPoints,
+  getFirebaseProjectId,
 } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -182,7 +183,8 @@ export function createStripeRouter() {
     }
 
     try {
-      const appUrl = process.env.APP_URL ?? `https://${process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG).projectId + '.web.app' : 'localhost:5000'}`;
+      const projectId = getFirebaseProjectId();
+      const appUrl = process.env.APP_URL ?? (projectId ? `https://${projectId}.web.app` : 'https://localhost:5000');
       const sessionMetadata: Record<string, string> = {
         ticketId: draft.id,
         userId: draft.userId,
