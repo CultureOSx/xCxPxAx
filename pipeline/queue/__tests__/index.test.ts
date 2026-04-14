@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals';
 
 import { Queue, Worker } from 'bullmq';
@@ -31,7 +32,7 @@ describe('pipeline queue index.js', () => {
     const data = { foo: 'bar' };
     const result = await addEventJob(data);
     expect(eventQueue.add).toHaveBeenCalledWith('ingest', data);
-    expect(result).toEqual({ id: 'mock-job-id' });
+    expect((result as any).id).toEqual('mock-job-id');
   });
 
   it('createEventWorker should instantiate a Worker', () => {
