@@ -141,15 +141,15 @@ describe('useCalendarSync.native', () => {
     const origPlatformOS = Platform.OS;
     beforeEach(() => {
       Platform.OS = 'ios';
-      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
-      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
     });
     afterEach(() => {
       Platform.OS = origPlatformOS;
     });
 
     it('returns false and alerts if permission denied', async () => {
-      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementationOnce(() => Promise.resolve({ granted: false }));
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementationOnce(() => Promise.resolve({ status: 'denied', granted: false }));
       const { result } = renderHook(() => useCalendarSync());
 
       const event = { id: '123', title: 'Test Event', date: new Date() } as unknown as EventData;
@@ -223,8 +223,8 @@ describe('useCalendarSync.native', () => {
     const origPlatformOS = Platform.OS;
     beforeEach(() => {
       Platform.OS = 'ios';
-      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
-      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
     });
     afterEach(() => {
       Platform.OS = origPlatformOS;
@@ -269,8 +269,8 @@ describe('useCalendarSync.native', () => {
     const origPlatformOS = Platform.OS;
     beforeEach(() => {
       Platform.OS = 'ios';
-      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
-      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ granted: true }));
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
     });
     afterEach(() => {
       Platform.OS = origPlatformOS;
