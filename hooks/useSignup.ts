@@ -111,30 +111,35 @@ export function useSignup() {
   }, [clearErrors, trackSignup, redirectTo]);
 
   const handleAppleSignUp = useCallback(async () => {
-    if (Platform.OS !== 'ios') return;
+    if (Platform.OS !== 'ios' && Platform.OS !== 'web') return;
     setLoading(true);
     clearErrors();
     try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      const provider = new OAuthProvider('apple.com');
-      const firebaseCredential = provider.credential({
-        idToken: credential.identityToken ?? '',
-        rawNonce: credential.authorizationCode ?? '',
-      });
-      await signInWithCredential(firebaseAuth, firebaseCredential);
+      if (Platform.OS === 'web') {
+        const provider = new OAuthProvider('apple.com');
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        });
+        const provider = new OAuthProvider('apple.com');
+        const firebaseCredential = provider.credential({
+          idToken: credential.identityToken ?? '',
+          rawNonce: credential.authorizationCode ?? '',
+        });
+        await signInWithCredential(firebaseAuth, firebaseCredential);
+      }
       trackSignup('apple');
-      await HapticManager.success();
+      if (Platform.OS !== 'web') await HapticManager.success();
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
     } catch (e: unknown) {
       const err = e as Record<string, unknown>;
       if (err?.code !== 'ERR_REQUEST_CANCELED') {
         setGlobalError('Apple sign-up failed. Please try again.');
-        await HapticManager.error();
+        if (Platform.OS !== 'web') await HapticManager.error();
       }
     } finally {
       setLoading(false);
@@ -172,6 +177,8 @@ export function useSignup() {
         setEmailError('Please enter a valid email address.');
       } else if (code === 'auth/weak-password') {
         setPasswordError('Password must be at least 6 characters.');
+      } else if (code === 'auth/network-request-failed') {
+        setGlobalError('Unable to connect. Please check your internet connection and try again.');
       } else {
         setGlobalError('Registration failed. Please try again.');
       }
