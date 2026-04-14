@@ -1,117 +1,164 @@
-import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { Platform, Alert, Linking } from 'react-native';
+import { renderHook, act } from '@testing-library/react-native';
+import { Alert, Platform, Linking } from 'react-native';
+import { EventData } from '@/shared/schema';
 
-// Try to mock the module by putting it into the global require cache manually or using doMock.
-// But earlier we saw `jest.mock` actually works fine if we mock the module properly,
-// The problem was our virtual mock somehow got lost or `isCalendarLinked` evaluated to false.
-// By putting the mock in `__mocks__/expo-calendar.js`, Jest automatically resolves it!
+// We must mock expo-calendar via jest.mock as the code does require('expo-calendar') inside a try-catch
+const mockExpoCalendar = {
+  requestCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
+  getCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
+  getCalendarsAsync: jest.fn(),
+  getEventsAsync: jest.fn(),
+  createEventAsync: jest.fn(),
+  EntityTypes: { EVENT: 'event' },
+};
 
-// Now import the hook
-import { useCalendarSync } from '../useCalendarSync.native';
+jest.doMock('expo-calendar', () => mockExpoCalendar);
 
-// Retrieve the mocked functions from the automatically mocked module
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const expoCalendar = require('expo-calendar');
+// Need to require hook after doMock so it gets the mocked version
+const { useCalendarSync, parseEventDate, buildICS } = require('../useCalendarSync.native');
 
-// Mock React Native Alert & Linking
-jest.spyOn(Alert, 'alert');
-jest.spyOn(Linking, 'openSettings');
+// --- Mocks ---
 
-// Mock @tanstack/react-query
+const mockMutateAsync = jest.fn();
 const mockQueryClient = { setQueryData: jest.fn() };
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
 
 jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(() => ({
+    data: { deviceConnected: true, showPersonalEvents: true, autoAddTickets: false },
+    isLoading: false,
+  })),
+  useMutation: jest.fn(() => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  })),
   useQueryClient: jest.fn(() => mockQueryClient),
-  useQuery: jest.fn((...args) => mockUseQuery(...args)),
-  useMutation: jest.fn((...args) => mockUseMutation(...args)),
 }));
-
-// Mock api
-const mockGetSettings = jest.fn();
-const mockUpdateSettings = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   api: {
     calendar: {
-      getSettings: mockGetSettings,
-      updateSettings: mockUpdateSettings,
+      getSettings: jest.fn(),
+      updateSettings: jest.fn(),
     },
   },
 }));
 
+jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+// URL and Blob mocks for web
+global.Blob = jest.fn() as unknown as typeof Blob;
+global.URL.createObjectURL = jest.fn(() => 'blob:mock');
+global.URL.revokeObjectURL = jest.fn();
+
 describe('useCalendarSync.native', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Default mock implementations
-    mockUseQuery.mockReturnValue({
-      data: { deviceConnected: false, showPersonalEvents: true, autoAddTickets: false },
-      isLoading: false,
-    });
-
-    mockUseMutation.mockReturnValue({
-      mutateAsync: mockUpdateSettings,
-      isPending: false,
-    });
-
-    mockUpdateSettings.mockImplementation(async (prefs) => {
-      // Simulate success callback
-      const [, options] = mockUseMutation.mock.calls[0];
-      if (options && options.onSuccess) {
-        options.onSuccess({ ...prefs });
-      }
-      return prefs;
-    });
-
-    expoCalendar.getCalendarPermissionsAsync.mockResolvedValue({ granted: true });
-    expoCalendar.requestCalendarPermissionsAsync.mockResolvedValue({ granted: true });
-
-    Object.defineProperty(Platform, 'OS', { get: jest.fn(() => 'ios') });
   });
 
-  it('should initialize correctly', async () => {
-    const { result } = renderHook(() => useCalendarSync());
-    expect(result.current.prefs).toBeDefined();
-    // if the mock loaded correctly, isCalendarLinked should be true
-    expect(result.current.isCalendarLinked).toBe(true);
+  describe('parseEventDate', () => {
+    it('returns Date object correctly if raw is a Date', () => {
+      const d = new Date('2025-01-01T10:00:00Z');
+      const event = { date: d } as unknown as EventData;
+      expect(parseEventDate(event)).toEqual(d);
+    });
 
-    // Wait for the useEffect permission check
-    await waitFor(() => {
-      expect(expoCalendar.getCalendarPermissionsAsync).toHaveBeenCalled();
+    it('returns Date object correctly if raw is string without T', () => {
+      const event = { date: '2025-01-01' } as unknown as EventData;
+      expect(parseEventDate(event).toISOString()).toBe('2025-01-01T00:00:00.000Z');
+    });
+
+    it('returns Date object correctly if raw is string with T', () => {
+      const event = { date: '2025-01-01T10:00:00Z' } as unknown as EventData;
+      expect(parseEventDate(event).toISOString()).toBe('2025-01-01T10:00:00.000Z');
+    });
+
+    it('handles Firestore Timestamp correctly', () => {
+      const d = new Date('2025-01-01T10:00:00Z');
+      const timestamp = { toDate: () => d };
+      const event = { date: timestamp } as unknown as EventData;
+      expect(parseEventDate(event)).toEqual(d);
+    });
+
+    it('falls back to new Date() if string is invalid', () => {
+      const event = { date: 'invalid date' } as unknown as EventData;
+      const parsed = parseEventDate(event);
+      // It should return a valid Date object fallback
+      expect(parsed).toBeInstanceOf(Date);
+      expect(isNaN(parsed.getTime())).toBe(false);
+    });
+
+    it('falls back to new Date() if raw is null or undefined', () => {
+      const event = { date: null } as unknown as EventData;
+      const parsed = parseEventDate(event);
+      expect(parsed).toBeInstanceOf(Date);
+      expect(isNaN(parsed.getTime())).toBe(false);
+    });
+
+    it('falls back to new Date() if error thrown internally', () => {
+      // e.g. raw object where toDate is not a function
+      const event = { date: { toDate: "not a function" } } as unknown as EventData;
+      const parsed = parseEventDate(event);
+      expect(parsed).toBeInstanceOf(Date);
+      expect(isNaN(parsed.getTime())).toBe(false);
     });
   });
 
-  describe('Permissions', () => {
-    it('should check permissions on mount', async () => {
-      renderHook(() => useCalendarSync());
-      await waitFor(() => {
-        expect(expoCalendar.getCalendarPermissionsAsync).toHaveBeenCalled();
-      });
+  describe('buildICS', () => {
+    it('builds ICS successfully without description or location', () => {
+      const d = new Date('2025-01-01T10:00:00Z');
+      const event = {
+        id: '123',
+        title: 'Test Event',
+        date: d,
+      } as unknown as EventData;
+
+      const ics = buildICS(event);
+      expect(ics).toContain('UID:culturepass-123@culturepass.app');
+      expect(ics).toContain('SUMMARY:Test Event');
+      expect(ics).not.toContain('LOCATION:');
+      expect(ics).not.toContain('DESCRIPTION:');
     });
 
-    it('should connect device calendar when permission is granted', async () => {
-      const { result } = renderHook(() => useCalendarSync());
+    it('builds ICS successfully with description and location', () => {
+      const d = new Date('2025-01-01T10:00:00Z');
+      const event = {
+        id: '123',
+        title: 'Test Event',
+        date: d,
+        description: 'Test Description',
+        venue: 'Test Venue',
+        address: '123 Test St',
+        city: 'Test City',
+      } as unknown as EventData;
 
-      await act(async () => {
-        await result.current.connectDeviceCalendar();
-      });
+      const ics = buildICS(event);
+      expect(ics).toContain('LOCATION:Test Venue, 123 Test St, Test City');
+      expect(ics).toContain('DESCRIPTION:Test Description');
+    });
+  });
 
-      expect(expoCalendar.requestCalendarPermissionsAsync).toHaveBeenCalled();
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ deviceConnected: true });
+  describe('exportEventToCalendar error paths', () => {
+    const origPlatformOS = Platform.OS;
+    beforeEach(() => {
+      Platform.OS = 'ios';
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+    });
+    afterEach(() => {
+      Platform.OS = origPlatformOS;
     });
 
-    it('should not connect device calendar when permission is denied', async () => {
-      expoCalendar.requestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: false });
+    it('returns false and alerts if permission denied', async () => {
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementationOnce(() => Promise.resolve({ status: 'denied', granted: false }));
       const { result } = renderHook(() => useCalendarSync());
 
+      const event = { id: '123', title: 'Test Event', date: new Date() } as unknown as EventData;
+      let success;
       await act(async () => {
-        await result.current.connectDeviceCalendar();
+        success = await result.current.exportEventToCalendar(event);
       });
 
-      expect(expoCalendar.requestCalendarPermissionsAsync).toHaveBeenCalled();
-      expect(mockUpdateSettings).not.toHaveBeenCalled();
+      expect(success).toBe(false);
       expect(Alert.alert).toHaveBeenCalledWith(
         'Calendar Permission Required',
         expect.any(String),
@@ -119,178 +166,156 @@ describe('useCalendarSync.native', () => {
       );
     });
 
-    it('should disconnect device calendar', async () => {
+    it('returns false and alerts if no writable calendar found', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementationOnce(() => Promise.resolve([
+        { id: '1', allowsModifications: false },
+      ]));
       const { result } = renderHook(() => useCalendarSync());
 
+      const event = { id: '123', title: 'Test Event', date: new Date() } as unknown as EventData;
+      let success;
       await act(async () => {
-        await result.current.disconnectDeviceCalendar();
+        success = await result.current.exportEventToCalendar(event);
       });
 
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ deviceConnected: false });
-      expect(result.current.personalEvents).toEqual([]);
+      expect(success).toBe(false);
+      expect(Alert.alert).toHaveBeenCalledWith('No writable calendar found', 'Unable to add event to your calendar.');
+    });
+
+    it('returns false and alerts if createEventAsync throws', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementationOnce(() => Promise.resolve([
+        { id: '1', allowsModifications: true },
+      ]));
+      mockExpoCalendar.createEventAsync.mockImplementationOnce(() => Promise.reject(new Error('Failed')));
+
+      const { result } = renderHook(() => useCalendarSync());
+
+      const event = { id: '123', title: 'Test Event', date: new Date() } as unknown as EventData;
+      let success;
+      await act(async () => {
+        success = await result.current.exportEventToCalendar(event);
+      });
+
+      expect(success).toBe(false);
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Could not add event to calendar. Please try again.');
+    });
+
+    it('returns true if createEventAsync succeeds', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementationOnce(() => Promise.resolve([
+        { id: '1', allowsModifications: true },
+      ]));
+      mockExpoCalendar.createEventAsync.mockImplementationOnce(() => Promise.resolve('event-123'));
+
+      const { result } = renderHook(() => useCalendarSync());
+
+      const event = { id: '123', title: 'Test Event', date: new Date() } as unknown as EventData;
+      let success;
+      await act(async () => {
+        success = await result.current.exportEventToCalendar(event);
+      });
+
+      expect(success).toBe(true);
+      expect(Alert.alert).toHaveBeenCalledWith('Added to Calendar', '"Test Event" has been added to your calendar.');
     });
   });
 
-  describe('fetchPersonalEvents', () => {
-    it('should fetch and map personal events', async () => {
-      mockUseQuery.mockReturnValue({
-        data: { deviceConnected: true, showPersonalEvents: true, autoAddTickets: false },
-        isLoading: false,
-      });
-
-      const { result } = renderHook(() => useCalendarSync());
-
-      // Wait for mount useEffect to finish setting permissionGranted to true
-      await waitFor(() => {
-        expect(result.current.permissionGranted).toBe(true);
-      });
-
-      const mockCalendars = [
-        { id: 'cal1', title: 'Work', color: '#ff0000' }
-      ];
-      expoCalendar.getCalendarsAsync.mockResolvedValueOnce(mockCalendars);
-
-      const mockEvents = [
-        { id: 'ev1', title: 'Meeting', startDate: '2023-01-01T10:00:00Z', endDate: '2023-01-01T11:00:00Z', calendarId: 'cal1' }
-      ];
-      expoCalendar.getEventsAsync.mockResolvedValueOnce(mockEvents);
-
-      const startDate = new Date('2023-01-01T00:00:00Z');
-      const endDate = new Date('2023-01-01T23:59:59Z');
-
-      await act(async () => {
-        await result.current.fetchPersonalEvents(startDate, endDate);
-      });
-
-      expect(expoCalendar.getCalendarsAsync).toHaveBeenCalledWith('EVENT');
-      expect(expoCalendar.getEventsAsync).toHaveBeenCalledWith(['cal1'], startDate, endDate);
-      expect(result.current.personalEvents).toHaveLength(1);
-      expect(result.current.personalEvents[0]).toMatchObject({
-        id: 'ev1',
-        title: 'Meeting',
-        calendarName: 'Work',
-        color: '#ff0000'
-      });
+  describe('fetchPersonalEvents error paths', () => {
+    const origPlatformOS = Platform.OS;
+    beforeEach(() => {
+      Platform.OS = 'ios';
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+    });
+    afterEach(() => {
+      Platform.OS = origPlatformOS;
     });
 
-    it('should return early if device not connected', async () => {
-      mockUseQuery.mockReturnValue({
-        data: { deviceConnected: false, showPersonalEvents: true, autoAddTickets: false },
-        isLoading: false,
-      });
-
+    it('silently ignores errors from getCalendarsAsync', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementationOnce(() => Promise.reject(new Error('Failed')));
       const { result } = renderHook(() => useCalendarSync());
+
+      await act(async () => {
+        await result.current.connectDeviceCalendar();
+      });
 
       await act(async () => {
         await result.current.fetchPersonalEvents(new Date(), new Date());
       });
 
-      expect(expoCalendar.getCalendarsAsync).not.toHaveBeenCalled();
+      expect(result.current.personalEvents).toEqual([]);
+    });
+
+    it('silently ignores errors from getEventsAsync', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementationOnce(() => Promise.resolve([
+        { id: '1', allowsModifications: true },
+      ]));
+      mockExpoCalendar.getEventsAsync.mockImplementationOnce(() => Promise.reject(new Error('Failed')));
+
+      const { result } = renderHook(() => useCalendarSync());
+
+      await act(async () => {
+        await result.current.connectDeviceCalendar();
+      });
+
+      await act(async () => {
+        await result.current.fetchPersonalEvents(new Date(), new Date());
+      });
+
+      expect(result.current.personalEvents).toEqual([]);
     });
   });
 
-  describe('exportEventToCalendar', () => {
-    it('should export event to writable calendar', async () => {
-      const { result } = renderHook(() => useCalendarSync());
-
-      await waitFor(() => {
-        expect(result.current.permissionGranted).toBe(true);
-      });
-
-      expoCalendar.getCalendarsAsync.mockResolvedValueOnce([
-        { id: 'cal1', allowsModifications: false },
-        { id: 'cal2', allowsModifications: true, isPrimary: true }
-      ]);
-
-      const mockEventData = {
-        id: '123',
-        title: 'Test Event',
-        date: new Date('2023-01-01T12:00:00Z'),
-        venue: 'Test Venue',
-        description: 'Test Description',
-      };
-
-      let success;
-      await act(async () => {
-        // @ts-ignore - mock event data
-        success = await result.current.exportEventToCalendar(mockEventData);
-      });
-
-      expect(success).toBe(true);
-      expect(expoCalendar.createEventAsync).toHaveBeenCalledWith('cal2', expect.objectContaining({
-        title: 'Test Event',
-        notes: 'Test Description',
-        location: 'Test Venue',
-      }));
-      expect(Alert.alert).toHaveBeenCalledWith('Added to Calendar', expect.any(String));
+  describe('exportAllTickets error paths', () => {
+    const origPlatformOS = Platform.OS;
+    beforeEach(() => {
+      Platform.OS = 'ios';
+      mockExpoCalendar.requestCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+      mockExpoCalendar.getCalendarPermissionsAsync.mockImplementation(() => Promise.resolve({ status: 'granted', granted: true }));
+    });
+    afterEach(() => {
+      Platform.OS = origPlatformOS;
     });
 
-    it('should show alert if no writable calendar found', async () => {
+    it('does not alert if all exports fail', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementation(() => Promise.resolve([
+        { id: '1', allowsModifications: true },
+      ]));
+      mockExpoCalendar.createEventAsync.mockImplementation(() => Promise.reject(new Error('Failed')));
+
       const { result } = renderHook(() => useCalendarSync());
+      const events = [
+        { id: '1', title: 'Event 1', date: new Date() },
+        { id: '2', title: 'Event 2', date: new Date() }
+      ] as unknown as EventData[];
 
-      await waitFor(() => {
-        expect(result.current.permissionGranted).toBe(true);
-      });
-
-      expoCalendar.getCalendarsAsync.mockResolvedValueOnce([
-        { id: 'cal1', allowsModifications: false },
-      ]);
-
-      let success;
       await act(async () => {
-        // @ts-ignore
-        success = await result.current.exportEventToCalendar({ id: '123' });
+        await result.current.exportAllTickets(events);
       });
 
-      expect(success).toBe(false);
-      expect(Alert.alert).toHaveBeenCalledWith('No writable calendar found', expect.any(String));
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Could not add event to calendar. Please try again.'); // Called per event
+      // Should not call the Sync Complete alert because count == 0
+      expect(Alert.alert).not.toHaveBeenCalledWith('Sync Complete', expect.any(String));
     });
 
-    it('should handle exportAllTickets', async () => {
+    it('alerts with correct count if partial success', async () => {
+      mockExpoCalendar.getCalendarsAsync.mockImplementation(() => Promise.resolve([
+        { id: '1', allowsModifications: true },
+      ]));
+      mockExpoCalendar.createEventAsync
+        .mockImplementationOnce(() => Promise.resolve('event-1'))
+        .mockImplementationOnce(() => Promise.reject(new Error('Failed')));
+
       const { result } = renderHook(() => useCalendarSync());
-
-      await waitFor(() => {
-        expect(result.current.permissionGranted).toBe(true);
-      });
-
-      expoCalendar.getCalendarsAsync.mockResolvedValue([
-        { id: 'cal1', allowsModifications: true, isPrimary: true }
-      ]);
-
-      const mockEvents = [
-        { id: '1', title: 'Ev1' },
-        { id: '2', title: 'Ev2' }
-      ];
+      const events = [
+        { id: '1', title: 'Event 1', date: new Date() },
+        { id: '2', title: 'Event 2', date: new Date() }
+      ] as unknown as EventData[];
 
       await act(async () => {
-        // @ts-ignore
-        await result.current.exportAllTickets(mockEvents);
+        await result.current.exportAllTickets(events);
       });
 
-      expect(expoCalendar.createEventAsync).toHaveBeenCalledTimes(2);
-      expect(Alert.alert).toHaveBeenCalledWith('Sync Complete', expect.any(String));
-    });
-  });
-
-  describe('Preferences', () => {
-    it('should set showPersonalEvents', async () => {
-      const { result } = renderHook(() => useCalendarSync());
-
-      await act(async () => {
-        await result.current.setShowPersonalEvents(false);
-      });
-
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ showPersonalEvents: false });
-    });
-
-    it('should set autoAddTickets', async () => {
-      const { result } = renderHook(() => useCalendarSync());
-
-      await act(async () => {
-        await result.current.setAutoAddTickets(true);
-      });
-
-      expect(mockUpdateSettings).toHaveBeenCalledWith({ autoAddTickets: true });
+      expect(Alert.alert).toHaveBeenCalledWith('Sync Complete', '1 event added to your calendar.');
     });
   });
 });

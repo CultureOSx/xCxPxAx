@@ -253,7 +253,7 @@ export function useCalendarSync() {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function parseEventDate(event: EventData): Date {
+export function parseEventDate(event: EventData): Date {
   try {
     const raw: unknown = event.date;
     if (raw instanceof Date) return raw;
@@ -270,7 +270,7 @@ function parseEventDate(event: EventData): Date {
   return new Date();
 }
 
-function buildICS(event: EventData): string {
+export function buildICS(event: EventData): string {
   const start = parseEventDate(event);
   const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
   const fmt = (d: Date) =>
