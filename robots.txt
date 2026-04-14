@@ -3,21 +3,11 @@
 
 User-agent: *
 Allow: /
-Allow: /assets/
-Allow: /_expo/static/
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /private/
 Disallow: /api/
 Disallow: /payment/
 Disallow: /settings/
-Disallow: /submit/
-Disallow: /scanner/
-Disallow: /membership/
-Disallow: /notifications/
-Disallow: /contacts/
-Disallow: /onboarding/
-Disallow: /(onboarding)/
 
 Sitemap: https://culturepass.app/sitemap.xml
-Host: https://culturepass.app

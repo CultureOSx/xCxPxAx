@@ -16,7 +16,8 @@ const baseSchema = z.object({
 
 export const EventSchema = baseSchema.extend({
   date: z.date({
-    error: "Please select a valid date.",
+    required_error: "When is this happening?",
+    invalid_type_error: "Please select a valid date."
   }),
   venueId: z.string().uuid("Please select a valid venue."),
   price: z.number().min(0, "Price cannot be negative."),

@@ -376,11 +376,7 @@ const sc = StyleSheet.create({
 
 const fr = StyleSheet.create({
   wrap: { gap: 8 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   label: { ...TextStyles.badge, letterSpacing: 0.4 },
-  requiredDot: { ...TextStyles.badge, lineHeight: 14 },
-  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  error: { ...TextStyles.caption, lineHeight: 16 },
 });
 
 const id = StyleSheet.create({
