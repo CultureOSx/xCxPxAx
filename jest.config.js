@@ -10,4 +10,5 @@ module.exports = {
     '^ioredis$': '<rootDir>/pipeline/queue/test-doubles/ioredis-stub.cjs',
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  testPathIgnorePatterns: ['<rootDir>/.claude/worktrees/'],
 };
