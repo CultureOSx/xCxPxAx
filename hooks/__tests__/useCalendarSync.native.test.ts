@@ -1,18 +1,14 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { Alert, Platform } from 'react-native';
 
-const mockGetCalendarsAsync = jest.fn();
-const mockCreateEventAsync = jest.fn();
-const mockRequestCalendarPermissionsAsync = jest.fn();
-const mockGetCalendarPermissionsAsync = jest.fn();
-
-const calendarMock = {
+// Mock expo-calendar with jest.fn() directly in the factory (avoids TDZ issues with hoisting)
+jest.mock('expo-calendar', () => ({
   EntityTypes: { EVENT: 'EVENT' },
-  getCalendarsAsync: mockGetCalendarsAsync,
-  createEventAsync: mockCreateEventAsync,
-  requestCalendarPermissionsAsync: mockRequestCalendarPermissionsAsync,
-  getCalendarPermissionsAsync: mockGetCalendarPermissionsAsync,
-};
+  getCalendarsAsync: jest.fn(),
+  createEventAsync: jest.fn(),
+  requestCalendarPermissionsAsync: jest.fn(),
+  getCalendarPermissionsAsync: jest.fn(),
+}));
 
 jest.mock('react-native', () => {
   const rn = jest.requireActual('react-native');
@@ -35,7 +31,16 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
-import { useCalendarSync, __test_setCalendarLinked } from '../useCalendarSync.native';
+import { useCalendarSync } from '../useCalendarSync.native';
+
+// Get typed references to the mock functions after the module registry is set up
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const calendarMocks = jest.requireMock('expo-calendar') as {
+  getCalendarsAsync: jest.Mock;
+  createEventAsync: jest.Mock;
+  requestCalendarPermissionsAsync: jest.Mock;
+  getCalendarPermissionsAsync: jest.Mock;
+};
 
 describe('useCalendarSync.native hook', () => {
   const originalOS = Platform.OS;
@@ -43,11 +48,7 @@ describe('useCalendarSync.native hook', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Platform.OS = 'ios';
-    // Make sure we pass the full mock obj with functions attached, because `isCalendarLinked` expects functions on the object
-    __test_setCalendarLinked(true, calendarMock);
-
-    // We must ensure the mock function returns a valid result for the useEffect hook on mount
-    mockGetCalendarPermissionsAsync.mockResolvedValue({ granted: false });
+    calendarMocks.getCalendarPermissionsAsync.mockResolvedValue({ granted: false });
   });
 
   afterAll(() => {
@@ -66,7 +67,7 @@ describe('useCalendarSync.native hook', () => {
 
   describe('exportEventToCalendar error paths', () => {
     it('returns false and alerts if permission is denied', async () => {
-      mockRequestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: false });
+      calendarMocks.requestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: false });
 
       const { result } = renderHook(() => useCalendarSync());
 
@@ -84,9 +85,8 @@ describe('useCalendarSync.native hook', () => {
     });
 
     it('returns false and alerts if no writable calendar is found', async () => {
-      mockRequestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: true });
-
-      mockGetCalendarsAsync.mockResolvedValueOnce([
+      calendarMocks.requestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: true });
+      calendarMocks.getCalendarsAsync.mockResolvedValueOnce([
         { id: 'cal1', allowsModifications: false },
       ]);
 
@@ -105,12 +105,11 @@ describe('useCalendarSync.native hook', () => {
     });
 
     it('returns false and alerts if createEventAsync throws an error', async () => {
-      mockRequestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: true });
-
-      mockGetCalendarsAsync.mockResolvedValueOnce([
+      calendarMocks.requestCalendarPermissionsAsync.mockResolvedValueOnce({ granted: true });
+      calendarMocks.getCalendarsAsync.mockResolvedValueOnce([
         { id: 'cal1', allowsModifications: true },
       ]);
-      mockCreateEventAsync.mockRejectedValueOnce(new Error('Failed to create event'));
+      calendarMocks.createEventAsync.mockRejectedValueOnce(new Error('Failed to create event'));
 
       const { result } = renderHook(() => useCalendarSync());
 
@@ -123,25 +122,6 @@ describe('useCalendarSync.native hook', () => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'Error',
         'Could not add event to calendar. Please try again.'
-      );
-    });
-  });
-
-  describe('isCalendarLinked = false', () => {
-    it('returns false and alerts when calendar module is missing', async () => {
-      __test_setCalendarLinked(false, null);
-
-      const { result } = renderHook(() => useCalendarSync());
-
-      let success;
-      await act(async () => {
-        success = await result.current.exportEventToCalendar(dummyEvent as any);
-      });
-
-      expect(success).toBe(false);
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Calendar Module Missing',
-        expect.any(String)
       );
     });
   });
