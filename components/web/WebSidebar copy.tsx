@@ -474,15 +474,49 @@ export function WebSidebar() {
         {isSponsor && <NavSection label="Sponsor" mutedColor={mutedColor}>{SPONSOR_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
         {isAdmin && <NavSection label="Admin" mutedColor={mutedColor}>{ADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
         {isSuperAdmin && <NavSection label="SuperAdmin" mutedColor={mutedColor}>{SUPERADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+      </ScrollView>
 
-        <NavSection label="More" mutedColor={mutedColor}>
+      {/* Council + Bottom Section (unchanged) */}
+      {myCouncil && (
+        <Pressable
+          style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
+          onPress={() => navigate('/(tabs)/directory')}
+          accessibilityRole="button"
+          accessibilityLabel={`My Council, ${myCouncil.name}`}
+        >
+          <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
+            <Ionicons name="shield-checkmark" size={15} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[s.councilEyebrow, { color: colors.primary }]} numberOfLines={1}>
+              My Council
+            </Text>
+            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>
+              {myCouncil.name}
+            </Text>
+            <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
+              {myCouncil.suburb ?? 'Local'}
+              {myCouncil.state ? `, ${myCouncil.state}` : ''}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
+        </Pressable>
+      )}
+
+      <View style={[s.thinDivider, { backgroundColor: border }]} />
+      <View style={s.bottomNavSection}>
+        <View style={s.navGroup}>
           {BOTTOM_NAV.map((item) => (
             <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
           ))}
-        </NavSection>
+        </View>
 
-        {!isAuthenticated && (
-          <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8, gap: 8 }}>
+        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 6 }]} />
+
+        {isAuthenticated && user ? (
+          <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={logout} />
+        ) : (
+          <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
             <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]} accessibilityRole="button" accessibilityLabel="Create submission">
               <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
                 <Text style={s.profileCreateText}>＋ Create</Text>
@@ -510,35 +544,7 @@ export function WebSidebar() {
           {brandMetaLine}
         </Text>
         <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
-      </ScrollView>
-
-      {myCouncil && (
-        <Pressable
-          style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
-          onPress={() => navigate('/(tabs)/directory')}
-          accessibilityRole="button"
-          accessibilityLabel={`My Council, ${myCouncil.name}`}
-        >
-          <View style={[s.councilIconWrap, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
-            <Ionicons name="shield-checkmark" size={15} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[s.councilEyebrow, { color: colors.primary }]} numberOfLines={1}>My Council</Text>
-            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>{myCouncil.name}</Text>
-            <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
-              {myCouncil.suburb ?? 'Local'}{myCouncil.state ? `, ${myCouncil.state}` : ''}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
-        </Pressable>
-      )}
-
-      {isAuthenticated && user && (
-        <>
-          <View style={[s.thinDivider, { backgroundColor: border }]} />
-          <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={logout} />
-        </>
-      )}
+      </View>
     </View>
   );
 }
@@ -624,6 +630,17 @@ function SidebarProfileBlock({
 
   return (
     <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
+      <Pressable
+        onPress={() => onNavigate('/submit')}
+        style={({ pressed }) => [s.profileCreateBtn, { marginBottom: 8 }, pressed && { opacity: 0.88 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Create submission"
+      >
+        <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
+          <Text style={s.profileCreateText}>＋ Create</Text>
+        </LinearGradient>
+      </Pressable>
+
       {/* Expanded quick links */}
       {expanded && (
         <View
@@ -740,7 +757,8 @@ function SidebarProfileBlock({
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const s = StyleSheet.create({
+const getSidebarStyles = (colors: ColorTheme) => {
+  const s = StyleSheet.create({
     sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
 
     brandHeader: {
@@ -888,9 +906,9 @@ const s = StyleSheet.create({
     profileBlock: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, marginHorizontal: 8 },
     profileBlockName: { ...TextStyles.labelSemibold },
     profileBlockSub: { ...TextStyles.caption },
-});
+  });
 
-const r = StyleSheet.create({
+  const r = StyleSheet.create({
     rail: { width: 54, height: '100%', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0, alignItems: 'center', paddingTop: 14, paddingBottom: 4 },
     railTop: { marginBottom: 10 },
     divider: { height: StyleSheet.hairlineWidth, width: 32, marginBottom: 6 },
@@ -898,9 +916,9 @@ const r = StyleSheet.create({
     railItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     railActionBtn: { backgroundColor: 'transparent' },
     railActiveBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
-});
+  });
 
-const ni = StyleSheet.create({
+  const ni = StyleSheet.create({
     item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, minHeight: 46, paddingVertical: 4, paddingHorizontal: 14, position: 'relative', overflow: 'hidden' },
     itemActive: { borderRadius: 12 },
     activeBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2, overflow: 'hidden' },
@@ -908,4 +926,7 @@ const ni = StyleSheet.create({
     labelActive: { fontFamily: 'Poppins_700Bold' },
     badge: { backgroundColor: Colors.error, borderRadius: 9, minWidth: 17, height: 17, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
     badgeText: { ...TextStyles.captionSemibold, color: '#fff', fontSize: 9 },
-});
+  });
+
+  return { s, r, ni };
+};

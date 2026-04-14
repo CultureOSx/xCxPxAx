@@ -87,7 +87,9 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR"
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -173,7 +175,6 @@
         "origin": "https://culturepass.app"
       },
       "eas": {
-        "projectId": "01dab28f-0531-42aa-8f76-c3dc0e13216e",
         "build": {
           "experimental": {
             "ios": {
@@ -192,17 +193,29 @@
                   "bundleIdentifier": "au.culturepass.app.smart-card",
                   "targetName": "smartcard",
                   "entitlements": {}
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "au.culturepass.app.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.au.culturepass.app"
+                    ]
+                  }
                 }
               ]
             }
           }
-        }
+        },
+        "projectId": "9dc511ee-ee3e-4798-ae29-30efc8f5343e"
       }
     },
-    "owner": "cultureoss-organization",
-      "runtimeVersion": { "policy": "appVersion" },
+    "owner": "cultureos",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
-      "url": "https://u.expo.dev/4bb2f141-de49-47d5-9212-e23e8c0b61d4"
+      "url": "https://u.expo.dev/9dc511ee-ee3e-4798-ae29-30efc8f5343e"
     }
   }
 }
