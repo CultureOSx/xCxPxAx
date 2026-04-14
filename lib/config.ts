@@ -73,13 +73,17 @@ export function getFirebaseWebConfig() {
     );
   }
 
+  // In CI, if config is missing, we provide dummy values to allow the build/bundler to complete.
+  // Static rendering in Expo Router executes app code, which would otherwise fail on getAuth() init.
+  const isCI = !!process.env.CI;
+
   return {
-    apiKey: getEnv('EXPO_PUBLIC_FIREBASE_API_KEY') ?? '',
-    authDomain: getEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') ?? '',
-    projectId: getEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID') ?? '',
-    storageBucket: getEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') ?? '',
-    messagingSenderId: getEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') ?? '',
-    appId: getEnv('EXPO_PUBLIC_FIREBASE_APP_ID') ?? '',
+    apiKey: getEnv('EXPO_PUBLIC_FIREBASE_API_KEY') ?? (isCI ? 'AIza-CI-DUMMY-KEY' : ''),
+    authDomain: getEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') ?? (isCI ? 'ci-dummy.firebaseapp.com' : ''),
+    projectId: getEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID') ?? (isCI ? 'ci-dummy' : ''),
+    storageBucket: getEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') ?? (isCI ? 'ci-dummy.appspot.com' : ''),
+    messagingSenderId: getEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') ?? (isCI ? '00000000' : ''),
+    appId: getEnv('EXPO_PUBLIC_FIREBASE_APP_ID') ?? (isCI ? '1:00000000:web:ci-dummy' : ''),
   };
 }
 
