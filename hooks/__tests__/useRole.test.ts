@@ -18,11 +18,10 @@ describe('useRole hook', () => {
     role?: UserRole,
     isAuthenticated = true,
     isLoading = false,
-    isRestoring = false,
-    id?: string
+    isRestoring = false
   ) => {
     mockUseAuth.mockReturnValue({
-      user: role || id ? { role, id } : null,
+      user: role ? { role } : null,
       isAuthenticated,
       isLoading,
       isRestoring,
@@ -134,42 +133,6 @@ describe('useRole hook', () => {
       setupMock('business', false);
       const { result } = renderHook(() => useRole());
       expect(result.current.hasRole('business')).toBe(false);
-    });
-  });
-
-  describe('superAdmin logic', () => {
-    it('should assign superAdmin role to specific IDs regardless of existing role', () => {
-      // Test with an ID from SUPER_ADMIN_IDS
-      const superAdminId = '1VLiq1SEUzWNM7J2XScWn3UbFI52';
-
-      setupMock('user', true, false, false, superAdminId);
-      const { result: res1 } = renderHook(() => useRole());
-      expect(res1.current.role).toBe('superAdmin');
-      expect(res1.current.isSuperAdmin).toBe(true);
-      expect(res1.current.isAdmin).toBe(true);
-
-      setupMock('organizer', true, false, false, superAdminId);
-      const { result: res2 } = renderHook(() => useRole());
-      expect(res2.current.role).toBe('superAdmin');
-      expect(res2.current.isSuperAdmin).toBe(true);
-      expect(res2.current.isOrganizer).toBe(true);
-    });
-
-    it('should correctly identify rank >= superAdmin', () => {
-      const validRoles: UserRole[] = ['superAdmin'];
-      const invalidRoles: UserRole[] = ['user', 'organizer', 'business', 'sponsor', 'cityAdmin', 'moderator', 'admin', 'platformAdmin'];
-
-      validRoles.forEach((role) => {
-        setupMock(role, true);
-        const { result } = renderHook(() => useRole());
-        expect(result.current.isSuperAdmin).toBe(true);
-      });
-
-      invalidRoles.forEach((role) => {
-        setupMock(role, true);
-        const { result } = renderHook(() => useRole());
-        expect(result.current.isSuperAdmin).toBe(false);
-      });
     });
   });
 

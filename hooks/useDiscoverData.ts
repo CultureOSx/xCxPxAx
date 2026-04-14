@@ -214,20 +214,10 @@ export function useDiscoverData() {
 
   const distanceSortedEvents = useMemo(() => {
     if (!selectedCityCoordinates || allEvents.length === 0) return [];
-
-    // Cache city coordinates to prevent redundant expensive string searches
-    const cityCoordsCache = new Map<string, { latitude: number, longitude: number } | null>();
-
     return allEvents
       .reduce((acc: (EventData & { distanceKm: number })[], event) => {
         if (!event.venue || !event.city) return acc;
-
-        let coords = cityCoordsCache.get(event.city);
-        if (coords === undefined) {
-          coords = cityToCoordinates(event.city);
-          cityCoordsCache.set(event.city, coords);
-        }
-
+        const coords = cityToCoordinates(event.city);
         if (!coords) return acc;
         const dist = calculateDistance(
           selectedCityCoordinates.latitude, selectedCityCoordinates.longitude,
