@@ -1,5 +1,4 @@
 // Main pipeline runner: Scrape, normalize, dedup, and ingest events
-import { fileURLToPath } from 'url';
 import {
   scrapeCityOfSydneyEvent,
   scrapeEventbriteEvent,
@@ -8,12 +7,6 @@ import {
 import { isDuplicate } from './dedup/engine.js';
 import { upsertEvent } from './firestore/index.js';
 import { addEventJob, createEventWorker } from './queue/index.js';
-
-const SCRAPERS = {
-  cityofsydney: scrapeCityOfSydneyEvent,
-  eventbrite: scrapeEventbriteEvent,
-  meetup: scrapeMeetupEvent,
-};
 
 // Enqueue jobs
 export async function enqueueCityOfSydneyEvent(url) {
@@ -35,13 +28,16 @@ export async function enqueueEventJob(source, url) {
 // Worker: Process event jobs
 createEventWorker(async job => {
   const { source, url } = job.data;
-
-  const scrapeFn = SCRAPERS[source];
-  if (!scrapeFn) {
-    throw new Error(`Unsupported scraper source: ${source}`);
+  let event;
+  if (source === 'cityofsydney') {
+    event = await scrapeCityOfSydneyEvent(url);
+  } else if (source === 'eventbrite') {
+    event = await scrapeEventbriteEvent(url);
+  } else if (source === 'meetup') {
+    event = await scrapeMeetupEvent(url);
+  } else {
+    throw new Error(`Unknown source: ${source}`);
   }
-
-  const event = await scrapeFn(url);
   // Normalize already handled in scraper/normalizer
 
   // Deduplication: Check Firestore for similar events (simplified)
@@ -52,6 +48,7 @@ createEventWorker(async job => {
 });
 
 // CLI usage example
+import { fileURLToPath } from 'url';
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const url = process.argv[2];
   const source = process.argv[3] || 'cityofsydney';
