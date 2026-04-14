@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, useIsDark } from '@/hooks/useColors';
-import { CultureTokens, TextStyles, gradients } from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -195,7 +195,7 @@ export default function CheckoutPage() {
             ) : (
               <View style={styles.eventThumb} accessibilityLabel="Event poster placeholder">
                 <LinearGradient
-                  colors={gradients.midnight as [string, string, ...string[]]}
+                  colors={[...gradients.midnight]}
                   style={StyleSheet.absoluteFill}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}

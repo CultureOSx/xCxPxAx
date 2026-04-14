@@ -1,6 +1,6 @@
 # CulturePass Architecture (Expo + Firebase)
 
-> **Last updated**: 2026-04-14
+> **Last updated**: 2026-03-20
 > **Stack**: Expo 55 · React Native 0.83 · Expo Router 5 · Reanimated 4 · Firebase 11
 
 ---
@@ -73,12 +73,13 @@ All tokens re-exported from `constants/theme.ts`:
 import { CultureTokens, ButtonTokens, CardTokens, InputTokens, gradients } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
-CultureTokens.indigo  // #0066CC — primary brand
-CultureTokens.coral   // #FF5E5B — action / movement
-CultureTokens.gold    // #FFC857 — warmth / discovery (also indigenous accents)
-CultureTokens.teal    // #2EC4B6 — global belonging
+CultureTokens.indigo    // #2C2A72 — Culture Indigo (primary brand)
+CultureTokens.gold   // #FF8C42 — Festival Saffron (events/discovery)
+CultureTokens.coral     // #FF5E5B — Movement Coral (action/CTA)
+CultureTokens.gold      // #FFC857 — Temple Gold (premium/cultural)
+CultureTokens.teal      // #2EC4B6 — Ocean Teal (global belonging)
 
-gradients.culturepassBrand  // brand gradient — banners & CTAs
+gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners
 ```
 
 **Never hardcode hex values.** Use `useColors()` for theme-aware values.
@@ -119,7 +120,7 @@ const { data } = useQuery({
 
 ### 4) Backend Layer
 
-- `functions/src/app.ts` — Express app: CORS allowlist, helmet, **global + route-specific rate limits**, `Cache-Control: no-store` on sensitive prefixes, 150+ mounted routes
+- `functions/src/app.ts` — Express app (150+ routes, 6500+ lines)
 - `functions/src/middleware/auth.ts` — Firebase ID token verification + role guards
 - `functions/src/middleware/moderation.ts` — content moderation
 - `functions/src/services/firestore.ts` — typed Firestore services

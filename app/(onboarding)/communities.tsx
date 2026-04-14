@@ -258,15 +258,10 @@ const s = StyleSheet.create({
   },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  mobileBackBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  stepIndicatorWrap: { flex: 1, alignItems: 'flex-end', gap: 6 },
   stepText: { ...TextStyles.captionSemibold, letterSpacing: 1, textTransform: 'uppercase' },
-  progressTrack: { width: 84, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2, backgroundColor: CultureTokens.gold },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
   desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
   desktopBackText: { ...TextStyles.label },
-  scrollView: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
   formContainer: { width: '100%', maxWidth: 600, alignSelf: 'center', overflow: 'hidden' },
@@ -311,7 +306,6 @@ const s = StyleSheet.create({
   },
   chipFlag: { fontSize: 15 },
   chipText: { ...TextStyles.chip, flexShrink: 1 },
-  chipTextSelected: { color: '#FFFFFF', fontFamily: 'Poppins_600SemiBold' },
 
   spacer: { height: 24 },
 

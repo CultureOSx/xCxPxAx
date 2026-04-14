@@ -468,37 +468,7 @@ function RootLayoutContent() {
     isWeb && typeof window !== 'undefined' && window.location.pathname
       ? window.location.pathname
       : '/';
-  const normalizedPath = currentPath.length > 1 ? currentPath.replace(/\/+$/, '') : currentPath;
-  const canonicalUrl = `${siteOrigin}${normalizedPath}`;
-  const noIndexPrefixes = [
-    '/admin',
-    '/dashboard',
-    '/settings',
-    '/payment',
-    '/submit',
-    '/scanner',
-    '/notifications',
-    '/contacts',
-    '/membership',
-    '/onboarding',
-    '/(onboarding)',
-  ];
-  const noIndexExact = new Set([
-    '/login',
-    '/signup',
-    '/forgot-password',
-    '/location',
-    '/interests',
-    '/communities',
-    '/culture-match',
-  ]);
-  const shouldNoIndex = normalizedPath !== '/' && (
-    noIndexExact.has(normalizedPath) ||
-    noIndexPrefixes.some((prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`))
-  );
-  const robotsContent = shouldNoIndex
-    ? 'noindex,nofollow,noarchive,nosnippet,max-image-preview:none'
-    : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+  const canonicalUrl = `${siteOrigin}${currentPath}`;
   const keralaJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -549,11 +519,8 @@ function RootLayoutContent() {
         <title>{siteTitle}</title>
         <meta name="description" content={siteDescription} />
         <meta name="keywords" content={siteKeywords} />
-        <meta name="robots" content={robotsContent} />
-        <meta name="googlebot" content={robotsContent} />
         <link rel="canonical" href={canonicalUrl} />
-        <link rel="alternate" hrefLang="en-au" href={`${siteOrigin}/`} />
-        <link rel="alternate" hrefLang="x-default" href={`${siteOrigin}/`} />
+        {isKeralaDomain && <meta name="robots" content="index,follow,max-image-preview:large" />}
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -561,7 +528,6 @@ function RootLayoutContent() {
         <meta property="og:title" content={siteTitle} />
         <meta property="og:description" content={siteDescription} />
         <meta property="og:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
-        <meta property="og:image:alt" content={isKeralaDomain ? 'CultureKerala social preview' : 'CulturePass social preview'} />
         <meta property="og:site_name" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
         <meta property="og:locale" content={isKeralaDomain ? 'ml_IN' : 'en_AU'} />
 
@@ -571,7 +537,6 @@ function RootLayoutContent() {
         <meta name="twitter:title" content={siteTitle} />
         <meta name="twitter:description" content={siteDescription} />
         <meta name="twitter:image" content={`${siteUrl.replace(/\/$/, '')}/assets/images/social-preview.png`} />
-        <meta name="twitter:image:alt" content={isKeralaDomain ? 'CultureKerala social preview' : 'CulturePass social preview'} />
         <meta name="application-name" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
         <meta name="apple-mobile-web-app-title" content={isKeralaDomain ? 'CultureKerala' : APP_NAME} />
         {isKeralaDomain ? (
