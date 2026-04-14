@@ -2,7 +2,6 @@
 
 > Full rules + code examples → [`culturepass-rules.md`](culturepass-rules.md)
 > Full project structure → [`CLAUDE.md`](CLAUDE.md)
-> Cursor Cloud / VM bootstrap + QA checklist → [`AGENTS.md`](AGENTS.md)
 > Design principles → [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md)
 
 ---
@@ -82,7 +81,5 @@ See [`culturepass-rules.md#ui-design-standard`](culturepass-rules.md) for full c
 | `hooks/useColors.ts` | Theme-aware colors |
 | `hooks/useLayout.ts` | Responsive layout values |
 | `shared/schema.ts` | Master TypeScript type re-exports |
-| `lib/app-meta.ts` | Default web SEO strings (title, description, keywords) |
-| `lib/shareContent.ts` | Social share URL builders for web |
 | `functions/src/routes/utils.ts` | `captureRouteError()` — use in all catch blocks |
 | `app/events.tsx` | Gold-standard listing screen UI pattern |

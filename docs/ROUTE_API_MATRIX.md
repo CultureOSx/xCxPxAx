@@ -15,11 +15,10 @@ This document maps canonical app routes to their primary backend dependencies. K
 | `/membership/upgrade` | `GET /api/membership/member-count`, `POST /api/membership/subscribe`, `POST /api/membership/cancel-subscription` |
 | `/scanner` | `POST /api/tickets/scan`, `GET /api/cpid/lookup/:cpid`, `GET /api/users/:id`, `GET /api/tickets/admin/scan-events` |
 | `/submit` | `POST /api/profiles`, `POST /api/perks`, `POST /api/uploads/image`, `POST /api/media/attach` |
-| `/(tabs)/directory`, Discover / onboarding (LGA) | `GET /api/council/list`, `GET /api/council/resolve`, `GET /api/council/my`, `GET /api/council/selected`, `POST /api/council/select` — council is **location metadata**, not a standalone governance product (see `docs/ARCHITECTURE.md`). |
-| *(Syndication — no Expo route)* | `GET /api/feeds/...` RSS/ICS, including `status.rss` / `story.rss` — see `docs/API_ENDPOINTS.md` and `docs/URL_STRUCTURE.md`. |
+| `/council/*`, `/(tabs)/council` | `GET /api/council/*`, `POST /api/council/:id/claim`, `POST /api/council/:id/follow`, `PUT /api/council/:id/preferences`, `PUT /api/council/:id/waste-reminder` |
 
 ## Notes
 
 - Canonical route behavior and legacy remaps belong in `docs/URL_STRUCTURE.md`.
-- The live route handlers are implemented in `functions/src/app.ts` and `functions/src/routes/*`.
+- The live route handlers are implemented in `functions/src/app.ts`.
 - If a route is added or removed, update this file in the same change as the router or backend handler.

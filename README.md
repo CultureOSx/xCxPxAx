@@ -1,18 +1,8 @@
 # CulturePass
 
-CulturePass is a **B2B2C cultural discovery marketplace** for events, communities, businesses, and ticketing—focused on **Australia** (First Nations spotlight, diaspora communities) with availability across **AU, NZ, UAE, UK, and CA**. The production app ships as **one Expo codebase** for **iOS, Android, and Web** (static export → Firebase Hosting), backed by **Firebase Cloud Functions + Firestore**.
+CulturePass is a **B2B2C cultural discovery marketplace** for events, communities, businesses, and ticketing—focused on **Australia** (First Nations spotlight, diaspora communities) with global availability. This repository is undergoing a **principal-grade cross-platform rebuild**: UI/UX aligned with **iOS 26 Liquid Glass** (WWDC 2025 design language), a modernized **API and offline-first data layer**, and **platform-parity** across iOS, Android, and Web.
 
-Ongoing work includes a **principal-grade UI pass** toward **iOS 26 Liquid Glass** (WWDC 2025 design language), a stronger **offline-first data story**, and **platform parity**—without splitting the web app into a separate framework.
-
-> **Design north star**: Native should feel fluid, refractive, accessible, and polished; **Material You 3+** on Android and **CSS `backdrop-filter`–based glass** on Web preserve the same information architecture.
-
-### Current product surface (web + API)
-
-- **Discover** with desktop **240px sidebar**, rails, and **featured cities** (server + client dedupe for `featuredCities`).
-- **Web SEO**: document titles, Open Graph / Twitter metadata, `robots.txt`, `sitemap.xml`, per-route `robots` in `app/_layout.tsx` (`lib/app-meta.ts`, `app/+html.tsx`).
-- **Syndication**: RSS/ICS under `/api/feeds/*`, including **status** and **story** community update feeds (see `docs/API_ENDPOINTS.md`).
-- **Sharing**: `lib/shareContent.ts` builds Instagram, WhatsApp, Facebook, X, and `mailto:` URLs from a canonical page URL.
-- **API hardening**: stricter rate limits on auth/membership/stripe and on search/feed/feeds/profiles/users; `Cache-Control: no-store` on sensitive response prefixes (`functions/src/app.ts`).
+> **Design north star**: The app should feel **indistinguishable from a first-party Apple product** on iOS 26—fluid, refractive, accessible, and joyful—while **Material You 3+** on Android and **CSS `backdrop-filter`–based glass** on Web keep the same information architecture and emotional quality.
 
 ---
 
@@ -119,22 +109,19 @@ For a deeper system view see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ## Quick start
 
 ```bash
-# 1. Install dependencies and compile Functions (required before emulators)
+# 1. Install dependencies
 npm install
-cd functions && npm install && npm run build && cd ..
+cd functions && npm install && cd ..
 
 # 2. Quality checks
-npm run lint              # ESLint
-npm run typecheck         # TypeScript
-npm run qa:solid          # Lint + typecheck + qa:all + functions build + web export + route hygiene
-# Lighter pass: test:unit, test:integration, functions:build, build-web, test:web:route-hygiene
+npm run lint          # ESLint
+npm run typecheck     # TypeScript
+npm run qa:all        # Unit + integration + E2E smoke tests (when configured)
 
 # 3. Start development
-npx expo start            # iOS / Android / Web (web: add --web --port 8081 for Cursor Cloud)
+npx expo start        # iOS / Android / Web
 firebase emulators:start --only functions,firestore,auth,storage
 ```
-
-**Cursor Cloud / agent VMs**: cold-start bootstrap and full QA checklist → [`AGENTS.md`](AGENTS.md) (§ Cursor Cloud specific instructions).
 
 ### Emulator: test org + events (“The CAP”)
 
@@ -258,8 +245,7 @@ GitHub Actions (see repo workflows) typically covers:
 - TypeScript **typecheck**
 - **ESLint**
 - **Unit tests**
-- **Integration** API smoke
-- **Web export** and **static HTML route hygiene** (`npm run build-web` + `npm run test:web:route-hygiene`)
+- **Web export** compile check
 
 ---
 

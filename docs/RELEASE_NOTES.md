@@ -1,21 +1,5 @@
 # CulturePass Release Notes
 
-## 2026-04-14 — Web SEO, syndication, sharing & API hardening
-
-### Added
-- **RSS**: `/api/feeds/status.rss` and `/api/feeds/story.rss` (plus community-scoped variants) for community post syndication (`functions/src/routes/feeds.ts`).
-- **Client sharing**: `lib/shareContent.ts` — URL helpers for Instagram, WhatsApp, Facebook, X, and email.
-- **Featured cities hygiene**: server-side dedupe in `functions/src/services/cities.ts`, client `select` dedupe in `hooks/useFeaturedCities.ts`; optional Firestore cleanup script `functions/scripts/dedupe-featured-cities.ts` (`npm run cities:dedupe:dry` / `cities:dedupe:apply` in `functions/`).
-
-### Updated
-- **Web metadata**: stronger defaults in `lib/app-meta.ts`, `app/+html.tsx`, and per-route SEO / `robots` / canonical handling in `app/_layout.tsx`.
-- **Crawler files**: `public/robots.txt`, `robots.txt`, `public/sitemap.xml` expanded and aligned with product routes.
-- **API**: stricter rate limits on auth, membership, Stripe, search, feed, feeds, profiles, and users; `Cache-Control: no-store` on sensitive API prefixes (`functions/src/app.ts`).
-- **Docs**: `README.md`, `CLAUDE.md`, `AGENTS.md`, `QUICK_RULES.md`, `docs/APP_DOCUMENTATION.md`, `docs/ARCHITECTURE.md`, `docs/API_ENDPOINTS.md`, `docs/URL_STRUCTURE.md`, `docs/ROUTE_API_MATRIX.md` refreshed for the current app and Cloud VM bootstrap.
-
-### Engineering
-- Integration tests extended for new feed endpoints (`scripts/tests/integration-api-routes.ts`).
-
 ## 2026-02-24 — Production-ready cross-platform enhancements
 
 ### Added
