@@ -11,6 +11,16 @@ ingestRouter.post('/', requireRole('admin'), async (req, res) => {
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid url' });
   }
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return res.status(400).json({ error: 'URL must use http or https protocol' });
+    }
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid URL format' });
+  }
+
   // Spawn the pipeline process (Node.js child process)
   const proc = spawn('node', ['pipeline/pipeline.js', url], {
     cwd: process.cwd(),
