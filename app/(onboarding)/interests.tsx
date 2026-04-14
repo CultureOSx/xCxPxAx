@@ -35,7 +35,6 @@ import {
   IconSize,
 } from '@/constants/theme';
 
-import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 
 const CATEGORY_EMOJI: Record<string, string> = {

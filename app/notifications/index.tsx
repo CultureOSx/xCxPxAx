@@ -677,23 +677,8 @@ const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean) => Sty
   notifMsg:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
   metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
   typePill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  typePillText:{ ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.4 },
-  timeText:    { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-  notifTitle:  { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
-  unreadDot:   { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
-  notifMsg:    { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
-  metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  typePill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  typePillText:{ fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
-  timeText:    { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-  notifTitle: { ...TextStyles.callout, color: colors.textSecondary, flex: 1 },
-  unreadDot: { width: 9, height: 9, borderRadius: 5, marginLeft: 8, marginTop: 3 },
-  notifMsg: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19, marginBottom: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  typePill: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: ChipTokens.radius },
   typePillText: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
   timeText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   swipeActionWrap: { flexDirection: 'row', alignItems: 'stretch', marginBottom: 10, marginLeft: 8 },
   swipeActionBtn: {

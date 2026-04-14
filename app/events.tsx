@@ -16,6 +16,8 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import EventCard from '@/components/EventCard';
+import { EventCardSkeleton } from '@/components/EventCardSkeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/lib/auth';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
@@ -513,16 +515,8 @@ const s = StyleSheet.create({
   filterBlock:   { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
   filterRow:     { flexDirection: 'row', alignItems: 'center', gap: 7 },
   filterRowDate: { paddingBottom: 4 },
-<<<<<<< HEAD
-  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:  { ...TextStyles.captionSemibold, lineHeight: 17 },
-||||||| 7dc71c1
-  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-=======
   clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, borderWidth: 1, minHeight: 38 },
   clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   fab: {
     position: 'absolute',

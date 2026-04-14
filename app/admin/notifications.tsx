@@ -23,7 +23,17 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
-import { CultureTokens, TextStyles } from '@/constants/theme';
+import {
+  CardTokens,
+  ChipTokens,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  IconSize,
+  LineHeight,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
@@ -104,16 +114,9 @@ function NotificationPreview({ title, message }: { title: string; message: strin
 }
 
 const np = StyleSheet.create({
-  phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
-  phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
-  phoneLabel: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.1 },
-  phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
-  phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
-  phoneLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 1.1 },
   phone:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: CardTokens.padding, gap: Spacing.md - 4, alignItems: 'center' },
   phoneDot:   { width: IconSize.xxl - 4, height: Spacing.sm - 3, borderRadius: Spacing.xs - 1, backgroundColor: 'rgba(128,128,128,0.25)' },
   phoneLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 1.1 },
->>>>>>> cursor/onboarding-brand-lint-fixes
   notifCard:  { 
     width: '100%', 
     borderRadius: CardTokens.radius - 2, 
@@ -131,28 +134,12 @@ const np = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-<<<<<<< HEAD
-  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
-  notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-  notifApp:   { flex: 1, ...TextStyles.captionSemibold },
-  notifTime:  { ...TextStyles.badge },
-  notifTitle: { ...TextStyles.cardTitle },
-  notifBody:  { ...TextStyles.chip, lineHeight: 19 },
-||||||| 7dc71c1
-  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
-  notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-  notifApp:   { flex: 1, fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  notifTime:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  notifTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  notifBody:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 19 },
-=======
   notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 1, marginBottom: Spacing.xs },
   notifIcon:  { width: IconSize.md + 4, height: IconSize.md + 4, borderRadius: Spacing.sm - 3, alignItems: 'center', justifyContent: 'center' },
   notifApp:   { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
   notifTime:  { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
   notifTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
   notifBody:  { fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 1 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── Char counter badge ─────────────────────────────────────────────────────
@@ -166,26 +153,14 @@ function CharCount({ value, max }: { value: string; max: number }) {
     </Text>
   );
 }
-<<<<<<< HEAD
-const cc = StyleSheet.create({ label: { ...TextStyles.badge, textAlign: 'right', marginTop: -4 } });
-||||||| 7dc71c1
-const cc = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_500Medium', textAlign: 'right', marginTop: -4 } });
-=======
 const cc = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textAlign: 'right', marginTop: -4 } });
->>>>>>> cursor/onboarding-brand-lint-fixes
 
 // ─── Section header ─────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: string }) {
   const colors = useColors();
   return <Text style={[sh.label, { color: colors.textTertiary }]}>{children}</Text>;
 }
-<<<<<<< HEAD
-const sh = StyleSheet.create({ label: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
-||||||| 7dc71c1
-const sh = StyleSheet.create({ label: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
-=======
 const sh = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: Spacing.sm + 2 } });
->>>>>>> cursor/onboarding-brand-lint-fixes
 
 // ─── Quick-link row ─────────────────────────────────────────────────────────
 function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label: string; sub: string; accent: string; onPress: () => void }) {
@@ -231,19 +206,9 @@ const ql = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-<<<<<<< HEAD
-  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:    { ...TextStyles.chip },
-  sub:      { ...TextStyles.badge, marginTop: 1 },
-||||||| 7dc71c1
-  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  label:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  sub:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-=======
   iconWrap: { width: IconSize.xxl - 4, height: IconSize.xxl - 4, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center' },
   label:    { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
   sub:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 function NotificationsSkeleton() {
@@ -800,31 +765,15 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4,
     paddingVertical: Spacing.md - 4, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-<<<<<<< HEAD
-  backBtn:          { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:      { ...TextStyles.title3 },
-  headerSub:        { ...TextStyles.caption, marginTop: 1 },
-||||||| 7dc71c1
-  backBtn:          { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerSub:        { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-=======
   backBtn:          { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   headerTitle:      { ...TextStyles.title3 },
   headerSub:        { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   audiencePill:     {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3,
     paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs + 1, borderRadius: ChipTokens.radius, borderWidth: 1,
   },
-<<<<<<< HEAD
-  audiencePillText: { ...TextStyles.captionSemibold },
-||||||| 7dc71c1
-  audiencePillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-=======
   audiencePillText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   scroll:           { paddingTop: Spacing.md },
   contentCol:       { paddingHorizontal: Spacing.md },
@@ -858,42 +807,18 @@ const s = StyleSheet.create({
   },
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
-<<<<<<< HEAD
-  filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  filterBadgeText:  { ...TextStyles.tabLabel, color: "white", textTransform: 'uppercase' },
-||||||| 7dc71c1
-  filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  filterBadgeText:  { fontSize: 10, fontFamily: 'Poppins_700Bold', color: "white", textTransform: 'uppercase' },
-=======
   filterBadge:      { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 2, borderRadius: Spacing.sm },
   filterBadgeText:  { fontSize: FontSize.tab, fontFamily: FontFamily.bold, color: "white", textTransform: 'uppercase' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
-<<<<<<< HEAD
-  typeLabelRow:     { marginTop: 4 },
-  typeLabel:        { ...TextStyles.caption, marginBottom: 8 },
-  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-||||||| 7dc71c1
-  typeLabelRow:     { marginTop: 4 },
-  typeLabel:        { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 8 },
-  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-=======
   typeLabelRow:     { marginTop: Spacing.xs },
   typeLabel:        { fontSize: FontSize.caption, fontFamily: FontFamily.medium, marginBottom: Spacing.sm },
   typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
->>>>>>> cursor/onboarding-brand-lint-fixes
   typeChip:         {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
     paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: ChipTokens.paddingV - 1,
     borderRadius: ChipTokens.radius, borderWidth: 1,
   },
-<<<<<<< HEAD
-  typeChipText:     { ...TextStyles.captionSemibold, textTransform: 'capitalize' },
-||||||| 7dc71c1
-  typeChipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
-=======
   typeChipText:     { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, textTransform: 'capitalize' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   row2:             { gap: Spacing.md - 4 },
   row2Desktop:      { flexDirection: 'row' },
@@ -915,40 +840,18 @@ const s = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-<<<<<<< HEAD
-  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  approvalBannerTitle: { ...TextStyles.cardTitle },
-  approvalBannerSub:{ ...TextStyles.caption, marginTop: 2 },
-  approvalCountdown:{ ...TextStyles.title2, tabularNums: true } as any,
-  approvalBarTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  approvalBarFill:  { height: 4, borderRadius: 2 },
-||||||| 7dc71c1
-  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  approvalBannerTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  approvalBannerSub:{ fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  approvalCountdown:{ fontSize: 20, fontFamily: 'Poppins_700Bold', tabularNums: true } as any,
-  approvalBarTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  approvalBarFill:  { height: 4, borderRadius: 2 },
-=======
   approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm + 2 },
   approvalBannerTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
   approvalBannerSub:{ fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
   approvalCountdown:{ fontSize: FontSize.title2, fontFamily: FontFamily.bold, tabularNums: true } as any,
   approvalBarTrack: { height: Spacing.xs, borderRadius: Spacing.xs / 2, overflow: 'hidden' },
   approvalBarFill:  { height: Spacing.xs, borderRadius: Spacing.xs / 2 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   approvalHint:     {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     borderRadius: CardTokens.radius - 4, borderWidth: 1, padding: Spacing.md - 4,
   },
-<<<<<<< HEAD
-  approvalHintText: { flex: 1, ...TextStyles.caption, lineHeight: 18 },
-||||||| 7dc71c1
-  approvalHintText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
-=======
   approvalHintText: { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.regular, lineHeight: LineHeight.caption + 2 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Action buttons
   actionsRow:       { flexDirection: 'row', gap: Spacing.sm + 2 },
@@ -956,24 +859,12 @@ const s = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4, borderWidth: 1,
   },
-<<<<<<< HEAD
-  dryRunBtnText:    { ...TextStyles.cardTitle },
-||||||| 7dc71c1
-  dryRunBtnText:    { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-=======
   dryRunBtnText:    { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
->>>>>>> cursor/onboarding-brand-lint-fixes
   sendBtn:          {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4,
   },
-<<<<<<< HEAD
-  sendBtnText:      { ...TextStyles.cardTitle },
-||||||| 7dc71c1
-  sendBtnText:      { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-=======
   sendBtnText:      { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Results / stats
   statsCard:        { 
@@ -992,73 +883,31 @@ const s = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-<<<<<<< HEAD
-  statsCardTitle:   { ...TextStyles.callout },
-  statRow:          { flexDirection: 'row', gap: 10 },
-  statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },
-  statNum:          { ...TextStyles.title3 },
-  statLabel:        { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.5 },
-||||||| 7dc71c1
-  statsCardTitle:   { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  statRow:          { flexDirection: 'row', gap: 10 },
-  statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },
-  statNum:          { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  statLabel:        { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5 },
-=======
   statsCardTitle:   { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
   statRow:          { flexDirection: 'row', gap: Spacing.sm + 2 },
   statBox:          { flex: 1, borderRadius: CardTokens.radius - 4, padding: Spacing.md - 2, alignItems: 'center', gap: Spacing.xs - 2 },
   statNum:          { fontSize: FontSize.title, fontFamily: FontFamily.bold },
   statLabel:        { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 0.5 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   replayBadge:      {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
     borderRadius: CardTokens.radius - 6, borderWidth: 1, padding: Spacing.sm + 2,
   },
-<<<<<<< HEAD
-  replayText:       { flex: 1, ...TextStyles.caption },
-||||||| 7dc71c1
-  replayText:       { flex: 1, fontSize: 12, fontFamily: 'Poppins_500Medium' },
-=======
   replayText:       { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.medium },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Audience table
-<<<<<<< HEAD
-  previewTableTitle:{ ...TextStyles.captionSemibold, marginBottom: 8 },
-  tableHeader:      { flexDirection: 'row', paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth },
-  thCell:           { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.8 },
-||||||| 7dc71c1
-  previewTableTitle:{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', marginBottom: 8 },
-  tableHeader:      { flexDirection: 'row', paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth },
-  thCell:           { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.8 },
-=======
   previewTableTitle:{ fontSize: FontSize.caption, fontFamily: FontFamily.semibold, marginBottom: Spacing.sm },
   tableHeader:      { flexDirection: 'row', paddingBottom: Spacing.sm - 2, borderBottomWidth: StyleSheet.hairlineWidth },
   thCell:           { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.8 },
->>>>>>> cursor/onboarding-brand-lint-fixes
   tableRow:         {
     flexDirection: 'row', paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-<<<<<<< HEAD
-  tdCell:           { ...TextStyles.caption },
-||||||| 7dc71c1
-  tdCell:           { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-=======
   tdCell:           { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   emptyAudience:    {
     alignItems: 'center', gap: Spacing.sm - 2, padding: Spacing.lg,
     borderRadius: CardTokens.radius - 4, borderWidth: 1, borderStyle: 'dashed', marginTop: Spacing.xs,
   },
-<<<<<<< HEAD
-  emptyAudienceText:{ ...TextStyles.chip },
-||||||| 7dc71c1
-  emptyAudienceText:{ fontSize: 13, fontFamily: 'Poppins_500Medium' },
-=======
   emptyAudienceText:{ fontSize: FontSize.chip, fontFamily: FontFamily.medium },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });

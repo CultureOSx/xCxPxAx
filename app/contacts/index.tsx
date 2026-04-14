@@ -16,7 +16,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
+import {
+  CardTokens,
+  Colors,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  gradients,
+  IconSize,
+  LineHeight,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useContacts, SavedContact, PhoneContact } from '@/contexts/ContactsContext';
@@ -1052,15 +1063,8 @@ const styles = StyleSheet.create({
   },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { ...TextStyles.title3 },
-  headerCount: { ...TextStyles.caption, marginTop: 1 },
-  headerRight: { flexDirection: 'row', gap: 8 },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  headerCount: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  headerRight: { flexDirection: 'row', gap: 8 },
-  headerTitle: { ...TextStyles.title3 },
   headerCount: { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
   headerRight: { flexDirection: 'row', gap: Spacing.sm },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Tab bar
   tabBar: {
@@ -1086,16 +1090,8 @@ const styles = StyleSheet.create({
     minWidth: IconSize.sm,
     alignItems: 'center',
   },
-<<<<<<< HEAD
-  tabBadgeText: { fontSize: 9, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  tabLabel: { ...TextStyles.badge },
-||||||| 7dc71c1
-  tabBadgeText: { fontSize: 9, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  tabLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-=======
   tabBadgeText: { fontSize: FontSize.micro - 2, fontFamily: FontFamily.bold, color: '#fff' },
   tabLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Search
   searchBar: {
@@ -1109,13 +1105,7 @@ const styles = StyleSheet.create({
     borderRadius: CardTokens.radius - 2,
     borderWidth: 1,
   },
-<<<<<<< HEAD
-  searchInput: { flex: 1, ...TextStyles.cardBody },
-||||||| 7dc71c1
-  searchInput: { flex: 1, fontSize: 14, fontFamily: 'Poppins_400Regular' },
-=======
   searchInput: { flex: 1, fontSize: FontSize.body2, fontFamily: FontFamily.regular },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Contact item
   contactItem: {
@@ -1142,13 +1132,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
   },
-<<<<<<< HEAD
-  contactInitials: { ...TextStyles.callout },
-||||||| 7dc71c1
-  contactInitials: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-=======
   contactInitials: { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
->>>>>>> cursor/onboarding-brand-lint-fixes
   phoneBadge: {
     position: 'absolute',
     bottom: 0,
@@ -1161,28 +1145,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contactInfo: { flex: 1 },
-<<<<<<< HEAD
-  contactName: { ...TextStyles.callout },
-  contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
-  cpidMini: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cpidMiniText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: CultureTokens.indigo },
-  contactLocation: { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  contactSavedAt: { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 3 },
-||||||| 7dc71c1
-  contactName: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
-  cpidMini: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cpidMiniText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: CultureTokens.indigo },
-  contactLocation: { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  contactSavedAt: { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 3 },
-=======
   contactName: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold },
   contactMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs - 1 },
   cpidMini: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   cpidMiniText: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, color: CultureTokens.indigo },
   contactLocation: { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
   contactSavedAt: { fontSize: FontSize.tab, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 1 },
->>>>>>> cursor/onboarding-brand-lint-fixes
   removeBtn: {
     width: IconSize.lg + Spacing.sm + 2,
     height: IconSize.lg + Spacing.sm + 2,
@@ -1219,13 +1187,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-<<<<<<< HEAD
-  onCPBadgeText: { ...TextStyles.tabLabel, color: CultureTokens.success },
-||||||| 7dc71c1
-  onCPBadgeText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.success },
-=======
   onCPBadgeText: { fontSize: FontSize.tab, fontFamily: FontFamily.semibold, color: CultureTokens.success },
->>>>>>> cursor/onboarding-brand-lint-fixes
   syncActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1234,13 +1196,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: CardTokens.radius - 6,
   },
-<<<<<<< HEAD
-  syncActionBtnText: { ...TextStyles.captionSemibold, color: '#fff' },
-||||||| 7dc71c1
-  syncActionBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
   syncActionBtnText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, color: '#fff' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Sync stats
   syncStats: {
@@ -1274,25 +1230,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md - 2,
     marginBottom: Spacing.md - 4,
   },
-<<<<<<< HEAD
-  importAllBtnText: { ...TextStyles.cardTitle, color: '#fff' },
-||||||| 7dc71c1
-  importAllBtnText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
   importAllBtnText: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, color: '#fff' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Syncing state
-<<<<<<< HEAD
-  syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  syncingText: { ...TextStyles.callout },
-||||||| 7dc71c1
-  syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  syncingText: { fontSize: 15, fontFamily: 'Poppins_400Regular' },
-=======
   syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   syncingText: { fontSize: FontSize.callout, fontFamily: FontFamily.regular },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Permission banner
   permissionContainer: {
@@ -1315,16 +1257,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-<<<<<<< HEAD
-  permissionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
-  permissionSub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
-||||||| 7dc71c1
-  permissionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
-  permissionSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
-=======
   permissionTitle: { fontSize: FontSize.title2 + 2, fontFamily: FontFamily.bold, textAlign: 'center' },
   permissionSub: { fontSize: FontSize.body2, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: LineHeight.callout },
->>>>>>> cursor/onboarding-brand-lint-fixes
   permissionBullets: { gap: 10, width: '100%', marginTop: 8 },
   bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bulletText: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, flex: 1, lineHeight: LineHeight.body2 },
@@ -1337,13 +1271,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginTop: 16,
   },
-<<<<<<< HEAD
-  permissionBtnText: { ...TextStyles.callout, color: '#fff' },
-||||||| 7dc71c1
-  permissionBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
   permissionBtnText: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold, color: Colors.textInverse },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Empty state
   emptyState: {
@@ -1363,16 +1291,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-<<<<<<< HEAD
-  emptyTitle: { ...TextStyles.title2 },
-  emptySub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
-||||||| 7dc71c1
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
-=======
   emptyTitle: { fontSize: FontSize.title2, fontFamily: FontFamily.bold },
   emptySub: { fontSize: FontSize.body2, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: LineHeight.callout },
->>>>>>> cursor/onboarding-brand-lint-fixes
   emptyActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   emptyBtn: {
     flexDirection: 'row',
@@ -1391,13 +1311,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
   },
-<<<<<<< HEAD
-  emptyBtnText: { ...TextStyles.cardTitle, color: '#fff' },
-||||||| 7dc71c1
-  emptyBtnText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
   emptyBtnText: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, color: Colors.textInverse },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Clear all
   clearAllBtn: {
@@ -1412,13 +1326,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-<<<<<<< HEAD
-  clearAllText: { ...TextStyles.chip },
-||||||| 7dc71c1
-  clearAllText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-=======
   clearAllText: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Discover / suggestions
   inviteBanner: {
@@ -1432,16 +1340,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inviteBannerLeft: { flex: 1 },
-<<<<<<< HEAD
-  inviteBannerTitle: { ...TextStyles.title3, color: '#fff' },
-  inviteBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-||||||| 7dc71c1
-  inviteBannerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  inviteBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-=======
   inviteBannerTitle: { fontSize: FontSize.title3, fontFamily: FontFamily.bold, color: Colors.textInverse },
   inviteBannerSub: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, color: 'rgba(255,255,255,0.8)', marginTop: Spacing.xs },
->>>>>>> cursor/onboarding-brand-lint-fixes
   inviteBannerIcon: {
     width: 52,
     height: 52,
@@ -1451,16 +1351,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   discoverSection: { marginBottom: 12 },
-<<<<<<< HEAD
-  discoverSectionTitle: { ...TextStyles.headline },
-  discoverSectionSub: { ...TextStyles.caption, marginTop: 2 },
-||||||| 7dc71c1
-  discoverSectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  discoverSectionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-=======
   discoverSectionTitle: { fontSize: FontSize.body, fontFamily: FontFamily.bold },
   discoverSectionSub: { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
->>>>>>> cursor/onboarding-brand-lint-fixes
   suggestionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1477,28 +1369,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-<<<<<<< HEAD
-  suggestionTitle: { ...TextStyles.cardTitle },
-  suggestionSub: { ...TextStyles.caption, marginTop: 2 },
-||||||| 7dc71c1
-  suggestionTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  suggestionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-=======
   suggestionTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold },
   suggestionSub: { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
->>>>>>> cursor/onboarding-brand-lint-fixes
   suggestionTag: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-<<<<<<< HEAD
-  suggestionTagText: { ...TextStyles.tabLabel },
-||||||| 7dc71c1
-  suggestionTagText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
-=======
   suggestionTagText: { fontSize: FontSize.tab, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
   interestSection: { marginTop: 16, marginBottom: 16 },
   interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   interestChip: {
@@ -1510,13 +1388,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
   },
-<<<<<<< HEAD
-  interestLabel: { ...TextStyles.chip },
-||||||| 7dc71c1
-  interestLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-=======
   interestLabel: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Add Contact Modal
   modalContainer: { flex: 1 },
@@ -1528,19 +1400,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-<<<<<<< HEAD
-  modalCancel: { ...TextStyles.body },
-  modalTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  modalDone: { ...TextStyles.headline },
-||||||| 7dc71c1
-  modalCancel: { fontSize: 16, fontFamily: 'Poppins_400Regular' },
-  modalTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  modalDone: { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
-=======
   modalCancel: { fontSize: FontSize.body, fontFamily: FontFamily.regular },
   modalTitle: { fontSize: FontSize.title3 - 1, fontFamily: FontFamily.bold },
   modalDone: { fontSize: FontSize.body, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
   modalContent: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 60, gap: 16 },
   modalAvatarRow: { alignItems: 'center', gap: 10, marginBottom: 8 },
   modalAvatar: {
@@ -1559,13 +1421,7 @@ const styles = StyleSheet.create({
   },
   formField: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   formFieldIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-<<<<<<< HEAD
-  formInput: { flex: 1, ...TextStyles.callout },
-||||||| 7dc71c1
-  formInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular' },
-=======
   formInput: { flex: 1, fontSize: FontSize.callout, fontFamily: FontFamily.regular },
->>>>>>> cursor/onboarding-brand-lint-fixes
   formDivider: { height: 1, marginLeft: 64 },
   addContactBtn: {
     flexDirection: 'row',
@@ -1576,11 +1432,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 8,
   },
-<<<<<<< HEAD
-  addContactBtnText: { ...TextStyles.callout, color: '#fff' },
-||||||| 7dc71c1
-  addContactBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
-=======
   addContactBtnText: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold, color: '#fff' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });

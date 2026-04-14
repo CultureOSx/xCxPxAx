@@ -17,7 +17,18 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
+import {
+  CardTokens,
+  ChipTokens,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  gradients,
+  IconSize,
+  SheetTokens,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import type { UserRole } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
@@ -122,19 +133,10 @@ function RoleBadge({ role, size = 'sm' }: { role?: UserRole; size?: 'sm' | 'md' 
   );
 }
 const rb = StyleSheet.create({
-  wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  text:   { ...TextStyles.tabLabel, letterSpacing: 0.3 },
-  textMd: { fontSize: 12 },
-  wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  text:   { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 0.3 },
-  textMd: { fontSize: 12 },
   wrap:   { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 1, borderRadius: Spacing.sm, borderWidth: 1 },
   wrapMd: { paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: CardTokens.radius - 6 },
   text:   { fontSize: FontSize.tab, fontFamily: FontFamily.bold, letterSpacing: 0.3 },
   textMd: { fontSize: FontSize.caption },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── Membership Tier Badge ────────────────────────────────────────────────────
@@ -269,35 +271,6 @@ const ms = StyleSheet.create({
     }),
     paddingTop: Spacing.sm, paddingBottom: isWeb ? Spacing.lg : Platform.OS === 'ios' ? Spacing.xl + Spacing.xs : CardTokens.paddingLarge,
   },
-<<<<<<< HEAD
-  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  userRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
-  userName:     { ...TextStyles.callout },
-  userEmail:    { ...TextStyles.caption, marginTop: 2 },
-  sectionLabel: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
-  roleRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
-  roleIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  roleLabel:    { ...TextStyles.cardTitle },
-  roleDesc:     { ...TextStyles.caption, marginTop: 1 },
-  currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  currentText:  { ...TextStyles.badge },
-  cancelBtn:    { marginTop: 6, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  cancelText:   { ...TextStyles.callout },
-||||||| 7dc71c1
-  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  userRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
-  userName:     { fontSize: 15, fontFamily: 'Poppins_700Bold' },
-  userEmail:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  sectionLabel: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
-  roleRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
-  roleIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  roleLabel:    { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  roleDesc:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  currentText:  { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  cancelBtn:    { marginTop: 6, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  cancelText:   { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-=======
   handle:       { width: SheetTokens.handleWidth - Spacing.xs, height: SheetTokens.handleHeight, borderRadius: SheetTokens.handleHeight / 2, alignSelf: 'center', marginBottom: Spacing.md },
   userRow:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4, paddingHorizontal: CardTokens.paddingLarge, paddingBottom: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: Spacing.sm - 2 },
   userName:     { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
@@ -311,7 +284,6 @@ const ms = StyleSheet.create({
   currentText:  { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
   cancelBtn:    { marginTop: Spacing.sm - 2, paddingVertical: Spacing.md, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   cancelText:   { fontSize: FontSize.callout, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── User Card (mobile) ───────────────────────────────────────────────────────
@@ -423,37 +395,6 @@ function UserCard({ user, onEditRole, onToggleVerify, canEditRole, canVerify, in
 }
 
 const uc = StyleSheet.create({
-<<<<<<< HEAD
-  card:      { borderRadius: 16, borderWidth: 1, padding: 14, gap: 12 },
-  topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  nameRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name:      { ...TextStyles.cardTitle, flexShrink: 1 },
-  email:     { ...TextStyles.caption, marginTop: 2 },
-  meta:      { ...TextStyles.badge, marginTop: 1 },
-  badges:    { alignItems: 'flex-end', gap: 5 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  metaRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  metaText:  { ...TextStyles.badge },
-  metaDot:   { fontSize: 11 },
-  actions:   { flexDirection: 'row', gap: 8 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
-  actionText:{ ...TextStyles.badge },
-||||||| 7dc71c1
-  card:      { borderRadius: 16, borderWidth: 1, padding: 14, gap: 12 },
-  topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  nameRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', flexShrink: 1 },
-  email:     { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  meta:      { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  badges:    { alignItems: 'flex-end', gap: 5 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  metaRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  metaText:  { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  metaDot:   { fontSize: 11 },
-  actions:   { flexDirection: 'row', gap: 8 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
-  actionText:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-=======
   card:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: Spacing.md - 2, gap: Spacing.md - 4 },
   topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md - 4 },
   nameRow:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3 },
@@ -468,7 +409,6 @@ const uc = StyleSheet.create({
   actions:   { flexDirection: 'row', gap: Spacing.sm },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.sm - 2, borderRadius: CardTokens.radius - 6, borderWidth: 1 },
   actionText:{ fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── Desktop Table Row ────────────────────────────────────────────────────────
@@ -551,23 +491,6 @@ const tr = StyleSheet.create({
   tdRole:   { flex: 1.2, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', minWidth: 0 },
   tdLoc:    { flex: 1.2, paddingRight: Spacing.sm, minWidth: 0 },
   tdJoined: { flex: 1, minWidth: 80 },
-<<<<<<< HEAD
-  tdAction: { width: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
-  name:     { ...TextStyles.chip },
-  sub:      { ...TextStyles.caption, marginTop: 1 },
-  subXs:    { ...TextStyles.tabLabel, marginTop: 1 },
-  iconBtn:  { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  editBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  editText: { ...TextStyles.badge },
-||||||| 7dc71c1
-  tdAction: { width: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
-  name:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  sub:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  subXs:    { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 1 },
-  iconBtn:  { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  editBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  editText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-=======
   tdAction: { width: ADMIN_USERS_UI.tableActionWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm - 2 },
   name:     { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
   sub:      { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
@@ -575,7 +498,6 @@ const tr = StyleSheet.create({
   iconBtn:  { width: ADMIN_USERS_UI.iconBtnSize, height: ADMIN_USERS_UI.iconBtnSize, borderRadius: Spacing.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   editBtn:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Spacing.sm, borderWidth: 1 },
   editText: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── Table Header ─────────────────────────────────────────────────────────────
@@ -601,16 +523,8 @@ function TableHeader() {
   );
 }
 const th = StyleSheet.create({
-<<<<<<< HEAD
-  row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  cell: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.9 },
-||||||| 7dc71c1
-  row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  cell: { fontSize: 10, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.9 },
-=======
   row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2, borderBottomWidth: StyleSheet.hairlineWidth },
   cell: { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.9 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 // ─── Stat Chip ────────────────────────────────────────────────────────────────
@@ -629,23 +543,6 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-<<<<<<< HEAD
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-||||||| 7dc71c1
-  chip: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8, 
-    paddingHorizontal: 12, 
-    paddingVertical: 10, 
-    borderRadius: 14, 
-=======
   chip: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -653,7 +550,6 @@ const sp = StyleSheet.create({
     paddingHorizontal: ChipTokens.paddingH - 4, 
     paddingVertical: Spacing.sm + 2, 
     borderRadius: CardTokens.radius - 2, 
->>>>>>> cursor/onboarding-brand-lint-fixes
     borderWidth: 1,
     ...Platform.select({
       web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
@@ -666,19 +562,9 @@ const sp = StyleSheet.create({
       android: { elevation: 1 }
     })
   },
-<<<<<<< HEAD
-  icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  val:  { ...TextStyles.headline },
-  lbl:  { ...TextStyles.tabLabel },
-||||||| 7dc71c1
-  icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  val:  { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  lbl:  { fontSize: 10, fontFamily: 'Poppins_500Medium' },
-=======
   icon: { width: IconSize.lg + 6, height: IconSize.lg + 6, borderRadius: Spacing.sm + 1, alignItems: 'center', justifyContent: 'center' },
   val:  { fontSize: FontSize.body, fontFamily: FontFamily.bold },
   lbl:  { fontSize: FontSize.tab, fontFamily: FontFamily.medium },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });
 
 function AdminUsersSkeleton() {
@@ -1012,25 +898,11 @@ const s = StyleSheet.create({
   fill:         { flex: 1 },
 
   // Header
-<<<<<<< HEAD
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
-  headerTitle:  { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
-  headerSub:    { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
-  backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  headerBtn:    { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-||||||| 7dc71c1
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: -0.2 },
-  headerSub:    { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
-  backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  headerBtn:    { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-=======
   header:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
   headerTitle:  { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
   headerSub:    { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: Spacing.xs - 3 },
   backBtn:      { width: IconSize.xl + Spacing.xs, height: IconSize.xl + Spacing.xs, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   headerBtn:    { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Body
   body:         { flex: 1 },
@@ -1044,71 +916,27 @@ const s = StyleSheet.create({
   statsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
 
   // Search
-<<<<<<< HEAD
-  searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
-  searchInput:  { flex: 1, ...TextStyles.cardBody, padding: 0 },
-||||||| 7dc71c1
-  searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
-  searchInput:  { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, padding: 0 },
-=======
   searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, paddingHorizontal: Spacing.md - 2, paddingVertical: Spacing.sm + 3, borderRadius: CardTokens.radius - 2, borderWidth: 1 },
   searchInput:  { flex: 1, fontFamily: FontFamily.regular, fontSize: FontSize.body2, padding: 0 },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Role chips
-<<<<<<< HEAD
-  chips:        { gap: 8, paddingVertical: 2 },
-  chip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipText:     { ...TextStyles.captionSemibold },
-  chipCount:    { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
-  chipCountText:{ ...TextStyles.tabLabel },
-||||||| 7dc71c1
-  chips:        { gap: 8, paddingVertical: 2 },
-  chip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  chipCount:    { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
-  chipCountText:{ fontSize: 10, fontFamily: 'Poppins_700Bold' },
-=======
   chips:        { gap: Spacing.sm, paddingVertical: Spacing.xs - 2 },
   chip:         { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3, paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: ChipTokens.paddingV - 1, borderRadius: ChipTokens.radius, borderWidth: 1 },
   chipText:     { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
   chipCount:    { paddingHorizontal: Spacing.sm - 3, paddingVertical: Spacing.xs - 3, borderRadius: Spacing.sm, minWidth: CardTokens.radius + Spacing.xs, alignItems: 'center' },
   chipCountText:{ fontSize: FontSize.tab, fontFamily: FontFamily.bold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Desktop table
   tableWrap:    { borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, overflow: 'hidden' },
 
   // Empty / loading
-<<<<<<< HEAD
-  emptyWrap:    { alignItems: 'center', gap: 10, paddingVertical: 60 },
-  emptyTitle:   { ...TextStyles.headline },
-  emptyText:    { ...TextStyles.chip, textAlign: 'center' },
-||||||| 7dc71c1
-  emptyWrap:    { alignItems: 'center', gap: 10, paddingVertical: 60 },
-  emptyTitle:   { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  emptyText:    { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
-=======
   emptyWrap:    { alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: 60 },
   emptyTitle:   { fontSize: FontSize.body, fontFamily: FontFamily.bold },
   emptyText:    { fontSize: FontSize.chip, fontFamily: FontFamily.regular, textAlign: 'center' },
->>>>>>> cursor/onboarding-brand-lint-fixes
 
   // Footer
-<<<<<<< HEAD
-  footer:       { alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 20 },
-  footerText:   { ...TextStyles.caption },
-  loadMore:     { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-  loadMoreText: { ...TextStyles.chip },
-||||||| 7dc71c1
-  footer:       { alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 20 },
-  footerText:   { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-  loadMore:     { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-  loadMoreText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-=======
   footer:       { alignItems: 'center', gap: Spacing.sm + 2, paddingTop: Spacing.md, paddingBottom: CardTokens.paddingLarge },
   footerText:   { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
   loadMore:     { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2, borderRadius: CardTokens.radius - 4, borderWidth: 1 },
   loadMoreText: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
->>>>>>> cursor/onboarding-brand-lint-fixes
 });

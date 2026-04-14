@@ -14,15 +14,8 @@ import TabScreenShell from '@/components/tabs/TabScreenShell';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
-import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import { CultureTokens, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
-import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
-import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
-import { TextStyles } from '@/constants/typography';
 import { useCultureWidgetSnapshot } from '@/hooks/useCultureWidgetSnapshot';
-import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
-import { TextStyles } from '@/constants/typography';
->>>>>>> cursor/onboarding-brand-lint-fixes
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 function WidgetsDashboardContent() {
