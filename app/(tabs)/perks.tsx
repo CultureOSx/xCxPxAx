@@ -33,8 +33,9 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
 import { MAIN_TAB_CARD_SHADOW, MAIN_TAB_CARD_SHADOW_STRONG, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
-import { api, type RewardsSummary } from '@/lib/api';
+import type { RewardsSummary } from '@/lib/api';
 import type { PerkData, Ticket } from '@/shared/schema';
+import { walletFeature } from '@/features';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 // Tier thresholds — keep aligned with functions/src/routes/rewards.ts
@@ -62,6 +63,8 @@ type ActiveQuest = {
 type PerkFeedItem =
   | { kind: 'section'; id: string; title: string; subtitle: string }
   | { kind: 'perk'; id: string; perk: PerkData };
+
+type WalletHubStat = { id: string; label: string; value: string; icon: keyof typeof Ionicons.glyphMap; color: string };
 
 function tierJourneyQuestProgress(rewards: RewardsSummary): { progress: number; total: number } {
   const p = rewards.points;
@@ -530,34 +533,29 @@ export default function PerksTabScreen() {
     pageSize: 150,
   });
 
-  const { data: rewards, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
-    queryKey: ['rewards', userId],
-    queryFn: () => api.rewards.get(userId!),
+  const {
+    data: walletFeatureSummary,
+    isLoading: walletFeatureLoading,
+    isError: walletFeatureError,
+  } = useQuery({
+    queryKey: ['feature-wallet-summary', userId],
+    queryFn: () => walletFeature.getWalletFeatureSummary(userId!),
     enabled: !!userId,
   });
-  const { data: wallet } = useQuery({
-    queryKey: ['wallet', userId],
-    queryFn: () => api.wallet.get(userId!),
-    enabled: !!userId,
-  });
-  const { data: redemptions } = useQuery({
-    queryKey: ['perk-redemptions', userId],
-    queryFn: () => api.perks.redemptions(),
-    enabled: !!userId,
-  });
-
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
-    queryKey: ['/api/tickets', userId],
-    queryFn: () => api.tickets.forUser(userId!),
-    enabled: !!userId,
-  });
+  const rewards = walletFeatureSummary?.rewards;
+  const wallet = walletFeatureSummary?.wallet;
+  const tickets = useMemo(
+    () => walletFeatureSummary?.tickets ?? [],
+    [walletFeatureSummary?.tickets],
+  );
+  const redemptionsCount = walletFeatureSummary?.redemptionsCount ?? 0;
 
   const activeQuests = useMemo(() => {
     if (!userId || !rewards) return [];
     return buildActiveQuests(rewards, tickets, perks, state.city || undefined);
   }, [userId, rewards, tickets, perks, state.city]);
 
-  const questsLoading = !!userId && (rewardsLoading || ticketsLoading);
+  const questsLoading = !!userId && walletFeatureLoading;
 
   const filteredPerks = useMemo(() => {
     if (selectedCategory === 'All') return perks;
@@ -657,14 +655,43 @@ export default function PerksTabScreen() {
 
   const renderHeader = useCallback(() => (
     <View style={[s.headerSection, { paddingHorizontal: hPad }]}>
+      <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} style={{ marginBottom: 16 }} contentStyle={{ padding: 12, gap: 10 }}>
+        <Text style={[s.walletHubTitle, { color: colors.text }]}>Wallet Hub</Text>
+        <View style={s.walletHubGrid}>
+          {([
+            { id: 'tickets', label: 'Tickets', value: String(tickets.filter((t) => t.status !== 'cancelled').length), icon: 'ticket-outline', color: CultureTokens.indigo },
+            { id: 'perks', label: 'Perks', value: String(filteredPerks.length), icon: 'gift-outline', color: CultureTokens.teal },
+            { id: 'tier', label: 'Membership', value: rewards?.tierLabel ?? 'Free', icon: 'shield-checkmark-outline', color: CultureTokens.gold },
+            { id: 'points', label: 'Rewards', value: `${rewards?.points ?? 0} pts`, icon: 'sparkles-outline', color: CultureTokens.coral },
+          ] as WalletHubStat[]).map((stat) => (
+            <Pressable
+              key={stat.id}
+              onPress={() => {
+                if (stat.id === 'tickets') router.push('/tickets');
+                else if (stat.id === 'perks') setViewMode('perks');
+                else if (stat.id === 'tier') router.push('/membership/upgrade');
+                else router.push('/payment/wallet');
+              }}
+              style={[s.walletHubCell, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${stat.label} ${stat.value}`}
+            >
+              <Ionicons name={stat.icon} size={16} color={stat.color} />
+              <Text style={[s.walletHubValue, { color: colors.text }]} numberOfLines={1}>{stat.value}</Text>
+              <Text style={[s.walletHubLabel, { color: colors.textSecondary }]} numberOfLines={1}>{stat.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </LiquidGlassPanel>
+
       <ExplorerBadge
         colors={colors}
         signedIn={isAuthenticated && !!userId}
-        loading={!!userId && rewardsLoading}
+        loading={!!userId && walletFeatureLoading}
         rewards={rewards}
-        rewardsError={!!userId && rewardsError && !rewardsLoading}
+        rewardsError={!!userId && walletFeatureError && !walletFeatureLoading}
         onRetryRewards={() => {
-          if (userId) void queryClient.invalidateQueries({ queryKey: ['rewards', userId] });
+          if (userId) void queryClient.invalidateQueries({ queryKey: ['feature-wallet-summary', userId] });
         }}
       />
 
@@ -756,7 +783,7 @@ export default function PerksTabScreen() {
           </View>
           <View style={[s.statPill, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             <Ionicons name="gift-outline" size={14} color={CultureTokens.teal} />
-            <Text style={[s.statPillText, { color: colors.text }]}>{redemptions?.redemptions?.length ?? 0} redeemed</Text>
+            <Text style={[s.statPillText, { color: colors.text }]}>{redemptionsCount} redeemed</Text>
           </View>
         </View>
       )}
@@ -779,6 +806,7 @@ export default function PerksTabScreen() {
     hPad,
     viewMode,
     selectedCategory,
+    tickets,
     filteredPerks.length,
     filtersActive,
     clearFilters,
@@ -786,11 +814,11 @@ export default function PerksTabScreen() {
     activeQuests.length,
     isAuthenticated,
     rewards,
-    rewardsLoading,
-    rewardsError,
+    walletFeatureLoading,
+    walletFeatureError,
     queryClient,
     wallet?.balance,
-    redemptions?.redemptions?.length,
+    redemptionsCount,
   ]);
 
   return (
@@ -798,8 +826,8 @@ export default function PerksTabScreen() {
       <View style={[s.screen, { backgroundColor: colors.background }]}>
         {/* ── Header ── */}
         <TabPrimaryHeader
-          title="Offers & Rewards"
-          subtitle={`Offers and rewards in ${locationLabel}`}
+          title="Wallet"
+          subtitle={`Tickets, perks, membership and rewards in ${locationLabel}`}
           locationLabel={undefined}
           hPad={hPad}
           topInset={topInset}
@@ -824,7 +852,7 @@ export default function PerksTabScreen() {
                   </View>
                 ) : questsLoading ? (
                   <ActivityIndicator style={{ marginTop: 32 }} color={CultureTokens.indigo} />
-                ) : rewardsError ? (
+                ) : walletFeatureError ? (
                   <View style={[s.emptyState, { paddingVertical: 48 }]}>
                     <Text style={[s.emptyDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
                       Could not load your quests. Check your connection and pull to refresh.
@@ -940,6 +968,18 @@ const s = StyleSheet.create({
   dynamicSectionHeader: { marginTop: 10, marginBottom: 2 },
   dynamicSectionTitle: { ...TextStyles.callout },
   dynamicSectionSubtitle: { ...TextStyles.caption },
+  walletHubTitle: { ...TextStyles.callout, fontFamily: 'Poppins_700Bold' },
+  walletHubGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  walletHubCell: {
+    width: '48%',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    gap: 2,
+  },
+  walletHubValue: { ...TextStyles.cardTitle },
+  walletHubLabel: { ...TextStyles.badge },
 
   list:           { paddingTop: MAIN_TAB_UI.sectionGapSmall, gap: MAIN_TAB_UI.sectionGapSmall },
   listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },

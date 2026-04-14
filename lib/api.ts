@@ -49,6 +49,7 @@ import type {
   UpdateCategory,
   DiscoverCurationResponse,
   DiscoverCurationConfig,
+  DiscoverFeedContract,
   IngestSource,
   IngestionJob,
   IngestScheduleInterval,
@@ -323,7 +324,7 @@ const discover = {
     if (params?.city) qs.set('city', params.city);
     if (params?.country) qs.set('country', params.country);
     const q = qs.toString();
-    return request<{ sections: import('@shared/schema').FeedSection[] }>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
+    return request<DiscoverFeedContract>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
   },
   feedback: (payload: Record<string, unknown>) => request<{ ok: boolean }>('POST', 'api/discover/feedback', payload),
   curation: (params?: { city?: string; country?: string; cultureIds?: string[] }) => {

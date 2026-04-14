@@ -40,6 +40,12 @@ export function captureTicketPurchaseCompleted(payload: {
     total_price_cents: payload.total_price_cents ?? null,
     source: payload.source,
   });
+  captureEvent('funnel_stage', {
+    stage: 'checkout',
+    event_id: payload.event_id,
+    ticket_id: payload.ticket_id,
+    source: payload.source,
+  });
 }
 
 export const identifyUser = (distinctId: string, properties?: Record<string, any>) => {

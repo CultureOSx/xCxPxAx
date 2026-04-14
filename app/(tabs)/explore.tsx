@@ -3,7 +3,6 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   TextInput, Platform
 } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
@@ -25,6 +24,8 @@ import { formatEventDateTime } from '@/lib/dateUtils';
 import type { EventData } from '@/shared/schema';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { CityRail } from '@/components/Discover/CityRail';
+import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
+import { CardGrammar } from '@/components/ui/CardGrammar';
 
 // ─── Category data ────────────────────────────────────────────────────────────
 
@@ -69,183 +70,38 @@ function eventMatchesCategory(event: EventData, catId: string): boolean {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ExploreEventCard({ event, index }: { event: EventData, index: number }) {
-  const colors = useColors();
+function ExploreEventCard({ event }: { event: EventData }) {
   const isIndigenous = isIndigenousEvent(event);
-  
-  // Height variation for masonry effect
-  const imgHeights = [240, 180, 210, 260, 200];
-  const imgHeight = imgHeights[index % imgHeights.length];
+  const trustChips = [
+    isIndigenous ? 'Indigenous' : null,
+    event.isFeatured ? 'Featured' : null,
+    typeof event.attending === 'number' && event.attending > 0 ? `${event.attending} attending` : null,
+  ].filter((chip): chip is string => Boolean(chip));
+  const ctaLabel =
+    event.entryType === 'free_open' || event.isFree || (event.priceCents ?? 0) === 0 ? 'Join Free' : 'Get Ticket';
 
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
-      accessibilityRole="button"
-      accessibilityLabel={event.title}
-      style={({ pressed }) => [
-        ec.card,
-        { backgroundColor: colors.surface, borderColor: colors.borderLight },
-        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-        isIndigenous && { borderWidth: 2, borderColor: CultureTokens.gold },
-      ]}
+    <View
+      style={{
+        borderWidth: isIndigenous ? 2 : 0,
+        borderColor: isIndigenous ? CultureTokens.gold : 'transparent',
+        borderRadius: 18,
+      }}
     >
-      {/* Image */}
-      <View style={[ec.imgWrap, { height: imgHeight, backgroundColor: colors.surfaceElevated }]}>
-        <Image
-          source={{ uri: event.imageUrl ?? undefined }}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-          transition={150}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.6)']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {/* Price badge */}
-        {(event.priceCents === 0 || event.isFree) ? (
-          <View style={ec.freeBadge}>
-            <Text style={ec.freeBadgeText}>FREE</Text>
-          </View>
-        ) : event.priceLabel ? (
-          <View style={[ec.freeBadge, { backgroundColor: CultureTokens.indigo }]}> 
-            <Text style={ec.freeBadgeText}>{event.priceLabel}</Text>
-          </View>
-        ) : null}
-        {/* Indigenous badge */}
-        {isIndigenous && (
-          <View style={ec.indigenousBadge}>
-            <Text style={ec.indigenousBadgeText}>🪃 Indigenous</Text>
-          </View>
-        )}
-        {/* Featured star */}
-        {event.isFeatured ? (
-          <View style={ec.featuredDot}>
-            <Ionicons name="star" size={10} color={CultureTokens.gold} />
-          </View>
-        ) : null}
-      </View>
-
-      {/* Details below, centered */}
-      <View style={ec.detailsWrap}>
-        <Text style={[ec.imgTitle, { color: colors.text }]} numberOfLines={2}>
-          {event.title}
-        </Text>
-        <Text style={[ec.imgDate, { color: CultureTokens.indigo }]} numberOfLines={1}>
-          {formatEventDateTime(event.date, event.time)}
-        </Text>
-        {(event.venue || event.city) ? (
-          <View style={ec.metaRowCentered}>
-            <Ionicons name="location-outline" size={11} color={colors.textTertiary} />
-            <Text style={[ec.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-              {event.venue || event.city}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </Pressable>
+      <CardGrammar
+        title={event.title}
+        subtitle={formatEventDateTime(event.date, event.time)}
+        meta={event.venue || event.city}
+        imageUrl={event.imageUrl}
+        trustChips={trustChips}
+        ctaLabel={ctaLabel}
+        iconName="calendar-outline"
+        onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+        accessibilityLabel={`${event.title}, ${ctaLabel}`}
+      />
+    </View>
   );
 }
-
-const ec = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    marginBottom: 4,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: { elevation: 3 },
-      web: { 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.12)' 
-      } as any,
-    }),
-  },
-  imgWrap: {
-    position: 'relative',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    overflow: 'hidden',
-  },
-  detailsWrap: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    padding: 14,
-    gap: 4,
-  },
-  freeBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: CultureTokens.teal,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  freeBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    color: '#fff',
-  },
-  indigenousBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    zIndex: 2,
-    borderWidth: 1,
-    borderColor: CultureTokens.gold + '60',
-  },
-  indigenousBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    color: CultureTokens.gold,
-  },
-  featuredDot: {
-    position: 'absolute',
-    top: 8,
-    left: 42,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)'
-  },
-  imgTitle: {
-    fontFamily: 'Poppins_700Bold',
-    fontSize: 14,
-    lineHeight: 18,
-    textAlign: 'left',
-  },
-  imgDate: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    textAlign: 'left',
-  },
-  metaRowCentered: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    justifyContent: 'flex-start',
-  },
-  meta: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
-    textAlign: 'left',
-  },
-});
 
 // ─── Category pill ────────────────────────────────────────────────────────────
 
@@ -332,6 +188,12 @@ export default function ExploreScreen() {
 
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string>(requestedFocus);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [distanceFilterKm, setDistanceFilterKm] = useState<number | null>(25);
+  const [priceFilter, setPriceFilter] = useState<'all' | 'free' | 'budget' | 'premium'>('all');
+  const [vibeFilter, setVibeFilter] = useState<'all' | 'chill' | 'energetic'>('all');
+  const [accessibilityOnly, setAccessibilityOnly] = useState(false);
+  const [cultureTagFilter, setCultureTagFilter] = useState<string>('all');
 
   // Responsive columns config
   const gridCols = isDesktop ? 4 : isTablet ? 3 : 2;
@@ -350,6 +212,44 @@ export default function ExploreScreen() {
 
   const filtered = useMemo(() => {
     let list = events.filter((e) => eventMatchesCategory(e, activeId));
+    const userCoords = state.city ? getPostcodesByPlace(state.city)[0] : undefined;
+
+    if (distanceFilterKm != null && userCoords) {
+      list = list.filter((event) => {
+        if (typeof event.distanceKm === 'number') return event.distanceKm <= distanceFilterKm;
+        if (typeof event.lat !== 'number' || typeof event.lng !== 'number') return true;
+        const distance = calculateDistance(userCoords.latitude, userCoords.longitude, event.lat, event.lng);
+        return distance <= distanceFilterKm;
+      });
+    }
+
+    if (priceFilter !== 'all') {
+      list = list.filter((event) => {
+        if (priceFilter === 'free') return event.entryType === 'free_open' || event.isFree || (event.priceCents ?? 0) === 0;
+        if (priceFilter === 'budget') return (event.priceCents ?? 0) > 0 && (event.priceCents ?? 0) <= 3000;
+        return (event.priceCents ?? 0) >= 5000 || event.priceTier === 'premium';
+      });
+    }
+
+    if (vibeFilter !== 'all') {
+      list = list.filter((event) => {
+        const haystack = [event.category, ...(event.tags ?? [])].join(' ').toLowerCase();
+        if (vibeFilter === 'chill') return /wellness|art|heritage|workshop|acoustic/.test(haystack);
+        return /nightlife|dance|festival|concert|party/.test(haystack);
+      });
+    }
+
+    if (accessibilityOnly) {
+      list = list.filter((event) => (event.accessibility?.length ?? 0) > 0);
+    }
+
+    if (cultureTagFilter !== 'all') {
+      list = list.filter((event) => {
+        const tags = [...(event.cultureTag ?? []), ...(event.cultureTags ?? [])].map((tag) => tag.toLowerCase());
+        return tags.some((tag) => tag.includes(cultureTagFilter.toLowerCase()));
+      });
+    }
+
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
@@ -360,9 +260,18 @@ export default function ExploreScreen() {
       );
     }
     return list;
-  }, [events, activeId, query]);
+  }, [events, activeId, query, state.city, distanceFilterKm, priceFilter, vibeFilter, accessibilityOnly, cultureTagFilter]);
 
   const featured = useMemo(() => events.filter((e) => e.isFeatured).slice(0, 6), [events]);
+  const cultureTagOptions = useMemo(() => {
+    const tags = new Set<string>();
+    for (const event of events) {
+      for (const tag of [...(event.cultureTag ?? []), ...(event.cultureTags ?? [])]) {
+        if (tag && tags.size < 8) tags.add(tag);
+      }
+    }
+    return ['all', ...Array.from(tags)];
+  }, [events]);
 
   const handleCatPress = useCallback((id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
@@ -493,6 +402,102 @@ export default function ExploreScreen() {
                   </ScrollView>
                 </View>
 
+                <View style={[s.hybridBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <View style={s.hybridToggle}>
+                    {(['list', 'map'] as const).map((mode) => (
+                      <Pressable
+                        key={mode}
+                        onPress={() => setViewMode(mode)}
+                        style={[
+                          s.hybridToggleBtn,
+                          {
+                            backgroundColor: viewMode === mode ? CultureTokens.indigo : 'transparent',
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Switch to ${mode} view`}
+                      >
+                        <Ionicons
+                          name={mode === 'list' ? 'list-outline' : 'map-outline'}
+                          size={14}
+                          color={viewMode === mode ? '#fff' : colors.textSecondary}
+                        />
+                        <Text style={[s.hybridToggleText, { color: viewMode === mode ? '#fff' : colors.textSecondary }]}>
+                          {mode === 'list' ? 'List' : 'Map'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hybridFilters}>
+                    <Pressable
+                      style={[s.filterPill, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => setDistanceFilterKm((prev) => (prev === 10 ? 25 : prev === 25 ? 50 : 10))}
+                    >
+                      <Text style={[s.filterPillText, { color: colors.text }]}>
+                        {distanceFilterKm ?? 25}km
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.filterPill, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => setPriceFilter((prev) => (prev === 'all' ? 'free' : prev === 'free' ? 'budget' : prev === 'budget' ? 'premium' : 'all'))}
+                    >
+                      <Text style={[s.filterPillText, { color: colors.text }]}>
+                        Price: {priceFilter}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.filterPill, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => setVibeFilter((prev) => (prev === 'all' ? 'chill' : prev === 'chill' ? 'energetic' : 'all'))}
+                    >
+                      <Text style={[s.filterPillText, { color: colors.text }]}>
+                        Vibe: {vibeFilter}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.filterPill, { borderColor: colors.borderLight, backgroundColor: accessibilityOnly ? CultureTokens.indigo + '22' : colors.surfaceElevated }]}
+                      onPress={() => setAccessibilityOnly((prev) => !prev)}
+                    >
+                      <Text style={[s.filterPillText, { color: accessibilityOnly ? CultureTokens.indigo : colors.text }]}>
+                        Accessible
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.filterPill, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => {
+                        const idx = cultureTagOptions.indexOf(cultureTagFilter);
+                        const next = cultureTagOptions[(idx + 1) % cultureTagOptions.length] ?? 'all';
+                        setCultureTagFilter(next);
+                      }}
+                    >
+                      <Text style={[s.filterPillText, { color: colors.text }]}>
+                        Culture: {cultureTagFilter}
+                      </Text>
+                    </Pressable>
+                  </ScrollView>
+                </View>
+
+                {viewMode === 'map' && (
+                  <View style={[s.mapPanel, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                    <View style={s.mapPanelHeader}>
+                      <Ionicons name="navigate-outline" size={16} color={CultureTokens.indigo} />
+                      <Text style={[s.mapPanelTitle, { color: colors.text }]}>Geo-smart map preview</Text>
+                    </View>
+                    <Text style={[s.mapPanelSub, { color: colors.textSecondary }]}>
+                      Showing {Math.min(filtered.length, 8)} nearby results by location and filters.
+                    </Text>
+                    <View style={s.mapPinWrap}>
+                      {filtered.slice(0, 8).map((event) => (
+                        <View key={event.id} style={[s.mapPin, { backgroundColor: CultureTokens.indigo + '16', borderColor: CultureTokens.indigo + '45' }]}>
+                          <Ionicons name="location" size={12} color={CultureTokens.indigo} />
+                          <Text style={[s.mapPinText, { color: colors.text }]} numberOfLines={1}>
+                            {event.title}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
                 {/* ── Indigenous banner ── */}
                 {activeId === 'indigenous' && (
                   <LinearGradient
@@ -545,7 +550,7 @@ export default function ExploreScreen() {
                     >
                       {featured.map((ev, index) => (
                         <View key={ev.id} style={{ width: 280 }}>
-                          <ExploreEventCard event={ev} index={index} />
+                          <ExploreEventCard event={ev} />
                         </View>
                       ))}
                     </ScrollView>
@@ -642,9 +647,9 @@ export default function ExploreScreen() {
                 )}
               </View>
             }
-            renderItem={({ item, index }: { item: EventData, index: number }) => (
+            renderItem={({ item }: { item: EventData }) => (
               <View style={{ padding: colGap / 2, paddingHorizontal: hPad * 0.2 }}>
-                 <ExploreEventCard event={item} index={index} />
+                 <ExploreEventCard event={item} />
               </View>
             )}
             ListFooterComponent={
@@ -708,6 +713,80 @@ const s = StyleSheet.create({
   },
   catsWrap: {
     paddingVertical: 16,
+  },
+  hybridBar: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 10,
+    gap: 10,
+    marginBottom: 16,
+  },
+  hybridToggle: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  hybridToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  hybridToggleText: {
+    ...TextStyles.captionSemibold,
+  },
+  hybridFilters: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  filterPill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  filterPillText: {
+    ...TextStyles.captionSemibold,
+  },
+  mapPanel: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 18,
+    gap: 8,
+  },
+  mapPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mapPanelTitle: {
+    ...TextStyles.callout,
+  },
+  mapPanelSub: {
+    ...TextStyles.caption,
+  },
+  mapPinWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  mapPin: {
+    maxWidth: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  mapPinText: {
+    ...TextStyles.badge,
+    flexShrink: 1,
   },
   catsScroll: {
     gap: 12,

@@ -28,6 +28,7 @@ import * as Haptics from 'expo-haptics';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useContacts } from '@/contexts/ContactsContext';
 import { api } from '@/lib/api';
+import { captureAttend } from '@/lib/analytics-funnel';
 import { useRole } from '@/hooks/useRole';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -170,6 +171,7 @@ export default function ScannerScreen() {
       }));
 
       if (valid) {
+        captureAttend(undefined, undefined, 'ticket_scanner');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else if (result.outcome === 'duplicate') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);

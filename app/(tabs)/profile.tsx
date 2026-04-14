@@ -15,7 +15,6 @@ import { useLayout } from '@/hooks/useLayout';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
-import { useCurrentUser } from '@/hooks/useProfile';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
@@ -24,10 +23,11 @@ import { CultureTokens, TextStyles } from '@/constants/theme';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/schema';
 import QRCode from 'react-native-qrcode-svg';
 import { ProfileScanner } from '@/components/scanner/ProfileScanner';
+import { identityFeature } from '@/features';
 
 import {
   SectionHeader,
@@ -58,7 +58,19 @@ export default function ProfileScreen() {
   const [showCultureMap, setShowCultureMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const queryClient = useQueryClient();
-  const { user, isLoading, isError, refetch: refetchProfile, error: profileError } = useCurrentUser();
+  const {
+    data: featureUser,
+    isLoading,
+    isError,
+    refetch: refetchProfile,
+    error: profileError,
+  } = useQuery({
+    queryKey: ['feature-identity-profile', userId],
+    queryFn: () => identityFeature.getIdentityFeatureProfile(),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+  const user = featureUser ?? null;
   const { data: perks = [], isLoading: perksLoading, refetch: refetchPerks } = usePerks();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -171,6 +183,19 @@ export default function ProfileScreen() {
 
   const communities = (displayUser?.communities as string[]) ?? [];
   const interests   = (displayUser?.interests as string[]) ?? [];
+  const contributionStats = [
+    { id: 'communities', label: 'Communities', value: communities.length, icon: 'people-outline', color: CultureTokens.indigo },
+    { id: 'interests', label: 'Interests', value: interests.length, icon: 'sparkles-outline', color: CultureTokens.gold },
+    { id: 'perks', label: 'Perks Used', value: perks.length, icon: 'gift-outline', color: CultureTokens.teal },
+    { id: 'social', label: 'Social Links', value: activeSocials.length, icon: 'share-social-outline', color: CultureTokens.coral },
+  ];
+
+  const contributionHistory = [
+    communities.length > 0 ? `Joined ${communities.length} communities` : null,
+    interests.length > 0 ? `Configured ${interests.length} culture interests` : null,
+    perks.length > 0 ? `Unlocked ${perks.length} perk opportunities` : null,
+    displayUser?.website ? 'Published a public profile link' : null,
+  ].filter((item): item is string => Boolean(item));
 
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
@@ -183,6 +208,7 @@ export default function ProfileScreen() {
           onClose={() => setShowScanner(false)}
           onSuccess={() => {
             void queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            void queryClient.invalidateQueries({ queryKey: ['feature-identity-profile'] });
           }}
         />
         <ScrollView
@@ -537,6 +563,40 @@ export default function ProfileScreen() {
             </View>
           ) : null}
 
+          {/* ── CONTRIBUTION HISTORY + PERSONALIZED STATS ────────────── */}
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
+            <SectionHeader title="Contribution History" colors={colors} />
+            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, gap: 10 }}>
+              {contributionHistory.length > 0 ? (
+                contributionHistory.map((entry) => (
+                  <View key={entry} style={profileStats.row}>
+                    <View style={[profileStats.dot, { backgroundColor: CultureTokens.indigo }]} />
+                    <Text style={[profileStats.rowText, { color: colors.textSecondary }]}>{entry}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={[profileStats.rowText, { color: colors.textSecondary }]}>
+                  Activity appears here as you attend events and engage with the community.
+                </Text>
+              )}
+            </LiquidGlassPanel>
+          </View>
+
+          <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }]}>
+            <SectionHeader title="Personalized Stats" colors={colors} />
+            <View style={profileStats.grid}>
+              {contributionStats.map((item) => (
+                <LiquidGlassPanel key={item.id} borderRadius={MAIN_TAB_UI.cardRadius} style={profileStats.cell} contentStyle={{ padding: 12 }}>
+                  <View style={[profileStats.iconWrap, { backgroundColor: item.color + '18' }]}>
+                    <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={item.color} />
+                  </View>
+                  <Text style={[profileStats.value, { color: colors.text }]}>{fmt(item.value)}</Text>
+                  <Text style={[profileStats.label, { color: colors.textSecondary }]}>{item.label}</Text>
+                </LiquidGlassPanel>
+              ))}
+            </View>
+          </View>
+
           {/* ── DIGITAL IDENTITY CARD ─────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Digital Identity" colors={colors} />
@@ -819,5 +879,44 @@ const profileGlass = StyleSheet.create({
     right: 16,
     height: 2,
     opacity: 0.45,
+  },
+});
+
+const profileStats = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  rowText: {
+    ...TextStyles.caption,
+    flex: 1,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  cell: {
+    width: '48%',
+  },
+  iconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  value: {
+    ...TextStyles.headline,
+  },
+  label: {
+    ...TextStyles.caption,
   },
 });
