@@ -8,7 +8,6 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Colors, CultureTokens, SpringConfig } from '@/constants/theme';
 import { CultureTagRow } from '@/components/ui/CultureTag';
 import { EventPublisherLine } from '@/components/events/EventPublisherLine';
-import { DISCOVER_TOKENS } from '@/components/Discover/tokens';
 import { useColors } from '@/hooks/useColors';
 import {
   DISCOVER_EVENT_LIVE_WINDOW_MS,
@@ -16,12 +15,11 @@ import {
   formatStartsInCountdown,
   parseEventStartMs,
 } from '@/lib/dateUtils';
-import { eventListImageUrl } from '@/lib/eventImage';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const RAIL_CARD_WIDTH = DISCOVER_TOKENS.card.railWidth;
-const RAIL_IMAGE_HEIGHT = DISCOVER_TOKENS.card.railImageHeight;
+const RAIL_CARD_WIDTH = 256;
+const RAIL_IMAGE_HEIGHT = 168;
 
 function isFreePriceLabel(label: string | undefined): boolean {
   return Boolean(label && label.trim().toLowerCase() === 'free');
@@ -272,10 +270,7 @@ function EventCard({
 
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const cardWidth = containerWidth ?? (layout === 'stacked'
-    ? RAIL_CARD_WIDTH
-    : DISCOVER_TOKENS.card.overlayWidth);
-  const displayImageUri = eventListImageUrl(event);
+  const cardWidth = containerWidth ?? (layout === 'stacked' ? RAIL_CARD_WIDTH : 240);
 
   if (layout === 'stacked') {
     return (
@@ -305,19 +300,12 @@ function EventCard({
           accessibilityHint="Opens event details"
         >
           <View style={{ position: 'relative' }}>
-            {displayImageUri ? (
-              <Image
-                source={{ uri: displayImageUri }}
-                style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
-                contentFit="cover"
-                transition={300}
-              />
-            ) : (
-              <View
-                style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
-                accessibilityElementsHidden
-              />
-            )}
+            <Image
+              source={event.imageUrl ? { uri: event.imageUrl } : undefined}
+              style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+              contentFit="cover"
+              transition={300}
+            />
             {/* Minimal UI: Remove rank and featured badge for clarity */}
           </View>
           <StackedCardContent
@@ -364,16 +352,12 @@ function EventCard({
         accessibilityLabel={`${event.title}, ${formatEventDateTimeBadge(event.date, event.time)}`}
         accessibilityHint="Opens event details"
       >
-        {displayImageUri ? (
-          <Image
-            source={{ uri: displayImageUri }}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-            transition={300}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.backgroundSecondary }]} />
-        )}
+        <Image
+          source={event.imageUrl ? { uri: event.imageUrl } : undefined}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={300}
+        />
 
         <LinearGradient
           colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.92)']}
@@ -391,9 +375,9 @@ function EventCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: DISCOVER_TOKENS.card.overlayWidth,
-    height: DISCOVER_TOKENS.card.overlayHeight,
-    borderRadius: DISCOVER_TOKENS.card.radius,
+    width: 240,
+    height: 260,
+    borderRadius: 24,
     overflow: 'hidden',
     // Minimal shadow for clarity
     shadowColor: '#000',
@@ -402,7 +386,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   stackedCard: {
-    borderRadius: DISCOVER_TOKENS.card.radius,
+    borderRadius: 22,
     overflow: 'hidden',
     marginBottom: 2,
   },
@@ -412,15 +396,15 @@ const styles = StyleSheet.create({
   },
   stackedImage: {
     width: '100%',
-    borderTopLeftRadius: DISCOVER_TOKENS.card.radius,
-    borderTopRightRadius: DISCOVER_TOKENS.card.radius,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
   },
   stackedBody: {
-    paddingHorizontal: DISCOVER_TOKENS.card.contentPadding - 2,
-    paddingTop: DISCOVER_TOKENS.rail.gap,
-    paddingBottom: DISCOVER_TOKENS.card.contentPadding,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 16,
     alignItems: 'flex-start',
-    gap: DISCOVER_TOKENS.card.bodyGap,
+    gap: 4,
   },
   stackedDate: {
     fontSize: 12,
@@ -509,7 +493,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     width: '100%',
-    height: DISCOVER_TOKENS.card.overlayHighlightHeight,
+    height: 320,
     borderWidth: 2,
     borderColor: CultureTokens.gold,
   },
@@ -518,7 +502,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: DISCOVER_TOKENS.card.contentPadding,
+    padding: 16,
     paddingTop: 32,
   },
   centeredContent: {

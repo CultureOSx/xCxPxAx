@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   Pressable,
   Platform,
   RefreshControl,
@@ -14,7 +15,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { FlashList } from '@shopify/flash-list';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
@@ -169,14 +169,12 @@ export default function OfferingsScreen() {
           </Pressable>
         </View>
       ) : (
-        <FlashList
+        <FlatList
           data={rows}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          estimatedItemSize={100}
           ListHeaderComponent={header}
-          contentContainerStyle={{ paddingHorizontal: hPad, paddingBottom: 32, paddingTop: 16 }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          contentContainerStyle={{ paddingHorizontal: hPad, paddingBottom: 32, paddingTop: 16, gap: 12 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor={CultureTokens.indigo} />
           }

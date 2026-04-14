@@ -22,18 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import {
-  CardTokens,
-  Colors,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  gradients,
-  IconSize,
-  LineHeight,
-  shadows,
-  Spacing,
-} from '@/constants/theme';
+import { CultureTokens, gradients, FontFamily, shadows } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -82,7 +71,6 @@ interface ExtendedProfile {
   handle?: string;
   username?: string;
   avatarUrl?: string;
-  imageUrl?: string;
   coverImageUrl?: string;
   bio?: string;
   description?: string;
@@ -183,9 +171,9 @@ function SectionHeader({
   );
 }
 const sec = StyleSheet.create({
-  wrap: { marginBottom: Spacing.md - 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  accent: { width: Spacing.xs - 1, height: Spacing.md - 2, borderRadius: Spacing.xs - 2 },
+  wrap: { marginBottom: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  accent: { width: 3, height: 14, borderRadius: 2 },
 });
 
 function RecoRow({
@@ -324,39 +312,39 @@ const pu = StyleSheet.create({
   recoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md - 4,
-    paddingVertical: Spacing.md - 4,
-    paddingHorizontal: Spacing.xs,
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   recoIconWrap: {
-    width: IconSize.xxl + 4,
-    height: IconSize.xxl + 4,
-    borderRadius: CardTokens.radius - 4,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  railScroll: { marginTop: Spacing.xs, marginHorizontal: -Spacing.xs },
-  railScrollContent: { paddingHorizontal: Spacing.xs, gap: Spacing.sm + 2, paddingBottom: Spacing.xs - 2 },
+  railScroll: { marginTop: 4, marginHorizontal: -4 },
+  railScrollContent: { paddingHorizontal: 4, gap: 10, paddingBottom: 2 },
   railCard: {
     width: 148,
-    borderRadius: CardTokens.radius - 2,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
-    paddingBottom: Spacing.sm + 2,
+    paddingBottom: 10,
   },
-  railImage: { width: '100%', height: 88, backgroundColor: Colors.backgroundSecondary },
-  railTitle: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold, marginTop: Spacing.sm, paddingHorizontal: Spacing.sm + 2, lineHeight: LineHeight.chip - 2 },
-  railMeta: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, marginTop: Spacing.xs, paddingHorizontal: Spacing.sm + 2 },
+  railImage: { width: '100%', height: 88, backgroundColor: '#f0f0f0' },
+  railTitle: { fontSize: 13, fontFamily: FontFamily.semibold, marginTop: 8, paddingHorizontal: 10, lineHeight: 18 },
+  railMeta: { fontSize: 11, fontFamily: FontFamily.medium, marginTop: 4, paddingHorizontal: 10 },
   commRailCard: {
     width: 112,
-    borderRadius: CardTokens.radius - 2,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
-    paddingBottom: Spacing.sm + 2,
+    paddingBottom: 10,
     alignItems: 'center',
   },
-  commRailAvatar: { width: '100%', aspectRatio: 1, backgroundColor: Colors.backgroundSecondary },
-  commRailName: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, marginTop: Spacing.sm, paddingHorizontal: Spacing.sm, textAlign: 'center', lineHeight: LineHeight.caption },
+  commRailAvatar: { width: '100%', aspectRatio: 1, backgroundColor: '#f0f0f0' },
+  commRailName: { fontSize: 12, fontFamily: FontFamily.semibold, marginTop: 8, paddingHorizontal: 8, textAlign: 'center', lineHeight: 16 },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1036,11 +1024,12 @@ const u = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 13,
-    backgroundColor: 'rgba(28,28,36,0.88)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
+    ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
   },
   heroBody: {
     alignItems: 'center',
@@ -1306,7 +1295,7 @@ function EntityPublicProfile({
   const tags = profile.tags ?? [];
   const showLocation = profile.privacySettings?.locationVisible !== false;
   const locationText = showLocation ? [profile.city, profile.country].filter(Boolean).join(', ') : '';
-  const heroImage = profile.coverImageUrl ?? profile.avatarUrl ?? profile.imageUrl;
+  const heroImage = profile.coverImageUrl ?? profile.avatarUrl;
   const accentColor = CultureTokens.indigo;
 
   return (

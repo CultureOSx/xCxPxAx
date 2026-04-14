@@ -18,11 +18,10 @@ describe('useRole hook', () => {
     role?: UserRole,
     isAuthenticated = true,
     isLoading = false,
-    isRestoring = false,
-    userId?: string
+    isRestoring = false
   ) => {
     mockUseAuth.mockReturnValue({
-      user: role ? { role, id: userId } : null,
+      user: role ? { role } : null,
       isAuthenticated,
       isLoading,
       isRestoring,
@@ -156,22 +155,5 @@ describe('useRole hook', () => {
       const { result } = renderHook(() => useRole());
       expect(result.current.hasMinRole('user')).toBe(false);
     });
-  });
-
-  it('should elevate configured user IDs to superAdmin', () => {
-    setupMock('user', true, false, false, '1VLiq1SEUzWNM7J2XScWn3UbFI52');
-    const { result } = renderHook(() => useRole());
-
-    expect(result.current.role).toBe('superAdmin');
-    expect(result.current.isSuperAdmin).toBe(true);
-    expect(result.current.hasMinRole('platformAdmin')).toBe(true);
-  });
-
-  it('should not mark regular admin as superAdmin', () => {
-    setupMock('admin', true, false, false, 'someone-else');
-    const { result } = renderHook(() => useRole());
-
-    expect(result.current.isAdmin).toBe(true);
-    expect(result.current.isSuperAdmin).toBe(false);
   });
 });

@@ -16,7 +16,6 @@ export default function DashboardLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="organizer" />
-      <Stack.Screen name="enquiries" />
       <Stack.Screen name="council" />
       <Stack.Screen name="widgets" />
       <Stack.Screen name="wallet-readiness" />

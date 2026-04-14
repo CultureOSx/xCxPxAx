@@ -2,7 +2,6 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { EventData } from '@shared/schema';
 import WebEventRailCard from './WebEventRailCard';
-import { DISCOVER_TOKENS } from '@/components/Discover/tokens';
 
 interface WebRailSectionProps {
   title: string;
@@ -45,14 +44,14 @@ export default function WebRailSection({
 
 const styles = StyleSheet.create({
   webSection: {
-    gap: DISCOVER_TOKENS.webRail.sectionGap,
+    gap: 16,
   },
   webSectionHeader: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: 10,
-    marginBottom: DISCOVER_TOKENS.webRail.headerBottomSpacing,
+    marginBottom: 4,
   },
   webSectionTitleRow: {
     flexDirection: 'row',
@@ -79,8 +78,8 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: DISCOVER_TOKENS.webRail.buttonRadius,
-    borderWidth: DISCOVER_TOKENS.webRail.buttonBorder,
+    borderRadius: 20,
+    borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
@@ -90,7 +89,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
   },
   webRailScroll: {
-    gap: DISCOVER_TOKENS.rail.gap + 2,
-    paddingBottom: DISCOVER_TOKENS.webRail.scrollBottomPadding,
+    gap: 14,
+    paddingBottom: 2,
   },
 });

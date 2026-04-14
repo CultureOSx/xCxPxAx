@@ -83,6 +83,7 @@ export const SHOP_CATEGORIES    = ['Fashion', 'Gifts', 'Books', 'Grocery', 'Elec
 export const CUISINE_OPTIONS    = ['Asian', 'Middle Eastern', 'European', 'African', 'Latin', 'Fusion', 'Cafe', 'Seafood', 'Vegetarian', 'General'];
 export const MOVIE_GENRES       = ['Drama', 'Comedy', 'Documentary', 'Horror', 'Family', 'Arthouse', 'World cinema'];
 export const PRICE_RANGE_OPTS   = ['$', '$$', '$$$', '$$$$'] as const;
+export const LISTING_PLACEHOLDER_IMG = 'https://placehold.co/1200x800/e8e8f0/2C2A72?text=CulturePass';
 export const PERK_TYPES = [
   { key: 'discount_percent', label: '% Discount',  icon: 'pricetag-outline'    },
   { key: 'discount_fixed',   label: '$ Discount',  icon: 'cash-outline'        },
@@ -107,7 +108,6 @@ export const initialForm = {
 };
 
 export type FormState = typeof initialForm;
-/** `coverImage` — cover photo upload / processing (not a form field key) */
-export type FieldErrors = Partial<Record<keyof FormState | 'perkType' | 'coverImage', string>>;
+export type FieldErrors = Partial<Record<keyof FormState | 'perkType', string>>;
 export type DerivedLocation = { city: string; state: string; country: string; postcode: number; latitude: number; longitude: number };
 

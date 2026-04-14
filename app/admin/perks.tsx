@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -40,8 +40,8 @@ function PerkRow({ perk, onPress, onToggleStatus, onDelete }: {
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{perk.title}</Text>
             <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{perk.partnerName} • {perk.categories?.[0] || 'Perk'}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: isActive ? colors.success + '20' : colors.divider }]}>
-            <Text style={[styles.statusText, { color: isActive ? colors.success : colors.textTertiary }]}>
+          <View style={[styles.statusBadge, { backgroundColor: isActive ? '#10B98120' : colors.divider }]}>
+            <Text style={[styles.statusText, { color: isActive ? '#10B981' : colors.textTertiary }]}>
               {(perk.status || 'DRAFT').toUpperCase()}
             </Text>
           </View>
@@ -52,19 +52,19 @@ function PerkRow({ perk, onPress, onToggleStatus, onDelete }: {
       <View style={styles.actions}>
         <Pressable 
           onPress={onToggleStatus} 
-          style={[styles.actionBtn, { backgroundColor: isActive ? colors.success + '20' : colors.surfaceElevated }]}
+          style={[styles.actionBtn, { backgroundColor: isActive ? '#10B98120' : colors.surfaceElevated }]}
         >
           <Ionicons 
             name={isActive ? "eye-off-outline" : "eye-outline"} 
             size={18} 
-            color={isActive ? colors.success : colors.textTertiary} 
+            color={isActive ? '#10B981' : colors.textTertiary}
           />
         </Pressable>
         <Pressable 
           onPress={onDelete} 
-          style={[styles.actionBtn, { backgroundColor: colors.error + '20' }]}
+          style={[styles.actionBtn, { backgroundColor: '#FF5E5B20' }]}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.error} />
+          <Ionicons name="trash-outline" size={18} color="#FF5E5B" />
         </Pressable>
       </View>
     </View>
@@ -104,13 +104,11 @@ export default function AdminPerksScreen() {
     },
   });
 
-  useEffect(() => {
-    if (!roleLoading && !isSuperAdmin && !isAdmin) {
-      router.replace('/(tabs)');
-    }
-  }, [isAdmin, isSuperAdmin, roleLoading]);
   if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) return null;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleDelete = (perk: PerkData) => {
     Alert.alert(

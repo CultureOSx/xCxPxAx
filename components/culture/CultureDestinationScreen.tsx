@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import type { ScrollView as ScrollViewType } from 'react-native';
 import {
   View,
   Text,
@@ -9,11 +8,7 @@ import {
   Platform,
   RefreshControl,
   Share,
-  ActivityIndicator,
-  Alert,
-  Linking,
 } from 'react-native';
-import * as Location from 'expo-location';
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import Head from 'expo-router/head';
@@ -31,7 +26,6 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens, gradients } from '@/constants/theme';
-import { HeroOverlayBar } from '@/components/city/HeroOverlayBar';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FilterChips from '@/components/ui/FilterChips';
@@ -41,12 +35,8 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import type { CultureDestinationDefinition } from '@/constants/cultureDestinations';
 import { useCultureDestinationData } from '@/hooks/useCultureDestinationData';
 import { useLocations } from '@/hooks/useLocations';
-import type { CultureHubNearRadiusKm, CultureHubScope } from '@/lib/cultureDestinationScope';
-import {
-  CULTURE_HUB_NEAR_RADIUS_KM,
-  CULTURE_HUB_NEAR_RADIUS_PRESETS,
-  eventMatchesViewerRegion,
-} from '@/lib/cultureDestinationScope';
+import type { CultureHubScope } from '@/lib/cultureDestinationScope';
+import { eventMatchesViewerRegion } from '@/lib/cultureDestinationScope';
 import { getMarketingWebOrigin } from '@/lib/domainHost';
 import {
   buildCultureHubShareUrl,
@@ -56,7 +46,6 @@ import {
 } from '@/lib/cultureHubDeepLink';
 import { CultureHubLocationModal } from '@/components/culture/CultureHubLocationModal';
 import { APP_NAME } from '@/lib/app-meta';
-import { scrollToChildInScrollView } from '@/lib/scrollContent';
 import {
   cityAmbient,
   getCityDestinationStyles,
@@ -66,8 +55,6 @@ import {
 type FilterMode = 'category' | 'culture' | 'language';
 
 const CATEGORY_FILTERS = ['Music', 'Food', 'Arts', 'Nightlife', 'Indigenous', 'Sports', 'Workshop'];
-
-const webCursor = Platform.OS === 'web' ? ({ cursor: 'pointer' } as const) : {};
 
 function getRegionLabel(
   stateCode: string | undefined,
@@ -89,22 +76,15 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
   const colors = useColors();
   const { isDesktop, contentWidth, width } = useLayout();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollViewType>(null);
-  const eventsSectionRef = useRef<View>(null);
-  const placesColumnRef = useRef<View>(null);
-  const layoutHeights = useRef({ hero: 400, stats: 76, filter: 200, highlights: 0 });
-  const { state: onboarding, isLoading: onboardingLoading } = useOnboarding();
+  const scrollRef = useRef<ScrollView>(null);
+  const { state: onboarding, isLoading: onboardingLoading, setCountry } = useOnboarding();
   const { states: auStates } = useLocations();
   const onboardingSeeded = useRef(false);
 
   const [focusCountry, setFocusCountry] = useState('Australia');
   const [focusStateCode, setFocusStateCode] = useState<string | undefined>(undefined);
   const [hubScope, setHubScope] = useState<CultureHubScope>('singleCountry');
-  const [nearYouCoords, setNearYouCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [nearYouRadiusKm, setNearYouRadiusKm] = useState<CultureHubNearRadiusKm>(CULTURE_HUB_NEAR_RADIUS_KM);
-  const [nearYouLoading, setNearYouLoading] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const nearYouBootRef = useRef(false);
 
   const hubRouteKey = useMemo(() => cultureHubRouteKey(routeSearchParams), [routeSearchParams]);
 
@@ -122,7 +102,6 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
       }
       if (url.scope) setHubScope(url.scope);
       if (url.applyState) setFocusStateCode(url.stateCode);
-      if (url.nearRadiusKm != null) setNearYouRadiusKm(url.nearRadiusKm);
       onboardingSeeded.current = true;
       return;
     }
@@ -140,51 +119,6 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
       }
     }
   }, [onboardingLoading, hubRouteKey, onboarding.country, onboarding.city, routeSearchParams]);
-
-  const resolveNearYouCoords = useCallback(async (): Promise<{ lat: number; lng: number } | null> => {
-    if (Platform.OS === 'web') {
-      return new Promise((resolve) => {
-        if (typeof navigator === 'undefined' || !navigator.geolocation) {
-          resolve(null);
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          (pos) =>
-            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          () => resolve(null),
-          { enableHighAccuracy: true, maximumAge: 60_000, timeout: 22_000 },
-        );
-      });
-    }
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return null;
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    return { lat: pos.coords.latitude, lng: pos.coords.longitude };
-  }, []);
-
-  /** Deep link `?scope=near` — request location after scope is applied from the URL. */
-  useEffect(() => {
-    if (hubScope !== 'nearYou') {
-      nearYouBootRef.current = false;
-      return;
-    }
-    if (nearYouCoords != null) return;
-    if (nearYouBootRef.current) return;
-    nearYouBootRef.current = true;
-    let cancelled = false;
-    void resolveNearYouCoords().then((c) => {
-      if (cancelled) return;
-      if (c) {
-        setNearYouCoords(c);
-      } else {
-        setHubScope('singleCountry');
-        nearYouBootRef.current = false;
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [hubScope, nearYouCoords, resolveNearYouCoords, hubRouteKey]);
 
   const focusStateLabel = useMemo(
     () => getRegionLabel(focusStateCode, auStates),
@@ -213,12 +147,9 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
     focusCountry,
     focusStateCode,
     scope: hubScope,
-    nearYouCoords,
-    nearYouRadiusKm,
   });
 
   const regionFilteredEvents = useMemo(() => {
-    if (hubScope === 'nearYou') return allEvents;
     if (hubScope !== 'singleCountry' || !focusStateCode) return allEvents;
     return allEvents.filter((e) => eventMatchesViewerRegion(e, focusStateCode));
   }, [allEvents, hubScope, focusStateCode]);
@@ -269,12 +200,6 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
   const resultsSubtitle = useMemo(() => {
     const n = events.length;
     const unit = n === 1 ? '' : 's';
-    if (hubScope === 'nearYou') {
-      if (!nearYouCoords) {
-        return `Allow location to load events within ${nearYouRadiusKm} km`;
-      }
-      return `${n} result${unit} · ${nearYouRadiusKm} km radius · ${def.heroTitle} matches, closest first`;
-    }
     if (hubScope === 'diaspora') {
       return `${n} result${unit} · ${focusCountry} & your region boosted, then other hub countries`;
     }
@@ -282,44 +207,11 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
       return `${n} result${unit} · ${focusStateLabel} (${focusCountry})`;
     }
     return `${n} result${unit} · entire ${focusCountry}`;
-  }, [events.length, hubScope, focusCountry, focusStateLabel, nearYouCoords, nearYouRadiusKm, def.heroTitle]);
+  }, [events.length, hubScope, focusCountry, focusStateLabel]);
 
   const haptic = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
-
-  const activateNearYou = useCallback(async () => {
-    if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    if (nearYouCoords) {
-      setHubScope('nearYou');
-      return;
-    }
-    nearYouBootRef.current = true;
-    setHubScope('nearYou');
-    setNearYouLoading(true);
-    const c = await resolveNearYouCoords();
-    setNearYouLoading(false);
-    if (c) {
-      setNearYouCoords(c);
-    } else {
-      setHubScope('singleCountry');
-      nearYouBootRef.current = false;
-      Alert.alert(
-        'Location needed',
-        Platform.OS === 'web'
-          ? 'Allow location in your browser to see events near you.'
-          : 'Enable location for CulturePass in Settings to browse nearby events.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          ...(Platform.OS !== 'web'
-            ? [{ text: 'Open Settings', onPress: () => void Linking.openSettings() }]
-            : []),
-        ],
-      );
-    }
-  }, [nearYouCoords, resolveNearYouCoords]);
 
   const shareUrl = useMemo(
     () =>
@@ -327,9 +219,8 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
         country: focusCountry,
         scope: hubScope,
         stateCode: focusStateCode,
-        nearRadiusKm: hubScope === 'nearYou' ? nearYouRadiusKm : undefined,
       }),
-    [def.publicPath, focusCountry, hubScope, focusStateCode, nearYouRadiusKm],
+    [def.publicPath, focusCountry, hubScope, focusStateCode],
   );
 
   const handleShare = useCallback(async () => {
@@ -421,68 +312,16 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
   }, [selectedCategories, selectedCultures, selectedLanguages, def.heroTitle]);
 
   const locationChip =
-    hubScope === 'nearYou'
-      ? nearYouCoords
-        ? `Near me · ${nearYouRadiusKm} km`
-        : 'Near me · location needed'
-      : hubScope === 'diaspora'
-        ? `Worldwide · ${focusCountry} first`
-        : focusStateLabel
-          ? `${focusStateLabel} · ${focusCountry}`
-          : `All ${focusCountry}`;
+    hubScope === 'diaspora'
+      ? `Worldwide · ${focusCountry} first`
+      : focusStateLabel
+        ? `${focusStateLabel} · ${focusCountry}`
+        : `All ${focusCountry}`;
 
-  const showHighlightsRail = regionFilteredEvents.length > 5 && totalActiveFilters === 0;
-
-  const areaCountryShort = useMemo(() => {
-    const t = focusCountry.trim() || '—';
-    return t.length > 14 ? `${t.slice(0, 12)}…` : t;
-  }, [focusCountry]);
-
-  const scrollToStickyToolbar = useCallback(() => {
-    const y = Math.max(0, layoutHeights.current.hero + layoutHeights.current.stats - 6);
-    scrollRef.current?.scrollTo({ y, animated: true });
-  }, []);
-
-  const scrollEventsIntoView = useCallback(() => {
-    const fallbackY =
-      layoutHeights.current.hero +
-      layoutHeights.current.stats +
-      layoutHeights.current.filter +
-      layoutHeights.current.highlights;
-    scrollToChildInScrollView(scrollRef, eventsSectionRef, { offset: 8, fallbackY });
-  }, []);
-
-  const onStatEventsPress = useCallback(() => {
+  const saveDiscoverCountry = useCallback(() => {
     haptic();
-    setFilterMode('category');
-    scrollEventsIntoView();
-  }, [haptic, scrollEventsIntoView]);
-
-  const onStatPlacesPress = useCallback(() => {
-    haptic();
-    const fallbackY =
-      layoutHeights.current.hero +
-      layoutHeights.current.stats +
-      layoutHeights.current.filter +
-      layoutHeights.current.highlights;
-    scrollToChildInScrollView(scrollRef, placesColumnRef, { offset: 8, fallbackY });
-  }, [haptic]);
-
-  const onStatCulturesPress = useCallback(() => {
-    haptic();
-    setFilterMode('culture');
-    scrollToStickyToolbar();
-  }, [haptic, scrollToStickyToolbar]);
-
-  const onStatLanguagesPress = useCallback(() => {
-    haptic();
-    setFilterMode('language');
-    scrollToStickyToolbar();
-  }, [haptic, scrollToStickyToolbar]);
-
-  useEffect(() => {
-    if (!showHighlightsRail) layoutHeights.current.highlights = 0;
-  }, [showHighlightsRail]);
+    setCountry(focusCountry);
+  }, [focusCountry, haptic, setCountry]);
 
   const webTitle = `${def.heroTitle} · ${APP_NAME}`;
 
@@ -520,12 +359,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
             />
           }
         >
-          <View
-            style={styles.hero}
-            onLayout={(e) => {
-              layoutHeights.current.hero = e.nativeEvent.layout.height;
-            }}
-          >
+          <View style={styles.hero}>
             <Image
               source={{ uri: def.heroImage }}
               style={styles.heroImage}
@@ -537,35 +371,67 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
               locations={[0, 0.4, 1]}
               style={StyleSheet.absoluteFill}
             />
-            <LinearGradient
-              colors={['rgba(0,0,0,0.72)', 'rgba(0,0,0,0.35)', 'transparent']}
-              locations={[0, 0.55, 1]}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 150,
-                zIndex: 8,
-              }}
-              pointerEvents="none"
-            />
-            <HeroOverlayBar
-              paddingTop={Platform.OS === 'web' ? 16 : insets.top + 16}
-              centerLabel={locationChip}
-              onBack={() => {
-                haptic();
-                router.back();
-              }}
-              onShare={() => {
-                void handleShare();
-              }}
-              onCenterPress={() => {
-                haptic();
-                setLocationModalOpen(true);
-              }}
-              shareA11y="Share this hub"
-            />
+            <View style={[styles.heroTopBar, { paddingTop: Platform.OS === 'web' ? 16 : insets.top + 16 }]}>
+              <LiquidGlassPanel
+                borderRadius={22}
+                bordered={false}
+                style={{ width: 44, height: 44 }}
+                contentStyle={styles.heroGlassCircleInner}
+              >
+                <Pressable
+                  onPress={() => {
+                    haptic();
+                    router.back();
+                  }}
+                  style={styles.heroIconHit}
+                  accessibilityLabel="Go back"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="chevron-back" size={24} color={colors.textOnBrandGradient} />
+                </Pressable>
+              </LiquidGlassPanel>
+
+              <LiquidGlassPanel
+                borderRadius={20}
+                bordered={false}
+                style={styles.heroGlassChipShell}
+                contentStyle={styles.heroGlassChipInner}
+              >
+                <Pressable
+                  onPress={() => {
+                    haptic();
+                    setLocationModalOpen(true);
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}
+                  accessibilityLabel={`Location: ${locationChip}. Tap to change country or region.`}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="location" size={13} color={CultureTokens.gold} />
+                  <Text style={[styles.chipText, { color: colors.textOnBrandGradient }]} numberOfLines={2}>
+                    {locationChip}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={colors.textOnBrandGradient} style={{ opacity: 0.85 }} />
+                </Pressable>
+              </LiquidGlassPanel>
+
+              <LiquidGlassPanel
+                borderRadius={22}
+                bordered={false}
+                style={{ width: 44, height: 44 }}
+                contentStyle={styles.heroGlassCircleInner}
+              >
+                <Pressable
+                  onPress={() => {
+                    void handleShare();
+                  }}
+                  style={styles.heroIconHit}
+                  accessibilityLabel="Share this hub"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="share-social-outline" size={22} color={colors.textOnBrandGradient} />
+                </Pressable>
+              </LiquidGlassPanel>
+            </View>
 
             <View style={styles.heroContent}>
               <View style={styles.heroBadge}>
@@ -575,385 +441,184 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
               <View style={styles.stateRow}>
                 <Ionicons name="map-outline" size={13} color={colors.textOnBrandGradient} style={{ opacity: 0.72 }} />
                 <Text style={styles.stateText}>
-                  {hubScope === 'nearYou'
-                    ? nearYouCoords
-                      ? `GPS · ${nearYouRadiusKm} km · ${def.heroTitle} culture`
-                      : 'Turn on location for nearby listings'
-                    : hubScope === 'diaspora'
-                      ? `Diaspora hub · ${focusCountry} ranked first`
-                      : focusStateLabel
-                        ? `${focusStateLabel}, ${focusCountry}`
-                        : `All of ${focusCountry}`}
+                  {hubScope === 'diaspora'
+                    ? `Diaspora hub · ${focusCountry} ranked first`
+                    : focusStateLabel
+                      ? `${focusStateLabel}, ${focusCountry}`
+                      : `All of ${focusCountry}`}
                 </Text>
               </View>
               <Text style={styles.heroSubtitle}>{cityMeta.tagline}</Text>
             </View>
           </View>
 
-          <View
-            style={[styles.statsStrip, { backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}
-            onLayout={(e) => {
-              layoutHeights.current.stats = e.nativeEvent.layout.height;
-            }}
-          >
-            <StatPill
-              icon="calendar"
-              value={String(regionFilteredEvents.length)}
-              label="Events"
-              colors={colors}
-              onPress={onStatEventsPress}
-              accessibilityLabel={`Events, ${regionFilteredEvents.length}. Jump to event list`}
-            />
+          <View style={[styles.statsStrip, { backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
+            <StatPill icon="calendar" value={String(regionFilteredEvents.length)} label="Events" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="business"
-              value={String(venues.length || '—')}
-              label="Places"
-              colors={colors}
-              onPress={onStatPlacesPress}
-              accessibilityLabel={`Places, ${venues.length || 0}. Jump to places and partners`}
-            />
+            <StatPill icon="business" value={String(venues.length || '—')} label="Places" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="people"
-              value={String(uniqueCultureTags.length)}
-              label="Cultures"
-              colors={colors}
-              onPress={onStatCulturesPress}
-              accessibilityLabel={`Cultures, ${uniqueCultureTags.length}. Open culture filter`}
-            />
+            <StatPill icon="people" value={String(uniqueCultureTags.length)} label="Cultures" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="chatbubble-ellipses"
-              value={String(uniqueLanguageTags.length)}
-              label="Languages"
-              colors={colors}
-              onPress={onStatLanguagesPress}
-              accessibilityLabel={`Languages, ${uniqueLanguageTags.length}. Open language filter`}
-            />
+            <StatPill icon="chatbubble-ellipses" value={String(uniqueLanguageTags.length)} label="Languages" colors={colors} />
           </View>
 
           <View
-            style={styles.filterBar}
-            onLayout={(e) => {
-              layoutHeights.current.filter = e.nativeEvent.layout.height;
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              backgroundColor: colors.surface,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.borderLight,
+              gap: 10,
             }}
           >
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  haptic();
+                  setHubScope('singleCountry');
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  backgroundColor:
+                    hubScope === 'singleCountry' ? CultureTokens.indigo : colors.backgroundSecondary,
+                  borderWidth: 1,
+                  borderColor: hubScope === 'singleCountry' ? CultureTokens.indigo : colors.borderLight,
+                }}
+                accessibilityLabel="Show events in the selected country"
+                accessibilityRole="button"
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: 'Poppins_600SemiBold',
+                    color: hubScope === 'singleCountry' ? colors.textOnBrandGradient : colors.textSecondary,
+                  }}
+                >
+                  This country
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  haptic();
+                  setHubScope('diaspora');
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  backgroundColor:
+                    hubScope === 'diaspora' ? CultureTokens.indigo : colors.backgroundSecondary,
+                  borderWidth: 1,
+                  borderColor: hubScope === 'diaspora' ? CultureTokens.indigo : colors.borderLight,
+                }}
+                accessibilityLabel="Show events across the worldwide diaspora hub"
+                accessibilityRole="button"
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: 'Poppins_600SemiBold',
+                    color: hubScope === 'diaspora' ? colors.textOnBrandGradient : colors.textSecondary,
+                  }}
+                >
+                  Worldwide hub
+                </Text>
+              </Pressable>
+            </View>
+            <Pressable onPress={saveDiscoverCountry} accessibilityLabel="Save country for Discover" accessibilityRole="button">
+              <Text style={[TextStyles.caption, { color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }]}>
+                Use {focusCountry} as my Discover country
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.filterBar}>
             <LiquidGlassPanel
               borderRadius={0}
               bordered={false}
               style={{
-                backgroundColor: colors.surface,
                 borderBottomWidth: StyleSheet.hairlineWidth * 2,
                 borderBottomColor: colors.borderLight,
               }}
               contentStyle={styles.filterBarGlassInner}
             >
-              <View style={styles.filterToolbarColumn}>
-                <View style={styles.filterToolbarGroupWrap}>
-                  <View
-                    style={[
-                      styles.hubControlGroup,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.borderLight,
-                      },
-                    ]}
-                  >
-                    {hubScope === 'nearYou' && (
-                      <View style={styles.hubToolbarRow}>
-                        <Text style={[styles.hubSectionLabel, { color: colors.textTertiary }]}>Distance</Text>
-                        <Text style={[styles.hubDiscoverCaption, { color: colors.textTertiary, marginBottom: 8 }]}>
-                          Events need map coordinates. Increase distance if results are thin.
-                        </Text>
-                        <ScrollView
-                          horizontal
-                          nestedScrollEnabled
-                          showsHorizontalScrollIndicator={false}
-                          keyboardShouldPersistTaps="handled"
-                          style={{ flexGrow: 0 }}
-                          contentContainerStyle={styles.nearRadiusScrollContent}
-                        >
-                          <View
-                            style={[
-                              styles.scopeSegmentTrack,
-                              {
-                                backgroundColor: colors.backgroundSecondary,
-                                borderColor: colors.borderLight,
-                                alignSelf: 'flex-start',
-                              },
-                            ]}
-                          >
-                            {CULTURE_HUB_NEAR_RADIUS_PRESETS.map((km) => {
-                              const on = nearYouRadiusKm === km;
-                              return (
-                                <Pressable
-                                  key={km}
-                                  onPress={() => {
-                                    haptic();
-                                    setNearYouRadiusKm(km);
-                                  }}
-                                  style={[
-                                    styles.scopeSegBtn,
-                                    webCursor,
-                                    { paddingHorizontal: 14 },
-                                    on && { backgroundColor: CultureTokens.gold },
-                                  ]}
-                                  accessibilityLabel={`Interest radius ${km} kilometres`}
-                                  accessibilityRole="button"
-                                  accessibilityState={{ selected: on }}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.scopeSegBtnText,
-                                      { color: on ? colors.text : colors.textSecondary },
-                                    ]}
-                                  >
-                                    {km} km
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                        </ScrollView>
-                      </View>
-                    )}
-
-                    <View style={[styles.hubToolbarRow, styles.hubToolbarRowLast]}>
-                      <ScrollView
-                        horizontal
-                        nestedScrollEnabled
-                        showsHorizontalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                        style={{ flexGrow: 0 }}
-                        contentContainerStyle={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 10,
-                          paddingVertical: 2,
-                          paddingRight: 8,
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <View
-                            style={[
-                              styles.scopeSegmentTrack,
-                              {
-                                backgroundColor: colors.backgroundSecondary,
-                                borderColor: colors.borderLight,
-                              },
-                            ]}
-                          >
-                            <Pressable
-                              onPress={() => {
-                                haptic();
-                                setHubScope('singleCountry');
-                              }}
-                              style={[
-                                styles.scopeSegBtn,
-                                webCursor,
-                                { maxWidth: 120 },
-                                hubScope === 'singleCountry' && { backgroundColor: CultureTokens.indigo },
-                              ]}
-                              accessibilityLabel={`${focusCountry} — events in this country`}
-                              accessibilityRole="button"
-                              accessibilityState={{ selected: hubScope === 'singleCountry' }}
-                            >
-                              <Ionicons
-                                name="flag-outline"
-                                size={14}
-                                color={hubScope === 'singleCountry' ? colors.textOnBrandGradient : colors.textSecondary}
-                              />
-                              <Text
-                                style={[
-                                  styles.scopeSegBtnText,
-                                  {
-                                    color: hubScope === 'singleCountry' ? colors.textOnBrandGradient : colors.textSecondary,
-                                    flexShrink: 1,
-                                  },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {areaCountryShort}
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={() => {
-                                void activateNearYou();
-                              }}
-                              disabled={nearYouLoading}
-                              style={[
-                                styles.scopeSegBtn,
-                                webCursor,
-                                hubScope === 'nearYou' && { backgroundColor: CultureTokens.gold },
-                              ]}
-                              accessibilityLabel="Near me — events within your chosen distance using your location"
-                              accessibilityRole="button"
-                              accessibilityState={{ selected: hubScope === 'nearYou', busy: nearYouLoading }}
-                            >
-                              {nearYouLoading ? (
-                                <ActivityIndicator
-                                  size="small"
-                                  color={CultureTokens.indigo}
-                                  style={{ marginRight: 2 }}
-                                />
-                              ) : (
-                                <Ionicons
-                                  name="navigate-outline"
-                                  size={14}
-                                  color={hubScope === 'nearYou' ? colors.text : colors.textSecondary}
-                                />
-                              )}
-                              <Text
-                                style={[
-                                  styles.scopeSegBtnText,
-                                  {
-                                    color: hubScope === 'nearYou' ? colors.text : colors.textSecondary,
-                                  },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                Near me
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={() => {
-                                haptic();
-                                setHubScope('diaspora');
-                              }}
-                              style={[
-                                styles.scopeSegBtn,
-                                webCursor,
-                                hubScope === 'diaspora' && { backgroundColor: CultureTokens.teal },
-                              ]}
-                              accessibilityLabel="Worldwide hub — diaspora listings with your country ranked first"
-                              accessibilityRole="button"
-                              accessibilityState={{ selected: hubScope === 'diaspora' }}
-                            >
-                              <Ionicons
-                                name="earth-outline"
-                                size={14}
-                                color={hubScope === 'diaspora' ? colors.textOnBrandGradient : colors.textSecondary}
-                              />
-                              <Text
-                                style={[
-                                  styles.scopeSegBtnText,
-                                  {
-                                    color: hubScope === 'diaspora' ? colors.textOnBrandGradient : colors.textSecondary,
-                                  },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                Worldwide
-                              </Text>
-                            </Pressable>
-                          </View>
-
-                          <View
-                            style={{
-                              width: StyleSheet.hairlineWidth * 2,
-                              alignSelf: 'stretch',
-                              minHeight: 28,
-                              backgroundColor: colors.borderLight,
-                            }}
-                          />
-
-                          <View
-                            style={[
-                              styles.scopeSegmentTrack,
-                              {
-                                backgroundColor: colors.backgroundSecondary,
-                                borderColor: colors.borderLight,
-                              },
-                            ]}
-                          >
-                            {(['category', 'culture', 'language'] as FilterMode[]).map((mode) => {
-                              const active = filterMode === mode;
-                              const labels: Record<FilterMode, string> = {
-                                category: 'Category',
-                                culture: 'Culture',
-                                language: 'Language',
-                              };
-                              return (
-                                <Pressable
-                                  key={mode}
-                                  onPress={() => {
-                                    haptic();
-                                    setFilterMode(mode);
-                                  }}
-                                  style={[
-                                    styles.scopeSegBtn,
-                                    webCursor,
-                                    active && { backgroundColor: CultureTokens.indigo },
-                                  ]}
-                                  accessibilityLabel={`Filter by ${labels[mode]}`}
-                                  accessibilityRole="button"
-                                  accessibilityState={{ selected: active }}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.scopeSegBtnText,
-                                      {
-                                        color: active ? colors.textOnBrandGradient : colors.textSecondary,
-                                      },
-                                    ]}
-                                    numberOfLines={1}
-                                  >
-                                    {labels[mode]}
-                                  </Text>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
+              <ScrollView
+                horizontal
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.modeTabs}
+              >
+                {(['category', 'culture', 'language'] as FilterMode[]).map((mode) => {
+                  const active = filterMode === mode;
+                  const badge =
+                    mode === 'category'
+                      ? selectedCategories.length
+                      : mode === 'culture'
+                        ? selectedCultures.length
+                        : selectedLanguages.length;
+                  const labels: Record<FilterMode, string> = {
+                    category: 'Category',
+                    culture: 'Culture',
+                    language: 'Language',
+                  };
+                  const icons: Record<FilterMode, keyof typeof Ionicons.glyphMap> = {
+                    category: 'grid-outline',
+                    culture: 'globe-outline',
+                    language: 'chatbubble-outline',
+                  };
+                  return (
+                    <Pressable
+                      key={mode}
+                      onPress={() => {
+                        haptic();
+                        setFilterMode(mode);
+                      }}
+                      style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
+                    >
+                      <Ionicons
+                        name={icons[mode]}
+                        size={15}
+                        color={active ? CultureTokens.indigo : colors.textTertiary}
+                      />
+                      <Text style={[styles.modeTabText, { color: active ? CultureTokens.indigo : colors.textTertiary }]}>
+                        {labels[mode]}
+                      </Text>
+                      {badge > 0 && (
+                        <View style={styles.modeBadge}>
+                          <Text style={styles.modeBadgeText}>{badge}</Text>
                         </View>
-
-                        {totalActiveFilters > 0 && (
-                          <Pressable
-                            onPress={clearAllFilters}
-                            hitSlop={10}
-                            style={webCursor}
-                            accessibilityLabel="Clear all filters"
-                            accessibilityRole="button"
-                          >
-                            <Text style={[styles.hubClearText, { color: CultureTokens.indigo }]}>Clear</Text>
-                          </Pressable>
-                        )}
-                      </ScrollView>
-                    </View>
-                  </View>
-                </View>
-
-                {filterOptions.length > 0 && (
-                  <FilterChips
-                    variant="hub"
-                    filters={filterOptions}
-                    selectedFilters={activeFilters}
-                    onToggle={onToggleFilter}
-                    onClearAll={onClearMode}
-                  />
+                      )}
+                    </Pressable>
+                  );
+                })}
+                {totalActiveFilters > 0 && (
+                  <Pressable onPress={clearAllFilters} style={styles.clearAllTab}>
+                    <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
+                    <Text style={[styles.modeTabText, { color: colors.textTertiary }]}>Clear all</Text>
+                  </Pressable>
                 )}
-              </View>
+              </ScrollView>
+              {filterOptions.length > 0 && (
+                <FilterChips
+                  filters={filterOptions}
+                  selectedFilters={activeFilters}
+                  onToggle={onToggleFilter}
+                  onClearAll={onClearMode}
+                />
+              )}
             </LiquidGlassPanel>
           </View>
 
-          {showHighlightsRail && (
-            <View
-              style={styles.section}
-              onLayout={(e) => {
-                layoutHeights.current.highlights = e.nativeEvent.layout.height;
-              }}
-            >
-              <View style={styles.sectionAccentTitleRow}>
-                <View style={styles.sectionAccentBar} />
-                <Text style={[TextStyles.title3, { color: colors.text, flex: 1 }]}>
-                  Highlights ·{' '}
-                  {hubScope === 'nearYou'
-                    ? 'Near me'
-                    : hubScope === 'diaspora'
-                      ? `${focusCountry} first`
-                      : focusCountry}
-                </Text>
-              </View>
+          {regionFilteredEvents.length > 5 && totalActiveFilters === 0 && (
+            <View style={styles.section}>
+              <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 12 }]}>
+                Highlights · {hubScope === 'diaspora' ? `${focusCountry} first` : focusCountry}
+              </Text>
               <ScrollView
                 horizontal
                 nestedScrollEnabled
@@ -1004,11 +669,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
             }
           >
             <View style={{ flex: isDesktop ? 2.8 : 1 }}>
-              <View
-                ref={eventsSectionRef}
-                collapsable={false}
-                style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}
-              >
+              <View style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}>
                 <View style={styles.sectionHeader}>
                   <View>
                     <Text style={[TextStyles.title3, { color: colors.text }]}>{sectionTitle}</Text>
@@ -1031,70 +692,27 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                   </View>
                 ) : events.length === 0 ? (
                   <View style={styles.emptyState}>
-                    <View
-                      style={[
-                        styles.emptyStateCard,
-                        { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                      ]}
-                    >
-                      <View
-                        style={{
-                          width: 72,
-                          height: 72,
-                          borderRadius: 36,
-                          backgroundColor: colors.backgroundSecondary,
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                    <Ionicons name="calendar-clear-outline" size={64} color={colors.textTertiary} />
+                    <Text style={styles.emptyTitle}>No events match yet</Text>
+                    <Text style={styles.emptySubtitle}>
+                      {hubScope === 'singleCountry'
+                        ? `No matches in ${focusStateLabel ? `${focusStateLabel}, ` : ''}${focusCountry}. Try Worldwide hub or adjust filters.`
+                        : 'Try filters or check back — we scan many countries for this community.'}
+                    </Text>
+                    <Pressable style={styles.retryButton} onPress={clearAllFilters}>
+                      <Text style={styles.retryText}>Clear filters</Text>
+                    </Pressable>
+                    {hubScope === 'singleCountry' && (
+                      <Pressable
+                        style={[styles.retryButton, { marginTop: 8, backgroundColor: colors.backgroundSecondary }]}
+                        onPress={() => {
+                          haptic();
+                          setHubScope('diaspora');
                         }}
                       >
-                        <Ionicons name="calendar-clear-outline" size={36} color={CultureTokens.indigo} />
-                      </View>
-                      <Text style={styles.emptyTitle}>No events match yet</Text>
-                      <Text style={styles.emptySubtitle}>
-                        {hubScope === 'nearYou'
-                          ? nearYouCoords
-                            ? `No ${def.heroTitle} events with coordinates in this radius yet. Try a larger km radius, Worldwide hub, or This country.`
-                            : 'Allow location to see what is on near you.'
-                          : hubScope === 'singleCountry'
-                            ? `No matches in ${focusStateLabel ? `${focusStateLabel}, ` : ''}${focusCountry}. Try Worldwide hub or adjust filters.`
-                            : 'Try filters or check back — we scan many countries for this community.'}
-                      </Text>
-                      <Pressable style={styles.retryButton} onPress={clearAllFilters}>
-                        <Text style={styles.retryText}>Clear filters</Text>
+                        <Text style={[styles.retryText, { color: colors.text }]}>Open worldwide hub</Text>
                       </Pressable>
-                      {hubScope === 'nearYou' && nearYouCoords && (
-                        <Pressable
-                          style={[styles.retryButton, { marginTop: 4, backgroundColor: colors.backgroundSecondary }]}
-                          onPress={() => {
-                            haptic();
-                            setHubScope('diaspora');
-                          }}
-                        >
-                          <Text style={[styles.retryText, { color: colors.text }]}>Try worldwide hub</Text>
-                        </Pressable>
-                      )}
-                      {hubScope === 'singleCountry' && (
-                        <Pressable
-                          style={[styles.retryButton, { marginTop: 4, backgroundColor: colors.backgroundSecondary }]}
-                          onPress={() => {
-                            haptic();
-                            setHubScope('diaspora');
-                          }}
-                        >
-                          <Text style={[styles.retryText, { color: colors.text }]}>Open worldwide hub</Text>
-                        </Pressable>
-                      )}
-                      {hubScope === 'nearYou' && !nearYouCoords && (
-                        <Pressable
-                          style={[styles.retryButton, { marginTop: 4, backgroundColor: CultureTokens.gold }]}
-                          onPress={() => {
-                            void activateNearYou();
-                          }}
-                        >
-                          <Text style={[styles.retryText, { color: colors.text }]}>Enable location</Text>
-                        </Pressable>
-                      )}
-                    </View>
+                    )}
                   </View>
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
@@ -1114,7 +732,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
               </View>
             </View>
 
-            <View ref={placesColumnRef} collapsable={false} style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
+            <View style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
               {venues.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0, paddingTop: 0 }]}>
                   <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 16 }]}>

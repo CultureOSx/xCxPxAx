@@ -134,44 +134,12 @@ export function uniqueCountriesForHub(viewerCountry: string): string[] {
   return Array.from(set);
 }
 
-/** Preset radii for culture hub “Near me” (dating-style distance steps). */
-export const CULTURE_HUB_NEAR_RADIUS_PRESETS = [5, 15, 25, 50, 100] as const;
-export type CultureHubNearRadiusKm = (typeof CULTURE_HUB_NEAR_RADIUS_PRESETS)[number];
-
-/** Default radius when opening Near me. */
-export const CULTURE_HUB_NEAR_RADIUS_KM: CultureHubNearRadiusKm = 25;
-
-/** Snap an arbitrary km value to the nearest preset (for URL `radius=`). */
-export function clampCultureHubNearRadiusKm(n: number): CultureHubNearRadiusKm {
-  let best: CultureHubNearRadiusKm = CULTURE_HUB_NEAR_RADIUS_PRESETS[0];
-  let bestDist = Math.abs(n - best);
-  for (const p of CULTURE_HUB_NEAR_RADIUS_PRESETS) {
-    const d = Math.abs(n - p);
-    if (d < bestDist) {
-      best = p;
-      bestDist = d;
-    }
-  }
-  return best;
-}
-
-/** How far we scan for diaspora-style hubs vs one-country listings vs device radius. */
-export type CultureHubScope = 'singleCountry' | 'diaspora' | 'nearYou';
+/** How far we scan for diaspora-style hubs vs one-country listings. */
+export type CultureHubScope = 'singleCountry' | 'diaspora';
 
 export function countriesForCultureHubQueries(focusCountry: string, scope: CultureHubScope): string[] {
-  if (scope === 'nearYou') {
-    return [];
-  }
   if (scope === 'singleCountry') {
     return [focusCountry];
   }
   return uniqueCountriesForHub(focusCountry);
-}
-
-/** Countries to query for venue cards when scope is “near you” (events use GPS). */
-export function venueCountriesForCultureHub(focusCountry: string, scope: CultureHubScope): string[] {
-  if (scope === 'nearYou') {
-    return focusCountry.trim() ? [focusCountry] : ['Australia'];
-  }
-  return countriesForCultureHubQueries(focusCountry, scope);
 }

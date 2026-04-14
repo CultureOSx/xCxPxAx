@@ -71,7 +71,7 @@ function buildFeaturedArtistHighlight(
   const subtitle = buildArtistSubtitle(artist, profile);
   const meta = buildArtistMeta(artist, profile);
   const imageUrl = buildArtistImage(artist, profile);
-  const accentColor = artist.accentColor || '#0066CC';
+  const accentColor = artist.accentColor || DEFAULT_DISCOVER_CURATION.featuredArtists[0]?.accentColor || '#2C2A72';
 
   if (profile?.id) {
     return {
@@ -167,8 +167,9 @@ export async function resolveDiscoverCuration(params: {
   const profilesById = new Map<string, Profile>();
 
   if (isFirestoreConfigured && profileIds.length > 0) {
-    const profileRefs = profileIds.map((profileId) => db.collection('profiles').doc(profileId));
-    const profileSnapshots = await db.getAll(...profileRefs);
+    const profileSnapshots = await Promise.all(
+      profileIds.map((profileId) => db.collection('profiles').doc(profileId).get()),
+    );
 
     for (const snap of profileSnapshots) {
       if (!snap.exists) continue;

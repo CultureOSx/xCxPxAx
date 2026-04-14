@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -22,112 +21,6 @@ export const useImageUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const uploadFromUri = async (
-    rawUri: string,
-    collectionName: string,
-    docId: string,
-    fieldName: string = 'coverUrl',
-    skipDbUpdate: boolean = false
-  ): Promise<UploadResult> => {
-    if (!rawUri) throw new Error('No image provided');
-
-    setUploading(true);
-    setProgress(0);
-
-    try {
-      let uploadUri = rawUri;
-      try {
-        const manipulated = await ImageManipulator.manipulateAsync(
-          rawUri,
-          [{ resize: { width: 1200 } }],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-        );
-        uploadUri = manipulated.uri;
-      } catch {
-        // Some web URI schemes are not compatible with the manipulator.
-      }
-
-      // Web: fetch handles blob:/data: URIs from picker + manipulator more reliably than XHR.
-      // Native: XHR is the usual path for file/content URIs.
-      let blob: Blob;
-      if (Platform.OS === 'web') {
-        const res = await globalThis.fetch(uploadUri);
-        if (!res.ok) throw new Error('Failed to load image file');
-        blob = await res.blob();
-      } else {
-        blob = await new Promise<Blob>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.responseType = 'blob';
-          xhr.onload = () => resolve(xhr.response as Blob);
-          xhr.onerror = () => reject(new Error('Failed to load image file'));
-          xhr.open('GET', uploadUri);
-          xhr.send();
-        });
-      }
-
-      // Storage rules require image/* — without metadata many clients send octet-stream and rules deny.
-      const contentType =
-        blob.type && /^image\//i.test(blob.type) ? blob.type : 'image/jpeg';
-
-      const timestamp = Date.now();
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
-      const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, blob, { contentType });
-
-      const UPLOAD_TIMEOUT_MS = 60_000;
-      await new Promise<void>((resolve, reject) => {
-        let settled = false;
-
-        const timeoutId = setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          uploadTask.cancel();
-          reject(new Error('Upload timed out. Please check your connection and try again.'));
-        }, UPLOAD_TIMEOUT_MS);
-
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setProgress(currentProgress);
-          },
-          (error) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeoutId);
-            reject(error);
-          },
-          () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeoutId);
-            resolve();
-          },
-        );
-      });
-
-      const downloadURL = await getDownloadURL(storageRef);
-
-      if (!skipDbUpdate) {
-        const { setDoc } = await import('firebase/firestore');
-        const docRef = doc(db, collectionName, docId);
-        await setDoc(
-          docRef,
-          {
-            [fieldName]: downloadURL,
-            updatedAt: new Date(),
-          },
-          { merge: true }
-        );
-      }
-
-      return { downloadURL };
-    } finally {
-      setUploading(false);
-      setProgress(0);
-    }
-  };
-
   /**
    * Automatically compresses the selected image, uploads it securely into Firebase Storage,
    * inside the specific {collection}/{docId} directory, and immediately writes the returned
@@ -143,8 +36,61 @@ export const useImageUpload = () => {
     if (pickerResult.canceled || !pickerResult.assets?.[0]) {
       throw new Error('No image provided');
     }
-    const asset = pickerResult.assets[0];
-    return uploadFromUri(asset.uri, collectionName, docId, fieldName, skipDbUpdate);
+
+    setUploading(true);
+    setProgress(0);
+
+    try {
+      const asset = pickerResult.assets[0];
+
+      // 1. Client-Side Image Compression (Save Bandwidth & Storage)
+      const manipulated = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 1200 } }], // Ideal max width preserving AR
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG } // 80% JPEG compression
+      );
+
+      const response = await fetch(manipulated.uri);
+      const blob = await response.blob();
+
+      // 2. Upload to path hierarchy structure (e.g. users/123/1643...-abc.jpg)
+      // Including Date.now() guarantees cache-busting when replacing avatars via Expo Image
+      const timestamp = Date.now();
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
+      const storageRef = ref(storage, `${collectionName}/${docId}/${fileName}`);
+
+      const uploadTask = uploadBytesResumable(storageRef, blob);
+
+      // Listen to streaming upload progress
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const currentProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setProgress(currentProgress);
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
+
+      const downloadURL = await getDownloadURL(storageRef);
+
+      if (!skipDbUpdate) {
+        // 3. Atomically update Firestore with new remote URL
+        const { setDoc } = await import('firebase/firestore');
+        const docRef = doc(db, collectionName, docId);
+        await setDoc(docRef, {
+          [fieldName]: downloadURL,
+          updatedAt: new Date(),
+        }, { merge: true });
+      }
+
+      return { downloadURL };
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
   };
 
   /**
@@ -169,5 +115,5 @@ export const useImageUpload = () => {
     }
   };
 
-  return { uploadImage, uploadFromUri, deleteImage, uploading, progress };
+  return { uploadImage, deleteImage, uploading, progress };
 };

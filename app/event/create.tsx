@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CultureTokens } from '@/constants/theme';
@@ -21,10 +22,7 @@ import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '
 import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
-import { HapticManager } from '@/lib/haptics';
-import { normalizeAddressText, validateAddressLine, validatePlaceName } from '@/lib/addressValidation';
 import { useAuth } from '@/lib/auth';
-import { useRole } from '@/hooks/useRole';
 
 import { getStyles } from '@/components/event-create/styles';
 import {
@@ -124,7 +122,6 @@ export default function CreateEventScreen() {
   const s = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
-  const { isOrganizer, isLoading: roleLoading, isAuthenticated } = useRole();
   const queryClient = useQueryClient();
   const { state: onboardingState } = useOnboarding();
 
@@ -239,7 +236,7 @@ export default function CreateEventScreen() {
     },
     onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
-      HapticManager.success();
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPublishedEvent(event);
     },
     onError: (err) => {
@@ -254,7 +251,7 @@ export default function CreateEventScreen() {
   });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const haptic = () => { HapticManager.light(); };
+  const haptic = () => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
 
   const setField = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -351,74 +348,27 @@ export default function CreateEventScreen() {
     if (step === 'basics') {
       if (!form.title.trim()) return 'Event title is required.';
       if (form.title.trim().length < 5) return 'Title must be at least 5 characters.';
-      if (!form.eventType) return 'Please select an event type.';
       if (!form.description.trim()) return 'Description is required.';
-      if (form.description.trim().length < 20) return 'Description must be at least 20 characters.';
-    }
-    if (step === 'publishing') {
-      if (!form.publisherProfileId.trim()) return 'Please select a profile to publish as.';
     }
     if (step === 'location') {
-      const cityError = validatePlaceName(form.city, 'City');
-      if (cityError) return cityError;
-      const countryError = validatePlaceName(form.country, 'Country');
-      if (countryError) return countryError;
-      const addressError = validateAddressLine(form.address, {
-        required: !form.useLinkedVenue,
-        fieldLabel: 'Street address',
-        requireStreetNumber: false,
-      });
-      if (addressError) return addressError;
-      const venueName = normalizeAddressText(form.venue);
-      if (!form.useLinkedVenue && !venueName && !normalizeAddressText(form.address)) {
-        return 'Add a venue name or street address.';
-      }
+      if (!form.city.trim()) return 'City is required.';
       if (form.useLinkedVenue && !form.venueProfileId.trim()) {
         return 'Select a saved venue profile, or switch to one-off address.';
       }
     }
     if (step === 'datetime') {
       if (!form.date) return 'Date is required.';
-      if (!form.time) return 'Start time is required.';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return 'Date format must be YYYY-MM-DD.';
       if (form.endDate && form.endDate < form.date) return 'End date cannot be before start date.';
     }
-    if (step === 'entry') {
-      if (!form.entryType) return 'Please select an entry type.';
-    }
-    if (step === 'tickets') {
-      if (form.tiers.length === 0) {
-        const price = parseFloat(form.priceCents || '0');
-        if (isNaN(price) || price < 0) return 'Please provide a valid ticket price.';
-      } else {
-        for (const tier of form.tiers) {
-          if (!tier.name.trim()) return 'All ticket tiers must have a name.';
-          const price = parseFloat(tier.priceCents || '0');
-          if (isNaN(price) || price < 0) return `Invalid price for tier: ${tier.name}`;
-        }
-      }
-    }
-    if (step === 'team') {
-      if (form.hostInfo.contactEmail) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(form.hostInfo.contactEmail.trim())) {
-          return 'Please enter a valid host contact email.';
-        }
-      }
-    }
-    if (step === 'culture') {
-      if (form.cultureTagIds.length === 0) return 'Please select at least one culture tag.';
-    }
+    if (step === 'tickets' && form.tiers.length === 0 && !form.priceCents)
+      return 'Add at least one ticket tier or a price.';
     return null;
   }, [step, form]);
 
   const goNext = useCallback(() => {
     const err = validateStep();
-    if (err) { 
-      setStepError(err); 
-      HapticManager.error();
-      return; 
-    }
+    if (err) { setStepError(err); return; }
     setStepError(null);
     setPublishError(null);
     if (step === 'review') { createEvent(); return; }
@@ -436,49 +386,6 @@ export default function CreateEventScreen() {
     haptic();
     setStepIndex((i) => i - 1);
   }, [stepIndex]);
-
-  // ── Role Guard ────────────────────────────────────────────────────────────
-  if (!roleLoading && isAuthenticated && !isOrganizer) {
-    return (
-      <View style={[s.root, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={[CultureTokens.coral + 'CC', colors.background]}
-          start={{ x: 0, y: 0 }} end={{ x: 0, y: 0.5 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-        <View style={[s.topBar, { paddingTop: topInset + 8 }]}>
-          <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-            hitSlop={12} style={s.backBtn}
-            accessibilityRole="button" accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.text} />
-          </Pressable>
-          <View style={s.topCenter}>
-            <Text style={[TextStyles.title3, { color: colors.text }]}>Create Event</Text>
-          </View>
-          <View style={s.backBtn} />
-        </View>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-          <Ionicons name="lock-closed-outline" size={56} color={CultureTokens.coral} style={{ marginBottom: 20 }} />
-          <Text style={[TextStyles.title2, { color: colors.text, textAlign: 'center', marginBottom: 12 }]}>
-            Organiser Account Required
-          </Text>
-          <Text style={[TextStyles.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 }]}>
-            Creating events requires an organiser or business account. Contact support to upgrade your account.
-          </Text>
-          <Button
-            variant="primary" size="lg" fullWidth
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-            style={{ backgroundColor: CultureTokens.coral }}
-          >
-            Go Back
-          </Button>
-        </View>
-      </View>
-    );
-  }
 
   // ── Success Screen ────────────────────────────────────────────────────────
   if (publishedEvent) {

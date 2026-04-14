@@ -2,11 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
-import { withAlpha } from '@/lib/withAlpha';
 import { useColors } from '@/hooks/useColors';
 import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { captureEvent } from '@/lib/analytics';
@@ -15,16 +13,11 @@ import SectionHeader from './SectionHeader';
 import { RailErrorBanner } from './RailErrorBanner';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-const CARD_WIDTH = 252;
-const IMAGE_HEIGHT = 158;
-const ITEM_GAP = 18;
+const CARD_WIDTH = 230;
+const IMAGE_HEIGHT = 142;
+const ITEM_GAP = 20;
 const SNAP = CARD_WIDTH + ITEM_GAP;
 const SKELETON_KEYS = ['a1', 'a2', 'a3', 'a4'] as const;
-
-const SECTION_EYEBROW = 'Spotlight';
-const SECTION_TITLE = 'Featured artists';
-const SECTION_SUBTITLE =
-  'Editorial picks — open a profile or jump into a themed Explore view.';
 
 interface FeaturedArtistRailProps {
   data: DiscoverArtistHighlight[];
@@ -36,21 +29,13 @@ interface FeaturedArtistRailProps {
 function FeaturedArtistSkeletonCard() {
   const colors = useColors();
   return (
-    <View
-      style={[
-        styles.card,
-        { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
-      ]}
-    >
-      <View style={[styles.accentRail, { backgroundColor: colors.border }]} />
-      <View style={styles.cardMain}>
-        <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
-        <View style={styles.skeletonBody}>
-          <Skeleton width="88%" height={15} borderRadius={6} />
-          <Skeleton width="58%" height={13} borderRadius={6} />
-          <Skeleton width="100%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
-          <Skeleton width="100%" height={36} borderRadius={12} style={{ marginTop: 12 }} />
-        </View>
+    <View style={[styles.card, { width: CARD_WIDTH, backgroundColor: colors.surface }]}>
+      <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
+      <View style={styles.skeletonBody}>
+        <Skeleton width="88%" height={15} borderRadius={6} />
+        <Skeleton width="58%" height={13} borderRadius={6} />
+        <Skeleton width="100%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
+        <Skeleton width={90} height={14} borderRadius={6} style={{ marginTop: 10 }} />
       </View>
     </View>
   );
@@ -72,19 +57,14 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
     });
   }, [data]);
 
-  const sectionHeaderProps = {
-    eyebrow: SECTION_EYEBROW,
-    title: SECTION_TITLE,
-    subtitle: SECTION_SUBTITLE,
-    accentColor: CultureTokens.coral,
-    seeAllLabel: 'Explore',
-  } as const;
-
   if (errorMessage && !isLoading && data.length === 0) {
     return (
       <View style={[styles.container, { marginBottom: vPad }]}>
         <View style={headerPadStyle}>
-          <SectionHeader {...sectionHeaderProps} />
+          <SectionHeader
+            title="Featured Artists"
+            subtitle="Creators shaping the sound and spirit of your city"
+          />
         </View>
         <RailErrorBanner message={errorMessage} onRetry={onRetry} />
       </View>
@@ -133,7 +113,11 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
   return (
     <View style={[styles.container, { marginBottom: vPad }]}>
       <View style={headerPadStyle}>
-        <SectionHeader {...sectionHeaderProps} onSeeAll={seeAllExplore} />
+        <SectionHeader
+          title="Featured Artists"
+          subtitle="Creators shaping the sound and spirit of your city"
+          onSeeAll={seeAllExplore}
+        />
       </View>
       <FlatList<DiscoverArtistHighlight | string>
         horizontal
@@ -146,68 +130,38 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
             <Pressable
               onPress={() => handlePress(item)}
               accessibilityRole="button"
-              accessibilityHint={
-                item.route.type === 'artist'
-                  ? 'Opens the artist profile.'
-                  : 'Opens Explore with filters for this theme.'
-              }
-              accessibilityLabel={`${item.name}. ${item.subtitle}. ${item.meta}`}
+              accessibilityLabel={`${item.name}. ${item.ctaLabel}`}
               style={({ pressed }) => [
                 styles.card,
-                {
-                  width: CARD_WIDTH,
-                  backgroundColor: colors.surface,
-                  borderColor: colors.borderLight,
-                },
-                pressed && { opacity: 0.94 },
+                { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
+                pressed && { opacity: 0.92 },
                 Platform.OS === 'web' && { cursor: 'pointer' as const },
                 Colors.shadows.medium,
               ]}
             >
-              <View style={[styles.accentRail, { backgroundColor: item.accentColor }]} />
-              <View style={styles.cardMain}>
-                <View style={styles.imageBlock}>
-                  <Image
-                    source={item.imageUrl ? { uri: item.imageUrl } : undefined}
-                    style={[styles.cardImage, { backgroundColor: colors.backgroundSecondary }]}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.55)']}
-                    style={StyleSheet.absoluteFillObject}
-                    pointerEvents="none"
-                  />
-                  <View style={styles.imageBadge}>
-                    <Ionicons name="star" size={11} color="#fff" />
-                    <Text style={styles.imageBadgeText}>Pick</Text>
-                  </View>
-                </View>
-                <View style={styles.cardBody}>
-                  <Text style={[styles.artistName, { color: colors.text }]} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  <View style={styles.roleRow}>
-                    <Ionicons name="mic-outline" size={14} color={item.accentColor} />
-                    <Text style={[styles.artistSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {item.subtitle}
-                    </Text>
-                  </View>
+              <View style={[styles.accentTopBar, { backgroundColor: item.accentColor }]} />
+              <Image
+                source={item.imageUrl ? { uri: item.imageUrl } : undefined}
+                style={[styles.cardImage, { height: IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
+                contentFit="cover"
+                transition={200}
+              />
+              <View style={styles.cardBody}>
+                <Text style={[styles.artistName, { color: colors.text }]} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.artistSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.subtitle}
+                </Text>
+                <View style={styles.metaRow}>
+                  <Ionicons name="sparkles" size={13} color={CultureTokens.gold} />
                   <Text style={[styles.artistMeta, { color: colors.textTertiary }]} numberOfLines={2}>
                     {item.meta}
                   </Text>
-                  <View
-                    style={[
-                      styles.ctaPill,
-                      {
-                        backgroundColor: withAlpha(item.accentColor, 0.14),
-                        borderColor: withAlpha(item.accentColor, 0.35),
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.ctaPillText, { color: item.accentColor }]}>{item.ctaLabel}</Text>
-                    <Ionicons name="arrow-forward" size={15} color={item.accentColor} />
-                  </View>
+                </View>
+                <View style={[styles.ctaRow, { borderTopColor: colors.borderLight }]}>
+                  <Text style={[styles.ctaText, { color: item.accentColor }]}>{item.ctaLabel}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={item.accentColor} />
                 </View>
               </View>
             </Pressable>
@@ -227,52 +181,22 @@ function FeaturedArtistRailComponent({ data, isLoading, errorMessage, onRetry }:
 const styles = StyleSheet.create({
   container: { paddingTop: 2 },
   card: {
-    flexDirection: 'row',
     borderRadius: CardTokens.radius,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
   },
-  accentRail: {
-    width: 4,
-    alignSelf: 'stretch',
-  },
-  cardMain: {
-    flex: 1,
-    minWidth: 0,
-  },
-  imageBlock: {
+  accentTopBar: {
     width: '100%',
-    height: IMAGE_HEIGHT,
-    position: 'relative',
+    height: 4,
   },
   cardImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  imageBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  imageBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: 0.6,
+    width: '100%',
   },
   cardBody: {
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 14,
-    gap: 6,
+    gap: 5,
   },
   skeletonBody: {
     padding: 14,
@@ -285,37 +209,35 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     letterSpacing: -0.2,
   },
-  roleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   artistSubtitle: {
-    flex: 1,
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
     lineHeight: 18,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 4,
+  },
   artistMeta: {
+    flex: 1,
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
     lineHeight: 17,
   },
-  ctaPill: {
+  ctaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  ctaPillText: {
+  ctaText: {
     fontSize: 13,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: 0.15,
-    flex: 1,
+    letterSpacing: 0.2,
   },
 });
 

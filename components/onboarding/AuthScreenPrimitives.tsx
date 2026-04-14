@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CultureTokens,
   gradients,
+  CardTokens,
   shadows,
   Spacing,
   IconSize,

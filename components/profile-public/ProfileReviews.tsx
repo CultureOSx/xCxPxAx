@@ -2,7 +2,7 @@ import React from 'react';
 import { useColors } from '@/hooks/useColors';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontFamily } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import type { Review } from '@/shared/schema';
 
 interface ProfileReviewsProps {
@@ -64,7 +64,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
     color: Colors.text,
     marginBottom: 10,
   },
@@ -92,18 +92,18 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   reviewerName: {
     fontSize: 14,
-    fontFamily: FontFamily.semibold,
+    fontFamily: 'Poppins_600SemiBold',
     color: Colors.text,
   },
   miniStars: { flexDirection: 'row', gap: 1 },
   reviewDate: {
     fontSize: 11,
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     color: Colors.textTertiary,
   },
   reviewBody: {
     fontSize: 13,
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     color: Colors.textSecondary,
     lineHeight: 20,
   },

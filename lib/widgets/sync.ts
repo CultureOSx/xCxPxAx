@@ -42,7 +42,6 @@ export function syncCultureWidgetSnapshots(payload: CultureWidgetSnapshotPayload
   widgets.CultureNearYouWidget.updateSnapshot({
     locationLabel: [payload.city, payload.country].filter(Boolean).join(', ') || 'Your area',
     events: payload.nearby.slice(0, 3).map((event) => ({
-      id: event.id,
       title: event.title,
       startsAt: formatEventDate(event.date, event.time),
     })),
@@ -67,15 +66,6 @@ export function syncCultureWidgetSnapshots(payload: CultureWidgetSnapshotPayload
       venue: upcomingEvent?.venue ?? ticket.eventVenue ?? 'Venue TBA',
       ticketCode: ticket.ticketCode,
       status: ticket.status,
-    });
-  } else {
-    widgets.CultureUpcomingTicketWidget.updateSnapshot({
-      eventTitle: '',
-      eventDate: '',
-      eventTime: undefined,
-      venue: undefined,
-      ticketCode: undefined,
-      status: 'empty',
     });
   }
 }

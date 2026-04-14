@@ -10,9 +10,25 @@ const soon = (days: number) => {
 };
 const nowTs = new Date().toISOString();
 
-// Local / emulator seed only — no third-party stock or avatar URLs (use empty; app shows gradients).
-const getRandomImage = () => '';
-const getAvatar = (_idx: number) => '';
+// Diverse Unsplash Image Set for various events & avatars
+const IMAGES = [
+  'https://images.unsplash.com/photo-1598300056393-4aac492f4344?w=800',
+  'https://images.unsplash.com/photo-1606298855672-3efb63017be8?w=800',
+  'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800',
+  'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800',
+  'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800',
+  'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=800',
+  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+  'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800',
+  'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=800',
+  'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800',
+  'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800',
+  'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800',
+  'https://images.unsplash.com/photo-1545213156-d8e7c7a84e31?w=800',
+];
+
+const getRandomImage = () => IMAGES[Math.floor(Math.random() * IMAGES.length)];
+const getAvatar = (idx: number) => `https://i.pravatar.cc/300?img=${idx}`;
 
 // Data Generation
 const USERS = Array.from({ length: 10 }).map((_, i) => ({

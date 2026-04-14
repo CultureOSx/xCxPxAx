@@ -4,51 +4,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens, FontFamily, FontSize, LineHeight } from '@/constants/theme';
-import { DISCOVER_TOKENS } from '@/components/Discover/tokens';
 
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;
-  /** Small caps label above the title (e.g. SPOTLIGHT, LISTEN). */
-  eyebrow?: string;
   accentColor?: string;
   onSeeAll?: () => void;
-  /** Override default “See all” (e.g. “Browse artists”). */
-  seeAllLabel?: string;
 }
 
-function SectionHeader({
-  title,
-  subtitle,
-  eyebrow,
-  accentColor,
-  onSeeAll,
-  seeAllLabel,
-}: SectionHeaderProps) {
+function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeaderProps) {
   const colors = useColors();
   const accent = accentColor ?? CultureTokens.indigo;
-  const gradientEnd = accent === CultureTokens.indigo ? CultureTokens.teal : CultureTokens.indigo;
 
   return (
     <View style={styles.wrap}>
+      {/* Gradient accent bar — "Vibrant & Block-based" visual identity */}
       <LinearGradient
-        colors={[accent, gradientEnd]}
+        colors={[accent, accent === CultureTokens.indigo ? CultureTokens.teal : CultureTokens.indigo]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.accentBar}
       />
 
       <View style={styles.textBlock}>
-        {eyebrow ? (
-          <Text
-            style={[styles.eyebrow, { color: accent }]}
-            maxFontSizeMultiplier={1.4}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          >
-            {eyebrow.toUpperCase()}
-          </Text>
-        ) : null}
         <Text style={[styles.title, { color: colors.text }]} maxFontSizeMultiplier={1.6}>
           {title}
         </Text>
@@ -65,9 +43,9 @@ function SectionHeader({
           onPress={onSeeAll}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel={`${seeAllLabel ?? 'See all'} — ${title}`}
+          accessibilityLabel={`See all ${title}`}
         >
-          <Text style={[styles.seeAllText, { color: accent }]}>{seeAllLabel ?? 'See all'}</Text>
+          <Text style={[styles.seeAllText, { color: accent }]}>See all</Text>
           <Ionicons name="chevron-forward" size={13} color={accent} />
         </Pressable>
       )}
@@ -79,24 +57,16 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: DISCOVER_TOKENS.sectionHeader.bottomSpacing,
-    gap: DISCOVER_TOKENS.sectionHeader.rowGap,
+    marginBottom: 16,
+    gap: 14,
   },
   accentBar: {
-    width: DISCOVER_TOKENS.sectionHeader.accentWidth,
-    height: DISCOVER_TOKENS.sectionHeader.accentHeight,
-    borderRadius: DISCOVER_TOKENS.sectionHeader.accentRadius,
+    width: 4,
+    height: 42,
+    borderRadius: 3,
     flexShrink: 0,
   },
-  textBlock: { flex: 1, gap: DISCOVER_TOKENS.sectionHeader.subtitleGap },
-  eyebrow: {
-    fontSize: 10,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 1.4,
-    lineHeight: 14,
-    opacity: 0.92,
-    marginBottom: 1,
-  },
+  textBlock: { flex: 1, gap: 3 },
   title: {
     fontSize: FontSize.title3,
     fontFamily: FontFamily.bold,
@@ -106,17 +76,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: FontSize.chip,
     fontFamily: FontFamily.regular,
-    lineHeight: LineHeight.chip + 2,
+    lineHeight: LineHeight.chip,
+    opacity: 0.75,
   },
   seeAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: DISCOVER_TOKENS.sectionHeader.actionGap,
-    paddingVertical: DISCOVER_TOKENS.sectionHeader.actionPaddingY,
-    paddingLeft: DISCOVER_TOKENS.sectionHeader.actionPaddingLeft,
-    paddingRight: DISCOVER_TOKENS.sectionHeader.actionPaddingRight,
+    gap: 2,
+    paddingVertical: 10,
+    paddingLeft: 8,
+    paddingRight: 2,
     flexShrink: 0,
-    minHeight: DISCOVER_TOKENS.sectionHeader.actionMinTouch,
+    minHeight: 44,
   },
   seeAllText: {
     fontSize: FontSize.chip,

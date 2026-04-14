@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useQuery } from "@tanstack/react-query";
 import { CultureTokens } from "@/constants/theme";
 import SocialLinksBar from "@/components/SocialLinksBar";
@@ -245,6 +246,7 @@ export default function VenueDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
               >
+                <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="chevron-back" size={24} color="white" />
               </Pressable>
               <View style={{ flexDirection: "row", gap: 10 }}>
@@ -257,6 +259,7 @@ export default function VenueDetailScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Share venue"
                 >
+                  <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                   <Ionicons name="share-outline" size={22} color="white" />
                 </Pressable>
                 {profile.address && (
@@ -269,6 +272,7 @@ export default function VenueDetailScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Get directions"
                   >
+                    <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                     <Ionicons name="navigate" size={22} color="white" />
                   </Pressable>
                 )}

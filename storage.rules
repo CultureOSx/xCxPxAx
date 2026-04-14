@@ -1,15 +1,23 @@
 rules_version = '2';
 
 /**
- * CulturePass — Firebase Storage Rules
+ * CulturePass AU — Firebase Storage Rules
  *
- * Writes validate image type + size on create/update only (request.resource).
- * Deletes use the same ownership checks without touching request.resource.
+ * Bucket layout:
+ *   avatars/{userId}/{filename}      — user profile photos
+ *   events/{eventId}/{filename}      — event banner images
+ *   profiles/{profileId}/{filename}  — community/business/venue images
+ *   uploads/{userId}/{filename}      — general user uploads (temp staging)
+ *
+ * All writes flow through the Cloud Functions upload endpoint which uses
+ * the Admin SDK — those bypass these rules.
+ * Direct client uploads are allowed only for avatars (own user folder).
  */
 
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // ── Helpers ─────────────────────────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
@@ -18,125 +26,34 @@ service firebase.storage {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    function role() {
-      return isSignedIn() && request.auth.token.role is string
-        ? request.auth.token.role
-        : '';
-    }
-
-    function isAdminLike() {
-      return role() in ['admin', 'platformAdmin', 'cityAdmin', 'moderator', 'superAdmin'];
-    }
-
-    function isOrganizerLike() {
-      return role() in ['organizer', 'business', 'sponsor', 'admin', 'platformAdmin', 'cityAdmin', 'superAdmin'];
-    }
-
-    function isValidImage() {
-      return request.resource.contentType.matches('image/.*');
-    }
-
-    function underMB(mb) {
-      return request.resource.size < mb * 1024 * 1024
-        && request.resource.size > 0;
-    }
-
-    function firestoreEventOrganizer(eventId) {
-      return firestore.exists(/databases/(default)/documents/events/$(eventId))
-        && firestore.get(/databases/(default)/documents/events/$(eventId)).data.organizerId == request.auth.uid;
-    }
-
-    function canAccessEventPath(eventId) {
-      return isOrganizerLike()
-        && (request.auth.uid == eventId || firestoreEventOrganizer(eventId) || isAdminLike());
-    }
-
-    function firestoreProfileOwner(profileId) {
-      return firestore.exists(/databases/(default)/documents/profiles/$(profileId))
-        && firestore.get(/databases/(default)/documents/profiles/$(profileId)).data.ownerId == request.auth.uid;
-    }
-
-    function canAccessProfilePath(profileId) {
-      return isOrganizerLike()
-        && (firestoreProfileOwner(profileId) || isAdminLike());
-    }
-
-    // ── Events ─────────────────────────────────────────────────────────────
-    match /events/{eventId}/{allPaths=**} {
+    // ── Public reads — event and profile images are public ──────────────────
+    match /events/{uploaderId}/{filename} {
       allow read: if true;
-      allow create, update: if canAccessEventPath(eventId)
-        && underMB(10)
-        && isValidImage();
-      allow delete: if canAccessEventPath(eventId);
+      allow write: if isOwner(uploaderId)
+                   && request.resource.size < 10 * 1024 * 1024  // max 10 MB
+                   && request.resource.contentType.matches('image/.*');
     }
 
-    // ── Profiles ───────────────────────────────────────────────────────────
-    match /profiles/{profileId}/{allPaths=**} {
+    match /profiles/{profileId}/{filename} {
       allow read: if true;
-      allow create, update: if canAccessProfilePath(profileId)
-        && underMB(10)
-        && isValidImage();
-      allow delete: if canAccessProfilePath(profileId);
+      allow write: if false; // Cloud Functions only
     }
 
-    // ── Communities (Firestore: profiles/{id}) ────────────────────────────
-    match /communities/{communityId}/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if canAccessProfilePath(communityId)
-        && underMB(10)
-        && isValidImage();
-      allow delete: if canAccessProfilePath(communityId);
-    }
-
-    // ── User avatars ───────────────────────────────────────────────────────
-    match /users/{userId}/{filename} {
-      allow read: if true;
-      allow create, update: if isOwner(userId)
-        && underMB(5)
-        && isValidImage();
-      allow delete: if isOwner(userId);
-    }
-
+    // ── Avatar uploads — user can write to their own folder ─────────────────
     match /avatars/{userId}/{filename} {
-      allow read: if true;
-      allow create, update: if isOwner(userId)
-        && underMB(5)
-        && isValidImage();
-      allow delete: if isOwner(userId);
+      allow read:  if true;
+      allow write: if isOwner(userId)
+                   && request.resource.size < 5 * 1024 * 1024   // max 5 MB
+                   && request.resource.contentType.matches('image/.*');
     }
 
-    // ── Feed post images ───────────────────────────────────────────────────
-    match /posts/{userId}/{filename} {
-      allow read: if true;
-      allow create, update: if isOwner(userId)
-        && underMB(10)
-        && isValidImage();
-      allow delete: if isOwner(userId);
-    }
-
-    // ── Admin-managed ──────────────────────────────────────────────────────
-    match /perks/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if isAdminLike()
-        && underMB(10)
-        && isValidImage();
-      allow delete: if isAdminLike();
-    }
-
-    match /featuredCities/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if isAdminLike()
-        && underMB(10)
-        && isValidImage();
-      allow delete: if isAdminLike();
-    }
-
-    // ── Cloud Functions staging — Admin SDK only ───────────────────────────
+    // ── User uploads (Cloud Functions — public URLs for listing images) ────
     match /uploads/{userId}/{filename} {
-      allow read: if true;
-      allow write: if false;
+      allow read:  if true;
+      allow write: if false; // Admin SDK / Cloud Functions only
     }
 
+    // ── Deny everything else ────────────────────────────────────────────────
     match /{allPaths=**} {
       allow read, write: if false;
     }

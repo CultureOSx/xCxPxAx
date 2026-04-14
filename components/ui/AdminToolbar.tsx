@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue, 
   withSpring,
 } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -85,7 +86,7 @@ function ToolbarAction({
  * AdminToolbar — World-class overlay for high-privilege event management.
  * Provides instant access to critical moderation tools from within the detail view.
  * 
- * DESIGN: Solid elevated dark bar
+ * DESIGN: Liquid Glass (Dark Tint)
  * ANIMATION: Reanimated 4 Slide-in
  */
 export function AdminToolbar({ onDelete, onToggleFeatured, isFeatured, onClose }: AdminToolbarProps) {
@@ -107,7 +108,7 @@ export function AdminToolbar({ onDelete, onToggleFeatured, isFeatured, onClose }
         }
       ]}
     >
-      <View style={[styles.blur, { backgroundColor: '#1C1D28' }]}>
+      <BlurView intensity={Platform.OS === 'ios' ? 80 : 100} tint="dark" style={styles.blur}>
         <View style={styles.inner}>
           <View style={styles.labelGroup}>
             <View style={[styles.adminIndicator, { backgroundColor: colors.success }]} />
@@ -151,7 +152,7 @@ export function AdminToolbar({ onDelete, onToggleFeatured, isFeatured, onClose }
             </Pressable>
           </View>
         </View>
-      </View>
+      </BlurView>
     </Animated.View>
   );
 }

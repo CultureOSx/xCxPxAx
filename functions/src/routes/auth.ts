@@ -12,8 +12,6 @@ import { requireAuth } from '../middleware/auth';
 import { nowIso, generateSecureId, parseBody,
   captureRouteError,
 } from './utils';
-import { enqueueTransactionalEmail } from '../services/emailQueue';
-import { buildWelcomeEmail } from '../services/emailTemplates';
 
 export const authRouter = Router();
 
@@ -69,28 +67,6 @@ async function materializeUserDocument(
       username: profile.username,
     }),
   ]);
-
-  if (reqUser.email) {
-    const appUrl = (process.env.APP_URL ?? 'https://culturepass.app').trim().replace(/\/+$/, '');
-    const welcomeEmail = buildWelcomeEmail({
-      displayName: String(profile.displayName ?? reqUser.username ?? 'there'),
-      role: requestedRole,
-      appUrl,
-    });
-    enqueueTransactionalEmail({
-      to: reqUser.email,
-      subject: welcomeEmail.subject,
-      html: welcomeEmail.html,
-      text: welcomeEmail.text,
-      metadata: {
-        template: 'welcome',
-        userId: uid,
-      },
-    }).catch((emailErr) => {
-      captureRouteError(emailErr, 'auth/register/welcome-email');
-    });
-  }
-
   return { id: uid, ...profile };
 }
 

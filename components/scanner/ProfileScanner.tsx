@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
@@ -43,7 +44,7 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
       if (onSuccess) onSuccess(targetId);
       onClose();
     } catch (err) {
-      if (__DEV__) console.error('Failed to follow user:', err);
+      console.error('Failed to follow user:', err);
       // Reset after 2 seconds to allow another scan
       setTimeout(() => {
         setScanned(false);
@@ -67,14 +68,14 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
 
         {/* Overlay */}
         <View style={styles.overlay}>
-          <View style={[styles.header, { backgroundColor: 'rgba(0,0,0,0.72)' }]}>
+          <BlurView intensity={30} tint="dark" style={styles.header}>
             <View style={styles.headerContent}>
               <Text style={styles.title}>Scan Identity</Text>
-              <Pressable style={styles.closeBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close scanner">
+              <Pressable style={styles.closeBtn} onPress={onClose}>
                 <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
-          </View>
+          </BlurView>
 
           <View style={styles.finderContainer}>
             <View style={styles.finder}>
@@ -87,10 +88,10 @@ export function ProfileScanner({ visible, onClose, onSuccess }: ProfileScannerPr
           </View>
 
           {processing && (
-            <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0,0,0,0.82)' }]}>
+            <BlurView intensity={80} tint="dark" style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color={CultureTokens.teal} />
               <Text style={styles.loadingText}>Saving contact...</Text>
-            </View>
+            </BlurView>
           )}
         </View>
       </View>

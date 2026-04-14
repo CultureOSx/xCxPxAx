@@ -2,64 +2,8 @@ import { Alert, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { routeWithRedirect } from '@/lib/routes';
-import type { EventData, Profile } from '@/shared/schema';
 
 export const isWeb = Platform.OS === 'web';
-
-export interface ResolvedEventOrganizer {
-  name: string;
-  profileId: string | null;
-  imageUrl: string | null;
-  email: string | null;
-  phone: string | null;
-  website: string | null;
-  presentedBy: string;
-}
-
-function firstNonEmpty(...values: (string | null | undefined)[]): string | null {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim().length > 0) return value.trim();
-  }
-  return null;
-}
-
-export function resolveEventOrganizer(
-  event: EventData,
-  publisherProfile?: Pick<Profile, 'id' | 'name' | 'imageUrl' | 'avatarUrl'> | null,
-): ResolvedEventOrganizer {
-  const name = firstNonEmpty(
-    event.hostInfo?.name,
-    event.hostName,
-    publisherProfile?.name,
-    'CulturePass host',
-  )!;
-  const presentedByRaw = (event as unknown as Record<string, unknown>).presentedBy;
-  const presentedBy = firstNonEmpty(
-    typeof presentedByRaw === 'string' ? presentedByRaw : null,
-    publisherProfile?.name,
-    name,
-  )!;
-
-  return {
-    name,
-    profileId: firstNonEmpty(event.publisherProfileId, publisherProfile?.id) ?? null,
-    imageUrl: firstNonEmpty(publisherProfile?.imageUrl, publisherProfile?.avatarUrl) ?? null,
-    email: firstNonEmpty(event.hostInfo?.contactEmail, event.hostEmail) ?? null,
-    phone: firstNonEmpty(event.hostInfo?.contactPhone, event.hostPhone) ?? null,
-    website: firstNonEmpty(event.hostInfo?.websiteUrl) ?? null,
-    presentedBy,
-  };
-}
-
-/** Title-case a kebab/snake_case or spaced string. Returns null if falsy. */
-export function startCaseLabel(value?: string | null): string | null {
-  if (!value) return null;
-  return value
-    .replace(/[-_]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
 
 export function safeIcsFilenameBase(title: string): string {
   const t = title.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').trim();
