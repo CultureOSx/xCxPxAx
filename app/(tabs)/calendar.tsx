@@ -20,6 +20,7 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useSaved } from '@/contexts/SavedContext';
 import { api } from '@/lib/api';
 import { useEventsList } from '@/hooks/queries/useEvents';
 import { ticketKeys } from '@/hooks/queries/keys';
@@ -37,7 +38,7 @@ import type { EventData, Ticket } from '@/shared/schema';
 
 const IS_WEB = Platform.OS === 'web';
 
-type CalendarFilter = 'All' | 'Today' | 'This Week' | 'My Tickets' | 'Free' | 'Council';
+type CalendarFilter = 'All' | 'Today' | 'This Week' | 'My Tickets' | 'Interested' | 'Free' | 'Council';
 
 function toDateFromKey(key: string): Date {
   return new Date(`${key}T00:00:00`);
@@ -48,6 +49,7 @@ export default function CalendarScreen() {
   const colors = useColors();
   const { isDesktop, isTablet, width, hPad } = useLayout();
   const { user, userId, isAuthenticated } = useAuth();
+  const { savedEvents } = useSaved();
   const { state: onboarding } = useOnboarding();
   const bottomInset = IS_WEB ? 0 : insets.bottom;
   const isDesktopWeb = IS_WEB && isDesktop;
@@ -115,13 +117,15 @@ export default function CalendarScreen() {
           return isAuthenticated && ticketedEventIds.has(event.id);
         case 'Free':
           return (event.priceCents ?? 0) === 0;
+        case 'Interested':
+          return savedEvents.includes(event.id);
         case 'Council':
           return Boolean(event.councilId) || event.category?.toLowerCase() === 'civic' || event.category?.toLowerCase() === 'council';
         default:
           return true;
       }
     });
-  }, [allEvents, activeFilter, isAuthenticated, ticketedEventIds]);
+  }, [allEvents, activeFilter, isAuthenticated, ticketedEventIds, savedEvents]);
 
   const eventsInCurrentMonth = useMemo(() => {
     return filteredEvents.filter((event) => {
@@ -192,6 +196,29 @@ export default function CalendarScreen() {
       .slice(0, 10);
   }, [filteredEvents]);
 
+  const reminderEvents = useMemo(() => {
+    const now = Date.now();
+    const within48h = now + 48 * 60 * 60 * 1000;
+    return filteredEvents
+      .map((event) => {
+        const dateMs = Date.parse(`${event.date}T${event.time ?? '00:00'}:00`);
+        return { event, dateMs };
+      })
+      .filter((item) => Number.isFinite(item.dateMs) && item.dateMs >= now && item.dateMs <= within48h)
+      .sort((a, b) => a.dateMs - b.dateMs)
+      .slice(0, 5)
+      .map((item) => item.event);
+  }, [filteredEvents]);
+
+  const conflictEvents = useMemo(() => {
+    const keyed = filteredEvents
+      .map((event) => ({ event, key: `${event.date}|${event.time ?? '00:00'}` }))
+      .filter((entry) => entry.event.date);
+    const counts = new Map<string, number>();
+    keyed.forEach((entry) => counts.set(entry.key, (counts.get(entry.key) ?? 0) + 1));
+    return keyed.filter((entry) => (counts.get(entry.key) ?? 0) > 1).map((entry) => entry.event).slice(0, 4);
+  }, [filteredEvents]);
+
   const monthDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const first = getFirstDayOfMonth(currentYear, currentMonth);
@@ -249,6 +276,7 @@ export default function CalendarScreen() {
         { id: 'Today', label: 'Today', icon: 'today-outline' },
         { id: 'This Week', label: 'Week', icon: 'calendar-number-outline' },
         ...(isAuthenticated ? [{ id: 'My Tickets', label: 'Tickets', icon: 'ticket-outline' }] : []),
+        { id: 'Interested', label: 'Interested', icon: 'heart-outline' },
         { id: 'Free', label: 'Free', icon: 'pricetag-outline' },
         { id: 'Council', label: 'Council', icon: 'business-outline' },
       ] as { id: CalendarFilter; label: string; icon: keyof typeof Ionicons.glyphMap }[],
@@ -555,6 +583,34 @@ export default function CalendarScreen() {
 
             <View style={isDesktopWeb ? styles.rightCol : undefined}>
               <View style={[styles.section, { paddingHorizontal: hPad }]}>
+                {(reminderEvents.length > 0 || conflictEvents.length > 0) && (
+                  <View style={[styles.agendaInsights, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                    {reminderEvents.length > 0 && (
+                      <View style={styles.agendaInsightBlock}>
+                        <View style={styles.agendaInsightHeader}>
+                          <Ionicons name="notifications-outline" size={14} color={CultureTokens.indigo} />
+                          <Text style={[styles.agendaInsightTitle, { color: colors.text }]}>Reminders</Text>
+                        </View>
+                        <Text style={[styles.agendaInsightBody, { color: colors.textSecondary }]} numberOfLines={2}>
+                          {reminderEvents[0]?.title}
+                          {reminderEvents.length > 1 ? ` +${reminderEvents.length - 1} more in 48h` : ' within 48h'}
+                        </Text>
+                      </View>
+                    )}
+                    {conflictEvents.length > 0 && (
+                      <View style={styles.agendaInsightBlock}>
+                        <View style={styles.agendaInsightHeader}>
+                          <Ionicons name="alert-circle-outline" size={14} color={CultureTokens.coral} />
+                          <Text style={[styles.agendaInsightTitle, { color: colors.text }]}>Conflicts</Text>
+                        </View>
+                        <Text style={[styles.agendaInsightBody, { color: colors.textSecondary }]} numberOfLines={2}>
+                          {conflictEvents.length} overlapping events detected
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
                 <View style={styles.sectionRow}>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming</Text>
                   <Pressable onPress={() => router.push('/events')} accessibilityRole="link">
@@ -679,6 +735,30 @@ const styles = StyleSheet.create({
   dot: { width: 5, height: 5, borderRadius: 3 },
 
   section: { paddingTop: MAIN_TAB_UI.sectionGapLarge },
+  agendaInsights: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 10,
+    gap: 10,
+    marginBottom: 12,
+  },
+  agendaInsightBlock: {
+    gap: 4,
+  },
+  agendaInsightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  agendaInsightTitle: {
+    ...TextStyles.captionSemibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  agendaInsightBody: {
+    ...TextStyles.caption,
+    lineHeight: 17,
+  },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 },
   sectionTitle: { flex: 1, ...TextStyles.headline, lineHeight: 22 },
   sectionCount: { ...TextStyles.chip },

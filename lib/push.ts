@@ -75,7 +75,24 @@ export async function registerForPushNotificationsAsync() {
   let token;
 
   if (Platform.OS === 'web') {
-    return null;
+    const vapidKey = process.env.EXPO_PUBLIC_FCM_VAPID_KEY;
+    if (!vapidKey) return null;
+    try {
+      const { getMessaging, getToken } = await import('firebase/messaging');
+      const { firebaseApp } = await import('./firebase');
+      const messaging = getMessaging(firebaseApp);
+      const fcmToken = await getToken(messaging, { vapidKey });
+      if (fcmToken) {
+        try {
+          const me = await api.auth.me();
+          if (me?.id) await api.users.update(me.id, { pushToken: fcmToken } as any);
+        } catch {}
+      }
+      return fcmToken;
+    } catch (e) {
+      if (__DEV__) console.warn('[push] Web push registration failed:', e);
+      return null;
+    }
   }
 
   if (Device.isDevice) {

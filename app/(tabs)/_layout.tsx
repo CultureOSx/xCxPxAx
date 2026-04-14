@@ -28,7 +28,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Discover',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
       />
@@ -36,7 +36,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Events',
+          title: 'Calendar',
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
       />
@@ -60,7 +60,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="perks"
         options={{
-          title: 'Perks',
+          title: 'Wallet',
           tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
         }}
       />

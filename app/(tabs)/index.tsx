@@ -26,11 +26,13 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
+import { discoverFeature } from '@/features';
 import { CategoryColors, CultureTokens } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
 import type { EventData, Community } from '@/shared/schema';
@@ -40,6 +42,7 @@ import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
 import { SuperAppLinks } from '@/components/Discover/SuperAppLinks';
 import { HeroCarousel } from '@/components/Discover/HeroCarousel';
 import { EventRail } from '@/components/Discover/EventRail';
+import { CultureCardRail } from '@/components/Discover/CultureCardRail';
 import { CommunityRail } from '@/components/Discover/CommunityRail';
 import { ActivityRail } from '@/components/Discover/ActivityRail';
 import { FeaturedArtistRail } from '@/components/Discover/FeaturedArtistRail';
@@ -111,6 +114,17 @@ export default function DiscoverScreen() {
 
   const d = useDiscoverData();
   const s = useKeralaScoping(keralaDomain, d);
+  const { data: discoverFeatureFeed } = useQuery({
+    queryKey: ['feature-discover-feed', d.userId ?? 'guest', d.state.city, d.state.country],
+    queryFn: () =>
+      discoverFeature.getDiscoverFeatureFeed({
+        userId: d.userId ?? 'guest',
+        city: d.state.city || undefined,
+        country: d.state.country || undefined,
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const recommendedFromFeature = discoverFeatureFeed?.rankedEvents.map((entry) => entry.event).slice(0, 8) ?? [];
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
@@ -143,6 +157,26 @@ export default function DiscoverScreen() {
 
       {/* ② Search (removed) */}
 
+
+      {/* ③ Starting Soon — always visible */}
+      {recommendedFromFeature.length > 0 && (
+        <EventRail
+          title="Recommended For You"
+          subtitle="Ranked by quality, trust, and cultural fit"
+          data={recommendedFromFeature}
+          onSeeAll={() => router.push('/events')}
+          isLoading={d.discoverLoading}
+        />
+      )}
+
+      {d.adaptiveCultureRails.map((rail) => (
+        <CultureCardRail
+          key={rail.id}
+          title={rail.title}
+          subtitle={rail.subtitle}
+          items={rail.items}
+        />
+      ))}
 
       {/* ③ Starting Soon — always visible */}
       <EventRail

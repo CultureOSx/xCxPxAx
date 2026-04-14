@@ -172,6 +172,37 @@ export const CardTokens = {
 } as const;
 
 /**
+ * Unified card grammar for marketplace surfaces.
+ * Structure order: image -> metadata -> trust chips -> primary CTA.
+ */
+export const CardGrammarTokens = {
+  width: 248,
+  imageHeight: 140,
+  radius: CardTokens.radius,
+  borderWidth: 1,
+  contentGap: 6,
+  contentPadding: 12,
+  trustChipRadius: 999,
+} as const;
+
+/**
+ * Motion language tokens: subtle depth, no decorative bounce.
+ */
+export const MotionTokens = {
+  pressScale: 0.985,
+  hoverScale: 1.01,
+  transitionMs: 180,
+} as const;
+
+/**
+ * Accessibility baseline tokens.
+ */
+export const AccessibilityTokens = {
+  minTapTarget: 44,
+  minButtonHeight: ButtonTokens.height.md,
+} as const;
+
+/**
  * Input component tokens.
  * Text inputs, search bars, dropdowns.
  */

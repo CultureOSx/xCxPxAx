@@ -5,6 +5,7 @@ import { isFirestoreConfigured } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
 import { searchService } from '../services/firestore';
 import { resolveDiscoverCuration } from '../services/discoverCuration';
+import { getDiscoverFeedWithContracts } from '../services/discoverDomain';
 
 export const discoveryRouter = Router();
 
@@ -72,18 +73,20 @@ discoveryRouter.get('/discover/:userId', async (req: Request, res: Response) => 
   }
   
   // Real implementation would use machine learning or complex queries
-  // For now, returning trending events as placeholder
   try {
     if (!isFirestoreConfigured) return res.json({ trendingEvents: [], rankedEvents: [], suggestedCommunities: [] });
-    const dateFrom = String(req.query.dateFrom || new Date().toISOString().split('T')[0]);
-    const result = await searchService.getTrending(20);
-    // filter trending to today only
-    const filtered = result.filter(e => e.date >= dateFrom);
-    
+    const feed = await getDiscoverFeedWithContracts(userId, {
+      userId,
+      city: req.query.city ? String(req.query.city) : undefined,
+      country: req.query.country ? String(req.query.country) : undefined,
+    });
+
     return res.json({
-      trendingEvents: filtered,
-      rankedEvents: [],
-      suggestedCommunities: []
+      meta: feed.meta,
+      trendingEvents: feed.trendingEvents,
+      rankedEvents: feed.rankedEvents.map((item) => item.event),
+      ranking: feed.rankedEvents,
+      suggestedCommunities: feed.suggestedCommunities,
     });
   } catch (err) {
     captureRouteError(err, 'GET /api/discover/:userId');

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useMemo, ReactNode, use
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { captureEventSave } from '@/lib/analytics-funnel';
 
 export type SavedHubBookmark = {
   id: string;
@@ -97,11 +98,15 @@ export function SavedProvider({ children }: { children: ReactNode }) {
 
   const toggleSaveEvent = useCallback((id: string) => {
     setSavedEvents(prev => {
-      const next = prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id];
+      const wasSaved = prev.includes(id);
+      const next = wasSaved ? prev.filter(e => e !== id) : [...prev, id];
       AsyncStorage.setItem(SAVED_EVENTS_KEY, JSON.stringify(next));
+      if (!wasSaved) {
+        captureEventSave(id, userId ?? undefined, 'saved_context');
+      }
       return next;
     });
-  }, []);
+  }, [userId]);
 
   const toggleSaveCommunityBookmark = useCallback((id: string) => {
     setSavedCommunityBookmarks((prev) => {

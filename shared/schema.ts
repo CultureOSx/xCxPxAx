@@ -18,6 +18,8 @@ export * from './schema/admin';
 export * from './schema/council';
 export * from './schema/update';
 export * from './schema/discover';
+export * from './schema/cultureCard';
+export * from './schema/recommendation';
 export * from './schema/feedSection';
 export * from './schema/ingest';
 export * from './schema/shopping';

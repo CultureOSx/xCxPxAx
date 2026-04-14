@@ -1,23 +1,17 @@
-import { renderHook, act } from '@testing-library/react-native';
-import { Alert, Platform, Linking } from 'react-native';
-import { EventData } from '@/shared/schema';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { Alert, Linking, Platform } from 'react-native';
+import type { EventData } from '@/shared/schema';
 
-// We must mock expo-calendar via jest.mock as the code does require('expo-calendar') inside a try-catch
 const mockExpoCalendar = {
-  requestCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
-  getCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
-  getCalendarsAsync: jest.fn(),
-  getEventsAsync: jest.fn(),
-  createEventAsync: jest.fn(),
+  requestCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  getCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  getCalendarsAsync: jest.fn(async () => []),
+  getEventsAsync: jest.fn(async () => []),
+  createEventAsync: jest.fn(async () => 'ev-1'),
   EntityTypes: { EVENT: 'event' },
 };
 
-jest.doMock('expo-calendar', () => mockExpoCalendar);
-
-// Need to require hook after doMock so it gets the mocked version
-const { useCalendarSync, parseEventDate, buildICS } = require('../useCalendarSync.native');
-
-// --- Mocks ---
+jest.mock('expo-calendar', () => mockExpoCalendar);
 
 const mockMutateAsync = jest.fn();
 const mockQueryClient = { setQueryData: jest.fn() };
@@ -50,9 +44,14 @@ global.Blob = jest.fn() as unknown as typeof Blob;
 global.URL.createObjectURL = jest.fn(() => 'blob:mock');
 global.URL.revokeObjectURL = jest.fn();
 
+const { useCalendarSync, parseEventDate, buildICS } = require('../useCalendarSync.native');
+
 describe('useCalendarSync.native', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    jest.spyOn(Linking, 'openSettings').mockImplementation(async () => undefined);
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => 'ios' });
   });
 
   describe('parseEventDate', () => {

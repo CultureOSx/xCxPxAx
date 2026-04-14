@@ -74,6 +74,18 @@ export function toICSTimestamp(value: Date): string {
   return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
+export function startCaseLabel(str?: string): string {
+  if (!str) return '';
+  return str
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+ 
+export function resolveEventOrganizer(_event?: unknown, _publisherProfile?: unknown): any {
+  return null;
+}
+
 export function buildICS(title: string, start: Date, end: Date, description: string, location: string): string {
   const lines = [
     'BEGIN:VCALENDAR',

@@ -119,7 +119,7 @@ const MAIN_NAV: NavItem[] = [
 ];
 
 const LIBRARY_NAV: NavItem[] = [
-  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
+  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets' },
   { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
   { label: 'All Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
   { label: 'Movies', icon: 'film-outline', iconActive: 'film', route: '/movies', matchPrefix: true },
@@ -250,13 +250,23 @@ export function WebSidebar() {
   const navWithBadge: NavItem[] = MAIN_NAV;
 
   const isActive = (item: NavItem) => {
-    if (item.matchPrefix) return pathname.startsWith(item.route.replace('/(tabs)', ''));
+    const bare = item.route
+      .replace('/(tabs)/', '/')
+      .replace('/(tabs)', '/')
+      .replace(/\/index$/, '');
     if (item.route === '/(tabs)') return pathname === '/' || pathname === '/index' || pathname === '';
-    const bare = item.route.replace('/(tabs)/', '/').replace('/(tabs)', '/');
-    return pathname === bare || pathname.startsWith(bare + '/');
+    if (item.matchPrefix) return pathname === bare || pathname.startsWith(bare + '/');
+    return pathname === bare;
   };
 
-  const navigate = (route: string) => router.navigate(route as Parameters<typeof router.navigate>[0]);
+  const navigate = (route: string) => {
+    const isTabRoute = route.startsWith('/(tabs)');
+    if (isTabRoute) {
+      router.navigate(route as any);
+    } else {
+      router.push(route as any);
+    }
+  };
 
   const bg = colors.surface;
   const border = colors.borderLight;

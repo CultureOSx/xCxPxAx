@@ -155,43 +155,76 @@ async function main(): Promise<void> {
 
   const geoHash = geofire.geohashForLocation([SYDNEY.lat, SYDNEY.lng]);
 
-  for (let i = 1; i <= 5; i += 1) {
+  // Build realistic dates: today, tomorrow, this weekend (Sat & Sun), next week
+  const todayDate = new Date();
+  const dayOfWeek = todayDate.getDay(); // 0=Sun … 6=Sat
+  const daysUntilSat = (6 - dayOfWeek + 7) % 7 || 7;
+  const daysUntilSun = daysUntilSat + 1;
+
+  function addDays(d: Date, n: number): string {
+    const r = new Date(d);
+    r.setDate(r.getDate() + n);
+    return r.toISOString().split('T')[0]!;
+  }
+
+  const todayStr = addDays(todayDate, 0);
+  const tomorrowStr = addDays(todayDate, 1);
+  const saturdayStr = addDays(todayDate, daysUntilSat);
+  const sundayStr = addDays(todayDate, daysUntilSun);
+  const nextWeekStr = addDays(todayDate, 7);
+
+  const EVENTS = [
+    { title: 'Desi Beats Night',          date: todayStr,    time: '19:00', isFree: false, priceCents: 2500, priceLabel: '$25',  category: 'Music',     entryType: 'ticketed',  tags: ['Indian', 'Music', 'Nightlife'], desc: 'Live tabla and electronic fusion at The CAP Hall.' },
+    { title: 'Community Potluck Lunch',    date: tomorrowStr, time: '12:00', isFree: true,  priceCents: 0,    priceLabel: 'Free', category: 'Community', entryType: 'free_open', tags: ['Community', 'Food', 'Family'], desc: 'Bring a dish from your culture. All ages welcome.' },
+    { title: 'Weekend Art Market',         date: saturdayStr, time: '10:00', isFree: true,  priceCents: 0,    priceLabel: 'Free', category: 'Festival',  entryType: 'free_open', tags: ['Art', 'Market', 'Family', 'Shopping'], desc: 'Browse handmade art, crafts, and street food from diaspora creators.' },
+    { title: 'Bollywood Dance Workshop',   date: saturdayStr, time: '14:00', isFree: false, priceCents: 3500, priceLabel: '$35',  category: 'Workshop',  entryType: 'ticketed',  tags: ['Indian', 'Dance', 'Workshop'], desc: 'Learn iconic Bollywood choreography with a professional instructor.' },
+    { title: 'Sunday Cultural Brunch',     date: sundayStr,   time: '11:00', isFree: false, priceCents: 4500, priceLabel: '$45',  category: 'Food',      entryType: 'ticketed',  tags: ['Food', 'Brunch', 'Community'], desc: 'Multi-cultural brunch with live acoustic music.' },
+    { title: 'Korean Film Screening',      date: sundayStr,   time: '18:00', isFree: true,  priceCents: 0,    priceLabel: 'Free', category: 'Film',      entryType: 'free_open', tags: ['Korean', 'Film', 'Free'], desc: 'Free screening of award-winning Korean cinema with subtitles.' },
+    { title: 'Diaspora Networking Mixer',  date: nextWeekStr, time: '18:30', isFree: false, priceCents: 1500, priceLabel: '$15',  category: 'Networking', entryType: 'ticketed', tags: ['Professional', 'Networking', 'Community'], desc: 'Connect with professionals from diverse cultural backgrounds.' },
+    { title: 'Kids Storytelling Hour',     date: saturdayStr, time: '10:30', isFree: true,  priceCents: 0,    priceLabel: 'Free', category: 'Children & Family', entryType: 'free_open', tags: ['Kids', 'Family', 'Children', 'Workshop', 'All Ages'], desc: 'Multicultural stories and craft activities for children 3-10.' },
+  ];
+
+  for (let i = 0; i < EVENTS.length; i += 1) {
+    const e = EVENTS[i]!;
     const ref = db.collection('events').doc();
-    const day = String(8 + i).padStart(2, '0');
     await ref.set({
       id: ref.id,
-      title: `${ORG_NAME} — Seed Event ${i}`,
-      description: `Emulator seed event ${i} for ${ORG_NAME}. Safe to delete.`,
+      title: e.title,
+      description: e.desc,
       communityId: 'emulator-seed',
       venue: `${ORG_NAME} Hall`,
-      address: `${i} Seed Street, Sydney NSW`,
-      date: `2026-06-${day}`,
-      time: `${10 + i}:00`,
+      address: `${i + 1} Seed Street, Sydney NSW`,
+      date: e.date,
+      time: e.time,
       city: 'Sydney',
       state: 'NSW',
       country: 'Australia',
       latitude: SYDNEY.lat,
       longitude: SYDNEY.lng,
       geoHash,
-      category: 'Community',
-      eventType: 'community',
+      category: e.category,
+      eventType: e.category.toLowerCase().replace(/[^a-z]/g, '_'),
+      entryType: e.entryType,
+      cultureTag: e.tags,
+      tags: e.tags,
       organizerId: uid,
       organizer: ORG_NAME,
       publisherProfileId: profileId,
       status: 'published',
-      isFree: i % 2 === 0,
-      priceCents: i % 2 === 0 ? 0 : 1500 + i * 250,
-      priceLabel: i % 2 === 0 ? 'Free' : `$${(15 + i * 2.5).toFixed(0)}`,
-      capacity: 80 + i * 10,
-      attending: 0,
-      imageUrl: `https://picsum.photos/seed/cap${i}/800/450`,
+      isFree: e.isFree,
+      isFeatured: i < 3,
+      priceCents: e.priceCents,
+      priceLabel: e.priceLabel,
+      capacity: 60 + i * 20,
+      attending: Math.floor(Math.random() * 30) + 5,
+      imageUrl: `https://picsum.photos/seed/cap${i + 1}/800/450`,
       imageColor: '#0066CC',
       cpid: cpid('EVT'),
       metadata: { seedBatch: SEED_BATCH },
       createdAt: now,
       updatedAt: now,
     });
-    console.log(`[seed] created events/${ref.id} (${i}/5)`);
+    console.log(`[seed] created events/${ref.id} (${i + 1}/${EVENTS.length})`);
   }
 
   console.log('[seed] done. Sign in the app against emulators with the same email/password you set in env (or defaults).');

@@ -49,6 +49,7 @@ import type {
   UpdateCategory,
   DiscoverCurationResponse,
   DiscoverCurationConfig,
+  DiscoverFeedContract,
   IngestSource,
   IngestionJob,
   IngestScheduleInterval,
@@ -148,6 +149,7 @@ export interface EventListParams {
   isFeatured?: boolean;
   organizerId?: string;
   isFree?: boolean;
+  includeOngoing?: boolean;
   /** Filter by canonical publisher profile id (GET /api/events) */
   publisherProfileId?: string;
   /** Filter by linked venue profile id */
@@ -213,6 +215,9 @@ const events = {
 
   remove: (id: string) =>
     request<{ success: boolean }>('DELETE', `api/events/${id}`),
+
+  contactOrganizer: (eventId: string, payload: { message: string; contactMethod?: string }) =>
+    request<{ requestId?: string; success: boolean }>('POST', `api/events/${eventId}/contact-organizer`, payload),
 };
 
 // ---------------------------------------------------------------------------
@@ -323,7 +328,7 @@ const discover = {
     if (params?.city) qs.set('city', params.city);
     if (params?.country) qs.set('country', params.country);
     const q = qs.toString();
-    return request<{ sections: import('@shared/schema').FeedSection[] }>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
+    return request<DiscoverFeedContract>('GET', `api/discover/${userId}${q ? `?${q}` : ''}`);
   },
   feedback: (payload: Record<string, unknown>) => request<{ ok: boolean }>('POST', 'api/discover/feedback', payload),
   curation: (params?: { city?: string; country?: string; cultureIds?: string[] }) => {

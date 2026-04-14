@@ -36,6 +36,10 @@ export function WidgetSync() {
     staleTime: 60 * 1000,
   });
 
+  const displayName = user?.displayName || user?.username;
+  const culturePassId = user?.culturePassId ?? user?.id;
+  const userId = user?.id;
+
   useEffect(() => {
     if (!onboarding.city) return;
 
@@ -62,12 +66,13 @@ export function WidgetSync() {
         : null,
       nearby: nearbyEvents,
       upcomingTicket: upcomingTicket ?? null,
-      displayName: user?.displayName || user?.username,
-      culturePassId: user?.culturePassId ?? user?.id,
+      displayName,
+      culturePassId,
       city: onboarding.city,
       country: onboarding.country,
     });
-  }, [events, upcomingTicket, user, onboarding.city, onboarding.country]);
+   
+  }, [events, upcomingTicket, userId, displayName, culturePassId, onboarding.city, onboarding.country]);
 
   return null;
 }
