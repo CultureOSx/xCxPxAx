@@ -1,6 +1,7 @@
 import { PurchaseMembershipUseCase } from '../PurchaseMembershipUseCase';
 import { membershipRepository } from '@/repositories/MembershipRepository';
 
+// Mock the repository
 jest.mock('@/repositories/MembershipRepository', () => ({
   membershipRepository: {
     subscribe: jest.fn(),
