@@ -66,6 +66,16 @@ async function run() {
     const rssText = await rssRes.text();
     assert.ok(rssText.includes('<rss version="2.0"'), 'rss feed should be XML');
 
+    const statusRssRes = await fetch(`${base}/api/feeds/status.rss`);
+    assert.equal(statusRssRes.ok, true, 'GET /api/feeds/status.rss should return 200');
+    const statusRssText = await statusRssRes.text();
+    assert.ok(statusRssText.includes('<rss version="2.0"'), 'status rss feed should be XML');
+
+    const storyRssRes = await fetch(`${base}/api/feeds/story.rss`);
+    assert.equal(storyRssRes.ok, true, 'GET /api/feeds/story.rss should return 200');
+    const storyRssText = await storyRssRes.text();
+    assert.ok(storyRssText.includes('<rss version="2.0"'), 'story rss feed should be XML');
+
     const icalRes = await fetch(`${base}/api/feeds/ical/tag/${encodeURIComponent('culture')}`);
     assert.equal(icalRes.ok, true, 'GET /api/feeds/ical/tag/:value should return 200');
     const icalText = await icalRes.text();
