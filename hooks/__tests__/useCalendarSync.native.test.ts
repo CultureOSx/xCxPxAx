@@ -44,10 +44,10 @@ const mockGetCalendarsAsync = jest.fn();
 
 jest.mock('expo-calendar', () => {
   return {
-    requestCalendarPermissionsAsync: (...args: any[]) => mockRequestPermissions(...args),
+    requestCalendarPermissionsAsync: () => mockRequestPermissions(),
     getCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ granted: false })),
-    getCalendarsAsync: (...args: any[]) => mockGetCalendarsAsync(...args),
-    createEventAsync: (...args: any[]) => mockCreateEventAsync(...args),
+    getCalendarsAsync: (entityType: any) => mockGetCalendarsAsync(entityType),
+    createEventAsync: (calendarId: any, details: any) => mockCreateEventAsync(calendarId, details),
     EntityTypes: { EVENT: 'event' },
   };
 }, { virtual: true });
@@ -83,7 +83,7 @@ describe('useCalendarSync.native error handling', () => {
   });
 
   describe('exportEventToCalendar error handling', () => {
-    const mockEvent = {
+    const mockEvent: any = {
       id: '1',
       title: 'Test Event',
       date: new Date('2024-01-01T12:00:00Z'),
