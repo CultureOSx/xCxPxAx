@@ -167,9 +167,8 @@ export async function resolveDiscoverCuration(params: {
   const profilesById = new Map<string, Profile>();
 
   if (isFirestoreConfigured && profileIds.length > 0) {
-    const profileSnapshots = await Promise.all(
-      profileIds.map((profileId) => db.collection('profiles').doc(profileId).get()),
-    );
+    const profileRefs = profileIds.map((profileId) => db.collection('profiles').doc(profileId));
+    const profileSnapshots = await db.getAll(...profileRefs);
 
     for (const snap of profileSnapshots) {
       if (!snap.exists) continue;
