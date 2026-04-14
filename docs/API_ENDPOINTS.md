@@ -30,6 +30,10 @@ This document describes the live Firebase Functions API surface in this reposito
 - `GET /api/feeds/:scope/:value.ics`
 - `GET /api/feeds/rss/:scope/:value`
 - `GET /api/feeds/ical/:scope/:value`
+- `GET /api/feeds/status.rss` — community status updates feed
+- `GET /api/feeds/story.rss` — community story updates feed
+- `GET /api/feeds/community/:communityId/status.rss` — status feed scoped to one community
+- `GET /api/feeds/community/:communityId/story.rss` — story feed scoped to one community
 
 ### Feed scopes
 - `community` — events with matching `communityId`
@@ -43,6 +47,7 @@ This document describes the live Firebase Functions API surface in this reposito
 ### Feed query params
 - `country` — optional country disambiguator for `city` and `state` feeds
 - `limit` — optional item cap, default `50`, max `200`
+- `communityId` — optional community filter for `/api/feeds/status.rss` and `/api/feeds/story.rss`
 
 ## Entertainment & Browse Collections
 - `GET /api/movies`
@@ -130,8 +135,13 @@ This document describes the live Firebase Functions API surface in this reposito
 - `POST /api/stripe/refund`
 - `POST /api/stripe/webhook`
 
-## Moderation and governance baseline
-- IP-based rate limiting middleware on API requests.
-- Profanity moderation on write-heavy endpoints.
-- Suspicious-link heuristic moderation for user-submitted content.
-- Basic profanity moderation on write-heavy endpoints.
+## Rate limits, caching & moderation
+
+Implemented in `functions/src/app.ts`:
+
+- **Global** IP rate limit on all methods except `OPTIONS` (preflight is skipped so CORS errors are not masked as 429).
+- **Stricter** limits on **`/auth`**, **`/membership`**, **`/stripe`** (and `/api/…`, `/v1/…`, `/api/v1/…` mirrors).
+- **Additional** limits on high-cardinality read surfaces: **`/search`**, **`/feed`**, **`/feeds`**, **`/profiles`**, **`/users`** (same path mirrors).
+- **`Cache-Control: no-store, private, max-age=0`** (plus `Pragma: no-cache`) for responses under **`/users`**, **`/profiles`**, **`/tickets`**, **`/wallet`**, **`/payment-methods`**, **`/membership`**, **`/admin`** (and `/api/…` prefixes as routed).
+
+**Content moderation** (separate from rate limits): profanity and suspicious-link heuristics on write-heavy endpoints via `functions/src/middleware/moderation.ts` and route-level checks.

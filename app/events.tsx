@@ -21,6 +21,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/lib/auth';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
+import { CultureTokens, TextStyles } from '@/constants/theme';
+import type { EventData, PaginatedEventsResponse } from '@/shared/schema/event';
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
