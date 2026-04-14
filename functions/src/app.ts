@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { authenticate } from './middleware/auth';
+import { getFirebaseProjectId } from './routes/utils';
 
 // Routers
 import { authRouter } from './routes/auth';
@@ -57,20 +58,6 @@ const CORS_EXTRA = (process.env.CORS_EXTRA_ORIGINS ?? '')
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function getFirebaseProjectId(): string | null {
-  try {
-    const raw = process.env.FIREBASE_CONFIG;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { projectId?: string };
-    if (typeof parsed.projectId === 'string' && parsed.projectId.trim().length > 0) {
-      return parsed.projectId.trim();
-    }
-  } catch {
-    // no-op
-  }
-  return null;
 }
 
 const firebaseProjectId = getFirebaseProjectId();
