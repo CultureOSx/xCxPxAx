@@ -207,68 +207,7 @@ app.use(
     skip: (req) => req.method === 'OPTIONS',
   }),
 );
-
-/**
- * Route-specific abuse controls.
- * - authLimiter: brute-force protection for authentication / account actions
- * - scrapeLimiter: slows high-volume anonymous data extraction attempts
- */
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 40,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => req.method === 'OPTIONS',
-  message: 'Too many authentication attempts. Please try again later.',
-});
-
-const scrapeLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 80,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => req.method === 'OPTIONS',
-  message: 'Request limit reached. Please slow down and try again shortly.',
-});
-
-const applyRouteLimiter = (segment: string, limiter: ReturnType<typeof rateLimit>) => {
-  app.use(segment, limiter);
-  app.use(`/api${segment}`, limiter);
-  app.use(`/v1${segment}`, limiter);
-  app.use(`/api/v1${segment}`, limiter);
-};
-
-// Brute-force hardening on auth/account-sensitive paths.
-applyRouteLimiter('/auth', authLimiter);
-applyRouteLimiter('/membership', authLimiter);
-applyRouteLimiter('/stripe', authLimiter);
-
-// Anonymous scraping hardening on high-cardinality read surfaces.
-applyRouteLimiter('/search', scrapeLimiter);
-applyRouteLimiter('/feed', scrapeLimiter);
-applyRouteLimiter('/feeds', scrapeLimiter);
-applyRouteLimiter('/profiles', scrapeLimiter);
-applyRouteLimiter('/users', scrapeLimiter);
-
 app.use(authenticate);
-
-// Sensitive API responses should never be stored by shared/browser caches.
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const path = req.path;
-  const isSensitivePath =
-    path.startsWith('/users') ||
-    path.startsWith('/profiles') ||
-    path.startsWith('/tickets') ||
-    path.startsWith('/wallet') ||
-    path.startsWith('/payment-methods') ||
-    path.startsWith('/membership') ||
-    path.startsWith('/admin');
-  if (isSensitivePath) {
-    res.setHeader('Cache-Control', 'no-store, private, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-  }
-  next();
-});
 
 // ─── Request logging ──────────────────────────────────────────────────────────
 // Structured one-liner per request — visible in Firebase Cloud Logging.

@@ -101,15 +101,13 @@ constants/
 
 hooks/
   useBrowseData.ts · useColors.ts · useCouncil.ts · useDiscoverData.ts
-  useFeaturedCities.ts · useImageUpload.ts · useLayout.ts · useLocationFilter.ts · useLocations.ts
+  useImageUpload.ts · useLayout.ts · useLocationFilter.ts · useLocations.ts
   useNearbyEvents.ts · useNearestCity.ts · useProfile.ts · usePushNotifications.ts · useRole.ts
   queries/          useEvents.ts, useExplore.ts, usePerks.ts
 
-  lib/
+lib/
   api.ts            Typed API client — ONLY way to call the backend (150+ endpoints)
   auth.tsx          Firebase Auth provider + useAuth()
-  app-meta.ts       Default SEO title/description/keywords for web document head
-  shareContent.ts   Social share URL builders (Instagram, WhatsApp, Facebook, X, email)
   analytics.ts · community.ts · config.ts · dateUtils.ts · feature-flags.ts
   feedService.ts · firebase.ts · firebase/explore.ts · image-manipulator.ts
   indigenous.ts · live-activity.ts · navigation.ts · push.ts · query-client.ts
@@ -124,13 +122,13 @@ shared/schema/      activity, admin, booking, checkin, council, discover, entiti
                     update, user, wallet (+ others)
 
 functions/src/
-  app.ts            Express app — CORS, helmet, global + route-specific rate limits, sensitive-path Cache-Control
+  app.ts            Express app (~112 lines)
   index.ts          Cloud Functions entry (exports `api` + `onEventWritten` trigger)
   triggers.ts       onEventWritten → feed collection sync
   middleware/       auth.ts (requireAuth, requireRole), moderation.ts
-  routes/           22+ route files — one per domain
+  routes/           22 route files — one per domain
     admin.ts · events.ts (GET /api/events/nearby)
-    search.ts (Firestore global search) · feed.ts (7-signal ranking) · feeds.ts (RSS/ICS + status/story)
+    search.ts (Firestore global search) · feed.ts (7-signal ranking)
     discovery.ts · auth.ts · tickets.ts · users.ts · profiles.ts · council.ts
     perks.ts · membership.ts · social.ts · stripe.ts · indigenous.ts
     locations.ts · activities.ts · movies.ts · updates.ts · misc.ts · import.ts · utils.ts
@@ -179,26 +177,6 @@ const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
 ---
 
-## Web metadata, syndication & sharing
-
-- **HTML head**: `app/+html.tsx` (global meta, sitemap link); route-level SEO and `robots` in `app/_layout.tsx`; defaults in `lib/app-meta.ts`.
-- **Crawler policy**: `public/robots.txt`, `robots.txt`, `public/sitemap.xml` — keep in sync when adding public routes.
-- **Feeds**: `GET /api/feeds/*` — city/community/host RSS and ICS; **status** and **story** RSS for community posts (`functions/src/routes/feeds.ts`). See `docs/API_ENDPOINTS.md`.
-- **Social**: `lib/shareContent.ts` — `buildSocialShareUrls` / `getSocialShareUrl` from a canonical page URL.
-
----
-
-## API rate limits & sensitive caching
-
-`functions/src/app.ts` applies:
-
-- **Global** IP rate limit (per minute) on all non-OPTIONS traffic.
-- **Stricter** limits on `/auth`, `/membership`, `/stripe` (and `/api/…` / `/v1/…` aliases).
-- **Scrape-oriented** limits on `/search`, `/feed`, `/feeds`, `/profiles`, `/users`.
-- **`Cache-Control: no-store`** for responses under `users`, `profiles`, `tickets`, `wallet`, `payment-methods`, `membership`, `admin`.
-
----
-
 ## Council as Location Service (LGA)
 
 Council = **location attribute only**. No governance, no detail pages, no user claims.
@@ -207,7 +185,6 @@ Council = **location attribute only**. No governance, no detail pages, no user c
 - Directory: browsable cards via Council filter chip (`api.council.list`)
 - Discover: "Events in Your Area" rail uses `lgaCode` matching
 - Admin data: `AllCouncilsList.csv` (~1000 AU LGAs), `councils/` Firestore collection
-- **Featured cities**: `getFeatured` dedupes by slug + country; client hook `useFeaturedCities` also dedupes. One-off Firestore cleanup: `cd functions && npm run cities:dedupe:dry` (add `--apply` via `cities:dedupe:apply` only after review).
 
 ---
 
@@ -309,7 +286,7 @@ Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
 ## Local Development
 
 ```bash
-npm install && cd functions && npm install && npm run build && cd ..
+npm install && cd functions && npm install && cd ..
 npx expo start            # native + web
 npx expo start --web      # web only
 firebase emulators:start --only functions,firestore,auth,storage
@@ -317,8 +294,6 @@ npm run emulator:seed:cap   # optional: Auth + Firestore emulator seed (The CAP 
 npm run typecheck
 npm run lint
 ```
-
-**Build Functions before emulators** — the emulator loads `functions/lib/`. **Cursor Cloud / VM bootstrap** (install + compile order): see `AGENTS.md` § *Cursor Cloud specific instructions*.
 
 Emulator API URL: `EXPO_PUBLIC_API_URL=http://localhost:5001/culturepass-4f264/us-central1/api/`
 

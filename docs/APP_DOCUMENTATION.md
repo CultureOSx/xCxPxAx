@@ -2,7 +2,7 @@
 
 ## 1. Product Overview
 
-CulturePass is a cross-platform Expo + React Native application for **cultural discovery and ticketing** across **Australia** and diaspora-focused cities in **NZ, UAE, UK, and CA**. Users discover events, join communities, manage tickets and perks, and use a shared CulturePass identity on **iOS, Android, and Web** (static export + Firebase Hosting).
+CulturePass is a cross-platform Expo + React Native application focused on cultural discovery in Australia. The app helps users discover events, join communities, manage tickets and perks, and maintain a CulturePass identity across native and web.
 
 ## 2. Platform Targets
 
@@ -15,10 +15,11 @@ The app is maintained as a single codebase and currently targets:
 ## 3. Core Tech Stack
 
 ### Frontend
-- **Pinned (verify in `package.json`)**: Expo SDK **55**, React Native **~0.83**, React **19.x**, **Expo Router 5**, **Reanimated 4**
-- Expo Router for file-based navigation and deep links
+- Current repo state: Expo SDK 54 + React Native 0.81 + React 19
+- Engineering target: Expo SDK 55 + React Native 0.83.2 + React 19.2
+- Expo Router for route-based navigation
 - TanStack Query for server-state caching and networking
-- AsyncStorage + SecureStore for persistence (auth token path via `lib/query-client.ts`)
+- AsyncStorage + SecureStore for persistence
 
 ### Build/Tooling
 - TypeScript
@@ -41,7 +42,7 @@ The app is maintained as a single codebase and currently targets:
 The root layout registers onboarding, tab navigation, and many feature/detail screens through Expo Router stack configuration. Key areas include:
 
 - Onboarding/auth (`(onboarding)/*`)
-- Main tabs (`(tabs)/*`) — **Discover** (index), **Calendar**, **Community**, **Perks**, **Profile**, plus in-tab surfaces such as **Directory** and **Explore** where routed
+- Main tabs (`(tabs)/*`) for feed, explore, communities, calendar, directory, perks, profile
 - Event/community/business/artist/venue/user detail routes
 - Tickets, payments, contacts, scanner, search, map, settings, legal pages
 
@@ -97,21 +98,20 @@ These are TypeScript interface contracts (not SQL schema definitions) and functi
 
 ## 11. Styling & Visual System
 
-Design tokens are **imported only from `constants/theme.ts`** (re-exports colors, typography, spacing, elevation). Use `useColors()` for theme-aware values. **Dark mode is default on native**; web follows product defaults for marketing surfaces. **Never hardcode hex** in feature code. Web desktop (**≥1024px**) uses a **240px left sidebar** (`components/web/WebSidebar.tsx`); **`topInset` on web is always `0`**.
+The app defines a consistent theme system in `constants/theme.ts` / `constants/colors.ts` with:
+
+- White-first runtime surfaces
+- Shared semantic tokens (primary, text, surface, status colors, etc.)
+- Centralized elevation/shadow presets
 
 ## 12. Build, Scripts, and Operational Commands
 
 Primary commands:
 
-- `npx expo start` — local dev (iOS / Android / Web)
-- `npm run lint`, `npm run typecheck` — quality gates
-- `npm run test:unit`, `npm run test:integration` — automated tests
-- `npm run functions:build` — compile Cloud Functions (`functions/lib/`) **before** Firebase emulators
-- `npm run build-web` — static web export to `dist/`
-- `npm run test:web:route-hygiene` — validates exported HTML (run after `build-web`)
-- `npm run qa:solid` — full gate: lint, typecheck, `qa:all`, functions build, web export, route hygiene
-
-**Cursor Cloud / agent VMs**: install + Functions compile order → `AGENTS.md` (Cursor Cloud section).
+- `npm run expo:dev` for local development
+- `npm run lint` and `npm run typecheck` for quality checks
+- `npm run expo:static:build` for web export flow
+- `npm run server:dev` / `server:build` / `server:prod` scripts are present in package metadata
 
 ## 13. Deployment & Distribution
 
@@ -120,23 +120,27 @@ Primary commands:
 - iOS submit placeholders (`appleId`, `ascAppId`, `appleTeamId`) to complete before release
 
 ### Web
-- Firebase Hosting serves `dist/` from `expo export --platform web`; rewrites route HTML and API to Cloud Functions per `firebase.json`.
+- Firebase Hosting serves `dist/` and rewrites all routes to `index.html` for SPA-style routing
 
-## 14. SEO, syndication & sharing
+## 14. SEO & Crawler Configuration
 
-- **Metadata**: `lib/app-meta.ts`, `app/+html.tsx`, and per-route configuration in `app/_layout.tsx` (titles, Open Graph, Twitter cards, `robots`, canonical paths).
-- **Crawlers**: `public/robots.txt`, root `robots.txt`, and `public/sitemap.xml` — update when public routes or disallow rules change.
-- **Feeds (API)**: RSS and ICS under `/api/feeds/*`, including community **status** and **story** RSS — see `docs/API_ENDPOINTS.md`.
-- **Social**: `lib/shareContent.ts` builds share links (Instagram, WhatsApp, Facebook, X, email) from a canonical URL.
+A root `robots.txt` file is included to:
 
-## 15. Data & backend (source of truth)
+- Allow public indexing
+- Disallow known sensitive/private routes
+- Explicitly allow major search and AI crawlers
+- Declare sitemap location
 
-- **Primary datastore**: Cloud Firestore (typed access via `functions/src/services/*`).
-- **HTTP API**: Firebase Cloud Functions Express app in `functions/src/app.ts` and `functions/src/routes/*`.
-- **Shared types**: `shared/schema.ts` and `shared/schema/*` — align client (`lib/api.ts`) and server contracts here.
+## 15. Data & Backend Status (Current State)
 
-## 16. Recommended documentation upkeep
+- Drizzle config is present and expects `DATABASE_URL`, with migrations output to `./migrations` and schema pointer `./shared/schema.ts`.
+- Cloud Functions in this repository are live application code.
+- Treat `functions/src/app.ts` and `functions/src/services/*` as the backend source of truth when code and docs drift.
 
-1. When adding **public routes**, update `docs/URL_STRUCTURE.md` and sitemap/robots as needed.
-2. When adding **API routes**, update `docs/API_ENDPOINTS.md` and integration tests under `scripts/tests/`.
-3. Keep `README.md`, `CLAUDE.md`, and `AGENTS.md` in sync for bootstrap and QA commands.
+## 16. Recommended Next Documentation/Engineering Steps
+
+1. Add endpoint-level API documentation once backend handlers are implemented.
+2. Split domain types (`shared/schema.ts`) into feature-specific modules as the model grows.
+3. Add architecture diagrams (navigation map + data flow + deployment topology).
+4. Add release checklist templates (versioning, store metadata, smoke tests).
+5. Add CI workflows for lint/typecheck/static web export on PRs.

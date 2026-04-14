@@ -16,14 +16,14 @@ export const SITE_ORIGIN = `https://${APP_DOMAIN}`;
 export const SITE_ORIGIN_WWW = 'https://www.culturepass.app';
 
 /** Web `<title>` / Open Graph primary title. */
-export const APP_WEB_TITLE = 'CulturePass | Cultural Events, Communities & Tickets';
+export const APP_WEB_TITLE = 'CulturePass — Celebrate Your Culture, Connect Your Community';
 
 /** Default meta description — keep in sync with `expo.web.description` in app.json. */
 export const APP_WEB_DESCRIPTION =
-  'Discover cultural events, community groups, and local experiences built for diaspora cities. Find festivals, book tickets, and connect with culture across Australia and global communities.';
+  'Discover cultural events and communities built for diaspora cities. Organizers reach the right audience; attendees find festivals, tickets, and belonging in one place.';
 
 export const APP_WEB_KEYWORDS =
-  'CulturePass, cultural events app, diaspora communities, event tickets, festivals, community events, multicultural events, Australia events, Sydney events, Melbourne events, New Zealand, UK, UAE, Canada';
+  'CulturePass, cultural events, diaspora communities, event organizers, community events, festivals, tickets, Australia, New Zealand, UK, UAE, Canada, cultural discovery';
 
 /** Subtitle / alternateName in structured data. */
 export const APP_WEB_TAGLINE = 'Celebrate Your Culture, Connect Your Community';

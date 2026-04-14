@@ -379,28 +379,22 @@ function clampLimit(limit: number | undefined): number {
 }
 
 async function fetchPublishedEvents(scanLimit: number): Promise<FirestoreEvent[]> {
-  try {
-    const items: FirestoreEvent[] = [];
-    let page = 1;
-    let hasNextPage = true;
+  const items: FirestoreEvent[] = [];
+  let page = 1;
+  let hasNextPage = true;
 
-    while (hasNextPage && items.length < scanLimit) {
-      const pageSize = Math.min(PAGE_SIZE, scanLimit - items.length);
-      const result = await eventsService.list(
-        { status: 'published' },
-        { page, pageSize },
-      );
-      items.push(...result.items);
-      hasNextPage = result.hasNextPage;
-      page += 1;
-    }
-
-    return items;
-  } catch {
-    // Keep feed endpoints available in local/integration environments
-    // when Firestore is unreachable by returning an empty feed payload.
-    return [];
+  while (hasNextPage && items.length < scanLimit) {
+    const pageSize = Math.min(PAGE_SIZE, scanLimit - items.length);
+    const result = await eventsService.list(
+      { status: 'published' },
+      { page, pageSize },
+    );
+    items.push(...result.items);
+    hasNextPage = result.hasNextPage;
+    page += 1;
   }
+
+  return items;
 }
 
 function buildFeedContext(

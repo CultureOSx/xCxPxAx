@@ -667,11 +667,6 @@ const styles = StyleSheet.create({
   loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingCard: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 28, paddingVertical: 24, alignItems: 'center', gap: 12 },
   loadingText: { ...TextStyles.cardTitle },
-  skeletonRoot: { paddingTop: MAIN_TAB_UI.sectionGapLarge, gap: MAIN_TAB_UI.sectionGapSmall },
-  skeletonMonthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: MAIN_TAB_UI.sectionGapSmall },
-  skeletonMonthActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  skeletonDayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  skeletonWeekRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
 
   topHeaderSyncBtn: {
     width: 42,
