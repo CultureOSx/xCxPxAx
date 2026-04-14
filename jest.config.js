@@ -8,5 +8,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
     '^@shared/(.*)$': '<rootDir>/shared/$1',
   },
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx', '**/__tests__/**/*.test.js'],
 };

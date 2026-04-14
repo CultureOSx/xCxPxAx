@@ -26,6 +26,17 @@ export function useFeaturedCities() {
   const { data: cities = [], isLoading, isError, refetch } = useQuery<FeaturedCityData[]>({
     queryKey: ['/api/cities/featured'],
     queryFn: () => api.cities.featured(),
+    select: (rows) => {
+      const seen = new Set<string>();
+      const unique: FeaturedCityData[] = [];
+      for (const city of rows) {
+        const key = `${(city.slug || city.name).toLowerCase()}::${city.countryCode.toLowerCase()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(city);
+      }
+      return unique;
+    },
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

@@ -54,8 +54,12 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <title>{siteTitle}</title>
         <meta name="description" content={siteDescription} />
         <meta name="keywords" content={APP_WEB_KEYWORDS} />
+        <meta name="author" content={APP_NAME} />
         <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
         <link rel="canonical" href={siteUrl} />
+        <link rel="sitemap" type="application/xml" title="Sitemap" href={`${siteUrl}/sitemap.xml`} />
         <link rel="alternate" hrefLang="en-au" href={siteUrl} />
         <link rel="alternate" hrefLang="x-default" href={siteUrl} />
         <link rel="icon" href="/assets/images/favicon.png" sizes="192x192" type="image/png" />
@@ -71,6 +75,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta property="og:description" content={siteDescription} />
         <meta property="og:url" content={siteUrl} />
         <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:alt" content="CulturePass preview showing cultural events and communities" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
 
@@ -78,6 +83,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="twitter:title" content={siteTitle} />
         <meta name="twitter:description" content={siteDescription} />
         <meta name="twitter:image" content={ogImageUrl} />
+        <meta name="twitter:image:alt" content="CulturePass preview showing cultural events and communities" />
 
         <meta name="theme-color" content={THEME_COLOR_WEB} />
         <ScrollViewStyleReset />

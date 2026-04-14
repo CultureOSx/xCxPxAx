@@ -96,6 +96,18 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+function dedupeCities(cities: FeaturedCity[]): FeaturedCity[] {
+  const seen = new Set<string>();
+  const unique: FeaturedCity[] = [];
+  for (const city of cities) {
+    const key = `${(city.slug || slugify(city.name)).toLowerCase()}::${city.countryCode.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(city);
+  }
+  return unique;
+}
+
 function toCity(id: string, data: Record<string, unknown>): FeaturedCity {
   return {
     id,
@@ -139,8 +151,9 @@ export const citiesService = {
     const cities = snap.docs
       .map((d) => toCity(d.id, d.data() as Record<string, unknown>))
       .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-    cache.set(FEATURED_KEY, cities);
-    return cities;
+    const uniqueCities = dedupeCities(cities);
+    cache.set(FEATURED_KEY, uniqueCities);
+    return uniqueCities;
   },
 
   /** Return all cities (admin use) */
