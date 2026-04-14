@@ -749,8 +749,14 @@ export default function ContactsScreen() {
         .map(c => ({
           id: c.id ?? `pc-${Math.random()}`,
           name: c.name ?? 'Unknown',
-          phoneNumbers: c.phoneNumbers?.map(p => p.number ?? '').filter(Boolean),
-          emails: c.emails?.map(e => e.email ?? '').filter(Boolean),
+          phoneNumbers: c.phoneNumbers?.reduce<string[]>((acc, p) => {
+            if (p.number) acc.push(p.number);
+            return acc;
+          }, []),
+          emails: c.emails?.reduce<string[]>((acc, e) => {
+            if (e.email) acc.push(e.email);
+            return acc;
+          }, []),
           // In production: matched set by server lookup
           matched: null,
           invited: false,
