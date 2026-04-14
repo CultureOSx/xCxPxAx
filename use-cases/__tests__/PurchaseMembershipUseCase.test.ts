@@ -10,71 +10,68 @@ jest.mock('@/repositories/MembershipRepository', () => ({
 
 describe('PurchaseMembershipUseCase', () => {
   let useCase: PurchaseMembershipUseCase;
+  const mockSubscribe = membershipRepository.subscribe as jest.Mock;
 
   beforeEach(() => {
-    useCase = new PurchaseMembershipUseCase();
     jest.clearAllMocks();
+    useCase = new PurchaseMembershipUseCase();
   });
 
-  it('should return already_active status if data says already active', async () => {
-    (membershipRepository.subscribe as jest.Mock).mockResolvedValue({
-      alreadyActive: true,
+  describe('execute', () => {
+    it('should return already_active status when user is already active', async () => {
+      mockSubscribe.mockResolvedValue({ alreadyActive: true });
+
+      const result = await useCase.execute('monthly');
+
+      expect(result).toEqual({ status: 'already_active' });
+      expect(mockSubscribe).toHaveBeenCalledWith('monthly');
     });
 
-    const result = await useCase.execute('monthly');
+    it('should return checkout_required status with URL when checkout is required', async () => {
+      const checkoutUrl = 'https://example.com/checkout';
+      mockSubscribe.mockResolvedValue({ checkoutUrl });
 
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('monthly');
-    expect(result).toEqual({ status: 'already_active' });
-  });
+      const result = await useCase.execute('yearly');
 
-  it('should return checkout_required status with url if data has checkoutUrl', async () => {
-    const testUrl = 'https://checkout.stripe.com/test';
-    (membershipRepository.subscribe as jest.Mock).mockResolvedValue({
-      checkoutUrl: testUrl,
+      expect(result).toEqual({ status: 'checkout_required', url: checkoutUrl });
+      expect(mockSubscribe).toHaveBeenCalledWith('yearly');
     });
 
-    const result = await useCase.execute('yearly');
+    it('should return dev_mode_success status when in dev mode', async () => {
+      mockSubscribe.mockResolvedValue({ devMode: true });
 
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('yearly');
-    expect(result).toEqual({ status: 'checkout_required', url: testUrl });
-  });
+      const result = await useCase.execute('monthly');
 
-  it('should return dev_mode_success status if data has devMode true', async () => {
-    (membershipRepository.subscribe as jest.Mock).mockResolvedValue({
-      devMode: true,
+      expect(result).toEqual({ status: 'dev_mode_success' });
+      expect(mockSubscribe).toHaveBeenCalledWith('monthly');
     });
 
-    const result = await useCase.execute('monthly');
+    it('should return error status for unknown checkout state', async () => {
+      mockSubscribe.mockResolvedValue({});
 
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('monthly');
-    expect(result).toEqual({ status: 'dev_mode_success' });
-  });
+      const result = await useCase.execute('monthly');
 
-  it('should return error status for unknown checkout state', async () => {
-    (membershipRepository.subscribe as jest.Mock).mockResolvedValue({});
+      expect(result).toEqual({ status: 'error', message: 'Unknown checkout state.' });
+      expect(mockSubscribe).toHaveBeenCalledWith('monthly');
+    });
 
-    const result = await useCase.execute('monthly');
+    it('should return error status with message when repository throws an Error', async () => {
+      const errorMessage = 'Network error occurred';
+      mockSubscribe.mockRejectedValue(new Error(errorMessage));
 
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('monthly');
-    expect(result).toEqual({ status: 'error', message: 'Unknown checkout state.' });
-  });
+      const result = await useCase.execute('monthly');
 
-  it('should return error status with message if an exception is thrown with Error object', async () => {
-    const errorMessage = 'Network error occurred';
-    (membershipRepository.subscribe as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      expect(result).toEqual({ status: 'error', message: errorMessage });
+      expect(mockSubscribe).toHaveBeenCalledWith('monthly');
+    });
 
-    const result = await useCase.execute('monthly');
+    it('should return error status with fallback message when repository throws a non-Error', async () => {
+      mockSubscribe.mockRejectedValue('String error');
 
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('monthly');
-    expect(result).toEqual({ status: 'error', message: errorMessage });
-  });
+      const result = await useCase.execute('yearly');
 
-  it('should return error status with default message if a non-Error exception is thrown', async () => {
-    (membershipRepository.subscribe as jest.Mock).mockRejectedValue('String error');
-
-    const result = await useCase.execute('monthly');
-
-    expect(membershipRepository.subscribe).toHaveBeenCalledWith('monthly');
-    expect(result).toEqual({ status: 'error', message: 'Failed to start subscription' });
+      expect(result).toEqual({ status: 'error', message: 'Failed to start subscription' });
+      expect(mockSubscribe).toHaveBeenCalledWith('yearly');
+    });
   });
 });
