@@ -13,7 +13,7 @@
  *   <SectionDivider size="sm" /> ← 16px gap (between tightly related items)
  */
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { LayoutRules, Spacing } from '@/constants/theme';
 
 interface SectionDividerProps {
