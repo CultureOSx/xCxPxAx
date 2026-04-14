@@ -152,7 +152,8 @@ export function useCalendarSync() {
   }, [permissionGranted, prefs.deviceConnected]);
 
   /** Export a single CulturePass event to the device calendar */
-  const exportEventToCalendar = useCallback(async (event: EventData): Promise<boolean> => {
+  const exportEventToCalendar = useCallback(async (event: EventData, options?: { silent?: boolean }): Promise<boolean> => {
+    const { silent = false } = options ?? {};
     if (Platform.OS === 'web') {
       // Web fallback: offer ICS download
       const ics = buildICS(event);
@@ -201,10 +202,14 @@ export function useCalendarSync() {
         url: `https://culturepass.app/event/${event.id}`,
       });
 
-      Alert.alert('Added to Calendar', `"${event.title}" has been added to your calendar.`);
+      if (!silent) {
+        Alert.alert('Added to Calendar', `"${event.title}" has been added to your calendar.`);
+      }
       return true;
     } catch {
-      Alert.alert('Error', 'Could not add event to calendar. Please try again.');
+      if (!silent) {
+        Alert.alert('Error', 'Could not add event to calendar. Please try again.');
+      }
       return false;
     }
   }, [permissionGranted, requestPermission]);
@@ -212,15 +217,20 @@ export function useCalendarSync() {
   /** Bulk export all ticket events to device calendar */
   const exportAllTickets = useCallback(async (events: EventData[]) => {
     if (!events.length) return;
-    let count = 0;
-    for (const ev of events) {
-      const ok = await exportEventToCalendar(ev);
-      if (ok) count++;
-    }
+
+    // Ensure permission once before starting parallel calls
+    const granted = permissionGranted || (await requestPermission());
+    if (!granted) return;
+
+    const results = await Promise.all(
+      events.map((ev) => exportEventToCalendar(ev, { silent: true })),
+    );
+
+    const count = results.filter((ok) => ok).length;
     if (count > 0) {
       Alert.alert('Sync Complete', `${count} event${count !== 1 ? 's' : ''} added to your calendar.`);
     }
-  }, [exportEventToCalendar]);
+  }, [exportEventToCalendar, permissionGranted, requestPermission]);
 
   /** Toggle showPersonalEvents preference */
   const setShowPersonalEvents = useCallback(async (val: boolean) => {
