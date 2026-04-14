@@ -244,6 +244,18 @@ describe('useMembershipUpgrade', () => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Network failure');
     });
 
+    it('should show default error message when a non-Error value is thrown', async () => {
+      (purchaseMembershipUseCase.execute as jest.Mock).mockRejectedValue('Some string error');
+
+      const { result } = renderHook(() => useMembershipUpgrade());
+
+      await act(async () => {
+        await result.current.executeSubscribe();
+      });
+
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to start subscription');
+    });
+
     it('should handle checkout_required response and poll for updates', async () => {
       (purchaseMembershipUseCase.execute as jest.Mock).mockResolvedValue({
         status: 'checkout_required',
@@ -355,6 +367,25 @@ describe('useMembershipUpgrade', () => {
       });
 
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Network failure during cancellation');
+    });
+
+    it('should show default error message when a non-Error value is thrown during cancellation', async () => {
+      (cancelMembershipUseCase.execute as jest.Mock).mockRejectedValue(12345);
+
+      const { result } = renderHook(() => useMembershipUpgrade());
+
+      await act(async () => {
+        await result.current.executeCancel();
+      });
+
+      const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
+      const cancelAction = alertArgs[2].find((btn: any) => btn.text === 'Cancel Membership');
+
+      await act(async () => {
+        await cancelAction.onPress();
+      });
+
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to cancel');
     });
   });
 });
