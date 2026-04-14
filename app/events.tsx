@@ -21,6 +21,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/lib/auth';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
+import { TextStyles, CultureTokens } from '@/constants/theme';
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
