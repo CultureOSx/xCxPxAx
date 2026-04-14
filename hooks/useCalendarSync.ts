@@ -57,7 +57,8 @@ export function useCalendarSync() {
     },
   });
 
-  const exportEventToCalendar = useCallback(async (event: EventData): Promise<boolean> => {
+  const exportEventToCalendar = useCallback(async (event: EventData, options?: { silent?: boolean }): Promise<boolean> => {
+    const { silent = false } = options ?? {};
     const ics = buildICS(event);
     const blob = new Blob([ics], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
@@ -70,9 +71,7 @@ export function useCalendarSync() {
   }, []);
 
   const exportAllTickets = useCallback(async (events: EventData[]) => {
-    for (const ev of events) {
-      await exportEventToCalendar(ev);
-    }
+    await Promise.all(events.map((ev) => exportEventToCalendar(ev, { silent: true })));
   }, [exportEventToCalendar]);
 
   const setShowPersonalEvents = async (val: boolean) => {
