@@ -1,8 +1,9 @@
-import { View, Platform, ScrollView } from 'react-native';
+import { View, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CardTokens, Spacing } from '@/constants/theme';
 
 export function EventDetailSkeleton() {
   const colors = useColors();
@@ -11,33 +12,39 @@ export function EventDetailSkeleton() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Skeleton width="100%" height={isDesktop ? 450 : 380 + topInset} borderRadius={isDesktop ? 32 : 0} style={isDesktop && { margin: 20, alignSelf: 'center', width: '90%' }} />
-        <View style={{ padding: 20, gap: 16 }}>
-          <View style={{
-            backgroundColor: colors.surface,
-            borderRadius: 16,
-            padding: 20,
-            marginVertical: 10,
-            borderWidth: 1,
-            borderColor: colors.borderLight,
-          }}>
+        <Skeleton
+          width="100%"
+          height={isDesktop ? 450 : 380 + topInset}
+          borderRadius={isDesktop ? CardTokens.radiusLarge + 12 : 0}
+          style={isDesktop ? styles.desktopHero : undefined}
+        />
+        <View style={styles.contentWrap}>
+          <View
+            style={[
+              styles.primaryCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
             <Skeleton width={120} height={20} borderRadius={10} />
-            <Skeleton width="80%" height={32} borderRadius={10} style={{ marginVertical: 12 }} />
-            <Skeleton width="100%" height={16} borderRadius={4} />
+            <Skeleton width="80%" height={32} borderRadius={10} style={styles.innerGap} />
+            <Skeleton width="100%" height={16} borderRadius={Spacing.xs} />
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
-            <Skeleton width="48%" height={100} borderRadius={20} />
-            <Skeleton width="48%" height={100} borderRadius={20} />
+          <View style={styles.rowCards}>
+            <Skeleton width="48%" height={100} borderRadius={CardTokens.radiusLarge} />
+            <Skeleton width="48%" height={100} borderRadius={CardTokens.radiusLarge} />
           </View>
 
-          <Skeleton width="100%" height={120} borderRadius={20} style={{ marginTop: 12 }} />
+          <Skeleton width="100%" height={120} borderRadius={CardTokens.radiusLarge} style={styles.innerGap} />
 
-          <View style={{ gap: 12, marginTop: 20 }}>
+          <View style={styles.listCards}>
             {[1, 2].map(i => (
-              <Skeleton key={i} width="100%" height={80} borderRadius={20} />
+              <Skeleton key={i} width="100%" height={80} borderRadius={CardTokens.radiusLarge} />
             ))}
           </View>
         </View>
@@ -47,3 +54,18 @@ export function EventDetailSkeleton() {
 }
 
 export default EventDetailSkeleton;
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  desktopHero: { margin: CardTokens.paddingLarge, alignSelf: 'center', width: '90%' },
+  contentWrap: { padding: CardTokens.paddingLarge, gap: Spacing.md },
+  primaryCard: {
+    borderRadius: CardTokens.radius,
+    padding: CardTokens.paddingLarge,
+    marginVertical: Spacing.sm + 2,
+    borderWidth: 1,
+  },
+  innerGap: { marginVertical: Spacing.sm + 4 },
+  rowCards: { flexDirection: 'row', gap: Spacing.sm + 4, marginTop: Spacing.sm + 2 },
+  listCards: { gap: Spacing.sm + 4, marginTop: CardTokens.paddingLarge },
+});

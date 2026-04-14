@@ -1,6 +1,7 @@
 import { CancelMembershipUseCase } from '../CancelMembershipUseCase';
 import { membershipRepository } from '@/repositories/MembershipRepository';
 
+// Mock the repository
 jest.mock('@/repositories/MembershipRepository', () => ({
   membershipRepository: {
     cancelMembership: jest.fn(),
@@ -8,38 +9,38 @@ jest.mock('@/repositories/MembershipRepository', () => ({
 }));
 
 describe('CancelMembershipUseCase', () => {
-  let cancelMembershipUseCase: CancelMembershipUseCase;
+  let useCase: CancelMembershipUseCase;
 
   beforeEach(() => {
-    cancelMembershipUseCase = new CancelMembershipUseCase();
+    useCase = new CancelMembershipUseCase();
     jest.clearAllMocks();
   });
 
-  it('should return success when membership is cancelled successfully', async () => {
-    (membershipRepository.cancelMembership as jest.Mock).mockResolvedValue(undefined);
+  it('should return status success when cancelMembership resolves', async () => {
+    (membershipRepository.cancelMembership as jest.Mock).mockResolvedValueOnce(undefined);
 
-    const result = await cancelMembershipUseCase.execute();
+    const result = await useCase.execute();
 
+    expect(membershipRepository.cancelMembership).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ status: 'success' });
-    expect(membershipRepository.cancelMembership).toHaveBeenCalledTimes(1);
   });
 
-  it('should return error when membership cancellation fails with an Error object', async () => {
+  it('should return status error with error message when cancelMembership throws a standard Error', async () => {
     const errorMessage = 'Network error';
-    (membershipRepository.cancelMembership as jest.Mock).mockRejectedValue(new Error(errorMessage));
+    (membershipRepository.cancelMembership as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
 
-    const result = await cancelMembershipUseCase.execute();
+    const result = await useCase.execute();
 
-    expect(result).toEqual({ status: 'error', message: errorMessage });
     expect(membershipRepository.cancelMembership).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ status: 'error', message: errorMessage });
   });
 
-  it('should return default error message when membership cancellation fails with a non-Error object', async () => {
-    (membershipRepository.cancelMembership as jest.Mock).mockRejectedValue('Something went wrong');
+  it('should return status error with generic message when cancelMembership throws a non-Error object', async () => {
+    (membershipRepository.cancelMembership as jest.Mock).mockRejectedValueOnce('Some string error');
 
-    const result = await cancelMembershipUseCase.execute();
+    const result = await useCase.execute();
 
-    expect(result).toEqual({ status: 'error', message: 'Failed to cancel membership' });
     expect(membershipRepository.cancelMembership).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ status: 'error', message: 'Failed to cancel membership' });
   });
 });

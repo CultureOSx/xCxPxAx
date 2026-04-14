@@ -20,7 +20,7 @@ import {
   StyleSheet,
   ViewStyle,
   StyleProp,
-  Platform,
+  // Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CultureImage from './CultureImage';

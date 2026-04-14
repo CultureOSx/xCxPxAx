@@ -16,6 +16,8 @@ import { COMMON_LANGUAGES, searchLanguages, type Language } from '@/constants/la
 
 export type Step = 'nationality' | 'culture' | 'language';
 
+const commonLanguagesMap = new Map(COMMON_LANGUAGES.map(l => [l.id, l]));
+
 export function useCultureMatch() {
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
@@ -56,7 +58,7 @@ export function useCultureMatch() {
     return pool.filter((l) => !selectedLanguageIds.includes(l.id));
   }, [languageQuery, selectedLanguageIds]);
 
-  const selectedLanguageObjects = useMemo(() => selectedLanguageIds.map((id) => COMMON_LANGUAGES.find((l) => l.id === id) ?? searchLanguages(id)[0]).filter(Boolean) as Language[], [selectedLanguageIds]);
+  const selectedLanguageObjects = useMemo(() => selectedLanguageIds.map((id) => commonLanguagesMap.get(id) ?? searchLanguages(id)[0]).filter(Boolean) as Language[], [selectedLanguageIds]);
 
   const triggerHaptic = useCallback(async () => {
     if (Platform.OS !== 'web') {

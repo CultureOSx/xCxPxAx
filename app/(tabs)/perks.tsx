@@ -21,7 +21,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { CultureTokens, TextStyles } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -219,15 +220,15 @@ function QuestCard({ quest, onContinue }: { quest: ActiveQuest; onContinue: () =
 
         <View style={qs.progressSection}>
           <View style={[qs.progressTrack, { backgroundColor: colors.borderLight }]}>
-            <View
-              style={[
-                qs.progressFill,
-                { width: `${progressPct}%` as `${number}%`, backgroundColor: quest.color },
-              ]}
+            <LinearGradient
+              colors={[CultureTokens.indigo, CultureTokens.teal]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[qs.progressFill, { width: `${progressPct}%` as `${number}%` }]}
             />
           </View>
           <Text style={[qs.progressLabel, { color: colors.textTertiary }]}>
-            {quest.progress}/{quest.total} completed
+            {quest.progress} of {quest.total}
           </Text>
         </View>
 
@@ -286,20 +287,20 @@ const qs = StyleSheet.create({
   questIconOnImage: { position: 'absolute', top: 12, left: 12, width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   questCardContent: { flex: 1, padding: 14, justifyContent: 'space-between' },
   questRewardBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: CultureTokens.gold + '18', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: CultureTokens.gold + '40', marginBottom: 4 },
-  questRewardText: { color: CultureTokens.gold, ...TextStyles.tabLabel },
-  questTitle: { ...TextStyles.headline, lineHeight: 21 },
-  questTask: { ...TextStyles.caption, lineHeight: 17 },
+  questRewardText: { color: CultureTokens.gold, fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
+  questTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', lineHeight: 21 },
+  questTask: { fontSize: 12, fontFamily: 'Poppins_500Medium', lineHeight: 17 },
   progressSection: { gap: 4 },
-  progressTrack: { height: 6, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4 },
-  progressLabel: { ...TextStyles.tabLabel },
+  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2 },
+  progressLabel: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
   checkInBtn: { height: 36, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  checkInText: { ...TextStyles.captionSemibold, color: '#fff' },
+  checkInText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' },
   completedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flex: 1 },
-  completedText: { ...TextStyles.captionSemibold },
+  completedText: { fontSize: 12, fontFamily: 'Poppins_700Bold' },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1.5, backgroundColor: CultureTokens.gold + '08' },
-  shareText: { color: CultureTokens.gold, ...TextStyles.badge },
+  shareText: { color: CultureTokens.gold, fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
 });
 
 // ─── Explorer Badge ───────────────────────────────────────────────────────────
@@ -332,7 +333,7 @@ function ExplorerBadge({
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-        <View style={[eb.levelCircle, { backgroundColor: colors.surfaceElevated }]}>
+        <View style={[eb.ringContainer, { backgroundColor: colors.surfaceElevated, borderRadius: 32 }]}>
             <Ionicons name="person-circle-outline" size={28} color={CultureTokens.indigo} />
         </View>
         <View style={{ flex: 1 }}>
@@ -385,11 +386,24 @@ function ExplorerBadge({
     );
   }
 
-  const tierLevel = rewards.tier === 'silver' ? 1 : rewards.tier === 'gold' ? 2 : 3;
   const expProgress = Math.min(1, Math.max(0, (rewards.progressPercent ?? 0) / 100));
   const subtitle = rewards.nextTierLabel
     ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
     : 'Top rewards tier unlocked';
+
+  const tierColors: Record<string, string> = {
+    silver: CultureTokens.indigo,
+    gold: CultureTokens.gold,
+    diamond: CultureTokens.teal,
+  };
+  const tierColor = tierColors[rewards.tier] ?? CultureTokens.indigo;
+
+  // SVG circular progress ring
+  const RING_SIZE = 64;
+  const STROKE = 5;
+  const RADIUS = (RING_SIZE - STROKE) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - expProgress);
 
   return (
     <Animated.View
@@ -397,49 +411,123 @@ function ExplorerBadge({
       style={[eb.explorerCard, { backgroundColor: colors.surface }]}
     >
       <LinearGradient
-        colors={[CultureTokens.gold + '22', 'transparent']}
+        colors={[CultureTokens.indigo + '14', 'transparent']}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      <LinearGradient colors={[CultureTokens.gold, '#F4A100']} style={eb.levelCircle}>
-        <Text style={eb.levelText}>{tierLevel}</Text>
-        <Text style={eb.levelLabel}>LVL</Text>
-      </LinearGradient>
-      <View style={{ flex: 1 }}>
-        <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer · {rewards.tierLabel}</Text>
-        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
-        <View style={[eb.expBarTrack, { backgroundColor: colors.borderLight }]}>
-          <LinearGradient
-            colors={[CultureTokens.gold, '#F4A100']}
-            style={[eb.expBarFill, { width: `${expProgress * 100}%` as `${number}%` }]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+      {/* Progress ring */}
+      <View style={eb.ringContainer}>
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          <Defs>
+            <SvgLinearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor={CultureTokens.indigo} />
+              <Stop offset="1" stopColor={CultureTokens.teal} />
+            </SvgLinearGradient>
+          </Defs>
+          {/* Track */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke={colors.borderLight}
+            strokeWidth={STROKE}
+            fill="none"
           />
+          {/* Fill */}
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RADIUS}
+            stroke="url(#ring-grad)"
+            strokeWidth={STROKE}
+            fill="none"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            rotation="-90"
+            origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+          />
+        </Svg>
+        <View style={eb.ringCenter}>
+          <Text style={[eb.ringPct, { color: colors.text }]}>
+            {Math.round(expProgress * 100)}
+          </Text>
+          <Text style={[eb.ringPctLabel, { color: colors.textTertiary }]}>%</Text>
         </View>
+      </View>
+
+      <View style={{ flex: 1, gap: 4 }}>
+        <View style={eb.tierRow}>
+          <Text style={[eb.explorerTitle, { color: colors.text }]}>Cultural Explorer</Text>
+          <View style={[eb.tierBadge, { backgroundColor: tierColor + '18', borderColor: tierColor + '40' }]}>
+            <Text style={[eb.tierBadgeText, { color: tierColor }]}>{rewards.tierLabel}</Text>
+          </View>
+        </View>
+        <Text style={[eb.explorerSub, { color: colors.textSecondary }]}>{subtitle}</Text>
+        <Text style={[eb.pointsText, { color: colors.textTertiary }]}>
+          {rewards.points.toLocaleString()} pts total
+        </Text>
       </View>
     </Animated.View>
   );
 }
 
 const eb = StyleSheet.create({
-  explorerCard: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 16, 
-    padding: 18, 
-    borderRadius: 24, 
-    marginBottom: 24, 
+  explorerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 18,
+    borderRadius: 24,
+    marginBottom: 24,
     overflow: 'hidden',
     ...MAIN_TAB_CARD_SHADOW,
   },
-  levelCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  levelText: { color: '#fff', ...TextStyles.title3, lineHeight: 22 },
-  levelLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
-  explorerTitle: { ...TextStyles.headline, marginBottom: 2 },
-  explorerSub: { ...TextStyles.caption, marginBottom: 10, opacity: 0.8 },
-  expBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  expBarFill: { height: '100%', borderRadius: 3 },
+  ringContainer: {
+    width: 64,
+    height: 64,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  ringCenter: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+  },
+  ringPct: {
+    fontSize: 16,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 20,
+  },
+  ringPctLabel: {
+    fontSize: 9,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tierBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  tierBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  explorerTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  explorerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', opacity: 0.8 },
+  pointsText: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
   signInBtn: {
     marginTop: 10,
     borderRadius: 12,
@@ -451,7 +539,7 @@ const eb = StyleSheet.create({
     gap: 8,
     alignSelf: 'flex-start',
   },
-  signInBtnText: { color: '#fff', ...TextStyles.chip },
+  signInBtnText: { color: '#fff', fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 });
 
 // ─── Membership Upgrade Banner ────────────────────────────────────────────────
@@ -500,10 +588,10 @@ const mb = StyleSheet.create({
     overflow: 'hidden',
     ...MAIN_TAB_CARD_SHADOW_STRONG,
   },
-  headline: { ...TextStyles.callout, color: '#fff', marginBottom: 2 },
-  sub: { ...TextStyles.caption, color: 'rgba(255,255,255,0.8)' },
+  headline: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#fff', marginBottom: 2 },
+  sub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)' },
   btn: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  btnText: { ...TextStyles.captionSemibold, color: CultureTokens.indigo },
+  btnText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -925,31 +1013,31 @@ const s = StyleSheet.create({
 
   filterRow:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
   clearBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText:   { ...TextStyles.captionSemibold, lineHeight: 17 },
+  clearBtnText:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
 
   toggleWrap:     { flexDirection: 'row', padding: 5, borderRadius: 18, marginBottom: 20, gap: 4 },
   toggleBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 14, overflow: 'hidden' },
   toggleBtnActive:{},
-  toggleText:     { ...TextStyles.chip },
+  toggleText:     { fontSize: 13, fontFamily: 'Poppins_700Bold' },
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  sectionLabel:   { ...TextStyles.captionSemibold, textTransform: 'uppercase', letterSpacing: 0.8 },
+  sectionLabel:   { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8 },
   statsRow: { flexDirection: 'row', gap: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  statPillText: { ...TextStyles.captionSemibold },
+  statPillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
   dynamicSectionHeader: { marginTop: 10, marginBottom: 2 },
-  dynamicSectionTitle: { ...TextStyles.callout },
-  dynamicSectionSubtitle: { ...TextStyles.caption },
+  dynamicSectionTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold' },
+  dynamicSectionSubtitle: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
 
   list:           { paddingTop: MAIN_TAB_UI.sectionGapSmall, gap: MAIN_TAB_UI.sectionGapSmall },
   listFooter:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },
-  listFooterText: { ...TextStyles.cardTitle, textTransform: 'uppercase', letterSpacing: 1 },
+  listFooterText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 20 },
   endLine:        { flex: 1, height: 1, opacity: 0.5 },
 
   emptyState:     { alignItems: 'center', paddingVertical: 80, paddingHorizontal: 40, gap: 14 },
   emptyIcon:      { width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 8 },
-  emptyTitle:     { ...TextStyles.title3, lineHeight: 24 },
-  emptyDesc:      { ...TextStyles.callout, textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  emptyTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24 },
+  emptyDesc:      { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, opacity: 0.8 },
   resetBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12 },
-  resetBtnText:   { ...TextStyles.cardTitle, textTransform: 'uppercase', letterSpacing: 0.5 },
+  resetBtnText:   { fontSize: 14, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 19 },
 });

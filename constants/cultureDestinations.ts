@@ -22,16 +22,15 @@ export type CultureDestinationDefinition = {
   metaDescription: string;
 };
 
+/** Hub hero art: leave empty so clients use brand gradients until you set licensed imagery. */
 const HERO = {
-  kerala:
-    'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&w=2000&q=90',
-  india: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=2000&q=90',
-  festival:
-    'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=2000&q=90',
-  city: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=2000&q=90',
-  dance: 'https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?auto=format&fit=crop&w=2000&q=90',
-  food: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=2000&q=90',
-  globe: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=2000&q=90',
+  kerala: '',
+  india: '',
+  festival: '',
+  city: '',
+  dance: '',
+  food: '',
+  globe: '',
 } as const;
 
 export const CULTURE_DESTINATIONS: Record<string, CultureDestinationDefinition> = {

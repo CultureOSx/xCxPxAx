@@ -14,14 +14,20 @@ import {
 const siteUrl = SITE_ORIGIN;
 const siteTitle = APP_WEB_TITLE;
 const siteDescription = APP_WEB_DESCRIPTION;
+/** Open Graph / Twitter — 1200×630 recommended; regenerate via `node scripts/ship-assets.mjs`. */
 const ogImageUrl = `${siteUrl}/assets/images/social-preview.png`;
+/** Square app icon for JSON-LD Organization.logo (Google prefers ≥112×112). */
+const siteLogoUrl = `${siteUrl}/assets/images/icon.png`;
 
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: APP_NAME,
   url: siteUrl,
-  logo: ogImageUrl,
+  logo: {
+    '@type': 'ImageObject',
+    url: siteLogoUrl,
+  },
   sameAs: [SITE_ORIGIN_WWW],
 };
 
@@ -52,13 +58,21 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <link rel="canonical" href={siteUrl} />
         <link rel="alternate" hrefLang="en-au" href={siteUrl} />
         <link rel="alternate" hrefLang="x-default" href={siteUrl} />
+        <link rel="icon" href="/assets/images/favicon.png" sizes="192x192" type="image/png" />
+        <link rel="apple-touch-icon" href="/assets/images/icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
 
         <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_AU" />
         <meta property="og:site_name" content={APP_NAME} />
         <meta property="og:title" content={siteTitle} />
         <meta property="og:description" content={siteDescription} />
         <meta property="og:url" content={siteUrl} />
         <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={siteTitle} />

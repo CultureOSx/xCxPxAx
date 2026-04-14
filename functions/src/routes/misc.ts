@@ -7,14 +7,15 @@ import { parseBody, nowIso,
   captureRouteError,
 } from './utils';
 import { getRolloutConfig, isFeatureEnabledForUser } from '../services/rollout';
+import { zHttpsImageUrlRequired, zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 export const miscRouter = Router();
 
 const mediaAttachSchema = z.object({
   targetType: z.enum(['user', 'profile', 'event', 'business', 'post']),
   targetId: z.string().min(1),
-  imageUrl: z.string().url(),
-  thumbnailUrl: z.string().url().optional(),
+  imageUrl: zHttpsImageUrlRequired,
+  thumbnailUrl: zOptionalHttpsImageUrl,
   width: z.number().int().optional(),
   height: z.number().int().optional(),
 });

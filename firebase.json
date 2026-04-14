@@ -1,68 +1,134 @@
 {
-  "hosting": {
-    "site": "culturepass",
-    "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*"
-    ],
-    "headers": [
-      {
-        "source": "/_expo/static/js/**",
-        "headers": [
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      },
-      {
-        "source": "/_expo/static/css/**",
-        "headers": [
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      },
-      {
-        "source": "/assets/(.*).ttf",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Content-Type", "value": "font/ttf" },
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      },
-      {
-        "source": "/assets/(.*).woff2",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Content-Type", "value": "font/woff2" },
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      },
-      {
-        "source": "/assets/(.*).woff",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Content-Type", "value": "font/woff" },
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      },
-      {
-        "source": "/assets/(.*).otf",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Content-Type", "value": "font/otf" },
-          { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
-        ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "/api/**",
-        "function": "api"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+  "hosting": [
+    {
+      "site": "culturepass",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "/_expo/static/js/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/_expo/static/css/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).ttf",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/ttf" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).woff2",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/woff2" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).woff",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/woff" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).otf",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/otf" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/api/**",
+          "function": "api"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "site": "culturepass-4f264",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "/_expo/static/js/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/_expo/static/css/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).ttf",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/ttf" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).woff2",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/woff2" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).woff",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/woff" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        },
+        {
+          "source": "/assets/(.*).otf",
+          "headers": [
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Content-Type", "value": "font/otf" },
+            { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/api/**",
+          "function": "api"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ],
   "functions": [
     {
       "codebase": "default",

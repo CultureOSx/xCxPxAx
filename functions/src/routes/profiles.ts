@@ -10,6 +10,12 @@ import { parseBody,
 } from './utils';
 import { z } from 'zod';
 import type { FirestoreProfile } from '../services/profiles';
+import { zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
+import { enqueueTransactionalEmail } from '../services/emailQueue';
+import {
+  buildCommunityCreatedEmail,
+  buildCommunityInvitationEmail,
+} from '../services/emailTemplates';
 
 export const profilesRouter = Router();
 
@@ -24,19 +30,31 @@ const optionalEmailField = z
   .optional()
   .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
 
+const PLACE_ALLOWED_CHARS = /^[A-Za-z\s'.-]+$/;
+const optionalPlaceField = z
+  .string()
+  .optional()
+  .transform((value) => {
+    const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
+    return normalized || undefined;
+  })
+  .refine((value) => !value || (value.length >= 2 && value.length <= 80 && PLACE_ALLOWED_CHARS.test(value)), {
+    message: 'location fields must be 2-80 chars with valid letters',
+  });
+
 const createProfileSchema = z.object({
   name: z.string().min(1),
   entityType: z.enum(['community', 'business', 'venue', 'artist', 'organisation', 'council', 'government', 'charity']),
-  city: z.string().optional(),
+  city: optionalPlaceField,
   state: z.string().max(20).optional(),
   postcode: z.coerce.number().int().min(200).max(9999).optional(),
-  country: z.string().optional(),
+  country: optionalPlaceField,
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
   category: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  imageUrl: optionalUrlField,
+  imageUrl: zOptionalHttpsImageUrl,
   website: optionalUrlField,
   email: optionalEmailField,
   contactEmail: optionalEmailField,
@@ -187,10 +205,106 @@ profilesRouter.post('/communities', requireAuth, async (req: Request, res: Respo
       handleStatus: 'pending',
     });
 
+    if (req.user?.email) {
+      const appUrl = (process.env.APP_URL ?? 'https://culturepass.app').trim().replace(/\/+$/, '');
+      const communityUrl = `${appUrl}/community/${encodeURIComponent(result.id)}`;
+      const createdEmail = buildCommunityCreatedEmail({
+        creatorName: req.user.username ?? 'there',
+        communityName: result.name,
+        communityUrl,
+      });
+      enqueueTransactionalEmail({
+        to: req.user.email,
+        subject: createdEmail.subject,
+        html: createdEmail.html,
+        text: createdEmail.text,
+        metadata: {
+          template: 'community-created',
+          communityId: result.id,
+          userId: req.user.id,
+        },
+      }).catch((emailErr) => captureRouteError(emailErr, 'communities/create-email'));
+    }
+
     return res.status(201).json({ community: result });
   } catch (err) {
     captureRouteError(err, 'POST /api/communities');
     return res.status(500).json({ error: 'Failed to create community' });
+  }
+});
+
+const communityInviteSchema = z.object({
+  emails: z.array(z.string().email()).min(1).max(50),
+  inviterName: z.string().min(1).max(80).optional(),
+  message: z.string().max(600).optional(),
+});
+
+/** POST /api/communities/:id/invitations — invite users to a community via email */
+profilesRouter.post('/communities/:id/invitations', requireAuth, async (req: Request, res: Response) => {
+  const communityId = String(req.params.id ?? '').trim();
+  if (!communityId) return res.status(400).json({ error: 'community id required' });
+
+  let body: z.infer<typeof communityInviteSchema>;
+  try {
+    body = parseBody(communityInviteSchema, req.body ?? {});
+  } catch (err) {
+    return res.status(400).json({ error: err instanceof Error ? err.message : 'invalid invitation payload' });
+  }
+
+  try {
+    const community = await profilesService.getById(communityId);
+    if (!community || community.entityType !== 'community') {
+      return res.status(404).json({ error: 'Community not found' });
+    }
+
+    const ownerId = (community as FirestoreProfile & { ownerId?: string }).ownerId ?? null;
+    const role = req.user!.role;
+    const canManage = ownerId === req.user!.id || role === 'platformAdmin' || role === 'admin' || role === 'moderator';
+    if (!canManage) return res.status(403).json({ error: 'Insufficient permissions.' });
+
+    const appUrl = (process.env.APP_URL ?? 'https://culturepass.app').trim().replace(/\/+$/, '');
+    const communityUrl = `${appUrl}/community/${encodeURIComponent(community.id)}`;
+    const senderName = trimOpt(body.inviterName) ?? req.user!.username ?? 'CulturePass member';
+    const inviteMessage = trimOpt(body.message);
+    const recipients = Array.from(new Set(body.emails.map((email) => email.trim().toLowerCase())));
+
+    await Promise.all(recipients.map(async (email) => {
+      await db.collection('communityInvitations').add({
+        communityId: community.id,
+        communityName: community.name,
+        invitedBy: req.user!.id,
+        invitedByName: senderName,
+        inviteeEmail: email,
+        message: inviteMessage ?? null,
+        status: 'sent',
+        createdAt: nowIso(),
+      });
+
+      const inviteEmail = buildCommunityInvitationEmail({
+        inviteeEmail: email,
+        inviterName: senderName,
+        communityName: community.name,
+        inviteMessage,
+        communityUrl,
+      });
+
+      await enqueueTransactionalEmail({
+        to: email,
+        subject: inviteEmail.subject,
+        html: inviteEmail.html,
+        text: inviteEmail.text,
+        metadata: {
+          template: 'community-invite',
+          communityId: community.id,
+          invitedBy: req.user!.id,
+        },
+      });
+    }));
+    const sent = recipients.length;
+    return res.status(201).json({ success: true, sent, skipped: recipients.length - sent });
+  } catch (err) {
+    captureRouteError(err, 'POST /api/communities/:id/invitations');
+    return res.status(500).json({ error: 'Failed to send invitations' });
   }
 });
 

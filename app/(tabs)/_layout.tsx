@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Main Tab Layout — CulturePass
- * Bottom bar: Discover · Feed · Events · Community · Perks
- * Profile & account: header menu (burger) → /menu
+ * Bottom bar: Discover · Events · Community · My City · Perks · Profile
+ * Menu: accessible via /menu deep link and profile header avatar
  */
 export default function TabsLayout() {
   return (
@@ -65,16 +65,21 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* Meet (CultraMeet) route is ready; kept off tab bar for phased rollout.
+          Future swap: replace the Perks tab entry with this Meet entry. */}
+      <Tabs.Screen name="meet" options={{ href: null }} />
+
+      {/* Profile — primary destination in tab bar. Shows user avatar when authenticated. */}
       <Tabs.Screen
-        name="menu"
+        name="profile"
         options={{
-          title: 'Menu',
-          tabBarIcon: ({ color, size }) => <Ionicons name="menu-outline" size={size} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" size={size} color={color} />,
         }}
       />
 
-      {/* In-tab profile (opened from Account menu, deep links, avatar). Hidden from tab bar. */}
-      <Tabs.Screen name="profile" options={{ href: null }} />
+      {/* Menu — accessible via deep link (/menu) and profile header. Hidden from tab bar. */}
+      <Tabs.Screen name="menu" options={{ href: null }} />
 
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />

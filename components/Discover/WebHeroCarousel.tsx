@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { EventData } from '@shared/schema';
+import { eventListImageUrl } from '@/lib/eventImage';
 
 interface WebHeroCarouselProps {
   events: EventData[];
@@ -55,9 +56,19 @@ function WebHeroCarousel({ events }: WebHeroCarouselProps) {
   }
 
   const event = events[current];
+  const heroUri = eventListImageUrl(event);
   return (
     <View style={[styles.webHeroCarousel, { height: heroHeight, backgroundColor: colors.surface }]}>
-      <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+      {heroUri ? (
+        <Image source={{ uri: heroUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+      ) : (
+        <LinearGradient
+          colors={[colors.primary, colors.secondary, colors.accent]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      )}
       <LinearGradient
         colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.88)']}
         locations={[0, 0.5, 1]}

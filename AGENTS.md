@@ -3,7 +3,7 @@
 > The definitive blueprint for CulturePass: architecture, tech stack, design laws, data models, and API patterns. **Read this before touching code.**
 >
 > **Last Updated**: April 2026
-> **Related Docs**: [`CLAUDE.md`](CLAUDE.md) (Quickstart), [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md), [`culturepass-rules.md`](culturepass-rules.md).
+> **Related Docs**: [`CLAUDE.md`](CLAUDE.md) (Quickstart), [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md), [`docs/UI_SYSTEM.md`](docs/UI_SYSTEM.md) (tokens + marketing layout), [`culturepass-rules.md`](culturepass-rules.md), [`docs/AI_AGENT_STYLE_SHEET.md`](docs/AI_AGENT_STYLE_SHEET.md).
 
 ---
 
@@ -160,3 +160,39 @@ We use a **Namespace Pattern** in `lib/api.ts`:
 - [ ] Push notification category opt-outs.
 - [ ] Promotional code system (`promoCodes` collection).
 - [ ] Apple/Google Pay wallet top-up integration.
+
+---
+
+## Cursor Cloud specific instructions
+
+### Services overview
+
+| Service | Command | Port | Required |
+|---------|---------|------|----------|
+| Expo Web Dev Server | `npx expo start --web --port 8081` | 8081 | Yes |
+| Firebase Emulators | `npx firebase emulators:start --only functions,firestore,auth,storage` | 5001 (Functions), 8080 (Firestore), 9099 (Auth), 9199 (Storage), 4000 (UI) | Yes |
+
+### Starting the dev environment
+
+1. **Firebase emulators first**: Start emulators before the Expo dev server so the API is ready when the frontend loads. Functions must be built before starting emulators: `cd functions && npm run build && cd ..`.
+2. **Expo web dev server**: `npx expo start --web --port 8081`. The `.env` file must exist with `EXPO_PUBLIC_*` Firebase config vars (even placeholder values work with emulators) and `EXPO_PUBLIC_USE_FIREBASE_EMULATORS=true`.
+3. **Health check**: `curl http://localhost:5001/culturepass-4f264/us-central1/api/health` should return `{"status":"ok"}`.
+
+### Key gotchas
+
+- **`.env` is required at startup**: The Expo bundler reads `EXPO_PUBLIC_*` vars at bundle time. If `.env` is missing or a required Firebase key is empty, the app throws immediately on load. Copy `.env.example` to `.env` and fill placeholder values.
+- **Functions must be compiled**: The emulator loads from `functions/lib/`. Always run `cd functions && npm run build` after changing backend code. The `build:watch` script (`npm run build:watch` inside `functions/`) is useful for iterative backend development.
+- **`postinstall` runs `patch-package`**: The root `npm install` automatically runs `patch-package` and `scripts/fix-metro-core.js`. If patches fail, check the `patches/` directory.
+- **Protected routes**: Calendar, Community, Perks, and Profile tabs require authentication (`AuthGuard`). The Discover page and public event/profile detail pages are accessible without login.
+- **`test:web:route-hygiene` needs a build**: This test validates the `dist/` output. Run `npm run build-web` first if `dist/` doesn't exist.
+
+### Commands quick reference
+
+See `CLAUDE.md` "Local Development" section for full commands. Key ones:
+
+- **Lint**: `npm run lint`
+- **Typecheck**: `npm run typecheck`
+- **Unit tests**: `npm run test:unit`
+- **Integration tests**: `npm run test:integration`
+- **Full QA**: `npm run qa:solid` (lint + typecheck + all tests + web build + route hygiene)
+- **Web build**: `npm run build-web`

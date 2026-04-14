@@ -1,0 +1,317 @@
+# Instincts generated from https://github.com/CultureOSx/xCxPxAx
+# Generated: 2026-04-09T23:59:37.112Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: xCxPxAx-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Commit Length
+
+## Action
+
+Write moderate-length commit messages (~85 characters)
+
+## Evidence
+
+- Average commit message length: 85 chars
+- Based on 2 commits
+
+---
+id: xCxPxAx-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: xCxPxAx-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: xCxPxAx-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: xCxPxAx-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: xCxPxAx-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: xcxpxax-instinct-file-naming
+trigger: "When creating a new file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct File Naming
+
+## Action
+
+Name the file using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.files
+
+---
+id: xcxpxax-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.functions
+
+---
+id: xcxpxax-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: xcxpxax-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: xcxpxax-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Import Style
+
+## Action
+
+Use alias-based import paths
+
+## Evidence
+
+- Pattern in importStyle: alias
+
+---
+id: xcxpxax-instinct-export-style
+trigger: "When exporting modules or values"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Export Style
+
+## Action
+
+Use either named or default exports as appropriate (mixed export style)
+
+## Evidence
+
+- Pattern in exportStyle: mixed
+
+---
+id: xcxpxax-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Test Location
+
+## Action
+
+Place test files in a separate directory from source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
+---
+id: xcxpxax-instinct-commit-prefix
+trigger: "When writing a commit message for a bug fix"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Commit Prefix
+
+## Action
+
+Prefix the commit message with 'fix:'
+
+## Evidence
+
+- Seen in commit: fix: event image URLs...
+- Pattern in commits.prefixes
+
+---
+id: xcxpxax-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Commit Length
+
+## Action
+
+Include a concise but descriptive summary, aiming for around 85 characters
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: xcxpxax-instinct-error-boundaries
+trigger: "When handling errors in UI components"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Error Boundaries
+
+## Action
+
+Use error boundaries to catch and handle errors
+
+## Evidence
+
+- Pattern in errorHandling.errorBoundaries: true
+

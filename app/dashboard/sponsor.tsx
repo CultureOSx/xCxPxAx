@@ -279,7 +279,7 @@ function SponsorDashboardContent() {
     queryKey: ['/api/events', 'sponsor', userId],
     queryFn: async () => {
       try {
-        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 100 });
+        const res = await api.events.list({ organizerId: userId ?? undefined, pageSize: 100, includePast: true });
         return { events: (res.events ?? []) as SponsoredEvent[] };
       } catch {
         return { events: [] };

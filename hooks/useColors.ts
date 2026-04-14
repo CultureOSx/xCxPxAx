@@ -5,7 +5,7 @@
  *   • Native (iOS / Android): dark theme by default (night festival aesthetic).
  *     Respects the device color-scheme preference — if the user explicitly sets
  *     their device to light mode, light theme is returned.
- *   • Web: always light theme (white-first web surfaces).
+ *   • Web: follows the same appearance preference / system scheme as native (see useAppAppearance).
  *
  * Usage:
  *   const colors = useColors();

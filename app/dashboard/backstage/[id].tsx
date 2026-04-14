@@ -1,159 +1,58 @@
-// app/dashboard/backstage/[id].tsx
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Platform,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Image } from 'expo-image';
+// app/dashboard/backstage/[id].tsx — organiser backstage (launch: no simulated stream or chat)
+import React from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  FadeInUp, 
-  FadeInLeft,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { CultureTokens, TextStyles } from '@/constants/theme';
-
-const MOCK_MESSAGES = [
-  { id: '1', user: 'CultureEnthusiast', text: 'This performance is incredible! Loving the visuals.', color: CultureTokens.indigo },
-  { id: '2', user: 'SukiFan_99', text: 'Suki is on fire tonight! 🔥', color: '#CD2E3A' },
-  { id: '3', user: 'TablaKing', text: 'The rhythm section is so tight.', color: '#FF9933' },
-];
+import { gradients, TextStyles } from '@/constants/theme';
+import { Button } from '@/components/ui/Button';
+import { useColors } from '@/hooks/useColors';
 
 export default function ArtistBackstagePortal() {
   const insets = useSafeAreaInsets();
-  const [chat, setChat] = useState(MOCK_MESSAGES);
-  const [msg, setMsg] = useState('');
-
-  // Live indicator animation
-  const pulse = useSharedValue(1);
-  useEffect(() => {
-    pulse.value = withRepeat(withSequence(withTiming(1.2, { duration: 600 }), withTiming(1, { duration: 600 })), -1, true);
-  }, [pulse]);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulse.value,
-    transform: [{ scale: pulse.value }],
-  }));
-
-  const handleSend = () => {
-    if (!msg.trim()) return;
-    setChat([...chat, { id: Date.now().toString(), user: 'You', text: msg, color: CultureTokens.teal }]);
-    setMsg('');
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  const colors = useColors();
+  const { title } = useLocalSearchParams<{ id?: string; title?: string }>();
+  const heading = typeof title === 'string' && title.trim() ? title.trim() : 'Backstage';
 
   return (
-    <View style={styles.root}>
-      {/* High-Impact Video Background / Placeholder */}
-      <View style={styles.videoContainer}>
-        <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1200' }} 
-          style={StyleSheet.absoluteFill} 
-          contentFit="cover"
-        />
-        <LinearGradient colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
-        
-        {/* Back Button */}
-        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 16 }]} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={[...gradients.midnight]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View style={[styles.safe, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 }]}>
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon="chevron-back"
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          }}
+          accessibilityLabel="Go back"
+        >
+          Back
+        </Button>
 
-        {/* Live Indicator */}
-        <View style={[styles.liveBadge, { top: insets.top + 16 }]}>
-          <Animated.View style={[styles.liveDot, pulseStyle]} />
-          <Text style={styles.liveText}>LIVE: Artist Backstage</Text>
+        <View style={styles.body}>
+          <Text style={[styles.title, { color: colors.text }]}>{heading}</Text>
+          <Text style={[styles.copy, { color: colors.textSecondary }]}>
+            Live stream and audience chat will appear here when your organiser runs a backstage session. There is nothing
+            to preview until that experience is enabled for a real event.
+          </Text>
         </View>
-
-        {/* Artist Profile Overay */}
-        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.artistInfo}>
-          <Image source={{ uri: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=400' }} style={styles.artistAvatar} />
-          <View>
-            <Text style={styles.artistName}>Suki Park</Text>
-            <View style={styles.viewerCount}>
-              <Ionicons name="people" size={12} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.viewerText}>1,429 watching</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.followBtn}><Text style={styles.followText}>Follow</Text></TouchableOpacity>
-        </Animated.View>
       </View>
-
-      {/* Chat & Interaction Portal */}
-      <BlurView intensity={30} tint="dark" style={[styles.interactionPortal, { paddingBottom: insets.bottom + 20 }]}>
-        <ScrollView style={styles.chatFeed} showsVerticalScrollIndicator={false} contentContainerStyle={styles.chatScroll}>
-          {chat.map((m, idx) => (
-            <Animated.View key={m.id} entering={FadeInLeft.delay(idx * 100).springify()} style={[styles.msgContainer, { borderLeftColor: m.color }]}>
-              <Text style={[styles.msgUser, { color: m.color }]}>{m.user}</Text>
-              <Text style={styles.msgText}>{m.text}</Text>
-            </Animated.View>
-          ))}
-        </ScrollView>
-
-        {/* Input Bar */}
-        <View style={styles.inputArea}>
-          <View style={styles.inputBar}>
-            <TextInput 
-              style={styles.input}
-              placeholder="Join the conversation..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              value={msg}
-              onChangeText={setMsg}
-              onSubmitEditing={handleSend}
-            />
-            <TouchableOpacity onPress={handleSend} style={styles.sendIcon}>
-              <Ionicons name="send" size={20} color={CultureTokens.indigo} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.giftBtn}>
-            <LinearGradient colors={[CultureTokens.gold, CultureTokens.gold]} style={styles.giftFill}>
-              <Ionicons name="gift" size={24} color="#000" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </BlurView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
-  videoContainer: { flex: 0.65, position: 'relative' },
-  backBtn: { position: 'absolute', left: 24, zIndex: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
-  liveBadge: { position: 'absolute', left: 80, zIndex: 10, backgroundColor: 'rgba(238, 28, 37, 0.9)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  liveText: { color: '#fff', ...TextStyles.badge, letterSpacing: 0.5 },
-  artistInfo: { position: 'absolute', bottom: 24, left: 24, right: 24, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  artistAvatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#fff' },
-  artistName: { color: '#fff', ...TextStyles.title3 },
-  viewerCount: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  viewerText: { color: 'rgba(255,255,255,0.7)', ...TextStyles.caption },
-  followBtn: { marginLeft: 'auto', backgroundColor: CultureTokens.indigo, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  followText: { color: '#fff', ...TextStyles.chip },
-
-  interactionPortal: { flex: 0.35, borderTopLeftRadius: 36, borderTopRightRadius: 36, overflow: 'hidden' },
-  chatFeed: { flex: 1, padding: 24 },
-  chatScroll: { gap: 16 },
-  msgContainer: { borderLeftWidth: 3, paddingLeft: 12, paddingVertical: 2 },
-  msgUser: { ...TextStyles.badge, textTransform: 'uppercase' },
-  msgText: { color: '#fff', ...TextStyles.cardBody, marginTop: 2 },
-  inputArea: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingBottom: 10, alignItems: 'center' },
-  inputBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20, paddingHorizontal: 16, height: 56 },
-  input: { flex: 1, color: '#fff', ...TextStyles.cardBody },
-  sendIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  giftBtn: { width: 56, height: 56, borderRadius: 20, overflow: 'hidden' },
-  giftFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1 },
+  safe: { flex: 1, paddingHorizontal: 24 },
+  body: { flex: 1, justifyContent: 'center', gap: 16, maxWidth: 520 },
+  title: { ...TextStyles.title, fontSize: 28 },
+  copy: { ...TextStyles.body, lineHeight: 24 },
 });

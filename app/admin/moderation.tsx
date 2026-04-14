@@ -13,7 +13,18 @@ import { api } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
+import {
+  CardTokens,
+  ChipTokens,
+  Colors,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  gradients,
+  IconSize,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import { queryClient } from '@/lib/query-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,6 +32,9 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '@/components/ui/Card';
 
 const isWeb = Platform.OS === 'web';
+const MOD_UI = {
+  emptyIconSize: 44,
+} as const;
 
 type ModerationTab = 'reports' | 'events';
 type ReportStatus = 'pending' | 'resolved' | 'dismissed';
@@ -29,12 +43,12 @@ const TARGET_TYPE_META: Record<string, { label: string; icon: string; color: str
   event:     { label: 'Event',     icon: 'calendar-outline',  color: CultureTokens.gold },
   community: { label: 'Community', icon: 'people-outline',    color: CultureTokens.indigo },
   profile:   { label: 'Profile',   icon: 'person-outline',    color: CultureTokens.teal },
-  post:      { label: 'Post',      icon: 'chatbubble-outline', color: '#A78BFA' },
+  post:      { label: 'Post',      icon: 'chatbubble-outline', color: CultureTokens.purple },
   user:      { label: 'User',      icon: 'person-outline',    color: CultureTokens.coral },
 };
 
 function getMeta(targetType: string) {
-  return TARGET_TYPE_META[targetType] ?? { label: targetType, icon: 'flag-outline', color: '#8E8E93' };
+  return TARGET_TYPE_META[targetType] ?? { label: targetType, icon: 'flag-outline', color: Colors.textTertiary };
 }
 
 function timeAgo(iso: string): string {
@@ -62,10 +76,10 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
-  icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  val:  { ...TextStyles.headline },
-  lbl:  { ...TextStyles.tabLabel },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: Spacing.sm + 2, borderRadius: CardTokens.radius - 2, borderWidth: 1 },
+  icon: { width: IconSize.lg + 6, height: IconSize.lg + 6, borderRadius: Spacing.sm + 1, alignItems: 'center', justifyContent: 'center' },
+  val:  { fontSize: FontSize.body, fontFamily: FontFamily.bold },
+  lbl:  { fontSize: FontSize.tab, fontFamily: FontFamily.medium },
 });
 
 function ReportCardSkeleton() {
@@ -116,10 +130,10 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
               <Text style={[rc.typeBadgeText, { color: meta.color }]}>{meta.label}</Text>
             </View>
             <View style={[rc.statusBadge, {
-              backgroundColor: isPending ? CultureTokens.coral + '14' : '#22C55E14',
-              borderColor: isPending ? CultureTokens.coral + '40' : '#22C55E40',
+              backgroundColor: isPending ? CultureTokens.coral + '14' : CultureTokens.success + '14',
+              borderColor: isPending ? CultureTokens.coral + '40' : CultureTokens.success + '40',
             }]}>
-              <Text style={[rc.statusText, { color: isPending ? CultureTokens.coral : '#22C55E' }]}>
+              <Text style={[rc.statusText, { color: isPending ? CultureTokens.coral : CultureTokens.success }]}>
                 {isPending ? 'Pending' : report.status.charAt(0).toUpperCase() + report.status.slice(1)}
               </Text>
             </View>
@@ -148,7 +162,7 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
           {isPending ? (
             <View style={rc.actions}>
               <Pressable
-                style={[rc.actionBtn, { backgroundColor: '#22C55E18', borderColor: '#22C55E44' }]}
+                style={[rc.actionBtn, { backgroundColor: CultureTokens.success + '18', borderColor: CultureTokens.success + '44' }]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onResolve();
@@ -156,8 +170,8 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
                 accessibilityRole="button"
                 accessibilityLabel="Resolve report"
               >
-                <Ionicons name="checkmark" size={14} color="#22C55E" />
-                <Text style={[rc.actionText, { color: '#22C55E' }]}>Resolve</Text>
+                <Ionicons name="checkmark" size={14} color={CultureTokens.success} />
+                <Text style={[rc.actionText, { color: CultureTokens.success }]}>Resolve</Text>
               </Pressable>
               <Pressable
                 style={[rc.actionBtn, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
@@ -192,22 +206,22 @@ function ReportCard({ report, onResolve, onDismiss, index }: {
 }
 
 const rc = StyleSheet.create({
-  card:       { flexDirection: 'row', gap: 12, borderRadius: 16, borderWidth: 1, overflow: 'hidden', padding: 14 },
-  accent:     { width: 3, borderRadius: 2, flexShrink: 0, marginLeft: -14, marginRight: 0 },
-  header:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  typeBadge:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  typeBadgeText: { ...TextStyles.badge },
-  statusBadge:{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  statusText: { ...TextStyles.badge },
-  timeText:   { ...TextStyles.caption },
-  reasonLabel:{ ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 },
-  reason:     { ...TextStyles.label },
-  details:    { ...TextStyles.caption, marginTop: 4 },
-  metaRow:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  metaText:   { ...TextStyles.badge, flex: 1 },
-  actions:    { flexDirection: 'row', gap: 8 },
-  actionBtn:  { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 10, borderWidth: 1, paddingVertical: 9 },
-  actionText: { ...TextStyles.captionSemibold },
+  card:       { flexDirection: 'row', gap: Spacing.md - 4, borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', padding: Spacing.md - 2 },
+  accent:     { width: Spacing.xs - 1, borderRadius: Spacing.xs - 2, flexShrink: 0, marginLeft: -(Spacing.md - 2), marginRight: 0 },
+  header:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  typeBadge:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Spacing.sm, borderWidth: 1 },
+  typeBadgeText: { fontSize: FontSize.micro, fontFamily: FontFamily.bold },
+  statusBadge:{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Spacing.sm, borderWidth: 1 },
+  statusText: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
+  timeText:   { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
+  reasonLabel:{ fontSize: FontSize.tab, fontFamily: FontFamily.semibold, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.xs - 1 },
+  reason:     { fontSize: FontSize.body2, fontFamily: FontFamily.medium },
+  details:    { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs },
+  metaRow:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3 },
+  metaText:   { fontSize: FontSize.micro, fontFamily: FontFamily.regular, flex: 1 },
+  actions:    { flexDirection: 'row', gap: Spacing.sm },
+  actionBtn:  { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm - 3, borderRadius: CardTokens.radius - 6, borderWidth: 1, paddingVertical: Spacing.sm + 1 },
+  actionText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
 });
 
 // ─── Event Approval Card ──────────────────────────────────────────────────────
@@ -283,20 +297,20 @@ function EventApprovalCard({ event, onApprove, index }: {
 }
 
 const ec = StyleSheet.create({
-  card:       { flexDirection: 'row', gap: 12, borderRadius: 16, borderWidth: 1, overflow: 'hidden', padding: 14 },
-  accent:     { width: 3, borderRadius: 2, flexShrink: 0, marginLeft: -14, marginRight: 0 },
-  header:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  catBadge:   { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
-  catText:    { ...TextStyles.badge },
-  time:       { ...TextStyles.caption },
-  title:      { ...TextStyles.callout },
-  metaRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  metaItem:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText:   { ...TextStyles.caption },
-  actions:    { flexDirection: 'row', gap: 8 },
-  approveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 12, paddingVertical: 10 },
-  approveBtnText: { ...TextStyles.chip, color: '#fff' },
-  viewBtn:    { width: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1 },
+  card:       { flexDirection: 'row', gap: Spacing.md - 4, borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden', padding: Spacing.md - 2 },
+  accent:     { width: Spacing.xs - 1, borderRadius: Spacing.xs - 2, flexShrink: 0, marginLeft: -(Spacing.md - 2), marginRight: 0 },
+  header:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  catBadge:   { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Spacing.sm, borderWidth: 1 },
+  catText:    { fontSize: FontSize.micro, fontFamily: FontFamily.bold },
+  time:       { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
+  title:      { fontSize: FontSize.callout, fontFamily: FontFamily.semibold },
+  metaRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md - 4 },
+  metaItem:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  metaText:   { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
+  actions:    { flexDirection: 'row', gap: Spacing.sm },
+  approveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm - 2, borderRadius: CardTokens.radius - 4, paddingVertical: Spacing.sm + 2 },
+  approveBtnText: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold, color: '#fff' },
+  viewBtn:    { width: IconSize.xxl, alignItems: 'center', justifyContent: 'center', borderRadius: CardTokens.radius - 4, borderWidth: 1 },
 });
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -438,7 +452,7 @@ function ModerationContent() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
                 {(['pending', 'resolved', 'dismissed'] as ReportStatus[]).map(st => {
                   const active = reportStatus === st;
-                  const color  = st === 'pending' ? CultureTokens.coral : st === 'resolved' ? '#22C55E' : colors.textSecondary;
+                  const color  = st === 'pending' ? CultureTokens.coral : st === 'resolved' ? CultureTokens.success : colors.textSecondary;
                   return (
                     <Pressable
                       key={st}
@@ -482,7 +496,7 @@ function ModerationContent() {
         ListEmptyComponent={
           (reportsQuery.isLoading || eventsQuery.isLoading) ? null : (
             <View style={s.emptyWrap}>
-              <Ionicons name={tab === 'reports' ? 'shield-checkmark-outline' : 'checkmark-circle-outline'} size={44} color={colors.textTertiary} />
+              <Ionicons name={tab === 'reports' ? 'shield-checkmark-outline' : 'checkmark-circle-outline'} size={MOD_UI.emptyIconSize} color={colors.textTertiary} />
               <Text style={[s.emptyTitle, { color: colors.text }]}>
                 {tab === 'reports' ? 'No reports' : 'No pending events'}
               </Text>
@@ -505,24 +519,24 @@ export default function AdminModerationScreen() {
 
 const s = StyleSheet.create({
   fill:        { flex: 1 },
-  header:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
+  header:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
   headerTitle: { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
-  headerSub:   { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
-  backBtn:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  headerBtn:   { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-  list:        { paddingTop: 16, paddingBottom: 40 },
-  listHeader:  { gap: 12, marginBottom: 12 },
-  statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tabBar:      { flexDirection: 'row', borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  tabItem:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  headerSub:   { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: Spacing.xs - 3 },
+  backBtn:     { width: IconSize.xl + Spacing.xs, height: IconSize.xl + Spacing.xs, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  headerBtn:   { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
+  list:        { paddingTop: Spacing.md, paddingBottom: Spacing.xl },
+  listHeader:  { gap: Spacing.md - 4, marginBottom: Spacing.md - 4 },
+  statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  tabBar:      { flexDirection: 'row', borderRadius: CardTokens.radius, borderWidth: 1, overflow: 'hidden' },
+  tabItem:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm - 2, paddingVertical: Spacing.md - 3, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabItemActive: {},
-  tabLabel:    { ...TextStyles.chip },
-  chips:       { gap: 8, paddingVertical: 2 },
-  chip:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipText:    { ...TextStyles.captionSemibold },
-  loadingWrap: { alignItems: 'center', gap: 10, paddingVertical: 40 },
-  loadingText: { ...TextStyles.cardBody },
-  emptyWrap:   { alignItems: 'center', gap: 10, paddingVertical: 60 },
-  emptyTitle:  { ...TextStyles.headline },
-  emptyText:   { ...TextStyles.chip, textAlign: 'center' },
+  tabLabel:    { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
+  chips:       { gap: Spacing.sm, paddingVertical: Spacing.xs - 2 },
+  chip:        { paddingHorizontal: Spacing.md - 2, paddingVertical: ChipTokens.paddingV - 1, borderRadius: ChipTokens.radius, borderWidth: 1 },
+  chipText:    { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
+  loadingWrap: { alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: Spacing.xxl },
+  loadingText: { fontSize: FontSize.body2, fontFamily: FontFamily.regular },
+  emptyWrap:   { alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: 60 },
+  emptyTitle:  { fontSize: FontSize.body, fontFamily: FontFamily.bold },
+  emptyText:   { fontSize: FontSize.chip, fontFamily: FontFamily.regular, textAlign: 'center' },
 });

@@ -133,7 +133,7 @@ Return: { eventsSeeded: 6, communitiesSeeded: 8 }
   "address": "Street, City STATE ZIP",
   "city": "Sydney",
   "country": "Australia",
-  "imageUrl": "https://images.unsplash.com/...",
+  "imageUrl": "",
   "imageColor": "#HEX_COLOR",
   "cultureTag": ["Cultural", "Tag"],
   "tags": ["tag1", "tag2"],

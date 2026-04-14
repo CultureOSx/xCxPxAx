@@ -16,7 +16,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
+import {
+  CardTokens,
+  Colors,
+  CultureTokens,
+  FontFamily,
+  FontSize,
+  gradients,
+  IconSize,
+  LineHeight,
+  Spacing,
+  TextStyles,
+} from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useContacts, SavedContact, PhoneContact } from '@/contexts/ContactsContext';
@@ -61,6 +72,11 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 type ActiveTab = 'contacts' | 'sync' | 'discover';
+const CONTACTS_UI = {
+  listHorizontalPad: Spacing.md,
+  listItemGap: Spacing.sm,
+  sectionHorizontalPad: Spacing.md,
+} as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -733,8 +749,14 @@ export default function ContactsScreen() {
         .map(c => ({
           id: c.id ?? `pc-${Math.random()}`,
           name: c.name ?? 'Unknown',
-          phoneNumbers: c.phoneNumbers?.map(p => p.number ?? '').filter(Boolean),
-          emails: c.emails?.map(e => e.email ?? '').filter(Boolean),
+          phoneNumbers: c.phoneNumbers?.reduce<string[]>((acc, p) => {
+            if (p.number) acc.push(p.number);
+            return acc;
+          }, []),
+          emails: c.emails?.reduce<string[]>((acc, e) => {
+            if (e.email) acc.push(e.email);
+            return acc;
+          }, []),
           // In production: matched set by server lookup
           matched: null,
           invited: false,
@@ -1033,80 +1055,80 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 10,
+    paddingHorizontal: CONTACTS_UI.sectionHorizontalPad,
+    paddingBottom: Spacing.md - 4,
+    gap: Spacing.sm + 2,
   },
   headerCircleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: IconSize.xxl,
+    height: IconSize.xxl,
+    borderRadius: IconSize.xxl / 2,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { ...TextStyles.title3 },
-  headerCount: { ...TextStyles.caption, marginTop: 1 },
-  headerRight: { flexDirection: 'row', gap: 8 },
+  headerCount: { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
+  headerRight: { flexDirection: 'row', gap: Spacing.sm },
 
   // Tab bar
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 16,
+    borderRadius: CardTokens.radius,
     borderWidth: 1,
-    padding: 4,
-    gap: 4,
+    padding: Spacing.xs,
+    gap: Spacing.xs,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 4,
+    paddingVertical: Spacing.sm,
+    borderRadius: CardTokens.radius - 4,
+    gap: Spacing.xs,
   },
-  tabIconRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  tabIconRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   tabBadge: {
     backgroundColor: CultureTokens.coral,
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    minWidth: 16,
+    borderRadius: Spacing.sm - 2,
+    paddingHorizontal: Spacing.sm - 3,
+    paddingVertical: Spacing.xs - 3,
+    minWidth: IconSize.sm,
     alignItems: 'center',
   },
-  tabBadgeText: { fontSize: 9, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  tabLabel: { ...TextStyles.badge },
+  tabBadgeText: { fontSize: FontSize.micro - 2, fontFamily: FontFamily.bold, color: '#fff' },
+  tabLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
 
   // Search
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderRadius: 14,
+    gap: Spacing.sm + 2,
+    marginHorizontal: CONTACTS_UI.sectionHorizontalPad,
+    marginBottom: Spacing.md - 4,
+    paddingHorizontal: Spacing.md - 2,
+    paddingVertical: Spacing.sm + 3,
+    borderRadius: CardTokens.radius - 2,
     borderWidth: 1,
   },
-  searchInput: { flex: 1, ...TextStyles.cardBody },
+  searchInput: { flex: 1, fontSize: FontSize.body2, fontFamily: FontFamily.regular },
 
   // Contact item
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: CardTokens.radius,
     borderWidth: 1,
-    paddingRight: 12,
+    paddingRight: Spacing.md - 4,
     overflow: 'hidden',
   },
   contactMain: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    gap: Spacing.md - 4,
+    paddingVertical: Spacing.md - 2,
+    paddingHorizontal: Spacing.md - 2,
   },
   contactAvatar: {
     width: 50,
@@ -1116,7 +1138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
   },
-  contactInitials: { ...TextStyles.callout },
+  contactInitials: { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
   phoneBadge: {
     position: 'absolute',
     bottom: 0,
@@ -1129,16 +1151,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contactInfo: { flex: 1 },
-  contactName: { ...TextStyles.callout },
-  contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
-  cpidMini: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cpidMiniText: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: CultureTokens.indigo },
-  contactLocation: { fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  contactSavedAt: { fontSize: 10, fontFamily: 'Poppins_400Regular', marginTop: 3 },
+  contactName: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold },
+  contactMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs - 1 },
+  cpidMini: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  cpidMiniText: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, color: CultureTokens.indigo },
+  contactLocation: { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
+  contactSavedAt: { fontSize: FontSize.tab, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 1 },
   removeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: IconSize.lg + Spacing.sm + 2,
+    height: IconSize.lg + Spacing.sm + 2,
+    borderRadius: CardTokens.radius - 6,
     backgroundColor: CultureTokens.coral + '12',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1148,11 +1170,11 @@ const styles = StyleSheet.create({
   phoneContactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: CardTokens.radius,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: Spacing.md - 2,
+    paddingVertical: Spacing.md - 4,
+    gap: Spacing.md - 4,
   },
   phoneAvatar: {
     width: 46,
@@ -1171,37 +1193,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  onCPBadgeText: { ...TextStyles.tabLabel, color: CultureTokens.success },
+  onCPBadgeText: { fontSize: FontSize.tab, fontFamily: FontFamily.semibold, color: CultureTokens.success },
   syncActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
+    gap: Spacing.sm - 3,
+    paddingHorizontal: Spacing.md - 4,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: CardTokens.radius - 6,
   },
-  syncActionBtnText: { ...TextStyles.captionSemibold, color: '#fff' },
+  syncActionBtnText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, color: '#fff' },
 
   // Sync stats
   syncStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 16,
+    marginHorizontal: CONTACTS_UI.sectionHorizontalPad,
+    marginBottom: Spacing.md - 4,
+    borderRadius: CardTokens.radius,
     borderWidth: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingVertical: Spacing.md - 2,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.sm,
   },
   syncStatItem: { flex: 1, alignItems: 'center' },
-  syncStatNum: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
-  syncStatLabel: { fontSize: 10, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
+  syncStatNum: { fontSize: FontSize.title, fontFamily: FontFamily.bold },
+  syncStatLabel: { fontSize: FontSize.tab, fontFamily: FontFamily.regular, textAlign: 'center' },
   syncStatDivider: { width: 1, height: 32 },
   resyncBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: IconSize.xxl - 4,
+    height: IconSize.xxl - 4,
+    borderRadius: CardTokens.radius - 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1209,16 +1231,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 14,
-    marginBottom: 12,
+    gap: Spacing.sm,
+    borderRadius: CardTokens.radius - 2,
+    paddingVertical: Spacing.md - 2,
+    marginBottom: Spacing.md - 4,
   },
-  importAllBtnText: { ...TextStyles.cardTitle, color: '#fff' },
+  importAllBtnText: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, color: '#fff' },
 
   // Syncing state
-  syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  syncingText: { ...TextStyles.callout },
+  syncingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
+  syncingText: { fontSize: FontSize.callout, fontFamily: FontFamily.regular },
 
   // Permission banner
   permissionContainer: {
@@ -1241,11 +1263,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  permissionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
-  permissionSub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
+  permissionTitle: { fontSize: FontSize.title2 + 2, fontFamily: FontFamily.bold, textAlign: 'center' },
+  permissionSub: { fontSize: FontSize.body2, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: LineHeight.callout },
   permissionBullets: { gap: 10, width: '100%', marginTop: 8 },
   bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  bulletText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flex: 1, lineHeight: 20 },
+  bulletText: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, flex: 1, lineHeight: LineHeight.body2 },
   permissionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1255,7 +1277,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginTop: 16,
   },
-  permissionBtnText: { ...TextStyles.callout, color: '#fff' },
+  permissionBtnText: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold, color: Colors.textInverse },
 
   // Empty state
   emptyState: {
@@ -1275,8 +1297,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  emptyTitle: { ...TextStyles.title2 },
-  emptySub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: FontSize.title2, fontFamily: FontFamily.bold },
+  emptySub: { fontSize: FontSize.body2, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: LineHeight.callout },
   emptyActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   emptyBtn: {
     flexDirection: 'row',
@@ -1295,7 +1317,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
   },
-  emptyBtnText: { ...TextStyles.cardTitle, color: '#fff' },
+  emptyBtnText: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, color: Colors.textInverse },
 
   // Clear all
   clearAllBtn: {
@@ -1310,7 +1332,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  clearAllText: { ...TextStyles.chip },
+  clearAllText: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
 
   // Discover / suggestions
   inviteBanner: {
@@ -1324,8 +1346,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inviteBannerLeft: { flex: 1 },
-  inviteBannerTitle: { ...TextStyles.title3, color: '#fff' },
-  inviteBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  inviteBannerTitle: { fontSize: FontSize.title3, fontFamily: FontFamily.bold, color: Colors.textInverse },
+  inviteBannerSub: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, color: 'rgba(255,255,255,0.8)', marginTop: Spacing.xs },
   inviteBannerIcon: {
     width: 52,
     height: 52,
@@ -1335,8 +1357,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   discoverSection: { marginBottom: 12 },
-  discoverSectionTitle: { ...TextStyles.headline },
-  discoverSectionSub: { ...TextStyles.caption, marginTop: 2 },
+  discoverSectionTitle: { fontSize: FontSize.body, fontFamily: FontFamily.bold },
+  discoverSectionSub: { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
   suggestionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1353,14 +1375,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  suggestionTitle: { ...TextStyles.cardTitle },
-  suggestionSub: { ...TextStyles.caption, marginTop: 2 },
+  suggestionTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.semibold },
+  suggestionSub: { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
   suggestionTag: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  suggestionTagText: { ...TextStyles.tabLabel },
+  suggestionTagText: { fontSize: FontSize.tab, fontFamily: FontFamily.semibold },
   interestSection: { marginTop: 16, marginBottom: 16 },
   interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   interestChip: {
@@ -1372,7 +1394,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
   },
-  interestLabel: { ...TextStyles.chip },
+  interestLabel: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
 
   // Add Contact Modal
   modalContainer: { flex: 1 },
@@ -1384,9 +1406,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  modalCancel: { ...TextStyles.body },
-  modalTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold' },
-  modalDone: { ...TextStyles.headline },
+  modalCancel: { fontSize: FontSize.body, fontFamily: FontFamily.regular },
+  modalTitle: { fontSize: FontSize.title3 - 1, fontFamily: FontFamily.bold },
+  modalDone: { fontSize: FontSize.body, fontFamily: FontFamily.semibold },
   modalContent: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 60, gap: 16 },
   modalAvatarRow: { alignItems: 'center', gap: 10, marginBottom: 8 },
   modalAvatar: {
@@ -1397,7 +1419,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalAvatarLabel: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  modalAvatarLabel: { fontSize: FontSize.chip, fontFamily: FontFamily.regular },
   formCard: {
     borderRadius: 18,
     borderWidth: 1,
@@ -1405,7 +1427,7 @@ const styles = StyleSheet.create({
   },
   formField: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   formFieldIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  formInput: { flex: 1, ...TextStyles.callout },
+  formInput: { flex: 1, fontSize: FontSize.callout, fontFamily: FontFamily.regular },
   formDivider: { height: 1, marginLeft: 64 },
   addContactBtn: {
     flexDirection: 'row',
@@ -1416,5 +1438,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 8,
   },
-  addContactBtnText: { ...TextStyles.callout, color: '#fff' },
+  addContactBtnText: { fontSize: FontSize.callout, fontFamily: FontFamily.semibold, color: '#fff' },
 });

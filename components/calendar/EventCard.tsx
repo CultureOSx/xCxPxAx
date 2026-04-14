@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { CardTokens, CultureTokens, TextStyles } from '@/constants/theme';
 import { formatEventDateTime } from '@/lib/dateUtils';
+import { eventListImageUrl } from '@/lib/eventImage';
 import type { EventData } from '@/shared/schema';
 
 interface Props {
@@ -15,11 +16,12 @@ export default function EventCard({ event }: Props) {
   const colors = useColors();
 
   const dateLabel = formatEventDateTime(event.date, event.time);
+  const coverUri = eventListImageUrl(event);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      {event.imageUrl ? (
-        <CultureImage uri={event.imageUrl} style={styles.image} contentFit="cover" recyclingKey={`calendar-event-${event.id}`} />
+      {coverUri ? (
+        <CultureImage uri={coverUri} style={styles.image} contentFit="cover" recyclingKey={`calendar-event-${event.id}`} />
       ) : (
         <View style={[styles.imagePlaceholder, { backgroundColor: colors.primaryGlow }]}>
           <Ionicons name="calendar" size={28} color={colors.primary} />

@@ -16,6 +16,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { APP_NAME, getAppVersionWithBuild } from '@/lib/app-meta';
+import { goBackOrReplace } from '@/lib/navigation';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -36,6 +37,7 @@ interface MenuEntry {
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
   requiresSuperAdmin?: boolean;
+  requiresNative?: boolean;
 }
 
 interface MenuSection {
@@ -66,6 +68,7 @@ const SECTIONS: MenuSection[] = [
       { id: 'shopping',    label: 'Shopping',     icon: 'bag-outline',         route: '/shopping' },
       { id: 'directory',   label: 'Directory',    icon: 'grid-outline',        route: '/(tabs)/directory' },
       { id: 'community',   label: 'Communities',  icon: 'people-outline',      route: '/(tabs)/community' },
+      { id: 'meet',        label: 'Meet (Beta)',  icon: 'heart-outline',       route: '/(tabs)/meet',     color: CultureTokens.coral, requiresNative: true },
       { id: 'perks',       label: 'Perks',        icon: 'gift-outline',        route: '/(tabs)/perks',    color: CultureTokens.indigo },
     ],
   },
@@ -221,6 +224,7 @@ export default function MenuScreen() {
           if (item.requiresAuth  && !isAuthenticated) return false;
           if (item.requiresAdmin && !isAdmin)         return false;
           if (item.requiresSuperAdmin && !isSuperAdmin) return false;
+          if (item.requiresNative && Platform.OS === 'web') return false;
           return true;
         }),
       }))
@@ -255,7 +259,10 @@ export default function MenuScreen() {
         <View style={[styles.topBar, { paddingTop: insets.top, paddingHorizontal: hPad, borderBottomColor: colors.borderLight }]}>
           <Text style={[styles.screenTitle, { color: colors.text }]}>Account</Text>
           <Pressable
-            onPress={() => { if (!isWeb) Haptics.selectionAsync(); router.back(); }}
+            onPress={() => {
+              if (!isWeb) Haptics.selectionAsync();
+              goBackOrReplace('/(tabs)');
+            }}
             style={[styles.closeBtn, { backgroundColor: colors.surface + 'CC', borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Close menu"

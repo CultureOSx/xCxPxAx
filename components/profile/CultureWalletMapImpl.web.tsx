@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
+import { gradients } from '@/constants/theme';
 
 import type { CultureWalletMarker } from './CultureWalletMapImpl.native';
 
@@ -12,24 +12,29 @@ export function CultureWalletMap({ cultures: _cultures }: { cultures: CultureWal
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <Image
-        source={{ uri: 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=800' }}
+      <LinearGradient
+        colors={[...gradients.midnight]}
         style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background + '99' }]} />
       <View style={styles.overlay}>
-        <Ionicons name="map-outline" size={40} color="#fff" style={{ opacity: 0.5 }} />
-        <Text style={styles.text}>Interactive Map on App</Text>
+        <Ionicons name="map-outline" size={40} color={colors.textTertiary} />
+        <Text style={[styles.text, { color: colors.textSecondary }]}>Culture map</Text>
+        <Text style={[styles.sub, { color: colors.textTertiary }]}>
+          Open CulturePass on iOS or Android to explore your culture wallet on the map.
+        </Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  overlay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#fff', marginTop: 12, fontFamily: 'Poppins_600SemiBold' },
+  container: { flex: 1, minHeight: 200, borderRadius: 16, overflow: 'hidden' },
+  overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 8 },
+  text: { marginTop: 8, fontFamily: 'Poppins_600SemiBold', fontSize: 16, textAlign: 'center' },
+  sub: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 20, textAlign: 'center', maxWidth: 320 },
 });
 
 export default CultureWalletMap;

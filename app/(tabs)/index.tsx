@@ -3,24 +3,23 @@
  *
  * Section order (user-driven hierarchy):
  *  1. Header          — greeting + time/weather
- *  2. Search bar      — primary entry point
- *  3. QuickLinks      — 8 app destinations
- *  4. Hero Carousel   — featured events
- *  5. Starting Soon   — urgency / live rail
- *  6. Near You        — GPS proximity
- *  7. Popular         — trending / attending
- *  8. For Your Culture— personalised
- *  9. Featured Artists— curated talent
- * 10. Heritage Playlist— culture content
- * 11. Indigenous Spotlight — always-on acknowledgement
- * 12. Communities     — connection
- * 13. Activities      — workshops & experiences
- * 14. Browse Categories— explore by interest
- * 15. Explore Cities  — geography
- * 16. Restaurants     — dining
- * 17. Movies          — entertainment
- * 18. Shopping        — goods & markets
- * 19. Perks           — rewards preview
+ *  2. QuickLinks      — 8 app destinations
+ *  3. Hero Carousel   — featured events
+ *  4. Starting Soon   — urgency / live rail
+ *  5. Near You        — GPS proximity
+ *  6. Popular         — trending / attending
+ *  7. For Your Culture— personalised
+ *  8. Featured Artists— curated talent
+ *  9. Heritage Playlist— culture content
+ * 10. Indigenous Spotlight — always-on acknowledgement
+ * 11. Communities     — connection
+ * 12. Activities      — workshops & experiences
+ * 13. Browse Categories— explore by interest
+ * 14. Explore Cities  — geography
+ * 15. Restaurants     — dining
+ * 16. Movies          — entertainment
+ * 17. Shopping        — goods & markets
+ * 18. Perks           — rewards preview
  */
 
 import React, { useEffect, useState } from 'react';
@@ -33,6 +32,7 @@ import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { CategoryColors, CultureTokens } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
+import { parseEventStartMs } from '@/lib/dateUtils';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
@@ -99,6 +99,22 @@ function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDisc
   };
 }
 
+function sortByDateTimeAsc(items: (EventData | string)[]): (EventData | string)[] {
+  const events = items.filter((item): item is EventData => typeof item !== 'string');
+  const placeholders = items.filter((item): item is string => typeof item === 'string');
+
+  events.sort((a, b) => {
+    const aStart = parseEventStartMs(a.date, a.time);
+    const bStart = parseEventStartMs(b.date, b.time);
+    if (aStart == null && bStart == null) return 0;
+    if (aStart == null) return 1;
+    if (bStart == null) return -1;
+    return aStart - bStart;
+  });
+
+  return [...events, ...placeholders];
+}
+
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
@@ -111,6 +127,10 @@ export default function DiscoverScreen() {
 
   const d = useDiscoverData();
   const s = useKeralaScoping(keralaDomain, d);
+  const startNowFallback = sortByDateTimeAsc(
+    s.popular.filter((item) => typeof item !== 'string').slice(0, 6),
+  );
+  const startNowData = sortByDateTimeAsc(s.soon.length > 0 ? s.soon : startNowFallback);
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
@@ -141,17 +161,20 @@ export default function DiscoverScreen() {
         onRefresh={d.handleRefresh}
       />
 
-      {/* ② Search (removed) */}
+      {/* ② Quick-access links */}
+      <SuperAppLinks />
 
+      {/* ③ Hero Carousel — featured events */}
+      <HeroCarousel events={s.featured} isLoading={d.eventsLoading} />
 
-      {/* ③ Starting Soon — always visible */}
+      {/* ④ Start Now — always visible */}
       <EventRail
-        title="Starting Soon"
-        subtitle="Grab your spot before they start"
+        title="Start Now"
+        subtitle={s.soon.length > 0 ? 'Grab your spot before they start' : 'Popular events you can join today'}
         data={
-          d.eventsLoading && s.soon.length === 0
+          d.eventsLoading && startNowData.length === 0
             ? ['sk1', 'sk2', 'sk3']
-            : s.soon
+            : startNowData
         }
         isLoading={d.eventsLoading}
         schedulingMode="live_and_countdown"
@@ -160,13 +183,7 @@ export default function DiscoverScreen() {
         onRetry={() => void d.refetchEvents()}
       />
 
-      {/* ④ Quick-access links */}
-      <SuperAppLinks />
-
-      {/* ⑤ Hero Carousel — featured events */}
-      <HeroCarousel events={s.featured} />
-
-      {/* ⑥ Near You — only if distinct from primary */}
+      {/* ⑤ Near You — only if distinct from primary */}
       {hasNearby && (
         <EventRail
           title="Popular Near You"
@@ -183,7 +200,7 @@ export default function DiscoverScreen() {
         />
       )}
 
-      {/* ⑦ For Your Culture — personalised */}
+      {/* ⑥ For Your Culture — personalised */}
       {(s.forYou.length > 0 || d.eventsLoading) && (
         <EventRail
           title="For Your Culture"
@@ -200,7 +217,7 @@ export default function DiscoverScreen() {
         />
       )}
 
-      {/* ⑧ Featured Artists */}
+      {/* ⑦ Featured Artists */}
       <FeaturedArtistRail
         data={d.featuredArtists}
         isLoading={d.curationLoading}
@@ -208,13 +225,13 @@ export default function DiscoverScreen() {
         onRetry={() => void d.refetchCuration()}
       />
 
-      {/* ⑨ Heritage Playlists */}
+      {/* ⑧ Heritage Playlists */}
       <HeritagePlaylistRail
         data={d.heritagePlaylist}
         isLoading={d.curationLoading}
       />
 
-      {/* ⑩ Indigenous Spotlight */}
+      {/* ⑨ Indigenous Spotlight */}
       <IndigenousSpotlight
         land={d.land}
         organisations={d.indigenousOrganisations}
@@ -222,7 +239,7 @@ export default function DiscoverScreen() {
         businesses={[]}
       />
 
-      {/* ⑪ Communities */}
+      {/* ⑩ Communities */}
       <CommunityRail
         title="Communities"
         subtitle={
@@ -240,7 +257,7 @@ export default function DiscoverScreen() {
         onRetry={() => void d.refetchCommunities()}
       />
 
-      {/* ⑫ Activities — workshops & experiences */}
+      {/* ⑪ Activities — workshops & experiences */}
       <ActivityRail
         title="Activities"
         subtitle="Workshops, classes & experiences"
@@ -251,13 +268,13 @@ export default function DiscoverScreen() {
         onRetry={() => void d.refetchActivities()}
       />
 
-      {/* ⑬ Browse Categories */}
+      {/* ⑫ Browse Categories */}
       <CategoryRail />
 
-      {/* ⑭ Explore Cities */}
+      {/* ⑬ Explore Cities */}
       <CityRail />
 
-      {/* ⑮ Restaurants */}
+      {/* ⑭ Restaurants */}
       <PreviewRail
         title="Restaurants Near You"
         subtitle="Cultural dining in your neighbourhood"
@@ -267,7 +284,7 @@ export default function DiscoverScreen() {
         seeAllRoute="/restaurants"
       />
 
-      {/* ⑯ Movies & Entertainment */}
+      {/* ⑮ Movies & Entertainment */}
       <PreviewRail
         title="Movies & Entertainment"
         subtitle="Cultural films, screenings & shows"
@@ -278,7 +295,7 @@ export default function DiscoverScreen() {
         cardStyle="portrait"
       />
 
-      {/* ⑰ Shopping & Markets */}
+      {/* ⑯ Shopping & Markets */}
       <PreviewRail
         title="Shopping & Markets"
         subtitle="Cultural goods, fashion & artisans"
@@ -289,7 +306,7 @@ export default function DiscoverScreen() {
         cardStyle="landscape"
       />
 
-      {/* ⑱ Perks Preview */}
+      {/* ⑰ Perks Preview */}
       <PreviewRail
         title="Perks Near You"
         subtitle="Exclusive rewards at cultural venues"

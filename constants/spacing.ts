@@ -4,12 +4,18 @@
  */
 
 export const Spacing = {
+  /** 2px — micro gap, icon badge offsets */
+  '2xs': 2,
   /** 4px */
   xs: 4,
   /** 8px */
   sm: 8,
+  /** 12px — between sm and md; use for tight card padding, inner gaps */
+  s12: 12,
   /** 16px */
   md: 16,
+  /** 20px — between md and lg; section inner padding */
+  s20: 20,
   /** 24px */
   lg: 24,
   /** 32px */
@@ -18,20 +24,39 @@ export const Spacing = {
   xxl: 40,
   /** 48px */
   xxxl: 48,
+  /** 56px */
+  xxxxl: 56,
+} as const;
+
+/**
+ * Vertical rhythm for marketing / storytelling sections (web-first, also usable natively).
+ * Apple-like “chapter” spacing — multiples of 8px.
+ */
+export const SectionSpacing = {
+  /** 64px */
+  sm: 64,
+  /** 80px */
+  md: 80,
+  /** 96px */
+  lg: 96,
+  /** 120px */
+  xl: 120,
 } as const;
 
 export const Radius = {
-  /** 16px — standardized corner radius */
-  xs: 16,
-  /** 16px — standardized corner radius */
-  sm: 16,
-  /** 16px — standardized corner radius */
-  md: 16,
-  /** 16px — standardized corner radius */
+  /** 4px — micro chips, status dots, tight badges */
+  xs: 4,
+  /** 8px — small tags, avatar rings, compact chips */
+  sm: 8,
+  /** 12px — standard inputs, compact cards, buttons */
+  md: 12,
+  /** 16px — standard cards, containers, modals */
   lg: 16,
-  /** 16px — standardized corner radius */
-  xl: 16,
-  /** 9999px — fully round (pills, avatars) */
+  /** 20px — featured cards, large panels */
+  xl: 20,
+  /** 28px — bottom sheets, full-screen overlays */
+  xxl: 28,
+  /** 9999px — pills, avatars, FABs */
   full: 9999,
 } as const;
 

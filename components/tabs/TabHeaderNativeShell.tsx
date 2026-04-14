@@ -4,9 +4,15 @@
  */
 import React, { type ReactNode } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { MAIN_TAB_UI, TAB_HEADER_NATIVE_INSET_GAP } from '@/components/tabs/mainTabTokens';
+import { CultureTokens } from '@/constants/theme';
+import {
+  HEADER_CHROME_TOKENS,
+  MAIN_TAB_UI,
+  TAB_HEADER_NATIVE_INSET_GAP,
+} from '@/components/tabs/mainTabTokens';
 
 type TabHeaderNativeShellProps = {
   hPad: number;
@@ -14,6 +20,8 @@ type TabHeaderNativeShellProps = {
   style?: object;
   /** When false, only top/side padding + background (e.g. nested section). */
   showBottomBorder?: boolean;
+  /** When false, hides brand accent line at the bottom edge. */
+  showBrandStrip?: boolean;
   zIndex?: number;
 };
 
@@ -21,7 +29,8 @@ export function TabHeaderNativeShell({
   hPad,
   children,
   style,
-  showBottomBorder = true,
+  showBottomBorder = false,
+  showBrandStrip = false,
   zIndex,
 }: TabHeaderNativeShellProps) {
   const insets = useSafeAreaInsets();
@@ -37,21 +46,33 @@ export function TabHeaderNativeShell({
           borderBottomColor: showBottomBorder ? colors.border : 'transparent',
           paddingTop: insets.top + TAB_HEADER_NATIVE_INSET_GAP,
           paddingHorizontal: hPad,
-          zIndex: zIndex ?? 100,
+          zIndex: zIndex ?? HEADER_CHROME_TOKENS.zIndex,
         },
         Platform.OS === 'ios' && showBottomBorder
           ? {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.06,
-              shadowRadius: 3,
+              shadowColor: HEADER_CHROME_TOKENS.shadow.iosColor,
+              shadowOffset: { width: 0, height: HEADER_CHROME_TOKENS.shadow.iosHeight },
+              shadowOpacity: HEADER_CHROME_TOKENS.shadow.iosOpacity,
+              shadowRadius: HEADER_CHROME_TOKENS.shadow.iosRadius,
             }
           : null,
-        Platform.OS === 'android' && showBottomBorder ? { elevation: 2 } : null,
+        Platform.OS === 'android' && showBottomBorder
+          ? { elevation: HEADER_CHROME_TOKENS.shadow.androidElevation }
+          : null,
         style,
       ]}
     >
       {children}
+      {/* Brand gradient accent strip at bottom edge */}
+      {showBrandStrip ? (
+        <LinearGradient
+          colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.brandStrip}
+          pointerEvents="none"
+        />
+      ) : null}
     </View>
   );
 }
@@ -59,5 +80,12 @@ export function TabHeaderNativeShell({
 const styles = StyleSheet.create({
   root: {
     width: '100%',
+  },
+  brandStrip: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_CHROME_TOKENS.stripHeight,
   },
 });

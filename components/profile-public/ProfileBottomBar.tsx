@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '@/constants/theme';
+import { Colors, FontFamily } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
 interface ProfileBottomBarProps {
@@ -94,6 +94,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   followText: {
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: FontFamily.semibold,
   },
 });

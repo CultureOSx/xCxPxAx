@@ -1,6 +1,7 @@
 import { useColors } from '@/hooks/useColors';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FontFamily } from '@/constants/theme';
 import { getStyles } from './styles';
 import { CP } from './constants';
 
@@ -14,7 +15,7 @@ export function LoadingSkeleton({ topInset }: { topInset: number }) {
         style={[styles.hero, { paddingTop: topInset + 8, justifyContent: 'center', alignItems: 'center', minHeight: 340 }]}
       >
         <ActivityIndicator size="large" color={CP.teal} />
-        <Text style={{ color: CP.muted, marginTop: 12, fontFamily: 'Poppins_400Regular', fontSize: 13 }}>
+        <Text style={{ color: CP.muted, marginTop: 12, fontFamily: FontFamily.regular, fontSize: 13 }}>
           Loading profile...
         </Text>
       </LinearGradient>

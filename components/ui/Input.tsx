@@ -72,6 +72,9 @@ export function Input({
   containerStyle,
   inputStyle,
   secureTextEntry,
+  autoCapitalize,
+  autoCorrect,
+  spellCheck,
   onFocus,
   onBlur,
   ...rest
@@ -109,7 +112,8 @@ export function Input({
   const resolvedRightIcon = effectiveRightIcon ? resolveOutlineIcon(effectiveRightIcon) : undefined;
 
   const isSearch = variant === 'search';
-  const height = isSearch ? InputTokens.heightSearch : InputTokens.height;
+  const defaultHeight = isSearch ? InputTokens.heightSearch : InputTokens.height;
+  const height = rest.multiline ? undefined : defaultHeight;
 
   return (
     <View style={[styles.wrapper, containerStyle]}>
@@ -123,10 +127,12 @@ export function Input({
         style={[
           styles.inputRow,
           {
-            height,
+            minHeight: height,
             backgroundColor: variant === 'ghost' ? 'transparent' : colors.surfaceElevated,
             borderWidth: variant === 'ghost' ? 0 : 1,
             borderRadius: isSearch ? InputTokens.radius + 4 : InputTokens.radius,
+            alignItems: rest.multiline ? 'flex-start' : 'center',
+            paddingVertical: rest.multiline ? Spacing.sm : 0,
           },
           borderColor,
         ]}
@@ -154,11 +160,14 @@ export function Input({
               fontSize: InputTokens.fontSize,
               paddingLeft: resolvedLeftIcon ? 0 : InputTokens.paddingH,
               paddingRight: resolvedRightIcon ? 0 : InputTokens.paddingH,
+              textAlignVertical: rest.multiline ? 'top' : 'center',
+              minHeight: rest.multiline ? 100 : undefined,
             },
             inputStyle,
           ]}
-          autoCapitalize="none"
-          autoCorrect={false}
+          autoCapitalize={autoCapitalize ?? 'none'}
+          autoCorrect={autoCorrect ?? false}
+          spellCheck={spellCheck ?? autoCorrect ?? false}
           accessibilityLabel={label}
         />
 

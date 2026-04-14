@@ -6,9 +6,20 @@
 import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 
+/** Used for Admin SDK init — avoids "Unable to detect a Project Id" when FIREBASE_CONFIG is unset (e.g. `tsx scripts/server-dev.ts`). */
+const resolvedProjectId =
+  process.env.FIREBASE_PROJECT_ID ??
+  process.env.GOOGLE_CLOUD_PROJECT ??
+  process.env.GCLOUD_PROJECT ??
+  process.env.PROJECT_ID ??
+  'culturepass-4f264';
+
 const explicitBucket = process.env.FIREBASE_STORAGE_BUCKET;
 if (!admin.apps.length) {
-  admin.initializeApp(explicitBucket ? { storageBucket: explicitBucket } : undefined);
+  admin.initializeApp({
+    projectId: resolvedProjectId,
+    ...(explicitBucket ? { storageBucket: explicitBucket } : {}),
+  });
 }
 
 /** Firestore database instance */
@@ -27,22 +38,16 @@ export const storageBucket = (() => {
   }
 })();
 
-const projectEnv =
-  process.env.FIREBASE_PROJECT_ID ??
-  process.env.GOOGLE_CLOUD_PROJECT ??
-  process.env.GCLOUD_PROJECT ??
-  process.env.PROJECT_ID ??
-  null;
-
-export const projectId = admin.apps[0]?.options?.projectId ?? projectEnv ?? 'culturepass-4f264';
+export const projectId = admin.apps[0]?.options?.projectId ?? resolvedProjectId;
 
 /**
- * True only when actual Firestore credentials are available.
- * projectId alone is not enough — the SDK needs credentials to make API calls.
- * Used by route handlers to decide whether to fall back to seed data.
+ * True when Firestore should be reachable: production CF, local ADC, Functions emulator,
+ * or Firestore emulator (`FIRESTORE_EMULATOR_HOST` — required for `npm run test:integration` against emulators).
+ * `projectId` alone does not imply live queries work without one of these.
  */
 export const isFirestoreConfigured = Boolean(
   process.env.FUNCTIONS_EMULATOR ||
+  process.env.FIRESTORE_EMULATOR_HOST ||
   process.env.GOOGLE_APPLICATION_CREDENTIALS ||
   process.env.K_SERVICE // Cloud Functions production env
 );

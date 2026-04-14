@@ -1,3 +1,16 @@
+/**
+ * Integration smoke: spawns `npm run server:dev` (Express from `functions/src/app.ts` via tsx).
+ *
+ * Firestore is optional for a green run:
+ * - Without `FIRESTORE_EMULATOR_HOST` / `GOOGLE_APPLICATION_CREDENTIALS` / Cloud runtime,
+ *   routes return empty data and RSS/ICS feeds are still valid XML (no live Firestore reads).
+ *
+ * To exercise real Firestore reads locally:
+ * 1. `firebase emulators:start --only firestore` (default host `127.0.0.1:8080`)
+ * 2. In the same shell: `export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`
+ * 3. Optionally `export FIREBASE_PROJECT_ID=culturepass-4f264` (Admin init also defaults this)
+ * 4. `npm run test:integration` (this repo uses **npm**, not pnpm, for scripts)
+ */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 
@@ -59,6 +72,17 @@ async function run() {
     assert.equal(searchRes.ok, true, 'GET /api/search should return 200');
     const search = await searchRes.json();
     assert.ok(typeof search === 'object' && search !== null, 'search response should be an object');
+
+    // Feed routes
+    const rssRes = await fetch(`${base}/api/feeds/city/${encodeURIComponent('Sydney')}.rss?country=${encodeURIComponent('Australia')}`);
+    assert.equal(rssRes.ok, true, 'GET /api/feeds/city/:value.rss should return 200');
+    const rssText = await rssRes.text();
+    assert.ok(rssText.includes('<rss version="2.0"'), 'rss feed should be XML');
+
+    const icalRes = await fetch(`${base}/api/feeds/ical/tag/${encodeURIComponent('culture')}`);
+    assert.equal(icalRes.ok, true, 'GET /api/feeds/ical/tag/:value should return 200');
+    const icalText = await icalRes.text();
+    assert.ok(icalText.includes('BEGIN:VCALENDAR'), 'ical feed should be VCALENDAR');
 
     console.log('integration api route checks passed');
   } finally {
