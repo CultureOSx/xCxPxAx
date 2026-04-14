@@ -2,66 +2,80 @@
   "version": "1.3",
   "schemaVersion": "1.0",
   "generatedBy": "ecc-tools",
-  "generatedAt": "2026-04-14T04:35:25.686Z",
+  "generatedAt": "2026-04-14T09:52:21.145Z",
   "repo": "https://github.com/CultureOSx/xCxPxAx",
   "profiles": {
-    "requested": "core",
-    "recommended": "core",
-    "effective": "core",
-    "requestedAlias": "core",
-    "recommendedAlias": "core",
-    "effectiveAlias": "core"
+    "requested": "developer",
+    "recommended": "developer",
+    "effective": "developer",
+    "requestedAlias": "developer",
+    "recommendedAlias": "developer",
+    "effectiveAlias": "developer"
   },
-  "requestedProfile": "core",
-  "profile": "core",
-  "recommendedProfile": "core",
-  "effectiveProfile": "core",
+  "requestedProfile": "developer",
+  "profile": "developer",
+  "recommendedProfile": "developer",
+  "effectiveProfile": "developer",
   "tier": "free",
   "requestedComponents": [
-    "repo-baseline"
+    "repo-baseline",
+    "workflow-automation"
   ],
   "selectedComponents": [
-    "repo-baseline"
+    "repo-baseline",
+    "workflow-automation"
   ],
   "requestedAddComponents": [],
   "requestedRemoveComponents": [],
   "blockedRemovalComponents": [],
   "tierFilteredComponents": [],
   "requestedRootPackages": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "selectedRootPackages": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "requestedPackages": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "requestedAddPackages": [],
   "requestedRemovePackages": [],
   "selectedPackages": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "packages": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "blockedRemovalPackages": [],
   "tierFilteredRootPackages": [],
   "tierFilteredPackages": [],
   "conflictingPackages": [],
   "dependencyGraph": {
-    "runtime-core": []
+    "runtime-core": [],
+    "workflow-pack": [
+      "runtime-core"
+    ]
   },
   "resolutionOrder": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "requestedModules": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "selectedModules": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "modules": [
-    "runtime-core"
+    "runtime-core",
+    "workflow-pack"
   ],
   "managedFiles": [
     ".claude/skills/xCxPxAx/SKILL.md",
@@ -73,7 +87,8 @@
     ".codex/agents/explorer.toml",
     ".codex/agents/reviewer.toml",
     ".codex/agents/docs-researcher.toml",
-    ".claude/homunculus/instincts/inherited/xCxPxAx-instincts.yaml"
+    ".claude/homunculus/instincts/inherited/xCxPxAx-instincts.yaml",
+    ".claude/commands/add-or-update-hook-unit-tests.md"
   ],
   "packageFiles": {
     "runtime-core": [
@@ -87,6 +102,9 @@
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
       ".claude/homunculus/instincts/inherited/xCxPxAx-instincts.yaml"
+    ],
+    "workflow-pack": [
+      ".claude/commands/add-or-update-hook-unit-tests.md"
     ]
   },
   "moduleFiles": {
@@ -101,6 +119,9 @@
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
       ".claude/homunculus/instincts/inherited/xCxPxAx-instincts.yaml"
+    ],
+    "workflow-pack": [
+      ".claude/commands/add-or-update-hook-unit-tests.md"
     ]
   },
   "files": [
@@ -153,14 +174,26 @@
       "moduleId": "runtime-core",
       "path": ".claude/homunculus/instincts/inherited/xCxPxAx-instincts.yaml",
       "description": "Continuous-learning instincts derived from repository patterns."
+    },
+    {
+      "moduleId": "workflow-pack",
+      "path": ".claude/commands/add-or-update-hook-unit-tests.md",
+      "description": "Workflow command scaffold for add-or-update-hook-unit-tests."
     }
   ],
-  "workflows": [],
+  "workflows": [
+    {
+      "command": "add-or-update-hook-unit-tests",
+      "path": ".claude/commands/add-or-update-hook-unit-tests.md"
+    }
+  ],
   "adapters": {
     "claudeCode": {
       "skillPath": ".claude/skills/xCxPxAx/SKILL.md",
       "identityPath": ".claude/identity.json",
-      "commandPaths": []
+      "commandPaths": [
+        ".claude/commands/add-or-update-hook-unit-tests.md"
+      ]
     },
     "codex": {
       "configPath": ".codex/config.toml",

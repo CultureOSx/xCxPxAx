@@ -7,8 +7,9 @@
     "explanations": true
   },
   "domains": [
-    "javascript"
+    "typescript",
+    "react"
   ],
   "suggestedBy": "ecc-tools-repo-analysis",
-  "createdAt": "2026-04-14T04:35:39.458Z"
+  "createdAt": "2026-04-14T09:52:44.123Z"
 }

@@ -44,7 +44,7 @@ if (missingKeys.length > 0 && !process.env.CI) {
     emulatorNote +
     'Copy .env.example to .env, paste your Web app config from Firebase Console → Project settings, ' +
     'then stop and restart Expo (EXPO_PUBLIC_* are baked in at bundler startup).';
-  console.warn(`[CulturePass] Firebase is not configured (missing: ${missingKeys.join(', ')}).\n${hint}`);
+  throw new Error(`[CulturePass] Firebase is not configured (missing: ${missingKeys.join(', ')}).\n${hint}`);
 }
 
 const firebaseConfig = getFirebaseWebConfig();
@@ -64,15 +64,7 @@ export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseC
  */
 export const auth = (() => {
   if (Platform.OS === 'web') {
-    try {
-      return getAuth(firebaseApp);
-    } catch (e: any) {
-      if (e.code === 'auth/invalid-api-key' || missingKeys.length > 0) {
-        console.warn('Firebase Auth is disabled because of missing API keys. Return mock auth for web build.')
-        return {} as any; // mock auth
-      }
-      throw e;
-    }
+    return getAuth(firebaseApp);
   }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -88,15 +80,7 @@ export const auth = (() => {
       console.warn('[firebase] initializeAuth fallback to getAuth:', maybeFirebaseError.message ?? error);
     }
     // Auth already initialized (Expo fast refresh) or native persistence init failed.
-    try {
-      return getAuth(firebaseApp);
-    } catch (e: any) {
-       if (e.code === 'auth/invalid-api-key' || missingKeys.length > 0) {
-        console.warn('Firebase Auth is disabled because of missing API keys. Return mock auth for build.')
-        return {} as any; // mock auth
-      }
-      throw e;
-    }
+    return getAuth(firebaseApp);
   }
 })();
 
