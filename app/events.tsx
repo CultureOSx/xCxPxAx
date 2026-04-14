@@ -11,7 +11,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -219,17 +219,34 @@ export default function AllEventsScreen() {
 
 
   const { user, hasRole } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleEditEvent = useCallback((event: EventData) => {
     // Navigate to edit screen
     router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
   }, []);
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.events.remove(id),
+    onSuccess: () => {
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['/api/events/paginated'] });
+    },
+    onError: (err) => {
+      Alert.alert('Error', `Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    },
+  });
+
   const handleDeleteEvent = useCallback((event: EventData) => {
-    // TODO: Implement delete logic (API call, optimistic update, etc.)
-    // For now, just alert
-    Alert.alert('Delete Event', `Event "${event.title}" deleted (demo only).`);
-  }, []);
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(event.id) },
+      ]
+    );
+  }, [deleteMutation.mutate]);
 
   const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
     const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));
