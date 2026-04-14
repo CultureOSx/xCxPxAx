@@ -25,7 +25,6 @@ import { CultureTokens, TextStyles } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
-import { TextStyles, CultureTokens } from '@/constants/theme';
 
 const isWeb = Platform.OS === 'web';
 
