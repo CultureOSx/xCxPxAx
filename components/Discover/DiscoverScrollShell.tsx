@@ -17,8 +17,6 @@ type DiscoverScrollShellProps = {
   refreshControl?: React.ReactElement<RefreshControlProps>;
   /** Bottom inset (e.g. tab bar + safe area) */
   scrollBottomPad: number;
-  /** Indices of direct children that should stick below the top bar. */
-  stickyHeaderIndices?: number[];
 };
 
 /**
@@ -29,7 +27,6 @@ export function DiscoverScrollShell({
   contentContainerStyle,
   refreshControl,
   scrollBottomPad,
-  stickyHeaderIndices,
 }: DiscoverScrollShellProps) {
   const colors = useColors();
 
@@ -47,7 +44,6 @@ export function DiscoverScrollShell({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={refreshControl}
-        stickyHeaderIndices={stickyHeaderIndices}
         contentContainerStyle={[{ paddingBottom: scrollBottomPad }, contentContainerStyle]}
       >
         {children}

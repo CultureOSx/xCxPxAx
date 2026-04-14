@@ -74,24 +74,11 @@ import { SpringConfig } from './animations';
 // ---------------------------------------------------------------------------
 // Re-exports — single import surface
 // ---------------------------------------------------------------------------
-export {
-  default as Colors,
-  light as lightColors,
-  dark as darkColors,
-  shadows,
-  glass,
-  gradients,
-  neon,
-  CultureTokens,
-  CategoryColors,
-  EntityTypeColors,
-  marketingSurfaces,
-} from './colors';
+export { default as Colors, light as lightColors, dark as darkColors, shadows, glass, gradients, neon, CultureTokens, CategoryColors, EntityTypeColors } from './colors';
 export type { ColorTheme, ShadowStyle } from './colors';
 
 export {
   Spacing,
-  SectionSpacing,
   Radius,
   Breakpoints,
   Layout,
@@ -104,7 +91,6 @@ export {
   LetterSpacing,
   TextStyles,
   DesktopTextStyles,
-  DesktopMarketingTextStyles,
   Typography,          // legacy
 } from './typography';
 
@@ -130,26 +116,21 @@ export {
  */
 export const ButtonTokens = {
   height: {
-    sm: 36,  // compact action button (icon+label, secondary actions)
-    md: 44,  // standard button — meets touch target minimum
-    lg: 52,  // primary CTA — prominent, thumb-friendly
+    sm: 52,
+    md: 52,
+    lg: 52,
   },
   paddingH: {
-    sm: 14,
+    sm: 16,
     md: 20,
     lg: 28,
   },
-  radius: 12,       // standard button radius (was 16 — slightly tighter)
+  radius: 16,
   radiusPill: 9999,
   fontSize: {
-    sm: 13,
+    sm: 14,
     md: 15,
     lg: 16,
-  },
-  iconSize: {
-    sm: 16,
-    md: 18,
-    lg: 20,
   },
   iconGap: 8,
 } as const;
@@ -162,45 +143,29 @@ export const LayoutRules = {
   screenHorizontalPadding: 16,
   cardPaddingMin: 16,
   cardPaddingMax: 20,
-  /** Default vertical gap between sections inside a screen */
   sectionSpacing: 32,
-  /** Marketing / storytelling vertical bands (larger than in-screen sections) */
-  sectionSpacingMarketing: 80,
   iconTextGap: 8,
   betweenCards: 16,
   buttonHeight: 52,
   borderRadius: 16,
 } as const;
 
-export {
-  DesignSystemVersion,
-  MarketingLayout,
-  MarketingMaxWidth,
-  ContentRhythm,
-  MarketingGrid,
-  HeroLayout,
-  MarketingShadow,
-  MarketingCTA,
-} from './designSystem';
-
 /**
  * Card component tokens.
  * Shared by EventCard, CommunityCard, CategoryCard etc.
  */
 export const CardTokens = {
-  radius: 16,        // standard card (Radius.lg)
-  radiusLarge: 20,   // featured card (Radius.xl)
-  radiusSmall: 12,   // compact card, list row (Radius.md)
+  radius: 16,
+  radiusLarge: 20,
   padding: 16,
   paddingLarge: 20,
-  paddingSmall: 12,
   imageHeight: {
-    mobile: 128,     // slightly taller for better photo proportion (was 120)
-    tablet: 148,
-    desktop: 168,
+    mobile: 120,
+    tablet: 140,
+    desktop: 160,
   },
   gap: {
-    mobile: 12,      // tighter gap between cards on mobile (was 16)
+    mobile: 16,
     desktop: 16,
   },
   minWidth: 160,
@@ -211,27 +176,26 @@ export const CardTokens = {
  * Text inputs, search bars, dropdowns.
  */
 export const InputTokens = {
-  height: 50,        // slightly taller for thumb comfort (was 48)
-  heightSearch: 44,  // search bar stays compact
-  radius: 12,        // matches ButtonTokens.radius (was 16 — too card-like)
-  fontSize: 16,      // minimum readable size (WCAG)
-  paddingH: 14,      // tighter horizontal padding (was 16)
-  paddingV: 13,
+  height: 48,
+  heightSearch: 44,
+  radius: 16,
+  fontSize: 16,
+  paddingH: 16,
+  paddingV: 12,
   iconSize: 20,
-  iconGap: 10,       // slightly more breathing room (was 8)
+  iconGap: 8,
 } as const;
 
 /**
  * Chip / filter pill tokens.
  */
 export const ChipTokens = {
-  height: 34,        // slightly more compact (was 36)
-  paddingH: 14,      // tighter horizontal (was 16)
-  paddingV: 7,       // tighter vertical (was 8)
-  radius: 8,         // pill-style but not fully round (Radius.sm)
+  height: 36,
+  paddingH: 16,
+  paddingV: 8,
+  radius: 50,
   fontSize: 13,
-  fontFamily: 'Poppins_600SemiBold',
-  gap: 6,            // tighter icon gap (was 8)
+  gap: 8,
 } as const;
 
 /**
@@ -343,7 +307,8 @@ export const BorderTokens = {
 };
 
 /**
- * Panel radii (legacy name LiquidGlassTokens). Surfaces are solid; blurFallback is unused but kept for API stability.
+ * Liquid Glass–aligned radii and fallback blur strengths.
+ * Native liquid glass uses `expo-glass-effect` when the API is available; otherwise expo-blur / CSS.
  */
 export const LiquidGlassTokens = {
   blurFallback: {

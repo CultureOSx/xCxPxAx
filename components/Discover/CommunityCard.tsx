@@ -8,7 +8,6 @@ import { router } from 'expo-router';
 import { CardTokens, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import type { Community } from '@/shared/schema';
-import { DISCOVER_TOKENS } from '@/components/Discover/tokens';
 import {
   getCommunityAccent,
   getCommunityActivityMeta,
@@ -166,7 +165,7 @@ function CommunityCard({ community, index = 0 }: CommunityCardProps) {
 const styles = StyleSheet.create({
   card: {
     width: 220,
-    borderRadius: DISCOVER_TOKENS.card.radius,
+    borderRadius: CardTokens.radius,
     overflow: 'hidden',
   },
   cardPressed: {
@@ -243,9 +242,9 @@ const styles = StyleSheet.create({
   },
   // Info strip
   infoStrip: {
-    paddingHorizontal: CardTokens.padding - 4,
-    paddingTop: DISCOVER_TOKENS.rail.gap - 2,
-    paddingBottom: CardTokens.padding - 4,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   communityName: {
     fontSize: 14,
@@ -255,8 +254,8 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: DISCOVER_TOKENS.rail.gap - 2,
-    marginBottom: DISCOVER_TOKENS.rail.gap - 4,
+    gap: 10,
+    marginBottom: 8,
   },
   statItem: {
     flexDirection: 'row',

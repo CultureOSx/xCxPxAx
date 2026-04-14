@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
@@ -127,7 +128,7 @@ export default function AdminTaxonomyScreen() {
           style={{ paddingTop: topInset, zIndex: 10, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
         >
           <Animated.View entering={FadeInUp.duration(300)} style={[styles.header, { paddingHorizontal: hPad }]}>
-            <View style={[styles.headerControlGlass, { backgroundColor: 'rgba(24,28,48,0.92)' }]}>
+            <GlassView style={styles.headerControlGlass}>
               <Pressable
                 onPress={() => router.back()}
                 style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
@@ -135,14 +136,14 @@ export default function AdminTaxonomyScreen() {
               >
                 <Ionicons name="chevron-back" size={20} color={colors.text} />
               </Pressable>
-            </View>
+            </GlassView>
             
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.headerTitle, { color: colors.text }]}>Taxonomy Manager</Text>
               <Text style={[styles.headerSub, { color: CultureTokens.purple }]}>Cultural Metadata & Interests</Text>
             </View>
 
-            <View style={[styles.headerControlGlass, { backgroundColor: 'rgba(24,28,48,0.92)' }]}>
+            <GlassView style={styles.headerControlGlass}>
               <Pressable 
                 onPress={() => {
                   if (!isWeb) Haptics.selectionAsync();
@@ -152,7 +153,7 @@ export default function AdminTaxonomyScreen() {
                 <Ionicons name="add" size={16} color={CultureTokens.gold} />
                 <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>NEW CATEGORY</Text>
               </Pressable>
-            </View>
+            </GlassView>
           </Animated.View>
         </LinearGradient>
 
@@ -220,7 +221,7 @@ export default function AdminTaxonomyScreen() {
             </Text>
           </View>
 
-          <View style={[styles.tagGridCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+          <GlassView style={[styles.tagGridCard, { borderColor: colors.borderLight }]}>
             {isLoading ? (
               <ActivityIndicator color={currentCategory.accentColor} style={{ padding: 20 }} />
             ) : (
@@ -250,7 +251,7 @@ export default function AdminTaxonomyScreen() {
                 </Pressable>
               </View>
             )}
-          </View>
+          </GlassView>
 
           {/* Info Box */}
           <View style={[styles.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '30' }]}>

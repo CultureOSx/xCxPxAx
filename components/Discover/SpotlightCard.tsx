@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,14 +16,18 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { CultureTokens, CardTokens } from '@/constants/theme';
 
-// ─── Cinema Mobile: deep backgrounds, ambient glow, solid elevated ribbons
+// ─── UI UX Pro Max: Modern Dark (Cinema Mobile) design system
+// Style: Deep backgrounds, ambient glow, BlurView glassmorphism,
+//        spring physics (damping:20 stiffness:90), haptic-linked press,
+//        bezier(0.16,1,0.3,1) easing, hairline border rgba(255,255,255,0.08)
 
 const CINEMA_SPRING = { damping: 20, stiffness: 90, mass: 1 } as const;
 const CINEMA_EASING = Easing.bezier(0.16, 1, 0.3, 1);
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function SolidBadge({
+// Glassmorphic badge — BlurView on iOS, semi-opaque fallback on Android
+function GlassBadge({
   children,
   style,
 }: {
@@ -31,7 +36,11 @@ function SolidBadge({
 }) {
   return (
     <View style={[styles.glassBadge, style]}>
-      <View style={[StyleSheet.absoluteFill, styles.badgeFill]} />
+      {Platform.OS !== 'android' ? (
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.androidGlass]} />
+      )}
       {children}
     </View>
   );
@@ -155,32 +164,32 @@ function SpotlightCard({
           style={styles.fill}
         />
 
-        {/* Category badge — top-left */}
-        <SolidBadge style={styles.categoryBadge}>
+        {/* Category badge — top-left, glassmorphic */}
+        <GlassBadge style={styles.categoryBadge}>
           <View style={[styles.categoryDot, { backgroundColor: accentColor }]} />
           <Text style={styles.categoryText}>{badgeLabel}</Text>
-        </SolidBadge>
+        </GlassBadge>
 
-        {/* Content — bottom-pinned ribbons */}
+        {/* Content — bottom-pinned with glassmorphic ribbons */}
         <View style={styles.content}>
-          <SolidBadge style={styles.titleRibbon}>
+          <GlassBadge style={styles.titleRibbon}>
             <Text
               style={styles.title}
               numberOfLines={2}
             >
               {item.title}
             </Text>
-          </SolidBadge>
+          </GlassBadge>
 
           {item.description ? (
-            <SolidBadge style={styles.descRibbon}>
+            <GlassBadge style={styles.descRibbon}>
               <Text
                 style={styles.description}
                 numberOfLines={2}
               >
                 {item.description}
               </Text>
-            </SolidBadge>
+            </GlassBadge>
           ) : null}
         </View>
 
@@ -233,18 +242,20 @@ const styles = StyleSheet.create({
     // opacity + scale driven by Reanimated
   },
 
+  // Glassmorphic badge base
   glassBadge: {
     alignSelf: 'flex-start',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.16)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     overflow: 'hidden',
-    backgroundColor: 'transparent',
+    // iOS: BlurView fills this; Android: androidGlass fills this
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(11,11,20,0.45)' : 'transparent',
   },
-  badgeFill: {
-    backgroundColor: 'rgba(18,18,28,0.92)',
+  androidGlass: {
+    backgroundColor: 'rgba(11,11,20,0.82)',
   },
 
   // Category badge

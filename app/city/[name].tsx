@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import type { ScrollView as ScrollViewType } from 'react-native';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -27,7 +26,6 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
 import { CultureTokens, gradients } from '@/constants/theme';
-import { HeroOverlayBar } from '@/components/city/HeroOverlayBar';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -37,7 +35,24 @@ import { getStateForCity, GLOBAL_REGIONS } from '@/constants/locations';
 import type { EventData, PaginatedEventsResponse, Profile } from '@/shared/schema';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { cityAmbient, StatPill, getCityDestinationStyles } from '@/components/city/CityDestinationStyles';
-import { scrollToChildInScrollView } from '@/lib/scrollContent';
+
+// ─── City hero images ─────────────────────────────────────────────────────────
+
+const CITY_IMAGES: Record<string, string> = {
+  sydney:    'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=2000&q=90',
+  melbourne: 'https://images.unsplash.com/photo-1514395462725-fb4566210144?auto=format&fit=crop&w=2000&q=90',
+  brisbane:  'https://images.unsplash.com/photo-1549008880-927376046f4e?auto=format&fit=crop&w=2000&q=90',
+  perth:     'https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?auto=format&fit=crop&w=2000&q=90',
+  adelaide:  'https://images.unsplash.com/photo-1550747528-cdb869422707?auto=format&fit=crop&w=2000&q=90',
+  uae:       'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=2000&q=90',
+  dubai:     'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=2000&q=90',
+  london:    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=2000&q=90',
+  toronto:   'https://images.unsplash.com/photo-1517090504586-fde19ea6066f?auto=format&fit=crop&w=2000&q=90',
+  auckland:  'https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=2000&q=90',
+};
+
+const DEFAULT_CITY_IMAGE =
+  'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=2000&q=90';
 
 // ─── Per-city metadata ────────────────────────────────────────────────────────
 
@@ -130,14 +145,12 @@ export default function CityScreen() {
   const colors = useColors();
   const { isDesktop, contentWidth, width } = useLayout();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollViewType>(null);
-  const eventsSectionRef = useRef<View>(null);
-  const placesColumnRef = useRef<View>(null);
-  const layoutHeights = useRef({ hero: 400, stats: 76, filter: 200, trending: 0 });
+  const scrollRef = useRef<ScrollView>(null);
   const { state: onboarding } = useOnboarding();
 
   const cityName    = Array.isArray(name)    ? name[0]    : name    ?? onboarding?.city ?? 'Sydney';
   const cityCountry = Array.isArray(country) ? country[0] : country ?? onboarding?.country ?? 'Australia';
+  const heroImage   = CITY_IMAGES[cityName.toLowerCase()] ?? DEFAULT_CITY_IMAGE;
   const cityMeta    = CITY_META[cityName.toLowerCase()] ?? DEFAULT_CITY_META;
 
   // State
@@ -271,58 +284,6 @@ export default function CityScreen() {
   }, [haptic]);
 
   const totalActiveFilters = selectedCategories.length + selectedCultures.length + selectedLanguages.length;
-  const showTrendingRail = allEvents.length > 5 && totalActiveFilters === 0;
-
-  const scrollToStickyToolbar = useCallback(() => {
-    const y = Math.max(0, layoutHeights.current.hero + layoutHeights.current.stats - 6);
-    scrollRef.current?.scrollTo({ y, animated: true });
-  }, []);
-
-  const scrollEventsIntoView = useCallback(() => {
-    const fallbackY =
-      layoutHeights.current.hero +
-      layoutHeights.current.stats +
-      layoutHeights.current.filter +
-      layoutHeights.current.trending;
-    scrollToChildInScrollView(scrollRef, eventsSectionRef, { offset: 8, fallbackY });
-  }, []);
-
-  const onStatEventsPress = useCallback(() => {
-    haptic();
-    setFilterMode('category');
-    scrollEventsIntoView();
-  }, [haptic, scrollEventsIntoView]);
-
-  const onStatPlacesPress = useCallback(() => {
-    haptic();
-    const fallbackY =
-      layoutHeights.current.hero +
-      layoutHeights.current.stats +
-      layoutHeights.current.filter +
-      layoutHeights.current.trending;
-    scrollToChildInScrollView(scrollRef, placesColumnRef, { offset: 8, fallbackY });
-  }, [haptic]);
-
-  const onStatCulturesPress = useCallback(() => {
-    haptic();
-    setFilterMode('culture');
-    scrollToStickyToolbar();
-  }, [haptic, scrollToStickyToolbar]);
-
-  const onStatLanguagesPress = useCallback(() => {
-    haptic();
-    setFilterMode('language');
-    scrollToStickyToolbar();
-  }, [haptic, scrollToStickyToolbar]);
-
-  useEffect(() => {
-    if (!showTrendingRail) layoutHeights.current.trending = 0;
-  }, [showTrendingRail]);
-
-  const openLocationSettings = useCallback(() => {
-    haptic();
-    router.push('/settings/location');
-  }, [haptic]);
 
   const gridGap   = 16;
   const gridWidth = isDesktop ? contentWidth : width - 40;
@@ -414,17 +375,12 @@ export default function CityScreen() {
           {/* ══════════════════════════════════════════════════════════════════
               HERO
           ══════════════════════════════════════════════════════════════════ */}
-          <View
-            style={styles.hero}
-            onLayout={(e) => {
-              layoutHeights.current.hero = e.nativeEvent.layout.height;
-            }}
-          >
-            <LinearGradient
-              colors={[...gradients.midnight]}
+          <View style={styles.hero}>
+            <Image
+              source={{ uri: heroImage }}
               style={styles.heroImage}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              contentFit="cover"
+              transition={600}
             />
 
             <LinearGradient
@@ -432,34 +388,54 @@ export default function CityScreen() {
               locations={[0, 0.4, 1]}
               style={StyleSheet.absoluteFill}
             />
-            <LinearGradient
-              colors={['rgba(0,0,0,0.72)', 'rgba(0,0,0,0.35)', 'transparent']}
-              locations={[0, 0.55, 1]}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 150,
-                zIndex: 8,
-              }}
-              pointerEvents="none"
-            />
 
-            <HeroOverlayBar
-              paddingTop={Platform.OS === 'web' ? 16 : insets.top + 16}
-              centerLabel={stateCode ? `${stateCode} · ${cityCountry}` : cityCountry}
-              onBack={() => {
-                haptic();
-                router.back();
-              }}
-              onShare={() => {
-                void handleShare();
-              }}
-              onCenterPress={openLocationSettings}
-              shareA11y="Share city guide"
-              centerA11y={`${stateCode ? `${stateCode}, ` : ''}${cityCountry}. Tap to change city or country in settings.`}
-            />
+            {/* Top bar */}
+            <View style={[styles.heroTopBar, { paddingTop: Platform.OS === 'web' ? 16 : insets.top + 16 }]}>
+              <LiquidGlassPanel
+                borderRadius={22}
+                bordered={false}
+                style={{ width: 44, height: 44 }}
+                contentStyle={styles.heroGlassCircleInner}
+              >
+                <Pressable
+                  onPress={() => { haptic(); router.back(); }}
+                  style={styles.heroIconHit}
+                  accessibilityLabel="Go back"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="chevron-back" size={24} color={colors.textOnBrandGradient} />
+                </Pressable>
+              </LiquidGlassPanel>
+
+              {/* State + Country chip */}
+              <LiquidGlassPanel
+                borderRadius={20}
+                bordered={false}
+                style={styles.heroGlassChipShell}
+                contentStyle={styles.heroGlassChipInner}
+              >
+                <Ionicons name="location" size={13} color={CultureTokens.gold} />
+                <Text style={[styles.chipText, { color: colors.textOnBrandGradient }]} numberOfLines={1}>
+                  {stateCode ? `${stateCode} · ${cityCountry}` : cityCountry}
+                </Text>
+              </LiquidGlassPanel>
+
+              <LiquidGlassPanel
+                borderRadius={22}
+                bordered={false}
+                style={{ width: 44, height: 44 }}
+                contentStyle={styles.heroGlassCircleInner}
+              >
+                <Pressable
+                  onPress={() => { void handleShare(); }}
+                  style={styles.heroIconHit}
+                  accessibilityLabel="Share city guide"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="share-social-outline" size={22} color={colors.textOnBrandGradient} />
+                </Pressable>
+              </LiquidGlassPanel>
+            </View>
 
             {/* Hero content */}
             <View style={styles.heroContent}>
@@ -483,58 +459,20 @@ export default function CityScreen() {
           {/* ══════════════════════════════════════════════════════════════════
               CITY STATS STRIP
           ══════════════════════════════════════════════════════════════════ */}
-          <View
-            style={[styles.statsStrip, { backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}
-            onLayout={(e) => {
-              layoutHeights.current.stats = e.nativeEvent.layout.height;
-            }}
-          >
-            <StatPill
-              icon="calendar"
-              value={String(allEvents.length)}
-              label="Events"
-              colors={colors}
-              onPress={onStatEventsPress}
-              accessibilityLabel={`Events, ${allEvents.length}. Jump to event list`}
-            />
+          <View style={[styles.statsStrip, { backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
+            <StatPill icon="calendar" value={String(allEvents.length)} label="Events" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="business"
-              value={String(venues.length || '—')}
-              label="Venues"
-              colors={colors}
-              onPress={onStatPlacesPress}
-              accessibilityLabel={`Venues, ${venues.length || 0}. Jump to local places`}
-            />
+            <StatPill icon="business" value={String(venues.length || '—')} label="Venues" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="people"
-              value={String(uniqueCultureTags.length)}
-              label="Cultures"
-              colors={colors}
-              onPress={onStatCulturesPress}
-              accessibilityLabel={`Cultures, ${uniqueCultureTags.length}. Open culture filter`}
-            />
+            <StatPill icon="people" value={String(uniqueCultureTags.length)} label="Cultures" colors={colors} />
             <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-            <StatPill
-              icon="chatbubble-ellipses"
-              value={String(uniqueLanguageTags.length)}
-              label="Languages"
-              colors={colors}
-              onPress={onStatLanguagesPress}
-              accessibilityLabel={`Languages, ${uniqueLanguageTags.length}. Open language filter`}
-            />
+            <StatPill icon="chatbubble-ellipses" value={String(uniqueLanguageTags.length)} label="Languages" colors={colors} />
           </View>
 
           {/* ══════════════════════════════════════════════════════════════════
               FILTER BAR (sticky)
           ══════════════════════════════════════════════════════════════════ */}
-          <View
-            style={styles.filterBar}
-            onLayout={(e) => {
-              layoutHeights.current.filter = e.nativeEvent.layout.height;
-            }}
-          >
+          <View style={styles.filterBar}>
             <LiquidGlassPanel
               borderRadius={0}
               bordered={false}
@@ -602,7 +540,6 @@ export default function CityScreen() {
             {/* Filter chips for active mode */}
             {filterOptions.length > 0 && (
               <FilterChips
-                variant="hub"
                 filters={filterOptions}
                 selectedFilters={activeFilters}
                 onToggle={onToggleFilter}
@@ -615,19 +552,11 @@ export default function CityScreen() {
           {/* ══════════════════════════════════════════════════════════════════
               TRENDING NOW
           ══════════════════════════════════════════════════════════════════ */}
-          {showTrendingRail && (
-            <View
-              style={styles.section}
-              onLayout={(e) => {
-                layoutHeights.current.trending = e.nativeEvent.layout.height;
-              }}
-            >
-              <View style={styles.sectionAccentTitleRow}>
-                <View style={styles.sectionAccentBar} />
-                <Text style={[TextStyles.title3, { color: colors.text, flex: 1 }]}>
-                  Happening now · {cityName}
-                </Text>
-              </View>
+          {allEvents.length > 5 && totalActiveFilters === 0 && (
+            <View style={styles.section}>
+              <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 12 }]}>
+                Happening Now in {cityName}
+              </Text>
               <ScrollView
                 horizontal
                 nestedScrollEnabled
@@ -680,11 +609,7 @@ export default function CityScreen() {
           >
             {/* Events grid */}
             <View style={{ flex: isDesktop ? 2.8 : 1 }}>
-              <View
-                ref={eventsSectionRef}
-                collapsable={false}
-                style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}
-              >
+              <View style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}>
                 <View style={styles.sectionHeader}>
                   <View>
                     <Text style={[TextStyles.title3, { color: colors.text }]}>{sectionTitle}</Text>
@@ -743,7 +668,7 @@ export default function CityScreen() {
             </View>
 
             {/* Sidebar — venues + map (desktop) or stacked section (mobile) */}
-            <View ref={placesColumnRef} collapsable={false} style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
+            <View style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
               {venues.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0, paddingTop: 0 }]}>
                   <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 16 }]}>

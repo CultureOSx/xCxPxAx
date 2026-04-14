@@ -27,8 +27,7 @@ createEventWorker(async job => {
 });
 
 // CLI usage example
-import { fileURLToPath } from 'url';
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (require.main === module) {
   const url = process.argv[2];
   if (!url) {
     console.error('Usage: node pipeline/pipeline.js <event-url>');

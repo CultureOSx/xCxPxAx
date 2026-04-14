@@ -4,7 +4,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, FontFamily } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import type { EventData } from '@/shared/schema';
 
 interface ProfileEventsProps {
@@ -54,7 +54,7 @@ export function ProfileEvents({ upcomingEvents, entityColor }: ProfileEventsProp
                 <Text style={styles.eventMetaText} numberOfLines={1}>{ev.venue}</Text>
               </View>
               <View style={styles.eventBottomRow}>
-                <Text style={[styles.eventPrice, { color: ev.priceCents === 0 ? Colors.success : entityColor }]}>
+                <Text style={[styles.eventPrice, { color: ev.priceCents === 0 ? '#2ECC71' : entityColor }]}>
                   {ev.priceLabel}
                 </Text>
                 <View style={styles.eventAttendeesRow}>
@@ -77,7 +77,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
     color: Colors.text,
     marginBottom: 10,
   },
@@ -89,7 +89,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   seeAllText: {
     fontSize: 14,
-    fontFamily: FontFamily.semibold,
+    fontFamily: 'Poppins_600SemiBold',
   },
   eventCard: {
     width: 200,
@@ -121,7 +121,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   eventTitle: {
     fontSize: 14,
-    fontFamily: FontFamily.semibold,
+    fontFamily: 'Poppins_600SemiBold',
     color: Colors.text,
     lineHeight: 18,
   },
@@ -132,7 +132,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   eventMetaText: {
     fontSize: 11,
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     color: Colors.textSecondary,
   },
   eventBottomRow: {
@@ -143,7 +143,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   eventPrice: {
     fontSize: 13,
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
   },
   eventAttendeesRow: {
     flexDirection: 'row',
@@ -152,7 +152,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   eventAttendeesText: {
     fontSize: 10,
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     color: Colors.textTertiary,
   },
 });

@@ -207,35 +207,33 @@ export const light: ColorTheme = {
   primary: CultureTokens.indigo,
   primaryLight: "#3385D6",
   primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.14)",
-  primarySoft: "rgba(0, 102, 204, 0.07)",
+  primaryGlow: "rgba(0, 102, 204, 0.12)",
+  primarySoft: "rgba(0, 102, 204, 0.06)",
 
-  // Backgrounds — warm white base; clear layering hierarchy
-  background: "#F8FAFC",          // near-white, neutral cool
-  backgroundSecondary: "#EFF3FA", // slightly tinted for sections
+  // Backgrounds - true light mode (clear visual difference from dark)
+  background: "#F7F9FC",
+  backgroundSecondary: "#EEF3FA",
 
-  surface: "#FFFFFF",             // pure white cards
-  surfaceElevated: "#F1F5FB",     // input fill — neutral, not brand-tinted
-  surfaceSecondary: "#E8EFF9",    // nested panels
+  surface: "#FFFFFF",
+  surfaceElevated: "#F3F7FF",
+  surfaceSecondary: "#E9F0FA",
 
-  // Borders — 3-step hierarchy: card → divider → hairline
-  border: "#CBD5E4",              // card outlines, input rings (stronger)
-  borderLight: "#E2E8F3",         // internal dividers, hairlines (subtle)
-  divider: "#DCE4F0",             // full-width row separators
+  border: "#D7E1EE",
+  borderLight: "#C7D5E7",
+  divider: "#D7E1EE",
 
-  // Text — WCAG AA at all three levels
-  text: "#0D1626",                // 100% opacity near-black (was #0F172A)
-  textSecondary: "#374151",       // 80% — subheadings, labels (was #334155)
-  textTertiary: "#6B7280",        // 60% — placeholders, captions (was #64748B)
-  textInverse: "#FFFFFF",
+  text: "#0F172A",
+  textSecondary: "#334155",
+  textTertiary: "#64748B",
+  textInverse: "#0B0B14",
   textOnBrandGradient: "#FFFFFF",
 
   card: "#FFFFFF",
-  cardBorder: "#CBD5E4",
+  cardBorder: "#D7E1EE",
 
-  tabBar: "rgba(255,255,255,0.97)",
-  tabBarBorder: "rgba(203,213,228,0.85)",
-  tabIconDefault: "#6B7280",
+  tabBar: "rgba(255,255,255,0.96)",
+  tabBarBorder: "rgba(199,213,231,0.9)",
+  tabIconDefault: "#64748B",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
@@ -250,57 +248,48 @@ export const light: ColorTheme = {
 
 /**
  * Dark Theme Tokens
- * Native default — "Night Festival" OLED-first (ui-ux-pro-max Dark Mode OLED).
+ * Native default — “Night Festival” + OLED-friendly base (ui-ux-pro-max: deep black,
+ * layered greys, brand accents; still CultureTokens-driven, not generic purple templates).
  *
- * Hierarchy:
- *   #000000 — true OLED black (page background)
- *   #0C1018 — backgroundSecondary (sections, tab content areas)
- *   #111827 — surface (card fill — warm-neutral, not saturated navy)
- *   #1A2436 — surfaceElevated (inputs, nested chips — subtle lift)
- *   #0D1929 — surfaceSecondary (deeply recessed panels)
- *
- * Border hierarchy (3 steps):
- *   #263345 — border (card outlines — most visible)
- *   #1B2840 — borderLight (internal hairlines — subtle)
- *   #182336 — divider (full-width separators — most subtle)
+ * Color hierarchy:
+ *   True black / near-black — primary background (OLED power + contrast anchor)
+ *   Lifted navy surfaces — cards and chrome
+ *   CulturePass Blue (#0066CC) — elevated/active surfaces and accents
  */
 export const dark: ColorTheme = {
   ...sharedBase,
 
-  // Primary - CulturePass Blue
+  // Primary - CulturePass Blue (Dark Mode Variant)
   primary: CultureTokens.indigo,
   primaryLight: "#3385D6",
   primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.22)",
-  primarySoft: "rgba(0, 102, 204, 0.11)",
+  primaryGlow: "rgba(0, 102, 204, 0.25)",
+  primarySoft: "rgba(0, 102, 204, 0.12)",
 
-  // Backgrounds — true OLED black base with layered lifts
+  // Backgrounds — OLED base + festival navy lift on surfaces
   background: "#000000",
-  backgroundSecondary: "#0C1018",
+  backgroundSecondary: "#0A0E14",
 
-  // Surfaces — warm-neutral dark (not over-saturated navy)
-  surface: "#111827",            // main card fill (was #121826 — slightly warmer)
-  surfaceElevated: "#1A2436",    // inputs, chips (was #1E2D42 — less saturated)
-  surfaceSecondary: "#0D1929",   // deep nested panels (was #0F2844 — tighter)
+  surface: "#121826",
+  surfaceElevated: CultureTokens.indigo, // CulturePass Blue — active surfaces
+  surfaceSecondary: "#0F2844",
 
-  // Borders — clear 3-step hierarchy
-  border: "#263345",             // card outlines (was #2A3A52)
-  borderLight: "#1B2840",        // inner hairlines — subtle (was #354560 which was TOO light)
-  divider: "#182336",            // full-width row dividers — most subtle
+  border: "#1A2436",
+  borderLight: "#243045",
+  divider: "#1A2436",
 
-  // Text — high contrast OLED hierarchy
-  text: "#F5F5F6",               // near-white primary (was #F4F4F5)
-  textSecondary: "#C8CDD8",      // supporting text — clear step down (was #D6D6E0)
-  textTertiary: "#8892A4",       // placeholders, disabled (was #AEB4C5)
-  textInverse: "#0D1626",
+  text: "#F4F4F5",
+  textSecondary: "#C9C9D6",
+  textTertiary: "#8D8D8D",
+  textInverse: "#0B0B14",
   textOnBrandGradient: "#FFFFFF",
 
-  card: "#111827",               // matches surface for consistency (was #151C2E)
-  cardBorder: "#263345",         // matches border
+  card: "#151C2E",
+  cardBorder: "#243045",
 
-  tabBar: "rgba(0, 0, 0, 0.96)",
-  tabBarBorder: "rgba(38, 51, 69, 0.6)",
-  tabIconDefault: "#8892A4",
+  tabBar: "rgba(0, 0, 0, 0.94)",
+  tabBarBorder: "rgba(36, 48, 69, 0.55)",
+  tabIconDefault: "#8D8D8D",
   tabIconSelected: CultureTokens.indigo,
 
   tint: CultureTokens.indigo,
@@ -321,28 +310,31 @@ export const shadows = {
 };
 
 /**
- * Solid surface presets (legacy name `glass` kept for imports).
- * Prefer `useColors().surface` / `surfaceElevated` in new code.
+ * Glassmorphism and futuristic surface presets.
+ * Use these on cards/modals for a modern frosted-glass feel.
  */
 export const glass = {
   light: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E2E8F0",
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderColor: "rgba(255,255,255,0.35)",
   },
   dark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#38383A",
+    backgroundColor: "rgba(28,28,30,0.72)",
+    borderColor: "rgba(255,255,255,0.08)",
   },
+  /** Semi-transparent overlay for modals/popovers */
   overlay: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
+  /** Ultra-clear glass — for hero sections and featured cards */
   ultraLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E8EDF5",
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderColor: "rgba(255,255,255,0.5)",
   },
+  /** Deep dark glass — for dark mode hero sections */
   ultraDark: {
-    backgroundColor: "#121218",
-    borderColor: "#2C2C2E",
+    backgroundColor: "rgba(0,0,0,0.82)",
+    borderColor: "rgba(255,255,255,0.06)",
   },
 } as const;
 
@@ -360,16 +352,6 @@ export const gradients = {
     CultureTokens.indigo,
     CultureTokens.coral,
   ] as [string, string],
-
-  /**
-   * Discovery arc — coral → gold → purple (energy → warmth → community).
-   * Use for: marketing heroes, campaign ribbons, web storytelling (not body text).
-   */
-  discoveryMarketing: [
-    CultureTokens.coral,
-    CultureTokens.gold,
-    CultureTokens.purple,
-  ] as [string, string, string],
 
   /** CulturePass Signature Gradient (reversed: Coral → Indigo) */
   culturepassBrandReversed: [
@@ -419,21 +401,6 @@ export const gradients = {
     "#FFCC00",
     "#FF3B30",
   ] as [string, string, string],
-} as const;
-
-/**
- * Apple-clarity neutrals for dedicated light marketing surfaces (landing, campaigns).
- * Does not replace `ColorTheme` — use with `useColors()` in product chrome.
- * Import from `@/constants/theme` as `marketingSurfaces`.
- */
-export const marketingSurfaces = {
-  page: '#FFFFFF',
-  band: '#F5F5F7',
-  text: '#111111',
-  textMuted: '#6B6B6B',
-  hairline: '#D2D2D7',
-  /** Text on saturated brand / marketing CTA fills */
-  onPrimary: '#FFFFFF',
 } as const;
 
 /**

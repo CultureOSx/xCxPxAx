@@ -7,20 +7,17 @@
 ios/Pods
 ios/build
 ios/DerivedData
-ios/.symlinks
-ios/**/*.xcarchive
 
 # ── Android ──────────────────────────────────────────────────────────────────
 # EAS runs Gradle itself — these are local build caches
 android/.gradle
 android/build
 android/app/build
-android/.cxx
-android/**/build
 
 # ── Cloud Functions ───────────────────────────────────────────────────────────
 # Not used by the native build; EAS doesn't need this
-functions
+functions/node_modules
+functions/lib
 
 # ── Supplementary server (Docker image service) ──────────────────────────────
 server
@@ -53,9 +50,6 @@ dataconnect
 docs
 *.md
 !README.md
-.claude
-.expo
-.stryker-tmp
 .env.local
 *.local.*
 *.log

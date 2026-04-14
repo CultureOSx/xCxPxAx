@@ -64,7 +64,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(defaultState);
   const [isLoading, setIsLoading] = useState(true);
 
-  /* Stryker disable all */
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -81,7 +80,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     };
     loadData();
   }, []);
-  /* Stryker restore all */
 
   const persistUpdate = async (patch: Partial<OnboardingState>) => {
     setState((prev) => {

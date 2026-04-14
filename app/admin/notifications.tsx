@@ -23,17 +23,7 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
 import { interestCategories } from '@/constants/onboardingInterests';
-import {
-  CardTokens,
-  ChipTokens,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  IconSize,
-  LineHeight,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
+import { CultureTokens, TextStyles } from '@/constants/theme';
 import { ALL_NATIONALITIES } from '@/constants/cultures';
 import type { NotificationType } from '@/shared/schema';
 
@@ -73,12 +63,6 @@ const TYPE_OPTIONS: { value: CampaignNotificationType; icon: string; label: stri
 
 const TITLE_MAX = 65;
 const MESSAGE_MAX = 240;
-const ADMIN_NOTIF_UI = {
-  skeletonHeaderHeight: 100,
-  skeletonCardHeight: 250,
-  contentMaxWidth: 1100,
-  tableSampleMaxRows: 12,
-} as const;
 
 function parseCsv(value: string): string[] {
   return value
@@ -114,15 +98,15 @@ function NotificationPreview({ title, message }: { title: string; message: strin
 }
 
 const np = StyleSheet.create({
-  phone:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: CardTokens.padding, gap: Spacing.md - 4, alignItems: 'center' },
-  phoneDot:   { width: IconSize.xxl - 4, height: Spacing.sm - 3, borderRadius: Spacing.xs - 1, backgroundColor: 'rgba(128,128,128,0.25)' },
-  phoneLabel: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 1.1 },
+  phone:      { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, alignItems: 'center' },
+  phoneDot:   { width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(128,128,128,0.25)' },
+  phoneLabel: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.1 },
   notifCard:  { 
     width: '100%', 
-    borderRadius: CardTokens.radius - 2, 
+    borderRadius: 14,
     borderWidth: 1, 
-    padding: Spacing.md - 2, 
-    gap: Spacing.sm - 3 ,
+    padding: 14,
+    gap: 5 ,
     ...Platform.select({
       web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
       ios: {
@@ -134,12 +118,12 @@ const np = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 1, marginBottom: Spacing.xs },
-  notifIcon:  { width: IconSize.md + 4, height: IconSize.md + 4, borderRadius: Spacing.sm - 3, alignItems: 'center', justifyContent: 'center' },
-  notifApp:   { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
-  notifTime:  { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
-  notifTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
-  notifBody:  { fontSize: FontSize.chip, fontFamily: FontFamily.regular, lineHeight: LineHeight.chip - 1 },
+  notifHeader:{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 },
+  notifIcon:  { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
+  notifApp:   { flex: 1, ...TextStyles.captionSemibold },
+  notifTime:  { ...TextStyles.badge },
+  notifTitle: { ...TextStyles.cardTitle },
+  notifBody:  { ...TextStyles.chip, lineHeight: 19 },
 });
 
 // ─── Char counter badge ─────────────────────────────────────────────────────
@@ -153,14 +137,14 @@ function CharCount({ value, max }: { value: string; max: number }) {
     </Text>
   );
 }
-const cc = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textAlign: 'right', marginTop: -4 } });
+const cc = StyleSheet.create({ label: { ...TextStyles.badge, textAlign: 'right', marginTop: -4 } });
 
 // ─── Section header ─────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: string }) {
   const colors = useColors();
   return <Text style={[sh.label, { color: colors.textTertiary }]}>{children}</Text>;
 }
-const sh = StyleSheet.create({ label: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: Spacing.sm + 2 } });
+const sh = StyleSheet.create({ label: { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 } });
 
 // ─── Quick-link row ─────────────────────────────────────────────────────────
 function QuickLink({ icon, label, sub, accent, onPress }: { icon: string; label: string; sub: string; accent: string; onPress: () => void }) {
@@ -190,11 +174,11 @@ const ql = StyleSheet.create({
     flex: 1, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: Spacing.md - 4, 
-    borderRadius: CardTokens.radius - 2, 
+    gap: 12,
+    borderRadius: 14,
     borderWidth: 1, 
-    paddingHorizontal: Spacing.md - 2, 
-    paddingVertical: Spacing.md - 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' },
       ios: {
@@ -206,9 +190,9 @@ const ql = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  iconWrap: { width: IconSize.xxl - 4, height: IconSize.xxl - 4, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center' },
-  label:    { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
-  sub:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
+  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  label:    { ...TextStyles.chip },
+  sub:      { ...TextStyles.badge, marginTop: 1 },
 });
 
 function NotificationsSkeleton() {
@@ -219,14 +203,14 @@ function NotificationsSkeleton() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ height: ADMIN_NOTIF_UI.skeletonHeaderHeight, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
-      <View style={{ padding: hPad, gap: Spacing.md }}>
-        <View style={{ flexDirection: 'row', gap: Spacing.md - 4 }}>
-          <Skeleton width="48%" height={60} borderRadius={CardTokens.radius - 2} />
-          <Skeleton width="48%" height={60} borderRadius={CardTokens.radius - 2} />
+      <View style={{ height: 100, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
+      <View style={{ padding: hPad, gap: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Skeleton width="48%" height={60} borderRadius={14} />
+          <Skeleton width="48%" height={60} borderRadius={14} />
         </View>
-        <Skeleton width="100%" height={200} borderRadius={CardTokens.radius} />
-        <Skeleton width="100%" height={ADMIN_NOTIF_UI.skeletonCardHeight} borderRadius={CardTokens.radius} />
+        <Skeleton width="100%" height={200} borderRadius={16} />
+        <Skeleton width="100%" height={250} borderRadius={16} />
       </View>
     </View>
   );
@@ -568,7 +552,7 @@ export default function AdminNotificationsScreen() {
                       onPress={() => setForm(p => ({ ...p, nationalityIds: [] }))}
                       style={{ marginTop: 6, alignSelf: 'flex-start' }}
                     >
-                      <Text style={{ fontSize: FontSize.micro, color: colors.textTertiary, fontFamily: FontFamily.medium }}>
+                      <Text style={{ fontSize: 11, color: colors.textTertiary, fontFamily: 'Poppins_500Medium' }}>
                         Clear selection
                       </Text>
                     </Pressable>
@@ -755,45 +739,45 @@ export default function AdminNotificationsScreen() {
   );
 }
 
-const CONTENT_MAX = ADMIN_NOTIF_UI.contentMaxWidth;
+const CONTENT_MAX = 1100;
 
 const s = StyleSheet.create({
   container:        { flex: 1 },
   center:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header:           {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4,
-    paddingVertical: Spacing.md - 4, borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn:          { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  backBtn:          { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   headerTitle:      { ...TextStyles.title3 },
-  headerSub:        { ...TextStyles.caption, marginTop: Spacing.xs - 3 },
+  headerSub:        { ...TextStyles.caption, marginTop: 1 },
 
   audiencePill:     {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3,
-    paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs + 1, borderRadius: ChipTokens.radius, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
   },
-  audiencePillText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
+  audiencePillText: { ...TextStyles.captionSemibold },
 
-  scroll:           { paddingTop: Spacing.md },
-  contentCol:       { paddingHorizontal: Spacing.md },
+  scroll:           { paddingTop: 16 },
+  contentCol:       { paddingHorizontal: 16 },
   contentColDesktop:{ maxWidth: CONTENT_MAX, width: '100%', alignSelf: 'center' as const, paddingHorizontal: 0 },
 
-  quickRow:         { flexDirection: 'row', gap: Spacing.md - 4, marginBottom: Spacing.md },
+  quickRow:         { flexDirection: 'row', gap: 12, marginBottom: 16 },
 
-  mainArea:         { gap: Spacing.md },
-  mainAreaDesktop:  { flexDirection: 'row', alignItems: 'flex-start', gap: CardTokens.paddingLarge },
+  mainArea:         { gap: 16 },
+  mainAreaDesktop:  { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
 
-  formCol:          { gap: Spacing.md - 2 },
+  formCol:          { gap: 14 },
   formColDesktop:   { flex: 3 },
-  previewCol:       { gap: Spacing.md - 2, marginTop: Spacing.xs },
+  previewCol:       { gap: 14, marginTop: 4 },
   previewColDesktop:{ flex: 2 },
 
   card:             { 
-    borderRadius: CardTokens.radius, 
+    borderRadius: 16,
     borderWidth: 1, 
-    padding: CardTokens.padding, 
-    gap: Spacing.md - 4,
+    padding: 16,
+    gap: 12,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
       ios: {
@@ -807,28 +791,28 @@ const s = StyleSheet.create({
   },
 
   sectionLabelRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 },
-  filterBadge:      { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 2, borderRadius: Spacing.sm },
-  filterBadgeText:  { fontSize: FontSize.tab, fontFamily: FontFamily.bold, color: "white", textTransform: 'uppercase' },
+  filterBadge:      { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  filterBadgeText:  { ...TextStyles.tabLabel, color: "white", textTransform: 'uppercase' },
 
-  typeLabelRow:     { marginTop: Spacing.xs },
-  typeLabel:        { fontSize: FontSize.caption, fontFamily: FontFamily.medium, marginBottom: Spacing.sm },
-  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  typeLabelRow:     { marginTop: 4 },
+  typeLabel:        { ...TextStyles.caption, marginBottom: 8 },
+  typeGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip:         {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
-    paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: ChipTokens.paddingV - 1,
-    borderRadius: ChipTokens.radius, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 20, borderWidth: 1,
   },
-  typeChipText:     { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, textTransform: 'capitalize' },
+  typeChipText:     { ...TextStyles.captionSemibold, textTransform: 'capitalize' },
 
-  row2:             { gap: Spacing.md - 4 },
+  row2:             { gap: 12 },
   row2Desktop:      { flexDirection: 'row' },
 
   // Approval
   approvalBanner:   { 
-    borderRadius: CardTokens.radius - 2, 
+    borderRadius: 14,
     borderWidth: 1, 
-    padding: Spacing.md - 2, 
-    gap: Spacing.sm + 2,
+    padding: 14,
+    gap: 10,
     ...Platform.select({
       web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.1)' },
       ios: {
@@ -840,38 +824,38 @@ const s = StyleSheet.create({
       android: { elevation: 4 }
     })
   },
-  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm + 2 },
-  approvalBannerTitle: { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
-  approvalBannerSub:{ fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
-  approvalCountdown:{ fontSize: FontSize.title2, fontFamily: FontFamily.bold, tabularNums: true } as any,
-  approvalBarTrack: { height: Spacing.xs, borderRadius: Spacing.xs / 2, overflow: 'hidden' },
-  approvalBarFill:  { height: Spacing.xs, borderRadius: Spacing.xs / 2 },
+  approvalBannerTop:{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  approvalBannerTitle: { ...TextStyles.cardTitle },
+  approvalBannerSub:{ ...TextStyles.caption, marginTop: 2 },
+  approvalCountdown:{ ...TextStyles.title2, tabularNums: true } as any,
+  approvalBarTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  approvalBarFill:  { height: 4, borderRadius: 2 },
 
   approvalHint:     {
-    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
-    borderRadius: CardTokens.radius - 4, borderWidth: 1, padding: Spacing.md - 4,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    borderRadius: 12, borderWidth: 1, padding: 12,
   },
-  approvalHintText: { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.regular, lineHeight: LineHeight.caption + 2 },
+  approvalHintText: { flex: 1, ...TextStyles.caption, lineHeight: 18 },
 
   // Action buttons
-  actionsRow:       { flexDirection: 'row', gap: Spacing.sm + 2 },
+  actionsRow:       { flexDirection: 'row', gap: 10 },
   dryRunBtn:        {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4, borderWidth: 1,
+    gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1,
   },
-  dryRunBtnText:    { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
+  dryRunBtnText:    { ...TextStyles.cardTitle },
   sendBtn:          {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.sm - 1, paddingVertical: Spacing.md - 3, borderRadius: CardTokens.radius - 4,
+    gap: 7, paddingVertical: 13, borderRadius: 12,
   },
-  sendBtnText:      { fontSize: FontSize.body2, fontFamily: FontFamily.bold },
+  sendBtnText:      { ...TextStyles.cardTitle },
 
   // Results / stats
   statsCard:        { 
-    borderRadius: CardTokens.radius, 
+    borderRadius: 16,
     borderWidth: 1, 
-    padding: CardTokens.padding, 
-    gap: Spacing.md - 4,
+    padding: 16,
+    gap: 12,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.1)' },
       ios: {
@@ -883,31 +867,31 @@ const s = StyleSheet.create({
       android: { elevation: 2 }
     })
   },
-  statsCardTitle:   { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
-  statRow:          { flexDirection: 'row', gap: Spacing.sm + 2 },
-  statBox:          { flex: 1, borderRadius: CardTokens.radius - 4, padding: Spacing.md - 2, alignItems: 'center', gap: Spacing.xs - 2 },
-  statNum:          { fontSize: FontSize.title, fontFamily: FontFamily.bold },
-  statLabel:        { fontSize: FontSize.micro, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statsCardTitle:   { ...TextStyles.callout },
+  statRow:          { flexDirection: 'row', gap: 10 },
+  statBox:          { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center', gap: 2 },
+  statNum:          { ...TextStyles.title3 },
+  statLabel:        { ...TextStyles.badge, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   replayBadge:      {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 2,
-    borderRadius: CardTokens.radius - 6, borderWidth: 1, padding: Spacing.sm + 2,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderRadius: 10, borderWidth: 1, padding: 10,
   },
-  replayText:       { flex: 1, fontSize: FontSize.caption, fontFamily: FontFamily.medium },
+  replayText:       { flex: 1, ...TextStyles.caption },
 
   // Audience table
-  previewTableTitle:{ fontSize: FontSize.caption, fontFamily: FontFamily.semibold, marginBottom: Spacing.sm },
-  tableHeader:      { flexDirection: 'row', paddingBottom: Spacing.sm - 2, borderBottomWidth: StyleSheet.hairlineWidth },
-  thCell:           { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.8 },
+  previewTableTitle:{ ...TextStyles.captionSemibold, marginBottom: 8 },
+  tableHeader:      { flexDirection: 'row', paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth },
+  thCell:           { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.8 },
   tableRow:         {
-    flexDirection: 'row', paddingVertical: Spacing.sm,
+    flexDirection: 'row', paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tdCell:           { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
+  tdCell:           { ...TextStyles.caption },
 
   emptyAudience:    {
-    alignItems: 'center', gap: Spacing.sm - 2, padding: Spacing.lg,
-    borderRadius: CardTokens.radius - 4, borderWidth: 1, borderStyle: 'dashed', marginTop: Spacing.xs,
+    alignItems: 'center', gap: 6, padding: 24,
+    borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginTop: 4,
   },
-  emptyAudienceText:{ fontSize: FontSize.chip, fontFamily: FontFamily.medium },
+  emptyAudienceText:{ ...TextStyles.chip },
 });

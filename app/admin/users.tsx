@@ -17,34 +17,13 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
 import { useAuth } from '@/lib/auth';
-import {
-  CardTokens,
-  ChipTokens,
-  CultureTokens,
-  FontFamily,
-  FontSize,
-  gradients,
-  IconSize,
-  SheetTokens,
-  Spacing,
-  TextStyles,
-} from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
 import type { UserRole } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import * as Haptics from 'expo-haptics';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
-const ADMIN_USERS_UI = {
-  iconBtnSize: 28,
-  tableActionWidth: 90,
-  desktopRoleSheetWidth: 480,
-  desktopRoleSheetBottom: Spacing.xl + Spacing.sm,
-  roleSheetListMaxHeight: 380,
-  emptyIconSize: 44,
-  skeletonHeaderHeight: 100,
-  skeletonCardHeight: 80,
-} as const;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type AdminUser = {
@@ -133,10 +112,10 @@ function RoleBadge({ role, size = 'sm' }: { role?: UserRole; size?: 'sm' | 'md' 
   );
 }
 const rb = StyleSheet.create({
-  wrap:   { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 1, borderRadius: Spacing.sm, borderWidth: 1 },
-  wrapMd: { paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: CardTokens.radius - 6 },
-  text:   { fontSize: FontSize.tab, fontFamily: FontFamily.bold, letterSpacing: 0.3 },
-  textMd: { fontSize: FontSize.caption },
+  wrap:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  wrapMd: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  text:   { ...TextStyles.tabLabel, letterSpacing: 0.3 },
+  textMd: { fontSize: 12 },
 });
 
 // ─── Membership Tier Badge ────────────────────────────────────────────────────
@@ -151,8 +130,8 @@ function TierBadge({ tier }: { tier?: string }) {
   );
 }
 const tb = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs - 1, paddingHorizontal: Spacing.sm - 1, paddingVertical: Spacing.xs - 1, borderRadius: Spacing.sm - 1, borderWidth: 1 },
-  text: { fontSize: FontSize.micro - 2, fontFamily: FontFamily.bold, letterSpacing: 0.4 },
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, borderWidth: 1 },
+  text: { fontSize: 9, fontFamily: 'Poppins_700Bold', letterSpacing: 0.4 },
 });
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -204,7 +183,7 @@ function RoleSheet({ user, assignable, onSelect, onClose, isPending }: {
 
           <Text style={[ms.sectionLabel, { color: colors.textTertiary }]}>Assign New Role</Text>
 
-          <ScrollView style={{ maxHeight: ADMIN_USERS_UI.roleSheetListMaxHeight }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
             {assignable.map(key => {
               const meta = ROLE_META[key];
               const isCurrent = key === current;
@@ -257,8 +236,8 @@ function RoleSheet({ user, assignable, onSelect, onClose, isPending }: {
 const ms = StyleSheet.create({
   backdrop:     { flex: 1, justifyContent: 'flex-end', alignItems: isWeb ? 'center' : 'stretch' },
   sheet:        {
-    borderTopLeftRadius: SheetTokens.borderRadius, borderTopRightRadius: SheetTokens.borderRadius,
-    ...(isWeb ? { borderRadius: CardTokens.radiusLarge, width: ADMIN_USERS_UI.desktopRoleSheetWidth, marginBottom: ADMIN_USERS_UI.desktopRoleSheetBottom } : {}),
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    ...(isWeb ? { borderRadius: 20, width: 480, marginBottom: 40 } : {}),
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(0,0,0,0.45)' },
       ios: {
@@ -269,21 +248,21 @@ const ms = StyleSheet.create({
       },
       android: { elevation: 12 }
     }),
-    paddingTop: Spacing.sm, paddingBottom: isWeb ? Spacing.lg : Platform.OS === 'ios' ? Spacing.xl + Spacing.xs : CardTokens.paddingLarge,
+    paddingTop: 8, paddingBottom: isWeb ? 24 : Platform.OS === 'ios' ? 36 : 20,
   },
-  handle:       { width: SheetTokens.handleWidth - Spacing.xs, height: SheetTokens.handleHeight, borderRadius: SheetTokens.handleHeight / 2, alignSelf: 'center', marginBottom: Spacing.md },
-  userRow:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4, paddingHorizontal: CardTokens.paddingLarge, paddingBottom: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: Spacing.sm - 2 },
-  userName:     { fontSize: FontSize.callout, fontFamily: FontFamily.bold },
-  userEmail:    { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
-  sectionLabel: { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: CardTokens.paddingLarge, paddingVertical: Spacing.sm + 2, },
-  roleRow:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.md - 4, paddingHorizontal: CardTokens.paddingLarge, paddingVertical: Spacing.md - 3, borderBottomWidth: StyleSheet.hairlineWidth },
-  roleIcon:     { width: IconSize.xxl - Spacing.xs, height: IconSize.xxl - Spacing.xs, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center' },
-  roleLabel:    { fontSize: FontSize.body2, fontFamily: FontFamily.semibold },
-  roleDesc:     { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
-  currentBadge: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs - 1, borderRadius: Spacing.sm, borderWidth: 1 },
-  currentText:  { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
-  cancelBtn:    { marginTop: Spacing.sm - 2, paddingVertical: Spacing.md, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  cancelText:   { fontSize: FontSize.callout, fontFamily: FontFamily.semibold },
+  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  userRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, marginBottom: 6 },
+  userName:     { ...TextStyles.callout },
+  userEmail:    { ...TextStyles.caption, marginTop: 2 },
+  sectionLabel: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 1.3, paddingHorizontal: 20, paddingVertical: 10, },
+  roleRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
+  roleIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  roleLabel:    { ...TextStyles.cardTitle },
+  roleDesc:     { ...TextStyles.caption, marginTop: 1 },
+  currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  currentText:  { ...TextStyles.badge },
+  cancelBtn:    { marginTop: 6, paddingVertical: 16, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
+  cancelText:   { ...TextStyles.callout },
 });
 
 // ─── User Card (mobile) ───────────────────────────────────────────────────────
@@ -395,20 +374,20 @@ function UserCard({ user, onEditRole, onToggleVerify, canEditRole, canVerify, in
 }
 
 const uc = StyleSheet.create({
-  card:      { borderRadius: CardTokens.radius, borderWidth: 1, padding: Spacing.md - 2, gap: Spacing.md - 4 },
-  topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md - 4 },
-  nameRow:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3 },
-  name:      { fontSize: FontSize.body2, fontFamily: FontFamily.semibold, flexShrink: 1 },
-  email:     { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 2 },
-  meta:      { fontSize: FontSize.micro, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
-  badges:    { alignItems: 'flex-end', gap: Spacing.sm - 3 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: Spacing.sm + 2, borderTopWidth: StyleSheet.hairlineWidth },
-  metaRow:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flex: 1 },
-  metaText:  { fontSize: FontSize.micro, fontFamily: FontFamily.regular },
-  metaDot:   { fontSize: FontSize.micro },
-  actions:   { flexDirection: 'row', gap: Spacing.sm },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.sm - 2, borderRadius: CardTokens.radius - 6, borderWidth: 1 },
-  actionText:{ fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
+  card:      { borderRadius: 16, borderWidth: 1, padding: 14, gap: 12 },
+  topRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  nameRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name:      { ...TextStyles.cardTitle, flexShrink: 1 },
+  email:     { ...TextStyles.caption, marginTop: 2 },
+  meta:      { ...TextStyles.badge, marginTop: 1 },
+  badges:    { alignItems: 'flex-end', gap: 5 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  metaRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  metaText:  { ...TextStyles.badge },
+  metaDot:   { fontSize: 11 },
+  actions:   { flexDirection: 'row', gap: 8 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
+  actionText:{ ...TextStyles.badge },
 });
 
 // ─── Desktop Table Row ────────────────────────────────────────────────────────
@@ -485,19 +464,19 @@ function TableRow({ user, onEditRole, onToggleVerify, canEditRole, canVerify }: 
 }
 
 const tr = StyleSheet.create({
-  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.md - 4, borderBottomWidth: StyleSheet.hairlineWidth },
-  tdUser:   { flex: 2, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, minWidth: 0 },
-  tdEmail:  { flex: 2, paddingRight: Spacing.sm + 2, minWidth: 0 },
+  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  tdUser:   { flex: 2, flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0 },
+  tdEmail:  { flex: 2, paddingRight: 10, minWidth: 0 },
   tdRole:   { flex: 1.2, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', minWidth: 0 },
-  tdLoc:    { flex: 1.2, paddingRight: Spacing.sm, minWidth: 0 },
+  tdLoc:    { flex: 1.2, paddingRight: 8, minWidth: 0 },
   tdJoined: { flex: 1, minWidth: 80 },
-  tdAction: { width: ADMIN_USERS_UI.tableActionWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm - 2 },
-  name:     { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
-  sub:      { fontSize: FontSize.caption, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
-  subXs:    { fontSize: FontSize.tab, fontFamily: FontFamily.regular, marginTop: Spacing.xs - 3 },
-  iconBtn:  { width: ADMIN_USERS_UI.iconBtnSize, height: ADMIN_USERS_UI.iconBtnSize, borderRadius: Spacing.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  editBtn:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Spacing.sm, borderWidth: 1 },
-  editText: { fontSize: FontSize.micro, fontFamily: FontFamily.semibold },
+  tdAction: { width: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+  name:     { ...TextStyles.chip },
+  sub:      { ...TextStyles.caption, marginTop: 1 },
+  subXs:    { ...TextStyles.tabLabel, marginTop: 1 },
+  iconBtn:  { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  editBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
+  editText: { ...TextStyles.badge },
 });
 
 // ─── Table Header ─────────────────────────────────────────────────────────────
@@ -523,8 +502,8 @@ function TableHeader() {
   );
 }
 const th = StyleSheet.create({
-  row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2, borderBottomWidth: StyleSheet.hairlineWidth },
-  cell: { fontSize: FontSize.tab, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.9 },
+  row:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  cell: { ...TextStyles.tabLabel, textTransform: 'uppercase', letterSpacing: 0.9 },
 });
 
 // ─── Stat Chip ────────────────────────────────────────────────────────────────
@@ -543,13 +522,13 @@ function StatChip({ value, label, color, icon }: { value: number | string; label
   );
 }
 const sp = StyleSheet.create({
-  chip: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: Spacing.sm, 
-    paddingHorizontal: ChipTokens.paddingH - 4, 
-    paddingVertical: Spacing.sm + 2, 
-    borderRadius: CardTokens.radius - 2, 
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
     ...Platform.select({
       web: { boxShadow: '0px 1px 4px rgba(0,0,0,0.05)' },
@@ -562,9 +541,9 @@ const sp = StyleSheet.create({
       android: { elevation: 1 }
     })
   },
-  icon: { width: IconSize.lg + 6, height: IconSize.lg + 6, borderRadius: Spacing.sm + 1, alignItems: 'center', justifyContent: 'center' },
-  val:  { fontSize: FontSize.body, fontFamily: FontFamily.bold },
-  lbl:  { fontSize: FontSize.tab, fontFamily: FontFamily.medium },
+  icon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  val:  { ...TextStyles.headline },
+  lbl:  { ...TextStyles.tabLabel },
 });
 
 function AdminUsersSkeleton() {
@@ -575,8 +554,8 @@ function AdminUsersSkeleton() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ height: ADMIN_USERS_UI.skeletonHeaderHeight, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
-      <View style={{ padding: Spacing.md, gap: Spacing.md }}>
+      <View style={{ height: 100, backgroundColor: CultureTokens.indigo, opacity: 0.8, paddingTop: topInset }} />
+      <View style={{ padding: 16, gap: 16 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {[1, 2, 3].map(i => <Skeleton key={i} width={100} height={60} borderRadius={14} />)}
         </View>
@@ -584,8 +563,8 @@ function AdminUsersSkeleton() {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {[1, 2, 3, 4].map(i => <Skeleton key={i} width={80} height={34} borderRadius={20} />)}
         </View>
-        <View style={{ marginTop: Spacing.sm + 2, gap: Spacing.md - 4 }}>
-          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={ADMIN_USERS_UI.skeletonCardHeight} borderRadius={CardTokens.radius} />)}
+        <View style={{ marginTop: 10, gap: 12 }}>
+          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={16} />)}
         </View>
       </View>
     </View>
@@ -837,16 +816,16 @@ function AdminUsersContent() {
             )
           }
           ItemSeparatorComponent={() =>
-            isDesktop ? null : <View style={{ height: Spacing.sm }} />
+            isDesktop ? null : <View style={{ height: 8 }} />
           }
         ListEmptyComponent={
           isLoading ? (
-            <View style={{ gap: Spacing.md - 4 }}>
-              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={ADMIN_USERS_UI.skeletonCardHeight} borderRadius={CardTokens.radius} />)}
+            <View style={{ gap: 12 }}>
+              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} width="100%" height={80} borderRadius={16} />)}
             </View>
           ) : (
               <View style={s.emptyWrap}>
-                <Ionicons name="people-outline" size={ADMIN_USERS_UI.emptyIconSize} color={colors.textTertiary} />
+                <Ionicons name="people-outline" size={44} color={colors.textTertiary} />
                 <Text style={[s.emptyTitle, { color: colors.text }]}>No users found</Text>
                 <Text style={[s.emptyText, { color: colors.textSecondary }]}>
                   {search ? 'Try a different search term.' : 'No users match the selected filter.'}
@@ -898,45 +877,45 @@ const s = StyleSheet.create({
   fill:         { flex: 1 },
 
   // Header
-  header:       { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 },
   headerTitle:  { ...TextStyles.title3, color: '#fff', letterSpacing: -0.2 },
-  headerSub:    { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: Spacing.xs - 3 },
-  backBtn:      { width: IconSize.xl + Spacing.xs, height: IconSize.xl + Spacing.xs, borderRadius: CardTokens.radius - 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  headerBtn:    { width: IconSize.lg + Spacing.sm + 2, height: IconSize.lg + Spacing.sm + 2, borderRadius: CardTokens.radius - 7, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
+  headerSub:    { ...TextStyles.caption, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  headerBtn:    { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
 
   // Body
   body:         { flex: 1 },
   bodyDesktop:  {},
 
   // List
-  listContent:  { paddingTop: Spacing.md, paddingBottom: Spacing.xl, gap: 0 },
-  listHeader:   { gap: Spacing.md - 4, marginBottom: Spacing.md - 4 },
+  listContent:  { paddingTop: 16, paddingBottom: 40, gap: 0 },
+  listHeader:   { gap: 12, marginBottom: 12 },
 
   // Stats
-  statsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  statsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   // Search
-  searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2, paddingHorizontal: Spacing.md - 2, paddingVertical: Spacing.sm + 3, borderRadius: CardTokens.radius - 2, borderWidth: 1 },
-  searchInput:  { flex: 1, fontFamily: FontFamily.regular, fontSize: FontSize.body2, padding: 0 },
+  searchWrap:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
+  searchInput:  { flex: 1, ...TextStyles.cardBody, padding: 0 },
 
   // Role chips
-  chips:        { gap: Spacing.sm, paddingVertical: Spacing.xs - 2 },
-  chip:         { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm - 3, paddingHorizontal: ChipTokens.paddingH - 4, paddingVertical: ChipTokens.paddingV - 1, borderRadius: ChipTokens.radius, borderWidth: 1 },
-  chipText:     { fontSize: FontSize.caption, fontFamily: FontFamily.semibold },
-  chipCount:    { paddingHorizontal: Spacing.sm - 3, paddingVertical: Spacing.xs - 3, borderRadius: Spacing.sm, minWidth: CardTokens.radius + Spacing.xs, alignItems: 'center' },
-  chipCountText:{ fontSize: FontSize.tab, fontFamily: FontFamily.bold },
+  chips:        { gap: 8, paddingVertical: 2 },
+  chip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  chipText:     { ...TextStyles.captionSemibold },
+  chipCount:    { paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 20, alignItems: 'center' },
+  chipCountText:{ ...TextStyles.tabLabel },
 
   // Desktop table
   tableWrap:    { borderRadius: 0, borderLeftWidth: 0, borderRightWidth: 0, overflow: 'hidden' },
 
   // Empty / loading
-  emptyWrap:    { alignItems: 'center', gap: Spacing.sm + 2, paddingVertical: 60 },
-  emptyTitle:   { fontSize: FontSize.body, fontFamily: FontFamily.bold },
-  emptyText:    { fontSize: FontSize.chip, fontFamily: FontFamily.regular, textAlign: 'center' },
+  emptyWrap:    { alignItems: 'center', gap: 10, paddingVertical: 60 },
+  emptyTitle:   { ...TextStyles.headline },
+  emptyText:    { ...TextStyles.chip, textAlign: 'center' },
 
   // Footer
-  footer:       { alignItems: 'center', gap: Spacing.sm + 2, paddingTop: Spacing.md, paddingBottom: CardTokens.paddingLarge },
-  footerText:   { fontSize: FontSize.caption, fontFamily: FontFamily.regular },
-  loadMore:     { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2, borderRadius: CardTokens.radius - 4, borderWidth: 1 },
-  loadMoreText: { fontSize: FontSize.chip, fontFamily: FontFamily.semibold },
+  footer:       { alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 20 },
+  footerText:   { ...TextStyles.caption },
+  loadMore:     { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  loadMoreText: { ...TextStyles.chip },
 });

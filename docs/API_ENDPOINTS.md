@@ -25,25 +25,6 @@ This document describes the live Firebase Functions API surface in this reposito
 - `POST /api/profiles`
 - `GET /api/businesses/:id`
 
-## Syndication Feeds
-- `GET /api/feeds/:scope/:value.rss`
-- `GET /api/feeds/:scope/:value.ics`
-- `GET /api/feeds/rss/:scope/:value`
-- `GET /api/feeds/ical/:scope/:value`
-
-### Feed scopes
-- `community` — events with matching `communityId`
-- `host` — events matched by `publisherProfileId`, `organizerId`, or legacy host metadata
-- `city` — events in a city; optional `country`
-- `state` — events in a state or territory; accepts codes like `NSW` and names like `New South Wales`; optional `country`
-- `artist` — events where `artists[].profileId` or artist name matches
-- `venue` — events matched by `venueProfileId` or venue name
-- `tag` — events matched across `tags`, `cultureTag`, `cultureTags`, `languageTags`, and `indigenousTags`
-
-### Feed query params
-- `country` — optional country disambiguator for `city` and `state` feeds
-- `limit` — optional item cap, default `50`, max `200`
-
 ## Entertainment & Browse Collections
 - `GET /api/movies`
 - `GET /api/movies/:id`

@@ -6,7 +6,6 @@ import { moderationCheck } from '../middleware/moderation';
 import { parseBody,
   captureRouteError,
 } from './utils';
-import { zOptionalHttpsImageUrl } from '../utils/httpsImageUrl';
 
 export const activitiesRouter = Router();
 
@@ -16,7 +15,7 @@ const activitySchema = z.object({
   category: z.string().min(1),
   city: z.string().min(1),
   country: z.string().min(1),
-  imageUrl: zOptionalHttpsImageUrl,
+  imageUrl: z.string().optional(),
   tags: z.array(z.string()).optional(),
   status: z.enum(['draft', 'published', 'archived']).default('published'),
 });

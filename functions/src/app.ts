@@ -34,7 +34,6 @@ import { ingestRouter } from './routes/ingest';
 import { calendarRouter } from './routes/calendar';
 import { offeringsRouter } from './routes/offerings';
 import { uploadsRouter } from './routes/uploads';
-import { feedsRouter } from './routes/feeds';
 
 export const app = express();
 
@@ -89,9 +88,6 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Production
   'https://culturepass.app',
   'https://www.culturepass.app',
-  // Firebase Hosting named site (project default URL is <projectId>.web.app)
-  'https://culturepass.web.app',
-  'https://culturepass.firebaseapp.com',
   /^https:\/\/[\w-]+\.culturepass\.app$/,          // preview/staging subdomains
   'https://culturekerala.com',
   'https://www.culturekerala.com',
@@ -272,7 +268,6 @@ mount('/', ingestRouter);
 mount('/', calendarRouter);
 mount('/', offeringsRouter);
 mount('/', uploadsRouter);
-mount('/', feedsRouter);
 app.use('/api/ingest', ingestRouter);
 
 // Special handling for factory routers

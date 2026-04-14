@@ -1,6 +1,5 @@
 import { db } from '../admin';
 import * as geofire from 'geofire-common';
-import { sanitizeStoredImagePointer } from '../utils/httpsImageUrl';
 import type { PaginationParams, PaginatedResult } from './base';
 
 export interface FirestoreEvent {
@@ -103,36 +102,9 @@ export interface EventFilters {
   time?: string;
   publisherProfileId?: string;
   venueProfileId?: string;
-  includeOngoing?: boolean;
 }
 
 const eventsCol = () => db.collection('events');
-
-function parseYmd(value?: string | null): number | null {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const ts = Date.parse(`${value}T00:00:00.000Z`);
-  return Number.isFinite(ts) ? ts : null;
-}
-
-function getEventDateRange(event: Pick<FirestoreEvent, 'date' | 'endDate'>): { start: number; end: number } | null {
-  const start = parseYmd(event.date);
-  if (start == null) return null;
-  const end = parseYmd(event.endDate ?? event.date) ?? start;
-  return { start, end: Math.max(start, end) };
-}
-
-function overlapsRequestedDateRange(
-  event: Pick<FirestoreEvent, 'date' | 'endDate'>,
-  dateFrom?: string,
-  dateTo?: string,
-): boolean {
-  if (!dateFrom && !dateTo) return true;
-  const range = getEventDateRange(event);
-  if (!range) return false;
-  const reqStart = parseYmd(dateFrom) ?? Number.NEGATIVE_INFINITY;
-  const reqEnd = parseYmd(dateTo) ?? Number.POSITIVE_INFINITY;
-  return range.end >= reqStart && range.start <= reqEnd;
-}
 
 export const eventsService = {
   async getById(id: string): Promise<FirestoreEvent | null> {
@@ -209,12 +181,8 @@ export const eventsService = {
 
       for (const data of uniqueDocs) {
         let matchesAdvanced = true;
-        if (filters.includeOngoing) {
-          if (!overlapsRequestedDateRange(data, filters.dateFrom, filters.dateTo)) matchesAdvanced = false;
-        } else {
-          if (filters.dateFrom && data.date < filters.dateFrom) matchesAdvanced = false;
-          if (filters.dateTo && data.date > filters.dateTo) matchesAdvanced = false;
-        }
+        if (filters.dateFrom && data.date < filters.dateFrom) matchesAdvanced = false;
+        if (filters.dateTo && data.date > filters.dateTo) matchesAdvanced = false;
         if (filters.isFree !== undefined && data.isFree !== filters.isFree) matchesAdvanced = false;
         if (filters.venue && data.venue !== filters.venue) matchesAdvanced = false;
         if (filters.time && data.time !== filters.time) matchesAdvanced = false;
@@ -251,10 +219,8 @@ export const eventsService = {
       if (filters.isFree !== undefined) {
         baseQuery = baseQuery.where('isFree', '==', filters.isFree);
       }
-      if (!filters.includeOngoing) {
-        if (filters.dateFrom) baseQuery = baseQuery.where('date', '>=', filters.dateFrom);
-        if (filters.dateTo) baseQuery = baseQuery.where('date', '<=', filters.dateTo);
-      }
+      if (filters.dateFrom) baseQuery = baseQuery.where('date', '>=', filters.dateFrom);
+      if (filters.dateTo) baseQuery = baseQuery.where('date', '<=', filters.dateTo);
       baseQuery = baseQuery.orderBy('date');
 
       const offset = (page - 1) * pageSize;
@@ -275,12 +241,8 @@ export const eventsService = {
         } else if (filters.status) {
           memItems = memItems.filter(e => e.status === filters.status);
         }
-        if (filters.includeOngoing) {
-          memItems = memItems.filter((e) => overlapsRequestedDateRange(e, filters.dateFrom, filters.dateTo));
-        } else {
-          if (filters.dateFrom) memItems = memItems.filter(e => e.date >= filters.dateFrom!);
-          if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
-        }
+        if (filters.dateFrom) memItems = memItems.filter(e => e.date >= filters.dateFrom!);
+        if (filters.dateTo) memItems = memItems.filter(e => e.date <= filters.dateTo!);
         if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
         if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
         if (filters.publisherProfileId) {
@@ -332,9 +294,14 @@ export const eventsService = {
         return fallbackListInMemory();
       }
 
-      // Always run in-memory filters prior to pagination so includeOngoing/date overlap
-      // semantics are applied consistently even when Firestore-side date range is skipped.
-      memItems = applyMemoryFilters(memItems);
+      if (filters.venue) memItems = memItems.filter(e => e.venue === filters.venue);
+      if (filters.time) memItems = memItems.filter(e => e.time === filters.time);
+      if (filters.publisherProfileId) {
+        memItems = memItems.filter((e) => e.publisherProfileId === filters.publisherProfileId);
+      }
+      if (filters.venueProfileId) {
+        memItems = memItems.filter((e) => e.venueProfileId === filters.venueProfileId);
+      }
 
       total = memItems.length;
       items = memItems.slice(offset, offset + pageSize);
@@ -399,24 +366,3 @@ export const eventsService = {
     return this.update(id, { status: 'published' });
   },
 };
-
-/**
- * Many clients only read `imageUrl`; some records store the banner in `heroImageUrl` only.
- * Coalesce for API responses so Discover / lists / maps get a loadable URL on all platforms.
- */
-export function normalizeEventImageForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(
-  e: T,
-): T {
-  const fromImage = sanitizeStoredImagePointer(e.imageUrl);
-  const fromHero = sanitizeStoredImagePointer(e.heroImageUrl);
-  const merged = fromImage || fromHero;
-  const out = { ...e } as T & { imageUrl?: string | null; heroImageUrl?: string | null };
-  out.imageUrl = merged ?? null;
-  return out as T;
-}
-
-export function normalizeEventListForClient<T extends { imageUrl?: string | null; heroImageUrl?: string | null }>(
-  items: T[],
-): T[] {
-  return items.map(normalizeEventImageForClient);
-}

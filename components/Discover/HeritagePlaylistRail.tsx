@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { FlatList, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CardTokens, Colors, CultureTokens } from '@/constants/theme';
@@ -14,16 +13,11 @@ import type { HeritagePlaylistEntry } from '@/shared/schema';
 import SectionHeader from './SectionHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-const CARD_WIDTH = 258;
-const IMAGE_HEIGHT = 162;
-const ITEM_GAP = 18;
+const CARD_WIDTH = 236;
+const IMAGE_HEIGHT = 148;
+const ITEM_GAP = 22;
 const SNAP = CARD_WIDTH + ITEM_GAP;
 const SKELETON_KEYS = ['h1', 'h2', 'h3', 'h4'] as const;
-
-const SECTION_EYEBROW = 'Listen';
-const SECTION_TITLE = 'Heritage playlist';
-const SECTION_SUBTITLE =
-  'Curated audio and stories — tap a card to open Explore for that culture, or jump straight to a stream when available.';
 
 interface HeritagePlaylistRailProps {
   data: HeritagePlaylistEntry[];
@@ -33,21 +27,13 @@ interface HeritagePlaylistRailProps {
 function HeritageSkeletonCard() {
   const colors = useColors();
   return (
-    <View
-      style={[
-        styles.card,
-        { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
-      ]}
-    >
-      <View style={[styles.accentRail, { backgroundColor: colors.border }]} />
-      <View style={styles.cardMain}>
-        <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
-        <View style={styles.skeletonBody}>
-          <Skeleton width={72} height={22} borderRadius={8} />
-          <Skeleton width="92%" height={16} borderRadius={6} />
-          <Skeleton width="40%" height={13} borderRadius={6} />
-          <Skeleton width="100%" height={40} borderRadius={12} style={{ marginTop: 10 }} />
-        </View>
+    <View style={[styles.card, { width: CARD_WIDTH, backgroundColor: colors.surface }]}>
+      <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
+      <View style={styles.skeletonBody}>
+        <Skeleton width={72} height={22} borderRadius={8} />
+        <Skeleton width="92%" height={16} borderRadius={6} />
+        <Skeleton width="48%" height={13} borderRadius={6} />
+        <Skeleton width="70%" height={12} borderRadius={6} />
       </View>
     </View>
   );
@@ -113,11 +99,8 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
     <View style={[styles.container, { marginBottom: vPad }]}>
       <View style={headerPadStyle}>
         <SectionHeader
-          eyebrow={SECTION_EYEBROW}
-          title={SECTION_TITLE}
-          subtitle={SECTION_SUBTITLE}
-          accentColor={CultureTokens.teal}
-          seeAllLabel="Explore"
+          title="Heritage Playlist"
+          subtitle="Curated listening that opens into matching cultural discovery"
           onSeeAll={seeAllExplore}
         />
       </View>
@@ -129,118 +112,96 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
           typeof item === 'string' ? (
             <HeritageSkeletonCard />
           ) : (
-            <View
-              style={[
+            <Pressable
+              onPress={() => handleCardPress(item)}
+              accessibilityLabel={`${item.title} by ${item.artist}. Opens matching culture in Explore.`}
+              style={({ pressed }) => [
                 styles.card,
-                {
-                  width: CARD_WIDTH,
-                  backgroundColor: colors.surface,
-                  borderColor: colors.borderLight,
-                },
+                { width: CARD_WIDTH, backgroundColor: colors.surface, borderColor: colors.borderLight },
+                pressed && { opacity: 0.92 },
+                Platform.OS === 'web' && { cursor: 'pointer' as const },
                 Colors.shadows.medium,
               ]}
             >
-              <View style={[styles.accentRail, { backgroundColor: item.accentColor }]} />
-              {/* Web: avoid nested <button> — Explore and Listen are sibling pressables. */}
-              <View style={styles.cardMain}>
-                <Pressable
-                  onPress={() => handleCardPress(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.title} by ${item.artist}. Opens Explore for ${item.culture} culture.`}
-                  accessibilityHint={
-                    item.externalUrl ? 'Use the separate Listen control on this card to open the audio stream.' : undefined
-                  }
-                  style={({ pressed }) => [
-                    styles.cardExplorePressable,
-                    pressed && { opacity: 0.97 },
-                    Platform.OS === 'web' && { cursor: 'pointer' as const },
-                  ]}
-                >
-                  <View style={styles.imageBlock}>
-                    <Image
-                      source={item.imageUrl ? { uri: item.imageUrl } : undefined}
-                      style={[styles.cardImage, { backgroundColor: colors.backgroundSecondary }]}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(0,0,0,0.5)']}
-                      style={StyleSheet.absoluteFillObject}
-                      pointerEvents="none"
-                    />
-                    <View style={styles.imageTopRow}>
+              <View style={[styles.accentTopBar, { backgroundColor: item.accentColor }]} />
+              <View style={styles.imageWrap}>
+                <Image
+                  source={item.imageUrl ? { uri: item.imageUrl } : undefined}
+                  style={[styles.cardImage, { backgroundColor: colors.backgroundSecondary }]}
+                  contentFit="cover"
+                  transition={200}
+                />
+                <View style={styles.imageOverlayRow}>
+                  <View style={[styles.typePill, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                    <Text style={styles.typePillText}>{item.typeLabel}</Text>
+                  </View>
+                  {item.isLive ? (
+                    <View style={[styles.livePill, { backgroundColor: CultureTokens.coral }]}>
+                      <Ionicons name="radio" size={10} color="white" />
+                      <Text style={styles.livePillText}>LIVE</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.playFab}>
+                  <Ionicons name={item.isLive ? 'radio' : 'play'} size={20} color="white" />
+                </View>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.artist, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.artist}
+                </Text>
+                <Text style={[styles.cultureLine, { color: colors.textTertiary }]} numberOfLines={1}>
+                  {item.culture} · tap for matching culture in Explore
+                </Text>
+                <View style={[styles.footerRow, { borderTopColor: colors.borderLight }]}>
+                  <View style={styles.discoverHint}>
+                    <Ionicons name="compass-outline" size={15} color={CultureTokens.teal} />
+                    <Text style={[styles.discoverHintText, { color: CultureTokens.teal }]}>Open discovery</Text>
+                  </View>
+                  {item.externalUrl ? (
+                    Platform.OS === 'web' ? (
                       <View
                         style={[
-                          styles.typePill,
-                          { backgroundColor: withAlpha(colors.surface, 0.92), borderColor: colors.borderLight },
+                          styles.listenBtn,
+                          { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
                         ]}
+                        accessibilityRole="link"
+                        accessibilityLabel="Listen in Spotify or browser"
+                        onStartShouldSetResponder={() => true}
+                        onResponderRelease={(event) => {
+                          event.stopPropagation?.();
+                          void openListenUrl(item.externalUrl!, item.id);
+                        }}
                       >
-                        <Text style={[styles.typePillText, { color: colors.text }]}>{item.typeLabel}</Text>
+                        <Ionicons name="musical-notes" size={14} color={item.accentColor} />
+                        <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
                       </View>
-                      {item.isLive ? (
-                        <View style={[styles.livePill, { backgroundColor: CultureTokens.coral }]}>
-                          <Ionicons name="radio" size={10} color="white" />
-                          <Text style={styles.livePillText}>LIVE</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <View style={styles.imageBottomRow}>
-                      <Text style={styles.imageTitle} numberOfLines={2}>
-                        {item.title}
-                      </Text>
-                      <Text style={styles.imageArtist} numberOfLines={1}>
-                        {item.artist}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.lowerBody,
-                      { borderTopColor: colors.borderLight },
-                      item.externalUrl ? styles.lowerBodyWithListen : null,
-                    ]}
-                  >
-                    <View style={styles.cultureRow}>
-                      <Ionicons name="earth-outline" size={15} color={CultureTokens.teal} />
-                      <Text style={[styles.cultureText, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {item.culture}
-                      </Text>
-                    </View>
-                    <Text style={[styles.exploreHint, { color: colors.textTertiary }]}>
-                      Opens Explore with matching culture filters
-                    </Text>
-                    <View style={styles.actionsRow}>
-                      <View style={styles.exploreAction}>
-                        <Ionicons name="compass" size={16} color={colors.primary} />
-                        <Text style={[styles.exploreActionText, { color: colors.primary }]}>Explore</Text>
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-                {item.externalUrl ? (
-                  <Pressable
-                    onPress={() => void openListenUrl(item.externalUrl!, item.id)}
-                    style={({ pressed }) => [
-                      styles.listenBtn,
-                      styles.listenBtnAbsolute,
-                      {
-                        backgroundColor: withAlpha(item.accentColor, 0.12),
-                        borderColor: withAlpha(item.accentColor, 0.4),
-                      },
-                      pressed && { opacity: 0.88 },
-                      Platform.OS === 'web' && { cursor: 'pointer' as const },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Listen in Spotify, browser, or your music app"
-                    hitSlop={6}
-                  >
-                    <Ionicons name="play-circle" size={18} color={item.accentColor} />
-                    <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
-                  </Pressable>
-                ) : null}
+                    ) : (
+                      <Pressable
+                        onPress={(event) => {
+                          event.stopPropagation?.();
+                          void openListenUrl(item.externalUrl!, item.id);
+                        }}
+                        style={({ pressed }) => [
+                          styles.listenBtn,
+                          { backgroundColor: colors.backgroundSecondary, borderColor: withAlpha(item.accentColor, 0.33) },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Listen in Spotify or browser"
+                        hitSlop={8}
+                      >
+                        <Ionicons name="musical-notes" size={14} color={item.accentColor} />
+                        <Text style={[styles.listenLabel, { color: item.accentColor }]}>Listen</Text>
+                      </Pressable>
+                    )
+                  ) : null}
+                </View>
               </View>
-            </View>
+            </Pressable>
           )
         }
         showsHorizontalScrollIndicator={false}
@@ -257,24 +218,15 @@ function HeritagePlaylistRailComponent({ data, isLoading }: HeritagePlaylistRail
 const styles = StyleSheet.create({
   container: { paddingTop: 2 },
   card: {
-    flexDirection: 'row',
     borderRadius: CardTokens.radius,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
   },
-  accentRail: {
-    width: 4,
-    alignSelf: 'stretch',
+  accentTopBar: {
+    width: '100%',
+    height: 4,
   },
-  cardMain: {
-    flex: 1,
-    minWidth: 0,
-    position: 'relative',
-  },
-  cardExplorePressable: {
-    flex: 1,
-  },
-  imageBlock: {
+  imageWrap: {
     width: '100%',
     height: IMAGE_HEIGHT,
     position: 'relative',
@@ -282,25 +234,25 @@ const styles = StyleSheet.create({
   cardImage: {
     ...StyleSheet.absoluteFillObject,
   },
-  imageTopRow: {
+  imageOverlayRow: {
     position: 'absolute',
     top: 10,
     left: 10,
     right: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   typePill: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   typePillText: {
+    color: 'white',
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: 0.35,
+    letterSpacing: 0.4,
   },
   livePill: {
     flexDirection: 'row',
@@ -315,93 +267,73 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Poppins_700Bold',
   },
-  imageBottomRow: {
+  playFab: {
     position: 'absolute',
-    left: 12,
+    bottom: 10,
     right: 12,
-    bottom: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  imageTitle: {
-    color: '#fff',
-    fontSize: 17,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 22,
-    letterSpacing: -0.2,
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-  },
-  imageArtist: {
-    marginTop: 2,
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
-    lineHeight: 18,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  lowerBody: {
+  cardBody: {
     paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 14,
-    gap: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  lowerBodyWithListen: {
-    paddingRight: 104,
+    paddingBottom: 12,
+    gap: 4,
   },
   skeletonBody: {
     padding: 14,
     gap: 8,
   },
-  cultureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  title: {
+    fontSize: 17,
+    fontFamily: 'Poppins_700Bold',
+    lineHeight: 22,
+    letterSpacing: -0.2,
   },
-  cultureText: {
-    flex: 1,
+  artist: {
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
     lineHeight: 19,
   },
-  exploreHint: {
+  cultureLine: {
     fontSize: 11,
     fontFamily: 'Poppins_400Regular',
-    lineHeight: 15,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 10,
+    lineHeight: 16,
     marginTop: 2,
   },
-  listenBtnAbsolute: {
-    position: 'absolute',
-    right: 14,
-    bottom: 14,
-    zIndex: 2,
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
   },
-  exploreAction: {
+  discoverHint: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     flexShrink: 1,
   },
-  exploreActionText: {
+  discoverHintText: {
     fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },
   listenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   listenLabel: {
     fontSize: 12,

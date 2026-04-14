@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, type StyleProp, type ViewStyle } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/typography';
-import { DISCOVER_TOKENS } from '@/components/Discover/tokens';
 
 interface CategoryCardProps {
   item: {
@@ -15,10 +14,9 @@ interface CategoryCardProps {
     emoji?: string;
   };
   onPress?: () => void;
-  style?: StyleProp<ViewStyle>;
 }
 
-function CategoryCard({ item, onPress, style }: CategoryCardProps) {
+function CategoryCard({ item, onPress }: CategoryCardProps) {
   const colors = useColors();
   const accent = item.color || colors.primary;
 
@@ -30,7 +28,6 @@ function CategoryCard({ item, onPress, style }: CategoryCardProps) {
         pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] },
         Platform.OS === 'web' && { cursor: 'pointer' as any },
         Colors.shadows.small,
-        style,
       ]}
       onPress={onPress}
     >
@@ -50,21 +47,21 @@ function CategoryCard({ item, onPress, style }: CategoryCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: DISCOVER_TOKENS.category.width,
-    borderRadius: DISCOVER_TOKENS.category.radius,
+    width: 110,
+    borderRadius: 20,
     alignItems: 'center',
-    paddingVertical: DISCOVER_TOKENS.category.paddingY,
-    paddingHorizontal: DISCOVER_TOKENS.category.paddingX,
+    paddingVertical: 18,
+    paddingHorizontal: 10,
     borderWidth: StyleSheet.hairlineWidth,
     // backgroundColor & borderColor applied inline via useColors()
   },
   iconWrap: {
-    width: DISCOVER_TOKENS.category.iconWrap,
-    height: DISCOVER_TOKENS.category.iconWrap,
-    borderRadius: DISCOVER_TOKENS.category.iconRadius,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: DISCOVER_TOKENS.rail.gap,
+    marginBottom: 12,
   },
   label: {
     textAlign: 'center',

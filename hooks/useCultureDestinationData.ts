@@ -1,14 +1,11 @@
 import { useMemo } from 'react';
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { calculateDistance } from '@shared/location/australian-postcodes';
+import { useQueries } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { EventData, Profile } from '@/shared/schema';
 import type { CultureDestinationDefinition } from '@/constants/cultureDestinations';
 import type { CultureHubScope } from '@/lib/cultureDestinationScope';
 import {
-  CULTURE_HUB_NEAR_RADIUS_KM,
   countriesForCultureHubQueries,
-  venueCountriesForCultureHub,
   eventMatchesCultureTerms,
   sortEventsForCultureDestination,
 } from '@/lib/cultureDestinationScope';
@@ -63,62 +60,26 @@ export type CultureDestinationQueryOptions = {
   focusCountry: string;
   focusStateCode?: string;
   scope: CultureHubScope;
-  /** When scope is `nearYou`, used with `GET /events/nearby` */
-  nearYouCoords?: { lat: number; lng: number } | null;
-  nearYouRadiusKm?: number;
 };
 
 export function useCultureDestinationData(def: CultureDestinationDefinition, options: CultureDestinationQueryOptions) {
-  const {
-    focusCountry,
-    focusStateCode,
-    scope,
-    nearYouCoords,
-    nearYouRadiusKm = CULTURE_HUB_NEAR_RADIUS_KM,
-  } = options;
-  const isNearYou = scope === 'nearYou';
+  const { focusCountry, focusStateCode, scope } = options;
   const countries = useMemo(
     () => countriesForCultureHubQueries(focusCountry, scope),
     [focusCountry, scope],
   );
-  const venueCountries = useMemo(
-    () => venueCountriesForCultureHub(focusCountry, scope),
-    [focusCountry, scope],
-  );
   const terms = def.matchTerms;
 
-  const nearbyQuery = useQuery({
-    queryKey: [
-      'culture-destination',
-      'nearby',
-      def.slug,
-      nearYouCoords?.lat,
-      nearYouCoords?.lng,
-      nearYouRadiusKm,
-    ],
-    queryFn: () =>
-      api.events.nearby({
-        lat: nearYouCoords!.lat,
-        lng: nearYouCoords!.lng,
-        radius: nearYouRadiusKm,
-        pageSize: 100,
-      }),
-    enabled: isNearYou && nearYouCoords != null,
-    staleTime: 90_000,
-  });
-
   const eventQueries = useQueries({
-    queries: isNearYou
-      ? []
-      : countries.map((country) => ({
-          queryKey: ['culture-destination', 'events', def.slug, country, scope],
-          queryFn: () => api.events.list({ country, pageSize: scope === 'singleCountry' ? 120 : 80 }),
-          staleTime: 120_000,
-        })),
+    queries: countries.map((country) => ({
+      queryKey: ['culture-destination', 'events', def.slug, country, scope],
+      queryFn: () => api.events.list({ country, pageSize: scope === 'singleCountry' ? 120 : 80 }),
+      staleTime: 120_000,
+    })),
   });
 
   const venueQueries = useQueries({
-    queries: venueCountries.map((country) => ({
+    queries: countries.map((country) => ({
       queryKey: ['culture-destination', 'venues', def.slug, country, scope],
       queryFn: () => api.businesses.list({ country }),
       staleTime: 300_000,
@@ -126,27 +87,6 @@ export function useCultureDestinationData(def: CultureDestinationDefinition, opt
   });
 
   const rawEvents = useMemo(() => {
-    if (isNearYou) {
-      const evs = nearbyQuery.data?.events ?? [];
-      const map = new Map<string, EventData>();
-      for (const e of evs) {
-        if (eventMatchesCultureTerms(e, terms)) map.set(e.id, e);
-      }
-      const list = Array.from(map.values());
-      if (!nearYouCoords) return list;
-      return [...list].sort((a, b) => {
-        const da =
-          a.lat != null && a.lng != null
-            ? calculateDistance(nearYouCoords.lat, nearYouCoords.lng, a.lat, a.lng)
-            : 99999;
-        const db =
-          b.lat != null && b.lng != null
-            ? calculateDistance(nearYouCoords.lat, nearYouCoords.lng, b.lat, b.lng)
-            : 99999;
-        if (Math.abs(da - db) > 0.05) return da - db;
-        return (a.date ?? '').localeCompare(b.date ?? '');
-      });
-    }
     const map = new Map<string, EventData>();
     for (const q of eventQueries) {
       for (const e of q.data?.events ?? []) {
@@ -154,15 +94,16 @@ export function useCultureDestinationData(def: CultureDestinationDefinition, opt
       }
     }
     return Array.from(map.values());
-  }, [isNearYou, nearbyQuery.data?.events, nearYouCoords, terms, eventQueries]);
+  }, [eventQueries, terms]);
 
-  const allEvents = useMemo(() => {
-    if (isNearYou) return rawEvents;
-    return sortEventsForCultureDestination(rawEvents, focusCountry, focusStateCode, {
-      originCountryHint: def.originCountryHint,
-      originKeywords: def.originKeywords,
-    });
-  }, [isNearYou, rawEvents, focusCountry, focusStateCode, def.originCountryHint, def.originKeywords]);
+  const allEvents = useMemo(
+    () =>
+      sortEventsForCultureDestination(rawEvents, focusCountry, focusStateCode, {
+        originCountryHint: def.originCountryHint,
+        originKeywords: def.originKeywords,
+      }),
+    [rawEvents, focusCountry, focusStateCode, def.originCountryHint, def.originKeywords],
+  );
 
   const venues = useMemo(() => {
     const map = new Map<string, Profile>();
@@ -175,16 +116,13 @@ export function useCultureDestinationData(def: CultureDestinationDefinition, opt
   }, [venueQueries, terms, focusCountry, focusStateCode]);
 
   const isLoading =
-    (isNearYou ? nearYouCoords != null && nearbyQuery.isPending : eventQueries.some((q) => q.isPending)) ||
-    venueQueries.some((q) => q.isPending);
+    eventQueries.some((q) => q.isPending) || venueQueries.some((q) => q.isPending);
 
   const refetch = () => {
-    if (isNearYou) {
-      void nearbyQuery.refetch();
-    } else {
-      void Promise.all(eventQueries.map((q) => q.refetch()));
-    }
-    void Promise.all(venueQueries.map((q) => q.refetch()));
+    void Promise.all([
+      ...eventQueries.map((q) => q.refetch()),
+      ...venueQueries.map((q) => q.refetch()),
+    ]);
   };
 
   return { allEvents, venues, isLoading, refetch, countriesQueried: countries };

@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { StyleSheet, Text, View, Platform, Pressable } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -11,11 +13,12 @@ import { WidgetUpcomingTicketCard } from '@/components/widgets/WidgetUpcomingTic
 import { WidgetIdentityQRCard } from '@/components/widgets/WidgetIdentityQRCard';
 import { BackButton } from '@/components/ui/BackButton';
 import TabScreenShell from '@/components/tabs/TabScreenShell';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
 import { useColors } from '@/hooks/useColors';
+import { syncCultureWidgetSnapshots } from '@/lib/widgets/sync';
 import { CultureTokens, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
-import { useCultureWidgetSnapshot } from '@/hooks/useCultureWidgetSnapshot';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 function WidgetsDashboardContent() {
@@ -27,7 +30,39 @@ function WidgetsDashboardContent() {
 
   const contentMaxWidth = isDesktop ? 800 : width;
 
-  const { data, isLoading, refetch } = useCultureWidgetSnapshot();
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['widgets-dashboard', userId, user?.city, user?.country],
+    queryFn: async () => {
+      const [spotlights, nearby, upcomingTicket] = await Promise.all([
+        api.widgets.spotlight(1),
+        api.widgets.happeningNearYou({
+          city: user?.city,
+          country: user?.country,
+          limit: 3,
+        }),
+        userId ? api.widgets.upcomingTicket(userId) : Promise.resolve(null),
+      ]);
+      return {
+        spotlight: spotlights[0] ?? null,
+        nearby,
+        upcomingTicket,
+      };
+    },
+  });
+
+  useEffect(() => {
+    if (!data) return;
+
+    syncCultureWidgetSnapshots({
+      spotlight: data.spotlight,
+      nearby: data.nearby,
+      upcomingTicket: data.upcomingTicket,
+      displayName: user?.displayName ?? user?.username,
+      culturePassId: user?.culturePassId,
+      city: user?.city,
+      country: user?.country,
+    });
+  }, [data, user?.city, user?.country, user?.culturePassId, user?.displayName, user?.username]);
 
   return (
     <View style={styles.container}>
@@ -96,7 +131,7 @@ function WidgetsDashboardContent() {
                 <Text style={styles.sectionTitle}>Happening Near You</Text>
               </View>
               <Animated.View entering={FadeInDown.delay(200).springify().damping(18)}>
-                <WidgetNearbyEventsCard events={data?.nearby?.slice(0, 3) ?? []} />
+                <WidgetNearbyEventsCard events={data?.nearby ?? []} />
               </Animated.View>
             </View>
 
@@ -131,7 +166,7 @@ function WidgetsDashboardContent() {
             <View style={styles.footerInfo}>
               <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
               <Text style={styles.footerNote}>
-                Pull to refresh updates preview cards; when the app is open, home-screen widgets receive the same data on the next snapshot sync.
+                Changes on this dashboard will automatically sync to your device widgets within 15 minutes.
               </Text>
             </View>
           </View>

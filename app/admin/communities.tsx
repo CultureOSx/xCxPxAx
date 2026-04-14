@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -45,8 +45,8 @@ function CommunityRow({ community, onPress, onToggleJoinMode, onDelete }: {
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{community.name}</Text>
             <View style={styles.metaRow}>
               <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{community.city} • {community.communityCategory}</Text>
-              <View style={[styles.modeBadge, { backgroundColor: isOpen ? colors.success + '15' : CultureTokens.gold + '15' }]}>
-                <Text style={[styles.modeText, { color: isOpen ? colors.success : CultureTokens.gold }]}>
+              <View style={[styles.modeBadge, { backgroundColor: isOpen ? '#10B98115' : CultureTokens.gold + '15' }]}>
+                <Text style={[styles.modeText, { color: isOpen ? '#10B981' : CultureTokens.gold }]}>
                   {(community.joinMode || 'OPEN').toUpperCase()}
                 </Text>
               </View>
@@ -59,19 +59,19 @@ function CommunityRow({ community, onPress, onToggleJoinMode, onDelete }: {
       <View style={styles.actions}>
         <Pressable 
           onPress={onToggleJoinMode} 
-          style={[styles.actionBtn, { backgroundColor: isOpen ? colors.success + '15' : colors.surfaceElevated }]}
+          style={[styles.actionBtn, { backgroundColor: isOpen ? '#10B98115' : colors.surfaceElevated }]}
         >
           <Ionicons 
             name={isOpen ? "lock-open-outline" : "lock-closed-outline"} 
             size={18} 
-            color={isOpen ? colors.success : colors.textTertiary} 
+            color={isOpen ? '#10B981' : colors.textTertiary}
           />
         </Pressable>
         <Pressable 
           onPress={onDelete} 
-          style={[styles.actionBtn, { backgroundColor: colors.error + '15' }]}
+          style={[styles.actionBtn, { backgroundColor: '#FF5E5B15' }]}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.error} />
+          <Ionicons name="trash-outline" size={18} color="#FF5E5B" />
         </Pressable>
       </View>
     </View>
@@ -112,13 +112,11 @@ export default function AdminCommunitiesScreen() {
     },
   });
 
-  useEffect(() => {
-    if (!roleLoading && !isSuperAdmin && !isAdmin) {
-      router.replace('/(tabs)');
-    }
-  }, [isAdmin, isSuperAdmin, roleLoading]);
   if (roleLoading) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!isSuperAdmin && !isAdmin) return null;
+  if (!isSuperAdmin && !isAdmin) {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const handleDelete = (community: Community) => {
     Alert.alert(

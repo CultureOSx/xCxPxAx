@@ -1,7 +1,8 @@
 import { useMemo, useCallback } from 'react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useSaved } from '@/contexts/SavedContext';
-import type { Locatable, EventData, Community } from '@shared/schema';
+import type { Locatable } from '@shared/schema';
+import type { EventData, CommunityData, BusinessData } from '@/data/mockData';
 
 /**
  * CulturePassAU Sydney Location Filters v2.0
@@ -12,7 +13,7 @@ export interface LocationFilterResult {
   // Core filters
   filterByLocation: <T extends Locatable>(items: T[]) => T[];
   filterSydneyEvents: (events: EventData[]) => EventData[];
-  filterSydneyCommunities: (communities: Community[]) => Community[];
+  filterSydneyCommunities: (communities: CommunityData[]) => CommunityData[];
   
   // Sydney-first logic
   prioritizeSydney: <T extends Locatable>(items: T[]) => T[];
@@ -65,12 +66,12 @@ export function useLocationFilter(): LocationFilterResult {
     return [...sydney, ...australia];
   }, []);
 
-  const filterSydneyCommunities = useCallback((communities: Community[]): Community[] => {
-    return communities.filter((c) => {
-      const city = c.city?.toLowerCase() ?? '';
-      const country = c.country?.toLowerCase() ?? '';
-      return city.includes('sydney') || (country === 'australia' && !city.includes('sydney'));
-    });
+  const filterSydneyCommunities = useCallback((communities: CommunityData[]): CommunityData[] => {
+    return communities.filter(c =>
+      c.city.toLowerCase().includes('sydney') ||
+      (c.country.toLowerCase() === 'australia' &&
+       !c.city.toLowerCase().includes('sydney'))
+    );
   }, []);
 
   // Prioritize Sydney in mixed lists
@@ -154,7 +155,7 @@ export function useSydneyEventsFilter(events: EventData[]) {
   return filterSydneyEvents(events);
 }
 
-export function useSydneyCommunitiesFilter(communities: Community[]) {
+export function useSydneyCommunitiesFilter(communities: CommunityData[]) {
   const { filterSydneyCommunities } = useLocationFilter();
   return filterSydneyCommunities(communities);
 }
