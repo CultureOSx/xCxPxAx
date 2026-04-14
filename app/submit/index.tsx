@@ -1918,6 +1918,7 @@ const s = StyleSheet.create({
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   mediaEmptyTitle: { ...TextStyles.callout },
   mediaEmptySub:   { ...TextStyles.caption, marginTop: 1 },
+  coverImageError: { ...TextStyles.caption, marginTop: 4, lineHeight: 18 },
 
   input:    { borderRadius: 12, padding: 14, ...TextStyles.cardBody, borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },

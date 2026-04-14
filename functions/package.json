@@ -15,7 +15,9 @@
     "seed:councils": "node scripts/uploadCouncils.js",
     "seed:indigenous:dry": "node scripts/seedIndigenousCulture.js --dry-run",
     "seed:indigenous": "node scripts/seedIndigenousCulture.js",
-    "seed:emulator:cap": "npx --yes tsx scripts/seed-emulator-cap-org.ts"
+    "seed:emulator:cap": "npx --yes tsx scripts/seed-emulator-cap-org.ts",
+    "cities:dedupe:dry": "npx --yes tsx scripts/dedupe-featured-cities.ts",
+    "cities:dedupe:apply": "npx --yes tsx scripts/dedupe-featured-cities.ts --apply"
   },
   "engines": {
     "node": "22"
