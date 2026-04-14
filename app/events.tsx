@@ -11,7 +11,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
@@ -220,16 +220,60 @@ export default function AllEventsScreen() {
 
   const { user, hasRole } = useAuth();
 
+  const deleteMutation = useMutation({
+    mutationFn: (eventId: string) => api.events.remove(eventId),
+    onMutate: async (eventId) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousEvents = queryClient.getQueryData(queryKey);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old || !old.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            events: page.events?.filter((e: EventData) => e.id !== eventId) || [],
+          })),
+        };
+      });
+
+      return { previousEvents };
+    },
+    onError: (err, eventId, context) => {
+      // Rollback to the previous value if there's an error
+      if (context?.previousEvents) {
+        queryClient.setQueryData(queryKey, context.previousEvents);
+      }
+      Alert.alert('Delete failed', err instanceof Error ? err.message : 'An unknown error occurred');
+    },
+    onSuccess: () => {
+      if (!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to make sure our local data is correct
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   const handleEditEvent = useCallback((event: EventData) => {
     // Navigate to edit screen
     router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
   }, []);
 
   const handleDeleteEvent = useCallback((event: EventData) => {
-    // TODO: Implement delete logic (API call, optimistic update, etc.)
-    // For now, just alert
-    Alert.alert('Delete Event', `Event "${event.title}" deleted (demo only).`);
-  }, []);
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(event.id) },
+      ]
+    );
+  }, [deleteMutation]);
 
   const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
     const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));

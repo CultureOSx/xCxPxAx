@@ -1,7 +1,7 @@
 // Scraper for City of Sydney events
 import axios from 'axios';
-import * as cheerio from 'cheerio';
-import { normalizeCityOfSydneyEvent } from '../normalizer/cityofsydney.js';
+import cheerio from 'cheerio';
+import { normalizeCityOfSydneyEvent } from '../normalizer/cityofsydney';
 
 export async function scrapeCityOfSydneyEvent(url) {
   const { data: html } = await axios.get(url);
