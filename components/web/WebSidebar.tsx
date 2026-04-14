@@ -123,7 +123,7 @@ const MAIN_NAV: NavItem[] = [
 ];
 
 const LIBRARY_NAV: NavItem[] = [
-  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets/index' },
+  { label: 'My Tickets', icon: 'ticket-outline', iconActive: 'ticket', route: '/tickets' },
   { label: 'Saved', icon: 'bookmark-outline', iconActive: 'bookmark', route: '/saved' },
   { label: 'Notifications', icon: 'notifications-outline', iconActive: 'notifications', route: '/notifications' },
   { label: 'All Events', icon: 'calendar-number-outline', iconActive: 'calendar-number', route: '/events', matchPrefix: true },
@@ -357,13 +357,23 @@ export function WebSidebar() {
   );
 
   const isActive = (item: NavItem) => {
-    if (item.matchPrefix) return pathname.startsWith(item.route.replace('/(tabs)', ''));
+    const bare = item.route
+      .replace('/(tabs)/', '/')
+      .replace('/(tabs)', '/')
+      .replace(/\/index$/, '');
     if (item.route === '/(tabs)') return pathname === '/' || pathname === '/index' || pathname === '';
-    const bare = item.route.replace('/(tabs)/', '/').replace('/(tabs)', '/');
-    return pathname === bare || pathname.startsWith(bare + '/');
+    if (item.matchPrefix) return pathname === bare || pathname.startsWith(bare + '/');
+    return pathname === bare;
   };
 
-  const navigate = (route: string) => router.navigate(route as any);
+  const navigate = (route: string) => {
+    const isTabRoute = route.startsWith('/(tabs)');
+    if (isTabRoute) {
+      router.navigate(route as any);
+    } else {
+      router.push(route as any);
+    }
+  };
 
   const bg = colors.surface;
   const border = colors.borderLight;
@@ -739,9 +749,9 @@ function SidebarProfileBlock({
 
 // Styles
 const s = StyleSheet.create({
-  sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
+  sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0, overflow: 'hidden' },
 
-  brandHeader: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 14, overflow: 'hidden', gap: 12 },
+  brandHeader: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 14, overflow: 'hidden', gap: 12, zIndex: 1 },
   brandBlackCard: {
     alignSelf: 'stretch',
     backgroundColor: '#08080f',

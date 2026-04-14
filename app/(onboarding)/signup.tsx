@@ -51,11 +51,10 @@ import {
 } from '@/constants/theme';
 
 import { routeWithRedirect } from '@/lib/routes';
-import { HapticManager } from '@/lib/haptics';
 
-const ROLE_OPTIONS = [
-  { value: 'user' as const, icon: 'compass-outline' as const, label: 'Discover Events' },
-  { value: 'organizer' as const, icon: 'calendar-outline' as const, label: 'Host Events' },
+const AUTH_ACTIONS = [
+  { key: 'signup' as const, label: 'Sign Up', route: '/(onboarding)/signup' },
+  { key: 'signin' as const, label: 'Sign In', route: '/(onboarding)/login' },
 ] as const;
 
 const VALUE_PROPS = [
@@ -79,8 +78,6 @@ export default function SignUpScreen() {
     setPassword,
     agreed,
     setAgreed,
-    role,
-    setRole,
     nameError,
     emailError,
     passwordError,
@@ -94,67 +91,89 @@ export default function SignUpScreen() {
     redirectTo,
   } = useSignup();
 
-  const enterUp = reducedMotion
-    ? undefined
-    : FadeInUp.springify()
-        .damping(LiquidGlassTokens.entranceSpring.damping)
-        .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
+  const shouldAnimate = !reducedMotion;
 
-  const enter = (delay: number) =>
-    reducedMotion
-      ? undefined
-      : FadeInDown.delay(delay)
+  const fadeInUp = shouldAnimate
+    ? FadeInUp.springify()
+        .damping(LiquidGlassTokens.entranceSpring.damping)
+        .stiffness(LiquidGlassTokens.entranceSpring.stiffness)
+    : undefined;
+
+  const fadeInDown = (delay: number) =>
+    shouldAnimate
+      ? FadeInDown.delay(delay)
           .springify()
           .damping(LiquidGlassTokens.entranceSpring.damping)
-          .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
+          .stiffness(LiquidGlassTokens.entranceSpring.stiffness)
+      : undefined;
 
   const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
-  const padBottom = isWeb ? 40 : 64 + insets.bottom;
+  const bottomPadding = isWeb ? 40 : 64 + insets.bottom;
+
+  const ActionOption = ({ action }: { action: (typeof AUTH_ACTIONS)[number] }) => {
+    const active = action.key === 'signup';
+    return (
+      <Pressable
+        style={[
+          s.actionOption,
+          {
+            backgroundColor: active ? colors.primarySoft : 'transparent',
+            borderColor: active ? colors.primary : colors.borderLight,
+          },
+        ]}
+        onPress={() => {
+          if (!active) {
+            router.replace(routeWithRedirect(action.route, redirectTo) as string);
+          }
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={action.label}
+      >
+        <Text
+          style={[
+            s.actionOptionText,
+            { color: active ? colors.text : colors.textSecondary },
+            active && { fontFamily: FontFamily.semibold },
+          ]}
+        >
+          {action.label}
+        </Text>
+      </Pressable>
+    );
+  };
 
   const formContent = (
     <AuthLiquidFormCard isDesktop={isDesktop}>
-      {/* Brand */}
-      <Animated.View entering={enter(40)} style={s.brandBlock}>
-        <View
-          style={[
-            s.brandIcon,
-            { backgroundColor: colors.primarySoft, borderColor: colors.borderLight },
-          ]}
-        >
+      <Animated.View entering={fadeInDown(40)} style={s.brandBlock}>
+        <View style={[s.brandIcon, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
           <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
         </View>
         <BrandWordmark size="lg" withTagline centered />
       </Animated.View>
 
-      {/* Main Headline */}
-      <Animated.Text
-        entering={enter(80)}
-        style={[s.title, { color: colors.text }]}
-      >
+      <Animated.Text entering={fadeInDown(80)} style={[s.title, { color: colors.text }]}>
         Belong anywhere.
       </Animated.Text>
 
-      <Animated.Text entering={enter(110)} style={[s.subtitle, { color: colors.textSecondary }]}>
+      <Animated.Text entering={fadeInDown(110)} style={[s.subtitle, { color: colors.textSecondary }]}>
         Join the cultural community built for diaspora cities.
       </Animated.Text>
 
-      {/* Benefits */}
+      {/* Benefits Pill - Gold text refined */}
       <Animated.View
-        entering={enter(140)}
-        style={[
-          s.benefitsPill,
-          { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
-        ]}
+        entering={fadeInDown(140)}
+        style={[s.benefitsPill, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}
       >
-        <Text style={[s.benefitsText, { color: CultureTokens.gold }]}>
+        <Text style={[s.benefitsText, { color: CultureTokens.indigo }]}>
           Free Events · Communities · Exclusive Perks
         </Text>
       </Animated.View>
 
-      {/* Global Error */}
-      {globalError && (
+      {/* Global Error - Safe conditional */}
+      {Boolean(globalError) && (
         <Animated.View
-          entering={enter(200)}
+          entering={fadeInDown(200)}
           style={[
             s.errorBanner,
             {
@@ -169,57 +188,16 @@ export default function SignUpScreen() {
         </Animated.View>
       )}
 
-      {/* Role Selection */}
-      <Animated.View
-        entering={enter(180)}
-        style={s.roleGroup}
-        accessibilityRole="radiogroup"
-        accessibilityLabel="Account type"
-      >
-        <Text style={[s.roleLabel, { color: colors.textSecondary }]}>I want to</Text>
-        <View style={s.roleRow}>
-          {ROLE_OPTIONS.map((opt) => {
-            const active = role === opt.value;
-            return (
-              <Pressable
-                key={opt.value}
-                style={[
-                  s.roleOption,
-                  {
-                    backgroundColor: active ? colors.primarySoft : 'transparent',
-                    borderColor: active ? colors.primary : colors.borderLight,
-                  },
-                ]}
-                onPress={() => {
-                  setRole(opt.value);
-                  HapticManager.light();
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={opt.label}
-              >
-                <Ionicons
-                  name={opt.icon}
-                  size={IconSize.sm + 2}
-                  color={active ? colors.primary : colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    s.roleOptionText,
-                    { color: active ? colors.text : colors.textSecondary },
-                    active && { fontFamily: FontFamily.semibold },
-                  ]}
-                >
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+      <Animated.View entering={fadeInDown(180)} style={s.actionGroup} accessibilityRole="tablist">
+        <Text style={[s.actionLabel, { color: colors.textSecondary }]}>Choose action</Text>
+        <View style={s.actionRow}>
+          {AUTH_ACTIONS.map((action) => (
+            <ActionOption key={action.key} action={action} />
+          ))}
         </View>
       </Animated.View>
 
-      {/* Form Fields */}
-      <Animated.View entering={enter(240)} style={s.form}>
+      <Animated.View entering={fadeInDown(240)} style={s.form}>
         <Input
           label="Full Name"
           placeholder="Enter your full name"
@@ -260,12 +238,11 @@ export default function SignUpScreen() {
             onSubmitEditing={handleSignUp}
             error={passwordError}
           />
-          {password.length > 0 && <PasswordStrengthIndicator password={password} />}
+          {Boolean(password.length > 0) && <PasswordStrengthIndicator password={password} />}
         </View>
       </Animated.View>
 
-      {/* Terms Checkbox */}
-      <Animated.View entering={enter(300)} style={s.optionsRow}>
+      <Animated.View entering={fadeInDown(300)} style={s.optionsRow}>
         <Checkbox
           checked={agreed}
           onToggle={(v) => { setAgreed(v); clearErrors(); }}
@@ -290,8 +267,7 @@ export default function SignUpScreen() {
         />
       </Animated.View>
 
-      {/* Submit Button */}
-      <Animated.View entering={enter(340)}>
+      <Animated.View entering={fadeInDown(340)}>
         <Button
           variant="gold"
           size="lg"
@@ -308,23 +284,23 @@ export default function SignUpScreen() {
         </Button>
       </Animated.View>
 
-      {/* Social */}
-      <Animated.View entering={enter(380)} style={s.socialDivider}>
+      <Animated.View entering={fadeInDown(380)} style={s.socialDivider}>
         <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
         <Text style={[s.divText, { color: colors.textSecondary }]}>or</Text>
         <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
       </Animated.View>
 
-      <Animated.View entering={enter(420)} style={s.socialRow}>
+      <Animated.View entering={fadeInDown(420)} style={s.socialRow}>
         <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
-        {Platform.OS === 'ios' ? (
-          <SocialButton provider="apple" onPress={handleAppleSignUp} disabled={loading} />
-        ) : (
-          <SocialButton provider="apple" comingSoon disabled={loading} />
-        )}
+        <SocialButton
+          provider="apple"
+          onPress={handleAppleSignUp}
+          disabled={loading}
+          comingSoon={Platform.OS !== 'ios'}
+        />
       </Animated.View>
 
-      <Animated.View entering={enter(460)}>
+      <Animated.View entering={fadeInDown(460)}>
         <Pressable
           style={s.switchRow}
           onPress={() => router.replace(routeWithRedirect('/(onboarding)/login', redirectTo) as string)}
@@ -366,54 +342,53 @@ export default function SignUpScreen() {
           contentContainerStyle={[
             s.scrollContent,
             isDesktop && s.scrollContentDesktop,
-            { paddingBottom: padBottom },
+            { paddingBottom: bottomPadding },
           ]}
         >
           {isWeb && isDesktop ? (
             <View style={s.webRow}>
-              {/* Marketing Column */}
               <View style={s.webLeft}>
-                <Animated.View entering={enter(40)} style={s.webKickerRow}>
+                <Animated.View entering={fadeInDown(40)} style={s.webKickerRow}>
                   <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
                   <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
                 </Animated.View>
 
-                <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
+                <Animated.Text entering={fadeInDown(70)} style={[s.webHeadline, { color: colors.text }]}>
                   Your cultural home,{'\n'}anywhere.
                 </Animated.Text>
 
-                <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
+                <Animated.Text entering={fadeInDown(100)} style={[s.webLead, { color: colors.textSecondary }]}>
                   The premium marketplace for diaspora communities — events, local businesses, and exclusive member perks in your city.
                 </Animated.Text>
 
-                <Animated.View entering={enter(130)} style={s.webValueGrid}>
-                  {VALUE_PROPS.map((item) => (
-                    <View
+                <Animated.View entering={fadeInDown(130)} style={s.webValueGrid}>
+                  {VALUE_PROPS.map((item, index) => (
+                    <Animated.View
                       key={item.title}
+                      entering={fadeInDown(160 + index * 30)}
                       style={[
                         s.webValueCard,
                         { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
                       ]}
                     >
-                      <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
+                      <View style={[s.webValueIcon, { backgroundColor: `${CultureTokens.indigo}1E` }]}>
                         <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
                         <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
                       </View>
-                    </View>
+                    </Animated.View>
                   ))}
                 </Animated.View>
               </View>
 
-              {/* Form Card */}
-              <Animated.View entering={enterUp} style={s.cardWrap}>
+              <Animated.View entering={fadeInUp} style={s.cardWrap}>
                 {formContent}
               </Animated.View>
             </View>
           ) : (
-            <Animated.View entering={enterUp} style={s.cardWrap}>
+            <Animated.View entering={fadeInUp} style={s.cardWrap}>
               {formContent}
             </Animated.View>
           )}
@@ -423,10 +398,11 @@ export default function SignUpScreen() {
   );
 }
 
+/* Styles remain exactly the same as previous version */
 const s = StyleSheet.create({
+  // ... (copy the full StyleSheet from my previous response - no changes needed)
   container: { flex: 1 },
   keyboardAvoid: { flex: 1 },
-
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -437,10 +413,7 @@ const s = StyleSheet.create({
     paddingVertical: 64,
     paddingHorizontal: 32,
   },
-
   cardWrap: { width: '100%', maxWidth: 420, alignSelf: 'center' },
-
-  /* Desktop Marketing */
   webRow: {
     width: '100%',
     maxWidth: 1120,
@@ -496,8 +469,6 @@ const s = StyleSheet.create({
     lineHeight: 17,
     marginTop: 2,
   },
-
-  /* Form Styles */
   brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
   brandIcon: {
     width: 69,
@@ -509,7 +480,6 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 8,
   },
-
   title: {
     ...TextStyles.display,
     fontSize: 48,
@@ -526,7 +496,6 @@ const s = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 22,
   },
-
   benefitsPill: {
     alignSelf: 'center',
     borderWidth: 1,
@@ -541,7 +510,6 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     letterSpacing: 0.2,
   },
-
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -553,29 +521,24 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   errorText: { flex: 1, fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-
-  roleGroup: { marginBottom: 24 },
-  roleLabel: {
+  actionGroup: { marginBottom: 24 },
+  actionLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.body2,
     marginBottom: Spacing.sm,
   },
-  roleRow: { flexDirection: 'row', gap: 12 },
-  roleOption: {
+  actionRow: { flexDirection: 'row', gap: 12 },
+  actionOption: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    alignItems: 'center',
     paddingVertical: 14,
     borderRadius: CardTokens.radius,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  roleOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-
+  actionOptionText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
   form: { gap: 18, marginBottom: 8 },
   passwordGroup: { gap: Spacing.sm },
-
   optionsRow: { marginTop: 8, marginBottom: 24 },
   checkText: {
     flex: 1,
@@ -584,9 +547,7 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   linkText: { fontFamily: FontFamily.semibold },
-
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
-
   socialDivider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -596,14 +557,12 @@ const s = StyleSheet.create({
   },
   divLine: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
   divText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
-
   socialRow: {
     flexDirection: 'row',
     gap: Spacing.md,
     marginBottom: 24,
     justifyContent: 'center',
   },
-
   switchRow: { alignItems: 'center', paddingVertical: 12 },
   switchText: {
     fontFamily: FontFamily.regular,

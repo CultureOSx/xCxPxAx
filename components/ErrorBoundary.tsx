@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<
     maxAutoRetries: number;
   } = {
     FallbackComponent: ErrorFallback,
-    maxAutoRetries: 2,
+    maxAutoRetries: 0,
   };
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
@@ -34,12 +34,13 @@ export class ErrorBoundary extends Component<
   componentDidCatch(error: Error, info: { componentStack: string }): void {
     const maxRetries = this.props.maxAutoRetries ?? 2;
     if (this.state.retryCount < maxRetries) {
+      const delay = 500 * (this.state.retryCount + 1);
       this.retryTimer = setTimeout(() => {
         this.setState(prev => ({
           error: null,
           retryCount: prev.retryCount + 1,
         }));
-      }, 100);
+      }, delay);
       return;
     }
 

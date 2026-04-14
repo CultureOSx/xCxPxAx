@@ -31,7 +31,7 @@ function clampScore(value: number): number {
 
 export function computeEventQuality(event: FirestoreEvent): EventQualityScore {
   const organizerReputationScore = clampScore(event.organizerReputationScore ?? 50);
-  const culturalRelevanceScore = clampScore(event.culturalRelevanceScore ?? ((event.cultureTag?.length ?? 0) * 20));
+  const culturalRelevanceScore = clampScore((event as unknown as Record<string, unknown>).culturalRelevanceScore as number ?? ((event.cultureTag?.length ?? 0) * 20));
   const popularityScore = clampScore(
     event.popularityScore ??
       ((event.attending ?? 0) * 0.8 + (event.ticketsSold ?? 0) * 0.4 + (event.isFeatured ? 12 : 0)),
@@ -75,7 +75,7 @@ export function rankEventsForDiscover(
         reasons.push('saved');
       }
 
-      const tags = [...(event.cultureTag ?? []), ...(event.cultureTags ?? [])].map((t) => t.toLowerCase());
+      const tags = [...(event.cultureTag ?? [])].map((t) => t.toLowerCase());
       if (tags.some((tag) => culturePrefs.has(tag))) {
         affinity += 12;
         reasons.push('culture_match');

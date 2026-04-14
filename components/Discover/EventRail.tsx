@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import SectionHeader from './SectionHeader';
 import EventCard from './EventCard';
@@ -8,7 +7,6 @@ import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { RailErrorBanner } from './RailErrorBanner';
 import type { EventData } from '@/shared/schema';
 
-/** Stacked Discover card width — match `EventCard` rail width. */
 const RAIL_CARD_WIDTH = 256;
 const RAIL_ITEM_GAP = 24;
 
@@ -18,10 +16,8 @@ interface EventRailProps {
   data: (EventData | string)[];
   isLoading?: boolean;
   onSeeAll?: () => void;
-  /** @deprecated FlashList uses ItemSeparator — kept for call-site compatibility */
   snapInterval?: number;
   isLive?: boolean;
-  /** Stacked cards: LIVE + ticking “Starts in …” (Discover starting-soon rail). */
   schedulingMode?: 'default' | 'live_and_countdown';
   errorMessage?: string | null;
   onRetry?: () => void;
@@ -40,7 +36,8 @@ function EventRailComponent({
 }: EventRailProps) {
   const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
 
-  const hasRealItems = data.some((item) => typeof item !== 'string');
+  const safeData = data.filter((item): item is EventData | string => item != null);
+  const hasRealItems = safeData.some((item) => typeof item !== 'string');
 
   if (!isLoading && !hasRealItems && !errorMessage) return null;
 
@@ -52,34 +49,31 @@ function EventRailComponent({
       {errorMessage && !isLoading && !hasRealItems ? (
         <RailErrorBanner message={errorMessage} onRetry={onRetry} />
       ) : (
-        <FlashList
+        <ScrollView
           horizontal
-          data={data}
-          keyExtractor={(item) => (typeof item === 'string' ? item : item.id)}
-          ItemSeparatorComponent={() => <View style={{ width: RAIL_ITEM_GAP }} />}
-          renderItem={({ item, index }) =>
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[scrollPadStyle, { gap: RAIL_ITEM_GAP }]}
+          snapToInterval={RAIL_CARD_WIDTH + RAIL_ITEM_GAP}
+          snapToAlignment="start"
+          decelerationRate="fast"
+        >
+          {safeData.map((item, index) =>
             typeof item === 'string' ? (
-              <View style={{ width: RAIL_CARD_WIDTH }}>
+              <View key={item} style={{ width: RAIL_CARD_WIDTH }}>
                 <EventCardSkeleton />
               </View>
             ) : (
               <EventCard
+                key={item.id}
                 event={item}
                 index={index}
                 isLive={isLive}
                 layout="stacked"
                 schedulingMode={schedulingMode}
               />
-            )
-          }
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={scrollPadStyle}
-          snapToInterval={RAIL_CARD_WIDTH + RAIL_ITEM_GAP}
-          snapToAlignment="start"
-          decelerationRate="fast"
-          // @ts-expect-error FlashList types omit estimatedItemSize in some versions
-          estimatedItemSize={RAIL_CARD_WIDTH}
-        />
+            ),
+          )}
+        </ScrollView>
       )}
     </View>
   );

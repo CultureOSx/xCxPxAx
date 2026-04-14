@@ -1,6 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { ScrollView, View } from 'react-native';
 import SectionHeader from './SectionHeader';
 import { useDiscoverRailInsets } from '@/components/Discover/discoverLayout';
 import { CultureCard } from './CultureCard';
@@ -22,17 +21,15 @@ export function CultureCardRail({ title, subtitle, items }: CultureCardRailProps
       <View style={headerPadStyle}>
         <SectionHeader title={title} subtitle={subtitle} />
       </View>
-      <FlashList
+      <ScrollView
         horizontal
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <CultureCard item={item} />}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={scrollPadStyle}
-        ItemSeparatorComponent={() => <View style={{ width: 18 }} />}
-        // @ts-expect-error FlashList type mismatch on some versions
-        estimatedItemSize={248}
-      />
+        contentContainerStyle={[scrollPadStyle, { gap: 18 }]}
+      >
+        {items.map((item) => (
+          <CultureCard key={item.id} item={item} />
+        ))}
+      </ScrollView>
     </View>
   );
 }

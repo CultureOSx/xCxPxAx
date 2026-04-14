@@ -8,7 +8,6 @@ import {
   CardGrammarTokens,
   CultureTokens,
   MotionTokens,
-  prefersReducedMotion,
 } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 
@@ -48,7 +47,7 @@ export function CardGrammar({
         {
           backgroundColor: colors.surface,
           borderColor: colors.borderLight,
-          transform: [{ scale: !prefersReducedMotion && isPressed ? MotionTokens.pressScale : 1 }],
+          transform: [{ scale: isPressed ? MotionTokens.pressScale : 1 }],
         },
         Platform.OS === 'web' && ({ cursor: 'pointer' } as object),
       ]}
