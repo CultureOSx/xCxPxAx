@@ -29,7 +29,7 @@ try {
   }
 }
 
-const isCalendarLinked =
+let isCalendarLinked =
   ExpoCalendar != null && typeof ExpoCalendar.requestCalendarPermissionsAsync === 'function';
 
 export interface PersonalEvent {
@@ -52,6 +52,9 @@ const DEFAULT_PREFS: CalendarSyncPrefs = {
   showPersonalEvents: true,
   autoAddTickets: false,
 };
+
+// @ts-ignore
+export function __test_setCalendarLinked(val, mock) { isCalendarLinked = val; if (mock) ExpoCalendar = mock; }
 
 export function useCalendarSync() {
   const queryClient = useQueryClient();
