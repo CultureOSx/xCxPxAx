@@ -11,7 +11,6 @@ import { createWidget } from 'expo-widgets';
 import { CultureTokens } from '@/constants/theme';
 
 export type CultureNearYouWidgetEvent = {
-  id?: string;
   title: string;
   startsAt: string;
 };
@@ -40,7 +39,7 @@ const CultureNearYouLayout = (props: CultureNearYouWidgetProps) => {
         {props.locationLabel}
       </Text>
       {props.events.slice(0, 3).map((event, index) => (
-        <HStack key={event.id ?? `${event.title}-${index}`} spacing={6}>
+        <HStack key={`${event.title}-${index}`} spacing={6}>
           <Text modifiers={[font({ size: 12 }), foregroundColor(CultureTokens.teal)]}>
             •
           </Text>

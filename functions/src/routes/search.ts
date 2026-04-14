@@ -20,15 +20,15 @@ export const searchRouter = Router();
  *   pageSize   — max 50, default 20
  */
 searchRouter.get('/search', async (req: Request, res: Response) => {
-  const query = String(req.query.q ?? '').trim().substring(0, 100);
-  const city = String(req.query.city ?? '').trim().substring(0, 50);
-  const country = String(req.query.country ?? '').trim().substring(0, 50);
-  const category = String(req.query.category ?? '').trim().substring(0, 50);
-  const cultureTag = String(req.query.cultureTag ?? '').trim().substring(0, 50);
-  const entryType = String(req.query.entryType ?? '').trim().substring(0, 50);
-  const eventType = String(req.query.eventType ?? '').trim().substring(0, 50);
-  const publisherProfileId = String(req.query.publisherProfileId ?? '').trim().substring(0, 50);
-  const venueProfileId = String(req.query.venueProfileId ?? '').trim().substring(0, 50);
+  const query = String(req.query.q ?? '').trim();
+  const city = String(req.query.city ?? '').trim();
+  const country = String(req.query.country ?? '').trim();
+  const category = String(req.query.category ?? '').trim();
+  const cultureTag = String(req.query.cultureTag ?? '').trim();
+  const entryType = String(req.query.entryType ?? '').trim();
+  const eventType = String(req.query.eventType ?? '').trim();
+  const publisherProfileId = String(req.query.publisherProfileId ?? '').trim();
+  const venueProfileId = String(req.query.venueProfileId ?? '').trim();
   const pageSize = Math.min(50, Math.max(1, parseInt(String(req.query.pageSize ?? '20'), 10) || 20));
 
   const hasStructuredEventFilter = Boolean(

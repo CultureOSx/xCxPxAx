@@ -40,7 +40,6 @@ interface NotificationData {
   eventId?: string;
   communityId?: string;
   userId?: string;
-  requestId?: string;
   url?: string;
 }
 
@@ -52,8 +51,6 @@ function handleNotificationResponse(data: NotificationData) {
       router.push({ pathname: '/community/[id]', params: { id: data.communityId } });
     } else if (data.screen === 'profile' && data.userId) {
       router.push({ pathname: '/profile/[id]', params: { id: data.userId } });
-    } else if (data.screen === 'enquiry' && data.requestId) {
-      router.push({ pathname: '/enquiries/[id]', params: { id: data.requestId } });
     } else if (data.screen === 'notifications') {
       router.push('/notifications');
     } else if (data.screen === 'tickets') {

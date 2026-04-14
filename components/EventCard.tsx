@@ -10,7 +10,6 @@ import { CultureTokens } from '@/constants/theme';
 import { useSaved } from '@/contexts/SavedContext';
 import { useColors } from '@/hooks/useColors';
 import { formatEventDateTime } from '@/lib/dateUtils';
-import { eventListImageUrl } from '@/lib/eventImage';
 import type { EventData } from '@/shared/schema';
 
 interface EventCardProps {
@@ -110,7 +109,7 @@ function EventCardInner({ event, isLive, canEdit, onEdit, onDelete }: EventCardP
       >
         <View style={[styles.imageContainer, { backgroundColor: colors.backgroundSecondary }]}>
           <CultureImage
-            uri={eventListImageUrl(event)}
+            uri={event.imageUrl ?? undefined}
             style={styles.image}
             contentFit="cover"
             recyclingKey={`event-${event.id}`}

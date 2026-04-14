@@ -8,10 +8,12 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme,
   ActivityIndicator,
   TextInput,
   type ViewStyle,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -61,6 +63,8 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
   const { user } = useAuth();
   const { state, updateLocation } = useOnboarding();
   const colors = useColors();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
   const { states, getStateForCity, isLoading: locationsLoading, error: locationsError } = useLocations();
   const { detect, status: detectStatus } = useNearestCity();
   const isDetecting = detectStatus === 'requesting';
@@ -274,6 +278,14 @@ export function LocationPicker({ variant = 'full', iconColor, buttonStyle, textC
         {...(Platform.OS === 'ios' ? { presentationStyle: 'pageSheet' as const } : {})}
       >
         <View style={[styles.modal, { flex: 1, backgroundColor: colors.background }]}>
+          {Platform.OS === 'ios' && (
+            <BlurView
+              intensity={60}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+
           <KeyboardAvoidingView
             style={styles.kavRoot}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}

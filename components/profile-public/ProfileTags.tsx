@@ -1,7 +1,7 @@
 import React from 'react';
 import { useColors } from '@/hooks/useColors';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { Colors, FontFamily } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 
 interface ProfileTagsProps {
   tags: string[];
@@ -36,7 +36,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
     color: Colors.text,
     marginBottom: 10,
   },
@@ -52,6 +52,6 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   },
   tagText: {
     fontSize: 13,
-    fontFamily: FontFamily.medium,
+    fontFamily: 'Poppins_500Medium',
   },
 });

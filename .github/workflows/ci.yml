@@ -1,0 +1,46 @@
+name: CulturePass CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    name: Lint, Typecheck & Build Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Typecheck
+        run: npm run typecheck
+
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Web Production
+        run: EXPO_PUBLIC_FIREBASE_API_KEY=mock_api_key EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=mock_auth_domain EXPO_PUBLIC_FIREBASE_PROJECT_ID=mock_project_id EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=mock_storage_bucket EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=mock_sender_id EXPO_PUBLIC_FIREBASE_APP_ID=mock_app_id npm run build-web

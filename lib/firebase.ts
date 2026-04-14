@@ -36,7 +36,7 @@ const missingKeys = getMissingFirebaseEnvKeys();
 
 // Empty EXPO_PUBLIC_FIREBASE_* values produce firebaseConfig.apiKey === ''.
 // initializeApp() still runs, but getAuth() then throws auth/invalid-api-key — obscure on Expo web.
-if (missingKeys.length > 0) {
+if (missingKeys.length > 0 && !process.env.CI) {
   const emulatorNote = shouldUseFirebaseEmulators()
     ? ' Emulator mode still needs the same Web app keys for initializeApp; only traffic is redirected to emulators.\n'
     : '';

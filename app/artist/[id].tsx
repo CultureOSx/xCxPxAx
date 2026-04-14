@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useQuery } from "@tanstack/react-query";
 import { CultureTokens } from "@/constants/theme";
 import SocialLinksBar from "@/components/SocialLinksBar";
@@ -255,6 +256,7 @@ export default function ArtistDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
               >
+                <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="chevron-back" size={24} color="white" />
               </Pressable>
 
@@ -267,6 +269,7 @@ export default function ArtistDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Share ${profile.name}`}
               >
+                <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                 <Ionicons name="share-outline" size={22} color="white" />
               </Pressable>
             </View>

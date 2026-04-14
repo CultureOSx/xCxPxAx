@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView,
   TextInput, Platform
 } from 'react-native';
-import CultureImage from '@/components/ui/CultureImage';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
@@ -22,7 +22,6 @@ import { isIndigenousEvent } from '@/lib/indigenous';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/Button';
 import { formatEventDateTime } from '@/lib/dateUtils';
-import { eventListImageUrl } from '@/lib/eventImage';
 import type { EventData } from '@/shared/schema';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { CityRail } from '@/components/Discover/CityRail';
@@ -92,12 +91,11 @@ function ExploreEventCard({ event, index }: { event: EventData, index: number })
     >
       {/* Image */}
       <View style={[ec.imgWrap, { height: imgHeight, backgroundColor: colors.surfaceElevated }]}>
-        <CultureImage
-          uri={eventListImageUrl(event)}
+        <Image
+          source={{ uri: event.imageUrl ?? undefined }}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
-          recyclingKey={`explore-event-${event.id}`}
-          borderRadius={0}
+          transition={150}
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.6)']}

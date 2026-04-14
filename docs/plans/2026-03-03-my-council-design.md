@@ -9,7 +9,6 @@ Scope: Australia-only, postcode/suburb-first civic module
 Ship a fully functioning My Council module that makes CulturePass useful weekly, not only event-driven.
 
 Primary outcomes:
-
 - Auto-resolve a user’s council from AU location context (postcode/suburb/city/state)
 - Provide high-frequency utility surfaces (waste, alerts, facilities)
 - Reuse existing Event and Profile infrastructure for council events and facilities
@@ -18,7 +17,6 @@ Primary outcomes:
 ## 2) Product scope (V1 AU)
 
 In scope:
-
 - New My Council tab/screen in Expo app (works on iOS/Android/web)
 - Sidebar navigation entry for desktop web layout
 - Backend council API namespace
@@ -33,7 +31,6 @@ In scope:
   - Grants and What’s On links
 
 Out of scope (V2+):
-
 - Polygon zoning (PostGIS)
 - SMS/email delivery orchestration
 - Full council admin portal and workflow engine
@@ -44,12 +41,10 @@ Out of scope (V2+):
 ### 3.1 Data strategy
 
 Use a hybrid strategy:
-
 - Immediate functionality via in-memory AU fallback stores in functions/src/app.ts
 - Firestore-ready route contracts that can be swapped to persisted collections
 
 Collections modeled in V1 route contracts:
-
 - institutions (council profiles)
 - waste_schedules
 - council_alerts
@@ -60,21 +55,18 @@ Collections modeled in V1 route contracts:
 - user_waste_reminders
 
 Reuse existing:
-
 - events for council events
 - profiles (entityType=venue/business/community) for facilities
 
 ### 3.2 Location resolution
 
 Resolution precedence:
-
-1. postcode + suburb match
-2. postcode only
-3. city + state
-4. city fallback
+1) postcode + suburb match
+2) postcode only
+3) city + state
+4) city fallback
 
 Inputs accepted from client:
-
 - postcode, suburb, city, state, country
 
 ## 4) API design
@@ -82,10 +74,10 @@ Inputs accepted from client:
 Namespace: /api/council
 
 Endpoints:
-
 - GET /api/council/my
   - Query: postcode, suburb, city, state, country
   - Returns aggregated dashboard payload
+
 - GET /api/council/:id
 - GET /api/council/:id/waste
 - GET /api/council/:id/alerts
@@ -95,7 +87,6 @@ Endpoints:
 - GET /api/council/:id/links
 
 User actions:
-
 - POST /api/council/:id/follow
 - DELETE /api/council/:id/follow
 - GET /api/council/:id/preferences
@@ -108,7 +99,6 @@ User actions:
 ### 5.1 Native typed API
 
 Add council namespace to lib/api.ts:
-
 - my, get, waste, alerts, events, facilities, grants, links
 - follow/unfollow
 - get/update preferences
@@ -122,7 +112,6 @@ Add council namespace to lib/api.ts:
 ### 5.3 Screen
 
 Create app/(tabs)/council.tsx:
-
 - Resolve council using onboarding location + postcode helper fallback
 - Render all sections from aggregate payload
 - Support interactions:
@@ -151,13 +140,11 @@ Create app/(tabs)/council.tsx:
 ## 8) Rollout plan
 
 Pilot with three councils in fallback data:
-
 - City of Parramatta Council (NSW)
 - City of Melbourne (VIC)
 - Brisbane City Council (QLD)
 
 Success metrics:
-
 - Weekly active usage of council tab
 - Reminder opt-in rate
 - Alert interaction CTR

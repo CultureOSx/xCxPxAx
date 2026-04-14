@@ -1,8 +1,29 @@
 # Instincts generated from https://github.com/CultureOSx/xCxPxAx
-# Generated: 2026-04-09T23:59:37.112Z
+# Generated: 2026-04-14T04:35:39.458Z
 # Version: 2.0
 # NOTE: This file supplements (does not replace) any existing curated instincts.
 # High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: xCxPxAx-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat
+
+## Evidence
+
+- 1 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat(queue): implement worker management and connection closure for event ingestion
 
 ---
 id: xCxPxAx-commit-length
@@ -17,12 +38,12 @@ source_repo: https://github.com/CultureOSx/xCxPxAx
 
 ## Action
 
-Write moderate-length commit messages (~85 characters)
+Write moderate-length commit messages (~83 characters)
 
 ## Evidence
 
-- Average commit message length: 85 chars
-- Based on 2 commits
+- Average commit message length: 83 chars
+- Based on 1 commits
 
 ---
 id: xCxPxAx-naming-files
@@ -37,12 +58,12 @@ source_repo: https://github.com/CultureOSx/xCxPxAx
 
 ## Action
 
-Use PascalCase naming convention
+Use camelCase naming convention
 
 ## Evidence
 
 - Analyzed file naming patterns in repository
-- Dominant pattern: PascalCase
+- Dominant pattern: camelCase
 
 ---
 id: xCxPxAx-import-alias
@@ -85,49 +106,9 @@ Prefer mixed exports
 - Dominant style: mixed
 
 ---
-id: xCxPxAx-arch-type-based
-trigger: "when adding new code"
-confidence: 0.8
-domain: architecture
-source: repo-analysis
-source_repo: https://github.com/CultureOSx/xCxPxAx
----
-
-# XCxPxAx Arch Type Based
-
-## Action
-
-Place code in the appropriate type folder (components/, services/, utils/, etc.)
-
-## Evidence
-
-- Type-based module organization detected
-- Folders: 
-
----
-id: xCxPxAx-test-separate
-trigger: "when writing tests"
-confidence: 0.8
-domain: testing
-source: repo-analysis
-source_repo: https://github.com/CultureOSx/xCxPxAx
----
-
-# XCxPxAx Test Separate
-
-## Action
-
-Place tests in the tests/ or __tests__/ directory, mirroring src structure
-
-## Evidence
-
-- Separate test directory pattern detected
-- Tests live in dedicated test folders
-
----
 id: xcxpxax-instinct-file-naming
 trigger: "When creating a new file"
-confidence: 0.9
+confidence: 0.8
 domain: code-style
 source: repo-analysis
 source_repo: CultureOSx/xCxPxAx
@@ -137,7 +118,7 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Name the file using PascalCase
+Name the file using camelCase format
 
 ## Evidence
 
@@ -156,7 +137,7 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Name the function using camelCase
+Use camelCase for the function name
 
 ## Evidence
 
@@ -175,7 +156,7 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Name the class using PascalCase
+Use PascalCase for the class name
 
 ## Evidence
 
@@ -183,7 +164,7 @@ Name the class using PascalCase
 
 ---
 id: xcxpxax-instinct-constant-naming
-trigger: "When declaring a constant"
+trigger: "When defining a constant"
 confidence: 0.9
 domain: code-style
 source: repo-analysis
@@ -194,7 +175,7 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Name the constant using SCREAMING_SNAKE_CASE
+Use SCREAMING_SNAKE_CASE for the constant name
 
 ## Evidence
 
@@ -213,15 +194,15 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Use alias-based import paths
+Use alias import style
 
 ## Evidence
 
-- Pattern in importStyle: alias
+- Pattern in importStyle
 
 ---
 id: xcxpxax-instinct-export-style
-trigger: "When exporting modules or values"
+trigger: "When exporting modules or functions"
 confidence: 0.7
 domain: code-style
 source: repo-analysis
@@ -232,49 +213,30 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Use either named or default exports as appropriate (mixed export style)
+Use mixed export style (default and named exports as appropriate)
 
 ## Evidence
 
-- Pattern in exportStyle: mixed
+- Pattern in exportStyle
 
 ---
-id: xcxpxax-instinct-test-location
-trigger: "When adding or updating tests"
-confidence: 0.9
-domain: testing
-source: repo-analysis
-source_repo: CultureOSx/xCxPxAx
----
-
-# Xcxpxax Instinct Test Location
-
-## Action
-
-Place test files in a separate directory from source files
-
-## Evidence
-
-- Pattern in architecture.folderStructure.testLocation: separate
-
----
-id: xcxpxax-instinct-commit-prefix
-trigger: "When writing a commit message for a bug fix"
+id: xcxpxax-instinct-git-commit-format
+trigger: "When making a git commit"
 confidence: 0.9
 domain: git
 source: repo-analysis
 source_repo: CultureOSx/xCxPxAx
 ---
 
-# Xcxpxax Instinct Commit Prefix
+# Xcxpxax Instinct Git Commit Format
 
 ## Action
 
-Prefix the commit message with 'fix:'
+Use the conventional commit format with a 'feat' prefix for features
 
 ## Evidence
 
-- Seen in commit: fix: event image URLs...
+- Seen in commit: 'feat(queue): implement worker management and connection closure for event ingestion'
 - Pattern in commits.prefixes
 
 ---
@@ -290,28 +252,47 @@ source_repo: CultureOSx/xCxPxAx
 
 ## Action
 
-Include a concise but descriptive summary, aiming for around 85 characters
+Write commit messages averaging around 80 characters in length
 
 ## Evidence
 
 - Pattern in commits.averageLength
 
 ---
-id: xcxpxax-instinct-error-boundaries
-trigger: "When handling errors in UI components"
+id: xcxpxax-instinct-test-location
+trigger: "When adding or locating tests"
 confidence: 0.8
-domain: code-style
+domain: testing
 source: repo-analysis
 source_repo: CultureOSx/xCxPxAx
 ---
 
-# Xcxpxax Instinct Error Boundaries
+# Xcxpxax Instinct Test Location
 
 ## Action
 
-Use error boundaries to catch and handle errors
+Place tests in mixed locations (not strictly separated from source code)
 
 ## Evidence
 
-- Pattern in errorHandling.errorBoundaries: true
+- Pattern in folderStructure.testLocation
+
+---
+id: xcxpxax-instinct-test-config
+trigger: "When configuring tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Test Config
+
+## Action
+
+Use 'jest.config.js' as the test configuration file
+
+## Evidence
+
+- Pattern in configFiles
 

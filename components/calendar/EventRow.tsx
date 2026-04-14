@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import type { EventData } from '@/shared/schema';
-import { eventListImageUrl } from '@/lib/eventImage';
 import { toSafeDateKey, MONTHS_SHORT, formatPrice } from './utils';
 
 export function EventRow({
@@ -20,7 +20,7 @@ export function EventRow({
   isAuthenticated: boolean;
   isWeb: boolean;
 }) {
-  const thumbUri = eventListImageUrl(event);
+  const isDark = useIsDark();
   const safeDate = toSafeDateKey(event.date);
   const dayNum = safeDate ? new Date(`${safeDate}T00:00:00`).getDate() : null;
   const monthAbbr = safeDate ? MONTHS_SHORT[new Date(`${safeDate}T00:00:00`).getMonth()] : 'TBA';
@@ -56,7 +56,7 @@ export function EventRow({
       ]}
     >
       {/* Left date block */}
-      <View style={[s.dateBlock, { backgroundColor: accentColor + '22' }]}>
+      <BlurView intensity={isDark ? 30 : 50} tint="dark" style={[s.dateBlock, { backgroundColor: accentColor + '22' }]}>
         {dayNum !== null ? (
           <>
             <Text style={[s.dateDay, { color: accentColor }]}>{dayNum}</Text>
@@ -65,7 +65,7 @@ export function EventRow({
         ) : (
           <Text style={[s.dateTba, { color: accentColor }]}>TBA</Text>
         )}
-      </View>
+      </BlurView>
 
       {/* Content */}
       <View style={s.content}>
@@ -109,9 +109,9 @@ export function EventRow({
       </View>
 
       {/* Thumbnail */}
-      {thumbUri ? (
+      {event.imageUrl ? (
         <Image
-          source={{ uri: thumbUri }}
+          source={{ uri: event.imageUrl }}
           style={[s.thumb, { backgroundColor: colors.backgroundSecondary }]}
           contentFit="cover"
         />

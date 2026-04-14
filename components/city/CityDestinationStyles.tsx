@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 import { CultureTokens, type ColorTheme } from '@/constants/theme';
@@ -9,66 +9,27 @@ export const cityAmbient = StyleSheet.create({
   mesh: { ...StyleSheet.absoluteFillObject, opacity: 0.06 },
 });
 
-const statWebCursor = Platform.OS === 'web' ? ({ cursor: 'pointer' } as const) : {};
-
 export function StatPill({
   icon,
   value,
   label,
   colors,
-  onPress,
-  accessibilityLabel: a11yLabel,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   value: string;
   label: string;
   colors: ColorTheme;
-  onPress?: () => void;
-  accessibilityLabel?: string;
 }) {
-  const inner = (
-    <View
-      style={{
-        alignItems: 'center',
-        paddingVertical: 11,
-        paddingHorizontal: 4,
-        borderRadius: 14,
-        backgroundColor: colors.backgroundSecondary,
-        borderWidth: StyleSheet.hairlineWidth * 2,
-        borderColor: colors.borderLight,
-      }}
-    >
-      <Ionicons name={icon} size={17} color={CultureTokens.indigo} style={{ marginBottom: 4, opacity: 0.92 }} />
-      <Text style={{ fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 21 }}>
+  return (
+    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}>
+      <Ionicons name={icon} size={18} color={CultureTokens.indigo} style={{ marginBottom: 3 }} />
+      <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 20 }}>
         {value}
       </Text>
-      <Text
-        style={{
-          fontSize: 10,
-          fontFamily: 'Poppins_600SemiBold',
-          color: colors.textTertiary,
-          letterSpacing: 0.2,
-          marginTop: 2,
-        }}
-      >
-        {label.toUpperCase()}
+      <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: colors.textTertiary }}>
+        {label}
       </Text>
     </View>
-  );
-
-  if (!onPress) {
-    return <View style={{ flex: 1, paddingHorizontal: 3 }}>{inner}</View>;
-  }
-
-  return (
-    <Pressable
-      style={({ pressed }) => [{ flex: 1, paddingHorizontal: 3, opacity: pressed ? 0.88 : 1 }, statWebCursor]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={a11yLabel ?? `${label}: ${value}. Tap to jump or filter.`}
-    >
-      {inner}
-    </Pressable>
   );
 }
 
@@ -125,9 +86,9 @@ export function getCityDestinationStyles(
     },
     heroBadge: {
       backgroundColor: CultureTokens.gold,
-      paddingHorizontal: 14,
-      paddingVertical: 6,
-      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
       marginBottom: 10,
     },
     heroBadgeText: { fontSize: 10, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
@@ -149,100 +110,29 @@ export function getCityDestinationStyles(
 
     statsStrip: {
       flexDirection: 'row',
-      paddingHorizontal: 10,
-      paddingVertical: 10,
-      borderBottomWidth: StyleSheet.hairlineWidth * 2,
-      gap: 2,
+      borderBottomWidth: 1,
     },
-    statDivider: { width: StyleSheet.hairlineWidth * 2, marginVertical: 14, alignSelf: 'stretch' },
+    statDivider: { width: 1, marginVertical: 10 },
 
     filterBar: {
       zIndex: 5,
     },
     filterBarGlassInner: {
-      paddingBottom: 10,
-    },
-    filterToolbarColumn: {
-      gap: 0,
-    },
-    /** One grouped “form” card: Area + optional Distance + Refine (Apple-style segments). */
-    filterToolbarGroupWrap: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 6,
-    },
-    hubControlGroup: {
-      borderRadius: 12,
-      padding: 10,
-      borderWidth: StyleSheet.hairlineWidth * 2,
-      maxWidth: '100%',
-    },
-    hubToolbarRow: {
-      marginBottom: 14,
-    },
-    hubToolbarRowLast: {
-      marginBottom: 0,
-    },
-    hubSectionLabel: {
-      fontSize: 11,
-      fontFamily: 'Poppins_600SemiBold',
-      letterSpacing: 0.35,
-      textTransform: 'uppercase' as const,
-      marginBottom: 8,
-    },
-    hubClearText: {
-      flexShrink: 0,
-      paddingVertical: 8,
-      paddingHorizontal: 4,
-      fontSize: 15,
-      fontFamily: 'Poppins_600SemiBold',
-    },
-    hubDiscoverCaption: {
-      fontSize: 12,
-      fontFamily: 'Poppins_400Regular',
-      lineHeight: 17,
-    },
-    scopeSegmentTrack: {
-      flexDirection: 'row',
-      borderRadius: 14,
-      padding: 3,
-      borderWidth: StyleSheet.hairlineWidth * 2,
-      gap: 3,
-      flexShrink: 0,
-    },
-    scopeSegBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 11,
-    },
-    scopeSegBtnText: {
-      fontSize: 12,
-      fontFamily: 'Poppins_600SemiBold',
-      lineHeight: 16,
-    },
-    nearRadiusScrollContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      paddingRight: 4,
+      paddingBottom: 8,
     },
     modeTabs: {
-      paddingHorizontal: 0,
-      paddingTop: 0,
+      paddingHorizontal: 20,
+      paddingTop: 10,
       gap: 0,
       flexDirection: 'row',
-      alignItems: 'center',
     },
     modeTab: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      paddingHorizontal: 14,
+      paddingHorizontal: 16,
       paddingVertical: 10,
-      marginRight: 2,
+      marginRight: 4,
       borderBottomWidth: 2,
       borderBottomColor: 'transparent',
     },
@@ -266,18 +156,6 @@ export function getCityDestinationStyles(
       marginLeft: 8,
     },
 
-    sectionAccentTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 14,
-    },
-    sectionAccentBar: {
-      width: 3,
-      height: 22,
-      borderRadius: 2,
-      backgroundColor: CultureTokens.gold,
-    },
     section: { paddingHorizontal: 20, paddingTop: 28 },
     sectionHeader: {
       flexDirection: 'row',
@@ -389,52 +267,15 @@ export function getCityDestinationStyles(
       opacity: 0.6,
     },
 
-    emptyState: {
-      minHeight: 300,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 14,
-      paddingVertical: 28,
-      paddingHorizontal: 20,
-    },
-    emptyStateCard: {
-      width: '100%',
-      maxWidth: 340,
-      borderRadius: 20,
-      borderWidth: StyleSheet.hairlineWidth * 2,
-      paddingVertical: 28,
-      paddingHorizontal: 20,
-      alignItems: 'center',
-      gap: 12,
-      ...Platform.select({
-        web: { boxShadow: '0 4px 24px rgba(0,0,0,0.07)' },
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-        },
-        default: { elevation: 3 },
-      }),
-    },
+    emptyState: { height: 320, alignItems: 'center', justifyContent: 'center', gap: 16 },
     emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text },
     emptySubtitle: { fontSize: 14, color: colors.textTertiary, textAlign: 'center', maxWidth: 260 },
     retryButton: {
-      marginTop: 4,
+      marginTop: 12,
       backgroundColor: CultureTokens.indigo,
       paddingHorizontal: 28,
       paddingVertical: 12,
       borderRadius: 30,
-      ...Platform.select({
-        web: { boxShadow: '0 2px 12px rgba(0,102,204,0.35)' },
-        ios: {
-          shadowColor: CultureTokens.indigo,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.35,
-          shadowRadius: 6,
-        },
-        default: { elevation: 3 },
-      }),
     },
     retryText: { color: colors.textOnBrandGradient, fontFamily: 'Poppins_600SemiBold', fontSize: 15 },
 

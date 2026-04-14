@@ -6,8 +6,8 @@
  * - Active state: indigo icon + label + small dot indicator below icon
  * - Spring scale animation on press
  * - Haptic feedback (iOS/Android)
- * - Profile tab shows user avatar when authenticated
- * - Solid elevated panel shell (tokenized surface + border + shadow)
+ * - Notification badge on Feed tab
+ * - LiquidGlassPanel (iOS glass / blur fallback / web backdrop-filter)
  * - Hidden on desktop web (sidebar takes over)
  */
 
@@ -21,7 +21,6 @@ import {
   Animated,
   AccessibilityInfo,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +29,8 @@ import { useColors, useIsDark } from '@/hooks/useColors';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { CultureTokens, LiquidGlassTokens } from '@/constants/theme';
 import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
@@ -67,14 +68,42 @@ const TABS = [
     iconActive: 'gift' as const,
   },
   {
-    name: 'profile',
-    label: 'Profile',
-    icon: 'person-circle-outline' as const,
-    iconActive: 'person-circle' as const,
+    name: 'menu',
+    label: 'Menu',
+    icon: 'menu-outline' as const,
+    iconActive: 'menu' as const,
   },
 ] as const;
 
 type TabConfig = (typeof TABS)[number];
+
+// ─── Badge ────────────────────────────────────────────────────────────────────
+
+function Badge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <View style={badge.wrap}>
+      <Text style={badge.txt}>{count > 9 ? '9+' : String(count)}</Text>
+    </View>
+  );
+}
+
+const badge = StyleSheet.create({
+  wrap: {
+    position: 'absolute',
+    top: -1,
+    right: -3,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: CultureTokens.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    zIndex: 10,
+  },
+  txt: { fontSize: 8, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+});
 
 // ─── Individual tab item ──────────────────────────────────────────────────────
 
@@ -84,28 +113,27 @@ const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   community: 'Find communities and cultural circles',
   city: 'See everything happening in your city',
   perks: 'Open perks, offers, and rewards',
-  profile: 'View your profile, settings, and account',
+  menu: 'Open app menu and settings',
 };
 
 interface TabItemProps {
   tab: TabConfig;
   isActive: boolean;
   onPress: () => void;
+  badgeCount?: number;
   isDark: boolean;
   colors: ReturnType<typeof useColors>;
   reduceMotion: boolean;
-  /** Avatar URL — shown on the Profile tab when user is authenticated */
-  avatarUrl?: string | null;
 }
 
 function TabItem({
   tab,
   isActive,
   onPress,
+  badgeCount,
   isDark,
   colors,
   reduceMotion,
-  avatarUrl,
 }: TabItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -126,7 +154,6 @@ function TabItem({
   const labelColor = isActive ? CultureTokens.indigo : colors.textTertiary;
 
   const hint = TAB_HINTS[tab.name];
-  const isProfileTab = tab.name === 'profile';
 
   return (
     <Pressable
@@ -143,28 +170,19 @@ function TabItem({
         style={[
           tabItem.inner,
           isActive && {
-            backgroundColor: isDark ? 'rgba(0,102,204,0.18)' : 'rgba(0,102,204,0.08)',
-            borderColor: isDark ? 'rgba(0,102,204,0.38)' : 'rgba(0,102,204,0.22)',
+            backgroundColor: isDark ? 'rgba(44,42,114,0.22)' : 'rgba(44,42,114,0.1)',
+            borderColor: isDark ? 'rgba(44,42,114,0.42)' : 'rgba(44,42,114,0.24)',
           },
           { transform: [{ scale }] },
         ]}
       >
-        {/* Icon / Avatar */}
+        {/* Icon */}
         <View style={tabItem.iconWrap}>
-          {isProfileTab && avatarUrl ? (
-            <View style={[tabItem.avatarRing, isActive && { borderColor: CultureTokens.indigo }]}>
-              <Image
-                source={{ uri: avatarUrl }}
-                style={tabItem.avatarImg}
-                contentFit="cover"
-              />
-            </View>
-          ) : (
-            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.md} color={iconColor} />
-          )}
+          <Ionicons name={isActive ? tab.iconActive : tab.icon} size={MAIN_TAB_UI.iconSize.md} color={iconColor} />
+          {badgeCount ? <Badge count={badgeCount} /> : null}
         </View>
 
-        {/* Label */}
+        {/* Label — min ~10px; allow scaling for Dynamic Type / accessibility */}
         <Text
           style={[tabItem.label, { color: labelColor, opacity: isActive ? 1 : 0.88 }]}
           numberOfLines={1}
@@ -175,7 +193,7 @@ function TabItem({
           {tab.label}
         </Text>
 
-        {/* Active indicator */}
+        {/* Active indicator dot */}
         {isActive ? <View style={tabItem.activeLine} /> : <View style={tabItem.linePlaceholder} />}
       </Animated.View>
     </Pressable>
@@ -206,19 +224,7 @@ const tabItem = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  avatarRing: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    overflow: 'hidden',
-  },
-  avatarImg: {
-    width: 21,
-    height: 21,
-    borderRadius: 6,
-  },
+
   label: {
     fontSize: 10,
     fontFamily: 'Poppins_600SemiBold',
@@ -246,7 +252,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const colors = useColors();
   const isDark = useIsDark();
   const { isDesktop } = useLayout();
-  const { user } = useAuth();
+  const { userId } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -276,11 +282,20 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
     };
   }, []);
 
+  const { data: notifCount = 0 } = useQuery<number>({
+    queryKey: ['notifications', 'unread-count', userId],
+    queryFn: async () => {
+      const res = await api.notifications.unreadCount();
+      return res.count ?? 0;
+    },
+    enabled: !!userId,
+    refetchInterval: 60_000,
+  });
+
   // Hidden on desktop web — sidebar handles navigation there
   if (Platform.OS === 'web' && isDesktop) return null;
 
   const bottomPad = Math.max(insets.bottom, 10);
-  const avatarUrl = user?.avatarUrl ?? null;
 
   // Only render tabs that match our TABS config
   const visibleRoutes = state.routes.filter((r) => TABS.some((t) => t.name === r.name));
@@ -333,6 +348,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
+          const isFeedTab = tab.name === 'city';
           return (
             <TabItem
               key={route.key}
@@ -341,7 +357,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
               isDark={isDark}
               colors={colors}
               reduceMotion={reduceMotion}
-              avatarUrl={tab.name === 'profile' ? avatarUrl : null}
+              badgeCount={isFeedTab ? notifCount : undefined}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',

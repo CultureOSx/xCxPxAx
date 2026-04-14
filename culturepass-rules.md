@@ -1,7 +1,6 @@
 # CulturePass — Rules & Patterns Reference
 
 > Full project structure → `CLAUDE.md`. Design principles → `docs/DESIGN_PRINCIPLES.md`.
-> Agent implementation style → `docs/AI_AGENT_STYLE_SHEET.md`.
 > This file covers: NEVER/ALWAYS, UI standard, design tokens, colors, API patterns, platform specifics.
 
 ---
@@ -15,7 +14,7 @@
 - Import from `constants/*.ts` files directly in screens — always import from `constants/theme`
 - Hardcode `topInset = Platform.OS === 'web' ? 67 : insets.top` — web inset is always `0`
 - Use raw `fetch()` — always use `api.*` from `lib/api.ts`
-- Rely on `**GET /api/users/me**` alone for the signed-in user — it returns **404** if `users/{uid}` is missing and does **not** create the doc. Load / refresh the current user with `**api.auth.me()`** (`GET /api/auth/me`), which materializes the profile on first hit
+- Rely on **`GET /api/users/me`** alone for the signed-in user — it returns **404** if `users/{uid}` is missing and does **not** create the doc. Load / refresh the current user with **`api.auth.me()`** (`GET /api/auth/me`), which materializes the profile on first hit
 - Import Firebase SDK directly in screens — use `lib/api.ts` and `lib/auth.tsx`
 - Create `StyleSheet` objects inside render functions — use module-level `StyleSheet.create()`
 - Use `console.log` in production — guard with `if (__DEV__)`
@@ -29,15 +28,15 @@
 
 ## ALWAYS Do
 
-- Use `api.`* from `lib/api.ts` for all backend calls
+- Use `api.*` from `lib/api.ts` for all backend calls
 - Use `useLayout()` for all responsive values (padding, columns, breakpoints, sidebarWidth)
 - Use `useColors()` for theme-aware colors — never hardcode hex in JSX
 - Wrap screens with async data in `<ErrorBoundary>`
 - Handle 401 with `ApiError.isUnauthorized()` → redirect to login
 - Use `useQuery` / `useMutation` (TanStack React Query) for all server state
-- Gate authenticated queries with `**!!userId && !isRestoring`** from `useAuth()` so web does not fetch with a stale `null` id or flash empty UI before Firebase restores the session
+- Gate authenticated queries with **`!!userId && !isRestoring`** from `useAuth()` so web does not fetch with a stale `null` id or flash empty UI before Firebase restores the session
 - Use `useSafeAreaInsets()` for native insets; web top inset is always `0`
-- Use `Haptics.`* (expo-haptics) for tactile feedback — iOS/Android only
+- Use `Haptics.*` (expo-haptics) for tactile feedback — iOS/Android only
 - Use `Image` from `expo-image` (not `react-native`) for all images
 - Test on iOS, Android, and web — use `Platform.OS` guards when behaviour differs
 - Use `Platform.select()` or `.native.tsx` / `.web.tsx` suffixes for large platform divergences
@@ -50,7 +49,7 @@
 
 ## UI Design Standard — events.tsx Pattern
 
-`**app/events.tsx` is the gold-standard listing screen.** Apply this structure to every listing/browsable screen (events, perks, community, directory, movies, restaurants, shopping).
+**`app/events.tsx` is the gold-standard listing screen.** Apply this structure to every listing/browsable screen (events, perks, community, directory, movies, restaurants, shopping).
 
 ### Required Structure
 
@@ -83,7 +82,6 @@ Footer
 ```
 
 ### Code conventions on these screens
-
 ```typescript
 // StyleSheet.create() at module level — never inside component
 const styles = StyleSheet.create({ ... });
@@ -113,45 +111,38 @@ const { numColumns, hPad, columnWidth } = useLayout();
 
 **Single import point**: `import { ... } from '@/constants/theme'`
 
-### Brand Colors (Updated with 2025–2026 Industry Trends)
+### Brand Colors
 
 ```typescript
 import { CultureTokens } from '@/constants/theme';
 
-CultureTokens.indigo   // #0066CC — CulturePass Blue (core brand; see `constants/colors.ts`)
-CultureTokens.coral    // #FF5E5B — Movement Coral — action energy, alerts (enhanced saturation for 2026 dopamine/vibrant trends)
-CultureTokens.teal     // #2EC4B6 — Ocean Teal — free badges, live states, belonging (now with electric teal influence for modern event apps)
+CultureTokens.indigo   // #0066CC — CulturePass Blue (see `constants/colors.ts`; design docs may cite alternate legacy indigo)
+CultureTokens.coral    // #FF5E5B — Movement Coral — action energy, alerts
+CultureTokens.teal     // #2EC4B6 — Ocean Teal — free badges, live states, belonging
 CultureTokens.gold     // #FFC857 — Temple Gold — INDIGENOUS CONTENT ONLY
-
-// NEW 2025–2026 Industry Accents (hyper-saturated & jewel-tone trends for festivals/culture apps)
-CultureTokens.electricBlue  // #00BFFF — High-energy accents, CTAs, live highlights (Pinterest/2026 electric trends)
-CultureTokens.vividPlum     // #8E4585 — Rich jewel tone for depth, community, premium events (plum noir influence)
-CultureTokens.neonMint      // #39FF9E — Fresh vibrant pop for success states, new content (wasabi/neon green trends)
 ```
 
-### Badge & Chip Color Rules (unchanged except for new accents where appropriate)
+### Badge & Chip Color Rules
 
+| Use case | Token | Reason |
+|----------|-------|--------|
+| FREE badge on event cards | `CultureTokens.teal` | Gold/saffron clashes with indigo brand |
+| LIVE / AVAILABLE badges | `CultureTokens.teal` | Positive state = teal |
+| Price chips on cards | `CultureTokens.teal` | Non-indigenous accent |
+| Active filter chip | `CultureTokens.indigo` | Primary brand color |
+| Indigenous banners / 🪃 badges | `CultureTokens.gold` | Cultural design choice — keep gold |
+| Indigenous section accents | `CultureTokens.gold` | Cultural design choice — keep gold |
 
-| Use case                       | Token                  | Reason                                 |
-| ------------------------------ | ---------------------- | -------------------------------------- |
-| FREE badge on event cards      | `CultureTokens.teal`   | Gold/saffron clashes with indigo brand |
-| LIVE / AVAILABLE badges        | `CultureTokens.teal`   | Positive state = teal                  |
-| Price chips on cards           | `CultureTokens.teal`   | Non-indigenous accent                  |
-| Active filter chip             | `CultureTokens.indigo` | Primary brand color                    |
-| Indigenous banners / 🪃 badges | `CultureTokens.gold`   | Cultural design choice — keep gold     |
-| Indigenous section accents     | `CultureTokens.gold`   | Cultural design choice — keep gold     |
+> **Rule**: Gold (#FFC857) is **reserved exclusively for indigenous content**. Use teal everywhere else.
 
-
-> **Rule**: Gold (#FFC857) is **reserved exclusively for indigenous content**. Use teal everywhere else. New electric accents (`electricBlue`, `neonMint`) are for high-energy non-indigenous highlights only.
-
-### Functional Category Tokens (Updated)
+### Functional Category Tokens
 
 ```typescript
 CultureTokens.event      // Saffron — event listing cards
-CultureTokens.artist     // Coral — artist profile cards (or Coral + ElectricBlue mix for energy)
+CultureTokens.artist     // Coral — artist profile cards
 CultureTokens.venue      // Teal — venue cards
-CultureTokens.movie      // Gold — movie cards (non-indigenous use teal/electric variants)
-CultureTokens.community  // Bright Blue -> now enhanced with ElectricBlue — community cards
+CultureTokens.movie      // Gold — movie cards
+CultureTokens.community  // Bright Blue — community cards
 ```
 
 ### Component Tokens
@@ -193,18 +184,16 @@ colors.border · colors.borderLight · colors.divider · colors.primaryGlow
 > Dark mode = default on native (night festival aesthetic).
 > Web always returns light theme from `useColors()`.
 
-### Gradients (Updated with new industry vibrancy)
+### Gradients
 
 ```typescript
 import { gradients } from '@/constants/theme';
 
-gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners, CTAs (optionally layer ElectricBlue)
-gradients.primary           // [Indigo, Blue] — tab bar active pill (enhanced with ElectricBlue)
-gradients.aurora            // light blue/purple — backgrounds (now richer with VividPlum)
-gradients.sunset            // warm orange/coral — event cards (punchier for 2026 trends)
+gradients.culturepassBrand  // [Indigo, Saffron, Coral] — hero banners, CTAs
+gradients.primary           // [Indigo, Blue] — tab bar active pill
+gradients.aurora            // light blue/purple — backgrounds
+gradients.sunset            // warm orange/coral — event cards
 gradients.midnight          // deep indigo — dark backgrounds
-// NEW
-gradients.electricVibe      // [ElectricBlue, NeonMint, Coral] — live events, high-energy sections
 ```
 
 ### Animations
@@ -240,8 +229,6 @@ const topInset = Platform.OS === 'web' ? 0 : insets.top;
 ```
 
 ---
-
-> **Scope note**: Sections after this point (Local web + Cloud Functions CORS, API/data fetching, route pattern, authentication, platform specifics, performance, security checklist, key files, and test commands) remain unchanged.
 
 ## Local web + Cloud Functions (CORS)
 
@@ -336,12 +323,10 @@ Social sign-in: Google (web: popup, native: `@react-native-google-signin`), Appl
 
 ### Current-user API (important)
 
-
-| Endpoint                                   | Behaviour                                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `**GET /api/auth/me**` (`api.auth.me()`)   | **Preferred** for “who am I” + edit screens. Creates `users/{uid}` on first successful hit if missing. |
-| `**GET /api/users/me`** (`api.users.me()`) | Returns 404 if the Firestore user doc does not exist — do not rely on it alone after login.            |
-
+| Endpoint | Behaviour |
+|----------|-----------|
+| **`GET /api/auth/me`** (`api.auth.me()`) | **Preferred** for “who am I” + edit screens. Creates `users/{uid}` on first successful hit if missing. |
+| **`GET /api/users/me`** (`api.users.me()`) | Returns 404 if the Firestore user doc does not exist — do not rely on it alone after login. |
 
 ### React Query pattern (profile & settings)
 
@@ -401,31 +386,29 @@ Use `api.search.query()` → `GET /api/search` (Firestore-backed on the server).
 
 ## Security Checklist (before every commit)
 
-- No hardcoded secrets — `EXPO_PUBLIC_`* env vars only
-- `STRIPE_SECRET_KEY` and other server secrets never in `EXPO_PUBLIC_`*
-- User input validated with `zod` before sending to API
-- No `dangerouslySetInnerHTML`
-- `redirectTo` params only allow internal routes (`/` prefix, no `://`)
-- Image uploads: MIME type + size validated client AND server
-- Server-side role guards (`requireRole()`) — client checks are UX only
-- `if (__DEV__)` guards on all `console.error` calls in client code
+- [ ] No hardcoded secrets — `EXPO_PUBLIC_*` env vars only
+- [ ] `STRIPE_SECRET_KEY` and other server secrets never in `EXPO_PUBLIC_*`
+- [ ] User input validated with `zod` before sending to API
+- [ ] No `dangerouslySetInnerHTML`
+- [ ] `redirectTo` params only allow internal routes (`/` prefix, no `://`)
+- [ ] Image uploads: MIME type + size validated client AND server
+- [ ] Server-side role guards (`requireRole()`) — client checks are UX only
+- [ ] `if (__DEV__)` guards on all `console.error` calls in client code
 
 ---
 
 ## Key Files Reference
 
-
-| File                            | Purpose                                         |
-| ------------------------------- | ----------------------------------------------- |
-| `lib/api.ts`                    | Typed API client — only way to call backend     |
-| `lib/auth.tsx`                  | Firebase Auth provider + `useAuth()`            |
-| `constants/theme.ts`            | Single import for all design tokens             |
-| `hooks/useColors.ts`            | Theme-aware colors (dark=native, light=web)     |
-| `hooks/useLayout.ts`            | Responsive layout values                        |
-| `shared/schema.ts`              | Master TypeScript type re-exports               |
+| File | Purpose |
+|------|---------|
+| `lib/api.ts` | Typed API client — only way to call backend |
+| `lib/auth.tsx` | Firebase Auth provider + `useAuth()` |
+| `constants/theme.ts` | Single import for all design tokens |
+| `hooks/useColors.ts` | Theme-aware colors (dark=native, light=web) |
+| `hooks/useLayout.ts` | Responsive layout values |
+| `shared/schema.ts` | Master TypeScript type re-exports |
 | `functions/src/routes/utils.ts` | `captureRouteError()` — use in all catch blocks |
-| `app/events.tsx`                | Gold-standard listing screen UI pattern         |
-
+| `app/events.tsx` | Gold-standard listing screen UI pattern |
 
 ---
 
@@ -440,4 +423,3 @@ npm run typecheck          # TypeScript check (no emit)
 npm run lint               # ESLint
 npm run lint:fix           # ESLint auto-fix
 ```
-

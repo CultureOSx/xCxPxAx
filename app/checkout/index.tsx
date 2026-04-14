@@ -10,7 +10,6 @@ import {
   TextInput,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,11 +24,11 @@ import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
 import { useAuth } from '@/lib/auth';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { BlurView } from 'expo-blur';
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import { getCurrencyForCountry, formatCurrency } from '@/lib/currency';
 import { captureTicketPurchaseCompleted } from '@/lib/analytics';
-import { eventListImageUrl } from '@/lib/eventImage';
 
 const isWeb = Platform.OS === 'web';
 
@@ -58,8 +57,6 @@ export default function CheckoutPage() {
   const totalPriceCents = discountApplied
     ? Math.max(0, (basePriceCents * quantity) - 500)
     : basePriceCents * quantity;
-
-  const eventPosterUri = event ? eventListImageUrl(event) : undefined;
 
   const handleApplyPromo = () => {
     if (!promoCode.trim()) return;
@@ -116,7 +113,7 @@ export default function CheckoutPage() {
     return (
       <View style={styles.screen}>
         <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.58)' }]} />
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         </Pressable>
         <Animated.View
           entering={SlideInDown.springify().damping(20)}
@@ -154,7 +151,7 @@ export default function CheckoutPage() {
         accessibilityRole="button"
         accessibilityLabel="Dismiss"
       >
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.58)' }]} />
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
       </Pressable>
 
       <Animated.View
@@ -185,23 +182,12 @@ export default function CheckoutPage() {
           </View>
 
           <View style={styles.eventInfo}>
-            {eventPosterUri ? (
-              <Image
-                source={{ uri: eventPosterUri }}
-                style={styles.eventThumb}
-                contentFit="cover"
-                accessibilityLabel="Event poster"
-              />
-            ) : (
-              <View style={styles.eventThumb} accessibilityLabel="Event poster placeholder">
-                <LinearGradient
-                  colors={[...gradients.midnight]}
-                  style={StyleSheet.absoluteFill}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                />
-              </View>
-            )}
+            <Image
+              source={{ uri: event?.heroImageUrl || 'https://images.unsplash.com/photo-1543157145-f78c636d023d?q=80&w=400' }}
+              style={styles.eventThumb}
+              contentFit="cover"
+              accessibilityLabel="Event poster"
+            />
             <View style={styles.eventText}>
               <Text style={[styles.eventTitle, { color: colors.text }]}>{event?.title}</Text>
               <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>{event?.date} • {event?.venue}</Text>

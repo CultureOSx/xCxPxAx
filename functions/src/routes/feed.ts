@@ -13,22 +13,19 @@
 
 import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
-import {
-  eventsService,
-  profilesService,
-  usersService,
-  normalizeEventListForClient,
-} from '../services/firestore';
+import { eventsService, profilesService, usersService } from '../services/firestore';
 import { isFirestoreConfigured, db } from '../admin';
 import { requireAuth, isOwnerOrAdmin } from '../middleware/auth';
+import type { UserRole } from '../../../shared/schema';
 import type { FirestoreEvent } from '../services/firestore';
-import { isAllowedHttpsImageUrl, MAX_IMAGE_URL_LENGTH, sanitizeStoredImagePointer } from '../utils/httpsImageUrl';
 
 export const feedRouter = Router();
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+const STORY_POST_ROLES: UserRole[] = ['organizer', 'business', 'admin', 'platformAdmin'];
 
 interface CommunityPost {
   id: string;
@@ -39,7 +36,7 @@ interface CommunityPost {
   authorName: string;
   body: string;
   imageUrl?: string | null;
-  /** 'story' = short status-style update (280 chars; optional portrait image). */
+  /** 'story' = tall story-style status (only org / business / admin may create). */
   postStyle?: 'standard' | 'story';
   likesCount: number;
   commentsCount: number;
@@ -242,13 +239,11 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
       fetchCommunityPosts(40),
     ]);
 
-    const events      = normalizeEventListForClient(
-      eventsResult.items.filter((event) => {
-        const cityOk = !city || (event.city ?? '').toLowerCase() === city.toLowerCase();
-        const countryOk = !country || (event.country ?? '').toLowerCase() === country.toLowerCase();
-        return cityOk && countryOk;
-      }),
-    );
+    const events      = eventsResult.items.filter((event) => {
+      const cityOk = !city || (event.city ?? '').toLowerCase() === city.toLowerCase();
+      const countryOk = !country || (event.country ?? '').toLowerCase() === country.toLowerCase();
+      return cityOk && countryOk;
+    });
     const communities = communitiesResult;
 
     // 2. Resolve user context for personalised ranking
@@ -298,7 +293,7 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
         event,
         communityId:       comm?.id,
         communityName:     comm?.name,
-        communityImageUrl: sanitizeStoredImagePointer(comm?.imageUrl) ?? null,
+        communityImageUrl: comm?.imageUrl ?? null,
         createdAt: event.createdAt ?? new Date(now - i * 3_600_000).toISOString(),
       });
     });
@@ -313,12 +308,9 @@ feedRouter.get('/feed', async (req: Request, res: Response) => {
         matchReasons:      [],
         communityId:       post.communityId,
         communityName:     comm?.name ?? post.communityName,
-        communityImageUrl:
-          sanitizeStoredImagePointer(comm?.imageUrl) ??
-          sanitizeStoredImagePointer(post.communityImageUrl) ??
-          null,
+        communityImageUrl: comm?.imageUrl ?? post.communityImageUrl ?? null,
         body:              post.body,
-        imageUrl:          sanitizeStoredImagePointer(post.imageUrl) ?? null,
+        imageUrl:          post.imageUrl ?? null,
         postStyle:         post.postStyle === 'story' ? 'story' : undefined,
         authorId:          post.authorId,
         likesCount:        post.likesCount,
@@ -361,18 +353,14 @@ feedRouter.post('/feed/posts', requireAuth, async (req: Request, res: Response) 
   }
   const trimmed = body.trim();
   if (postStyle === 'story') {
+    if (!STORY_POST_ROLES.includes(req.user!.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     if (trimmed.length > 280) {
       return res.status(400).json({ error: 'Story must be 280 characters or less' });
     }
   } else if (trimmed.length > 500) {
     return res.status(400).json({ error: 'body must be 500 characters or less' });
-  }
-
-  if (imageUrl != null && typeof imageUrl === 'string' && imageUrl.trim()) {
-    const u = imageUrl.trim();
-    if (u.length > MAX_IMAGE_URL_LENGTH || !isAllowedHttpsImageUrl(u)) {
-      return res.status(400).json({ error: 'imageUrl must be a public https:// URL' });
-    }
   }
 
   try {

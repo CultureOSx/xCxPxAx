@@ -1,15 +1,15 @@
 import { useColors } from '@/hooks/useColors';
 import { Platform, StyleSheet, type ViewStyle } from 'react-native';
-import { Colors, CultureTokens, FontFamily, Spacing } from '@/constants/theme';
+import { Colors, CultureTokens, Spacing } from '@/constants/theme';
 import { CP } from './constants';
 
 export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  errorText:      { fontSize: 16, fontFamily: FontFamily.medium, color: Colors.textSecondary },
+  errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium', color: Colors.textSecondary },
   backButton:     { marginTop: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderRadius: 14, backgroundColor: CultureTokens.indigo },
-  backButtonText: { fontSize: 15, fontFamily: FontFamily.semibold, color: Colors.textInverse },
+  backButtonText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Colors.textInverse },
 
   hero: { paddingBottom: 30, overflow: 'hidden' },
 
@@ -86,7 +86,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: {
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
     fontSize: 33, color: CultureTokens.teal, letterSpacing: 1,
   },
   verifiedBadge: {
@@ -104,12 +104,12 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
   },
 
   heroName: {
-    fontFamily: FontFamily.bold,
+    fontFamily: 'Poppins_700Bold',
     fontSize: 26, color: Colors.text,
     textAlign: 'center', letterSpacing: -0.4,
   },
   heroHandle: {
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     fontSize: 15, color: Colors.textSecondary,
     marginTop: Spacing.xs, marginBottom: Spacing.lg,
   },
@@ -129,7 +129,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     borderColor: CP.teal + '35',
   },
   heroPillText: {
-    fontFamily: FontFamily.medium,
+    fontFamily: 'Poppins_500Medium',
     fontSize: 12, color: colors.textSecondary, letterSpacing: 0.2,
   },
 
@@ -146,8 +146,8 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     height: 1.5, opacity: 0.6,
   },
   statItem:  { flex: 1, alignItems: 'center' },
-  statNum:   { fontFamily: FontFamily.bold, fontSize: 22, color: Colors.textInverse, letterSpacing: -0.5 },
-  statLabel: { fontFamily: FontFamily.regular, fontSize: 11, color: CP.muted, marginTop: 3, letterSpacing: 0.4 },
+  statNum:   { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#FFF', letterSpacing: -0.5 },
+  statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: CP.muted, marginTop: 3, letterSpacing: 0.4 },
   statDivider: { width: 1, height: 32, backgroundColor: colors.surfaceElevated },
 
   tierRow: {
@@ -159,14 +159,14 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     paddingHorizontal: 16, paddingVertical: 8,
     borderRadius: 50, borderWidth: 1.5,
   },
-  tierText:        { fontFamily: FontFamily.semibold, fontSize: 13 },
+  tierText:        { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
   memberSince:     { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  memberSinceText: { fontFamily: FontFamily.regular, fontSize: 13, color: Colors.textTertiary },
+  memberSinceText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.textTertiary },
 
   section:       { paddingHorizontal: 20, marginTop: 32 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionAccent: { width: 4, height: 22, borderRadius: 2, backgroundColor: CP.teal },
-  sectionTitle:  { fontFamily: FontFamily.bold, fontSize: 18, color: CP.text, letterSpacing: -0.3 },
+  sectionTitle:  { fontFamily: 'Poppins_700Bold', fontSize: 18, color: CP.text, letterSpacing: -0.3 },
 
   card: {
     backgroundColor: CP.surface,
@@ -176,7 +176,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
   },
   bioText: {
-    fontFamily: FontFamily.regular,
+    fontFamily: 'Poppins_400Regular',
     fontSize: 15, color: Colors.textSecondary, lineHeight: 26,
   },
 
@@ -196,13 +196,13 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     width: 46, height: 46, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
   },
-  socialLabel: { flex: 1, fontFamily: FontFamily.semibold, fontSize: 15, color: CP.text },
+  socialLabel: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: CP.text },
 
   detailRow:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
   detailIconWrap:{ width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   detailText:    { flex: 1 },
-  detailLabel:   { fontFamily: FontFamily.regular, fontSize: 11, color: CP.muted, letterSpacing: 0.4, marginBottom: 2 },
-  detailValue:   { fontFamily: FontFamily.semibold, fontSize: 15, color: CP.text },
+  detailLabel:   { fontFamily: 'Poppins_400Regular', fontSize: 11, color: CP.muted, letterSpacing: 0.4, marginBottom: 2 },
+  detailValue:   { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: CP.text },
   detailDivider: { height: 1, backgroundColor: CP.bg, marginVertical: 16, marginLeft: 60 },
 
   cpidCard: {
@@ -226,7 +226,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
     width: 26, height: 26, borderRadius: 8,
     alignItems: 'center', justifyContent: 'center',
   },
-  cpidLogoText: { fontFamily: FontFamily.bold, fontSize: 15, color: Colors.textInverse, letterSpacing: 0.4 },
+  cpidLogoText: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#FFF', letterSpacing: 0.4 },
   cpidVerifiedIcon: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: colors.surfaceElevated,
@@ -235,24 +235,24 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
   },
 
   cpidCenter:    { alignItems: 'center', marginBottom: 26 },
-  cpidLabel:     { fontFamily: FontFamily.medium, fontSize: 9, color: CP.muted, letterSpacing: 4, marginBottom: 8 },
-  cpidValue:     { fontFamily: FontFamily.bold, fontSize: 30, color: Colors.textInverse, letterSpacing: 5 },
+  cpidLabel:     { fontFamily: 'Poppins_500Medium', fontSize: 9, color: CP.muted, letterSpacing: 4, marginBottom: 8 },
+  cpidValue:     { fontFamily: 'Poppins_700Bold', fontSize: 30, color: '#FFF', letterSpacing: 5 },
   cpidUnderline: { width: 160, height: 1.5, marginTop: 10, opacity: 0.65 },
 
   cpidMeta:      { flexDirection: 'row', marginBottom: 20, gap: 8 },
   cpidMetaItem:  { flex: 1 },
   cpidMetaLabel: {
-    fontFamily: FontFamily.regular, fontSize: 9, color: CP.muted,
+    fontFamily: 'Poppins_400Regular', fontSize: 9, color: CP.muted,
     textTransform: 'uppercase' as const, letterSpacing: 1.2, marginBottom: 4,
   },
-  cpidMetaValue: { fontFamily: FontFamily.semibold, fontSize: 13, color: Colors.textInverse },
+  cpidMetaValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#FFF' },
 
   cpidFooter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 14,
   },
   cpidFooterText: {
-    fontFamily: FontFamily.medium, fontSize: 11, color: CP.muted, letterSpacing: 0.3,
+    fontFamily: 'Poppins_500Medium', fontSize: 11, color: CP.muted, letterSpacing: 0.3,
   },
 
   viewQrBtn: {
@@ -264,6 +264,6 @@ export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.cr
   viewQrIconWrap: {
     width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
   },
-  viewQrText: { fontFamily: FontFamily.semibold, fontSize: 15, color: CP.text },
-  viewQrSub:  { fontFamily: FontFamily.regular, fontSize: 12, color: CP.muted, marginTop: 1 },
+  viewQrText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: CP.text },
+  viewQrSub:  { fontFamily: 'Poppins_400Regular', fontSize: 12, color: CP.muted, marginTop: 1 },
 });

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -11,6 +12,8 @@ import { CultureTokens } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import SectionHeader from './SectionHeader';
 import type { IndigenousOrganisation, IndigenousFestival, IndigenousBusiness } from '@/lib/api';
+
+const isWeb = Platform.OS === 'web';
 
 interface IndigenousSpotlightProps {
   land?: { landName: string; traditionalCustodians: string };
@@ -35,7 +38,9 @@ function IndigenousSpotlightComponent({ land, organisations, festivals, business
             { marginHorizontal: isDesktop ? 0 : pad, marginBottom: vPad },
           ]}
         >
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
+          {(Platform.OS === 'ios' || isWeb) && (
+            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          )}
           <LinearGradient 
             colors={['rgba(212,165,116,0.15)', 'rgba(212,165,116,0.05)']} 
             start={{ x: 0, y: 0 }} 

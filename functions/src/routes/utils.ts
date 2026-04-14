@@ -23,6 +23,26 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Safely extracts the Firebase Project ID from the FIREBASE_CONFIG environment variable.
+ * Returns null if the environment variable is missing, malformed, or if the projectId is invalid.
+ * Validates that the projectId only contains alphanumeric characters and hyphens.
+ */
+export function getFirebaseProjectId(): string | null {
+  try {
+    const raw = process.env.FIREBASE_CONFIG;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { projectId?: string };
+    const projectId = parsed.projectId;
+    if (typeof projectId === 'string' && /^[a-z0-9-]+$/.test(projectId)) {
+      return projectId;
+    }
+  } catch {
+    // no-op: ignore JSON parse errors or other issues
+  }
+  return null;
+}
+
 /** Safely extract a single string from an Express route param (Express v5 types as string | string[]). */
 export function qparam(v: string | string[] | undefined): string {
   if (Array.isArray(v)) return v[0] ?? '';

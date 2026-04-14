@@ -20,6 +20,8 @@ import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated'
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
+import { ConnectTeaser } from '@/components/connect/ConnectTeaser';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { CommunityGridCard } from '@/components/community/CommunityGridCard';
 import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewDrawer';
@@ -143,68 +145,7 @@ export default function CommunityScreen() {
           locationLabel={locationLabel}
           hPad={hPad}
           topInset={topInset}
-          childrenFullBleed
-        >
-          {/* Filter chips — full-bleed inside the header shell */}
-          <View style={{ paddingBottom: 10 }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.row, { paddingHorizontal: hPad }]}
-            >
-              {CATEGORIES.map((cat) => (
-                <AnimatedFilterChip
-                  key={cat.id}
-                  label={cat.label}
-                  active={selectedCategory === cat.id}
-                  onPress={() => setSelectedCategory(cat.id)}
-                  icon={cat.icon}
-                />
-              ))}
-              {filtersActive ? (
-                <Pressable
-                  onPress={clearFilters}
-                  style={[styles.clearBtn, { borderColor: colors.borderLight }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear all filters"
-                >
-                  <Ionicons name="close" size={12} color={colors.textTertiary} />
-                  <Text style={[styles.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
-                </Pressable>
-              ) : null}
-            </ScrollView>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.row, { paddingHorizontal: hPad, marginTop: 6 }]}
-            >
-              {cultureChips.map((chip) => {
-                const active = selectedCulture === chip;
-                return (
-                  <Pressable
-                    key={chip}
-                    onPress={() => setSelectedCulture(active ? null : chip)}
-                    style={({ pressed }) => [
-                      styles.cultureChip,
-                      {
-                        backgroundColor: active ? CultureTokens.indigo + '18' : colors.surface,
-                        borderColor: active ? CultureTokens.indigo : colors.borderLight,
-                        opacity: pressed ? 0.85 : 1,
-                      },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Filter by ${chip}`}
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text style={[styles.cultureChipText, { color: active ? CultureTokens.indigo : colors.text }]}>
-                      {chip}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TabPrimaryHeader>
+        />
 
         <FlatList
           data={filteredCommunities}
@@ -241,7 +182,65 @@ export default function CommunityScreen() {
                 icon="people"
               />
 
-              <View style={[styles.summaryRow, { paddingHorizontal: hPad }]}>
+              <ConnectTeaser />
+
+              <LiquidGlassPanel
+                borderRadius={MAIN_TAB_UI.cardRadius}
+                style={{ marginTop: 8, marginBottom: 10 }}
+                contentStyle={{ paddingVertical: 10, paddingHorizontal: 8, gap: 8 }}
+              >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+                  {CATEGORIES.map((cat) => (
+                    <AnimatedFilterChip
+                      key={cat.id}
+                      label={cat.label}
+                      active={selectedCategory === cat.id}
+                      onPress={() => setSelectedCategory(cat.id)}
+                      icon={cat.icon}
+                    />
+                  ))}
+                  {filtersActive ? (
+                    <Pressable
+                      onPress={clearFilters}
+                      style={[styles.clearBtn, { borderColor: colors.borderLight }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Clear all filters"
+                    >
+                      <Ionicons name="close" size={12} color={colors.textTertiary} />
+                      <Text style={[styles.clearBtnText, { color: colors.textTertiary }]}>Clear</Text>
+                    </Pressable>
+                  ) : null}
+                </ScrollView>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+                  {cultureChips.map((chip) => {
+                    const active = selectedCulture === chip;
+                    return (
+                      <Pressable
+                        key={chip}
+                        onPress={() => setSelectedCulture(active ? null : chip)}
+                        style={({ pressed }) => [
+                          styles.cultureChip,
+                          {
+                            backgroundColor: active ? CultureTokens.indigo + '18' : colors.surface,
+                            borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                            opacity: pressed ? 0.85 : 1,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Filter by ${chip}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text style={[styles.cultureChipText, { color: active ? CultureTokens.indigo : colors.text }]}>
+                          {chip}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </LiquidGlassPanel>
+
+              <View style={styles.summaryRow}>
                 <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
                   {filteredCommunities.length} communities in {locationLabel}
                 </Text>
@@ -321,8 +320,7 @@ const styles = StyleSheet.create({
   cultureChipText: { fontSize: 12, fontFamily: FontFamily.semibold },
 
   summaryRow: {
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

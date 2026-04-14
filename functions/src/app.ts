@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { authenticate } from './middleware/auth';
+import { getFirebaseProjectId } from './routes/utils';
 
 // Routers
 import { authRouter } from './routes/auth';
@@ -34,7 +35,6 @@ import { ingestRouter } from './routes/ingest';
 import { calendarRouter } from './routes/calendar';
 import { offeringsRouter } from './routes/offerings';
 import { uploadsRouter } from './routes/uploads';
-import { feedsRouter } from './routes/feeds';
 
 export const app = express();
 
@@ -59,20 +59,6 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function getFirebaseProjectId(): string | null {
-  try {
-    const raw = process.env.FIREBASE_CONFIG;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { projectId?: string };
-    if (typeof parsed.projectId === 'string' && parsed.projectId.trim().length > 0) {
-      return parsed.projectId.trim();
-    }
-  } catch {
-    // no-op
-  }
-  return null;
-}
-
 const firebaseProjectId = getFirebaseProjectId();
 const firebaseHostingOrigins: RegExp[] = firebaseProjectId
   ? [
@@ -89,9 +75,6 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   // Production
   'https://culturepass.app',
   'https://www.culturepass.app',
-  // Firebase Hosting named site (project default URL is <projectId>.web.app)
-  'https://culturepass.web.app',
-  'https://culturepass.firebaseapp.com',
   /^https:\/\/[\w-]+\.culturepass\.app$/,          // preview/staging subdomains
   'https://culturekerala.com',
   'https://www.culturekerala.com',
@@ -272,7 +255,6 @@ mount('/', ingestRouter);
 mount('/', calendarRouter);
 mount('/', offeringsRouter);
 mount('/', uploadsRouter);
-mount('/', feedsRouter);
 app.use('/api/ingest', ingestRouter);
 
 // Special handling for factory routers

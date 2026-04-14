@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { zOptionalNullableHttpsImageUrl } from '../utils/httpsImageUrl';
 import { db, isFirestoreConfigured, authAdmin } from '../admin';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { moderationCheck } from '../middleware/moderation';
@@ -16,17 +15,7 @@ socialRouter.get('/notifications', requireAuth, async (req, res) => {
   const userId = req.user!.id;
   if (isFirestoreConfigured) {
     const snap = await db.collection('notifications').where('userId', '==', userId).orderBy('createdAt', 'desc').limit(50).get();
-    return res.json(
-      snap.docs.map((d) => {
-        const payload = d.data() as Record<string, unknown>;
-        return {
-          id: d.id,
-          ...payload,
-          // Keep client compatibility regardless of storage key.
-          read: (payload.read as boolean | undefined) ?? (payload.isRead as boolean | undefined) ?? false,
-        };
-      }),
-    );
+    return res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   }
   // Fallback to devStore logic if needed, but simplified for now
   return res.json([]);
@@ -50,73 +39,16 @@ socialRouter.get('/notifications/unread-count', requireAuth, async (req, res) =>
   }
 });
 
-/** PUT /api/notifications/:notificationId/read — mark one notification as read */
-socialRouter.put('/notifications/:notificationId/read', requireAuth, async (req, res) => {
-  const userId = req.user!.id;
-  const notificationId = String(req.params.notificationId ?? '');
-
-  if (!isFirestoreConfigured) {
-    return res.json({ success: true });
-  }
-
-  try {
-    const ref = db.collection('notifications').doc(notificationId);
-    const snap = await ref.get();
-
-    if (!snap.exists) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    const row = snap.data() as { userId?: string } | undefined;
-    if (row?.userId !== userId) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    await ref.update({ isRead: true, read: true });
-    return res.json({ success: true });
-  } catch {
-    return res.status(500).json({ error: 'Failed to mark notification as read' });
-  }
-});
-
-/** DELETE /api/notifications/:notificationId — remove one notification */
-socialRouter.delete('/notifications/:notificationId', requireAuth, async (req, res) => {
-  const userId = req.user!.id;
-  const notificationId = String(req.params.notificationId ?? '');
-
-  if (!isFirestoreConfigured) {
-    return res.json({ success: true });
-  }
-
-  try {
-    const ref = db.collection('notifications').doc(notificationId);
-    const snap = await ref.get();
-    if (!snap.exists) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    const row = snap.data() as { userId?: string } | undefined;
-    if (row?.userId !== userId) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    await ref.delete();
-    return res.json({ success: true });
-  } catch {
-    return res.status(500).json({ error: 'Failed to delete notification' });
-  }
-});
-
 /** POST /api/notifications/mark-all-read — mark all as read */
 socialRouter.post('/notifications/mark-all-read', requireAuth, async (req, res) => {
   const userId = req.user!.id;
   if (isFirestoreConfigured) {
     const snap = await db.collection('notifications').where('userId', '==', userId).where('isRead', '==', false).get();
     const batch = db.batch();
-    snap.docs.forEach(d => batch.update(d.ref, { isRead: true, read: true }));
+    snap.docs.forEach(d => batch.update(d.ref, { isRead: true }));
     await batch.commit();
   }
-  return res.json({ success: true });
+  return res.json({ ok: true });
 });
 
 /** POST /api/social/follow/:targetType/:targetId — follow a profile/user */
@@ -164,7 +96,7 @@ socialRouter.post('/posts', requireAuth, moderationCheck, async (req: Request, r
     communityId:   z.string().min(1),
     communityName: z.string().min(1),
     body:          z.string().min(1).max(500),
-    imageUrl:      zOptionalNullableHttpsImageUrl,
+    imageUrl:      z.string().url().optional().nullable(),
   });
   try {
     const { communityId, communityName, body, imageUrl } = parseBody(schema, req.body);

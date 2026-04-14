@@ -6,7 +6,6 @@ import { Colors } from '@/constants/theme';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useEffect, useRef, useState } from 'react';
 import type { EventData } from '@/shared/schema';
-import { eventListImageUrl } from '@/lib/eventImage';
 
 function formatDate(dateStr: string): string {
   const parts = dateStr.split('-');
@@ -129,8 +128,8 @@ export default function NativeMapViewComponent({
                 onLongPress={() => onOpenEventMap(event)}
                 accessibilityHint="Tap for event details, long press to open venue in maps"
               >
-                {eventListImageUrl(event) ? (
-                  <Image source={{ uri: eventListImageUrl(event)! }} style={styles.eventImage} contentFit="cover" />
+                {event.imageUrl ? (
+                  <Image source={{ uri: event.imageUrl }} style={styles.eventImage} contentFit="cover" />
                 ) : (
                   <View style={[styles.eventImage, { backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
                     <Ionicons name="calendar" size={24} color={Colors.primary} />
@@ -171,8 +170,8 @@ export default function NativeMapViewComponent({
                         onEventPress(event.id);
                       }}
                     >
-                      {eventListImageUrl(event) ? (
-                        <Image source={{ uri: eventListImageUrl(event)! }} style={styles.modalEventImage} contentFit="cover" />
+                      {event.imageUrl ? (
+                        <Image source={{ uri: event.imageUrl }} style={styles.modalEventImage} contentFit="cover" />
                       ) : (
                         <View style={[styles.modalEventImage, { backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
                           <Ionicons name="calendar" size={32} color={Colors.primary} />

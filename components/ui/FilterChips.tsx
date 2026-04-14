@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,8 +9,6 @@ interface FilterChipProps {
   selectedFilters: string[];
   onToggle: (filter: string) => void;
   onClearAll: () => void;
-  /** Hub: rounded-rect chips aligned with culture hub segmented controls (not full pills). */
-  variant?: 'default' | 'hub';
 }
 
 export default function FilterChips({
@@ -18,32 +16,22 @@ export default function FilterChips({
   selectedFilters,
   onToggle,
   onClearAll,
-  variant = 'default',
 }: FilterChipProps) {
   const colors = useColors();
-  const hub = variant === 'hub';
-  const webTap = Platform.OS === 'web' ? ({ cursor: 'pointer' } as const) : {};
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={hub ? styles.containerHub : styles.container}
+      contentContainerStyle={styles.container}
     >
       {selectedFilters.length > 0 && (
         <TouchableOpacity
-          style={[
-            hub ? styles.chipHub : styles.chip,
-            webTap,
-            {
-              backgroundColor: hub ? colors.background : colors.surfaceElevated,
-              borderColor: colors.borderLight,
-            },
-          ]}
+          style={[styles.chip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
           onPress={onClearAll}
         >
           <Ionicons name="close" size={14} color={colors.text} style={{ marginRight: 4 }} />
-          <Text style={[hub ? styles.chipTextHub : styles.chipText, { color: colors.text }]}>Clear</Text>
+          <Text style={[styles.chipText, { color: colors.text }]}>Clear all</Text>
         </TouchableOpacity>
       )}
 
@@ -53,19 +41,15 @@ export default function FilterChips({
           <TouchableOpacity
             key={filter}
             style={[
-              hub ? styles.chipHub : styles.chip,
-              webTap,
-              {
-                backgroundColor: isActive ? CultureTokens.indigo : colors.backgroundSecondary,
-                borderColor: isActive ? CultureTokens.indigo : colors.borderLight,
-              },
+              styles.chip,
+              { backgroundColor: isActive ? CultureTokens.indigo : colors.backgroundSecondary, borderColor: isActive ? CultureTokens.indigo : colors.borderLight },
             ]}
             onPress={() => onToggle(filter)}
           >
             <Text
               style={[
-                hub ? styles.chipTextHub : styles.chipText,
-                { color: isActive ? colors.textOnBrandGradient : colors.textSecondary },
+                styles.chipText,
+                { color: isActive ? '#fff' : colors.textSecondary },
               ]}
             >
               {filter}
@@ -79,7 +63,6 @@ export default function FilterChips({
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 20, paddingVertical: 12, gap: 10, alignItems: 'center' },
-  containerHub: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -88,21 +71,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  chipHub: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
   chipText: {
     fontFamily: 'Poppins_600SemiBold',
-    fontSize: 13.5,
-  },
-  chipTextHub: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13.5
   },
 });

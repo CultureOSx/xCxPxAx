@@ -5,8 +5,9 @@ import {
   Pressable,
   StyleSheet,
   Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
-import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,9 +90,11 @@ export default function LoginScreen() {
           .damping(LiquidGlassTokens.entranceSpring.damping)
           .stiffness(LiquidGlassTokens.entranceSpring.stiffness);
 
+  // Better keyboard offset for iOS (status bar + header)
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
   const padBottom = isWeb ? 40 : 64 + insets.bottom;
 
-  const formContent = (
+  const FormContent = () => (
     <View style={s.cardInner}>
       {/* Brand */}
       <Animated.View entering={enter(40)} style={s.brandBlock}>
@@ -103,18 +106,16 @@ export default function LoginScreen() {
         >
           <Ionicons name="globe-outline" size={IconSize.xl} color={colors.primary} />
         </View>
-        <BrandWordmark size="lg" withTagline centered taglineColor={CultureTokens.coral} />
+        <BrandWordmark size="lg" withTagline centered />
       </Animated.View>
 
       {/* Copy */}
-      <Animated.View entering={enter(90)}>
-        <Text style={[s.title, { color: colors.text }]}>Welcome back.</Text>
-      </Animated.View>
-      <Animated.View entering={enter(120)}>
-        <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-          Sign in to continue your cultural journey.
-        </Text>
-      </Animated.View>
+      <Animated.Text entering={enter(90)} style={[s.title, { color: colors.text }]}>
+        Welcome back.
+      </Animated.Text>
+      <Animated.Text entering={enter(120)} style={[s.subtitle, { color: colors.textSecondary }]}>
+        Sign in to continue your cultural journey.
+      </Animated.Text>
 
       <Animated.View
         entering={enter(150)}
@@ -163,7 +164,6 @@ export default function LoginScreen() {
           keyboardType="email-address"
           returnKeyType="next"
           error={emailError}
-          onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
         />
 
         <View style={s.passwordHeader}>
@@ -266,76 +266,80 @@ export default function LoginScreen() {
         />
       )}
 
-      <KeyboardAwareScrollViewCompat
+      <KeyboardAvoidingView
         style={s.keyboardAvoid}
-        contentContainerStyle={[
-          s.scrollContent,
-          isDesktop && s.scrollContentDesktop,
-          { paddingBottom: padBottom },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+        enabled
       >
-        {isWeb && isDesktop ? (
-          <View style={s.webRow}>
-            {/* Marketing Column */}
-            <View style={s.webLeft}>
-              <Animated.View entering={enter(40)} style={s.webKickerRow}>
-                <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
-                <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
-              </Animated.View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            s.scrollContent,
+            isDesktop && s.scrollContentDesktop,
+            { paddingBottom: padBottom },
+          ]}
+        >
+          {isWeb && isDesktop ? (
+            <View style={s.webRow}>
+              {/* Left marketing column */}
+              <View style={s.webLeft}>
+                <Animated.View entering={enter(40)} style={s.webKickerRow}>
+                  <View style={[s.webDot, { backgroundColor: CultureTokens.gold }]} />
+                  <Text style={[s.webKicker, { color: colors.textSecondary }]}>CulturePass</Text>
+                </Animated.View>
 
-              <Animated.View entering={enter(70)}>
-                <Text style={[s.webHeadline, { color: colors.text }]}>Belong anywhere.</Text>
-              </Animated.View>
+                <Animated.Text entering={enter(70)} style={[s.webHeadline, { color: colors.text }]}>
+                  Belong anywhere.
+                </Animated.Text>
 
-              <Animated.View entering={enter(100)}>
-                <Text style={[s.webLead, { color: colors.textSecondary }]}>
+                <Animated.Text entering={enter(100)} style={[s.webLead, { color: colors.textSecondary }]}>
                   A premium cultural lifestyle marketplace — find events, communities, and local places built for diaspora cities.
-                </Text>
-              </Animated.View>
+                </Animated.Text>
 
-              <Animated.View entering={enter(130)} style={s.webValueGrid}>
-                {[
-                  { icon: 'calendar-outline' as const, title: 'Events', desc: 'Discover what’s on this week.' },
-                  { icon: 'people-outline' as const, title: 'Communities', desc: 'Join and share with your people.' },
-                  { icon: 'gift-outline' as const, title: 'Perks', desc: 'Member-only rewards & offers.' },
-                ].map((item) => (
-                  <View
-                    key={item.title}
-                    style={[
-                      s.webValueCard,
-                      { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-                    ]}
-                  >
-                    <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
-                      <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
+                <Animated.View entering={enter(130)} style={s.webValueGrid}>
+                  {[
+                    { icon: 'calendar-outline' as const, title: 'Events', desc: 'Discover what’s on this week.' },
+                    { icon: 'people-outline' as const, title: 'Communities', desc: 'Join and share with your people.' },
+                    { icon: 'gift-outline' as const, title: 'Perks', desc: 'Member-only rewards & offers.' },
+                  ].map((item) => (
+                    <View
+                      key={item.title}
+                      style={[
+                        s.webValueCard,
+                        { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                      ]}
+                    >
+                      <View style={[s.webValueIcon, { backgroundColor: CultureTokens.indigo + '1E' }]}>
+                        <Ionicons name={item.icon} size={18} color={CultureTokens.indigo} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
+                        <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
+                      </View>
                     </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[s.webValueTitle, { color: colors.text }]}>{item.title}</Text>
-                      <Text style={[s.webValueDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
-                    </View>
-                  </View>
-                ))}
+                  ))}
+                </Animated.View>
+              </View>
+
+              {/* Form Card */}
+              <Animated.View entering={enterUp} style={s.cardWrap}>
+                <AuthLiquidFormCard isDesktop={isDesktop}>
+                  <FormContent />
+                </AuthLiquidFormCard>
               </Animated.View>
             </View>
-
-            {/* Form Card - Right side on desktop */}
+          ) : (
+            /* Mobile / non-desktop */
             <Animated.View entering={enterUp} style={s.cardWrap}>
               <AuthLiquidFormCard isDesktop={isDesktop}>
-                {formContent}
+                <FormContent />
               </AuthLiquidFormCard>
             </Animated.View>
-          </View>
-        ) : (
-          /* Mobile & non-desktop web */
-          <Animated.View entering={enterUp} style={s.cardWrap}>
-            <AuthLiquidFormCard isDesktop={isDesktop}>
-              {formContent}
-            </AuthLiquidFormCard>
-          </Animated.View>
-        )}
-      </KeyboardAwareScrollViewCompat>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -348,7 +352,7 @@ const s = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     justifyContent: 'center',
-    paddingTop: 20,
+    paddingTop: 20, // prevents form from being too high on tall screens
   },
   scrollContentDesktop: {
     paddingVertical: 64,
@@ -370,12 +374,7 @@ const s = StyleSheet.create({
   webLeft: { flex: 1, minWidth: 0 },
   webKickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   webDot: { width: 8, height: 8, borderRadius: 4 },
-  webKicker: {
-    fontFamily: FontFamily.semibold,
-    fontSize: 12,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
+  webKicker: { fontFamily: FontFamily.semibold, fontSize: 12, letterSpacing: 1.1, textTransform: 'uppercase' },
   webHeadline: {
     fontFamily: FontFamily.bold,
     fontSize: 42,
@@ -408,12 +407,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   webValueTitle: { fontFamily: FontFamily.semibold, fontSize: 14 },
-  webValueDesc: {
-    fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 2,
-  },
+  webValueDesc: { fontFamily: FontFamily.regular, fontSize: 12, lineHeight: 17, marginTop: 2 },
 
   /* Shared form styles */
   brandBlock: { alignItems: 'center', marginBottom: 24, gap: 8 },
@@ -502,10 +496,6 @@ const s = StyleSheet.create({
   },
 
   switchRow: { alignItems: 'center', paddingVertical: 12 },
-  switchText: {
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.callout,
-    textAlign: 'center',
-  },
+  switchText: { fontFamily: FontFamily.regular, fontSize: FontSize.callout, textAlign: 'center' },
   switchLink: { fontFamily: FontFamily.bold },
 });

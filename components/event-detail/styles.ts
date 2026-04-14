@@ -16,33 +16,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
 
   desktopShellWrapper: { flex: 1, alignItems: 'center' },
   desktopShell: { width: '100%', maxWidth: 800 },
-  detailShell: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 },
-
-  // ── Desktop two-column layout ────────────────────────────────────────────
-  desktopTwoColWrapper: {
-    width: '100%',
-    alignItems: 'center' as const,
-  },
-  desktopTwoColInner: {
-    width: '100%',
-    maxWidth: 1120,
-    flexDirection: 'row' as const,
-    alignItems: 'flex-start' as const,
-    paddingBottom: 8,
-  },
-  desktopMainCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  desktopSidebarCol: {
-    width: 300,
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    ...Platform.select({
-      web: { alignSelf: 'flex-start' as any },
-      default: {},
-    }),
-  },
+  detailShell: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
 
   heroWrapper: { width: '100%' },
   heroSection: { position: 'relative', justifyContent: 'flex-end', overflow: 'hidden' },
@@ -84,9 +58,9 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   heroTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 32, letterSpacing: -0.4 },
   heroOrganizer: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  countdownWrapper: { marginBottom: 14 },
+  countdownWrapper: { marginBottom: 20 },
   countdownEndedBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderRadius: 0, justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.borderLight,
     ...Platform.select({
       web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.05)' },
       ios: {
@@ -103,7 +77,7 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   },
   countdownEndedText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   countdownRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderRadius: 20, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight,
     ...Platform.select({
       web: {
         boxShadow: isDark
@@ -127,20 +101,39 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   countLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', color: colors.textTertiary, letterSpacing: 0.5 },
   countSep: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.borderLight, paddingBottom: 12 },
 
-  earlyAccessBanner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoGrid: { gap: 12, marginBottom: 20 },
+  infoGridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
+  infoCardDesktopHalf: { flex: 1, minWidth: 280 },
+  infoCard: {
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, gap: 16, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.4)' : '0px 2px 8px rgba(44,42,114,0.04)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.4 : 0.04,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
+  infoIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  infoTextWrap: { flex: 1, gap: 2 },
+  infoLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8, color: colors.textTertiary },
+  infoVal: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  infoSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
-  divider: { height: 1, width: '100%', marginVertical: 24, backgroundColor: colors.borderLight, opacity: 0.4 },
+  earlyAccessBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 20, justifyContent: 'center', backgroundColor: colors.primarySoft, borderColor: colors.primaryLight },
+  earlyAccessText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.primaryLight },
 
-  section: { gap: 10 },
+  divider: { height: 1, width: '100%', marginVertical: 32, backgroundColor: colors.borderLight, opacity: 0.5 },
+
+  section: { gap: 12 },
   sectionTitle: { fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4, color: colors.textTertiary },
   aboutDesc: { fontSize: 16, fontFamily: 'Poppins_400Regular', lineHeight: 26, color: colors.textSecondary },
   actionGrid: { gap: 10 },
   actionGridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
-  actionButton: { minWidth: 128, alignSelf: 'flex-start' },
-  planVisitSection: { marginTop: 12, gap: 8 },
-  planVisitNote: {
-    marginTop: 2,
-  },
+  actionButton: { flex: 1, minWidth: 160 },
   metaBlock: { gap: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
@@ -158,81 +151,28 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   capacityFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   capacityFootText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
 
+  tierCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12, backgroundColor: colors.surface, borderColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px 2px 8px rgba(0,0,0,0.35)' : '0px 2px 8px rgba(44,42,114,0.04)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.35 : 0.04,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 }
+    })
+  },
   tierLeft: { gap: 2 },
   tierName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   tierAvail: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   tierRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tierPrice: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
-  tierRowMinimal: {
-    minHeight: 56,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
 
   metricRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   metricIconBg: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
   metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
-  inlineMetaList: {
-    gap: 2,
-  },
-  inlineMetaRow: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderLight,
-  },
-  inlineMetaIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inlineMetaContent: {
-    flex: 1,
-    minWidth: 0,
-    gap: 1,
-  },
-  inlineFactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingVertical: 2,
-  },
-  inlineFactLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-  },
-  inlineFactValue: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  moreDetailsToggle: {
-    minHeight: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  moreDetailsToggleText: {
-    fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
-  },
   hostCard: {
     borderRadius: 20,
     borderWidth: 1,
@@ -241,6 +181,68 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   },
   hostHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   hostContent: { flex: 1, gap: 2 },
+
+  floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
+  unifiedBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    gap: 10,
+  },
+  unifiedBarStat: { flexShrink: 0, maxWidth: 104 },
+  unifiedBarScroll: { flex: 1, minWidth: 0 },
+  unifiedBarScrollContent: {
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingVertical: 0,
+    paddingLeft: 4,
+  },
+  compactRsvpPill: {
+    height: 52,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxHeight: 52,
+  },
+  compactRsvpPillText: { fontSize: 13, fontFamily: 'Poppins_700Bold' },
+
+  floatingBottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    ...Platform.select({
+      web: { boxShadow: isDark ? '0px -4px 16px rgba(0,0,0,0.6)' : '0px -4px 16px rgba(44,42,114,0.1)' },
+      ios: {
+        shadowColor: isDark ? '#000' : '#2C2A72',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: isDark ? 0.6 : 0.1,
+        shadowRadius: 16,
+      },
+      android: { elevation: 4 }
+    }),
+  },
+  bottomPriceSection: { minWidth: 90, gap: 2 },
+  iconActionBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomPriceLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', color: colors.textSecondary, letterSpacing: 0.8 },
+  bottomPriceValue: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
+  bottomBtnGroup: { flexDirection: 'row', gap: 10 },
 
   modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   modalSheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden', maxHeight: '90%' },
@@ -294,145 +296,4 @@ export const getStyles = (colors: ReturnType<typeof useColors>, isDark: boolean)
   calOptIcon:  { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   calOptLabel: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   calOptSub:   { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 2 },
-
-  // ── Social Proof Bar ─────────────────────────────────────────────────────
-  socialProofBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 4,
-  },
-  hostCompactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-    minWidth: 0,
-  },
-  hostAvatarBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  hostAvatarImg: {
-    width: 38,
-    height: 38,
-  },
-  attendeeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    flexShrink: 0,
-  },
-
-  // ── Quick Actions ────────────────────────────────────────────────────────
-  quickActionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  quickActionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-
-  // ── Primary Action Section (inline, non-floating) ─────────────────────────
-  primaryActionCard: {
-    marginTop: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 6,
-    ...Platform.select({
-      web: { boxShadow: isDark ? '0px 6px 18px rgba(0,0,0,0.35)' : '0px 6px 18px rgba(44,42,114,0.06)' },
-      ios: {
-        shadowColor: isDark ? '#000' : '#2C2A72',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: isDark ? 0.25 : 0.08,
-        shadowRadius: 14,
-      },
-      android: { elevation: 3 },
-    }),
-  },
-  primaryActionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-  },
-  primaryActionRow: {
-    maxHeight: 40,
-  },
-  primaryActionRowContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingRight: 8,
-  },
-  primaryCta: {
-    minHeight: 34,
-    minWidth: 92,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  primaryPill: {
-    minHeight: 32,
-    minWidth: 80,
-    paddingHorizontal: 9,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryPillText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
-  },
-  quickActionChipCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-
-  // ── Discovery: Similar Events + Communities ───────────────────────────────
-  discoverSection: {
-    gap: 14,
-  },
-  discoverSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  discoverRail: {
-    marginHorizontal: -20, // break out of detailShell horizontal padding
-  },
-  discoverRailContent: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
 });

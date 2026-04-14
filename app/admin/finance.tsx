@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,7 +85,7 @@ function FinanceContent() {
   const insets   = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
-  const { hPad, isDesktop, isTablet, contentWidth } = useLayout();
+  const { hPad } = useLayout();
   const { hasMinRole, isLoading: roleLoading } = useRole();
   const canAccess = hasMinRole('admin');
 
@@ -104,19 +104,11 @@ function FinanceContent() {
   const paidTickets         = data?.paidTickets ?? 0;
   const sampleRevenue       = data?.sampleRevenueCents ?? 0;
   const sampleSize          = data?.sampleSize ?? 0;
-  const revenuePerSubscriptionCents =
-    activeSubscriptions > 0 ? Math.round(sampleRevenue / activeSubscriptions) : 0;
-  const sampleCoveragePct =
-    paidTickets > 0 ? Math.min(100, Math.round((sampleSize / paidTickets) * 100)) : 0;
 
   // Estimated MRR at $9.99 monthly plan
   const estimatedMRR = (activeSubscriptions * 999) / 100;
   // Average ticket revenue
   const avgTicketCents = sampleSize > 0 ? Math.round(sampleRevenue / sampleSize) : 0;
-  const metricCols = isDesktop ? 3 : isTablet ? 2 : 1;
-  const metricGap = 10;
-  const metricCellWidth =
-    metricCols === 1 ? '100%' : (contentWidth - metricGap * (metricCols - 1)) / metricCols;
 
   const fmtMoney = (cents: number) =>
     cents >= 100_000
@@ -173,59 +165,28 @@ function FinanceContent() {
           </View>
         ) : (
           <>
-            <View style={[s.callout, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              <View style={s.calloutHead}>
-                <View style={[s.calloutDot, { backgroundColor: CultureTokens.teal }]} />
-                <Text style={[s.calloutTitle, { color: colors.text }]}>Finance Command Center</Text>
-              </View>
-              <Text style={[s.calloutDesc, { color: colors.textSecondary }]}>
-                Snapshot combines memberships, tickets, and Stripe sample metrics. Coverage: {sampleCoveragePct}% of paid tickets.
-              </Text>
-            </View>
-
-            {/* ── Finance Pulse ───────────────────────────────────────────── */}
+            {/* ── Subscription Overview ──────────────────────────────────── */}
             <View style={s.section}>
-              <SectionHeader label="Finance Pulse" />
+              <SectionHeader label="Subscription Overview" />
               <View style={s.metricsRow}>
-                <View style={{ width: metricCellWidth }}>
-                  <MetricCard
-                    index={0} icon="people" label="Active Members"
-                    value={activeSubscriptions.toLocaleString()}
-                    sub="Paid subscriptions"
-                    accent={CultureTokens.gold}
-                  />
-                </View>
-                <View style={{ width: metricCellWidth }}>
-                  <MetricCard
-                    index={1} icon="trending-up" label="Est. MRR"
-                    value={fmtMoney(estimatedMRR * 100)}
-                    sub="@ $9.99 baseline"
-                    accent={CultureTokens.teal}
-                  />
-                </View>
-                <View style={{ width: metricCellWidth }}>
-                  <MetricCard
-                    index={2} icon="ticket-outline" label="Paid Tickets"
-                    value={paidTickets.toLocaleString()}
-                    sub="Completed transactions"
-                    accent={CultureTokens.indigo}
-                  />
-                </View>
-                <View style={{ width: metricCellWidth }}>
-                  <MetricCard
-                    index={3} icon="cash-outline" label="Avg Ticket"
-                    value={avgTicketCents > 0 ? fmtMoney(avgTicketCents) : '—'}
-                    sub={sampleSize > 0 ? `${sampleSize} ticket sample` : 'No sample data'}
-                    accent={CultureTokens.coral}
-                  />
-                </View>
+                <MetricCard
+                  index={0} icon="people" label="Active Members"
+                  value={activeSubscriptions.toLocaleString()}
+                  sub="All paid tiers"
+                  accent={CultureTokens.gold}
+                />
+                <MetricCard
+                  index={1} icon="trending-up" label="Est. MRR"
+                  value={fmtMoney(estimatedMRR * 100)}
+                  sub="@ $9.99/mo avg"
+                  accent={CultureTokens.teal}
+                />
               </View>
 
               <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.borderLight, marginTop: 12 }]}>
-                <InfoRow index={0} icon="star-outline"         label="Active subscriptions" value={activeSubscriptions.toLocaleString()}                          accent={CultureTokens.gold} />
-                <InfoRow index={1} icon="trending-up-outline"  label="Estimated MRR"        value={`$${estimatedMRR.toFixed(2)}`}                                 accent={CultureTokens.teal} />
-                <InfoRow index={2} icon="wallet-outline"       label="Estimated ARR"        value={`$${(estimatedMRR * 12).toFixed(0)}`}                           accent='#A78BFA' />
-                <InfoRow index={3} icon="analytics-outline"    label="Revenue/member"       value={revenuePerSubscriptionCents > 0 ? fmtMoney(revenuePerSubscriptionCents) : '—'} accent={CultureTokens.indigo} />
+                <InfoRow index={0} icon="star-outline"       label="Active subscriptions"  value={activeSubscriptions.toLocaleString()} accent={CultureTokens.gold} />
+                <InfoRow index={1} icon="trending-up-outline" label="Estimated MRR"         value={`$${estimatedMRR.toFixed(2)}`}        accent={CultureTokens.teal} />
+                <InfoRow index={2} icon="wallet-outline"     label="Est. ARR"               value={`$${(estimatedMRR * 12).toFixed(0)}`}  accent='#A78BFA' />
               </View>
 
               <View style={[s.infoBox, { backgroundColor: CultureTokens.gold + '10', borderColor: CultureTokens.gold + '30' }]}>
@@ -236,9 +197,23 @@ function FinanceContent() {
               </View>
             </View>
 
-            {/* ── Ticket Revenue Intelligence ───────────────────────────── */}
+            {/* ── Ticket Revenue ────────────────────────────────────────── */}
             <View style={s.section}>
-              <SectionHeader label="Ticket Revenue Intelligence" />
+              <SectionHeader label="Ticket Revenue" />
+              <View style={s.metricsRow}>
+                <MetricCard
+                  index={0} icon="ticket-outline" label="Paid Tickets"
+                  value={paidTickets.toLocaleString()}
+                  sub="All time"
+                  accent={CultureTokens.gold}
+                />
+                <MetricCard
+                  index={1} icon="cash-outline" label="Avg Ticket"
+                  value={avgTicketCents > 0 ? fmtMoney(avgTicketCents) : '—'}
+                  sub={sampleSize > 0 ? `Sample: ${sampleSize}` : 'No data'}
+                  accent={CultureTokens.coral}
+                />
+              </View>
 
               <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.borderLight, marginTop: 12 }]}>
                 <InfoRow index={0} icon="ticket-outline"  label="Total paid tickets"    value={paidTickets.toLocaleString()}                            accent={CultureTokens.gold} />
@@ -266,13 +241,9 @@ function FinanceContent() {
 
               <Pressable
                 style={[s.stripeBtn, { backgroundColor: CultureTokens.indigo }]}
-                onPress={async () => {
+                onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  try {
-                    await Linking.openURL('https://dashboard.stripe.com');
-                  } catch {
-                    router.push('/admin/platform');
-                  }
+                  router.push('/legal/terms');
                 }}
                 accessibilityRole="button"
                 accessibilityLabel="Open Stripe Dashboard"
@@ -280,34 +251,6 @@ function FinanceContent() {
                 <Ionicons name="open-outline" size={18} color="#fff" />
                 <Text style={s.stripeBtnText}>Open Stripe Dashboard</Text>
               </Pressable>
-            </View>
-
-            {/* ── Operator Actions ──────────────────────────────────────── */}
-            <View style={s.section}>
-              <SectionHeader label="Operator Actions" />
-              <View style={s.actionsRow}>
-                <Pressable
-                  style={[s.actionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                  onPress={() => router.push('/admin/tickets')}
-                >
-                  <Ionicons name="ticket-outline" size={16} color={CultureTokens.teal} />
-                  <Text style={[s.actionBtnText, { color: colors.text }]}>Inspect tickets</Text>
-                </Pressable>
-                <Pressable
-                  style={[s.actionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                  onPress={() => router.push('/admin/audit-logs')}
-                >
-                  <Ionicons name="list-outline" size={16} color={CultureTokens.indigo} />
-                  <Text style={[s.actionBtnText, { color: colors.text }]}>Audit transactions</Text>
-                </Pressable>
-                <Pressable
-                  style={[s.actionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                  onPress={() => router.push('/admin/perks')}
-                >
-                  <Ionicons name="gift-outline" size={16} color={CultureTokens.coral} />
-                  <Text style={[s.actionBtnText, { color: colors.text }]}>Perks settlement</Text>
-                </Pressable>
-              </View>
             </View>
 
             {/* ── Revenue Reports ───────────────────────────────────────── */}
@@ -346,13 +289,8 @@ const s = StyleSheet.create({
   backBtn:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   scroll:      { paddingTop: 20 },
   section:     { marginBottom: 28 },
-  metricsRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  metricsRow:  { flexDirection: 'row', gap: 10 },
   card:        { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 4, overflow: 'hidden' },
-  callout:     { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20 },
-  calloutHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  calloutDot:  { width: 8, height: 8, borderRadius: 99 },
-  calloutTitle:{ fontSize: 13, fontFamily: 'Poppins_700Bold' },
-  calloutDesc: { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
   infoBox:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 14, borderWidth: 1, padding: 13, marginTop: 10 },
   infoText:    { flex: 1, ...TextStyles.caption, lineHeight: 18 },
   stripeBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 12 },

@@ -2,7 +2,6 @@ import React, { memo, useMemo } from 'react';
 import { Image, ImageProps } from 'expo-image';
 import { StyleSheet, ViewStyle, ImageStyle, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { sanitizeRemoteImageUri } from '@/lib/remoteImageUrl';
 
 interface CultureImageProps extends Omit<ImageProps, 'source' | 'style' | 'placeholder'> {
   uri: string | null | undefined;
@@ -35,7 +34,6 @@ const CultureImage = memo(({
   ...rest
 }: CultureImageProps) => {
   const colors = useColors();
-  const safeUri = sanitizeRemoteImageUri(uri);
 
   // Build placeholder object once
   const placeholder = useMemo(() => {
@@ -46,9 +44,9 @@ const CultureImage = memo(({
 
   // Final source with fallback — treat empty string same as null to avoid browser broken-image icon
   const source = useMemo(() => {
-    if (!safeUri) return null;
-    return { uri: safeUri };
-  }, [safeUri]);
+    if (!uri || uri.trim() === '') return null;
+    return { uri };
+  }, [uri]);
 
   if (!source) {
     return (
@@ -74,7 +72,7 @@ const CultureImage = memo(({
         height !== undefined && { height: height as any },
         style,
       ]}
-      recyclingKey={recyclingKey || safeUri || undefined}   // Most important for FlashList performance
+      recyclingKey={recyclingKey || uri || undefined}   // Most important for FlashList performance
       transition={280}                      // Smooth cross-fade (ms) — eliminates flicker on recycle
       contentFit={contentFit}
       priority={priority}

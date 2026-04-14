@@ -1,20 +1,16 @@
 /**
- * Tab header chrome: home logo + page title + global actions (search, notifications, profile avatar).
+ * Tab header chrome: home logo + page title + global actions (search, notifications, account menu).
  * One pattern for Discover, Feed, Events, Community, Perks, and Profile (in-tab).
  */
 import React, { useCallback, type ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useQuery } from '@tanstack/react-query';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
-import { HEADER_CHROME_TOKENS, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
-import { useAuth } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
 export const BRAND_TAGLINE_SHORT = 'Discover culture · Belong anywhere';
 
@@ -22,15 +18,6 @@ const isWeb = Platform.OS === 'web';
 
 function haptic() {
   if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-}
-
-function ActionBadge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <View style={markStyles.actionBadge}>
-      <Text style={markStyles.actionBadgeText}>{count > 9 ? '9+' : String(count)}</Text>
-    </View>
-  );
 }
 
 /** Logo only — tap returns to Discover home. */
@@ -107,47 +94,6 @@ export function BrandMark({
   );
 }
 
-/** Circular avatar button — shows user photo or fallback person icon. Navigates to profile. */
-function ProfileAvatarButton() {
-  const colors = useColors();
-  const isDark = useIsDark();
-  const { user, isAuthenticated } = useAuth();
-
-  const ringBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
-  const ringBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.1)';
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        markStyles.avatarBtn,
-        { borderColor: isAuthenticated ? CultureTokens.indigo + '60' : ringBorder, backgroundColor: ringBg },
-        pressed && { opacity: 0.75 },
-      ]}
-      onPress={() => {
-        haptic();
-        router.push('/(tabs)/profile' as const);
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={isAuthenticated ? 'View your profile' : 'Sign in'}
-      accessibilityHint="Open profile and settings"
-    >
-      {isAuthenticated && user?.avatarUrl ? (
-        <Image
-          source={{ uri: user.avatarUrl }}
-          style={markStyles.avatarImg}
-          contentFit="cover"
-        />
-      ) : (
-        <Ionicons
-          name={isAuthenticated ? 'person-circle' : 'person-circle-outline'}
-          size={22}
-          color={isAuthenticated ? CultureTokens.indigo : colors.textSecondary}
-        />
-      )}
-    </Pressable>
-  );
-}
-
 export function GlobalNavActions({
   showMenu = true,
   leadingAction,
@@ -157,20 +103,10 @@ export function GlobalNavActions({
 }) {
   const colors = useColors();
   const isDark = useIsDark();
-  const { userId, isRestoring } = useAuth();
-
-  const { data: unreadCount = 0 } = useQuery<number>({
-    queryKey: ['notifications', 'unread-count', userId, 'tab-header-chrome'],
-    queryFn: async () => {
-      const res = await api.notifications.unreadCount();
-      return res.count ?? 0;
-    },
-    enabled: Boolean(userId) && !isRestoring,
-    refetchInterval: 60_000,
-  });
 
   const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.055)';
   const chipBorder = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.08)';
+  const menuBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.1)';
 
   return (
     <View style={markStyles.actions}>
@@ -178,7 +114,7 @@ export function GlobalNavActions({
       <Pressable
         style={({ pressed }) => [
           markStyles.iconBtn,
-          { backgroundColor: colors.primarySoft, borderColor: CultureTokens.indigo + '30' },
+          { backgroundColor: chipBg, borderColor: chipBorder },
           pressed && { opacity: 0.7 },
         ]}
         onPress={() => {
@@ -189,39 +125,38 @@ export function GlobalNavActions({
         accessibilityLabel="Search"
         accessibilityHint="Open search"
       >
-        <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={CultureTokens.indigo} />
-      </Pressable>
-      <Pressable
-        style={({ pressed }) => [
-          markStyles.iconBtn,
-          { backgroundColor: chipBg, borderColor: chipBorder },
-          pressed && { opacity: 0.7 },
-        ]}
-        onPress={() => {
-          haptic();
-          router.push('/notifications' as const);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Notifications"
-        accessibilityHint="Open notifications"
-      >
-        <Ionicons name="notifications-outline" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
-        <ActionBadge count={unreadCount} />
+        <Ionicons name="search" size={MAIN_TAB_UI.iconSize.md} color={colors.text} />
       </Pressable>
 
-      {showMenu ? <ProfileAvatarButton /> : null}
+      {showMenu ? (
+        <Pressable
+          style={({ pressed }) => [
+            markStyles.iconBtn,
+            { backgroundColor: chipBg, borderColor: menuBorder },
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => {
+            haptic();
+            router.push('/menu' as const);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Account and profile menu"
+          accessibilityHint="Open app menu"
+        >
+          <Ionicons name="menu" size={MAIN_TAB_UI.iconSize.lg} color={colors.text} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
-/** Page-first header: logo | title | search · notifications · profile avatar */
+/** Page-first header: logo | title | search · notifications · account menu */
 export function TabPageChromeRow({
   title,
   subtitle: _subtitle,
   locationLabel,
   showMenu = true,
   showHairline = false,
-  showBrandStrip = false,
   topHeaderAction,
 }: {
   title: string;
@@ -229,50 +164,37 @@ export function TabPageChromeRow({
   locationLabel?: string;
   showMenu?: boolean;
   showHairline?: boolean;
-  showBrandStrip?: boolean;
   topHeaderAction?: ReactNode;
 }) {
   const colors = useColors();
 
   return (
-    <View style={markStyles.chromeWrapper}>
-      <View
-        style={[
-          markStyles.pageChromeRow,
-          !showHairline && markStyles.chromeRowPlain,
-          showHairline && { borderBottomColor: colors.borderLight },
-        ]}
-      >
-        <HomeLogoMark compact />
-        <View style={markStyles.pageTitleCol}>
-          <Text
-            style={[markStyles.pageTitle, { color: colors.text }]}
-            numberOfLines={1}
-            accessibilityRole="header"
-          >
-            {title}
-          </Text>
-          {locationLabel ? (
-            <View style={markStyles.locationInline}>
-              <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
-              <Text style={[markStyles.pageLocation, { color: colors.textTertiary }]} numberOfLines={1}>
-                {locationLabel}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-        <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
+    <View
+      style={[
+        markStyles.pageChromeRow,
+        !showHairline && markStyles.chromeRowPlain,
+        showHairline && { borderBottomColor: colors.borderLight },
+      ]}
+    >
+      <HomeLogoMark compact />
+      <View style={markStyles.pageTitleCol}>
+        <Text
+          style={[markStyles.pageTitle, { color: colors.text }]}
+          numberOfLines={1}
+          accessibilityRole="header"
+        >
+          {title}
+        </Text>
+        {locationLabel ? (
+          <View style={markStyles.locationInline}>
+            <Ionicons name="location-outline" size={MAIN_TAB_UI.iconSize.sm} color={CultureTokens.indigo} />
+            <Text style={[markStyles.pageLocation, { color: colors.textTertiary }]} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </View>
+        ) : null}
       </View>
-      {/* Brand gradient accent strip */}
-      {showBrandStrip ? (
-        <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.teal, 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={markStyles.brandStrip}
-          pointerEvents="none"
-        />
-      ) : null}
+      <GlobalNavActions showMenu={showMenu} leadingAction={topHeaderAction} />
     </View>
   );
 }
@@ -282,35 +204,35 @@ const markStyles = StyleSheet.create({
     flexShrink: 0,
   },
   logoPlain: {
-    width: HEADER_CHROME_TOKENS.logo.defaultSize,
-    height: HEADER_CHROME_TOKENS.logo.defaultSize,
-    borderRadius: HEADER_CHROME_TOKENS.logo.defaultRadius,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
   },
   logoPlainCompact: {
-    width: HEADER_CHROME_TOKENS.logo.compactSize,
-    height: HEADER_CHROME_TOKENS.logo.compactSize,
-    borderRadius: HEADER_CHROME_TOKENS.logo.compactRadius,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
   },
   logoBg: {
-    width: HEADER_CHROME_TOKENS.logo.defaultRing,
-    height: HEADER_CHROME_TOKENS.logo.defaultRing,
-    borderRadius: HEADER_CHROME_TOKENS.logo.defaultRing / 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoBgCompact: {
-    width: HEADER_CHROME_TOKENS.logo.compactRing,
-    height: HEADER_CHROME_TOKENS.logo.compactRing,
-    borderRadius: HEADER_CHROME_TOKENS.logo.compactRing / 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   pageChromeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: HEADER_CHROME_TOKENS.row.gap,
-    marginBottom: HEADER_CHROME_TOKENS.row.marginBottom,
-    paddingBottom: HEADER_CHROME_TOKENS.row.paddingBottom,
+    gap: 10,
+    marginBottom: 10,
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   pageTitleCol: {
@@ -320,14 +242,10 @@ const markStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 2 : 4,
   },
   pageTitle: {
-    fontSize: Platform.OS === 'web'
-      ? HEADER_CHROME_TOKENS.title.webFontSize
-      : HEADER_CHROME_TOKENS.title.nativeFontSize,
-    lineHeight: Platform.OS === 'web'
-      ? HEADER_CHROME_TOKENS.title.webLineHeight
-      : HEADER_CHROME_TOKENS.title.nativeLineHeight,
+    fontSize: Platform.OS === 'web' ? 20 : 22,
+    lineHeight: Platform.OS === 'web' ? 26 : 28,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: HEADER_CHROME_TOKENS.title.letterSpacing,
+    letterSpacing: -0.4,
   },
   pageSubtitle: {
     marginTop: 2,
@@ -336,15 +254,15 @@ const markStyles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
   },
   locationInline: {
-    marginTop: HEADER_CHROME_TOKENS.location.marginTop,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: HEADER_CHROME_TOKENS.location.gap,
+    gap: 4,
   },
   pageLocation: {
     flex: 1,
-    fontSize: HEADER_CHROME_TOKENS.location.fontSize,
-    lineHeight: HEADER_CHROME_TOKENS.location.lineHeight,
+    fontSize: 11,
+    lineHeight: 15,
     fontFamily: 'Poppins_400Regular',
   },
   chromeRowPlain: {
@@ -435,53 +353,11 @@ const markStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 0 : 2,
   },
   iconBtn: {
-    width: HEADER_CHROME_TOKENS.actionButton.size,
-    height: HEADER_CHROME_TOKENS.actionButton.size,
-    borderRadius: HEADER_CHROME_TOKENS.actionButton.radius,
-    borderWidth: HEADER_CHROME_TOKENS.actionButton.borderWidth,
+    width: MAIN_TAB_UI.minTouchTarget,
+    height: MAIN_TAB_UI.minTouchTarget,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionBadge: {
-    position: 'absolute',
-    top: 5,
-    right: 4,
-    minWidth: HEADER_CHROME_TOKENS.actionButton.badgeSize,
-    height: HEADER_CHROME_TOKENS.actionButton.badgeSize,
-    borderRadius: HEADER_CHROME_TOKENS.actionButton.badgeRadius,
-    backgroundColor: CultureTokens.coral,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    color: '#FFFFFF',
-    fontSize: HEADER_CHROME_TOKENS.actionButton.badgeFontSize,
-    lineHeight: 10,
-    fontFamily: 'Poppins_700Bold',
-  },
-  avatarBtn: {
-    width: HEADER_CHROME_TOKENS.actionButton.size,
-    height: HEADER_CHROME_TOKENS.actionButton.size,
-    borderRadius: HEADER_CHROME_TOKENS.actionButton.radius,
-    borderWidth: HEADER_CHROME_TOKENS.actionButton.avatarBorderWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImg: {
-    width: HEADER_CHROME_TOKENS.actionButton.avatarImageSize,
-    height: HEADER_CHROME_TOKENS.actionButton.avatarImageSize,
-    borderRadius: HEADER_CHROME_TOKENS.actionButton.avatarImageRadius,
-  },
-  chromeWrapper: {
-    position: 'relative',
-  },
-  brandStrip: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: HEADER_CHROME_TOKENS.stripHeight,
   },
 });

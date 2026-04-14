@@ -6,22 +6,28 @@ import {
 import { router } from 'expo-router';
 import Animated, {
   FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring,
+  interpolateColor, withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useInfiniteQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import EventCard from '@/components/EventCard';
+import { useAuth } from '@/lib/auth';
 import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useAuth } from '@/lib/auth';
+import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
+import { CultureTokens, TextStyles } from '@/constants/theme';
+import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
 import { TextStyles, CultureTokens } from '@/constants/theme';
+
+const isWeb = Platform.OS === 'web';
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -117,35 +123,28 @@ function FilterChip({
 }) {
   const colors = useColors();
   const scale = useSharedValue(1);
+  const bg = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    backgroundColor: interpolateColor(
+      bg.value, [0, 1],
+      active
+        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
+        : [colors.surface, colors.surfaceElevated],
+    ),
   }));
   return (
     <Pressable
-      onPressIn={() => { scale.value = withSpring(0.93, { damping: 18 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 18 }); }}
+      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
+      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
       onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <Animated.View
-        style={[
-          fc.chip,
-          active
-            ? { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo }
-            : { backgroundColor: colors.surface, borderColor: colors.border },
-          animStyle,
-        ]}
-      >
-        {icon
-          ? <Ionicons
-              name={icon as keyof typeof Ionicons.glyphMap}
-              size={13}
-              color={active ? '#fff' : colors.textSecondary}
-            />
-          : null}
-        <Text style={[fc.text, { color: active ? '#fff' : colors.text }]}>{label}</Text>
+      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
+        {icon ? <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
+        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -157,7 +156,7 @@ const fc = StyleSheet.create({
 });
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
-  return <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 2, alignSelf: 'center', opacity: 0.6 }} />;
+  return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
 }
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -221,44 +220,17 @@ export default function AllEventsScreen() {
 
 
   const { user, hasRole } = useAuth();
-  const queryClient = useQueryClient();
-
-  const deleteEventMutation = useMutation({
-    mutationFn: (id: string) => api.events.remove(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['/api/events/paginated'] });
-    },
-  });
 
   const handleEditEvent = useCallback((event: EventData) => {
     // Navigate to edit screen
     router.push({ pathname: '/event/[id]', params: { id: event.id, edit: '1' } });
   }, []);
 
-  const handleDeleteEvent = useCallback(
-    (event: EventData) => {
-      Alert.alert(
-        'Delete event',
-        `Remove "${event.title}"? This cannot be undone.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => {
-              deleteEventMutation.mutate(event.id, {
-                onError: (err) => {
-                  if (__DEV__) console.error(err);
-                  Alert.alert('Could not delete', 'Try again or contact support.');
-                },
-              });
-            },
-          },
-        ],
-      );
-    },
-    [deleteEventMutation],
-  );
+  const handleDeleteEvent = useCallback((event: EventData) => {
+    // TODO: Implement delete logic (API call, optimistic update, etc.)
+    // For now, just alert
+    Alert.alert('Delete Event', `Event "${event.title}" deleted (demo only).`);
+  }, []);
 
   const renderItem = useCallback(({ item, index }: { item: EventData; index: number }) => {
     const canEdit = !!user && (user.id === item.organizerId || hasRole('admin', 'platformAdmin', 'moderator'));
@@ -298,7 +270,7 @@ export default function AllEventsScreen() {
         >
           <BackButton
             fallback="/(tabs)"
-            style={[s.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
+            style={[s.backBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
           />
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: colors.text }]}>Events</Text>
@@ -314,16 +286,14 @@ export default function AllEventsScreen() {
           </View>
           <Pressable
             onPress={() => refetch()}
-            style={({ pressed }) => [
-              s.iconBtn,
-              { backgroundColor: pressed ? colors.surface : colors.surfaceElevated, borderColor: colors.border },
-            ]}
+            style={[s.iconBtn, { backgroundColor: colors.surface + '80', borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Refresh events"
           >
             {isRefetching
               ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
               : <Ionicons name="refresh" size={18} color={colors.text} />}
+            {!isWeb && <BlurView intensity={10} tint="light" style={StyleSheet.absoluteFill} />}
           </Pressable>
         </Animated.View>
 
@@ -452,8 +422,8 @@ export default function AllEventsScreen() {
               }}
               ListEmptyComponent={
                 <View style={s.emptyState}>
-                  <View style={[s.emptyIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Ionicons name="search-outline" size={28} color={colors.textSecondary} />
+                  <View style={[s.emptyIcon, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Ionicons name="search-outline" size={28} color={colors.textTertiary} />
                   </View>
                   <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
                   <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
@@ -480,18 +450,28 @@ export default function AllEventsScreen() {
       <Pressable
         onPress={() => router.push('/event/create')}
         style={({ pressed }) => [
-          s.fab,
           {
-            right: isDesktop ? hPad + 32 : 20,
-            bottom: isDesktop ? 48 : bottomInset + 20,
-            opacity: pressed ? 0.85 : 1,
+            position: 'absolute',
+            right: isDesktop ? hPad + 32 : 24,
+            bottom: isDesktop ? 48 : 24,
+            zIndex: 100,
+            backgroundColor: CultureTokens.indigo,
+            borderRadius: 32,
+            width: 64,
+            height: 64,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.18,
+            shadowRadius: 12,
+            opacity: pressed ? 0.8 : 1,
           },
         ]}
         accessibilityRole="button"
         accessibilityLabel="Create new event"
       >
-        <Ionicons name="add" size={28} color="#fff" />
-        {isDesktop && <Text style={s.fabLabel}>New Event</Text>}
+        <Ionicons name="add-circle" size={40} color="#fff" />
       </Pressable>
       </View>
     </ErrorBoundary>
@@ -516,26 +496,8 @@ const s = StyleSheet.create({
   filterBlock:   { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4, gap: 6 },
   filterRow:     { flexDirection: 'row', alignItems: 'center', gap: 7 },
   filterRowDate: { paddingBottom: 4 },
-  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 20, borderWidth: 1, minHeight: 38 },
-  clearBtnText:  { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
-
-  fab: {
-    position: 'absolute',
-    zIndex: 100,
-    backgroundColor: CultureTokens.indigo,
-    borderRadius: 28,
-    height: 56,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: CultureTokens.indigo,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    ...Platform.select({ android: { elevation: 8 } }),
-  },
-  fabLabel: { color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 14, lineHeight: 19 },
+  clearBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  clearBtnText:  { ...TextStyles.captionSemibold, lineHeight: 17 },
 
   list:          { paddingTop: 20, gap: 20 },
   listFooter:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 20, justifyContent: 'center' },

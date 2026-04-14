@@ -2,7 +2,6 @@ import { Router, type Request, type Response } from 'express';
 import { captureRouteError } from './utils';
 import { citiesService } from '../services/cities';
 import { authenticate, requireRole } from '../middleware/auth';
-import { isAllowedHttpsImageUrl, MAX_IMAGE_URL_LENGTH } from '../utils/httpsImageUrl';
 
 export const citiesRouter = Router();
 
@@ -49,12 +48,6 @@ citiesRouter.post('/cities', [authenticate, requireRole('admin')], async (req: R
     if (!name || !countryCode || !countryName || !countryEmoji) {
       return res.status(400).json({ error: 'name, countryCode, countryName, and countryEmoji are required' });
     }
-    if (imageUrl != null && typeof imageUrl === 'string' && String(imageUrl).trim()) {
-      const u = String(imageUrl).trim();
-      if (u.length > MAX_IMAGE_URL_LENGTH || !isAllowedHttpsImageUrl(u)) {
-        return res.status(400).json({ error: 'imageUrl must be a public https:// URL' });
-      }
-    }
     const city = await citiesService.create({ name, countryCode, countryName, countryEmoji, stateCode, imageUrl, featured, order, lat, lng });
     return res.status(201).json({ city });
   } catch (err) {
@@ -67,13 +60,6 @@ citiesRouter.post('/cities', [authenticate, requireRole('admin')], async (req: R
 citiesRouter.patch('/cities/:id', [authenticate, requireRole('admin')], async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
-    const { imageUrl } = req.body ?? {};
-    if (imageUrl != null && typeof imageUrl === 'string' && String(imageUrl).trim()) {
-      const u = String(imageUrl).trim();
-      if (u.length > MAX_IMAGE_URL_LENGTH || !isAllowedHttpsImageUrl(u)) {
-        return res.status(400).json({ error: 'imageUrl must be a public https:// URL' });
-      }
-    }
     await citiesService.update(id, req.body);
     return res.json({ ok: true });
   } catch (err) {

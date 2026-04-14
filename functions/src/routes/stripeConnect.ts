@@ -12,12 +12,13 @@ import { stripeClient } from '../admin';
 import { requireAuth, requireRevocationCheck, isOwnerOrAdmin } from '../middleware/auth';
 import { profilesService } from '../services/firestore';
 import { mapConnectFieldsFromStripeAccount } from '../services/stripeConnect';
-import { captureRouteError } from './utils';
+import { captureRouteError, getFirebaseProjectId } from './utils';
 
 function appBaseUrl(): string {
+  const projectId = getFirebaseProjectId();
   return (
     process.env.APP_URL ??
-    `https://${process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG).projectId + '.web.app' : 'localhost:5000'}`
+    (projectId ? `https://${projectId}.web.app` : 'https://localhost:5000')
   );
 }
 
