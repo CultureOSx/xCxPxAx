@@ -1,0 +1,408 @@
+# Instincts generated from https://github.com/CultureOSx/xCxPxAx
+# Generated: 2026-04-14T09:52:44.123Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: xCxPxAx-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: test, fix
+
+## Evidence
+
+- 4 commits analyzed
+- Detected conventional commit pattern
+- Examples: test(hooks): add comprehensive unit tests for useCalendarSync.native error paths, fix(tests): update useCalendarSync tests to use jest.mock instead of __test_setCalendarLinked helper
+
+---
+id: xCxPxAx-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Commit Length
+
+## Action
+
+Write moderate-length commit messages (~85 characters)
+
+## Evidence
+
+- Average commit message length: 85 chars
+- Based on 4 commits
+
+---
+id: xCxPxAx-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: xCxPxAx-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: xCxPxAx-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: xCxPxAx-workflow-add-or-update-hook-unit-tests
+trigger: "when doing add or update hook unit tests"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/CultureOSx/xCxPxAx
+---
+
+# XCxPxAx Workflow Add Or Update Hook Unit Tests
+
+## Action
+
+Follow the add-or-update-hook-unit-tests workflow:
+1. Create or update test files in hooks/__tests__/, named after the hook being tested.
+2. Mock external/native dependencies (e.g., expo-calendar, react-native/Alert) to isolate logic.
+3. Add or update test cases for permission errors, missing dependencies, and exception handling.
+4. Update the hook implementation file if necessary to facilitate testing (e.g., remove test-only exports, refactor for better testability).
+5. Update package.json or lock files if new test dependencies are added.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: hooks/__tests__/*.test.ts, hooks/use*.ts, package.json
+
+---
+id: xcxpxax-instinct-file-naming
+trigger: "When creating or renaming a file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct File Naming
+
+## Action
+
+Use camelCase for file names
+
+## Evidence
+
+- Pattern in namingConventions.files
+- No snake_case or kebab-case files detected
+
+---
+id: xcxpxax-instinct-function-naming
+trigger: "When defining a function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Function Naming
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions
+- TypeScript code samples
+
+---
+id: xcxpxax-instinct-class-naming
+trigger: "When defining a class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: xcxpxax-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: xcxpxax-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Import Style
+
+## Action
+
+Use alias-based imports
+
+## Evidence
+
+- Pattern in importStyle: alias
+
+---
+id: xcxpxax-instinct-export-style
+trigger: "When exporting from a module"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: xcxpxax-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Test Location
+
+## Action
+
+Place test files in hooks/__tests__/ and name them after the hook being tested
+
+## Evidence
+
+- Workflow filesInvolved
+- Commit examples: test files in hooks/__tests__/*.test.ts
+
+---
+id: xcxpxax-instinct-mock-dependencies
+trigger: "When testing hooks that use external/native dependencies"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Mock Dependencies
+
+## Action
+
+Mock external/native dependencies (e.g., expo-calendar, react-native/Alert) to isolate logic
+
+## Evidence
+
+- Workflow step: Mock external/native dependencies
+- Commit example: update useCalendarSync tests to use jest.mock
+
+---
+id: xcxpxax-instinct-test-error-paths
+trigger: "When writing or updating unit tests for hooks"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Test Error Paths
+
+## Action
+
+Add or update test cases for permission errors, missing dependencies, and exception handling
+
+## Evidence
+
+- Workflow step: Add or update test cases for permission errors, missing dependencies, and exception handling
+- Commit example: add comprehensive unit tests for useCalendarSync.native error paths
+
+---
+id: xcxpxax-instinct-refactor-for-testability
+trigger: "When hook implementation is hard to test"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Refactor For Testability
+
+## Action
+
+Refactor the hook implementation to facilitate testing (e.g., remove test-only exports, improve modularity)
+
+## Evidence
+
+- Workflow step: Update the hook implementation file if necessary to facilitate testing
+
+---
+id: xcxpxax-instinct-update-test-deps
+trigger: "When adding tests that require new dependencies"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Update Test Deps
+
+## Action
+
+Update package.json and lock files to include new test dependencies
+
+## Evidence
+
+- Workflow step: Update package.json or lock files if new test dependencies are added
+- filesInvolved: package.json, pnpm-lock.yaml, package-lock.json
+
+---
+id: xcxpxax-instinct-commit-format
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Commit Format
+
+## Action
+
+Use the Conventional Commits format with prefixes like test or fix
+
+## Evidence
+
+- commits.type: conventional
+- commits.prefixes: test, fix
+- Commit examples: test(hooks): ..., fix(tests): ...
+
+---
+id: xcxpxax-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Commit Length
+
+## Action
+
+Keep commit messages concise, around 85 characters on average
+
+## Evidence
+
+- commits.averageLength: 85
+
+---
+id: xcxpxax-instinct-add-or-update-hook-unit-tests
+trigger: "When someone wants to improve or add test coverage for a custom hook, especially for error handling and edge cases"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: CultureOSx/xCxPxAx
+---
+
+# Xcxpxax Instinct Add Or Update Hook Unit Tests
+
+## Action
+
+Follow the workflow: create/update test files in hooks/__tests__/, mock dependencies, test error paths, refactor hooks for testability, and update package/lock files as needed
+
+## Evidence
+
+- Workflow: add-or-update-hook-unit-tests
+- Commit examples and workflow steps
+
