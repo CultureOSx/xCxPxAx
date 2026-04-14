@@ -492,17 +492,6 @@ export function WebSidebar() {
               <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
               <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
             </Pressable>
-            <Button
-              variant="gradient"
-              size="md"
-              leftIcon="person-add"
-              onPress={() => navigate('/(onboarding)/signup')}
-              fullWidth
-              style={{ height: 40, borderRadius: 12 } as any}
-              textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
-            >
-              Join CulturePass
-            </Button>
           </View>
         )}
 
@@ -511,6 +500,22 @@ export function WebSidebar() {
         </Text>
         <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
       </ScrollView>
+
+      {!isAuthenticated && (
+        <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 }}>
+          <Button
+            variant="gradient"
+            size="md"
+            leftIcon="person-add"
+            onPress={() => navigate('/(onboarding)/signup')}
+            fullWidth
+            style={{ height: 40, borderRadius: 12 } as any}
+            textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
+          >
+            Join CulturePass
+          </Button>
+        </View>
+      )}
 
       {myCouncil && (
         <Pressable
