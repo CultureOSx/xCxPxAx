@@ -15,18 +15,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
-      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Run Jest with coverage and JUnit output
         env:
