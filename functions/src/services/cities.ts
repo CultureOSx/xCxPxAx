@@ -96,6 +96,27 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+function cityIdentityKey(city: Pick<FeaturedCity, 'countryCode' | 'slug'>): string {
+  return `${city.countryCode.toUpperCase()}::${city.slug}`;
+}
+
+function dedupeCities(cities: FeaturedCity[]): FeaturedCity[] {
+  const byIdentity = new Map<string, FeaturedCity>();
+  for (const city of cities) {
+    const key = cityIdentityKey(city);
+    const current = byIdentity.get(key);
+    if (!current) {
+      byIdentity.set(key, city);
+      continue;
+    }
+    // Keep the city with the lowest configured order for stable UI ordering.
+    if ((city.order ?? 999) < (current.order ?? 999)) {
+      byIdentity.set(key, city);
+    }
+  }
+  return [...byIdentity.values()].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+}
+
 function toCity(id: string, data: Record<string, unknown>): FeaturedCity {
   return {
     id,
@@ -139,8 +160,9 @@ export const citiesService = {
     const cities = snap.docs
       .map((d) => toCity(d.id, d.data() as Record<string, unknown>))
       .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-    cache.set(FEATURED_KEY, cities);
-    return cities;
+    const deduped = dedupeCities(cities);
+    cache.set(FEATURED_KEY, deduped);
+    return deduped;
   },
 
   /** Return all cities (admin use) */
@@ -150,8 +172,9 @@ export const citiesService = {
 
     const snap = await col().orderBy('order', 'asc').get();
     const cities = snap.docs.map((d) => toCity(d.id, d.data() as Record<string, unknown>));
-    cache.set(ALL_KEY, cities);
-    return cities;
+    const deduped = dedupeCities(cities);
+    cache.set(ALL_KEY, deduped);
+    return deduped;
   },
 
   /** Get a single city by ID */
@@ -231,7 +254,8 @@ export const citiesService = {
     const now = new Date().toISOString();
 
     DEFAULT_FEATURED_CITIES.forEach((city, i) => {
-      const ref = col().doc();
+      // Deterministic ID prevents duplicate rows when seed runs multiple times.
+      const ref = col().doc(`${city.countryCode.toLowerCase()}-${slugify(city.name)}`);
       batch.set(ref, {
         ...city,
         slug: slugify(city.name),

@@ -23,7 +23,7 @@
  * 19. Perks           — rewards preview
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -124,7 +124,13 @@ export default function DiscoverScreen() {
       }),
     staleTime: 5 * 60 * 1000,
   });
-  const recommendedFromFeature = discoverFeatureFeed?.rankedEvents.map((entry) => entry.event).slice(0, 8) ?? [];
+  const recommendedFromFeature = useMemo(
+    () => discoverFeatureFeed?.rankedEvents.map((entry) => entry.event).slice(0, 8) ?? [],
+    [discoverFeatureFeed],
+  );
+
+  const goEvents = useCallback(() => router.push('/events'), []);
+  const goActivities = useCallback(() => router.push('/activities'), []);
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
@@ -167,7 +173,7 @@ export default function DiscoverScreen() {
           title="Recommended For You"
           subtitle="Ranked by quality, trust, and cultural fit"
           data={recommendedFromFeature}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           isLoading={d.discoverLoading}
         />
       )}
@@ -192,7 +198,7 @@ export default function DiscoverScreen() {
         }
         isLoading={d.eventsLoading}
         schedulingMode="live_and_countdown"
-        onSeeAll={() => router.push('/events')}
+        onSeeAll={goEvents}
         errorMessage={d.eventsRailError}
         onRetry={() => void d.refetchEvents()}
       />
@@ -214,7 +220,7 @@ export default function DiscoverScreen() {
               : s.popular
           }
           isLoading={d.eventsLoading || d.discoverLoading}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           errorMessage={d.eventsRailError}
           onRetry={() => void d.refetchEvents()}
         />
@@ -231,7 +237,7 @@ export default function DiscoverScreen() {
               : s.forYou
           }
           isLoading={d.eventsLoading}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           errorMessage={d.eventsRailError}
           onRetry={() => void d.refetchEvents()}
         />
@@ -283,7 +289,7 @@ export default function DiscoverScreen() {
         subtitle="Workshops, classes & experiences"
         data={d.activityRailData}
         isLoading={d.activitiesLoading}
-        onSeeAll={() => router.push('/activities')}
+        onSeeAll={goActivities}
         errorMessage={d.activitiesRailError}
         onRetry={() => void d.refetchActivities()}
       />

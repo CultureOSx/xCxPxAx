@@ -11,7 +11,7 @@ interface CultureCardRailProps {
   items: CultureCardModel[];
 }
 
-export function CultureCardRail({ title, subtitle, items }: CultureCardRailProps) {
+function CultureCardRailComponent({ title, subtitle, items }: CultureCardRailProps) {
   const { headerPadStyle, scrollPadStyle, vPad } = useDiscoverRailInsets();
 
   if (items.length === 0) return null;
@@ -33,3 +33,5 @@ export function CultureCardRail({ title, subtitle, items }: CultureCardRailProps
     </View>
   );
 }
+
+export const CultureCardRail = React.memo(CultureCardRailComponent);

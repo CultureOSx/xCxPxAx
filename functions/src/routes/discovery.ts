@@ -82,11 +82,14 @@ discoveryRouter.get('/discover/:userId', async (req: Request, res: Response) => 
     });
 
     return res.json({
+      // Canonical contract used by mobile/web clients
       meta: feed.meta,
       trendingEvents: feed.trendingEvents,
-      rankedEvents: feed.rankedEvents.map((item) => item.event),
-      ranking: feed.rankedEvents,
+      rankedEvents: feed.rankedEvents,
       suggestedCommunities: feed.suggestedCommunities,
+      // Backward-compat fields (safe to remove after all clients migrate)
+      rankedEventList: feed.rankedEvents.map((item) => item.event),
+      ranking: feed.rankedEvents,
     });
   } catch (err) {
     captureRouteError(err, 'GET /api/discover/:userId');

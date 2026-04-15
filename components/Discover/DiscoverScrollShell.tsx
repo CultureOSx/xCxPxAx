@@ -3,6 +3,7 @@ import {
   View,
   ScrollView,
   StyleSheet,
+  Platform,
   type RefreshControlProps,
   type StyleProp,
   type ViewStyle,
@@ -45,6 +46,8 @@ export function DiscoverScrollShell({
         style={styles.scrollTransparent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={Platform.OS === 'android'}
+        scrollEventThrottle={16}
         refreshControl={refreshControl}
         contentContainerStyle={[{ paddingBottom: scrollBottomPad }, contentContainerStyle]}
       >
