@@ -1,6 +1,6 @@
 import { Text, Pressable, StyleSheet, ScrollView, Platform, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, ChipTokens } from '@/constants/theme';
+import { Colors, ChipTokens, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 
@@ -22,12 +22,9 @@ interface FilterChipProps {
 
 export function FilterChip({ item, isActive, onPress, size = 'medium' }: FilterChipProps) {
   const colors = useColors();
-  // Use red (coral) or green (teal) for active background
-  const activeBgColor = item.color || colors.primary;
-  const activeColor = item.activeColor || undefined;
   const isSmall = size === 'small';
-  // For community context, use red (coral) or green (teal) for active
-  const activeBackground = CultureTokens.coral; // Use CultureTokens.teal for green
+  const accentColor = item.color || colors.primary;
+  const activeBackground = item.color || CultureTokens.coral;
   const activeTextColor = '#fff';
 
   const handlePress = () => {
