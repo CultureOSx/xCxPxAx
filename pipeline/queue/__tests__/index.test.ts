@@ -38,7 +38,11 @@ describe('pipeline queue index.js', () => {
   it('createEventWorker should instantiate a Worker', () => {
     const processor = jest.fn();
     const worker = createEventWorker(processor as any);
-    expect(Worker).toHaveBeenCalledWith('event-ingest', processor, expect.any(Object));
+    expect(Worker).toHaveBeenCalledWith(
+      'event-ingest',
+      processor,
+      expect.objectContaining({ connection: expect.anything() })
+    );
     expect(worker).toBeDefined();
   });
 });
