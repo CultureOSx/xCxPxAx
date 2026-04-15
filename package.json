@@ -150,7 +150,9 @@
     "@typescript-eslint/parser": "^8.58.1",
     "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
     "babel-plugin-transform-remove-console": "^6.9.4",
+    "brunch": "^4.0.2",
     "dotenv": "^17.4.1",
+    "envify": "^4.1.0",
     "eslint": "^9.39.4",
     "eslint-config-expo": "~55.0.0",
     "eslint-config-prettier": "^10.1.8",
@@ -168,11 +170,14 @@
     "prettier": "^3.8.1",
     "qrcode": "^1.5.4",
     "react-test-renderer": "19.2.0",
+    "terser": "^5.46.1",
+    "terser-brunch": "^4.1.0",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.58.1"
+    "typescript-eslint": "^8.58.1",
+    "uglifyify": "^5.0.2"
   },
   "overrides": {
     "@isaacs/brace-expansion": "5.0.1",
