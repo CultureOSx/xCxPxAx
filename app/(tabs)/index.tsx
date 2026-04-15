@@ -28,17 +28,18 @@ import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
-import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { discoverFeature } from '@/features';
-import { CategoryColors, CultureTokens } from '@/constants/theme';
+import { CategoryColors, CultureTokens, Vitrine } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
+import { DiscoverVitrineProvider } from '@/components/Discover/DiscoverVitrineContext';
 import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
+import { DiscoverCultureTodayCard } from '@/components/Discover/DiscoverCultureTodayCard';
 import { SuperAppLinks } from '@/components/Discover/SuperAppLinks';
 import { HeroCarousel } from '@/components/Discover/HeroCarousel';
 import { EventRail } from '@/components/Discover/EventRail';
@@ -105,7 +106,6 @@ function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDisc
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
-  const colors = useColors();
   const { isDesktop, contentWidth } = useLayout();
   const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
@@ -131,6 +131,7 @@ export default function DiscoverScreen() {
   const hasNearby = nearbyRailResolved.length > 0;
 
   return (
+    <DiscoverVitrineProvider>
     <DiscoverScrollShell
       scrollBottomPad={scrollBottomPad}
       contentContainerStyle={
@@ -140,7 +141,7 @@ export default function DiscoverScreen() {
         <RefreshControl
           refreshing={d.refreshing}
           onRefresh={d.handleRefresh}
-          tintColor={colors.primary}
+          tintColor={Vitrine.primary}
         />
       }
     >
@@ -154,6 +155,8 @@ export default function DiscoverScreen() {
         isAuthenticated={d.isAuthenticated}
         onRefresh={d.handleRefresh}
       />
+
+      <DiscoverCultureTodayCard />
 
       {/* ② Search (removed) */}
 
@@ -334,5 +337,6 @@ export default function DiscoverScreen() {
       />
 
     </DiscoverScrollShell>
+    </DiscoverVitrineProvider>
   );
 }

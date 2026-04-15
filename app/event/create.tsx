@@ -18,7 +18,7 @@ import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api, ApiError } from '@/lib/api';
 import { ALL_NATIONALITIES, getCulturesForNationality } from '@/constants/cultures';
-import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '@/shared/schema';
+import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo, CULTURE_TODAY_EVENT_TAG } from '@/shared/schema';
 import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
@@ -208,6 +208,7 @@ export default function CreateEventScreen() {
         cultureTag:  form.cultureTagIds,
         languageTags: form.languageTagIds,
         accessibility: form.accessibilityIds,
+        ...(form.cultureTodayPromo ? { tags: [CULTURE_TODAY_EVENT_TAG] } : {}),
         artists: form.artists.length > 0
           ? form.artists.map((a) => ({ name: a.name, role: a.role || undefined, profileId: a.profileId, imageUrl: a.imageUrl } as EventArtist))
           : undefined,
@@ -400,6 +401,7 @@ export default function CreateEventScreen() {
             country: form.country,
             cultureTagIds: onboardingState.cultureIds?.slice(0, 3) ?? [],
             languageTagIds: onboardingState.languageIds?.slice(0, 2) ?? [],
+            cultureTodayPromo: false,
           });
           setStepIndex(0);
         }}
@@ -533,6 +535,10 @@ export default function CreateEventScreen() {
                 toggleAccessibilityTag={toggleAccessibilityTag}
                 haptic={haptic}
                 initialNationalityId={onboardingState.nationalityId}
+                onCultureTodayToggle={() => {
+                  haptic();
+                  setField('cultureTodayPromo', !form.cultureTodayPromo);
+                }}
               />
             )}
             {step === 'review' && (

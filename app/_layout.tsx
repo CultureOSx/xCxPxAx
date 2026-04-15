@@ -37,6 +37,7 @@ import { useLayout } from "@/hooks/useLayout";
 import { initializeWidgets } from "@/lib/widgets/register";
 import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
+import { AppFooter } from "@/components/AppFooter";
 import { isCultureKeralaHost } from "@/lib/domainHost";
 import {
   APP_NAME,
@@ -265,6 +266,10 @@ function RootLayoutNav() {
         // Empty string removes the "Back" label next to the iOS chevron
         headerBackTitle: "",
         animation: Platform.OS === "web" ? "fade" : Platform.OS === "ios" ? "default" : "slide_from_right",
+        // Web: scene must flex inside WebShell so Discover (and other tabs) scroll correctly
+        ...(Platform.OS === "web"
+          ? { contentStyle: { flex: 1, minHeight: 0, width: "100%" } }
+          : {}),
       }}
     >
       <Stack.Screen name="landing" />
@@ -274,6 +279,9 @@ function RootLayoutNav() {
       <Stack.Screen name="hubs" />
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
+
+      <Stack.Screen name="culture-today/index" />
+      <Stack.Screen name="culture-today/[dayKey]" />
 
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="event/create" />
@@ -350,6 +358,7 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/finance" />
       <Stack.Screen name="admin/platform" />
       <Stack.Screen name="admin/discover" />
+      <Stack.Screen name="admin/culture-today" />
       <Stack.Screen name="admin/data-compliance" />
       <Stack.Screen name="admin/shopping" />
       <Stack.Screen name="admin/cockpit" />
@@ -370,6 +379,13 @@ function WebShell({ children }: { children: React.ReactNode }) {
   const colors = useColors();
   const { isDesktop } = useLayout();
 
+  const mainColumn = (
+    <View style={webStyles.contentContainer}>
+      <View style={webStyles.mainFlex}>{children}</View>
+      <AppFooter />
+    </View>
+  );
+
   return (
     <View
       style={[
@@ -389,10 +405,10 @@ function WebShell({ children }: { children: React.ReactNode }) {
       {isDesktop ? (
         <>
           <WebSidebar />
-          <View style={webStyles.contentContainer}>{children}</View>
+          {mainColumn}
         </>
       ) : (
-        <View style={webStyles.contentContainer}>{children}</View>
+        mainColumn
       )}
     </View>
   );
@@ -442,7 +458,10 @@ function RootLayoutContent() {
 
   const appShell = (
     <GestureHandlerRootView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={[
+        { flex: 1, backgroundColor: colors.background },
+        Platform.OS === "web" && ({ minHeight: "100%", height: "100%" } as const),
+      ]}
       onLayout={onLayoutRootView}
     >
       <DataSync />
@@ -584,7 +603,9 @@ function RootLayoutContent() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-      <SafeAreaProvider>{queryAppTree}</SafeAreaProvider>
+      <SafeAreaProvider style={Platform.OS === "web" ? ({ flex: 1, minHeight: 0 } as const) : undefined}>
+        {queryAppTree}
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
@@ -624,8 +645,14 @@ const webStyles = StyleSheet.create({
   outerContainer: {
     flex: 1,
     flexDirection: "row",
+    alignItems: "stretch",
     overflow: "hidden",
-    ...(Platform.OS === "web" && { minHeight: "100vh" as unknown as number }),
+    ...(Platform.OS === "web" &&
+      ({
+        minHeight: "100%",
+        height: "100%",
+        maxHeight: "100%",
+      } as const)),
   },
   ambientMesh: {
     ...StyleSheet.absoluteFillObject,
@@ -634,6 +661,15 @@ const webStyles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
+    flexDirection: "column",
+    alignSelf: "stretch",
+  },
+  mainFlex: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+    alignSelf: "stretch",
   },
 });
 

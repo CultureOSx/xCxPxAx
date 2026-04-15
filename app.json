@@ -52,7 +52,6 @@
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

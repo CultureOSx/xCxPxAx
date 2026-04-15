@@ -80,6 +80,7 @@ export async function registerForPushNotificationsAsync() {
     try {
       const { getMessaging, getToken } = await import('firebase/messaging');
       const { firebaseApp } = await import('./firebase');
+      if (!firebaseApp) return null;
       const messaging = getMessaging(firebaseApp);
       const fcmToken = await getToken(messaging, { vapidKey });
       if (fcmToken) {

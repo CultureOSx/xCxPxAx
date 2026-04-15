@@ -338,10 +338,10 @@ export default function SubmitScreen() {
           : await fetch(processed.uri);
       const blob = await blobRes.blob();
 
-      const uid = auth.currentUser?.uid ?? userId ?? null;
+      const uid = auth?.currentUser?.uid ?? userId ?? null;
 
       if (Platform.OS === 'web') {
-        if (uid) {
+        if (uid && storage) {
           try {
             const storageFolder = isEventLike(activeTab) ? `events/${uid}` : `listings/${uid}`;
             const objectPath = `${storageFolder}/submit-cover-${Date.now()}.jpg`;
@@ -355,7 +355,7 @@ export default function SubmitScreen() {
 
         try {
           if (typeof window !== 'undefined' && window.fetch && apiBase) {
-            const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
             const fd = new FormData();
             fd.append('image', blob, 'upload.jpg');
             const resp = await window.fetch(`${apiBase}uploads/image`, {

@@ -26,6 +26,10 @@ export function TabHeaderNativeShell({
 }: TabHeaderNativeShellProps) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const topPad =
+    Platform.OS === 'web'
+      ? TAB_HEADER_NATIVE_INSET_GAP
+      : insets.top + TAB_HEADER_NATIVE_INSET_GAP;
 
   return (
     <View
@@ -35,7 +39,7 @@ export function TabHeaderNativeShell({
           backgroundColor: colors.surface,
           borderBottomWidth: showBottomBorder ? MAIN_TAB_UI.headerBorderWidth : 0,
           borderBottomColor: showBottomBorder ? colors.border : 'transparent',
-          paddingTop: insets.top + TAB_HEADER_NATIVE_INSET_GAP,
+          paddingTop: topPad,
           paddingHorizontal: hPad,
           zIndex: zIndex ?? 100,
         },

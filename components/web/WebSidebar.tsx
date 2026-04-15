@@ -746,7 +746,16 @@ function SidebarProfileBlock({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-    sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
+    sidebar: {
+      width: 240,
+      alignSelf: 'stretch',
+      borderRightWidth: StyleSheet.hairlineWidth,
+      flexShrink: 0,
+      ...Platform.select({
+        web: { minHeight: '100%', height: '100%' } as object,
+        default: {},
+      }),
+    },
 
     brandHeader: {
       paddingHorizontal: 14,

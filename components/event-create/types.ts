@@ -41,6 +41,8 @@ export interface FormData {
   cultureTagIds: string[];
   languageTagIds: string[];
   accessibilityIds: string[];
+  /** Adds server tag `CultureToday` for the global calendar */
+  cultureTodayPromo: boolean;
 }
 
 export const defaultForm: FormData = {
@@ -72,6 +74,7 @@ export const defaultForm: FormData = {
   cultureTagIds: [],
   languageTagIds: [],
   accessibilityIds: [],
+  cultureTodayPromo: false,
 };
 
 // ---------------------------------------------------------------------------

@@ -51,6 +51,10 @@ export default function ForgotPasswordScreen() {
 
   const handleSubmit = async () => {
     if (!isValid) return;
+    if (!auth) {
+      Alert.alert('Unavailable', 'Password reset requires Firebase to be configured for this web build.');
+      return;
+    }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email.trim().toLowerCase());
@@ -78,6 +82,10 @@ export default function ForgotPasswordScreen() {
 
   const handleResend = async () => {
     if (!isValid) return;
+    if (!auth) {
+      Alert.alert('Unavailable', 'Password reset requires Firebase to be configured for this web build.');
+      return;
+    }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email.trim().toLowerCase());

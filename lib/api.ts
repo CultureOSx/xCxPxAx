@@ -53,6 +53,7 @@ import type {
   IngestSource,
   IngestionJob,
   IngestScheduleInterval,
+  CultureTodayEntry,
 } from '@/shared/schema';
 
 export type { MembershipSummary, Notification, CouncilData, CouncilLgaContext, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilListResponse, ActivityData, ActivityInput, AdminAuditLog, AppUpdate, UpdateCategory, IngestSource, IngestionJob, IngestScheduleInterval } from '@/shared/schema';
@@ -154,6 +155,8 @@ export interface EventListParams {
   publisherProfileId?: string;
   /** Filter by linked venue profile id */
   venueProfileId?: string;
+  /** Exact match on event `tags` (e.g. CultureToday) */
+  tag?: string;
 }
 
 const events = {
@@ -174,6 +177,7 @@ const events = {
     if (params.isFree !== undefined) qs.set('isFree', String(params.isFree));
     if (params.publisherProfileId) qs.set('publisherProfileId', params.publisherProfileId);
     if (params.venueProfileId) qs.set('venueProfileId', params.venueProfileId);
+    if (params.tag) qs.set('tag', params.tag);
 
     const query = qs.toString();
     return request<PaginatedEventsResponse>('GET', `api/events${query ? `?${query}` : ''}`);
@@ -1442,6 +1446,43 @@ const calendar = {
     request<import('@/shared/schema/user').CalendarSettings>('PUT', 'api/calendar/settings', settings),
 };
 
+const cultureToday = {
+  today: () =>
+    request<{
+      dayKey: string;
+      entries: CultureTodayEntry[];
+      promoTitle?: string;
+      promoSubtitle?: string;
+    }>('GET', 'api/culture-today/today'),
+
+  month: (m: number) =>
+    request<{ month: number; entries: CultureTodayEntry[] }>('GET', `api/culture-today/month/${m}`),
+
+  day: (dayKey: string) =>
+    request<{ dayKey: string; entries: CultureTodayEntry[] }>(
+      'GET',
+      `api/culture-today/day/${encodeURIComponent(dayKey)}`,
+    ),
+
+  taggedEvents: (pageSize = 24) =>
+    request<{ events: EventData[]; total: number }>('GET', `api/culture-today/events?pageSize=${pageSize}`),
+
+  admin: {
+    listEntries: () => request<{ entries: CultureTodayEntry[] }>('GET', 'api/admin/culture-today/entries'),
+    createEntry: (payload: Partial<CultureTodayEntry>) =>
+      request<CultureTodayEntry>('POST', 'api/admin/culture-today/entries', payload),
+    updateEntry: (id: string, payload: Partial<CultureTodayEntry>) =>
+      request<CultureTodayEntry>('PATCH', `api/admin/culture-today/entries/${id}`, payload),
+    deleteEntry: (id: string) => request<{ ok: boolean }>('DELETE', `api/admin/culture-today/entries/${id}`),
+    seed: () =>
+      request<{ ok: boolean; count: number; entries: CultureTodayEntry[] }>(
+        'POST',
+        'api/admin/culture-today/seed',
+        {},
+      ),
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Named export — single surface for all API calls
 // ---------------------------------------------------------------------------
@@ -1487,6 +1528,7 @@ export const api = {
   updates,
   feed,
   calendar,
+  cultureToday,
 
 /** Raw request — use when a specific endpoint isn't covered above */
   raw: request,

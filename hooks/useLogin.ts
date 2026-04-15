@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { auth as firebaseAuth } from '@/lib/firebase';
+import { auth as firebaseAuth, FIREBASE_CLIENT_DISABLED_MESSAGE } from '@/lib/firebase';
 import { FirebaseError } from 'firebase/app';
 import {
   signInWithEmailAndPassword,
@@ -98,7 +98,7 @@ export function useLogin(redirectTo: string | null) {
   }, [waitForHydration, getSnapshot, redirectTo]);
 
   const trackLogin = useCallback((method: string) => {
-    const u = firebaseAuth.currentUser;
+    const u = firebaseAuth?.currentUser;
     if (u) {
       identifyUser(u.uid, { email: u.email, name: u.displayName });
       captureEvent('Login Success', { method });
@@ -108,6 +108,11 @@ export function useLogin(redirectTo: string | null) {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
       if (Platform.OS === 'web') {
         const provider = new GoogleAuthProvider();
@@ -139,6 +144,11 @@ export function useLogin(redirectTo: string | null) {
     if (Platform.OS !== 'ios' && Platform.OS !== 'web') return;
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
       if (Platform.OS === 'web') {
         const provider = new OAuthProvider('apple.com');
@@ -180,6 +190,10 @@ export function useLogin(redirectTo: string | null) {
     }
     setLoading(true);
     try {
+      if (!firebaseAuth) {
+        setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+        return;
+      }
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       }
@@ -203,6 +217,10 @@ export function useLogin(redirectTo: string | null) {
     setLoading(true);
     clearErrors();
     try {
+      if (!firebaseAuth) {
+        setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+        return;
+      }
       const creds = await biometric.authenticate();
       if (!creds) return; // user cancelled
       await signInWithEmailAndPassword(firebaseAuth, creds.email, creds.password);

@@ -8,6 +8,8 @@ import { COMMON_LANGUAGES } from '@/constants/languages';
 import { FormData, ACCESSIBILITY_OPTIONS } from './types';
 import { Field } from './Field';
 import type { CreateStyles } from './styles';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { CULTURE_TODAY_EVENT_TAG } from '@/shared/schema';
 
 interface Props {
   form: FormData;
@@ -18,9 +20,20 @@ interface Props {
   toggleAccessibilityTag: (id: string) => void;
   haptic: () => void;
   initialNationalityId?: string | null;
+  onCultureTodayToggle: () => void;
 }
 
-export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageTag, toggleAccessibilityTag, haptic, initialNationalityId }: Props) {
+export function StepCulture({
+  form,
+  colors,
+  s,
+  toggleCultureTag,
+  toggleLanguageTag,
+  toggleAccessibilityTag,
+  haptic,
+  initialNationalityId,
+  onCultureTodayToggle,
+}: Props) {
   const [cultureNationalityId, setCultureNationalityId] = useState<string | null>(initialNationalityId ?? null);
   const [nationalitySearch, setNationalitySearch] = useState('');
 
@@ -221,6 +234,22 @@ export function StepCulture({ form, colors, s, toggleCultureTag, toggleLanguageT
             );
           })}
         </View>
+      </Field>
+
+      <Field label="5. Culture Today calendar" colors={colors}>
+        <Text style={[s.natHint, { color: colors.textSecondary, marginBottom: 10 }]}>
+          When enabled, this event is tagged “{CULTURE_TODAY_EVENT_TAG}” and can appear on the Culture Today day page when the event date matches that calendar day (month and day).
+        </Text>
+        <Checkbox
+          checked={form.cultureTodayPromo}
+          onToggle={() => onCultureTodayToggle()}
+          color={CultureTokens.indigo}
+          label={
+            <Text style={[s.tagLabel, { color: colors.text, flex: 1 }]}>
+              Promote on Culture Today (tagged event)
+            </Text>
+          }
+        />
       </Field>
     </View>
   );

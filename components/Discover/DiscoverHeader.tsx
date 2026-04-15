@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
-import { FontFamily, FontSize, LineHeight, LetterSpacing } from '@/constants/theme';
+import { FontFamily, FontSize, LineHeight, LetterSpacing, Vitrine } from '@/constants/theme';
+import { useDiscoverVitrine } from '@/components/Discover/DiscoverVitrineContext';
 import { LocationPicker } from '@/components/LocationPicker';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BRAND_TAGLINE_SHORT, TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
@@ -26,8 +27,11 @@ function DiscoverHeaderComponent({
   city,
 }: DiscoverHeaderProps) {
   const colors = useColors();
+  const vitrine = useDiscoverVitrine();
   const { isDesktop, hPad } = useLayout();
   const { user } = useAuth();
+  const greetingColor = vitrine ? Vitrine.primary : colors.text;
+  const metaColor = vitrine ? Vitrine.onSurfaceVariant : colors.textSecondary;
 
   const { timeGreeting, firstName } = useMemo(() => {
     const hour = new Date().getHours();
@@ -84,15 +88,24 @@ function DiscoverHeaderComponent({
 
       {isDesktop ? (
         <View style={[styles.heroDesktop, { paddingHorizontal: hPad }]}>
-          <View style={styles.heroDesktopLeft}>
-            <Text style={[styles.desktopMeta, { color: colors.textSecondary }]}>
-              {currentTime}
-              {weatherSummary ? ` · ${weatherSummary}` : ''}
-            </Text>
-            <Text style={[styles.desktopGreeting, { color: colors.text, fontSize: Math.min(36, greetingFontSize + 8) }]}>{greeting}</Text>
-            <Text style={[styles.desktopSub, { color: colors.textSecondary }]}>
-              {`Explore festivals, communities, and events in ${city}.`}
-            </Text>
+          <View style={styles.heroDesktopRow}>
+            {vitrine ? (
+              <View style={[styles.heritageBar, { backgroundColor: Vitrine.tertiary }]} accessibilityElementsHidden />
+            ) : null}
+            <View style={styles.heroDesktopLeft}>
+              <Text style={[styles.desktopMeta, { color: metaColor }]}>
+                {currentTime}
+                {weatherSummary ? ` · ${weatherSummary}` : ''}
+              </Text>
+              <Text
+                style={[styles.desktopGreeting, { color: greetingColor, fontSize: Math.min(36, greetingFontSize + 8) }]}
+              >
+                {greeting}
+              </Text>
+              <Text style={[styles.desktopSub, { color: metaColor }]}>
+                {`Explore festivals, communities, and events in ${city}.`}
+              </Text>
+            </View>
           </View>
           <View style={styles.desktopActions}>
             <LocationPicker />
@@ -100,7 +113,7 @@ function DiscoverHeaderComponent({
         </View>
       ) : (
         <View style={[styles.mobileHero, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.mobileGreeting, { color: colors.text, fontSize: greetingFontSize }]} numberOfLines={1}>
+          <Text style={[styles.mobileGreeting, { color: greetingColor, fontSize: greetingFontSize }]} numberOfLines={1}>
             {greeting}
           </Text>
           <View style={styles.mobileMetaRow}>
@@ -108,7 +121,7 @@ function DiscoverHeaderComponent({
               <LocationPicker variant="text" />
             </View>
             {mobileMetaLabel ? (
-              <Text style={[styles.mobileMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[styles.mobileMeta, { color: metaColor }]} numberOfLines={1}>
                 {mobileMetaLabel}
               </Text>
             ) : null}
@@ -158,6 +171,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 40,
     marginBottom: 32,
+  },
+  heroDesktopRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  heritageBar: {
+    width: 4,
+    borderRadius: 3,
+    marginTop: 6,
+    minHeight: 56,
+    alignSelf: 'flex-start',
   },
   heroDesktopLeft: { flex: 1 },
   desktopMeta: { fontSize: FontSize.chip, fontFamily: FontFamily.regular, marginBottom: 4 },

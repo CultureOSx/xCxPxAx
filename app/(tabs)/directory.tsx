@@ -12,7 +12,7 @@ import {
 import Animated, { FadeInDown, FadeInUp, useReducedMotion } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffectiveMainTabTopInset } from '@/hooks/useEffectiveMainTabTopInset';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
@@ -55,7 +55,6 @@ import {
 // ─── DirectoryScreen ──────────────────────────────────────────────────────────
 
 export default function DirectoryScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useColors();
   const { width, isDesktop, isTablet, hPad } = useLayout();
   const { state: onboardingState } = useOnboarding();
@@ -65,7 +64,7 @@ export default function DirectoryScreen() {
   const showAcknowledgement = ['Australia', 'New Zealand', 'Canada', 'AU', 'NZ', 'CA'].includes(onboardingState.country || 'Australia');
 
   const isDesktopWeb = isWeb && isDesktop;
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const topInset = useEffectiveMainTabTopInset();
   const shellMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
 
   const useWebTwoColumnResults = isWeb && shellMaxWidth >= 900;

@@ -209,6 +209,7 @@ export function createEventsRouter() {
       const time        = qstr(req.query.time).trim() || undefined;
       const publisherProfileId = qstr(req.query.publisherProfileId).trim() || undefined;
       const venueProfileId = qstr(req.query.venueProfileId).trim() || undefined;
+      const tag = qstr(req.query.tag).trim() || undefined;
 
       const centerLatStr  = qstr(req.query.centerLat).trim();
       const centerLngStr  = qstr(req.query.centerLng).trim();
@@ -239,6 +240,7 @@ export function createEventsRouter() {
           time,
           publisherProfileId,
           venueProfileId,
+          tag,
         },
         { page, pageSize },
       );

@@ -78,6 +78,10 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
+/* Full-viewport flex host so WebShell + Stack + tab ScrollViews get a bounded height */
+html, body, #root { height: 100%; }
+body { margin: 0; }
+#root { display: flex; flex-direction: column; flex: 1; min-height: 100%; }
 :root { color-scheme: light; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

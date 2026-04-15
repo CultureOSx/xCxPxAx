@@ -63,6 +63,18 @@ export function getMissingFirebaseEnvKeys(): RequiredFirebaseEnvKey[] {
   return REQUIRED_FIREBASE_KEYS.filter((key) => !getEnv(key));
 }
 
+/**
+ * True when all six `EXPO_PUBLIC_FIREBASE_*` web keys are set and the API key is not a
+ * short placeholder (e.g. `mock_api_key` from `npm run build-web:with-mock-firebase`). Prevents
+ * `getAuth()` from throwing `auth/invalid-api-key` at module load.
+ */
+export function isFirebaseWebClientReady(): boolean {
+  if (getMissingFirebaseEnvKeys().length > 0) return false;
+  const apiKey = (getEnv('EXPO_PUBLIC_FIREBASE_API_KEY') ?? '').trim();
+  if (apiKey.length < 30) return false;
+  return true;
+}
+
 export function getFirebaseWebConfig() {
   const missing = getMissingFirebaseEnvKeys();
   if (missing.length > 0) {

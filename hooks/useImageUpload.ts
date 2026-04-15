@@ -40,6 +40,11 @@ export const useImageUpload = () => {
     setUploading(true);
     setProgress(0);
 
+    if (!storage || !db) {
+      setUploading(false);
+      throw new Error('Image upload is unavailable: Firebase is not configured for this build.');
+    }
+
     try {
       const asset = pickerResult.assets[0];
 
@@ -103,6 +108,10 @@ export const useImageUpload = () => {
     fieldName: string = 'coverUrl'
   ) => {
     if (!oldUrl) return;
+    if (!storage || !db) {
+      console.warn('[CulturePass] deleteImage skipped: Firebase Storage/Firestore not configured.');
+      return;
+    }
     try {
       // Firebase standardly resolves full bucket urls to refs internally
       const storageRef = ref(storage, oldUrl);

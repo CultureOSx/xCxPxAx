@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { auth as firebaseAuth } from '@/lib/firebase';
+import { auth as firebaseAuth, FIREBASE_CLIENT_DISABLED_MESSAGE } from '@/lib/firebase';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -71,7 +71,7 @@ export function useSignup() {
   }, [normalizedName, normalizedEmail, password, agreed]);
 
   const trackSignup = useCallback((method: string) => {
-    const u = firebaseAuth.currentUser;
+    const u = firebaseAuth?.currentUser;
     if (u) {
       identifyUser(u.uid, { email: u.email, name: u.displayName, role });
       captureEvent('Signup Success', { method, role });
@@ -81,6 +81,11 @@ export function useSignup() {
   const handleGoogleSignUp = useCallback(async () => {
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, browserLocalPersistence);
@@ -114,6 +119,11 @@ export function useSignup() {
     if (Platform.OS !== 'ios' && Platform.OS !== 'web') return;
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
       if (Platform.OS === 'web') {
         const provider = new OAuthProvider('apple.com');
@@ -155,6 +165,10 @@ export function useSignup() {
 
     setLoading(true);
     try {
+      if (!firebaseAuth) {
+        setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+        return;
+      }
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, browserLocalPersistence);
       }
