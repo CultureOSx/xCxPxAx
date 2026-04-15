@@ -14,9 +14,11 @@ import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { auth, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
-import { fetch } from 'expo/fetch';
 import { useRole } from '@/hooks/useRole';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useLayout } from '@/hooks/useLayout';
@@ -31,6 +33,7 @@ import {
   LISTING_PLACEHOLDER_IMG,
   MOVIE_GENRES,
   ORG_CATEGORIES,
+  ORG_DISCOVERY_TAGS,
   ORG_LISTING_TABS,
   PERK_CATEGORIES,
   PERK_TYPES,
@@ -112,6 +115,7 @@ export default function SubmitScreen() {
   const { hPad, isDesktop, isWeb } = useLayout();
   const isWebDesktop = isWeb && isDesktop;
   const { isAdmin, isOrganizer } = useRole();
+  const { userId } = useAuth();
   const params  = useLocalSearchParams<{ type?: string; variant?: string }>();
 
   // Pre-select from URL, e.g. /submit?type=event&variant=festival or /submit?type=restaurant
@@ -125,7 +129,10 @@ export default function SubmitScreen() {
   const [isFree, setIsFree]         = useState(false);
   const [imageUri, setImageUri]     = useState<string | null>(null);
   const [eventCultureTags, setEventCultureTags] = useState<string[]>([]);
+  const [orgDiscoveryTags, setOrgDiscoveryTags] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  const [imageUploadWarning, setImageUploadWarning] = useState<string | null>(null);
   const [submitted, setSubmitted]   = useState(false);
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
 
@@ -158,6 +165,17 @@ export default function SubmitScreen() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
+  const handleMutationError = (err: Error) => {
+    const msg = err.message || '';
+    const isNetworkError = msg === 'Failed to fetch' || msg.includes('Network request failed') || msg.includes('ERR_CONNECTION_REFUSED');
+    if (isNetworkError) {
+      setNetworkError('Could not reach the server. Check your connection or try again later.');
+    } else {
+      setNetworkError(null);
+      setFieldErrors({ name: msg });
+    }
+  };
+
   const submitEventMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
       return api.events.create(data);
@@ -165,6 +183,8 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('event');
       setSubmitted(true);
       setForm({ ...initialForm });
@@ -172,7 +192,7 @@ export default function SubmitScreen() {
       setEventCultureTags([]);
       setIsFree(false);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitProfileMutation = useMutation({
@@ -182,12 +202,15 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType(activeTab);
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
+      setOrgDiscoveryTags([]);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitPerkMutation = useMutation({
@@ -197,12 +220,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/perks'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('perk');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitActivityMutation = useMutation({
@@ -210,12 +235,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('activity');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitRestaurantMutation = useMutation({
@@ -223,12 +250,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/restaurants'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('restaurant');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitShopMutation = useMutation({
@@ -236,12 +265,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shopping'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('shop');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitMovieMutation = useMutation({
@@ -249,12 +280,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/movies'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('movie');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const isPending =
@@ -279,22 +312,87 @@ export default function SubmitScreen() {
     if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
   };
 
+  /**
+   * Attempts to upload the selected cover image.
+   * Returns the public URL on success, or null on failure.
+   * On failure, sets `imageUploadWarning` so the caller can continue
+   * submission with a placeholder instead of blocking the user.
+   *
+   * Upload strategy (web):
+   *   1. Firebase Storage SDK direct upload (works if storage rules deployed + CORS allowed)
+   *   2. Cloud Functions multipart via native window.fetch (reliable multipart on web)
+   *
+   * Upload strategy (native):
+   *   Cloud Functions multipart via api.uploads.image (global fetch + RN FormData).
+   */
   const uploadCoverIfNeeded = async (): Promise<string | null> => {
     if (!imageUri) return null;
+    setImageUploadWarning(null);
+    const apiBase = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/?$/, '/');
+
     try {
       const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
-      const blobRes = await fetch(processed.uri);
+      const blobRes =
+        Platform.OS === 'web' && typeof window !== 'undefined'
+          ? await window.fetch(processed.uri)
+          : await fetch(processed.uri);
       const blob = await blobRes.blob();
-      const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'upload.jpg');
-      const uploaded = await api.uploads.image(formData);
-      return uploaded.imageUrl;
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[uploadCoverIfNeeded] Failed to upload cover image', { imageUri, error: err });
+
+      const uid = auth.currentUser?.uid ?? userId ?? null;
+
+      if (Platform.OS === 'web') {
+        if (uid) {
+          try {
+            const storageFolder = isEventLike(activeTab) ? `events/${uid}` : `listings/${uid}`;
+            const objectPath = `${storageFolder}/submit-cover-${Date.now()}.jpg`;
+            const storageRef = ref(storage, objectPath);
+            await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+            return await getDownloadURL(storageRef);
+          } catch (storageErr) {
+            if (__DEV__) console.warn('[upload] Storage SDK failed, trying API', storageErr);
+          }
+        }
+
+        try {
+          if (typeof window !== 'undefined' && window.fetch && apiBase) {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            const fd = new FormData();
+            fd.append('image', blob, 'upload.jpg');
+            const resp = await window.fetch(`${apiBase}uploads/image`, {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              body: fd,
+            });
+            if (resp.ok) {
+              const json = (await resp.json()) as { imageUrl: string };
+              if (json.imageUrl) return json.imageUrl;
+            }
+            if (__DEV__) {
+              const errBody = await resp.text().catch(() => '');
+              console.warn('[upload] API uploads/image', resp.status, errBody.slice(0, 200));
+            }
+          }
+        } catch (apiFetchErr) {
+          if (__DEV__) console.warn('[upload] API via window.fetch failed', apiFetchErr);
+        }
+      } else {
+        try {
+          const formData = new FormData();
+          formData.append('image', blob as unknown as Blob, 'upload.jpg');
+          const uploaded = await api.uploads.image(formData);
+          return uploaded.imageUrl;
+        } catch (nativeErr) {
+          if (__DEV__) console.warn('[upload] Native API upload failed', nativeErr);
+        }
       }
-      return null;
+    } catch (err) {
+      if (__DEV__) console.warn('[uploadCoverIfNeeded] image processing failed', err);
     }
+
+    setImageUploadWarning(
+      'Cover photo could not be uploaded (often: Storage CORS on localhost, or Functions not running). Your listing will still submit — add a photo later from your dashboard.',
+    );
+    return null;
   };
 
   // ── Validation + submit ────────────────────────────────────────────────────
@@ -343,13 +441,13 @@ export default function SubmitScreen() {
       let heroImageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
+        if (url) {
+          imageUrl = url;
+          heroImageUrl = url;
+        } else {
+          imageUrl = LISTING_PLACEHOLDER_IMG;
+          heroImageUrl = LISTING_PLACEHOLDER_IMG;
         }
-        imageUrl = url;
-        heroImageUrl = url;
       }
       submitEventMutation.mutate({
         title:       form.name.trim(),
@@ -400,12 +498,7 @@ export default function SubmitScreen() {
       let imageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        imageUrl = url ?? LISTING_PLACEHOLDER_IMG;
       }
       submitActivityMutation.mutate({
         name: form.name.trim(),
@@ -428,12 +521,7 @@ export default function SubmitScreen() {
       let imageUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
       submitRestaurantMutation.mutate({
         name: form.name.trim(),
@@ -461,12 +549,7 @@ export default function SubmitScreen() {
       let imageUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
       submitShopMutation.mutate({
         name: form.name.trim(),
@@ -492,12 +575,7 @@ export default function SubmitScreen() {
       let posterUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        posterUrl = url;
+        if (url) posterUrl = url;
       }
       submitMovieMutation.mutate({
         title: form.name.trim(),
@@ -522,18 +600,12 @@ export default function SubmitScreen() {
       let imageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
-      const tags = form.profileTags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 20);
+      const tags = [
+        ...orgDiscoveryTags,
+        ...form.profileTags.split(',').map((t) => t.trim()).filter(Boolean),
+      ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 20);
       submitProfileMutation.mutate({
         entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
@@ -591,7 +663,10 @@ export default function SubmitScreen() {
     setForm(next);
     setImageUri(null);
     setEventCultureTags([]);
+    setOrgDiscoveryTags([]);
     setFieldErrors({});
+    setNetworkError(null);
+    setImageUploadWarning(null);
     setIsFree(false);
   }, []);
 
@@ -899,6 +974,35 @@ export default function SubmitScreen() {
               ) : null
             ) : null}
 
+            {/* ── Network error banner ── */}
+            {networkError ? (
+              <View style={[s.networkErrorBanner, { marginHorizontal: hPad, backgroundColor: colors.surface, borderColor: colors.error + '60' }]}>
+                <View style={[s.networkErrorStrip, { backgroundColor: colors.error }]} />
+                <Ionicons name="cloud-offline-outline" size={18} color={colors.error} style={{ marginLeft: 12 }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[s.networkErrorTitle, { color: colors.text }]}>Submission failed</Text>
+                  <Text style={[s.networkErrorMsg, { color: colors.textSecondary }]}>{networkError}</Text>
+                </View>
+                <Pressable onPress={() => setNetworkError(null)} hitSlop={8} accessibilityLabel="Dismiss">
+                  <Ionicons name="close" size={18} color={colors.textTertiary} />
+                </Pressable>
+              </View>
+            ) : null}
+
+            {imageUploadWarning ? (
+              <View style={[s.networkErrorBanner, { marginHorizontal: hPad, backgroundColor: colors.surface, borderColor: colors.warning + '55' }]}>
+                <View style={[s.networkErrorStrip, { backgroundColor: colors.warning }]} />
+                <Ionicons name="image-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[s.networkErrorTitle, { color: colors.text }]}>Photo upload skipped</Text>
+                  <Text style={[s.networkErrorMsg, { color: colors.textSecondary }]}>{imageUploadWarning}</Text>
+                </View>
+                <Pressable onPress={() => setImageUploadWarning(null)} hitSlop={8} accessibilityLabel="Dismiss photo warning">
+                  <Ionicons name="close" size={18} color={colors.textTertiary} />
+                </Pressable>
+              </View>
+            ) : null}
+
             {/* ── Cover Photo (standalone full-bleed section) ── */}
             {imageUri ? (
               <Pressable
@@ -928,7 +1032,16 @@ export default function SubmitScreen() {
                   <Ionicons name="image-outline" size={28} color={accent} />
                 </View>
                 <Text style={[s.mediaEmptyTitle, { color: colors.text }]}>Add Cover Photo</Text>
-                <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>16:9 recommended · high-resolution looks best</Text>
+                <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>
+                  {activeTab === 'movie'
+                    ? 'Poster: 2:3 ratio · min 600×900 px · JPEG or PNG'
+                    : activeTab === 'artist'
+                      ? 'Profile photo: 1:1 square · min 800×800 px · JPEG or PNG'
+                      : 'Banner: 16:9 · min 1200×675 px · JPEG or PNG · max 10 MB'}
+                </Text>
+                <Text style={[s.mediaEmptyFormats, { color: colors.textTertiary }]}>
+                  JPEG · PNG · WebP · HEIC accepted
+                </Text>
               </Pressable>
             )}
 
@@ -1346,6 +1459,18 @@ export default function SubmitScreen() {
                   </Field>
                 )}
 
+                {activeTab === 'organisation' && (
+                  <Field label="Street address" hint="Optional — shown on your profile page">
+                    <TextInput
+                      style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                      value={form.address}
+                      onChangeText={v => set('address', v)}
+                      placeholder="e.g. 123 George St, Sydney"
+                      placeholderTextColor={colors.textTertiary}
+                    />
+                  </Field>
+                )}
+
                 <View style={s.row}>
                   <View style={{ flex: 2 }}>
                     <Field label="City" error={fieldErrors.city}>
@@ -1557,12 +1682,73 @@ export default function SubmitScreen() {
             {PROFILE_TABS.includes(activeTab) && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="pricetag-outline" label="Discovery tags" />
-                <Field label="Tags" hint="Comma-separated — e.g. Diwali, dance, Western Sydney">
+
+                {/* Suggested tag chips — organisation, business, professional */}
+                {ORG_LISTING_TABS.includes(activeTab) && (
+                  <>
+                    <Text style={[s.tagHint, { color: colors.textSecondary }]}>
+                      Tap to add · helps people find you on Discover
+                    </Text>
+                    <View style={s.chipGrid}>
+                      {ORG_DISCOVERY_TAGS.map((tag) => {
+                        const isActive = orgDiscoveryTags.includes(tag);
+                        return (
+                          <Pressable
+                            key={tag}
+                            style={[
+                              s.chip,
+                              isActive
+                                ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                                : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                            ]}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync();
+                              setOrgDiscoveryTags((prev) =>
+                                prev.includes(tag)
+                                  ? prev.filter((t) => t !== tag)
+                                  : prev.length >= 15 ? prev : [...prev, tag],
+                              );
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Tag: ${tag}`}
+                            accessibilityState={{ selected: isActive }}
+                          >
+                            {isActive && (
+                              <Ionicons name="checkmark" size={11} color="#fff" />
+                            )}
+                            <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{tag}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    {orgDiscoveryTags.length > 0 && (
+                      <View style={[s.tagCountRow, { borderColor: colors.borderLight }]}>
+                        <Ionicons name="pricetag" size={13} color={accent} />
+                        <Text style={[s.tagCountText, { color: accent }]}>
+                          {orgDiscoveryTags.length} tag{orgDiscoveryTags.length !== 1 ? 's' : ''} selected
+                        </Text>
+                        <Pressable
+                          onPress={() => setOrgDiscoveryTags([])}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Clear all tags"
+                        >
+                          <Text style={[s.tagClearText, { color: colors.textTertiary }]}>Clear all</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <Field
+                  label="Custom tags"
+                  hint={`Comma-separated${orgDiscoveryTags.length > 0 ? ' · merged with selected above' : ' — e.g. Diwali, dance, Western Sydney'}`}
+                >
                   <TextInput
                     style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.profileTags}
                     onChangeText={v => set('profileTags', v)}
-                    placeholder="community, festival, language class…"
+                    placeholder="e.g. community, festival, language class…"
                     placeholderTextColor={colors.textTertiary}
                     autoCapitalize="none"
                   />
@@ -1821,8 +2007,18 @@ const s = StyleSheet.create({
     gap: 8, marginBottom: 12,
   },
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  mediaEmptyTitle: { ...TextStyles.callout },
-  mediaEmptySub:   { ...TextStyles.caption, marginTop: 1 },
+  mediaEmptyTitle:   { ...TextStyles.callout },
+  mediaEmptySub:     { ...TextStyles.caption, marginTop: 1, textAlign: 'center' },
+  mediaEmptyFormats: { ...TextStyles.caption, marginTop: 2, opacity: 0.6, textAlign: 'center' },
+
+  networkErrorBanner: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: 12,
+    borderWidth: 1, marginBottom: 10, overflow: 'hidden',
+    paddingVertical: 12, paddingRight: 14,
+  },
+  networkErrorStrip:  { width: 4, alignSelf: 'stretch', marginRight: 0 },
+  networkErrorTitle:  { ...TextStyles.chip, fontWeight: '600' },
+  networkErrorMsg:    { ...TextStyles.caption, marginTop: 1 },
 
   input:    { borderRadius: 12, padding: 14, ...TextStyles.cardBody, borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },
@@ -1844,6 +2040,11 @@ const s = StyleSheet.create({
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
   chipText: { ...TextStyles.chip },
+
+  tagHint:      { ...TextStyles.caption, lineHeight: 18, marginBottom: 10, opacity: 0.85 },
+  tagCountRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  tagCountText: { ...TextStyles.chip, flex: 1 },
+  tagClearText: { ...TextStyles.chip },
 
   submitWrap: { marginTop: 4, marginBottom: 8 },
   submitBtn:  {

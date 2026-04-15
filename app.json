@@ -211,9 +211,7 @@
       }
     },
     "owner": "cultureos",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.1.0",
     "updates": {
       "url": "https://u.expo.dev/9dc511ee-ee3e-4798-ae29-30efc8f5343e"
     }

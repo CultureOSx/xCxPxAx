@@ -112,8 +112,20 @@ function DataSync() {
         if ((user.subscriptionTier ?? 'free') !== state.subscriptionTier) {
           setSubscriptionTier(user.subscriptionTier ?? 'free');
         }
-        // Fallback: If user profile is complete but onboarding is not, complete onboarding
-        if (!state.isComplete && user.city && user.country && (user.interests?.length ?? 0) > 0) {
+        // Fallback: If server profile clearly belongs to a returning member but local onboarding was cleared (e.g. logout), mark complete.
+        const hasCulture =
+          !!(user.culturalIdentity?.nationalityId || (user.culturalIdentity?.cultureIds?.length ?? 0) > 0);
+        const profileLooksEstablished =
+          !!user.city &&
+          !!user.country &&
+          (
+            (user.interests?.length ?? 0) > 0 ||
+            (user.communities?.length ?? 0) > 0 ||
+            hasCulture ||
+            !!user.lgaCode ||
+            !!user.councilId
+          );
+        if (!state.isComplete && profileLooksEstablished) {
           await completeOnboarding();
         }
         // Analytics Tracking
@@ -156,7 +168,7 @@ function DataSync() {
 // ---------------------------------------------------------------------------
 function AuthGuard() {
   const { user, isRestoring } = useAuth();
-  const { state: onboardingState } = useOnboarding();
+  const { state: onboardingState, isLoading: onboardingLoading } = useOnboarding();
   const segments = useSegments() as string[];
   const router = useRouter();
 
@@ -191,11 +203,28 @@ function AuthGuard() {
     if (!user && isProtected) {
       // Guests hitting a locked screen → route to login
       router.replace('/(onboarding)/login');
-    } else if (user && inOnboardingGroup && preAuthScreens.has(currentOnboardingScreen)) {
+    } else if (
+      user &&
+      !onboardingLoading &&
+      inOnboardingGroup &&
+      preAuthScreens.has(currentOnboardingScreen)
+    ) {
       // Authenticated users should either finish onboarding or return to the app shell.
+      // Wait for persisted onboarding to load — default `isComplete: false` would otherwise always send users to location.
       router.replace(onboardingState.isComplete ? '/(tabs)' : '/(onboarding)/location');
+    } else if (
+      user &&
+      !onboardingLoading &&
+      inOnboardingGroup &&
+      !preAuthScreens.has(currentOnboardingScreen) &&
+      onboardingState.isComplete
+    ) {
+      // DataSync marked the user complete while they were on a mid-flow screen
+      // (e.g. /location). This happens when post-login routing races ahead of the
+      // first DataSync profile-check. Send them straight to tabs.
+      router.replace('/(tabs)');
     }
-  }, [user, segments, isRestoring, onboardingState.isComplete, router]);
+  }, [user, segments, isRestoring, onboardingLoading, onboardingState.isComplete, router]);
 
   return null;
 }

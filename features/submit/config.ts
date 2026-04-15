@@ -76,6 +76,20 @@ export const EVENT_CULTURE_TAGS = [
   'Indigenous', 'Multicultural', 'Faith', 'Youth', 'LGBTQIA+', 'Seniors', 'Family',
 ] as const;
 export const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
+
+/** Chip-selectable discovery tags for organisation/professional/business profiles */
+export const ORG_DISCOVERY_TAGS = [
+  // Culture & heritage
+  'Indian', 'Chinese', 'Vietnamese', 'Filipino', 'Greek', 'Italian',
+  'Middle Eastern', 'African', 'Pacific Islander', 'Indigenous', 'Multicultural',
+  'Korean', 'Arabic', 'Tamil', 'Persian', 'Nepali', 'Sri Lankan',
+  // Activity type
+  'Language Class', 'Dance', 'Music', 'Cultural Events', 'Festivals',
+  'Art & Craft', 'Heritage', 'Film', 'Food', 'Sports',
+  // Community focus
+  'Youth', 'Women', 'Seniors', 'Family-Friendly', 'Faith',
+  'LGBTQIA+', 'Volunteers', 'Newcomers & Migrants',
+] as const;
 export const BIZ_CATEGORIES     = ['Restaurant', 'Retail', 'Services', 'Beauty', 'Tech', 'Grocery'];
 export const ARTIST_GENRES      = ['Music', 'Dance', 'Visual Arts', 'Theatre', 'Film', 'Literature'];
 export const ACTIVITY_CATEGORIES = ['Tour', 'Workshop', 'Cultural Site', 'Outdoor', 'Family', 'Food & drink'];

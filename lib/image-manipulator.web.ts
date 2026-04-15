@@ -48,15 +48,19 @@ interface SaveOptions {
 function loadImage(uri: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // blob:/data: are same-origin; forcing anonymous can break loading in some engines.
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.loading = 'eager';
     img.decoding = 'sync';
-    
+
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load: ${uri}`));
-    
-    // Sydney event photo optimization
-    img.src = uri + (uri.includes('event') ? '?w=1600' : '');
+
+    // Query params are invalid on blob: URLs — only append for remote http(s) assets.
+    const isRemoteHttp = uri.startsWith('http://') || uri.startsWith('https://');
+    img.src = isRemoteHttp && uri.includes('event') ? `${uri}${uri.includes('?') ? '&' : '?'}w=1600` : uri;
   });
 }
 
@@ -78,7 +82,8 @@ function resizeSmart(
   canvas: HTMLCanvasElement,
   targetWidth: number,
   targetHeight: number,
-  method: 'contain' | 'cover' | 'stretch' | 'fill' = 'contain'
+  method: 'contain' | 'cover' | 'stretch' | 'fill' = 'contain',
+  fillColor = 'white'
 ): HTMLCanvasElement {
   const ctx = canvas.getContext('2d')!;
   const aspect = canvas.width / canvas.height;
@@ -119,8 +124,11 @@ function resizeSmart(
   rCtx.imageSmoothingEnabled = true;
   rCtx.imageSmoothingQuality = 'high';
   
-  rCtx.fillStyle = 'white'; // Sydney white background
-  rCtx.fillRect(0, 0, targetWidth, targetHeight);
+  // Only fill background when not transparent (PNG uses fillColor='transparent')
+  if (fillColor !== 'transparent') {
+    rCtx.fillStyle = fillColor;
+    rCtx.fillRect(0, 0, targetWidth, targetHeight);
+  }
   rCtx.drawImage(canvas, offsetX, offsetY, drawWidth, drawHeight);
   
   return resized;
@@ -150,13 +158,18 @@ export async function manipulateAsync(
     // Process actions (Sydney event photo optimized)
     for (const action of actions) {
       if ('resize' in action) {
-        const targetW = action.resize.width ?? 1080;  // Sydney event default
-        const targetH = action.resize.height ?? 1080;
+        const aspect = canvas.width / canvas.height;
+        // If only one dimension is specified, compute the other from the source aspect ratio
+        // to avoid letterboxing (e.g. { resize: { width: 1600 } } → 1600×900 for a 16:9 image)
+        const targetW = action.resize.width ?? (action.resize.height ? Math.round(action.resize.height * aspect) : 1080);
+        const targetH = action.resize.height ?? (action.resize.width ? Math.round(action.resize.width / aspect) : 1080);
+        const isPng = (saveOptions.format ?? SaveFormat.WEBP) === SaveFormat.PNG;
         canvas = resizeSmart(
-          canvas, 
-          targetW, 
-          targetH, 
-          action.resize.method ?? 'contain'
+          canvas,
+          targetW,
+          targetH,
+          action.resize.method ?? 'contain',
+          isPng ? 'transparent' : 'white'
         );
       } else if ('rotate' in action) {
         const radians = (action.rotate * Math.PI) / 180;

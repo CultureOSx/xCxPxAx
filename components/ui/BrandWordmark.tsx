@@ -52,10 +52,6 @@ export function BrandWordmark({
 
   const gradientId = `brandGrad-${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
-  const textColor = light 
-    ? 'rgba(255, 255, 255, 0.95)' 
-    : CultureTokens.indigo;
-
   return (
     <View style={[
       styles.container,

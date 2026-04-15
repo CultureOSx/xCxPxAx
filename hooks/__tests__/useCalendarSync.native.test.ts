@@ -2,10 +2,13 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { Alert, Linking, Platform } from 'react-native';
 import type { EventData } from '@/shared/schema';
 
+/** Minimal calendar row shape used by useCalendarSync.native (writable calendar lookup). */
+type MockWritableCalendar = { id: string; allowsModifications: boolean };
+
 const mockExpoCalendar = {
   requestCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
   getCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
-  getCalendarsAsync: jest.fn(async () => []),
+  getCalendarsAsync: jest.fn(async (): Promise<MockWritableCalendar[]> => []),
   getEventsAsync: jest.fn(async () => []),
   createEventAsync: jest.fn(async () => 'ev-1'),
   EntityTypes: { EVENT: 'event' },

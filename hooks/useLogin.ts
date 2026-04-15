@@ -42,7 +42,7 @@ export function handleFirebaseError(e: unknown, defaultMessage: string): string 
 }
 
 export function useLogin(redirectTo: string | null) {
-  const { state: onboardingState } = useOnboarding();
+  const { waitForHydration, getSnapshot } = useOnboarding();
   const biometric = useBiometricAuth();
 
   const [email, setEmail] = useState('');
@@ -78,8 +78,11 @@ export function useLogin(redirectTo: string | null) {
     if (globalError) setGlobalError('');
   }, [emailError, passwordError, globalError]);
 
-  const postAuthRoute = useCallback(() => {
-    if (!onboardingState.isComplete) {
+  /** Uses `getSnapshot()` after hydration so we do not read stale `isComplete` before the first re-render. */
+  const postAuthRouteAfterHydration = useCallback(async () => {
+    await waitForHydration();
+    const snap = getSnapshot();
+    if (!snap.isComplete) {
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
       return;
     }
@@ -92,7 +95,7 @@ export function useLogin(redirectTo: string | null) {
     } else {
       router.replace('/(tabs)');
     }
-  }, [onboardingState.isComplete, redirectTo]);
+  }, [waitForHydration, getSnapshot, redirectTo]);
 
   const trackLogin = useCallback((method: string) => {
     const u = firebaseAuth.currentUser;
@@ -122,7 +125,7 @@ export function useLogin(redirectTo: string | null) {
       }
       trackLogin('google');
       if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
+      await postAuthRouteAfterHydration();
     } catch (e: unknown) {
       const errorMsg = handleFirebaseError(e, 'Google sign-in failed. Please try again.');
       if (errorMsg) setGlobalError(errorMsg);
@@ -156,7 +159,7 @@ export function useLogin(redirectTo: string | null) {
       }
       trackLogin('apple');
       if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
+      await postAuthRouteAfterHydration();
     } catch (e: unknown) {
       const err = e as Record<string, unknown>;
       if (err?.code !== 'ERR_REQUEST_CANCELED') {
@@ -186,7 +189,7 @@ export function useLogin(redirectTo: string | null) {
       if (biometric.isAvailable && !biometric.biometricEnabled) {
         await biometric.promptToEnable(email, password);
       }
-      postAuthRoute();
+      await postAuthRouteAfterHydration();
     } catch (e: unknown) {
       const errorMsg = handleFirebaseError(e, 'Sign in failed. Please try again.');
       if (errorMsg) setGlobalError(errorMsg);
@@ -205,7 +208,7 @@ export function useLogin(redirectTo: string | null) {
       await signInWithEmailAndPassword(firebaseAuth, creds.email, creds.password);
       trackLogin('biometric');
       if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      postAuthRoute();
+      await postAuthRouteAfterHydration();
     } catch (e: unknown) {
       const errorMsg = handleFirebaseError(e, 'Biometric sign-in failed. Please use your password.');
       if (errorMsg) setGlobalError(errorMsg);
@@ -213,7 +216,7 @@ export function useLogin(redirectTo: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [biometric, clearErrors, trackLogin, postAuthRoute]);
+  }, [biometric, clearErrors, trackLogin, postAuthRouteAfterHydration]);
 
   return {
     email, setEmail,

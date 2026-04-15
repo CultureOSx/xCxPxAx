@@ -23,6 +23,17 @@ function publicGcsUrl(bucketName: string, objectPath: string): string {
   return `https://storage.googleapis.com/${bucketName}/${encoded}`;
 }
 
+const ACCEPTED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/gif',
+  'image/avif',
+]);
+
 uploadsRouter.post('/uploads/image', requireAuth, upload.single('image'), async (req: Request, res: Response) => {
   if (!storageBucket) {
     return res.status(503).json({ error: 'Storage is not configured for this environment' });
@@ -30,6 +41,12 @@ uploadsRouter.post('/uploads/image', requireAuth, upload.single('image'), async 
   const file = req.file;
   if (!file?.buffer?.length) {
     return res.status(400).json({ error: 'Missing image file (field name: image)' });
+  }
+  const mime = (file.mimetype || '').toLowerCase();
+  if (!ACCEPTED_MIME_TYPES.has(mime)) {
+    return res.status(415).json({
+      error: `Unsupported image format: ${file.mimetype || 'unknown'}. Accepted: JPEG, PNG, WebP, HEIC, AVIF.`,
+    });
   }
   const uid = req.user!.id;
   const id = `${Date.now()}-${randomBytes(6).toString('hex')}`;
