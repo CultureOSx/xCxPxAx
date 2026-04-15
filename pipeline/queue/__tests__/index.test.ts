@@ -41,6 +41,10 @@ jest.mock('ioredis', () => {
   }));
 }, { virtual: true });
 
+// We use require to avoid compile-time checks for modules that might be missing in some environments
+const { Queue, Worker } = require('bullmq');
+const IORedis = require('ioredis');
+
 import { createEventWorker, addEventJob, eventQueue } from '../index.js';
 
 describe('pipeline queue index.js', () => {
@@ -54,11 +58,13 @@ describe('pipeline queue index.js', () => {
     const data = { foo: 'bar' };
     const result = await addEventJob(data);
     expect(eventQueue.add).toHaveBeenCalledWith('ingest', data);
-    expect((result as any).id).toEqual('mock-job-id');
+    expect(result.id).toEqual('mock-job-id');
   });
 
   it('createEventWorker should instantiate a Worker', () => {
     const processor = jest.fn();
+    const worker = createEventWorker(processor);
+    expect(Worker).toHaveBeenCalledWith('event-ingest', processor, expect.any(Object));
     const worker = createEventWorker(processor as any);
     expect(Worker).toHaveBeenCalledWith(
       'event-ingest',
