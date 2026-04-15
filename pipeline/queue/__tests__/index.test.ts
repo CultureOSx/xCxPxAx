@@ -1,15 +1,12 @@
 // @ts-nocheck
 import { jest } from '@jest/globals';
 
-import { Queue, Worker } from 'bullmq';
-import IORedis from 'ioredis';
-
 jest.mock('bullmq', () => ({
   Queue: jest.fn().mockImplementation(() => ({
     add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
   })),
   Worker: jest.fn().mockImplementation(() => ({})),
-}));
+}), { virtual: true });
 
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => ({
@@ -17,7 +14,11 @@ jest.mock('ioredis', () => {
     quit: jest.fn(),
     disconnect: jest.fn(),
   }));
-});
+}, { virtual: true });
+
+// We use require to avoid compile-time checks for modules that might be missing in some environments
+const { Queue, Worker } = require('bullmq');
+const IORedis = require('ioredis');
 
 import { createEventWorker, addEventJob, eventQueue } from '../index.js';
 
@@ -32,12 +33,12 @@ describe('pipeline queue index.js', () => {
     const data = { foo: 'bar' };
     const result = await addEventJob(data);
     expect(eventQueue.add).toHaveBeenCalledWith('ingest', data);
-    expect((result as any).id).toEqual('mock-job-id');
+    expect(result.id).toEqual('mock-job-id');
   });
 
   it('createEventWorker should instantiate a Worker', () => {
     const processor = jest.fn();
-    const worker = createEventWorker(processor as any);
+    const worker = createEventWorker(processor);
     expect(Worker).toHaveBeenCalledWith('event-ingest', processor, expect.any(Object));
     expect(worker).toBeDefined();
   });
