@@ -5,12 +5,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
-  gradients,
   CardTokens,
-  glass,
   shadows,
   FontFamily,
   FontSize,
@@ -94,20 +91,6 @@ export default function CultureMatchScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
-      {/* Background */}
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
-      />
-      {Platform.OS === 'web' && (
-        <>
-          <View style={[s.orb, { top: -60, right: -80, backgroundColor: accent, opacity: 0.25 }]} />
-          <View style={[s.orb, { bottom: -100, left: -60, backgroundColor: CultureTokens.indigo, opacity: 0.3 }]} />
-        </>
-      )}
-
       {/* Mobile header */}
       {!isDesktop && (
         <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm }]}>
@@ -135,12 +118,12 @@ export default function CultureMatchScreen() {
           <Pressable
             onPress={goBack}
             hitSlop={Spacing.sm}
-            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: 'rgba(255,255,255,0.20)' }]}
+            style={[s.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color="#FFFFFF" />
-            <Text style={s.desktopBackText}>Back</Text>
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.text} />
+            <Text style={[s.desktopBackText, { color: colors.text }]}>Back</Text>
           </Pressable>
         </View>
       )}
@@ -540,14 +523,6 @@ export default function CultureMatchScreen() {
 const s = StyleSheet.create({
   container:  { flex: 1 },
   flex:       { flex: 1 },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.88 },
-  orb: {
-    position: 'absolute',
-    width: 360,
-    height: 360,
-    borderRadius: 180,
-    ...Platform.select({ web: { filter: 'blur(70px)' } as any }),
-  },
 
   // ── Mobile header ──
   mobileHeader: {

@@ -32,13 +32,10 @@ import { useNearestCity } from '@/hooks/useNearestCity';
 import { useDetectCountry } from '@/hooks/useDetectCountry';
 
 import { Button } from '@/components/ui/Button';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   CultureTokens,
-  gradients,
   CardTokens,
-  glass,
   shadows,
   Spacing,
   FontFamily,
@@ -417,20 +414,6 @@ export default function LocationScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
-      />
-
-      {Platform.OS === 'web' && (
-        <>
-          <View style={[s.orb, { top: -40, right: -60, backgroundColor: CultureTokens.indigo, opacity: 0.4 }]} />
-          <View style={[s.orb, { bottom: -80, left: -40, backgroundColor: CultureTokens.teal, opacity: 0.25 }]} />
-        </>
-      )}
-
       {/* Desktop Back Button */}
       {isDesktop && (
         <View style={s.desktopBackRow}>
@@ -440,13 +423,13 @@ export default function LocationScreen() {
                 ? router.back()
                 : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)
             }
-            style={[s.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: 'rgba(255,255,255,0.20)' }]}
+            style={[s.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
             hitSlop={Spacing.sm}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color="#FFFFFF" />
-            <Text style={[s.desktopBackText, { color: '#FFFFFF' }]}>Back</Text>
+            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.text} />
+            <Text style={[s.desktopBackText, { color: colors.text }]}>Back</Text>
           </Pressable>
         </View>
       )}
@@ -834,14 +817,6 @@ export default function LocationScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    ...Platform.select({ web: { filter: 'blur(50px)' } as any }),
-  },
 
   scrollView: { flex: 1 },
   scrollContent: {

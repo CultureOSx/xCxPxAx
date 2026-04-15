@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { MAIN_TAB_CARD_SHADOW_STRONG, MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 
 interface CultureEngagementHeroProps {
@@ -30,51 +29,60 @@ export function CultureEngagementHero({
   const colors = useColors();
 
   return (
-    <LiquidGlassPanel
-      borderRadius={MAIN_TAB_UI.cardRadius}
-      style={[styles.wrap, MAIN_TAB_CARD_SHADOW_STRONG]}
-      contentStyle={styles.content}
+    <View
+      style={[
+        styles.wrap,
+        MAIN_TAB_CARD_SHADOW_STRONG,
+        {
+          borderRadius: MAIN_TAB_UI.cardRadius,
+          borderWidth: 1,
+          borderColor: colors.borderLight,
+          backgroundColor: colors.surface,
+        },
+      ]}
     >
-      <LinearGradient
-        colors={[CultureTokens.indigo + '20', CultureTokens.teal + '14', CultureTokens.gold + '10']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.topRow}>
-        <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft }]}>
-          <Ionicons name={icon} size={MAIN_TAB_UI.iconSize.md} color={CultureTokens.indigo} />
-        </View>
-        <View style={styles.badges}>
-          <View style={[styles.badgeChip, { borderColor: CultureTokens.gold + '55', backgroundColor: CultureTokens.gold + '18' }]}>
-            <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>{badge}</Text>
+      <View style={styles.content}>
+        <LinearGradient
+          colors={[CultureTokens.indigo + '20', CultureTokens.teal + '14', CultureTokens.gold + '10']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.topRow}>
+          <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft }]}>
+            <Ionicons name={icon} size={MAIN_TAB_UI.iconSize.md} color={CultureTokens.indigo} />
           </View>
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>{stat}</Text>
+          <View style={styles.badges}>
+            <View style={[styles.badgeChip, { borderColor: CultureTokens.gold + '55', backgroundColor: CultureTokens.gold + '18' }]}>
+              <Text style={[styles.badgeText, { color: CultureTokens.gold }]}>{badge}</Text>
+            </View>
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>{stat}</Text>
+          </View>
         </View>
+
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+
+        <Pressable
+          onPress={() => router.push(ctaRoute as never)}
+          style={({ pressed }) => [
+            styles.cta,
+            { backgroundColor: CultureTokens.indigo },
+            Platform.OS === 'web' || Platform.OS === 'ios'
+              ? { opacity: pressed ? 0.88 : 1 }
+              : null,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={ctaLabel}
+          {...(Platform.OS === 'android'
+            ? { android_ripple: { color: 'rgba(255,255,255,0.22)', borderless: false } }
+            : {})}
+        >
+          <Text style={styles.ctaText}>{ctaLabel}</Text>
+          <Ionicons name="arrow-forward" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />
+        </Pressable>
       </View>
-
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
-
-      <Pressable
-        onPress={() => router.push(ctaRoute as never)}
-        style={({ pressed }) => [
-          styles.cta,
-          { backgroundColor: CultureTokens.indigo },
-          Platform.OS === 'web' || Platform.OS === 'ios'
-            ? { opacity: pressed ? 0.88 : 1 }
-            : null,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={ctaLabel}
-        {...(Platform.OS === 'android'
-          ? { android_ripple: { color: 'rgba(255,255,255,0.22)', borderless: false } }
-          : {})}
-      >
-        <Text style={styles.ctaText}>{ctaLabel}</Text>
-        <Ionicons name="arrow-forward" size={MAIN_TAB_UI.iconSize.sm} color="#fff" />
-      </Pressable>
-    </LiquidGlassPanel>
+    </View>
   );
 }
 
@@ -111,8 +119,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeText: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 12,
+    lineHeight: 16,
     fontFamily: 'Poppins_700Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -123,14 +131,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
   },
   title: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 22,
+    lineHeight: 28,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 15,
+    lineHeight: 22,
     fontFamily: 'Poppins_400Regular',
   },
   cta: {

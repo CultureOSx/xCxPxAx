@@ -21,7 +21,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
 import { CultureEngagementHero } from '@/components/tabs/CultureEngagementHero';
 import { ConnectTeaser } from '@/components/connect/ConnectTeaser';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { CommunityGridCard } from '@/components/community/CommunityGridCard';
 import { CommunityPreviewDrawer } from '@/components/community/CommunityPreviewDrawer';
@@ -145,6 +144,7 @@ export default function CommunityScreen() {
           locationLabel={locationLabel}
           hPad={hPad}
           topInset={topInset}
+          useSolidWebSurface
         />
 
         <FlatList
@@ -184,10 +184,20 @@ export default function CommunityScreen() {
 
               <ConnectTeaser />
 
-              <LiquidGlassPanel
-                borderRadius={MAIN_TAB_UI.cardRadius}
-                style={{ marginTop: 8, marginBottom: 10 }}
-                contentStyle={{ paddingVertical: 10, paddingHorizontal: 8, gap: 8 }}
+              <View
+                style={[
+                  {
+                    marginTop: 8,
+                    marginBottom: 10,
+                    borderRadius: MAIN_TAB_UI.cardRadius,
+                    borderWidth: 1,
+                    borderColor: colors.borderLight,
+                    backgroundColor: colors.surface,
+                    paddingVertical: 10,
+                    paddingHorizontal: 8,
+                    gap: 8,
+                  },
+                ]}
               >
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
                   {CATEGORIES.map((cat) => (
@@ -238,7 +248,7 @@ export default function CommunityScreen() {
                     );
                   })}
                 </ScrollView>
-              </LiquidGlassPanel>
+              </View>
 
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryText, { color: colors.textSecondary }]}>

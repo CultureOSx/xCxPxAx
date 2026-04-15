@@ -14,7 +14,6 @@ import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import Animated, {
   useAnimatedStyle,
@@ -140,6 +139,33 @@ type FilterMode = 'category' | 'culture' | 'language';
 
 const CATEGORY_FILTERS = ['Music', 'Food', 'Arts', 'Nightlife', 'Indigenous', 'Sports', 'Workshop'];
 
+type ExploreCategoryKey =
+  | 'artists'
+  | 'events'
+  | 'movies'
+  | 'dining'
+  | 'activities'
+  | 'shopping'
+  | 'offers'
+  | 'directory'
+  | 'indigenous';
+
+const EXPLORE_CATEGORY_LINKS: readonly {
+  key: ExploreCategoryKey;
+  label: 'Artists' | 'Events' | 'Movies' | 'Dining' | 'Activities' | 'Shopping' | 'Offers' | 'Directory' | 'Indigenous';
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: 'artists', label: 'Artists', icon: 'color-palette-outline' },
+  { key: 'events', label: 'Events', icon: 'calendar-outline' },
+  { key: 'movies', label: 'Movies', icon: 'film-outline' },
+  { key: 'dining', label: 'Dining', icon: 'restaurant-outline' },
+  { key: 'activities', label: 'Activities', icon: 'compass-outline' },
+  { key: 'shopping', label: 'Shopping', icon: 'bag-handle-outline' },
+  { key: 'offers', label: 'Offers', icon: 'pricetag-outline' },
+  { key: 'directory', label: 'Directory', icon: 'grid-outline' },
+  { key: 'indigenous', label: 'Indigenous', icon: 'leaf-outline' },
+];
+
 export default function CityScreen() {
   const { name, country } = useLocalSearchParams<{ name: string; country?: string }>();
   const colors = useColors();
@@ -162,6 +188,7 @@ export default function CityScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedCultures, setSelectedCultures] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [activeExploreCategory, setActiveExploreCategory] = useState<ExploreCategoryKey>('events');
   const [refreshing, setRefreshing] = useState(false);
 
   const colAnim = useSharedValue(2);
@@ -254,7 +281,7 @@ export default function CityScreen() {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   const haptic = useCallback(() => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Disabled for this page to avoid repeated vibration on filter/menu taps.
   }, []);
 
   const handleShare = useCallback(async () => {
@@ -298,6 +325,48 @@ export default function CityScreen() {
     haptic();
     router.push({ pathname: '/map', params: { city: cityName } });
   }, [cityName, haptic]);
+
+  const eventResults = useMemo(() => {
+    const includesAny = (haystack: string, needles: string[]) => needles.some((n) => haystack.includes(n));
+    return events.filter((e) => {
+      const blob = `${e.category ?? ''} ${(e.tags ?? []).join(' ')} ${(e.cultureTag ?? []).join(' ')} ${(e.cultureTags ?? []).join(' ')}`.toLowerCase();
+      switch (activeExploreCategory) {
+        case 'events':
+          return true;
+        case 'movies':
+          return includesAny(blob, ['movie', 'film', 'cinema', 'screening']);
+        case 'activities':
+          return includesAny(blob, ['activity', 'tour', 'experience', 'workshop', 'class']);
+        case 'offers':
+          return includesAny(blob, ['offer', 'deal', 'discount', 'free', 'perk']);
+        case 'indigenous':
+          return includesAny(blob, ['indigenous', 'aboriginal', 'first nations', 'torres strait']);
+        case 'artists':
+          return includesAny(blob, ['artist', 'music', 'dance', 'creative', 'performance', 'concert']);
+        default:
+          return true;
+      }
+    });
+  }, [activeExploreCategory, events]);
+
+  const venueResults = useMemo(() => {
+    const includesAny = (haystack: string, needles: string[]) => needles.some((n) => haystack.includes(n));
+    return venues.filter((v) => {
+      const blob = `${v.category ?? ''} ${v.name ?? ''}`.toLowerCase();
+      switch (activeExploreCategory) {
+        case 'directory':
+          return true;
+        case 'dining':
+          return includesAny(blob, ['dining', 'restaurant', 'cafe', 'café', 'food']);
+        case 'shopping':
+          return includesAny(blob, ['shop', 'shopping', 'retail', 'store', 'boutique']);
+        case 'artists':
+          return includesAny(blob, ['artist', 'music', 'creative', 'studio']);
+        default:
+          return true;
+      }
+    });
+  }, [activeExploreCategory, venues]);
 
   const styles = getCityDestinationStyles(colors, insets, isDesktop, gridGap);
 
@@ -528,6 +597,31 @@ export default function CityScreen() {
                   </Pressable>
                 );
               })}
+              <View style={{ width: 1, height: 20, alignSelf: 'center', backgroundColor: colors.borderLight, marginHorizontal: 8 }} />
+              {EXPLORE_CATEGORY_LINKS.map((item) => {
+                const active = activeExploreCategory === item.key;
+                return (
+                  <Pressable
+                    key={item.key}
+                    onPress={() => {
+                      haptic();
+                      setActiveExploreCategory(item.key);
+                    }}
+                    style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${item.label}`}
+                  >
+                    <Ionicons
+                      name={item.icon}
+                      size={15}
+                      color={active ? CultureTokens.indigo : colors.textTertiary}
+                    />
+                    <Text style={[styles.modeTabText, { color: active ? CultureTokens.indigo : colors.textTertiary }]}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
 
               {totalActiveFilters > 0 && (
                 <Pressable onPress={clearAllFilters} style={styles.clearAllTab}>
@@ -614,7 +708,7 @@ export default function CityScreen() {
                   <View>
                     <Text style={[TextStyles.title3, { color: colors.text }]}>{sectionTitle}</Text>
                     <Text style={[TextStyles.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                      {events.length} result{events.length !== 1 ? 's' : ''} in {cityName}
+                      {eventResults.length} event result{eventResults.length !== 1 ? 's' : ''} · {venueResults.length} places in {cityName}
                     </Text>
                   </View>
                   {totalActiveFilters > 0 && (
@@ -630,7 +724,7 @@ export default function CityScreen() {
                       <View key={i} style={[styles.skeletonCard, { width: cardWidth, height: 240 }]} />
                     ))}
                   </View>
-                ) : events.length === 0 ? (
+                ) : eventResults.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Ionicons name="calendar-clear-outline" size={64} color={colors.textTertiary} />
                     <Text style={styles.emptyTitle}>No events found</Text>
@@ -643,7 +737,7 @@ export default function CityScreen() {
                   </View>
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
-                    {events.map((event) => {
+                    {eventResults.map((event) => {
                       const w = isDesktop
                         ? (gridWidth * 0.72 - gridGap) / 2
                         : cardWidth;
@@ -669,13 +763,13 @@ export default function CityScreen() {
 
             {/* Sidebar — venues + map (desktop) or stacked section (mobile) */}
             <View style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
-              {venues.length > 0 && (
+              {venueResults.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0, paddingTop: 0 }]}>
                   <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 16 }]}>
                     Local Places & Partners
                   </Text>
                   <View style={isDesktop ? { gap: 12 } : styles.venueGrid}>
-                    {venues.map((v) => (
+                    {venueResults.map((v) => (
                       <Pressable
                         key={v.id}
                         onPress={() => router.push(`/business/${v.id}`)}

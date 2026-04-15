@@ -89,12 +89,8 @@ export default function CultureHubIndexScreen() {
 
           <Text style={[TextStyles.title2, { color: colors.text, marginTop: 4, fontSize: 28 }]}>Culture hubs</Text>
           <Text style={[TextStyles.body, { color: colors.textSecondary, marginTop: 8, marginBottom: 20 }]}>
-            Language, ethnicity, and community pages. Each hub opens in your country (
-            {prefs.country}) with a worldwide option — shareable links like{' '}
-            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: colors.text }}>
-              ?country=Australia&scope=single&state=NSW
-            </Text>
-            .
+            Language, ethnicity, and community hubs. Each page starts in your country ({prefs.country}), with a
+            one-tap switch to worldwide view and easy sharing from inside the page.
           </Text>
 
           <View style={{ gap: 12 }}>

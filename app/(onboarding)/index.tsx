@@ -9,13 +9,11 @@ import {
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import Head from 'expo-router/head';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CultureTokens,
-  gradients,
   CardTokens,
   shadows,
   FontSize,
@@ -28,7 +26,6 @@ import { useCallback, useState } from 'react';
 import Animated, {
   FadeInDown,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
   useReducedMotion,
 } from 'react-native-reanimated';
@@ -38,7 +35,6 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import { Image } from 'expo-image';
 import { BrandWordmark } from '@/components/ui/BrandWordmark';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 
 const HERO_TAGLINE = 'Celebrate Your Culture, Connect Your Community';
 
@@ -109,16 +105,6 @@ export default function WelcomeScreen() {
     },
   });
 
-  const orbStyleA = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * LiquidGlassTokens.parallaxFactor * 0.6 }],
-  }));
-  const orbStyleB = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * LiquidGlassTokens.parallaxFactor * 1.1 }],
-  }));
-  const orbStyleC = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * LiquidGlassTokens.parallaxFactor * 0.85 }],
-  }));
-
   const goToSignup = useCallback(() => {
     triggerImpact(Haptics.ImpactFeedbackStyle.Medium);
     router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } });
@@ -163,32 +149,6 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBg}
-      />
-
-      <Animated.View
-        style={[styles.orb, styles.orbIndigo, orbStyleA]}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      />
-      <Animated.View
-        style={[styles.orb, styles.orbGold, orbStyleB]}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      />
-      <Animated.View
-        style={[styles.orb, styles.orbCoral, orbStyleC]}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      />
-
       <AnimatedScrollView
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
@@ -200,17 +160,22 @@ export default function WelcomeScreen() {
           { paddingTop: isDesktop ? 56 : topInset + 32, paddingBottom: bottomInset + 28 },
         ]}
       >
-        <LiquidGlassPanel
+        <View
           style={[
             styles.cardOuter,
             isDesktop && styles.cardOuterDesktop,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+              borderWidth: 1,
+              borderRadius: LiquidGlassTokens.corner.mainCard,
+            },
             Platform.select({
               ios: shadows.large,
               android: { elevation: 8 },
               web: shadows.heavy,
             }),
           ]}
-          borderRadius={LiquidGlassTokens.corner.mainCard}
         >
           <View style={[styles.cardInner, { padding: cardPad }]}>
             {Platform.OS === 'web' && (
@@ -220,10 +185,7 @@ export default function WelcomeScreen() {
               </Head>
             )}
 
-            <LinearGradient
-              colors={[CultureTokens.indigo, CultureTokens.coral]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
               style={[
                 styles.heroRibbon,
                 {
@@ -232,6 +194,7 @@ export default function WelcomeScreen() {
                   paddingHorizontal: cardPad,
                   borderTopLeftRadius: LiquidGlassTokens.corner.mainCard,
                   borderTopRightRadius: LiquidGlassTokens.corner.mainCard,
+                  backgroundColor: CultureTokens.indigo,
                 },
               ]}
             >
@@ -241,7 +204,7 @@ export default function WelcomeScreen() {
               >
                 {HERO_TAGLINE}
               </Text>
-            </LinearGradient>
+            </View>
 
             <View style={styles.headerBlock}>
               <View style={styles.logoContainer}>
@@ -253,7 +216,7 @@ export default function WelcomeScreen() {
                   transition={200}
                 />
               </View>
-              <BrandWordmark size="xl" withTagline={false} centered light />
+              <BrandWordmark size="xl" withTagline={false} centered />
               <Text
                 style={[styles.subtitle, { color: colors.textSecondary }]}
                 maxFontSizeMultiplier={2}
@@ -416,7 +379,7 @@ export default function WelcomeScreen() {
               </Pressable>
             </View>
           </View>
-        </LiquidGlassPanel>
+        </View>
       </AnimatedScrollView>
     </View>
   );
@@ -425,43 +388,6 @@ export default function WelcomeScreen() {
 const getStyles = () =>
   StyleSheet.create({
     container: { flex: 1 },
-    gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.88 },
-    orb: {
-      position: 'absolute',
-      width: 320,
-      height: 320,
-      borderRadius: 160,
-    },
-    orbIndigo: {
-      top: -120,
-      right: -80,
-      backgroundColor: CultureTokens.indigo,
-      opacity: 0.45,
-      ...Platform.select({
-        web: { filter: 'blur(72px)' } as object,
-        default: {},
-      }),
-    },
-    orbGold: {
-      bottom: -40,
-      left: -60,
-      backgroundColor: CultureTokens.gold,
-      opacity: 0.28,
-      ...Platform.select({
-        web: { filter: 'blur(64px)' } as object,
-        default: {},
-      }),
-    },
-    orbCoral: {
-      top: '38%',
-      left: -100,
-      backgroundColor: CultureTokens.coral,
-      opacity: 0.22,
-      ...Platform.select({
-        web: { filter: 'blur(56px)' } as object,
-        default: {},
-      }),
-    },
     scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20 },
     scrollContentDesktop: { paddingVertical: 48 },
     cardOuter: { width: '100%', maxWidth: 500, alignSelf: 'center' },
