@@ -14,8 +14,6 @@ const posthogClient = process.env.EXPO_PUBLIC_POSTHOG_API_KEY ? new PostHog(proc
 export const captureEvent = (eventName: string, properties?: Record<string, any>) => {
   if (posthogClient) {
     posthogClient.capture(eventName, properties);
-  } else if (__DEV__) {
-    console.log('[Analytics Event]:', eventName, properties);
   }
 };
 
@@ -51,8 +49,6 @@ export function captureTicketPurchaseCompleted(payload: {
 export const identifyUser = (distinctId: string, properties?: Record<string, any>) => {
   if (posthogClient) {
     posthogClient.identify(distinctId, properties);
-  } else if (__DEV__) {
-    console.log('[Analytics Identify]:', distinctId, properties);
   }
 };
 
