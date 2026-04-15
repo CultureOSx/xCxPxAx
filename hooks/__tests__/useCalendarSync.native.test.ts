@@ -5,8 +5,8 @@ import type { EventData } from '@/shared/schema';
 const mockExpoCalendar = {
   requestCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
   getCalendarPermissionsAsync: jest.fn(async () => ({ granted: true })),
-  getCalendarsAsync: jest.fn(async () => []),
-  getEventsAsync: jest.fn(async () => []),
+  getCalendarsAsync: jest.fn(async () => [] as any[]),
+  getEventsAsync: jest.fn(async () => [] as any[]),
   createEventAsync: jest.fn(async () => 'ev-1'),
   EntityTypes: { EVENT: 'event' },
 };

@@ -9,7 +9,7 @@ jest.mock('bullmq', () => ({
     add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
   })),
   Worker: jest.fn().mockImplementation(() => ({})),
-}));
+}), { virtual: true });
 
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => ({
@@ -17,7 +17,7 @@ jest.mock('ioredis', () => {
     quit: jest.fn(),
     disconnect: jest.fn(),
   }));
-});
+}, { virtual: true });
 
 import { createEventWorker, addEventJob, eventQueue } from '../index.js';
 
