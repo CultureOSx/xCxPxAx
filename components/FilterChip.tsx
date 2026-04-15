@@ -22,8 +22,13 @@ interface FilterChipProps {
 
 export function FilterChip({ item, isActive, onPress, size = 'medium' }: FilterChipProps) {
   const colors = useColors();
-  const accentColor = item.color || colors.primary;
+  // Use red (coral) or green (teal) for active background
+  const activeBgColor = item.color || colors.primary;
+  const activeColor = item.activeColor || undefined;
   const isSmall = size === 'small';
+  // For community context, use red (coral) or green (teal) for active
+  const activeBackground = CultureTokens.coral; // Use CultureTokens.teal for green
+  const activeTextColor = '#fff';
 
   const handlePress = () => {
     if (Platform.OS !== 'web') {
@@ -43,7 +48,7 @@ export function FilterChip({ item, isActive, onPress, size = 'medium' }: FilterC
         styles.chip,
         isSmall && styles.chipSmall,
         isActive
-          ? { backgroundColor: accentColor, borderColor: accentColor }
+          ? { backgroundColor: activeBackground, borderColor: activeBackground }
           : { backgroundColor: item.backgroundColor || colors.surfaceElevated, borderColor: item.color ? item.color + '40' : colors.border },
         pressed && !isActive && styles.chipPressed,
         pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
@@ -64,8 +69,9 @@ export function FilterChip({ item, isActive, onPress, size = 'medium' }: FilterC
         style={[
           styles.label,
           isSmall && styles.labelSmall,
-          isActive ? { color: colors.textInverse, fontFamily: 'Poppins_600SemiBold' } : { color: colors.text },
-          item.color && isActive && { color: colors.textInverse },
+          isActive
+            ? { color: activeTextColor, fontFamily: 'Poppins_600SemiBold' }
+            : { color: colors.text },
         ]}
         numberOfLines={1}
       >

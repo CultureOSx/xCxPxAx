@@ -150,7 +150,7 @@ export function WebTopBar() {
         {/* Location picker (desktop only) */}
         {isDesktop && (
           <View style={styles.locationWrap}>
-            <LocationPicker />
+            <LocationPicker variant="icon" />
           </View>
         )}
       </View>
