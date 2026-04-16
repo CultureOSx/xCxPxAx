@@ -32,10 +32,11 @@ import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
 import { BlurView } from 'expo-blur';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { CultureTokens, gradients, shadows, TextStyles, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, shadows, TextStyles, LiquidGlassTokens, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -178,42 +179,23 @@ function SectionCard({
   isDark: boolean;
   index?: number;
 }) {
-  const borderStyle = {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    overflow: 'hidden' as const,
-  };
-
   const inner = (
     <>
       <SectionHeader title={title} subtitle={subtitle} colors={colors} />
-      <View style={[sc.cardBody, { backgroundColor: isDark ? colors.card : colors.surface }]}>{children}</View>
+      <View style={sc.cardBody}>{children}</View>
     </>
   );
 
-  const iosBlur = isDark && Platform.OS === 'ios';
-
   return (
     <Animated.View entering={FadeInDown.delay(70 + index * 35).duration(380)} style={sc.cardRoot}>
-      {iosBlur ? (
-        <BlurView intensity={28} tint="dark" style={[borderStyle, { backgroundColor: 'rgba(18,24,38,0.55)' }]}>
-          {inner}
-        </BlurView>
-      ) : (
-        <View
-          style={[
-            borderStyle,
-            {
-              backgroundColor: isDark ? colors.card : colors.surface,
-              ...(Platform.OS === 'web' ? shadows.small : {}),
-              ...sectionCardShadow(isDark),
-            },
-          ]}
-        >
-          {inner}
-        </View>
-      )}
+      <LiquidGlassPanel
+        borderRadius={LiquidGlassTokens.corner.mainCard}
+        bordered
+        style={sc.glassCard}
+        contentStyle={sc.cardBody}
+      >
+        {inner}
+      </LiquidGlassPanel>
     </Animated.View>
   );
 }
@@ -1333,19 +1315,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   topBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     ...Platform.select({
-      ios: { minWidth: 44, minHeight: 44 },
+      ios: { minWidth: 52, minHeight: 52 },
       default: {},
     }),
   },
@@ -1353,90 +1335,93 @@ const s = StyleSheet.create({
   scroll: { flexGrow: 1 },
   scrollDesktop: { paddingHorizontal: 0 },
   loadError: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 14,
+    marginTop: 16,
+    padding: 20,
+    borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    gap: 10,
+    gap: 12,
   },
   toast: {
-    marginTop: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 999,
   },
   heroWrap: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 32,
     overflow: 'hidden',
   },
   heroOrb: {
     position: 'absolute',
-    top: -50,
-    right: -40,
+    top: -60,
+    right: -50,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+  },
+  heroOrbSecondary: {
+    position: 'absolute',
+    bottom: -40,
+    left: -60,
     width: 200,
     height: 200,
     borderRadius: 100,
   },
-  heroOrbSecondary: {
-    position: 'absolute',
-    bottom: -30,
-    left: -50,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-  },
-  avatarBtn: { position: 'relative', marginBottom: 12 },
+  avatarBtn: { position: 'relative', marginBottom: 16 },
   avatarRingOuter: {
-    padding: 3,
+    padding: 4,
     borderRadius: 999,
   },
   avatarRing: {
-    width: AVATAR + 8,
-    height: AVATAR + 8,
-    borderRadius: (AVATAR + 8) / 2,
-    borderWidth: 2,
+    width: AVATAR + 12,
+    height: AVATAR + 12,
+    borderRadius: (AVATAR + 12) / 2,
+    borderWidth: 3,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   cameraBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    bottom: 4,
+    right: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
+    backgroundColor: CultureTokens.indigo,
   },
   tabRail: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
-    paddingBottom: 6,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     justifyContent: 'center',
   },
   tabRailScroll: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingBottom: 6,
+    paddingBottom: 8,
     flexGrow: 1,
   },
   tabRailDesktop: {
-    maxWidth: 700,
+    maxWidth: 720,
     alignSelf: 'center',
     width: '100%',
     justifyContent: 'space-between',
   },
   tabBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
     borderWidth: 1,
+    minWidth: 110,
   },
   tabBtnDesktop: {
     flex: 1,
@@ -1445,55 +1430,75 @@ const s = StyleSheet.create({
   tabLabel: {
     ...TextStyles.chip,
     textAlign: 'center',
+    fontSize: 15,
   },
-  body: { paddingTop: 8, gap: 0, paddingBottom: 8 },
-  bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center' },
+  body: { 
+    paddingTop: 8, 
+    gap: 32, 
+    paddingHorizontal: 20, 
+    paddingBottom: 40 
+  },
+  bodyDesktop: { maxWidth: 720, width: '100%', alignSelf: 'center', paddingHorizontal: 0 },
   input: {
-    height: 52,
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 20,
     ...TextStyles.callout,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  bioInput: { height: 108, paddingTop: 14, paddingBottom: 14 },
-  charCount: { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 4 },
-  twoCol: { flexDirection: 'row', gap: 12 },
-  socialRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  bioInput: { 
+    height: 120, 
+    paddingTop: 16, 
+    paddingBottom: 16,
+    textAlignVertical: 'top' as const,
+  },
+  charCount: { 
+    fontSize: 12, 
+    fontFamily: 'Poppins_400Regular', 
+    textAlign: 'right', 
+    marginTop: 6,
+    opacity: 0.6,
+  },
+  twoCol: { flexDirection: 'row', gap: 16 },
+  socialRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   socialIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginTop: 22,
+    marginTop: 28,
   },
   privacyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    gap: 12,
+    paddingVertical: 20,
+    gap: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    height: 54,
-    borderRadius: 16,
+    gap: 10,
+    height: 56,
+    borderRadius: 999,
     overflow: 'hidden',
-    marginTop: 16,
+    marginTop: 8,
+    marginBottom: 32,
     ...Platform.select({
-      web: { boxShadow: '0px 4px 20px rgba(0,102,204,0.28)' },
+      web: { boxShadow: '0px 8px 32px rgba(0,102,204,0.25)' },
       ios: {
         shadowColor: PRIMARY,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
       },
-      android: { elevation: 6 },
-      default: { elevation: 6 },
+      android: { elevation: 8 },
+      default: { elevation: 8 },
     }),
   },
 });
