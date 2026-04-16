@@ -448,16 +448,6 @@ export default function SuperAdminCockpit() {
                 onPress={() => router.push('/admin/shopping')}
               />
             </View>
-            <View style={{ width: columnWidth(2) }}>
-              <ActionItem
-                delay={680}
-                title="Ingestion"
-                description="Manual JSON/CSV imports"
-                icon="cloud-upload-outline"
-                color={CultureTokens.indigo}
-                onPress={() => router.push('/admin/import')}
-              />
-            </View>
           </View>
 
           {/* ── Security ─────────────────────────────────────────────────── */}

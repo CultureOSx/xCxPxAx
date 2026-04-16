@@ -56,14 +56,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     route: '/admin/dashboard/event-ingest',
   },
   {
-    id: 'import',
-    label: 'Bulk Import',
-    description: 'CSV / JSON import',
-    icon: 'document-text-outline',
-    color: CultureTokens.teal,
-    route: '/admin/import',
-  },
-  {
     id: 'geohash',
     label: 'Geo backfill',
     description: 'Align coordinates & geohashes',

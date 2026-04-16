@@ -50,13 +50,10 @@ import type {
   DiscoverCurationResponse,
   DiscoverCurationConfig,
   DiscoverFeedContract,
-  IngestSource,
-  IngestionJob,
-  IngestScheduleInterval,
   CultureTodayEntry,
 } from '@/shared/schema';
 
-export type { MembershipSummary, Notification, CouncilData, CouncilLgaContext, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilListResponse, ActivityData, ActivityInput, AdminAuditLog, AppUpdate, UpdateCategory, IngestSource, IngestionJob, IngestScheduleInterval } from '@/shared/schema';
+export type { MembershipSummary, Notification, CouncilData, CouncilLgaContext, RewardsSummary, WalletSummary, WalletTransaction, WidgetSpotlightItem, WidgetNearbyEventItem, WidgetUpcomingTicketItem, CouncilListResponse, ActivityData, ActivityInput, AdminAuditLog, AppUpdate, UpdateCategory } from '@/shared/schema';
 
 // ---------------------------------------------------------------------------
 // Pending handle item — returned by admin handle approval endpoint
@@ -731,52 +728,6 @@ const admin = {
     request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/approve`, {}),
   rejectHandle: (type: 'user' | 'profile', id: string, reason?: string) =>
     request<{ ok: boolean }>('POST', `api/admin/handles/${type}/${id}/reject`, { reason }),
-
-  // ── Data Import ──────────────────────────────────────────────────────────
-  importJson: (payload: {
-    events: Record<string, unknown>[];
-    source?: 'manual' | 'json-api';
-    city?: string;
-    country?: string;
-  }) => request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string }>('POST', 'api/admin/import/json', payload),
-
-  importUrl: (payload: { url: string; city?: string; country?: string }) =>
-    request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string }>('POST', 'api/admin/import/url', payload),
-
-  importClear: (source: 'manual' | 'url-scrape' | 'cityofsydney' | 'json-api' | 'all' = 'all') =>
-    request<{ ok: boolean; deleted: number; source: string }>('DELETE', 'api/admin/import/clear', { source, confirm: true }),
-
-  importSources: () =>
-    request<{ sources: { source: string; count: number; latest: string }[]; total: number }>('GET', 'api/admin/import/sources'),
-
-  // ── Ingest Source Management ─────────────────────────────────────────────
-  ingestSourcesList: () =>
-    request<{ sources: IngestSource[] }>('GET', 'api/admin/ingest/sources'),
-
-  ingestSourceCreate: (payload: { name: string; url: string; city?: string; country?: string; enabled?: boolean; scheduleInterval?: IngestScheduleInterval | null }) =>
-    request<{ ok: boolean; source: IngestSource }>('POST', 'api/admin/ingest/sources', payload),
-
-  ingestSourceUpdate: (id: string, payload: Partial<{ name: string; url: string; city: string; country: string; enabled: boolean; scheduleInterval: IngestScheduleInterval | null }>) =>
-    request<{ ok: boolean }>('PUT', `api/admin/ingest/sources/${id}`, payload),
-
-  ingestSourceDelete: (id: string) =>
-    request<{ ok: boolean }>('DELETE', `api/admin/ingest/sources/${id}`),
-
-  ingestSourceRun: (id: string) =>
-    request<{ ok: boolean; imported: number; updated: number; skipped: number; errors: string[]; source: string; jobId?: string }>('POST', `api/admin/ingest/sources/${id}/run`),
-
-  // ── Ingestion Job History ────────────────────────────────────────────────
-  ingestJobsList: (params?: { limit?: number; sourceId?: string; status?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.limit != null) qs.set('limit', String(params.limit));
-    if (params?.sourceId) qs.set('sourceId', params.sourceId);
-    if (params?.status) qs.set('status', params.status);
-    const q = qs.toString();
-    return request<{ jobs: IngestionJob[] }>('GET', `api/admin/ingest/jobs${q ? `?${q}` : ''}`);
-  },
-
-  ingestJobRetry: (id: string) =>
-    request<{ ok: boolean; imported: number; updated: number; skipped: number; jobId?: string }>('POST', `api/admin/ingest/jobs/${id}/retry`),
 
   /** List all updates (including drafts) — admin only */
   listUpdates: (params?: { category?: UpdateCategory; limit?: number; offset?: number }) => {
