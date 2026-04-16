@@ -286,7 +286,7 @@ function VenueDashboardContent() {
             <Text style={[vc.sectionHeader, { color: colors.textTertiary }]}>QUICK ACTIONS</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {[
-                { icon: 'add-circle-outline', label: 'New Event', color: CultureTokens.indigo,  route: '/submit' },
+                { icon: 'add-circle-outline', label: 'New Event', color: CultureTokens.indigo,  route: '/create' },
                 { icon: 'qr-code-outline',    label: 'Scanner',   color: CultureTokens.teal,    route: '/scanner' },
                 { icon: 'analytics-outline',  label: 'Organizer', color: CultureTokens.gold, route: '/dashboard/organizer' },
               ].map(a => (
@@ -340,11 +340,11 @@ function VenueDashboardContent() {
               </Text>
               <Pressable
                 style={[vc.ctaBtn, { backgroundColor: CultureTokens.indigo }]}
-                onPress={() => router.push('/submit')}
+                onPress={() => router.push('/create')}
                 accessibilityRole="button"
               >
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 14 }}>Submit an Event</Text>
+                <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 14 }}>Create an Event</Text>
               </Pressable>
             </View>
           )}

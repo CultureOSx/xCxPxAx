@@ -13,6 +13,8 @@ import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
+import type { SubmitType } from '@/features/submit/config';
+import { canUserCreateListingType } from '@/features/submit/creatorAccess';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { APP_NAME, getAppVersionWithBuild } from '@/lib/app-meta';
@@ -36,6 +38,8 @@ interface MenuEntry {
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
   requiresSuperAdmin?: boolean;
+  /** When set, only shown if the user may create this listing type in Creator Studio */
+  creatorSubmitType?: SubmitType;
 }
 
 interface MenuSection {
@@ -70,21 +74,21 @@ const SECTIONS: MenuSection[] = [
     ],
   },
   {
-    title: 'Create & submit',
+    title: 'Create',
     items: [
-      { id: 'studio',        label: 'Creator Studio (all types)', icon: 'add-circle-outline',       route: '/submit',                             requiresAuth: true, color: CultureTokens.coral },
-      { id: 'sub-event',     label: 'Submit: Event',              icon: 'calendar-outline',       route: '/submit?type=event',                 requiresAuth: true },
-      { id: 'sub-festival',  label: 'Submit: Festival',           icon: 'color-filter-outline',   route: '/submit?type=event&variant=festival', requiresAuth: true },
-      { id: 'sub-concert',   label: 'Submit: Concert / show',     icon: 'musical-notes-outline',   route: '/submit?type=event&variant=concert',  requiresAuth: true },
-      { id: 'sub-workshop',  label: 'Submit: Workshop / class',     icon: 'school-outline',          route: '/submit?type=event&variant=workshop', requiresAuth: true },
-      { id: 'sub-movie',     label: 'Submit: Movie / cinema',     icon: 'videocam-outline',        route: '/submit?type=movie',                 requiresAuth: true },
-      { id: 'sub-dining',    label: 'Submit: Dining venue',       icon: 'restaurant-outline',      route: '/submit?type=restaurant',            requiresAuth: true },
-      { id: 'sub-shop',      label: 'Submit: Shop / retail',      icon: 'storefront-outline',       route: '/submit?type=shop',                 requiresAuth: true },
-      { id: 'sub-activity',  label: 'Submit: Activity / tour',    icon: 'walk-outline',            route: '/submit?type=activity',              requiresAuth: true },
-      { id: 'sub-pro',       label: 'Submit: Professional page', icon: 'briefcase-outline',        route: '/submit?type=professional',         requiresAuth: true },
-      { id: 'sub-org',       label: 'Submit: Organisation',       icon: 'people-circle-outline',   route: '/submit?type=organisation',          requiresAuth: true },
-      { id: 'sub-business',  label: 'Submit: Business profile',   icon: 'business-outline',       route: '/submit?type=business',            requiresAuth: true },
-      { id: 'sub-artist',    label: 'Submit: Artist profile',     icon: 'color-palette-outline',   route: '/submit?type=artist',                requiresAuth: true },
+      { id: 'studio',        label: 'Creator Studio', icon: 'add-circle-outline',       route: '/create',                             requiresAuth: true, color: CultureTokens.coral },
+      { id: 'sub-event',     label: 'Create: Event',              icon: 'calendar-outline',       route: '/create?type=event',                 requiresAuth: true, creatorSubmitType: 'event' },
+      { id: 'sub-festival',  label: 'Create: Festival',           icon: 'color-filter-outline',   route: '/create?type=event&variant=festival', requiresAuth: true, creatorSubmitType: 'festival' },
+      { id: 'sub-concert',   label: 'Create: Concert / show',     icon: 'musical-notes-outline',   route: '/create?type=event&variant=concert',  requiresAuth: true, creatorSubmitType: 'concert' },
+      { id: 'sub-workshop',  label: 'Create: Workshop / class',     icon: 'school-outline',          route: '/create?type=event&variant=workshop', requiresAuth: true, creatorSubmitType: 'workshop' },
+      { id: 'sub-movie',     label: 'Create: Movie / cinema',     icon: 'videocam-outline',        route: '/create?type=movie',                 requiresAuth: true, creatorSubmitType: 'movie' },
+      { id: 'sub-dining',    label: 'Create: Dining venue',       icon: 'restaurant-outline',      route: '/create?type=restaurant',            requiresAuth: true, creatorSubmitType: 'restaurant' },
+      { id: 'sub-shop',      label: 'Create: Shop / retail',      icon: 'storefront-outline',       route: '/create?type=shop',                 requiresAuth: true, creatorSubmitType: 'shop' },
+      { id: 'sub-activity',  label: 'Create: Activity / tour',    icon: 'walk-outline',            route: '/create?type=activity',              requiresAuth: true, creatorSubmitType: 'activity' },
+      { id: 'sub-pro',       label: 'Create: Professional page', icon: 'briefcase-outline',        route: '/create?type=professional',         requiresAuth: true, creatorSubmitType: 'professional' },
+      { id: 'sub-org',       label: 'Create: Organisation',       icon: 'people-circle-outline',   route: '/create?type=organisation',          requiresAuth: true, creatorSubmitType: 'organisation' },
+      { id: 'sub-business',  label: 'Create: Business profile',   icon: 'business-outline',       route: '/create?type=business',            requiresAuth: true, creatorSubmitType: 'business' },
+      { id: 'sub-artist',    label: 'Create: Artist profile',     icon: 'color-palette-outline',   route: '/create?type=artist',                requiresAuth: true, creatorSubmitType: 'artist' },
     ],
   },
   {
@@ -211,7 +215,7 @@ export default function MenuScreen() {
   const appVersionWithBuild = getAppVersionWithBuild();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { isAdmin, isSuperAdmin } = useRole();
+  const { isAdmin, isSuperAdmin, isOrganizer } = useRole();
 
   const visibleSections = useMemo<MenuSection[]>(() =>
     SECTIONS
@@ -221,11 +225,15 @@ export default function MenuScreen() {
           if (item.requiresAuth  && !isAuthenticated) return false;
           if (item.requiresAdmin && !isAdmin)         return false;
           if (item.requiresSuperAdmin && !isSuperAdmin) return false;
+          if (item.creatorSubmitType != null) {
+            const ok = canUserCreateListingType(item.creatorSubmitType, { isAdmin, isOrganizer });
+            if (!ok) return false;
+          }
           return true;
         }),
       }))
       .filter((section) => section.items.length > 0),
-    [isAuthenticated, isAdmin, isSuperAdmin],
+    [isAuthenticated, isAdmin, isSuperAdmin, isOrganizer],
   );
 
   const handleLogout = async () => {
@@ -341,7 +349,7 @@ export default function MenuScreen() {
               key={section.title}
               section={section}
               colors={colors}
-              defaultCollapsed={section.title === 'Create & submit'}
+              defaultCollapsed={section.title === 'Create'}
             />
           ))}
 

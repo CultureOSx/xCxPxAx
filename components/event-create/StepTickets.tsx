@@ -25,7 +25,24 @@ interface Props {
 
 const TIER_PRESETS = ['Early Bird', 'General Admission', 'VIP'];
 
+const getCurrencyLabel = (currency: string): string => (currency === 'AUD' ? 'A$' : currency);
+
+const formatTierPrice = (price: string, currency: string): string => {
+  const amount = parseFloat(price || '0');
+  if (!Number.isFinite(amount) || amount <= 0) return 'Free';
+  if (currency === 'AUD') {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  }
+  return `${currency} ${amount.toFixed(2)}`;
+};
+
 export function StepTickets({ form, setField, colors, s, currency, showAddTier, setShowAddTier, newTier, setNewTier, addTier, removeTier, haptic }: Props) {
+  const currencyLabel = getCurrencyLabel(currency);
   return (
     <View style={s.fields}>
       <Text style={[s.sectionNote, { color: colors.textSecondary }]}>
@@ -37,9 +54,7 @@ export function StepTickets({ form, setField, colors, s, currency, showAddTier, 
           <View style={s.tierInfo}>
             <Text style={[s.tierName, { color: colors.text }]}>{tier.name}</Text>
             <Text style={[s.tierDetails, { color: colors.textSecondary }]}>
-              {parseFloat(tier.priceCents || '0') === 0
-                ? 'Free'
-                : `${currency} ${parseFloat(tier.priceCents || '0').toFixed(2)}`}
+              {formatTierPrice(tier.priceCents, currency)}
               {tier.capacity ? ` · ${tier.capacity} spots` : ''}
             </Text>
           </View>
@@ -73,7 +88,7 @@ export function StepTickets({ form, setField, colors, s, currency, showAddTier, 
           />
           <View style={s.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>PRICE ({currency})</Text>
+              <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>PRICE ({currencyLabel})</Text>
               <TextInput
                 style={[s.inlineInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 value={newTier.priceCents}

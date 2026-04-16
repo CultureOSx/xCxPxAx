@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
-  TextInput, ActivityIndicator, KeyboardAvoidingView, Switch,
+  TextInput, ActivityIndicator, KeyboardAvoidingView, Switch, Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,7 +41,6 @@ import {
   PROFILE_TABS,
   SHOP_CATEGORIES,
   TYPE_CONFIG,
-  TYPE_ORDER,
   initialForm,
   isEventLike,
   normalizeSubmitType,
@@ -51,6 +50,11 @@ import {
   type FormState,
   type SubmitType,
 } from '@/features/submit/config';
+import {
+  creatorListingBlockedHint,
+  listingTypesForUser,
+} from '@/features/submit/creatorAccess';
+import { mapSubmitMutationError } from '@/features/submit/mapSubmitMutationError';
 import { Card, Field, SectionLabel } from '@/components/submit/FormPrimitives';
 
 /** Local aside width (submit studio); separate from app sidebar */
@@ -107,6 +111,24 @@ function SubmitStudioLayout({
   );
 }
 
+const emptyToUndefined = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const isIsoDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const isAustralianDate = (value: string): boolean => /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+
+const toIsoDate = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (isIsoDate(trimmed)) return trimmed;
+  if (isAustralianDate(trimmed)) {
+    const [day, month, year] = trimmed.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  return null;
+};
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SubmitScreen() {
@@ -118,13 +140,12 @@ export default function SubmitScreen() {
   const { userId } = useAuth();
   const params  = useLocalSearchParams<{ type?: string; variant?: string }>();
 
-  // Pre-select from URL, e.g. /submit?type=event&variant=festival or /submit?type=restaurant
-  const initialType = normalizeSubmitType(
-    typeof params.type === 'string' ? params.type : undefined,
-    typeof params.variant === 'string' ? params.variant : undefined,
-  );
-
-  const [activeTab, setActiveTab]   = useState<SubmitType>(initialType);
+  // Pre-select from URL, e.g. /create?type=event&variant=festival (synced in effect after role gates load)
+  const [activeTab, setActiveTab]   = useState<SubmitType>(() => {
+    const raw = typeof params.type === 'string' ? params.type.trim() : '';
+    if (!raw) return 'organisation';
+    return normalizeSubmitType(raw, typeof params.variant === 'string' ? params.variant : undefined);
+  });
   const [form, setForm]             = useState<FormState>({ ...initialForm });
   const [isFree, setIsFree]         = useState(false);
   const [imageUri, setImageUri]     = useState<string | null>(null);
@@ -137,11 +158,14 @@ export default function SubmitScreen() {
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
 
   const accent = TYPE_CONFIG[activeTab].color;
-  const visibleTypes = TYPE_ORDER.filter((t) => {
-    if (t === 'perk' && !isAdmin) return false;
-    if (['movie', 'restaurant', 'shop'].includes(t) && !isOrganizer && !isAdmin) return false;
-    return true;
-  });
+  const accessFlags = useMemo(() => ({ isAdmin, isOrganizer }), [isAdmin, isOrganizer]);
+  const visibleTypes = useMemo(() => listingTypesForUser(accessFlags), [accessFlags]);
+  const urlSubmitType = useMemo((): SubmitType | null => {
+    const raw = typeof params.type === 'string' ? params.type.trim() : '';
+    if (!raw) return null;
+    return normalizeSubmitType(raw, typeof params.variant === 'string' ? params.variant : undefined);
+  }, [params.type, params.variant]);
+  const [accessGateHint, setAccessGateHint] = useState<string | null>(null);
 
   const set = useCallback((field: keyof FormState, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
@@ -165,14 +189,11 @@ export default function SubmitScreen() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
-  const handleMutationError = (err: Error) => {
-    const msg = err.message || '';
-    const isNetworkError = msg === 'Failed to fetch' || msg.includes('Network request failed') || msg.includes('ERR_CONNECTION_REFUSED');
-    if (isNetworkError) {
-      setNetworkError('Could not reach the server. Check your connection or try again later.');
-    } else {
-      setNetworkError(null);
-      setFieldErrors({ name: msg });
+  const handleMutationError = (err: unknown) => {
+    const { networkBanner, fieldPatch } = mapSubmitMutationError(err);
+    setNetworkError(networkBanner);
+    if (Object.keys(fieldPatch).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...fieldPatch }));
     }
   };
 
@@ -301,7 +322,7 @@ export default function SubmitScreen() {
 
   // ── Image upload ───────────────────────────────────────────────────────────
 
-  const uploadImage = async () => {
+  const pickCoverFromLibrary = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -310,6 +331,28 @@ export default function SubmitScreen() {
       quality: 1,
     });
     if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
+  };
+
+  const pickCoverFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
+  };
+
+  const openCoverImagePicker = () => {
+    if (Platform.OS === 'web') {
+      void pickCoverFromLibrary();
+      return;
+    }
+    Alert.alert('Add cover image', 'Take a new photo or choose from your library.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Photo library', onPress: () => void pickCoverFromLibrary() },
+      { text: 'Take photo', onPress: () => void pickCoverFromCamera() },
+    ]);
   };
 
   /**
@@ -416,6 +459,11 @@ export default function SubmitScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!visibleTypes.includes(activeTab)) {
+      setNetworkError('This listing type is not available for your account.');
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
     const errors: FieldErrors = {};
     const nameLabel =
       isEventLike(activeTab) ? 'Event title is required'
@@ -426,15 +474,19 @@ export default function SubmitScreen() {
     if (form.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) errors.contactEmail = 'Invalid email address';
     if (form.website && !/^https?:\/\/.+/.test(form.website)) errors.website = 'Must start with https://';
     if (PROFILE_TABS.includes(activeTab) && !form.contactEmail.trim()) errors.contactEmail = 'Contact email is required';
+    if ((isEventLike(activeTab) || activeTab === 'movie') && form.date.trim() && !toIsoDate(form.date.trim())) {
+      errors.date = 'Date must be DD/MM/YYYY';
+    }
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const normalizedDate = toIsoDate(form.date);
 
     if (isEventLike(activeTab)) {
-      if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Date is required' })); return; }
+      if (!normalizedDate) { setFieldErrors(p => ({ ...p, date: 'Date is required (DD/MM/YYYY)' })); return; }
       const location = deriveLocation();
       if (!location) return;
       let imageUrl: string | undefined;
@@ -451,11 +503,11 @@ export default function SubmitScreen() {
       }
       submitEventMutation.mutate({
         title:       form.name.trim(),
-        description: form.description.trim() || null,
-        date:        form.date.trim(),
-        time:        form.time.trim() || null,
-        venue:       form.venue.trim() || null,
-        address:     form.address.trim() || null,
+        description: emptyToUndefined(form.description),
+        date:        normalizedDate,
+        time:        emptyToUndefined(form.time),
+        venue:       emptyToUndefined(form.venue),
+        address:     emptyToUndefined(form.address),
         city:        location.city,
         state:       location.state,
         postcode:    location.postcode,
@@ -463,16 +515,16 @@ export default function SubmitScreen() {
         latitude:    location.latitude,
         longitude:   location.longitude,
         category:    resolveEventCategory(activeTab, form.category.trim()),
-        contactEmail: form.contactEmail.trim() || null,
+        contactEmail: emptyToUndefined(form.contactEmail),
         priceCents:  isFree ? 0 : (form.price.trim() ? Math.round(Number(form.price.trim()) * 100) : 0),
         isFree:      isFree || !form.price.trim() || Number(form.price.trim()) <= 0,
-        capacity:    form.capacity.trim() ? Number(form.capacity.trim()) : null,
-        externalTicketUrl: form.externalTicketUrl.trim() || null,
-        communityId: form.communityId || null,
-        hostName:    form.hostName.trim() || null,
-        hostEmail:   form.hostEmail.trim() || null,
-        hostPhone:   form.hostPhone.trim() || null,
-        sponsors:    form.sponsors.trim() || null,
+        capacity:    form.capacity.trim() ? Number(form.capacity.trim()) : undefined,
+        externalTicketUrl: emptyToUndefined(form.externalTicketUrl),
+        communityId: emptyToUndefined(form.communityId),
+        hostName:    emptyToUndefined(form.hostName),
+        hostEmail:   emptyToUndefined(form.hostEmail),
+        hostPhone:   emptyToUndefined(form.hostPhone),
+        sponsors:    emptyToUndefined(form.sponsors),
         cultureTag:  eventCultureTags.length > 0 ? eventCultureTags : undefined,
         imageUrl,
         heroImageUrl,
@@ -569,7 +621,7 @@ export default function SubmitScreen() {
         deals: [],
       });
     } else if (activeTab === 'movie') {
-      if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Release date is required' })); return; }
+      if (!normalizedDate) { setFieldErrors(p => ({ ...p, date: 'Release date is required (DD/MM/YYYY)' })); return; }
       const location = deriveLocation();
       if (!location) return;
       let posterUrl = LISTING_PLACEHOLDER_IMG;
@@ -584,7 +636,7 @@ export default function SubmitScreen() {
         duration: form.runtime.trim() || '2h',
         rating: form.movieRating.trim() || 'M',
         posterUrl,
-        releaseDate: form.date.trim(),
+        releaseDate: normalizedDate,
         genre: form.category ? [form.category] : ['Drama'],
         cast: [],
         director: form.director.trim() || '—',
@@ -606,28 +658,34 @@ export default function SubmitScreen() {
         ...orgDiscoveryTags,
         ...form.profileTags.split(',').map((t) => t.trim()).filter(Boolean),
       ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 20);
+      const instagramHandle = emptyToUndefined(form.instagram)?.replace(/^@/, '');
+      const facebookHandle = emptyToUndefined(form.facebook);
+      const youtubeHandle = emptyToUndefined(form.youtube)?.replace(/^@/, '');
+      const twitterHandle = emptyToUndefined(form.twitterX)?.replace(/^@/, '');
+      const linkedinHandle = emptyToUndefined(form.linkedin)?.replace(/^@/, '');
+      const airpalHandle = emptyToUndefined(form.airpal)?.replace(/^@/, '');
       submitProfileMutation.mutate({
         entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
-        description:  form.description.trim() || null,
+        description:  emptyToUndefined(form.description),
         city:         location.city,
         state:        location.state,
         postcode:     location.postcode,
         country:      location.country,
         latitude:     location.latitude,
         longitude:    location.longitude,
-        contactEmail: form.contactEmail.trim() || null,
-        phone:        form.phone.trim() || null,
-        website:      form.website.trim() || null,
-        category:     activeTab === 'professional' ? 'Professional' : (form.category || null),
+        contactEmail: emptyToUndefined(form.contactEmail),
+        phone:        emptyToUndefined(form.phone),
+        website:      emptyToUndefined(form.website),
+        category:     activeTab === 'professional' ? 'Professional' : emptyToUndefined(form.category),
         imageUrl,
         tags:         tags.length > 0 ? tags : undefined,
-        instagram:    form.instagram.trim() ? `https://instagram.com/${form.instagram.trim().replace(/^@/, '')}` : null,
-        facebook:     form.facebook.trim() ? `https://facebook.com/${form.facebook.trim()}` : null,
-        youtube:      form.youtube.trim() ? `https://youtube.com/@${form.youtube.trim().replace(/^@/, '')}` : null,
-        twitterX:     form.twitterX.trim() ? `https://x.com/${form.twitterX.trim().replace(/^@/, '')}` : null,
-        linkedin:     form.linkedin.trim() ? `https://linkedin.com/in/${form.linkedin.trim().replace(/^@/, '')}` : null,
-        airpal:       form.airpal.trim() ? `https://airpal.me/@${form.airpal.trim().replace(/^@/, '')}` : null,
+        instagram:    instagramHandle ? `https://instagram.com/${instagramHandle}` : undefined,
+        facebook:     facebookHandle ? `https://facebook.com/${facebookHandle}` : undefined,
+        youtube:      youtubeHandle ? `https://youtube.com/@${youtubeHandle}` : undefined,
+        twitterX:     twitterHandle ? `https://x.com/${twitterHandle}` : undefined,
+        linkedin:     linkedinHandle ? `https://linkedin.com/in/${linkedinHandle}` : undefined,
+        airpal:       airpalHandle ? `https://airpal.me/@${airpalHandle}` : undefined,
       });
     }
   };
@@ -670,6 +728,20 @@ export default function SubmitScreen() {
     setIsFree(false);
   }, []);
 
+  useEffect(() => {
+    if (urlSubmitType == null) {
+      setAccessGateHint(null);
+      return;
+    }
+    const blocked = creatorListingBlockedHint(urlSubmitType, accessFlags);
+    setAccessGateHint(blocked);
+    if (blocked) {
+      handleSelectType(visibleTypes[0] ?? 'organisation');
+      return;
+    }
+    handleSelectType(urlSubmitType);
+  }, [urlSubmitType, accessFlags, visibleTypes, handleSelectType]);
+
   const headerGradientStops = useMemo(() => {
     if (Platform.OS === 'web' && isDesktop) {
       return {
@@ -707,20 +779,20 @@ export default function SubmitScreen() {
                 ? 'Perk Created!'
                 : `${TYPE_CONFIG[submittedType].label} submitted!`}
           </Text>
-          <Text style={[s.successSub, { color: colors.textSecondary }]}>
+            <Text style={[s.successSub, { color: colors.textSecondary }]}>
             {submittedType === 'perk'
               ? 'Your perk is now active and available to members.'
               : submittedType === 'activity'
                 ? 'Your activity is published. You can edit it later from the activities tool if needed.'
-                : "Our team will review your submission within 2\u20133 business days. You'll receive an email once approved."}
+                : "Your listing is created and sent for review within 2\u20133 business days. You'll receive an email once approved."}
           </Text>
           <Pressable
             style={[s.successBtn, { backgroundColor: conf.color }]}
             onPress={() => setSubmitted(false)}
             accessibilityRole="button"
-            accessibilityLabel="Submit another"
+            accessibilityLabel="Create another"
           >
-            <Text style={s.successBtnText}>Submit Another</Text>
+            <Text style={s.successBtnText}>Create Another</Text>
           </Pressable>
           <Pressable
             style={[s.successBtnOutline, { borderColor: conf.color + '50' }]}
@@ -739,7 +811,7 @@ export default function SubmitScreen() {
   // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
-    <AuthGuard icon="add-circle-outline" title="Submit Content" message="Sign in to submit events, organisations, and more.">
+    <AuthGuard icon="add-circle-outline" title="Create Content" message="Sign in to create events, organisations, and more.">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -764,7 +836,7 @@ export default function SubmitScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle}>List on CulturePass</Text>
+            <Text style={s.headerTitle}>Create on CulturePass</Text>
               <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
             <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
@@ -959,19 +1031,12 @@ export default function SubmitScreen() {
             )}
           >
             <>
-            {/* Organizer notice — events, movies, dining & shops */}
-            {(['movie', 'restaurant', 'shop'] as SubmitType[]).includes(activeTab) || isEventLike(activeTab) ? (
-              !isOrganizer && !isAdmin ? (
+            {accessGateHint ? (
               <View style={[s.notice, { backgroundColor: colors.surface, marginHorizontal: hPad }]}>
                 <View style={[s.noticeStrip, { backgroundColor: colors.warning }]} />
-                <Ionicons name="information-circle-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
-                <Text style={[s.noticeText, { color: colors.textSecondary }]}>
-                  {isEventLike(activeTab)
-                    ? 'Only organizer or admin accounts can create events. Request organizer access or sign in with an eligible account.'
-                    : 'Movies, dining, and shop listings require an organizer or admin account.'}
-                </Text>
+                <Ionicons name="shield-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
+                <Text style={[s.noticeText, { color: colors.textSecondary }]}>{accessGateHint}</Text>
               </View>
-              ) : null
             ) : null}
 
             {/* ── Network error banner ── */}
@@ -1007,7 +1072,7 @@ export default function SubmitScreen() {
             {imageUri ? (
               <Pressable
                 style={[s.mediaPrevieFull, { marginHorizontal: hPad }]}
-                onPress={uploadImage}
+                onPress={openCoverImagePicker}
                 accessibilityRole="button"
                 accessibilityLabel="Replace image"
               >
@@ -1024,7 +1089,7 @@ export default function SubmitScreen() {
             ) : (
               <Pressable
                 style={[s.mediaEmpty, { borderColor: accent + '50', marginHorizontal: hPad }]}
-                onPress={uploadImage}
+                onPress={openCoverImagePicker}
                 accessibilityRole="button"
                 accessibilityLabel="Upload cover photo"
               >
@@ -1112,7 +1177,7 @@ export default function SubmitScreen() {
                         }]}
                         value={form.date}
                         onChangeText={v => set('date', v)}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD/MM/YYYY"
                         placeholderTextColor={colors.textTertiary}
                         keyboardType="numbers-and-punctuation"
                       />
@@ -1171,7 +1236,7 @@ export default function SubmitScreen() {
                 {!isFree && (
                   <View style={s.row}>
                     <View style={{ flex: 1 }}>
-                      <Field label="Price (AUD)">
+                      <Field label="Price (A$)">
                         <TextInput
                           style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                           value={form.price} onChangeText={v => set('price', v)}
@@ -1309,7 +1374,7 @@ export default function SubmitScreen() {
                         }]}
                         value={form.date}
                         onChangeText={v => set('date', v)}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD/MM/YYYY"
                         placeholderTextColor={colors.textTertiary}
                         keyboardType="numbers-and-punctuation"
                       />
@@ -1778,13 +1843,13 @@ export default function SubmitScreen() {
               </Card>
             )}
 
-            {/* ── Submit ── */}
+            {/* ── Create ── */}
             <View style={[s.submitWrap, { paddingHorizontal: hPad }]}>
               <Pressable
                 onPress={() => void handleSubmit()}
                 disabled={isPending}
                 accessibilityRole="button"
-                accessibilityLabel={`Submit ${TYPE_CONFIG[activeTab].label}`}
+                accessibilityLabel={`Create ${TYPE_CONFIG[activeTab].label}`}
                 style={[isPending && { opacity: 0.7 }]}
               >
                 <LinearGradient
@@ -1798,7 +1863,7 @@ export default function SubmitScreen() {
                     : <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   }
                   <Text style={s.submitBtnText}>
-                    {isPending ? 'Submitting…' : `Submit ${TYPE_CONFIG[activeTab].label}`}
+                    {isPending ? 'Creating…' : `Create ${TYPE_CONFIG[activeTab].label}`}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -1808,7 +1873,7 @@ export default function SubmitScreen() {
                   {activeTab === 'perk'
                     ? 'Your perk will be created and made available immediately.'
                     : activeTab === 'activity'
-                      ? 'Activities go live after submission (subject to moderation).'
+                      ? 'Activities go live after creation (subject to moderation).'
                       : 'Reviewed within 2–3 business days'}
                 </Text>
               </View>

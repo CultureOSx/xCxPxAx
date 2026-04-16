@@ -34,9 +34,13 @@ export const TYPE_CONFIG: Record<SubmitType, { label: string; description: strin
 export const EVENT_LIKE: SubmitType[] = ['event', 'festival', 'concert', 'workshop'];
 export const PROFILE_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
 export const ORG_LISTING_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
+/** Default order in Creator Studio (role filtering applied in UI). */
 export const TYPE_ORDER: SubmitType[] = [
-  'event', 'festival', 'concert', 'workshop', 'movie', 'restaurant', 'shop', 'activity',
-  'professional', 'organisation', 'business', 'artist', 'perk',
+  'event', 'festival', 'concert', 'workshop',
+  'activity',
+  'professional', 'organisation', 'business', 'artist',
+  'movie', 'restaurant', 'shop',
+  'perk',
 ];
 
 export function isEventLike(tab: SubmitType): boolean {

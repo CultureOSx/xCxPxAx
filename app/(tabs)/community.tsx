@@ -178,7 +178,7 @@ export default function CommunityScreen() {
                 stat={`${filteredCommunities.length} communities available`}
                 badge="Community Hub"
                 ctaLabel="Create a Community"
-                ctaRoute="/submit?type=organisation"
+                ctaRoute="/create?type=organisation"
                 icon="people"
               />
 
@@ -254,7 +254,7 @@ export default function CommunityScreen() {
                 <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
                   {filteredCommunities.length} communities in {locationLabel}
                 </Text>
-                <Pressable onPress={() => router.push('/submit?type=organisation')} accessibilityRole="button" accessibilityLabel="Create community">
+                <Pressable onPress={() => router.push('/create?type=organisation')} accessibilityRole="button" accessibilityLabel="Create community">
                   <Text style={[styles.summaryLink, { color: CultureTokens.indigo }]}>Create</Text>
                 </Pressable>
               </View>
@@ -283,7 +283,7 @@ export default function CommunityScreen() {
                   Try changing your filters or start a new community in your region.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/submit?type=organisation')}
+                  onPress={() => router.push('/create?type=organisation')}
                   style={({ pressed }) => [
                     styles.emptyCta,
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },

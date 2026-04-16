@@ -199,7 +199,7 @@ export default function AccountSettingsScreen() {
       items: [
         { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',                color: CultureTokens.indigo, route: '/dashboard/organizer' },
         { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',                 color: CultureTokens.gold,   route: '/scanner' },
-        { icon: 'add-circle-outline', label: 'Create & submit',     sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/submit' },
+        { icon: 'add-circle-outline', label: 'Create',     sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/create' },
         ...(canTargetCampaigns ? [{ icon: 'megaphone-outline',      label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: CultureTokens.gold,    route: '/admin/notifications' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'document-text-outline',  label: 'Campaign Audit Logs', sub: 'Review admin send history',    color: CultureTokens.warning, route: '/admin/audit-logs' }] : []),
       ] as SettingItem[],
