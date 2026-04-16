@@ -9,6 +9,11 @@
       "exclude": [
         "@shopify/flash-list"
       ]
+    },
+    "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      }
     }
   },
   "scripts": {
