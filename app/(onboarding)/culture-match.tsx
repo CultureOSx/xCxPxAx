@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
   TextInput, KeyboardAvoidingView,
+  type DimensionValue,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +14,6 @@ import {
   FontSize,
   TextStyles,
   Spacing,
-  IconSize,
 } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -21,6 +21,7 @@ import { type Step, useCultureMatch } from '@/hooks/useCultureMatch';
 import Animated, {
   FadeInDown, FadeInUp, FadeInRight, FadeOutLeft, FadeIn,
 } from 'react-native-reanimated';
+import { AuthDesktopBackPill, AuthMobileHeader } from '@/components/onboarding/AuthScreenPrimitives';
 
 // ---------------------------------------------------------------------------
 // Per-step design tokens
@@ -93,20 +94,17 @@ export default function CultureMatchScreen() {
     <View style={[s.container, { backgroundColor: colors.background }]}>
       {/* Mobile header */}
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm }]}>
-          <Pressable
-            onPress={goBack}
-            hitSlop={12}
-            style={s.mobileBackBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-          </Pressable>
+        <View>
+          <AuthMobileHeader variant="back-only" onPress={goBack} />
           <View style={s.mobileStepIndicator}>
-            <Text style={s.mobileStepLabel}>Step 3 of 4</Text>
-            <View style={s.mobileProgressTrack}>
-              <View style={[s.mobileProgressFill, { width: `${((stepIndex + 1) / 3) * 100}%` as any, backgroundColor: accent }]} />
+            <Text style={[s.mobileStepLabel, { color: colors.textSecondary }]}>Step 3 of 4</Text>
+            <View style={[s.mobileProgressTrack, { backgroundColor: colors.borderLight }]}>
+              <View
+                style={[
+                  s.mobileProgressFill,
+                  { width: `${((stepIndex + 1) / 3) * 100}%` as DimensionValue, backgroundColor: accent },
+                ]}
+              />
             </View>
           </View>
         </View>
@@ -114,18 +112,7 @@ export default function CultureMatchScreen() {
 
       {/* Desktop back */}
       {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable
-            onPress={goBack}
-            hitSlop={Spacing.sm}
-            style={[s.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.text} />
-            <Text style={[s.desktopBackText, { color: colors.text }]}>Back</Text>
-          </Pressable>
-        </View>
+        <AuthDesktopBackPill label="Back" onPress={goBack} />
       )}
 
       <KeyboardAvoidingView
@@ -147,10 +134,14 @@ export default function CultureMatchScreen() {
         >
           <Animated.View
             entering={FadeInUp.springify().damping(18).duration(500)}
-            style={[s.card, isDesktop && s.cardDesktop]}
+            style={[
+              s.card,
+              isDesktop && s.cardDesktop,
+              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+            ]}
           >
             {/* Glass surface */}
-            <View style={[StyleSheet.absoluteFill, s.cardSurface]} />
+            <View style={[StyleSheet.absoluteFill, s.cardSurface, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} />
 
             {/* Accent top bar */}
             <View style={[s.accentBar, { backgroundColor: accent }]} />
@@ -173,7 +164,7 @@ export default function CultureMatchScreen() {
                           !isDone && !isActive && s.stepperCircleInactive,
                         ]}>
                           {isDone ? (
-                            <Ionicons name="checkmark" size={12} color="#fff" />
+                            <Ionicons name="checkmark" size={12} color={colors.surface} />
                           ) : (
                             <Text style={[
                               s.stepperNum,
@@ -185,7 +176,7 @@ export default function CultureMatchScreen() {
                         </View>
                         <Text style={[
                           s.stepperName,
-                          isActive && { color: '#FFFFFF', fontFamily: FontFamily.semibold },
+                          isActive && { color: colors.text, fontFamily: FontFamily.semibold },
                           isDone && { color: stAccent },
                         ]}>
                           {st.charAt(0).toUpperCase() + st.slice(1)}
@@ -204,8 +195,8 @@ export default function CultureMatchScreen() {
                 <View style={[s.iconRing, { borderColor: `${accent}60`, backgroundColor: `${accent}18` }]}>
                   <Ionicons name={STEP_ICONS[step]} size={32} color={accent} />
                 </View>
-                <Text style={s.title}>{STEP_LABELS[step]}</Text>
-                <Text style={s.subtitle}>{STEP_SUBTITLES[step]}</Text>
+                <Text style={[s.title, { color: colors.text }]}>{STEP_LABELS[step]}</Text>
+                <Text style={[s.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLES[step]}</Text>
               </Animated.View>
 
               {/* ── Nationality step ── */}

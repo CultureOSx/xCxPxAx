@@ -16,13 +16,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
 import { Button } from '@/components/ui/Button';
-import { CultureTokens, CardTokens, shadows, TextStyles } from '@/constants/theme';
+import { CultureTokens, CardTokens, shadows, TextStyles, FontFamily } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import { light as lightColors, type ColorTheme } from '@/constants/colors';
+import { type ColorTheme } from '@/constants/colors';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
+import { useColors } from '@/hooks/useColors';
 
 export default function CommunitiesScreen() {
-  const colors = lightColors;
+  const colors = useColors();
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -161,14 +162,14 @@ export default function CommunitiesScreen() {
                           <Text
                             style={[
                               styles.chipText,
-                              { color: isSelected ? '#fff' : colors.text, opacity: isSelected ? 1 : 0.9 },
+                              { color: isSelected ? colors.surface : colors.text, opacity: isSelected ? 1 : 0.9 },
                             ]}
                             numberOfLines={1}
                           >
                             {community}
                           </Text>
                           {isSelected && (
-                            <Ionicons name="checkmark-circle" size={15} color="rgba(255,255,255,0.9)" />
+                            <Ionicons name="checkmark-circle" size={15} color={colors.surface} />
                           )}
                         </Pressable>
                       );
@@ -230,7 +231,7 @@ const getStyles = (colors: ColorTheme) => StyleSheet.create({
   headerBlock: { alignItems: 'center', marginBottom: 28 },
   iconWrapper: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1.5 },
   headerEmoji: { fontSize: 32 },
-  title: { fontSize: 30, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  title: { fontSize: 30, fontFamily: FontFamily.bold, textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
   subtitle: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 21, color: colors.textSecondary },
 
   section: { marginBottom: 20 },

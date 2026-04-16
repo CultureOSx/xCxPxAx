@@ -185,8 +185,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             profileData = await fetchProfileWithRetry();
           } catch (profileErr) {
-            // 404 means the user is authenticated in Firebase but no Firestore profile exists yet.
-            if (profileErr instanceof ApiError && profileErr.status === 404) {
+            // 404: Firebase auth exists but Firestore profile not materialized yet.
+            // 401: token/header propagation can briefly race during bootstrap in dev/emulator.
+            if (profileErr instanceof ApiError && (profileErr.status === 404 || profileErr.status === 401)) {
               profileData = {};
             } else {
               throw profileErr; // Re-throw to be caught by the outer handler

@@ -5,8 +5,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, CategoryColors, LiquidGlassTokens } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, CategoryColors, LiquidGlassTokens, FontFamily } from '@/constants/theme';
 
 interface AppLink {
   id: string;
@@ -34,59 +33,61 @@ export function SuperAppLinks() {
   const { hPad, vPad } = useLayout();
 
   return (
-    <LiquidGlassPanel
-      borderRadius={LiquidGlassTokens.corner.mainCard}
-      style={[styles.glassRail, { marginHorizontal: hPad, marginBottom: Math.min(14, Math.round(vPad * 0.45)) }]}
-      contentStyle={styles.glassRailInner}
+    <ScrollView
+      horizontal
+      nestedScrollEnabled
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={[
+        styles.row,
+        {
+          marginHorizontal: hPad,
+          marginBottom: Math.min(14, Math.round(vPad * 0.45)),
+          backgroundColor: colors.surface,
+          borderColor: colors.borderLight,
+        },
+      ]}
+      style={styles.scroll}
     >
-      <ScrollView
-        horizontal
-        nestedScrollEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        style={styles.scroll}
-      >
-        {APP_LINKS.map((link) => (
-          <Pressable
-            key={link.id}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(link.route as any);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={link.label}
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: pressed ? `${link.color}28` : `${link.color}18`,
-                borderColor: `${link.color}44`,
-              },
-              Platform.OS === 'web' && { cursor: 'pointer' as const },
-            ]}
-          >
-            <Ionicons
-              name={link.icon}
-              size={15}
-              color={link.id === 'search' ? colors.textSecondary : link.color}
-            />
-            <Text style={[styles.label, { color: colors.text }]}>{link.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </LiquidGlassPanel>
+      {APP_LINKS.map((link) => (
+        <Pressable
+          key={link.id}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push(link.route as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={link.label}
+          style={({ pressed }) => [
+            styles.chip,
+            {
+              backgroundColor: pressed ? colors.primarySoft : colors.surfaceSecondary,
+              borderColor: pressed ? link.color : colors.border,
+            },
+            Platform.OS === 'web' && { cursor: 'pointer' as const },
+          ]}
+        >
+          <Ionicons
+            name={link.icon}
+            size={15}
+            color={link.id === 'search' ? colors.textSecondary : link.color}
+          />
+          <Text style={[styles.label, { color: colors.text }]}>{link.label}</Text>
+        </Pressable>
+      ))}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  glassRail: {
-    overflow: 'hidden',
-  },
-  glassRailInner: {
+  scroll: { overflow: 'visible' },
+  row: {
+    gap: 8,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    paddingHorizontal: 6,
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: LiquidGlassTokens.corner.mainCard,
   },
-  scroll: {},
-  row: { gap: 8, paddingHorizontal: 6, alignItems: 'center' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: FontFamily.semibold,
     letterSpacing: 0.1,
   },
 });

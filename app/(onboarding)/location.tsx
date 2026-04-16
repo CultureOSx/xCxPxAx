@@ -9,10 +9,10 @@ import {
   Alert,
   TextInput,
   ScrollView,
+  type DimensionValue,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   FadeInRight,
@@ -55,6 +55,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { syncUserMarketplaceLocation } from '@/lib/syncMarketplaceLocation';
 import { CountrySelectList } from '@/components/location/CountrySelectList';
+import { AuthDesktopBackPill, AuthMobileHeader } from '@/components/onboarding/AuthScreenPrimitives';
 
 // ---------------------------------------------------------------------------
 // Types & constants
@@ -65,7 +66,7 @@ type LocStep = 'country' | 'region' | 'city';
 const STEPS: LocStep[] = ['country', 'region', 'city'];
 const STEP_LABELS = ['Country', 'State', 'City'];
 
-const STEP_ICON: Record<LocStep, string> = {
+const STEP_ICON: Record<LocStep, keyof typeof Ionicons.glyphMap> = {
   country: 'earth',
   region: 'compass',
   city: 'location',
@@ -90,7 +91,6 @@ const STEP_SUBTITLE: Record<LocStep, string> = {
 export default function LocationScreen() {
   const colors = useColors();
   const { isDesktop } = useLayout();
-  const insets = useSafeAreaInsets();
   const searchParams = useLocalSearchParams();
   const redirectTo = sanitizeInternalRedirect(searchParams.redirectTo ?? searchParams.redirect);
 
@@ -132,7 +132,7 @@ export default function LocationScreen() {
   }, [stepIndex, progressWidth]);
 
   const progressBarStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value * 100}%` as any,
+    width: `${progressWidth.value * 100}%` as DimensionValue,
   }));
 
   // ---------------------------------------------------------------------------
@@ -416,44 +416,30 @@ export default function LocationScreen() {
     <View style={[s.container, { backgroundColor: colors.background }]}>
       {/* Desktop Back Button */}
       {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable
-            onPress={() =>
-              router.canGoBack()
-                ? router.back()
-                : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)
-            }
-            style={[s.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-            hitSlop={Spacing.sm}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.text} />
-            <Text style={[s.desktopBackText, { color: colors.text }]}>Back</Text>
-          </Pressable>
-        </View>
+        <AuthDesktopBackPill
+          label="Back"
+          onPress={() =>
+            router.canGoBack()
+              ? router.back()
+              : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)
+          }
+        />
       )}
 
       {/* Mobile Header */}
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: insets.top + Spacing.sm + 4 }]}>
-          <Pressable
+        <View>
+          <AuthMobileHeader
+            variant="back-only"
             onPress={() =>
               router.canGoBack()
                 ? router.back()
                 : router.replace(routeWithRedirect('/(onboarding)/signup', redirectTo) as string)
             }
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={s.mobileBackBtn}
-          >
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-          </Pressable>
-
-          <View style={s.stepIndicatorWrap}>
-            <Text style={[s.stepText, { color: 'rgba(255,255,255,0.6)' }]}>Step 1 of 4</Text>
-            <View style={s.progressTrack}>
+          />
+          <View style={s.mobileProgressWrap}>
+            <Text style={[s.stepText, { color: colors.textSecondary }]}>Step 1 of 4</Text>
+            <View style={[s.progressTrack, { backgroundColor: colors.borderLight }]}>
               <Animated.View style={[s.progressFill, progressBarStyle]} />
             </View>
           </View>
@@ -467,7 +453,13 @@ export default function LocationScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View entering={enter(40)} style={[s.formContainer, isDesktop && s.formContainerDesktop]}>
-          <View style={[StyleSheet.absoluteFill, s.formBlur, { borderRadius: 32 }]} />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              s.formBlur,
+              { borderRadius: 32, backgroundColor: colors.surface, borderColor: colors.borderLight },
+            ]}
+          />
 
           <View style={s.formContent}>
 
@@ -477,13 +469,14 @@ export default function LocationScreen() {
                 {breadcrumbItems.map((item, i) => (
                   <React.Fragment key={i}>
                     {i > 0 && (
-                      <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.35)" />
+                      <Ionicons name="chevron-forward" size={12} color={colors.textTertiary} />
                     )}
                     <Text
                       style={[
                         s.breadcrumbSegment,
                         item.done && s.breadcrumbDone,
                         item.active && s.breadcrumbActive,
+                        { color: item.active ? colors.text : item.done ? CultureTokens.teal : colors.textTertiary },
                       ]}
                       numberOfLines={1}
                     >
@@ -511,12 +504,12 @@ export default function LocationScreen() {
                           ]}
                         >
                           {isDone ? (
-                            <Ionicons name="checkmark" size={10} color="#fff" />
+                            <Ionicons name="checkmark" size={10} color={colors.surface} />
                           ) : (
                             <View style={[s.desktopDotInner, isActive && { backgroundColor: CultureTokens.gold }]} />
                           )}
                         </View>
-                        <Text style={[s.desktopStepLabel, isActive && { color: 'rgba(255,255,255,0.9)' }]}>
+                        <Text style={[s.desktopStepLabel, { color: isActive ? colors.text : colors.textTertiary }]}>
                           {STEP_LABELS[i]}
                         </Text>
                       </View>
@@ -533,11 +526,11 @@ export default function LocationScreen() {
             <View style={s.headerBlock}>
               <View style={[s.iconWrapper, { borderColor: CultureTokens.teal, backgroundColor: `${CultureTokens.teal}18` }]}>
                 <Animated.View key={step} entering={FadeIn.duration(200)}>
-                  <Ionicons name={STEP_ICON[step] as any} size={34} color={CultureTokens.teal} />
+                  <Ionicons name={STEP_ICON[step]} size={34} color={CultureTokens.teal} />
                 </Animated.View>
               </View>
-              <Text style={[s.title, { color: '#FFFFFF' }]}>{STEP_TITLE[step](pendingCountry)}</Text>
-              <Text style={s.subtitle}>{STEP_SUBTITLE[step]}</Text>
+              <Text style={[s.title, { color: colors.text }]}>{STEP_TITLE[step](pendingCountry)}</Text>
+              <Text style={[s.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLE[step]}</Text>
             </View>
 
             {/* Step content */}
@@ -846,6 +839,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: Spacing.sm + 4,
     gap: 12,
+  },
+  mobileProgressWrap: {
+    paddingHorizontal: 20,
+    paddingBottom: Spacing.sm + 4,
+    alignItems: 'flex-end',
+    gap: 6,
   },
   mobileBackBtn: {
     width: 44,
