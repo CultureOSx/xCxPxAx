@@ -52,7 +52,7 @@ export const CultureTokens = {
   // Core brand palette
   indigo: "#0066CC",        // CulturePass Blue — primary brand
   coral: "#FF5E5B",         // Movement Coral — action energy
-  gold: "#FFC857",          // Temple Gold — premium marker
+  gold: "#0066CC",          // Remapped to blue for better text visibility
   teal: "#2EC4B6",          // Ocean Teal — global belonging
   purple: "#AF52DE",        // Community Purple
 
@@ -186,7 +186,7 @@ const sharedBase = {
   accent: "#FF9500", // Apple Orange
   accentLight: "#FFB340",
 
-  gold: "#FFCC00", // Apple Yellow
+  gold: "#0066CC", // Remapped to blue for better text visibility
 
   success: "#34C759", // Apple Green
   warning: "#FF9500", // Apple Orange

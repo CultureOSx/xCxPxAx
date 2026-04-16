@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { CultureTokens } from '@/constants/theme';
+import { CULTURE_TODAY_EVENT_TAG } from '@/shared/schema';
 import { useColors } from '@/hooks/useColors';
 import { formatDateForCountry } from '@/lib/dateUtils';
 import { FormData, EVENT_TYPES } from './types';
@@ -88,6 +89,9 @@ export function StepReview({ form, colors, s, availableCultures, publishError }:
           colors={colors}
         />
       )}
+      {form.cultureTodayPromo ? (
+        <ReviewRow label="Culture Today" value={`Tagged “${CULTURE_TODAY_EVENT_TAG}” for the calendar`} colors={colors} />
+      ) : null}
 
       <View style={[s.infoBox, { backgroundColor: CultureTokens.gold + '15', borderColor: CultureTokens.gold + '40', marginTop: 8 }]}>
         <Ionicons name="rocket-outline" size={18} color={CultureTokens.gold} />

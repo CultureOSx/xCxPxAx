@@ -75,6 +75,7 @@ import { SpringConfig } from './animations';
 // Re-exports — single import surface
 // ---------------------------------------------------------------------------
 export { default as Colors, light as lightColors, dark as darkColors, shadows, glass, gradients, neon, CultureTokens, CategoryColors, EntityTypeColors } from './colors';
+export { Vitrine, vitrineGhostBorder, vitrinePlumShadowSoft } from './vitrineTheme';
 export type { ColorTheme, ShadowStyle } from './colors';
 
 export {

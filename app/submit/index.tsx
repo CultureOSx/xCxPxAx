@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
-  TextInput, ActivityIndicator, KeyboardAvoidingView, Switch,
+  TextInput, ActivityIndicator, KeyboardAvoidingView, Switch, Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,9 +14,11 @@ import * as Haptics from 'expo-haptics';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { auth, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
-import { fetch } from 'expo/fetch';
 import { useRole } from '@/hooks/useRole';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useLayout } from '@/hooks/useLayout';
@@ -31,6 +33,7 @@ import {
   LISTING_PLACEHOLDER_IMG,
   MOVIE_GENRES,
   ORG_CATEGORIES,
+  ORG_DISCOVERY_TAGS,
   ORG_LISTING_TABS,
   PERK_CATEGORIES,
   PERK_TYPES,
@@ -38,7 +41,6 @@ import {
   PROFILE_TABS,
   SHOP_CATEGORIES,
   TYPE_CONFIG,
-  TYPE_ORDER,
   initialForm,
   isEventLike,
   normalizeSubmitType,
@@ -48,6 +50,11 @@ import {
   type FormState,
   type SubmitType,
 } from '@/features/submit/config';
+import {
+  creatorListingBlockedHint,
+  listingTypesForUser,
+} from '@/features/submit/creatorAccess';
+import { mapSubmitMutationError } from '@/features/submit/mapSubmitMutationError';
 import { Card, Field, SectionLabel } from '@/components/submit/FormPrimitives';
 
 /** Local aside width (submit studio); separate from app sidebar */
@@ -104,6 +111,24 @@ function SubmitStudioLayout({
   );
 }
 
+const emptyToUndefined = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const isIsoDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const isAustralianDate = (value: string): boolean => /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+
+const toIsoDate = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (isIsoDate(trimmed)) return trimmed;
+  if (isAustralianDate(trimmed)) {
+    const [day, month, year] = trimmed.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  return null;
+};
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SubmitScreen() {
@@ -112,29 +137,35 @@ export default function SubmitScreen() {
   const { hPad, isDesktop, isWeb } = useLayout();
   const isWebDesktop = isWeb && isDesktop;
   const { isAdmin, isOrganizer } = useRole();
+  const { userId } = useAuth();
   const params  = useLocalSearchParams<{ type?: string; variant?: string }>();
 
-  // Pre-select from URL, e.g. /submit?type=event&variant=festival or /submit?type=restaurant
-  const initialType = normalizeSubmitType(
-    typeof params.type === 'string' ? params.type : undefined,
-    typeof params.variant === 'string' ? params.variant : undefined,
-  );
-
-  const [activeTab, setActiveTab]   = useState<SubmitType>(initialType);
+  // Pre-select from URL, e.g. /create?type=event&variant=festival (synced in effect after role gates load)
+  const [activeTab, setActiveTab]   = useState<SubmitType>(() => {
+    const raw = typeof params.type === 'string' ? params.type.trim() : '';
+    if (!raw) return normalizeSubmitType(undefined, undefined);
+    return normalizeSubmitType(raw, typeof params.variant === 'string' ? params.variant : undefined);
+  });
   const [form, setForm]             = useState<FormState>({ ...initialForm });
   const [isFree, setIsFree]         = useState(false);
   const [imageUri, setImageUri]     = useState<string | null>(null);
   const [eventCultureTags, setEventCultureTags] = useState<string[]>([]);
+  const [orgDiscoveryTags, setOrgDiscoveryTags] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  const [imageUploadWarning, setImageUploadWarning] = useState<string | null>(null);
   const [submitted, setSubmitted]   = useState(false);
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
 
   const accent = TYPE_CONFIG[activeTab].color;
-  const visibleTypes = TYPE_ORDER.filter((t) => {
-    if (t === 'perk' && !isAdmin) return false;
-    if (['movie', 'restaurant', 'shop'].includes(t) && !isOrganizer && !isAdmin) return false;
-    return true;
-  });
+  const accessFlags = useMemo(() => ({ isAdmin, isOrganizer }), [isAdmin, isOrganizer]);
+  const visibleTypes = useMemo(() => listingTypesForUser(accessFlags), [accessFlags]);
+  const urlSubmitType = useMemo((): SubmitType | null => {
+    const raw = typeof params.type === 'string' ? params.type.trim() : '';
+    if (!raw) return null;
+    return normalizeSubmitType(raw, typeof params.variant === 'string' ? params.variant : undefined);
+  }, [params.type, params.variant]);
+  const [accessGateHint, setAccessGateHint] = useState<string | null>(null);
 
   const set = useCallback((field: keyof FormState, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
@@ -158,6 +189,14 @@ export default function SubmitScreen() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
+  const handleMutationError = (err: unknown) => {
+    const { networkBanner, fieldPatch } = mapSubmitMutationError(err);
+    setNetworkError(networkBanner);
+    if (Object.keys(fieldPatch).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...fieldPatch }));
+    }
+  };
+
   const submitEventMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
       return api.events.create(data);
@@ -165,6 +204,8 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('event');
       setSubmitted(true);
       setForm({ ...initialForm });
@@ -172,7 +213,7 @@ export default function SubmitScreen() {
       setEventCultureTags([]);
       setIsFree(false);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitProfileMutation = useMutation({
@@ -182,12 +223,15 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType(activeTab);
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
+      setOrgDiscoveryTags([]);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitPerkMutation = useMutation({
@@ -197,12 +241,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/perks'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('perk');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitActivityMutation = useMutation({
@@ -210,12 +256,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('activity');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitRestaurantMutation = useMutation({
@@ -223,12 +271,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/restaurants'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('restaurant');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitShopMutation = useMutation({
@@ -236,12 +286,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shopping'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('shop');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const submitMovieMutation = useMutation({
@@ -249,12 +301,14 @@ export default function SubmitScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/movies'] });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
       setSubmittedType('movie');
       setSubmitted(true);
       setForm({ ...initialForm });
       setImageUri(null);
     },
-    onError: (err: Error) => setFieldErrors({ name: err.message }),
+    onError: handleMutationError,
   });
 
   const isPending =
@@ -268,7 +322,7 @@ export default function SubmitScreen() {
 
   // ── Image upload ───────────────────────────────────────────────────────────
 
-  const uploadImage = async () => {
+  const pickCoverFromLibrary = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -279,22 +333,109 @@ export default function SubmitScreen() {
     if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
   };
 
+  const pickCoverFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets[0]?.uri) setImageUri(result.assets[0].uri);
+  };
+
+  const openCoverImagePicker = () => {
+    if (Platform.OS === 'web') {
+      void pickCoverFromLibrary();
+      return;
+    }
+    Alert.alert('Add cover image', 'Take a new photo or choose from your library.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Photo library', onPress: () => void pickCoverFromLibrary() },
+      { text: 'Take photo', onPress: () => void pickCoverFromCamera() },
+    ]);
+  };
+
+  /**
+   * Attempts to upload the selected cover image.
+   * Returns the public URL on success, or null on failure.
+   * On failure, sets `imageUploadWarning` so the caller can continue
+   * submission with a placeholder instead of blocking the user.
+   *
+   * Upload strategy (web):
+   *   1. Firebase Storage SDK direct upload (works if storage rules deployed + CORS allowed)
+   *   2. Cloud Functions multipart via native window.fetch (reliable multipart on web)
+   *
+   * Upload strategy (native):
+   *   Cloud Functions multipart via api.uploads.image (global fetch + RN FormData).
+   */
   const uploadCoverIfNeeded = async (): Promise<string | null> => {
     if (!imageUri) return null;
+    setImageUploadWarning(null);
+    const apiBase = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/?$/, '/');
+
     try {
       const processed = await manipulateAsync(imageUri, [{ resize: { width: 1600 } }], { compress: 0.9, format: SaveFormat.JPEG });
-      const blobRes = await fetch(processed.uri);
+      const blobRes =
+        Platform.OS === 'web' && typeof window !== 'undefined'
+          ? await window.fetch(processed.uri)
+          : await fetch(processed.uri);
       const blob = await blobRes.blob();
-      const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'upload.jpg');
-      const uploaded = await api.uploads.image(formData);
-      return uploaded.imageUrl;
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[uploadCoverIfNeeded] Failed to upload cover image', { imageUri, error: err });
+
+      const uid = auth?.currentUser?.uid ?? userId ?? null;
+
+      if (Platform.OS === 'web') {
+        if (uid && storage) {
+          try {
+            const storageFolder = isEventLike(activeTab) ? `events/${uid}` : `listings/${uid}`;
+            const objectPath = `${storageFolder}/submit-cover-${Date.now()}.jpg`;
+            const storageRef = ref(storage, objectPath);
+            await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+            return await getDownloadURL(storageRef);
+          } catch (storageErr) {
+            if (__DEV__) console.warn('[upload] Storage SDK failed, trying API', storageErr);
+          }
+        }
+
+        try {
+          if (typeof window !== 'undefined' && window.fetch && apiBase) {
+            const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+            const fd = new FormData();
+            fd.append('image', blob, 'upload.jpg');
+            const resp = await window.fetch(`${apiBase}uploads/image`, {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              body: fd,
+            });
+            if (resp.ok) {
+              const json = (await resp.json()) as { imageUrl: string };
+              if (json.imageUrl) return json.imageUrl;
+            }
+            if (__DEV__) {
+              const errBody = await resp.text().catch(() => '');
+              console.warn('[upload] API uploads/image', resp.status, errBody.slice(0, 200));
+            }
+          }
+        } catch (apiFetchErr) {
+          if (__DEV__) console.warn('[upload] API via window.fetch failed', apiFetchErr);
+        }
+      } else {
+        try {
+          const formData = new FormData();
+          formData.append('image', blob as unknown as Blob, 'upload.jpg');
+          const uploaded = await api.uploads.image(formData);
+          return uploaded.imageUrl;
+        } catch (nativeErr) {
+          if (__DEV__) console.warn('[upload] Native API upload failed', nativeErr);
+        }
       }
-      return null;
+    } catch (err) {
+      if (__DEV__) console.warn('[uploadCoverIfNeeded] image processing failed', err);
     }
+
+    setImageUploadWarning(
+      'Cover photo could not be uploaded (often: Storage CORS on localhost, or Functions not running). Your listing will still submit — add a photo later from your dashboard.',
+    );
+    return null;
   };
 
   // ── Validation + submit ────────────────────────────────────────────────────
@@ -318,6 +459,11 @@ export default function SubmitScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!visibleTypes.includes(activeTab)) {
+      setNetworkError('This listing type is not available for your account.');
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
     const errors: FieldErrors = {};
     const nameLabel =
       isEventLike(activeTab) ? 'Event title is required'
@@ -328,36 +474,40 @@ export default function SubmitScreen() {
     if (form.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) errors.contactEmail = 'Invalid email address';
     if (form.website && !/^https?:\/\/.+/.test(form.website)) errors.website = 'Must start with https://';
     if (PROFILE_TABS.includes(activeTab) && !form.contactEmail.trim()) errors.contactEmail = 'Contact email is required';
+    if ((isEventLike(activeTab) || activeTab === 'movie') && form.date.trim() && !toIsoDate(form.date.trim())) {
+      errors.date = 'Date must be DD/MM/YYYY';
+    }
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const normalizedDate = toIsoDate(form.date);
 
     if (isEventLike(activeTab)) {
-      if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Date is required' })); return; }
+      if (!normalizedDate) { setFieldErrors(p => ({ ...p, date: 'Date is required (DD/MM/YYYY)' })); return; }
       const location = deriveLocation();
       if (!location) return;
       let imageUrl: string | undefined;
       let heroImageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
+        if (url) {
+          imageUrl = url;
+          heroImageUrl = url;
+        } else {
+          imageUrl = LISTING_PLACEHOLDER_IMG;
+          heroImageUrl = LISTING_PLACEHOLDER_IMG;
         }
-        imageUrl = url;
-        heroImageUrl = url;
       }
       submitEventMutation.mutate({
         title:       form.name.trim(),
-        description: form.description.trim() || null,
-        date:        form.date.trim(),
-        time:        form.time.trim() || null,
-        venue:       form.venue.trim() || null,
-        address:     form.address.trim() || null,
+        description: emptyToUndefined(form.description),
+        date:        normalizedDate,
+        time:        emptyToUndefined(form.time),
+        venue:       emptyToUndefined(form.venue),
+        address:     emptyToUndefined(form.address),
         city:        location.city,
         state:       location.state,
         postcode:    location.postcode,
@@ -365,16 +515,16 @@ export default function SubmitScreen() {
         latitude:    location.latitude,
         longitude:   location.longitude,
         category:    resolveEventCategory(activeTab, form.category.trim()),
-        contactEmail: form.contactEmail.trim() || null,
+        contactEmail: emptyToUndefined(form.contactEmail),
         priceCents:  isFree ? 0 : (form.price.trim() ? Math.round(Number(form.price.trim()) * 100) : 0),
         isFree:      isFree || !form.price.trim() || Number(form.price.trim()) <= 0,
-        capacity:    form.capacity.trim() ? Number(form.capacity.trim()) : null,
-        externalTicketUrl: form.externalTicketUrl.trim() || null,
-        communityId: form.communityId || null,
-        hostName:    form.hostName.trim() || null,
-        hostEmail:   form.hostEmail.trim() || null,
-        hostPhone:   form.hostPhone.trim() || null,
-        sponsors:    form.sponsors.trim() || null,
+        capacity:    form.capacity.trim() ? Number(form.capacity.trim()) : undefined,
+        externalTicketUrl: emptyToUndefined(form.externalTicketUrl),
+        communityId: emptyToUndefined(form.communityId),
+        hostName:    emptyToUndefined(form.hostName),
+        hostEmail:   emptyToUndefined(form.hostEmail),
+        hostPhone:   emptyToUndefined(form.hostPhone),
+        sponsors:    emptyToUndefined(form.sponsors),
         cultureTag:  eventCultureTags.length > 0 ? eventCultureTags : undefined,
         imageUrl,
         heroImageUrl,
@@ -400,12 +550,7 @@ export default function SubmitScreen() {
       let imageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        imageUrl = url ?? LISTING_PLACEHOLDER_IMG;
       }
       submitActivityMutation.mutate({
         name: form.name.trim(),
@@ -428,12 +573,7 @@ export default function SubmitScreen() {
       let imageUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
       submitRestaurantMutation.mutate({
         name: form.name.trim(),
@@ -461,12 +601,7 @@ export default function SubmitScreen() {
       let imageUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
       submitShopMutation.mutate({
         name: form.name.trim(),
@@ -486,18 +621,13 @@ export default function SubmitScreen() {
         deals: [],
       });
     } else if (activeTab === 'movie') {
-      if (!form.date.trim()) { setFieldErrors(p => ({ ...p, date: 'Release date is required' })); return; }
+      if (!normalizedDate) { setFieldErrors(p => ({ ...p, date: 'Release date is required (DD/MM/YYYY)' })); return; }
       const location = deriveLocation();
       if (!location) return;
       let posterUrl = LISTING_PLACEHOLDER_IMG;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        posterUrl = url;
+        if (url) posterUrl = url;
       }
       submitMovieMutation.mutate({
         title: form.name.trim(),
@@ -506,7 +636,7 @@ export default function SubmitScreen() {
         duration: form.runtime.trim() || '2h',
         rating: form.movieRating.trim() || 'M',
         posterUrl,
-        releaseDate: form.date.trim(),
+        releaseDate: normalizedDate,
         genre: form.category ? [form.category] : ['Drama'],
         cast: [],
         director: form.director.trim() || '—',
@@ -522,40 +652,40 @@ export default function SubmitScreen() {
       let imageUrl: string | undefined;
       if (imageUri) {
         const url = await uploadCoverIfNeeded();
-        if (!url) {
-          setFieldErrors({ name: 'Could not upload your image. Check your connection and try again, or remove the photo.' });
-          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        imageUrl = url;
+        if (url) imageUrl = url;
       }
-      const tags = form.profileTags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 20);
+      const tags = [
+        ...orgDiscoveryTags,
+        ...form.profileTags.split(',').map((t) => t.trim()).filter(Boolean),
+      ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 20);
+      const instagramHandle = emptyToUndefined(form.instagram)?.replace(/^@/, '');
+      const facebookHandle = emptyToUndefined(form.facebook);
+      const youtubeHandle = emptyToUndefined(form.youtube)?.replace(/^@/, '');
+      const twitterHandle = emptyToUndefined(form.twitterX)?.replace(/^@/, '');
+      const linkedinHandle = emptyToUndefined(form.linkedin)?.replace(/^@/, '');
+      const airpalHandle = emptyToUndefined(form.airpal)?.replace(/^@/, '');
       submitProfileMutation.mutate({
         entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
-        description:  form.description.trim() || null,
+        description:  emptyToUndefined(form.description),
         city:         location.city,
         state:        location.state,
         postcode:     location.postcode,
         country:      location.country,
         latitude:     location.latitude,
         longitude:    location.longitude,
-        contactEmail: form.contactEmail.trim() || null,
-        phone:        form.phone.trim() || null,
-        website:      form.website.trim() || null,
-        category:     activeTab === 'professional' ? 'Professional' : (form.category || null),
+        contactEmail: emptyToUndefined(form.contactEmail),
+        phone:        emptyToUndefined(form.phone),
+        website:      emptyToUndefined(form.website),
+        category:     activeTab === 'professional' ? 'Professional' : emptyToUndefined(form.category),
         imageUrl,
         tags:         tags.length > 0 ? tags : undefined,
-        instagram:    form.instagram.trim() ? `https://instagram.com/${form.instagram.trim().replace(/^@/, '')}` : null,
-        facebook:     form.facebook.trim() ? `https://facebook.com/${form.facebook.trim()}` : null,
-        youtube:      form.youtube.trim() ? `https://youtube.com/@${form.youtube.trim().replace(/^@/, '')}` : null,
-        twitterX:     form.twitterX.trim() ? `https://x.com/${form.twitterX.trim().replace(/^@/, '')}` : null,
-        linkedin:     form.linkedin.trim() ? `https://linkedin.com/in/${form.linkedin.trim().replace(/^@/, '')}` : null,
-        airpal:       form.airpal.trim() ? `https://airpal.me/@${form.airpal.trim().replace(/^@/, '')}` : null,
+        instagram:    instagramHandle ? `https://instagram.com/${instagramHandle}` : undefined,
+        facebook:     facebookHandle ? `https://facebook.com/${facebookHandle}` : undefined,
+        youtube:      youtubeHandle ? `https://youtube.com/@${youtubeHandle}` : undefined,
+        twitterX:     twitterHandle ? `https://x.com/${twitterHandle}` : undefined,
+        linkedin:     linkedinHandle ? `https://linkedin.com/in/${linkedinHandle}` : undefined,
+        airpal:       airpalHandle ? `https://airpal.me/@${airpalHandle}` : undefined,
       });
     }
   };
@@ -591,9 +721,37 @@ export default function SubmitScreen() {
     setForm(next);
     setImageUri(null);
     setEventCultureTags([]);
+    setOrgDiscoveryTags([]);
     setFieldErrors({});
+    setNetworkError(null);
+    setImageUploadWarning(null);
     setIsFree(false);
   }, []);
+
+  // Deep-linked type from URL (do not depend on activeTab — user may switch type while keeping the same URL)
+  useEffect(() => {
+    if (urlSubmitType == null) return;
+    const blocked = creatorListingBlockedHint(urlSubmitType, accessFlags);
+    setAccessGateHint(blocked);
+    if (blocked) {
+      handleSelectType(visibleTypes[0] ?? 'organisation');
+      return;
+    }
+    handleSelectType(urlSubmitType);
+  }, [urlSubmitType, accessFlags, visibleTypes, handleSelectType]);
+
+  // No type in URL: clear gate; if role gates hide the current tab (e.g. default event for a plain user), snap to a valid type
+  useEffect(() => {
+    if (urlSubmitType != null) return;
+    setAccessGateHint(null);
+    if (!visibleTypes.includes(activeTab)) {
+      const preferred =
+        visibleTypes.find((t) => t === 'event') ??
+        visibleTypes[0] ??
+        'organisation';
+      handleSelectType(preferred);
+    }
+  }, [urlSubmitType, visibleTypes, handleSelectType, activeTab]);
 
   const headerGradientStops = useMemo(() => {
     if (Platform.OS === 'web' && isDesktop) {
@@ -632,20 +790,20 @@ export default function SubmitScreen() {
                 ? 'Perk Created!'
                 : `${TYPE_CONFIG[submittedType].label} submitted!`}
           </Text>
-          <Text style={[s.successSub, { color: colors.textSecondary }]}>
+            <Text style={[s.successSub, { color: colors.textSecondary }]}>
             {submittedType === 'perk'
               ? 'Your perk is now active and available to members.'
               : submittedType === 'activity'
                 ? 'Your activity is published. You can edit it later from the activities tool if needed.'
-                : "Our team will review your submission within 2\u20133 business days. You'll receive an email once approved."}
+                : "Your listing is created and sent for review within 2\u20133 business days. You'll receive an email once approved."}
           </Text>
           <Pressable
             style={[s.successBtn, { backgroundColor: conf.color }]}
             onPress={() => setSubmitted(false)}
             accessibilityRole="button"
-            accessibilityLabel="Submit another"
+            accessibilityLabel="Create another"
           >
-            <Text style={s.successBtnText}>Submit Another</Text>
+            <Text style={s.successBtnText}>Create Another</Text>
           </Pressable>
           <Pressable
             style={[s.successBtnOutline, { borderColor: conf.color + '50' }]}
@@ -664,7 +822,7 @@ export default function SubmitScreen() {
   // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
-    <AuthGuard icon="add-circle-outline" title="Submit Content" message="Sign in to submit events, organisations, and more.">
+    <AuthGuard icon="add-circle-outline" title="Create Content" message="Sign in to create events, organisations, and more.">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -689,7 +847,7 @@ export default function SubmitScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle}>List on CulturePass</Text>
+            <Text style={s.headerTitle}>Create on CulturePass</Text>
               <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
             <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
@@ -884,26 +1042,48 @@ export default function SubmitScreen() {
             )}
           >
             <>
-            {/* Organizer notice — events, movies, dining & shops */}
-            {(['movie', 'restaurant', 'shop'] as SubmitType[]).includes(activeTab) || isEventLike(activeTab) ? (
-              !isOrganizer && !isAdmin ? (
+            {accessGateHint ? (
               <View style={[s.notice, { backgroundColor: colors.surface, marginHorizontal: hPad }]}>
                 <View style={[s.noticeStrip, { backgroundColor: colors.warning }]} />
-                <Ionicons name="information-circle-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
-                <Text style={[s.noticeText, { color: colors.textSecondary }]}>
-                  {isEventLike(activeTab)
-                    ? 'Only organizer or admin accounts can create events. Request organizer access or sign in with an eligible account.'
-                    : 'Movies, dining, and shop listings require an organizer or admin account.'}
-                </Text>
+                <Ionicons name="shield-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
+                <Text style={[s.noticeText, { color: colors.textSecondary }]}>{accessGateHint}</Text>
               </View>
-              ) : null
+            ) : null}
+
+            {/* ── Network error banner ── */}
+            {networkError ? (
+              <View style={[s.networkErrorBanner, { marginHorizontal: hPad, backgroundColor: colors.surface, borderColor: colors.error + '60' }]}>
+                <View style={[s.networkErrorStrip, { backgroundColor: colors.error }]} />
+                <Ionicons name="cloud-offline-outline" size={18} color={colors.error} style={{ marginLeft: 12 }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[s.networkErrorTitle, { color: colors.text }]}>Submission failed</Text>
+                  <Text style={[s.networkErrorMsg, { color: colors.textSecondary }]}>{networkError}</Text>
+                </View>
+                <Pressable onPress={() => setNetworkError(null)} hitSlop={8} accessibilityLabel="Dismiss">
+                  <Ionicons name="close" size={18} color={colors.textTertiary} />
+                </Pressable>
+              </View>
+            ) : null}
+
+            {imageUploadWarning ? (
+              <View style={[s.networkErrorBanner, { marginHorizontal: hPad, backgroundColor: colors.surface, borderColor: colors.warning + '55' }]}>
+                <View style={[s.networkErrorStrip, { backgroundColor: colors.warning }]} />
+                <Ionicons name="image-outline" size={18} color={colors.warning} style={{ marginLeft: 12 }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[s.networkErrorTitle, { color: colors.text }]}>Photo upload skipped</Text>
+                  <Text style={[s.networkErrorMsg, { color: colors.textSecondary }]}>{imageUploadWarning}</Text>
+                </View>
+                <Pressable onPress={() => setImageUploadWarning(null)} hitSlop={8} accessibilityLabel="Dismiss photo warning">
+                  <Ionicons name="close" size={18} color={colors.textTertiary} />
+                </Pressable>
+              </View>
             ) : null}
 
             {/* ── Cover Photo (standalone full-bleed section) ── */}
             {imageUri ? (
               <Pressable
                 style={[s.mediaPrevieFull, { marginHorizontal: hPad }]}
-                onPress={uploadImage}
+                onPress={openCoverImagePicker}
                 accessibilityRole="button"
                 accessibilityLabel="Replace image"
               >
@@ -920,7 +1100,7 @@ export default function SubmitScreen() {
             ) : (
               <Pressable
                 style={[s.mediaEmpty, { borderColor: accent + '50', marginHorizontal: hPad }]}
-                onPress={uploadImage}
+                onPress={openCoverImagePicker}
                 accessibilityRole="button"
                 accessibilityLabel="Upload cover photo"
               >
@@ -928,7 +1108,16 @@ export default function SubmitScreen() {
                   <Ionicons name="image-outline" size={28} color={accent} />
                 </View>
                 <Text style={[s.mediaEmptyTitle, { color: colors.text }]}>Add Cover Photo</Text>
-                <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>16:9 recommended · high-resolution looks best</Text>
+                <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>
+                  {activeTab === 'movie'
+                    ? 'Poster: 2:3 ratio · min 600×900 px · JPEG or PNG'
+                    : activeTab === 'artist'
+                      ? 'Profile photo: 1:1 square · min 800×800 px · JPEG or PNG'
+                      : 'Banner: 16:9 · min 1200×675 px · JPEG or PNG · max 10 MB'}
+                </Text>
+                <Text style={[s.mediaEmptyFormats, { color: colors.textTertiary }]}>
+                  JPEG · PNG · WebP · HEIC accepted
+                </Text>
               </Pressable>
             )}
 
@@ -999,7 +1188,7 @@ export default function SubmitScreen() {
                         }]}
                         value={form.date}
                         onChangeText={v => set('date', v)}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD/MM/YYYY"
                         placeholderTextColor={colors.textTertiary}
                         keyboardType="numbers-and-punctuation"
                       />
@@ -1058,7 +1247,7 @@ export default function SubmitScreen() {
                 {!isFree && (
                   <View style={s.row}>
                     <View style={{ flex: 1 }}>
-                      <Field label="Price (AUD)">
+                      <Field label="Price (A$)">
                         <TextInput
                           style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                           value={form.price} onChangeText={v => set('price', v)}
@@ -1196,7 +1385,7 @@ export default function SubmitScreen() {
                         }]}
                         value={form.date}
                         onChangeText={v => set('date', v)}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD/MM/YYYY"
                         placeholderTextColor={colors.textTertiary}
                         keyboardType="numbers-and-punctuation"
                       />
@@ -1341,6 +1530,18 @@ export default function SubmitScreen() {
                       value={form.address}
                       onChangeText={v => set('address', v)}
                       placeholder="Building & street"
+                      placeholderTextColor={colors.textTertiary}
+                    />
+                  </Field>
+                )}
+
+                {activeTab === 'organisation' && (
+                  <Field label="Street address" hint="Optional — shown on your profile page">
+                    <TextInput
+                      style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                      value={form.address}
+                      onChangeText={v => set('address', v)}
+                      placeholder="e.g. 123 George St, Sydney"
                       placeholderTextColor={colors.textTertiary}
                     />
                   </Field>
@@ -1557,12 +1758,73 @@ export default function SubmitScreen() {
             {PROFILE_TABS.includes(activeTab) && (
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="pricetag-outline" label="Discovery tags" />
-                <Field label="Tags" hint="Comma-separated — e.g. Diwali, dance, Western Sydney">
+
+                {/* Suggested tag chips — organisation, business, professional */}
+                {ORG_LISTING_TABS.includes(activeTab) && (
+                  <>
+                    <Text style={[s.tagHint, { color: colors.textSecondary }]}>
+                      Tap to add · helps people find you on Discover
+                    </Text>
+                    <View style={s.chipGrid}>
+                      {ORG_DISCOVERY_TAGS.map((tag) => {
+                        const isActive = orgDiscoveryTags.includes(tag);
+                        return (
+                          <Pressable
+                            key={tag}
+                            style={[
+                              s.chip,
+                              isActive
+                                ? { backgroundColor: accent, borderColor: accent, borderWidth: 0 }
+                                : { backgroundColor: 'transparent', borderColor: colors.borderLight, borderWidth: 1 },
+                            ]}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync();
+                              setOrgDiscoveryTags((prev) =>
+                                prev.includes(tag)
+                                  ? prev.filter((t) => t !== tag)
+                                  : prev.length >= 15 ? prev : [...prev, tag],
+                              );
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Tag: ${tag}`}
+                            accessibilityState={{ selected: isActive }}
+                          >
+                            {isActive && (
+                              <Ionicons name="checkmark" size={11} color="#fff" />
+                            )}
+                            <Text style={[s.chipText, { color: isActive ? '#fff' : colors.textSecondary }]}>{tag}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    {orgDiscoveryTags.length > 0 && (
+                      <View style={[s.tagCountRow, { borderColor: colors.borderLight }]}>
+                        <Ionicons name="pricetag" size={13} color={accent} />
+                        <Text style={[s.tagCountText, { color: accent }]}>
+                          {orgDiscoveryTags.length} tag{orgDiscoveryTags.length !== 1 ? 's' : ''} selected
+                        </Text>
+                        <Pressable
+                          onPress={() => setOrgDiscoveryTags([])}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Clear all tags"
+                        >
+                          <Text style={[s.tagClearText, { color: colors.textTertiary }]}>Clear all</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <Field
+                  label="Custom tags"
+                  hint={`Comma-separated${orgDiscoveryTags.length > 0 ? ' · merged with selected above' : ' — e.g. Diwali, dance, Western Sydney'}`}
+                >
                   <TextInput
                     style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                     value={form.profileTags}
                     onChangeText={v => set('profileTags', v)}
-                    placeholder="community, festival, language class…"
+                    placeholder="e.g. community, festival, language class…"
                     placeholderTextColor={colors.textTertiary}
                     autoCapitalize="none"
                   />
@@ -1592,13 +1854,13 @@ export default function SubmitScreen() {
               </Card>
             )}
 
-            {/* ── Submit ── */}
+            {/* ── Create ── */}
             <View style={[s.submitWrap, { paddingHorizontal: hPad }]}>
               <Pressable
                 onPress={() => void handleSubmit()}
                 disabled={isPending}
                 accessibilityRole="button"
-                accessibilityLabel={`Submit ${TYPE_CONFIG[activeTab].label}`}
+                accessibilityLabel={`Create ${TYPE_CONFIG[activeTab].label}`}
                 style={[isPending && { opacity: 0.7 }]}
               >
                 <LinearGradient
@@ -1612,7 +1874,7 @@ export default function SubmitScreen() {
                     : <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   }
                   <Text style={s.submitBtnText}>
-                    {isPending ? 'Submitting…' : `Submit ${TYPE_CONFIG[activeTab].label}`}
+                    {isPending ? 'Creating…' : `Create ${TYPE_CONFIG[activeTab].label}`}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -1622,7 +1884,7 @@ export default function SubmitScreen() {
                   {activeTab === 'perk'
                     ? 'Your perk will be created and made available immediately.'
                     : activeTab === 'activity'
-                      ? 'Activities go live after submission (subject to moderation).'
+                      ? 'Activities go live after creation (subject to moderation).'
                       : 'Reviewed within 2–3 business days'}
                 </Text>
               </View>
@@ -1821,8 +2083,18 @@ const s = StyleSheet.create({
     gap: 8, marginBottom: 12,
   },
   mediaEmptyIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  mediaEmptyTitle: { ...TextStyles.callout },
-  mediaEmptySub:   { ...TextStyles.caption, marginTop: 1 },
+  mediaEmptyTitle:   { ...TextStyles.callout },
+  mediaEmptySub:     { ...TextStyles.caption, marginTop: 1, textAlign: 'center' },
+  mediaEmptyFormats: { ...TextStyles.caption, marginTop: 2, opacity: 0.6, textAlign: 'center' },
+
+  networkErrorBanner: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: 12,
+    borderWidth: 1, marginBottom: 10, overflow: 'hidden',
+    paddingVertical: 12, paddingRight: 14,
+  },
+  networkErrorStrip:  { width: 4, alignSelf: 'stretch', marginRight: 0 },
+  networkErrorTitle:  { ...TextStyles.chip, fontWeight: '600' },
+  networkErrorMsg:    { ...TextStyles.caption, marginTop: 1 },
 
   input:    { borderRadius: 12, padding: 14, ...TextStyles.cardBody, borderWidth: 1 },
   textArea: { minHeight: 100, paddingTop: 12 },
@@ -1844,6 +2116,11 @@ const s = StyleSheet.create({
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
   chipText: { ...TextStyles.chip },
+
+  tagHint:      { ...TextStyles.caption, lineHeight: 18, marginBottom: 10, opacity: 0.85 },
+  tagCountRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  tagCountText: { ...TextStyles.chip, flex: 1 },
+  tagClearText: { ...TextStyles.chip },
 
   submitWrap: { marginTop: 4, marginBottom: 8 },
   submitBtn:  {

@@ -20,6 +20,8 @@ interface TabPrimaryHeaderProps {
   withGlobalNav?: boolean;
   /** Controls the divider under the chrome row (not the shell border). */
   showChromeHairline?: boolean;
+  /** Use a plain solid surface on web instead of LiquidGlassPanel. */
+  useSolidWebSurface?: boolean;
 }
 
 export function TabPrimaryHeader({
@@ -33,6 +35,7 @@ export function TabPrimaryHeader({
   topInset = 0,
   withGlobalNav = true,
   showChromeHairline = false,
+  useSolidWebSurface = false,
 }: TabPrimaryHeaderProps) {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
@@ -62,6 +65,27 @@ export function TabPrimaryHeader({
   );
 
   if (isWeb) {
+    if (useSolidWebSurface) {
+      return (
+        <View
+          style={[
+            {
+              borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
+              borderBottomColor: colors.border,
+              backgroundColor: colors.surface,
+            },
+            {
+              boxShadow: '0px 2px 12px rgba(0,0,0,0.07)',
+            } as object,
+          ]}
+        >
+          <View style={[styles.wrapWeb, { paddingHorizontal: hPad, paddingTop: webTopPad }]}>
+            <View style={styles.chromeContainer}>{body}</View>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <LiquidGlassPanel
         borderRadius={0}

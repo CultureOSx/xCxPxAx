@@ -3,7 +3,8 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, FontFamily, FontSize, LineHeight } from '@/constants/theme';
+import { CultureTokens, FontFamily, FontSize, LineHeight, Vitrine } from '@/constants/theme';
+import { useDiscoverVitrine } from '@/components/Discover/DiscoverVitrineContext';
 
 interface SectionHeaderProps {
   title: string;
@@ -14,24 +15,31 @@ interface SectionHeaderProps {
 
 function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeaderProps) {
   const colors = useColors();
+  const vitrine = useDiscoverVitrine();
   const accent = accentColor ?? CultureTokens.indigo;
+  const titleColor = vitrine ? Vitrine.primary : colors.text;
+  const subtitleColor = vitrine ? Vitrine.onSurfaceVariant : colors.textSecondary;
+  const seeAllColor = vitrine ? (accentColor ?? Vitrine.primaryContainer) : accent;
 
   return (
     <View style={styles.wrap}>
-      {/* Gradient accent bar — "Vibrant & Block-based" visual identity */}
-      <LinearGradient
-        colors={[accent, accent === CultureTokens.indigo ? CultureTokens.teal : CultureTokens.indigo]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.accentBar}
-      />
+      {vitrine ? (
+        <View style={[styles.accentBar, { backgroundColor: Vitrine.tertiary }]} />
+      ) : (
+        <LinearGradient
+          colors={[accent, accent === CultureTokens.indigo ? CultureTokens.teal : CultureTokens.indigo]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.accentBar}
+        />
+      )}
 
       <View style={styles.textBlock}>
-        <Text style={[styles.title, { color: colors.text }]} maxFontSizeMultiplier={1.6}>
+        <Text style={[styles.title, { color: titleColor }]} maxFontSizeMultiplier={1.6}>
           {title}
         </Text>
         {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]} maxFontSizeMultiplier={1.5}>
+          <Text style={[styles.subtitle, { color: subtitleColor }]} maxFontSizeMultiplier={1.5}>
             {subtitle}
           </Text>
         ) : null}
@@ -45,8 +53,8 @@ function SectionHeader({ title, subtitle, accentColor, onSeeAll }: SectionHeader
           accessibilityRole="button"
           accessibilityLabel={`See all ${title}`}
         >
-          <Text style={[styles.seeAllText, { color: accent }]}>See all</Text>
-          <Ionicons name="chevron-forward" size={13} color={accent} />
+          <Text style={[styles.seeAllText, { color: seeAllColor }]}>See all</Text>
+          <Ionicons name="chevron-forward" size={13} color={seeAllColor} />
         </Pressable>
       )}
     </View>

@@ -8,9 +8,8 @@ import { useCouncil } from '@/hooks/useCouncil';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import type {
-  AdaptiveCultureRail,
-  CultureCardModel,
   DiscoverCurationResponse,
+  DiscoverFeedContract,
   EventData,
   Community,
   RestaurantData,
@@ -18,24 +17,10 @@ import type {
   MovieData,
   PerkData,
 } from '@/shared/schema';
-import type { PreviewItem } from '@/components/Discover/PreviewRail';
-import { CultureTokens } from '@/constants/theme';
-import { formatEventDateTimeBadge, isEventInDiscoverLiveWindow, parseEventStartMs } from '@/lib/dateUtils';
+import { isEventInDiscoverLiveWindow, parseEventStartMs } from '@/lib/dateUtils';
 import { captureDiscoverView, captureReturn } from '@/lib/analytics-funnel';
-
-export interface DiscoverFeed {
-  trendingEvents?: EventData[];
-  rankedEvents?: EventData[];
-  suggestedCommunities?: Community[];
-  meta?: {
-    userId: string;
-    city: string;
-    country: string;
-    generatedAt: string;
-    totalItems: number;
-    signalsUsed?: unknown;
-  };
-}
+import { useDiscoverAdaptiveRails } from '@/hooks/discover/useDiscoverAdaptiveRails';
+import { useDiscoverPreviewRails } from '@/hooks/discover/useDiscoverPreviewRails';
 
 const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
   'Sydney': { lat: -33.8688, lon: 151.2093 },
@@ -65,42 +50,6 @@ async function fetchWeather(lat: number, lon: number) {
   } catch {
     return null;
   }
-}
-
-function isWeekendDate(dateStr?: string): boolean {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const day = date.getDay();
-  return day === 0 || day === 6;
-}
-
-function isTonightEvent(event: EventData): boolean {
-  const date = new Date(event.date);
-  const now = new Date();
-  if (date.toDateString() !== now.toDateString()) return false;
-  if (!event.time) return true;
-  const [hours] = event.time.split(':').map(Number);
-  return Number.isFinite(hours) && hours >= 17;
-}
-
-function eventLooksFamilyFriendly(event: EventData): boolean {
-  const haystack = [
-    event.title,
-    event.description,
-    event.category,
-    ...(event.tags ?? []),
-    ...(event.cultureTag ?? []),
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return /family|kids|child|all ages|community day|workshop|festival/.test(haystack);
-}
-
-function eventIsPremium(event: EventData): boolean {
-  if (typeof event.priceCents === 'number') return event.priceCents >= 5000;
-  const numeric = Number.parseFloat((event.priceLabel ?? '').replace(/[^0-9.]/g, ''));
-  return Number.isFinite(numeric) && numeric >= 50;
 }
 
 export function useDiscoverData() {
@@ -183,12 +132,12 @@ export function useDiscoverData() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: discoverFeed, isLoading: discoverLoading, refetch } = useQuery<DiscoverFeed>({
+  const { data: discoverFeed, isLoading: discoverLoading, refetch } = useQuery<DiscoverFeedContract>({
     queryKey: ['/api/discover', userId ?? 'guest', state.city, state.country, today],
     queryFn: () => api.discover.feed(userId ?? 'guest', {
       city: state.city || undefined,
       country: state.country || undefined,
-    }) as unknown as Promise<DiscoverFeed>,
+    }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -379,131 +328,12 @@ export function useDiscoverData() {
     [discoverCuration],
   );
 
-  const unifiedCultureCards = useMemo((): CultureCardModel[] => {
-    const eventCards: CultureCardModel[] = allEvents.slice(0, 12).map((event) => ({
-      id: `event-${event.id}`,
-      entityType: 'event',
-      title: event.title,
-      subtitle: event.venue ?? event.city,
-      imageUrl: event.imageUrl,
-      meta: formatEventDateTimeBadge(event.date, event.time),
-      trust: {
-        isVerified: (event.organizerReputationScore ?? 0) >= 80,
-        socialProof: typeof event.attending === 'number' ? `${event.attending} attending` : undefined,
-        qualityRank: Math.min(100, Math.max(1, (event.attending ?? 0) + (event.isFeatured ? 25 : 0))),
-      },
-      primaryAction: {
-        kind: 'book',
-        label: event.entryType === 'free_open' || event.priceLabel?.toLowerCase() === 'free' ? 'Join Free' : 'Get Ticket',
-        route: `/event/${event.id}`,
-      },
-    }));
-
-    const businessCards: CultureCardModel[] = restaurantsRaw.slice(0, 6).map((biz) => ({
-      id: `business-${biz.id}`,
-      entityType: 'business',
-      title: biz.name,
-      subtitle: `${biz.cuisine} · ${biz.priceRange}`,
-      imageUrl: biz.imageUrl,
-      meta: biz.city,
-      trust: {
-        isVerified: biz.rating >= 4.6,
-        socialProof: `${biz.reviewsCount} reviews`,
-        qualityRank: Math.round((biz.rating ?? 0) * 20),
-      },
-      primaryAction: {
-        kind: 'directions',
-        label: 'Directions',
-        route: `/restaurants/${biz.id}`,
-      },
-    }));
-
-    const artistCards: CultureCardModel[] = featuredArtists.slice(0, 6).map((artist) => ({
-      id: `artist-${artist.id}`,
-      entityType: 'artist',
-      title: artist.name,
-      subtitle: artist.subtitle,
-      imageUrl: artist.imageUrl,
-      meta: artist.meta,
-      trust: {
-        isVerified: artist.source === 'profile',
-        socialProof: artist.source === 'profile' ? 'Featured profile' : 'Curated highlight',
-        qualityRank: artist.source === 'profile' ? 90 : 75,
-      },
-      primaryAction: {
-        kind: 'follow',
-        label: 'Follow Artist',
-        route: artist.route.type === 'artist' ? `/artist/${artist.route.id}` : '/(tabs)/explore',
-      },
-    }));
-
-    const communityCards: CultureCardModel[] = allCommunities.slice(0, 8).map((community) => {
-      const members = typeof community.membersCount === 'number' ? community.membersCount : community.memberCount;
-      const upcoming = community.communityHealth?.upcomingEventsCount;
-      return {
-        id: `community-${community.id}`,
-        entityType: 'community',
-        title: community.name,
-        subtitle: community.headline ?? community.city,
-        imageUrl: community.imageUrl,
-        meta: community.city,
-        trust: {
-          isVerified: Boolean(community.isVerified),
-          socialProof: typeof members === 'number' ? `${members} members` : undefined,
-          qualityRank: Math.min(100, Math.max(1, (upcoming ?? 0) * 10 + (community.isVerified ? 20 : 0))),
-        },
-        primaryAction: {
-          kind: 'message',
-          label: 'Join Community',
-          route: `/community/${community.slug || community.id}`,
-        },
-      };
-    });
-
-    const seen = new Set<string>();
-    return [...eventCards, ...businessCards, ...artistCards, ...communityCards].filter((card) => {
-      if (seen.has(card.id)) return false;
-      seen.add(card.id);
-      return true;
-    });
-  }, [allEvents, restaurantsRaw, featuredArtists, allCommunities]);
-
-  const adaptiveCultureRails = useMemo((): AdaptiveCultureRail[] => {
-    const eventCards = allEvents.map((event) => ({
-      card: unifiedCultureCards.find((item) => item.id === `event-${event.id}`),
-      event,
-    }));
-
-    const tonight = eventCards
-      .filter(({ event, card }) => card && isTonightEvent(event))
-      .slice(0, 10)
-      .map(({ card }) => card as CultureCardModel);
-    const weekend = eventCards
-      .filter(({ event, card }) => card && isWeekendDate(event.date))
-      .slice(0, 10)
-      .map(({ card }) => card as CultureCardModel);
-    const family = eventCards
-      .filter(({ event, card }) => card && eventLooksFamilyFriendly(event))
-      .slice(0, 10)
-      .map(({ card }) => card as CultureCardModel);
-    const free = eventCards
-      .filter(({ event, card }) => card && (event.entryType === 'free_open' || event.priceLabel?.toLowerCase() === 'free'))
-      .slice(0, 10)
-      .map(({ card }) => card as CultureCardModel);
-    const premium = eventCards
-      .filter(({ event, card }) => card && eventIsPremium(event))
-      .slice(0, 10)
-      .map(({ card }) => card as CultureCardModel);
-
-    const rails: AdaptiveCultureRail[] = [
-      { id: 'tonight', title: 'Tonight', subtitle: 'Right now and later this evening', items: tonight },
-      { id: 'weekend', title: 'This Weekend', subtitle: 'Plan your cultural weekend', items: weekend },
-      { id: 'family', title: 'Family-friendly', subtitle: 'Designed for all ages', items: family },
-      { id: 'free', title: 'Free', subtitle: 'No-cost culture nearby', items: free },
-      { id: 'premium', title: 'Premium', subtitle: 'High-demand signature experiences', items: premium },
-    ];
-    return rails.filter((rail) => rail.items.length > 0);
-  }, [allEvents, unifiedCultureCards]);
+  const { unifiedCultureCards, adaptiveCultureRails } = useDiscoverAdaptiveRails({
+    allEvents,
+    restaurantsRaw,
+    featuredArtists,
+    allCommunities,
+  });
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -526,58 +356,21 @@ export function useDiscoverData() {
 
   const nearbyLoading = gpsLoading || eventsLoading;
 
-  // --- Preview rail mapped data ---
-  const restaurantPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
-    if (restaurantsLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
-    return restaurantsRaw.slice(0, 8).map((r) => ({
-      id: r.id,
-      imageUrl: r.imageUrl,
-      title: r.name,
-      subtitle: `${r.cuisine} · ${r.priceRange}`,
-      badge: r.isOpen ? 'Open' : undefined,
-      badgeColor: r.isOpen ? '#34C759' : undefined,
-      route: `/restaurants/${r.id}`,
-    }));
-  }, [restaurantsRaw, restaurantsLoading]);
-
-  const moviePreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
-    if (moviesLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
-    return moviesRaw.slice(0, 8).map((m) => ({
-      id: m.id,
-      imageUrl: m.posterUrl,
-      title: m.title,
-      subtitle: Array.isArray(m.genre) ? m.genre[0] : m.genre,
-      badge: m.rating,
-      badgeColor: '#1C1C1E',
-      route: `/movies/${m.id}`,
-    }));
-  }, [moviesRaw, moviesLoading]);
-
-  const shoppingPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
-    if (shoppingLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
-    return shoppingRaw.slice(0, 8).map((s) => ({
-      id: s.id,
-      imageUrl: s.imageUrl,
-      title: s.name,
-      subtitle: s.category,
-      badge: s.deliveryAvailable ? 'Delivery' : s.isOpen ? 'Open' : undefined,
-      badgeColor: s.deliveryAvailable ? CultureTokens.teal : '#34C759',
-      route: `/shopping/${s.id}`,
-    }));
-  }, [shoppingRaw, shoppingLoading]);
-
-  const perksPreviewItems = useMemo((): (PreviewItem | 'skeleton')[] => {
-    if (perksLoading) return ['skeleton', 'skeleton', 'skeleton', 'skeleton'];
-    return perksRaw.slice(0, 8).map((p) => ({
-      id: p.id,
-      imageUrl: p.coverUrl,
-      title: p.title,
-      subtitle: p.partnerName ?? p.categories?.[0],
-      badge: p.discountPercent ? `${p.discountPercent}% off` : p.perkType,
-      badgeColor: CultureTokens.indigo,
-      route: `/perks/${p.id}`,
-    }));
-  }, [perksRaw, perksLoading]);
+  const {
+    restaurantPreviewItems,
+    moviePreviewItems,
+    shoppingPreviewItems,
+    perksPreviewItems,
+  } = useDiscoverPreviewRails({
+    restaurantsRaw,
+    restaurantsLoading,
+    moviesRaw,
+    moviesLoading,
+    shoppingRaw,
+    shoppingLoading,
+    perksRaw,
+    perksLoading,
+  });
 
   const popularRailData = useMemo((): (EventData | string)[] =>
     eventsLoading || discoverLoading ? ['s1', 's2', 's3', 's4'] : popularEvents,

@@ -15,7 +15,6 @@ import Head from 'expo-router/head';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -55,6 +54,68 @@ import {
 type FilterMode = 'category' | 'culture' | 'language';
 
 const CATEGORY_FILTERS = ['Music', 'Food', 'Arts', 'Nightlife', 'Indigenous', 'Sports', 'Workshop'];
+
+type ExploreCategoryKey =
+  | 'artists'
+  | 'events'
+  | 'movies'
+  | 'dining'
+  | 'activities'
+  | 'shopping'
+  | 'offers'
+  | 'directory'
+  | 'indigenous';
+
+const EXPLORE_CATEGORY_LINKS: readonly {
+  key: ExploreCategoryKey;
+  label: 'Artists' | 'Events' | 'Movies' | 'Dining' | 'Activities' | 'Shopping' | 'Offers' | 'Directory' | 'Indigenous';
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: 'artists', label: 'Artists', icon: 'color-palette-outline' },
+  { key: 'events', label: 'Events', icon: 'calendar-outline' },
+  { key: 'movies', label: 'Movies', icon: 'film-outline' },
+  { key: 'dining', label: 'Dining', icon: 'restaurant-outline' },
+  { key: 'activities', label: 'Activities', icon: 'compass-outline' },
+  { key: 'shopping', label: 'Shopping', icon: 'bag-handle-outline' },
+  { key: 'offers', label: 'Offers', icon: 'pricetag-outline' },
+  { key: 'directory', label: 'Directory', icon: 'grid-outline' },
+  { key: 'indigenous', label: 'Indigenous', icon: 'leaf-outline' },
+];
+
+type ListingTypeKey =
+  | 'event'
+  | 'festival'
+  | 'concert'
+  | 'workshop'
+  | 'movie'
+  | 'dining'
+  | 'shopping'
+  | 'activity'
+  | 'professional'
+  | 'organisation'
+  | 'business'
+  | 'artist'
+  | 'perk';
+
+const LISTING_TYPE_ROWS: readonly {
+  key: ListingTypeKey;
+  title: string;
+  description: string;
+}[] = [
+  { key: 'event', title: 'Event', description: 'Timed happenings & community gatherings' },
+  { key: 'festival', title: 'Festival', description: 'Multi-day festivals & celebrations' },
+  { key: 'concert', title: 'Concert / show', description: 'Live music, theatre & performances' },
+  { key: 'workshop', title: 'Workshop / class', description: 'Classes, talks & skill sessions' },
+  { key: 'movie', title: 'Movie', description: 'Cinema listings & screenings' },
+  { key: 'dining', title: 'Dining', description: 'Restaurant & café listings' },
+  { key: 'shopping', title: 'Shopping', description: 'Retail & boutique listings' },
+  { key: 'activity', title: 'Activity', description: 'Tours, experiences & cultural sites' },
+  { key: 'professional', title: 'Professional', description: 'Practice & professional profile page' },
+  { key: 'organisation', title: 'Organisation', description: 'Cultural groups & communities' },
+  { key: 'business', title: 'Business', description: 'General business profile' },
+  { key: 'artist', title: 'Artist', description: 'Musicians, dancers & creatives' },
+  { key: 'perk', title: 'Perk', description: 'Discounts & member benefits' },
+];
 
 function getRegionLabel(
   stateCode: string | undefined,
@@ -139,6 +200,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedCultures, setSelectedCultures] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [activeExploreCategory, setActiveExploreCategory] = useState<ExploreCategoryKey>('events');
   const [refreshing, setRefreshing] = useState(false);
 
   const colAnim = useSharedValue(2);
@@ -197,20 +259,34 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
     return list;
   }, [regionFilteredEvents, selectedCategories, selectedCultures, selectedLanguages]);
 
-  const resultsSubtitle = useMemo(() => {
-    const n = events.length;
-    const unit = n === 1 ? '' : 's';
-    if (hubScope === 'diaspora') {
-      return `${n} result${unit} · ${focusCountry} & your region boosted, then other hub countries`;
-    }
-    if (focusStateLabel) {
-      return `${n} result${unit} · ${focusStateLabel} (${focusCountry})`;
-    }
-    return `${n} result${unit} · entire ${focusCountry}`;
-  }, [events.length, hubScope, focusCountry, focusStateLabel]);
+  const listingResultCounts = useMemo(() => {
+    const countByEvent = (matcher: (text: string) => boolean): number =>
+      events.filter((e) => {
+        const haystack = `${e.category ?? ''} ${(e.tags ?? []).join(' ')} ${(e.cultureTag ?? []).join(' ')}`.toLowerCase();
+        return matcher(haystack);
+      }).length;
+    const countByVenue = (matcher: (text: string) => boolean): number =>
+      venues.filter((v) => matcher(`${v.category ?? ''} ${v.name ?? ''}`.toLowerCase())).length;
+
+    return {
+      event: events.length,
+      festival: countByEvent((t) => /festival|celebration|carnival|mela/.test(t)),
+      concert: countByEvent((t) => /concert|music|show|theatre|theater|performance|live/.test(t)),
+      workshop: countByEvent((t) => /workshop|class|talk|masterclass|session/.test(t)),
+      movie: countByEvent((t) => /movie|film|cinema|screening/.test(t)),
+      dining: countByVenue((t) => /dining|restaurant|cafe|café|food/.test(t)),
+      shopping: countByVenue((t) => /shop|shopping|retail|store|boutique/.test(t)),
+      activity: countByEvent((t) => /activity|tour|experience|sport|outdoor/.test(t)),
+      professional: countByVenue((t) => /professional|practice|consult|service/.test(t)),
+      organisation: countByVenue((t) => /organisation|organization|community|group|association/.test(t)),
+      business: venues.length,
+      artist: countByEvent((t) => /artist|music|dance|creative|performer/.test(t)),
+      perk: 0,
+    } satisfies Record<ListingTypeKey, number>;
+  }, [events, venues]);
 
   const haptic = useCallback(() => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Disabled for this page to avoid repeated vibration on filter/menu taps.
   }, []);
 
   const shareUrl = useMemo(
@@ -302,6 +378,78 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
     else if (filterMode === 'culture') setSelectedCultures([]);
     else setSelectedLanguages([]);
   }, [filterMode, haptic]);
+
+  const openListingTypeResults = useCallback(
+    (listingType: ListingTypeKey) => {
+      haptic();
+      const hubQuery = encodeURIComponent(def.heroTitle);
+      const routes: Record<ListingTypeKey, string> = {
+        event: `/events`,
+        festival: `/search?q=${encodeURIComponent(`${def.heroTitle} festival`)}`,
+        concert: `/search?q=${encodeURIComponent(`${def.heroTitle} concert`)}`,
+        workshop: `/search?q=${encodeURIComponent(`${def.heroTitle} workshop`)}`,
+        movie: `/movies`,
+        dining: `/restaurants`,
+        shopping: `/shopping`,
+        activity: `/activities`,
+        professional: `/search?q=${encodeURIComponent(`${def.heroTitle} professional`)}`,
+        organisation: `/search?q=${encodeURIComponent(`${def.heroTitle} organisation`)}`,
+        business: `/directory`,
+        artist: `/search?q=${encodeURIComponent(`${def.heroTitle} artist`)}`,
+        perk: `/perks`,
+      };
+      const route = routes[listingType];
+      if (route.includes('?q=')) {
+        router.push(route as never);
+        return;
+      }
+      const suffix = route.includes('?') ? '&' : '?';
+      router.push(`${route}${suffix}q=${hubQuery}` as never);
+    },
+    [def.heroTitle, haptic],
+  );
+
+  const eventResults = useMemo(() => {
+    const includesAny = (haystack: string, needles: string[]) => needles.some((n) => haystack.includes(n));
+    return events.filter((e) => {
+      const blob = `${e.category ?? ''} ${(e.tags ?? []).join(' ')} ${(e.cultureTag ?? []).join(' ')} ${(e.cultureTags ?? []).join(' ')}`.toLowerCase();
+      switch (activeExploreCategory) {
+        case 'events':
+          return true;
+        case 'movies':
+          return includesAny(blob, ['movie', 'film', 'cinema', 'screening']);
+        case 'activities':
+          return includesAny(blob, ['activity', 'tour', 'experience', 'workshop', 'class']);
+        case 'offers':
+          return includesAny(blob, ['offer', 'deal', 'discount', 'free', 'perk']);
+        case 'indigenous':
+          return includesAny(blob, ['indigenous', 'aboriginal', 'first nations', 'torres strait']);
+        case 'artists':
+          return includesAny(blob, ['artist', 'music', 'dance', 'creative', 'performance', 'concert']);
+        default:
+          return true;
+      }
+    });
+  }, [activeExploreCategory, events]);
+
+  const venueResults = useMemo(() => {
+    const includesAny = (haystack: string, needles: string[]) => needles.some((n) => haystack.includes(n));
+    return venues.filter((v) => {
+      const blob = `${v.category ?? ''} ${v.name ?? ''}`.toLowerCase();
+      switch (activeExploreCategory) {
+        case 'directory':
+          return true;
+        case 'dining':
+          return includesAny(blob, ['dining', 'restaurant', 'cafe', 'café', 'food']);
+        case 'shopping':
+          return includesAny(blob, ['shop', 'shopping', 'retail', 'store', 'boutique']);
+        case 'artists':
+          return includesAny(blob, ['artist', 'music', 'creative', 'studio']);
+        default:
+          return true;
+      }
+    });
+  }, [activeExploreCategory, venues]);
 
   const sectionTitle = useMemo(() => {
     const parts: string[] = [];
@@ -596,6 +744,31 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                     </Pressable>
                   );
                 })}
+                <View style={{ width: 1, height: 20, alignSelf: 'center', backgroundColor: colors.borderLight, marginHorizontal: 8 }} />
+                {EXPLORE_CATEGORY_LINKS.map((item) => {
+                  const active = activeExploreCategory === item.key;
+                  return (
+                    <Pressable
+                      key={item.key}
+                      onPress={() => {
+                        haptic();
+                        setActiveExploreCategory(item.key);
+                      }}
+                      style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${item.label}`}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={15}
+                        color={active ? CultureTokens.indigo : colors.textTertiary}
+                      />
+                      <Text style={[styles.modeTabText, { color: active ? CultureTokens.indigo : colors.textTertiary }]}>
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
                 {totalActiveFilters > 0 && (
                   <Pressable onPress={clearAllFilters} style={styles.clearAllTab}>
                     <Ionicons name="close-circle" size={15} color={colors.textTertiary} />
@@ -674,7 +847,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                   <View>
                     <Text style={[TextStyles.title3, { color: colors.text }]}>{sectionTitle}</Text>
                     <Text style={[TextStyles.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                      {resultsSubtitle}
+                      {eventResults.length} event result{eventResults.length === 1 ? '' : 's'} · {venueResults.length} places
                     </Text>
                   </View>
                   {totalActiveFilters > 0 && (
@@ -690,7 +863,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                       <View key={i} style={[styles.skeletonCard, { width: cardWidth, height: 240 }]} />
                     ))}
                   </View>
-                ) : events.length === 0 ? (
+                ) : eventResults.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Ionicons name="calendar-clear-outline" size={64} color={colors.textTertiary} />
                     <Text style={styles.emptyTitle}>No events match yet</Text>
@@ -716,7 +889,7 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                   </View>
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
-                    {events.map((event) => {
+                    {eventResults.map((event) => {
                       const w = isDesktop ? (gridWidth * 0.72 - gridGap) / 2 : cardWidth;
                       return (
                         <Animated.View
@@ -733,13 +906,13 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
             </View>
 
             <View style={{ flex: 1, paddingTop: isDesktop ? 28 : 0 }}>
-              {venues.length > 0 && (
+              {venueResults.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0, paddingTop: 0 }]}>
                   <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 16 }]}>
                     Places & partners
                   </Text>
                   <View style={isDesktop ? { gap: 12 } : styles.venueGrid}>
-                    {venues.map((v) => (
+                    {venueResults.map((v) => (
                       <Pressable
                         key={v.id}
                         onPress={() => router.push(`/business/${v.id}`)}
@@ -769,6 +942,57 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                   )}
                 </View>
               )}
+
+              <View style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}>
+                  <Text style={[TextStyles.title3, { color: colors.text, marginBottom: 4 }]}>
+                    Listing type
+                  </Text>
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary, marginBottom: 12 }]}>
+                    Choose a category to load the correct fields for your listing.
+                  </Text>
+                  <View style={{ gap: 8 }}>
+                    {LISTING_TYPE_ROWS.map((row) => (
+                      <Pressable
+                        key={row.key}
+                        onPress={() => openListingTypeResults(row.key)}
+                        style={({ pressed }) => [
+                          {
+                            borderWidth: 1,
+                            borderColor: colors.borderLight,
+                            borderRadius: 12,
+                            paddingHorizontal: 10,
+                            paddingVertical: 9,
+                            backgroundColor: colors.backgroundSecondary,
+                            opacity: pressed ? 0.9 : 1,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${row.title} results`}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <Text style={[TextStyles.callout, { color: colors.text, fontFamily: 'Poppins_600SemiBold' }]}>
+                            {row.title}
+                          </Text>
+                          <View
+                            style={{
+                              borderRadius: 999,
+                              paddingHorizontal: 8,
+                              paddingVertical: 2,
+                              backgroundColor: CultureTokens.indigo + '18',
+                            }}
+                          >
+                            <Text style={[TextStyles.caption, { color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }]}>
+                              {listingResultCounts[row.key]} results
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                          {row.description}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
 
               {uniqueCultureTags.length > 0 && (
                 <View style={[styles.section, isDesktop && { paddingHorizontal: 0 }]}>

@@ -3,6 +3,10 @@ import { db } from '../firebase';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 
 export const getExploreItems = async (filters: any) => {
+  if (!db) {
+    return { events: [] };
+  }
+
   let q = query(
     collection(db, 'events'),
     orderBy('culturalRelevanceScore', 'desc'),

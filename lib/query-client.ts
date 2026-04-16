@@ -41,6 +41,15 @@ function normalizeBaseUrl(url: string): string {
   return url.replace(/\/+$/, '') + '/';
 }
 
+function isRemoteFunctionsHost(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname.endsWith('cloudfunctions.net') || hostname.endsWith('.run.app');
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Base URL for the Functions-hosted HTTP API (Express `api` function).
  * - Production / preview: EXPO_PUBLIC_API_URL or same-origin `/api` on hosted web
@@ -66,7 +75,18 @@ function resolveApiUrl(): string {
       return normalizeBaseUrl(window.location.origin);
     }
 
-    if (explicit) return normalizeBaseUrl(explicit);
+    if (explicit) {
+      // On localhost web in development, prefer local backends over remote Functions
+      // URLs to avoid CORS/network failures on POST during local form testing.
+      if (__DEV__ && isRemoteFunctionsHost(explicit)) {
+        console.warn(
+          '[api] Localhost web detected with remote EXPO_PUBLIC_API_URL; using local dev backend instead.',
+          'Set EXPO_PUBLIC_USE_FIREBASE_EMULATORS=true for :5001, or run npm run server:dev for :5050.',
+        );
+      } else {
+        return normalizeBaseUrl(explicit);
+      }
+    }
 
     if (shouldUseFirebaseEmulators()) {
       const host = getFirebaseEmulatorHost();

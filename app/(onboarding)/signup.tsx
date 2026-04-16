@@ -296,7 +296,7 @@ export default function SignUpScreen() {
           provider="apple"
           onPress={handleAppleSignUp}
           disabled={loading}
-          comingSoon={Platform.OS !== 'ios'}
+          comingSoon={Platform.OS !== 'ios' && Platform.OS !== 'web'}
         />
       </Animated.View>
 

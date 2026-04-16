@@ -102,6 +102,8 @@ export interface EventFilters {
   time?: string;
   publisherProfileId?: string;
   venueProfileId?: string;
+  /** Exact match on `tags` array (case-insensitive), applied in memory */
+  tag?: string;
 }
 
 const eventsCol = () => db.collection('events');
@@ -192,6 +194,11 @@ export const eventsService = {
         if (filters.venueProfileId && data.venueProfileId !== filters.venueProfileId) {
           matchesAdvanced = false;
         }
+        if (filters.tag) {
+          const t = filters.tag.toLowerCase();
+          const tags = Array.isArray(data.tags) ? data.tags : [];
+          if (!tags.some((x) => String(x).toLowerCase() === t)) matchesAdvanced = false;
+        }
 
         if (matchesAdvanced && data.latitude != null && data.longitude != null) {
           const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
@@ -251,6 +258,12 @@ export const eventsService = {
         if (filters.venueProfileId) {
           memItems = memItems.filter((e) => e.venueProfileId === filters.venueProfileId);
         }
+        if (filters.tag) {
+          const t = filters.tag.toLowerCase();
+          memItems = memItems.filter((e) =>
+            (Array.isArray(e.tags) ? e.tags : []).some((x) => String(x).toLowerCase() === t),
+          );
+        }
         memItems.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         return memItems;
       };
@@ -301,6 +314,12 @@ export const eventsService = {
       }
       if (filters.venueProfileId) {
         memItems = memItems.filter((e) => e.venueProfileId === filters.venueProfileId);
+      }
+      if (filters.tag) {
+        const t = filters.tag.toLowerCase();
+        memItems = memItems.filter((e) =>
+          (Array.isArray(e.tags) ? e.tags : []).some((x) => String(x).toLowerCase() === t),
+        );
       }
 
       total = memItems.length;

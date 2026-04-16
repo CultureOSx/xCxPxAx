@@ -11,7 +11,7 @@ import { Platform, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { setAccessToken, setTokenRefresher } from '@/lib/query-client';
 import { router } from 'expo-router';
-import { auth as firebaseAuth } from '@/lib/firebase';
+import { auth as firebaseAuth, FIREBASE_CLIENT_DISABLED_MESSAGE } from '@/lib/firebase';
 import { signOut, onAuthStateChanged, sendEmailVerification, type User as FirebaseUser } from 'firebase/auth';
 import { api, ApiError } from '@/lib/api';
 import type { User, UserRole } from '@/shared/schema';
@@ -126,7 +126,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Firebase Auth state observer
   // ------------------------------------------------------------------
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
+    if (!firebaseAuth) {
+      setAccessToken(null);
+      setTokenRefresher(null);
+      setSession(null);
+      setIsRestoring(false);
+      if (typeof console !== 'undefined' && !__DEV__) {
+        console.error(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      }
+      return;
+    }
+
+    const authRef = firebaseAuth;
+
+    const unsubscribe = onAuthStateChanged(authRef, async (firebaseUser: FirebaseUser | null) => {
       if (!firebaseUser) {
         setSession(null);
         setAccessToken(null);
@@ -147,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Inject refresher so apiRequest can self-heal on 401 without
         // importing Firebase directly (avoids circular dependency).
         setTokenRefresher(async () => {
-          const u = firebaseAuth.currentUser;
+          const u = authRef.currentUser;
           if (!u) return null;
           const t = await u.getIdToken(true);
           setAccessToken(t);
@@ -228,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // the DataSync component in _layout.tsx (avoids circular dep).
       } catch (error) {
         devErrorLog('onAuthStateChanged error', error);
-        await signOut(firebaseAuth); // Force cleanup on critical failure
+        await signOut(authRef); // Force cleanup on critical failure
         setSession(null);
         setAccessToken(null);
       } finally {
@@ -237,9 +250,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return unsubscribe;
-  }, []);  
+  }, [firebaseAuth]);
 
   const retryProfileSync = useCallback(async () => {
+    if (!firebaseAuth) return;
     const currentUser = firebaseAuth.currentUser;
     if (!currentUser) return;
 
@@ -288,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const interval = setInterval(async () => {
       try {
+        if (!firebaseAuth) return;
         const user = firebaseAuth.currentUser;
         if (user) {
           const freshToken = await user.getIdToken(true);
@@ -334,7 +349,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     try {
-      await signOut(firebaseAuth);
+      if (firebaseAuth) {
+        await signOut(firebaseAuth);
+      }
       router.replace(redirectTo as never);
     } catch (error) {
       devErrorLog('logout failed', error);
@@ -348,6 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ------------------------------------------------------------------
   const refreshSession = useCallback(async () => {
     try {
+      if (!firebaseAuth) throw new Error('Firebase Auth is not configured');
       const user = firebaseAuth.currentUser;
       if (!user) throw new Error('No authenticated user');
       const freshToken = await user.getIdToken(true);
@@ -361,6 +379,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   const sendVerificationEmail = useCallback(async () => {
+    if (!firebaseAuth) throw new Error('Firebase Auth is not configured');
     const user = firebaseAuth.currentUser;
     if (!user) throw new Error('No authenticated user');
     if (user.emailVerified) return;
@@ -368,6 +387,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkEmailVerified = useCallback(async (): Promise<boolean> => {
+    if (!firebaseAuth) return false;
     const user = firebaseAuth.currentUser;
     if (!user) return false;
     await user.reload();

@@ -16,10 +16,9 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useColors } from '@/hooks/useColors';
+import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, FontFamily, FontSize } from '@/constants/theme';
 
@@ -30,8 +29,9 @@ interface ConnectFeature {
   emoji: string;
   title: string;
   description: string;
-  gradientStart: string;
-  gradientEnd: string;
+  /** Opaque card fills (no translucent gradients — readable on web). */
+  fillLight: string;
+  fillDark: string;
   accentColor: string;
   icon: keyof typeof Ionicons.glyphMap;
   interestMessage: string;
@@ -43,8 +43,8 @@ const FEATURES: ConnectFeature[] = [
     emoji: '🤝',
     title: 'CulturePass Meetups',
     description: 'Attend casual cultural gatherings and activities near you.',
-    gradientStart: `${CultureTokens.indigo}28`,
-    gradientEnd: `${CultureTokens.teal}14`,
+    fillLight: '#E3ECFA',
+    fillDark: '#152A45',
     accentColor: CultureTokens.indigo,
     icon: 'people-circle-outline',
     interestMessage: 'You\'re on the early list for CulturePass Meetups — we\'ll notify you when it launches in your city.',
@@ -54,8 +54,8 @@ const FEATURES: ConnectFeature[] = [
     emoji: '👥',
     title: 'Cultural Groups',
     description: 'Join hobby circles, diaspora chapters and interest clubs.',
-    gradientStart: `${CultureTokens.teal}28`,
-    gradientEnd: `${CultureTokens.indigo}14`,
+    fillLight: '#E4F6F3',
+    fillDark: '#143B38',
     accentColor: CultureTokens.teal,
     icon: 'grid-outline',
     interestMessage: 'Noted! We\'ll let you know when Cultural Groups launches so you can find your people.',
@@ -65,8 +65,8 @@ const FEATURES: ConnectFeature[] = [
     emoji: '💫',
     title: 'Culture Match',
     description: 'Meet people who share your roots, language and values.',
-    gradientStart: `${CultureTokens.coral}28`,
-    gradientEnd: `#E91E6314`,
+    fillLight: '#FFECEB',
+    fillDark: '#3D2428',
     accentColor: CultureTokens.coral,
     icon: 'heart-circle-outline',
     interestMessage: 'You\'re on the waitlist for Culture Match — culturally intelligent connections, coming soon.',
@@ -76,8 +76,8 @@ const FEATURES: ConnectFeature[] = [
     emoji: '💍',
     title: 'Matrimony',
     description: 'Find a life partner within your culture and community.',
-    gradientStart: `${CultureTokens.gold}28`,
-    gradientEnd: `${CultureTokens.coral}14`,
+    fillLight: '#FFF6E0',
+    fillDark: '#3D3520',
     accentColor: CultureTokens.gold,
     icon: 'diamond-outline',
     interestMessage: 'Added to the early access list for CulturePass Matrimony. We\'ll reach out when it\'s ready.',
@@ -87,8 +87,8 @@ const FEATURES: ConnectFeature[] = [
     emoji: '🗣️',
     title: 'Language Circles',
     description: 'Practice languages with native speakers in your city.',
-    gradientStart: '#2980B928',
-    gradientEnd: `${CultureTokens.teal}14`,
+    fillLight: '#E3F0FA',
+    fillDark: '#1A3044',
     accentColor: '#2980B9',
     icon: 'chatbubbles-outline',
     interestMessage: 'Great — you\'re on the list for Language Circles. We\'ll notify you when it launches near you.',
@@ -103,6 +103,8 @@ interface FeatureCardProps {
 
 function FeatureCard({ feature }: FeatureCardProps) {
   const colors = useColors();
+  const isDark = useIsDark();
+  const cardFill = isDark ? feature.fillDark : feature.fillLight;
 
   const handlePress = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -120,13 +122,7 @@ function FeatureCard({ feature }: FeatureCardProps) {
       accessibilityLabel={`${feature.title} — coming soon. Tap to register interest.`}
       style={({ pressed }) => [card.root, { opacity: pressed ? 0.88 : 1 }]}
     >
-      {/* Gradient card background */}
-      <LinearGradient
-        colors={[feature.gradientStart, feature.gradientEnd] as [string, string]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: cardFill }]} />
 
       {/* Border */}
       <View style={[card.border, { borderColor: `${feature.accentColor}30` }]} />
@@ -140,10 +136,10 @@ function FeatureCard({ feature }: FeatureCardProps) {
       {/* Body */}
       <View style={card.body}>
         <Text style={card.emoji}>{feature.emoji}</Text>
-        <Text style={[card.title, { color: colors.textInverse }]} numberOfLines={2}>
+        <Text style={[card.title, { color: colors.text }]} numberOfLines={2}>
           {feature.title}
         </Text>
-        <Text style={card.desc} numberOfLines={3}>
+        <Text style={[card.desc, { color: colors.textSecondary }]} numberOfLines={3}>
           {feature.description}
         </Text>
       </View>
@@ -213,7 +209,6 @@ const card = StyleSheet.create({
     fontSize: 11,
     fontFamily: FontFamily.regular,
     lineHeight: 16,
-    color: 'rgba(255,255,255,0.62)',
   },
   footer: {
     flexDirection: 'row',
@@ -238,33 +233,48 @@ export function ConnectTeaser() {
 
   return (
     <View style={[rail.wrapper, { paddingHorizontal: hPad }]}>
-      {/* Section header */}
-      <View style={rail.header}>
-        <View style={[rail.accent, { backgroundColor: CultureTokens.coral }]} />
-        <View style={{ flex: 1 }}>
-          <Text style={[rail.title, { color: colors.text }]}>Meet · Connect · Belong</Text>
-          <Text style={[rail.subtitle, { color: colors.textSecondary }]}>
-            Social features coming to CulturePass
-          </Text>
-        </View>
-        <View style={[rail.roadmapPill, { backgroundColor: `${CultureTokens.indigo}14`, borderColor: `${CultureTokens.indigo}30` }]}>
-          <Text style={[rail.roadmapText, { color: CultureTokens.indigo }]}>Roadmap</Text>
-        </View>
-      </View>
-
-      {/* Horizontal card scroll */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={rail.scroll}
-        decelerationRate="fast"
-        snapToInterval={204}
-        snapToAlignment="start"
+      <View
+        style={[
+          rail.panel,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.borderLight,
+          },
+        ]}
       >
-        {FEATURES.map((f) => (
-          <FeatureCard key={f.id} feature={f} />
-        ))}
-      </ScrollView>
+        {/* Section header */}
+        <View style={rail.header}>
+          <View style={[rail.accent, { backgroundColor: CultureTokens.coral }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={[rail.title, { color: colors.text }]}>Meet · Connect · Belong</Text>
+            <Text style={[rail.subtitle, { color: colors.textSecondary }]}>
+              Social features coming to CulturePass
+            </Text>
+          </View>
+          <View
+            style={[
+              rail.roadmapPill,
+              { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[rail.roadmapText, { color: CultureTokens.indigo }]}>Roadmap</Text>
+          </View>
+        </View>
+
+        {/* Horizontal card scroll */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={rail.scroll}
+          decelerationRate="fast"
+          snapToInterval={204}
+          snapToAlignment="start"
+        >
+          {FEATURES.map((f) => (
+            <FeatureCard key={f.id} feature={f} />
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -272,6 +282,18 @@ export function ConnectTeaser() {
 const rail = StyleSheet.create({
   wrapper: {
     marginBottom: 8,
+  },
+  panel: {
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 12,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 2 },
+      web: { boxShadow: '0 2px 12px rgba(15, 23, 42, 0.08)' } as object,
+    }),
   },
   header: {
     flexDirection: 'row',

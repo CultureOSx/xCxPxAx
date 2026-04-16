@@ -42,5 +42,5 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build Web Production
-        run: npm run build-web
+      - name: Build Web (mock Firebase — real keys only required for deploy-web)
+        run: npm run build-web:with-mock-firebase

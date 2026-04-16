@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffectiveMainTabTopInset } from '@/hooks/useEffectiveMainTabTopInset';
 import * as Haptics from 'expo-haptics';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useLocations } from '@/hooks/useLocations';
@@ -180,8 +180,7 @@ export default function ExploreScreen() {
   const { state } = useOnboarding();
   const colors = useColors();
   const params = useLocalSearchParams<{ focus?: string; source?: string; playlistId?: string; featuredArtistId?: string }>();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+  const topInset = useEffectiveMainTabTopInset();
   const { hPad, isDesktop, isTablet } = useLayout();
 
   const requestedFocus = params.focus ? params.focus : 'all';

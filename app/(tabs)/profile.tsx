@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffectiveMainTabTopInset } from '@/hooks/useEffectiveMainTabTopInset';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
@@ -51,6 +52,7 @@ for (const g of communityGroups) {
 
 export default function ProfileScreen() {
   const insets   = useSafeAreaInsets();
+  const effectiveTop = useEffectiveMainTabTopInset();
   const colors   = useColors();
   const { isDesktop, hPad } = useLayout();
   const { userId, user: authUser, logout } = useAuth();
@@ -166,7 +168,7 @@ export default function ProfileScreen() {
   if (!userId) return <GuestProfileView />;
 
   const showBootSkeleton = isLoading && !user && !authUser?.username && !authUser?.email;
-  if (showBootSkeleton) return <ProfileSkeleton colors={colors} topInset={Platform.OS === 'web' ? 0 : insets.top} />;
+  if (showBootSkeleton) return <ProfileSkeleton colors={colors} topInset={effectiveTop} />;
 
   const displayName  = displayUser?.displayName || displayUser?.username || 'CulturePass Member';
   const handle       = displayUser?.handle ?? displayUser?.username;
@@ -197,7 +199,7 @@ export default function ProfileScreen() {
     displayUser?.website ? 'Published a public profile link' : null,
   ].filter((item): item is string => Boolean(item));
 
-  const topInset    = Platform.OS === 'web' ? 0 : insets.top;
+  const topInset    = effectiveTop;
   const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
 
   return (

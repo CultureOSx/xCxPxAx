@@ -362,7 +362,7 @@ function SponsorDashboardContent() {
             <Text style={[sd.sectionHeader, { color: colors.textTertiary }]}>QUICK ACTIONS</Text>
             <View style={[sd.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               {[
-                { icon: 'add-circle-outline',   label: 'Submit / Sponsor an Event', sub: 'List a new event or add sponsorship',     route: '/submit' },
+                { icon: 'add-circle-outline',   label: 'Create / Sponsor an Event', sub: 'Create a new event or add sponsorship',     route: '/create' },
                 { icon: 'grid-outline',          label: 'Organizer Dashboard',       sub: 'Manage your events end-to-end',           route: '/dashboard/organizer' },
                 { icon: 'storefront-outline',    label: 'Venue Dashboard',           sub: 'See events at your venue',                route: '/dashboard/venue' },
                 { icon: 'person-circle-outline', label: 'Edit Profile',             sub: 'Update your brand / business details',    route: '/profile/edit' },
@@ -393,15 +393,15 @@ function SponsorDashboardContent() {
               <Ionicons name="ribbon-outline" size={48} color={colors.textTertiary} />
               <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: colors.text }}>No events yet</Text>
               <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-                Submit an event or add your brand as a sponsor to track attendance and reach here.
+                Create an event or add your brand as a sponsor to track attendance and reach here.
               </Text>
               <Pressable
                 style={[{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: CultureTokens.indigo }]}
-                onPress={() => router.push('/submit')}
+                onPress={() => router.push('/create')}
                 accessibilityRole="button"
               >
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 14 }}>Submit an Event</Text>
+                <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 14 }}>Create an Event</Text>
               </Pressable>
             </View>
           )}

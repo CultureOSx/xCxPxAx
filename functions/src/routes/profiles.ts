@@ -24,38 +24,44 @@ const optionalEmailField = z
   .optional()
   .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
 
+const optionalStringField = (maxLength?: number) =>
+  z
+    .union([maxLength ? z.string().max(maxLength) : z.string(), z.null(), z.literal('')])
+    .optional()
+    .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
+
 const createProfileSchema = z.object({
   name: z.string().min(1),
   entityType: z.enum(['community', 'business', 'venue', 'artist', 'organisation', 'council', 'government', 'charity']),
-  city: z.string().optional(),
-  state: z.string().max(20).optional(),
+  city: optionalStringField(),
+  state: optionalStringField(20),
   postcode: z.coerce.number().int().min(200).max(9999).optional(),
-  country: z.string().optional(),
+  country: optionalStringField(),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
-  category: z.string().optional(),
-  description: z.string().optional(),
+  category: optionalStringField(),
+  description: optionalStringField(),
   tags: z.array(z.string()).optional(),
   imageUrl: optionalUrlField,
   website: optionalUrlField,
   email: optionalEmailField,
   contactEmail: optionalEmailField,
-  phone: z.string().max(40).optional(),
-  instagram: z.string().max(500).optional(),
-  facebook: z.string().max(500).optional(),
-  youtube: z.string().max(500).optional(),
+  phone: optionalStringField(40),
+  instagram: optionalStringField(500),
+  facebook: optionalStringField(500),
+  youtube: optionalStringField(500),
   /** Client sends X URLs under this key */
-  twitterX: z.string().max(500).optional(),
-  linkedin: z.string().max(500).optional(),
-  airpal: z.string().max(500).optional(),
+  twitterX: optionalStringField(500),
+  linkedin: optionalStringField(500),
+  airpal: optionalStringField(500),
   // Cultural Identity Layer
-  nationalityId: z.string().optional(),
+  nationalityId: optionalStringField(),
   cultureIds: z.array(z.string()).optional(),
   languageIds: z.array(z.string()).optional(),
   diasporaGroupIds: z.array(z.string()).optional(),
   cultureTags: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
-  countryOfOrigin: z.string().optional(),
+  countryOfOrigin: optionalStringField(),
   isIndigenous: z.boolean().optional(),
 });
 

@@ -33,6 +33,7 @@ import { citiesRouter } from './routes/cities';
 import { rewardsRouter } from './routes/rewards';
 import { ingestRouter } from './routes/ingest';
 import { calendarRouter } from './routes/calendar';
+import { cultureTodayRouter } from './routes/cultureToday';
 import { offeringsRouter } from './routes/offerings';
 import { uploadsRouter } from './routes/uploads';
 
@@ -253,6 +254,7 @@ mount('/', rewardsRouter);
 mount('/', citiesRouter);
 mount('/', ingestRouter);
 mount('/', calendarRouter);
+mount('/', cultureTodayRouter);
 mount('/', offeringsRouter);
 mount('/', uploadsRouter);
 app.use('/api/ingest', ingestRouter);

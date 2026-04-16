@@ -18,7 +18,7 @@ import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api, ApiError } from '@/lib/api';
 import { ALL_NATIONALITIES, getCulturesForNationality } from '@/constants/cultures';
-import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo } from '@/shared/schema';
+import { EventData, EventType, EventArtist, EventSponsor, EventHostInfo, CULTURE_TODAY_EVENT_TAG } from '@/shared/schema';
 import { TextStyles } from '@/constants/typography';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { getCurrencyForCountry } from '@/lib/dateUtils';
@@ -41,6 +41,20 @@ import { StepCulture } from '@/components/event-create/StepCulture';
 import { StepReview } from '@/components/event-create/StepReview';
 
 type Step = typeof ALL_STEPS[number];
+
+const isIsoDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const isAustralianDate = (value: string): boolean => /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+
+const toIsoDate = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (isIsoDate(trimmed)) return trimmed;
+  if (isAustralianDate(trimmed)) {
+    const [day, month, year] = trimmed.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  return null;
+};
 
 // ---------------------------------------------------------------------------
 // Success Screen
@@ -177,6 +191,8 @@ export default function CreateEventScreen() {
   const { mutate: createEvent, isPending } = useMutation({
     mutationFn: async () => {
       const isTicketed = form.entryType === 'ticketed';
+      const startDateIso = toIsoDate(form.date) ?? form.date;
+      const endDateIso = toIsoDate(form.endDate);
       const payload: Partial<EventData> = {
         title:       form.title.trim(),
         description: form.description.trim(),
@@ -186,8 +202,8 @@ export default function CreateEventScreen() {
         address:     form.address.trim() || undefined,
         city:        form.city.trim(),
         country:     form.country.trim(),
-        date:        form.date,
-        endDate:     form.endDate || undefined,
+        date:        startDateIso,
+        endDate:     endDateIso || undefined,
         time:        form.time || undefined,
         endTime:     form.endTime || undefined,
         heroImageUrl: form.heroImageUrl || undefined,
@@ -208,6 +224,7 @@ export default function CreateEventScreen() {
         cultureTag:  form.cultureTagIds,
         languageTags: form.languageTagIds,
         accessibility: form.accessibilityIds,
+        ...(form.cultureTodayPromo ? { tags: [CULTURE_TODAY_EVENT_TAG] } : {}),
         artists: form.artists.length > 0
           ? form.artists.map((a) => ({ name: a.name, role: a.role || undefined, profileId: a.profileId, imageUrl: a.imageUrl } as EventArtist))
           : undefined,
@@ -358,8 +375,13 @@ export default function CreateEventScreen() {
     }
     if (step === 'datetime') {
       if (!form.date) return 'Date is required.';
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return 'Date format must be YYYY-MM-DD.';
-      if (form.endDate && form.endDate < form.date) return 'End date cannot be before start date.';
+      const startDateIso = toIsoDate(form.date);
+      if (!startDateIso) return 'Date format must be DD/MM/YYYY.';
+      if (form.endDate) {
+        const endDateIso = toIsoDate(form.endDate);
+        if (!endDateIso) return 'End date format must be DD/MM/YYYY.';
+        if (endDateIso < startDateIso) return 'End date cannot be before start date.';
+      }
     }
     if (step === 'tickets' && form.tiers.length === 0 && !form.priceCents)
       return 'Add at least one ticket tier or a price.';
@@ -400,6 +422,7 @@ export default function CreateEventScreen() {
             country: form.country,
             cultureTagIds: onboardingState.cultureIds?.slice(0, 3) ?? [],
             languageTagIds: onboardingState.languageIds?.slice(0, 2) ?? [],
+            cultureTodayPromo: false,
           });
           setStepIndex(0);
         }}
@@ -533,6 +556,10 @@ export default function CreateEventScreen() {
                 toggleAccessibilityTag={toggleAccessibilityTag}
                 haptic={haptic}
                 initialNationalityId={onboardingState.nationalityId}
+                onCultureTodayToggle={() => {
+                  haptic();
+                  setField('cultureTodayPromo', !form.cultureTodayPromo);
+                }}
               />
             )}
             {step === 'review' && (

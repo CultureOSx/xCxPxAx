@@ -47,6 +47,14 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
 
+    // ── Listing cover images — direct client upload for all listing types ──
+    match /listings/{userId}/{filename} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+                   && request.resource.size < 10 * 1024 * 1024  // max 10 MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+
     // ── User uploads (Cloud Functions — public URLs for listing images) ────
     match /uploads/{userId}/{filename} {
       allow read:  if true;

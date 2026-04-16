@@ -73,6 +73,10 @@ export default function LoginScreen() {
     handleGoogleSignIn,
     handleAppleSignIn,
     handleLogin,
+    handleBiometricLogin,
+    biometricAvailable,
+    biometricEnabled,
+    biometricType,
   } = useLogin(redirectTo);
 
   const enterUp = reducedMotion
@@ -263,6 +267,31 @@ export default function LoginScreen() {
         </Button>
       </Animated.View>
 
+      {/* Biometric Sign-In */}
+      {Platform.OS !== 'web' && biometricAvailable && biometricEnabled ? (
+        <Animated.View entering={enter(310)} style={s.biometricRow}>
+          <Pressable
+            style={[
+              s.biometricBtn,
+              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+            ]}
+            onPress={handleBiometricLogin}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={`Sign in with ${biometricType === 'faceid' ? 'Face ID' : 'Touch ID'}`}
+          >
+            <Ionicons
+              name={biometricType === 'faceid' ? 'scan-outline' : 'finger-print-outline'}
+              size={22}
+              color={colors.primary}
+            />
+            <Text style={[s.biometricLabel, { color: colors.text }]}>
+              {biometricType === 'faceid' ? 'Sign in with Face ID' : 'Sign in with Touch ID'}
+            </Text>
+          </Pressable>
+        </Animated.View>
+      ) : null}
+
       {/* Social Divider */}
       <Animated.View entering={enter(320)} style={s.socialDivider}>
         <View style={[s.divLine, { backgroundColor: colors.borderLight }]} />
@@ -273,7 +302,7 @@ export default function LoginScreen() {
       {/* Social Buttons */}
       <Animated.View entering={enter(360)} style={s.socialRow}>
         <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
-        {Platform.OS === 'ios' ? (
+        {Platform.OS === 'ios' || Platform.OS === 'web' ? (
           <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
         ) : (
           <SocialButton provider="apple" comingSoon disabled={loading} />
@@ -547,6 +576,18 @@ const s = StyleSheet.create({
   optionsRow: { marginTop: 4, marginBottom: 12 },
   rememberLabel: { fontFamily: FontFamily.regular, fontSize: FontSize.body2 },
   submitBtn: { height: 56, borderRadius: CardTokens.radius },
+
+  biometricRow: { marginTop: 16 },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 52,
+    borderRadius: CardTokens.radius,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  biometricLabel: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
 
   socialDivider: {
     flexDirection: 'row',

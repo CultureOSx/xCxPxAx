@@ -13,7 +13,6 @@ import Animated, { SlideInDown } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -82,15 +81,10 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
 
         <Animated.View
           entering={Platform.OS !== 'web' ? SlideInDown.springify().damping(22) : undefined}
-          style={[styles.sheet, { backgroundColor: 'transparent' }]}
+          style={[styles.sheet, { backgroundColor: colors.surface }]}
         >
           <View style={styles.sheetClip}>
-            <LiquidGlassPanel
-              borderRadius={0}
-              bordered={false}
-              style={{ flex: 1 }}
-              contentStyle={{ paddingBottom: insets.bottom + 20 }}
-            >
+            <View style={{ flex: 1, paddingBottom: insets.bottom + 20 }}>
               <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
               <View style={styles.coverWrap}>
@@ -175,7 +169,7 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
                   </TouchableOpacity>
                 </View>
               </View>
-            </LiquidGlassPanel>
+            </View>
           </View>
         </Animated.View>
       </View>

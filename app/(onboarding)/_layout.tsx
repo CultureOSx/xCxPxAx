@@ -1,11 +1,9 @@
 import { Stack, Redirect } from 'expo-router';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
 import { useAuth } from '@/lib/auth';
-import { CultureTokens, gradients, LiquidGlassTokens } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens } from '@/constants/theme';
 
 export default function OnboardingLayout() {
   const colors = useColors();
@@ -14,26 +12,10 @@ export default function OnboardingLayout() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadRoot} accessibilityLabel="Loading onboarding">
-        <LinearGradient
-          colors={[CultureTokens.indigo, colors.backgroundSecondary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.4, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <LinearGradient
-          colors={gradients.culturepassBrand}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={[StyleSheet.absoluteFill, { opacity: 0.35 }]}
-        />
-        <LiquidGlassPanel
-          borderRadius={LiquidGlassTokens.corner.innerRow + 6}
-          style={styles.loadGlass}
-          contentStyle={styles.loadGlassInner}
-        >
+      <View style={[styles.loadRoot, { backgroundColor: colors.background }]} accessibilityLabel="Loading onboarding">
+        <View style={[styles.loadPanel, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
           <ActivityIndicator size="large" color={CultureTokens.gold} accessibilityLabel="Loading" />
-        </LiquidGlassPanel>
+        </View>
       </View>
     );
   }
@@ -62,12 +44,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadGlass: {
-    padding: 0,
+  loadPanel: {
     minWidth: 120,
     minHeight: 120,
-  },
-  loadGlassInner: {
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 28,

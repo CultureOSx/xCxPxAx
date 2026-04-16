@@ -70,6 +70,13 @@ export function StepDatetime({ form, setField, colors, s }: Props) {
       ) : null}
 
       <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20', marginTop: 8 }]}>
+        <Ionicons name="information-circle-outline" size={18} color={CultureTokens.indigo} />
+        <Text style={[s.infoText, { color: colors.textSecondary }]}>
+          Australia format: DD/MM/YYYY.
+        </Text>
+      </View>
+
+      <View style={[s.infoBox, { backgroundColor: CultureTokens.indigo + '10', borderColor: CultureTokens.indigo + '20', marginTop: 8 }]}>
         <Ionicons name="information-circle-outline" size={18} color={CultureTokens.gold} />
         <Text style={[s.infoText, { color: CultureTokens.gold }]}>
           Need more time/date options? Use the event details to add complex schedules.

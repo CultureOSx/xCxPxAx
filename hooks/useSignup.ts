@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { auth as firebaseAuth } from '@/lib/firebase';
+import { auth as firebaseAuth, FIREBASE_CLIENT_DISABLED_MESSAGE } from '@/lib/firebase';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -71,7 +71,7 @@ export function useSignup() {
   }, [normalizedName, normalizedEmail, password, agreed]);
 
   const trackSignup = useCallback((method: string) => {
-    const u = firebaseAuth.currentUser;
+    const u = firebaseAuth?.currentUser;
     if (u) {
       identifyUser(u.uid, { email: u.email, name: u.displayName, role });
       captureEvent('Signup Success', { method, role });
@@ -81,6 +81,11 @@ export function useSignup() {
   const handleGoogleSignUp = useCallback(async () => {
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, browserLocalPersistence);
@@ -111,30 +116,40 @@ export function useSignup() {
   }, [clearErrors, trackSignup, redirectTo]);
 
   const handleAppleSignUp = useCallback(async () => {
-    if (Platform.OS !== 'ios') return;
+    if (Platform.OS !== 'ios' && Platform.OS !== 'web') return;
     setLoading(true);
     clearErrors();
+    if (!firebaseAuth) {
+      setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+      setLoading(false);
+      return;
+    }
     try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      const provider = new OAuthProvider('apple.com');
-      const firebaseCredential = provider.credential({
-        idToken: credential.identityToken ?? '',
-        rawNonce: credential.authorizationCode ?? '',
-      });
-      await signInWithCredential(firebaseAuth, firebaseCredential);
+      if (Platform.OS === 'web') {
+        const provider = new OAuthProvider('apple.com');
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        });
+        const provider = new OAuthProvider('apple.com');
+        const firebaseCredential = provider.credential({
+          idToken: credential.identityToken ?? '',
+          rawNonce: credential.authorizationCode ?? '',
+        });
+        await signInWithCredential(firebaseAuth, firebaseCredential);
+      }
       trackSignup('apple');
-      await HapticManager.success();
+      if (Platform.OS !== 'web') await HapticManager.success();
       router.replace(routeWithRedirect('/(onboarding)/location', redirectTo) as string);
     } catch (e: unknown) {
       const err = e as Record<string, unknown>;
       if (err?.code !== 'ERR_REQUEST_CANCELED') {
         setGlobalError('Apple sign-up failed. Please try again.');
-        await HapticManager.error();
+        if (Platform.OS !== 'web') await HapticManager.error();
       }
     } finally {
       setLoading(false);
@@ -150,6 +165,10 @@ export function useSignup() {
 
     setLoading(true);
     try {
+      if (!firebaseAuth) {
+        setGlobalError(FIREBASE_CLIENT_DISABLED_MESSAGE);
+        return;
+      }
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, browserLocalPersistence);
       }
@@ -172,6 +191,8 @@ export function useSignup() {
         setEmailError('Please enter a valid email address.');
       } else if (code === 'auth/weak-password') {
         setPasswordError('Password must be at least 6 characters.');
+      } else if (code === 'auth/network-request-failed') {
+        setGlobalError('Unable to connect. Please check your internet connection and try again.');
       } else {
         setGlobalError('Registration failed. Please try again.');
       }

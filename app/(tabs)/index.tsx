@@ -23,22 +23,23 @@
  * 19. Perks           — rewards preview
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
-import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useTabScrollBottomPadding } from '@/hooks/useTabScrollBottomPadding';
 import { useDiscoverData } from '@/hooks/useDiscoverData';
 import { discoverFeature } from '@/features';
-import { CategoryColors, CultureTokens } from '@/constants/theme';
+import { CategoryColors, CultureTokens, Vitrine } from '@/constants/theme';
 import { isCultureKeralaHost } from '@/lib/domainHost';
 import type { EventData, Community } from '@/shared/schema';
 
 import { DiscoverScrollShell } from '@/components/Discover/DiscoverScrollShell';
+import { DiscoverVitrineProvider } from '@/components/Discover/DiscoverVitrineContext';
 import { DiscoverHeader } from '@/components/Discover/DiscoverHeader';
+import { DiscoverCultureTodayCard } from '@/components/Discover/DiscoverCultureTodayCard';
 import { SuperAppLinks } from '@/components/Discover/SuperAppLinks';
 import { HeroCarousel } from '@/components/Discover/HeroCarousel';
 import { EventRail } from '@/components/Discover/EventRail';
@@ -105,7 +106,6 @@ function useKeralaScoping(keralaDomain: boolean, data: ReturnType<typeof useDisc
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
-  const colors = useColors();
   const { isDesktop, contentWidth } = useLayout();
   const scrollBottomPad = useTabScrollBottomPadding(28);
   const [keralaDomain, setKeralaDomain] = useState(false);
@@ -124,13 +124,20 @@ export default function DiscoverScreen() {
       }),
     staleTime: 5 * 60 * 1000,
   });
-  const recommendedFromFeature = discoverFeatureFeed?.rankedEvents.map((entry) => entry.event).slice(0, 8) ?? [];
+  const recommendedFromFeature = useMemo(
+    () => discoverFeatureFeed?.rankedEvents.map((entry) => entry.event).slice(0, 8) ?? [],
+    [discoverFeatureFeed],
+  );
+
+  const goEvents = useCallback(() => router.push('/events'), []);
+  const goActivities = useCallback(() => router.push('/activities'), []);
 
   // Primary nearby rail: GPS first, fall back to starting-soon
   const nearbyRailResolved = s.nearby.filter((i) => typeof i !== 'string');
   const hasNearby = nearbyRailResolved.length > 0;
 
   return (
+    <DiscoverVitrineProvider>
     <DiscoverScrollShell
       scrollBottomPad={scrollBottomPad}
       contentContainerStyle={
@@ -140,7 +147,7 @@ export default function DiscoverScreen() {
         <RefreshControl
           refreshing={d.refreshing}
           onRefresh={d.handleRefresh}
-          tintColor={colors.primary}
+          tintColor={Vitrine.primary}
         />
       }
     >
@@ -155,6 +162,8 @@ export default function DiscoverScreen() {
         onRefresh={d.handleRefresh}
       />
 
+      <DiscoverCultureTodayCard />
+
       {/* ② Search (removed) */}
 
 
@@ -164,7 +173,7 @@ export default function DiscoverScreen() {
           title="Recommended For You"
           subtitle="Ranked by quality, trust, and cultural fit"
           data={recommendedFromFeature}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           isLoading={d.discoverLoading}
         />
       )}
@@ -189,7 +198,7 @@ export default function DiscoverScreen() {
         }
         isLoading={d.eventsLoading}
         schedulingMode="live_and_countdown"
-        onSeeAll={() => router.push('/events')}
+        onSeeAll={goEvents}
         errorMessage={d.eventsRailError}
         onRetry={() => void d.refetchEvents()}
       />
@@ -211,7 +220,7 @@ export default function DiscoverScreen() {
               : s.popular
           }
           isLoading={d.eventsLoading || d.discoverLoading}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           errorMessage={d.eventsRailError}
           onRetry={() => void d.refetchEvents()}
         />
@@ -228,7 +237,7 @@ export default function DiscoverScreen() {
               : s.forYou
           }
           isLoading={d.eventsLoading}
-          onSeeAll={() => router.push('/events')}
+          onSeeAll={goEvents}
           errorMessage={d.eventsRailError}
           onRetry={() => void d.refetchEvents()}
         />
@@ -280,7 +289,7 @@ export default function DiscoverScreen() {
         subtitle="Workshops, classes & experiences"
         data={d.activityRailData}
         isLoading={d.activitiesLoading}
-        onSeeAll={() => router.push('/activities')}
+        onSeeAll={goActivities}
         errorMessage={d.activitiesRailError}
         onRetry={() => void d.refetchActivities()}
       />
@@ -334,5 +343,6 @@ export default function DiscoverScreen() {
       />
 
     </DiscoverScrollShell>
+    </DiscoverVitrineProvider>
   );
 }

@@ -98,29 +98,41 @@ const eventTierSchema = z.object({
   available:  z.coerce.number().int().min(0),
 });
 
+const optionalStringField = (maxLength?: number) =>
+  z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    maxLength ? z.string().max(maxLength).optional() : z.string().optional(),
+  );
+
+const optionalIntField = (min: number, max?: number) =>
+  z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    (max != null ? z.coerce.number().int().min(min).max(max) : z.coerce.number().int().min(min)).optional(),
+  );
+
 const createEventSchema = z.object({
   title:       z.string().min(1, 'title is required').max(200),
-  description: z.string().max(5000).optional(),
+  description: optionalStringField(5000),
   date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
-  time:        z.string().max(20).optional(),
-  venue:       z.string().max(200).optional(),
-  address:     z.string().max(500).optional(),
-  city:        z.string().max(100).optional(),
-  state:       z.string().max(10).optional(),
-  postcode:    z.coerce.number().int().min(200).max(9999).optional(),
-  country:     z.string().max(100).optional(),
+  time:        optionalStringField(20),
+  venue:       optionalStringField(200),
+  address:     optionalStringField(500),
+  city:        optionalStringField(100),
+  state:       optionalStringField(10),
+  postcode:    optionalIntField(200, 9999),
+  country:     optionalStringField(100),
   latitude:    z.coerce.number().optional(),
   longitude:   z.coerce.number().optional(),
-  communityId: z.string().max(100).optional(),
+  communityId: optionalStringField(100),
   imageUrl:    z.string().url('imageUrl must be a valid URL').optional().or(z.literal('')),
-  imageColor:  z.string().max(20).optional(),
+  imageColor:  optionalStringField(20),
   priceCents:  z.coerce.number().int().min(0).optional(),
-  priceLabel:  z.string().max(50).optional(),
-  category:    z.string().max(100).optional(),
+  priceLabel:  optionalStringField(50),
+  category:    optionalStringField(100),
   eventType:   z.enum(['festival', 'concert', 'workshop', 'puja', 'sports', 'food', 'cultural', 'community', 'exhibition', 'conference', 'other']).optional(),
-  ageSuitability: z.string().max(20).optional(),
-  priceTier:   z.string().max(20).optional(),
-  capacity:    z.coerce.number().int().min(1).optional(),
+  ageSuitability: optionalStringField(20),
+  priceTier:   optionalStringField(20),
+  capacity:    optionalIntField(1),
   isFree:      z.coerce.boolean().optional(),
   isFeatured:  z.coerce.boolean().optional(),
   /** Listing form — stored for moderator / organiser contact */
@@ -133,7 +145,7 @@ const createEventSchema = z.object({
   cultureTag:  z.array(z.string().max(50)).max(20).optional(),
   indigenousTags: z.array(z.string().max(50)).max(10).optional(),
   languageTags:   z.array(z.string().max(50)).max(10).optional(),
-  organizer:   z.string().max(200).optional(),
+  organizer:   optionalStringField(200),
   externalTicketUrl: z.string().url().optional().or(z.literal('')).or(z.null()),
   geoHash:     z.string().max(20).optional(),
   organizerReputationScore: z.coerce.number().int().min(0).max(100).optional(),
@@ -144,7 +156,7 @@ const createEventSchema = z.object({
   // Enhanced creation fields
   entryType:   z.enum(['ticketed', 'free_open']).optional(),
   endDate:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
-  endTime:     z.string().max(20).optional(),
+  endTime:     optionalStringField(20),
   heroImageUrl: z.string().url().optional().or(z.literal('')),
   artists: z.array(z.object({
     profileId: z.string().optional(),
@@ -209,6 +221,7 @@ export function createEventsRouter() {
       const time        = qstr(req.query.time).trim() || undefined;
       const publisherProfileId = qstr(req.query.publisherProfileId).trim() || undefined;
       const venueProfileId = qstr(req.query.venueProfileId).trim() || undefined;
+      const tag = qstr(req.query.tag).trim() || undefined;
 
       const centerLatStr  = qstr(req.query.centerLat).trim();
       const centerLngStr  = qstr(req.query.centerLng).trim();
@@ -239,6 +252,7 @@ export function createEventsRouter() {
           time,
           publisherProfileId,
           venueProfileId,
+          tag,
         },
         { page, pageSize },
       );

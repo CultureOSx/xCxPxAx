@@ -37,6 +37,7 @@ import { useLayout } from "@/hooks/useLayout";
 import { initializeWidgets } from "@/lib/widgets/register";
 import { WidgetSync } from "@/components/WidgetSync";
 import { WebSidebar } from "@/components/web/WebSidebar";
+import { AppFooter } from "@/components/AppFooter";
 import { isCultureKeralaHost } from "@/lib/domainHost";
 import {
   APP_NAME,
@@ -112,8 +113,20 @@ function DataSync() {
         if ((user.subscriptionTier ?? 'free') !== state.subscriptionTier) {
           setSubscriptionTier(user.subscriptionTier ?? 'free');
         }
-        // Fallback: If user profile is complete but onboarding is not, complete onboarding
-        if (!state.isComplete && user.city && user.country && (user.interests?.length ?? 0) > 0) {
+        // Fallback: If server profile clearly belongs to a returning member but local onboarding was cleared (e.g. logout), mark complete.
+        const hasCulture =
+          !!(user.culturalIdentity?.nationalityId || (user.culturalIdentity?.cultureIds?.length ?? 0) > 0);
+        const profileLooksEstablished =
+          !!user.city &&
+          !!user.country &&
+          (
+            (user.interests?.length ?? 0) > 0 ||
+            (user.communities?.length ?? 0) > 0 ||
+            hasCulture ||
+            !!user.lgaCode ||
+            !!user.councilId
+          );
+        if (!state.isComplete && profileLooksEstablished) {
           await completeOnboarding();
         }
         // Analytics Tracking
@@ -156,7 +169,7 @@ function DataSync() {
 // ---------------------------------------------------------------------------
 function AuthGuard() {
   const { user, isRestoring } = useAuth();
-  const { state: onboardingState } = useOnboarding();
+  const { state: onboardingState, isLoading: onboardingLoading } = useOnboarding();
   const segments = useSegments() as string[];
   const router = useRouter();
 
@@ -191,11 +204,28 @@ function AuthGuard() {
     if (!user && isProtected) {
       // Guests hitting a locked screen → route to login
       router.replace('/(onboarding)/login');
-    } else if (user && inOnboardingGroup && preAuthScreens.has(currentOnboardingScreen)) {
+    } else if (
+      user &&
+      !onboardingLoading &&
+      inOnboardingGroup &&
+      preAuthScreens.has(currentOnboardingScreen)
+    ) {
       // Authenticated users should either finish onboarding or return to the app shell.
+      // Wait for persisted onboarding to load — default `isComplete: false` would otherwise always send users to location.
       router.replace(onboardingState.isComplete ? '/(tabs)' : '/(onboarding)/location');
+    } else if (
+      user &&
+      !onboardingLoading &&
+      inOnboardingGroup &&
+      !preAuthScreens.has(currentOnboardingScreen) &&
+      onboardingState.isComplete
+    ) {
+      // DataSync marked the user complete while they were on a mid-flow screen
+      // (e.g. /location). This happens when post-login routing races ahead of the
+      // first DataSync profile-check. Send them straight to tabs.
+      router.replace('/(tabs)');
     }
-  }, [user, segments, isRestoring, onboardingState.isComplete, router]);
+  }, [user, segments, isRestoring, onboardingLoading, onboardingState.isComplete, router]);
 
   return null;
 }
@@ -236,6 +266,10 @@ function RootLayoutNav() {
         // Empty string removes the "Back" label next to the iOS chevron
         headerBackTitle: "",
         animation: Platform.OS === "web" ? "fade" : Platform.OS === "ios" ? "default" : "slide_from_right",
+        // Web: scene must flex inside WebShell so Discover (and other tabs) scroll correctly
+        ...(Platform.OS === "web"
+          ? { contentStyle: { flex: 1, minHeight: 0, width: "100%" } }
+          : {}),
       }}
     >
       <Stack.Screen name="landing" />
@@ -245,6 +279,9 @@ function RootLayoutNav() {
       <Stack.Screen name="hubs" />
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
+
+      <Stack.Screen name="culture-today/index" />
+      <Stack.Screen name="culture-today/[dayKey]" />
 
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="event/create" />
@@ -321,6 +358,7 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/finance" />
       <Stack.Screen name="admin/platform" />
       <Stack.Screen name="admin/discover" />
+      <Stack.Screen name="admin/culture-today" />
       <Stack.Screen name="admin/data-compliance" />
       <Stack.Screen name="admin/shopping" />
       <Stack.Screen name="admin/cockpit" />
@@ -341,6 +379,13 @@ function WebShell({ children }: { children: React.ReactNode }) {
   const colors = useColors();
   const { isDesktop } = useLayout();
 
+  const mainColumn = (
+    <View style={webStyles.contentContainer}>
+      <View style={webStyles.mainFlex}>{children}</View>
+      <AppFooter />
+    </View>
+  );
+
   return (
     <View
       style={[
@@ -360,10 +405,10 @@ function WebShell({ children }: { children: React.ReactNode }) {
       {isDesktop ? (
         <>
           <WebSidebar />
-          <View style={webStyles.contentContainer}>{children}</View>
+          {mainColumn}
         </>
       ) : (
-        <View style={webStyles.contentContainer}>{children}</View>
+        mainColumn
       )}
     </View>
   );
@@ -413,7 +458,10 @@ function RootLayoutContent() {
 
   const appShell = (
     <GestureHandlerRootView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={[
+        { flex: 1, backgroundColor: colors.background },
+        Platform.OS === "web" && ({ minHeight: "100%", height: "100%" } as const),
+      ]}
       onLayout={onLayoutRootView}
     >
       <DataSync />
@@ -555,7 +603,9 @@ function RootLayoutContent() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-      <SafeAreaProvider>{queryAppTree}</SafeAreaProvider>
+      <SafeAreaProvider style={Platform.OS === "web" ? ({ flex: 1, minHeight: 0 } as const) : undefined}>
+        {queryAppTree}
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
@@ -595,8 +645,14 @@ const webStyles = StyleSheet.create({
   outerContainer: {
     flex: 1,
     flexDirection: "row",
+    alignItems: "stretch",
     overflow: "hidden",
-    ...(Platform.OS === "web" && { minHeight: "100vh" as unknown as number }),
+    ...(Platform.OS === "web" &&
+      ({
+        minHeight: "100%",
+        height: "100%",
+        maxHeight: "100%",
+      } as const)),
   },
   ambientMesh: {
     ...StyleSheet.absoluteFillObject,
@@ -605,6 +661,15 @@ const webStyles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
+    flexDirection: "column",
+    alignSelf: "stretch",
+  },
+  mainFlex: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+    alignSelf: "stretch",
   },
 });
 

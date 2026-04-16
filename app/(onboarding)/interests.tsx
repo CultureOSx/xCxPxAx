@@ -20,13 +20,11 @@ import {
 } from '@/constants/onboardingInterests';
 
 import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { useInterestsSelection } from '@/hooks/useInterestsSelection';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
-  gradients,
   shadows,
   Spacing,
   FontFamily,
@@ -35,7 +33,7 @@ import {
   IconSize,
 } from '@/constants/theme';
 
-import { useColors } from '@/hooks/useColors';
+import { light as lightColors } from '@/constants/colors';
 import { useLayout } from '@/hooks/useLayout';
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -61,7 +59,7 @@ const InterestChip = React.memo(function InterestChip({
   accentColor: string;
   onPress: () => void;
 }) {
-  const colors = useColors();
+  const colors = lightColors;
 
   return (
     <Pressable
@@ -99,7 +97,7 @@ const InterestChip = React.memo(function InterestChip({
 // Main screen
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
-  const colors = useColors();
+  const colors = lightColors;
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -134,17 +132,7 @@ export default function InterestsScreen() {
   const progressPct = `${Math.min(1, selected.length / MIN_REQUIRED) * 100}%` as DimensionValue;
 
   return (
-    <View style={s.root}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        style={StyleSheet.absoluteFillObject}
-      />
-      {Platform.OS === 'web' && (
-        <>
-          <View style={[s.orb, { top: -80, right: -60, backgroundColor: CultureTokens.indigo }]} />
-          <View style={[s.orb, { bottom: 100, left: -80, backgroundColor: CultureTokens.gold, opacity: 0.25 }]} />
-        </>
-      )}
+    <View style={[s.root, { backgroundColor: colors.background }]}>
 
       {/* Header */}
       <View style={[s.header, { paddingTop: topInset + 14 }]}>
@@ -171,13 +159,10 @@ export default function InterestsScreen() {
         ]}
       >
         <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
-          {Platform.OS === 'ios' && isDesktop && (
-            <BlurView intensity={25} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />
-          )}
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
-            <Text style={s.subtitle}>
+            <Text style={[s.subtitle, { color: colors.textSecondary }]}>
               Pick at least {MIN_REQUIRED} to personalise your CulturePass feed
             </Text>
           </View>
@@ -305,7 +290,7 @@ export default function InterestsScreen() {
 
       {/* Sticky bottom CTA */}
       <LinearGradient
-        colors={['transparent', gradients.culturepassBrand[0]]}
+        colors={['transparent', colors.background]}
         style={s.bottomFade}
         pointerEvents="none"
       />
@@ -341,18 +326,6 @@ export default function InterestsScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
 
-  orb: {
-    position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    opacity: 0.35,
-    ...Platform.select({
-      web: { filter: 'blur(80px)' } as Record<string, string>,
-      default: {},
-    }),
-  },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -366,7 +339,7 @@ const s = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#EEF3FA',
   },
   stepLabel: {
     ...TextStyles.badgeCaps,
@@ -384,10 +357,10 @@ const s = StyleSheet.create({
   },
 
   desktopCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: '#E3EAF6',
     padding: Spacing.xl,
     marginTop: Spacing.sm,
   },
@@ -403,7 +376,6 @@ const s = StyleSheet.create({
   },
   subtitle: {
     ...TextStyles.callout,
-    color: 'rgba(255,255,255,0.75)',
   },
 
   progressBlock: {

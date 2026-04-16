@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { useCouncil } from '@/hooks/useCouncil';
-import { Colors, CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
+import { Colors, CultureTokens, gradients } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { routeWithRedirect } from '@/lib/routes';
@@ -175,6 +175,14 @@ const BOTTOM_NAV: NavItem[] = [
   { label: 'Help', icon: 'help-circle-outline', iconActive: 'help-circle', route: '/help' },
 ];
 
+const PROFILE_ACTIONS = [
+  { key: 'profile', label: 'View Profile', icon: 'person-outline' as const, route: '/profile/edit' },
+  { key: 'qr', label: 'Digital ID', icon: 'qr-code-outline' as const, route: '/profile/qr' },
+  { key: 'wallet', label: 'Wallet', icon: 'wallet-outline' as const, route: '/payment/wallet' },
+  { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' as const, route: '/notifications' },
+  { key: 'settings', label: 'Settings', icon: 'settings-outline' as const, route: '/settings' },
+] as const;
+
 // ─── Avatar helper ────────────────────────────────────────────────────────────
 function AvatarWithRing({
   avatarUrl,
@@ -231,11 +239,47 @@ function AvatarWithRing({
   );
 }
 
+// ─── File-local hooks ─────────────────────────────────────────────────────────
+function useLiveClock(): Date {
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function useWeatherSummary(city?: string): string {
+  const [summary, setSummary] = useState<string>('');
+  useEffect(() => {
+    const trimmed = city?.trim();
+    if (!trimmed) { setSummary(''); return; }
+    const place = getPostcodesByPlace(trimmed)[0];
+    if (!place) { setSummary(''); return; }
+    const controller = new AbortController();
+    const fetchWeather = async () => {
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error('weather');
+        const data = await res.json() as { current?: { temperature_2m?: number; weather_code?: number } };
+        const temp = data.current?.temperature_2m;
+        const code = data.current?.weather_code;
+        const label = code === 0 ? 'Clear' : code === 1 || code === 2 ? 'Partly Cloudy' : code === 3 ? 'Cloudy' : '';
+        setSummary(typeof temp === 'number' ? `${Math.round(temp)}°C${label ? ` · ${label}` : ''}` : '');
+      } catch { setSummary(''); }
+    };
+    void fetchWeather();
+    const rid = setInterval(() => { void fetchWeather(); }, 10 * 60_000);
+    return () => { controller.abort(); clearInterval(rid); };
+  }, [city]);
+  return summary;
+}
+
 // ─── Main WebSidebar Component ───────────────────────────────────────────────
 export function WebSidebar() {
   const pathname = usePathname();
   const colors = useColors();
-  const { s, r } = getSidebarStyles(colors);
   const isDark = useIsDark();
   const { user, logout, isAuthenticated } = useAuth();
   const { isOrganizer, isAdmin, isSuperAdmin, role } = useRole();
@@ -244,8 +288,8 @@ export function WebSidebar() {
   const { data: councilData } = useCouncil();
 
   const [collapsed, setCollapsed] = useState(false);
-  const [now, setNow] = useState<Date>(() => new Date());
-  const [weatherSummary, setWeatherSummary] = useState<string>('');
+  const now = useLiveClock();
+  const weatherSummary = useWeatherSummary(user?.city);
 
   const navWithBadge: NavItem[] = MAIN_NAV;
 
@@ -272,36 +316,6 @@ export function WebSidebar() {
   const border = colors.borderLight;
   const mutedColor = isDark ? 'rgba(232,244,255,0.35)' : 'rgba(0,22,40,0.32)';
   const myCouncil = councilData?.council;
-
-  // Clock
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Weather
-  useEffect(() => {
-    const city = user?.city?.trim();
-    if (!city) { setWeatherSummary(''); return; }
-    const place = getPostcodesByPlace(city)[0];
-    if (!place) { setWeatherSummary(''); return; }
-    const controller = new AbortController();
-    const fetchWeather = async () => {
-      try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error('weather');
-        const data = await res.json() as { current?: { temperature_2m?: number; weather_code?: number } };
-        const temp = data.current?.temperature_2m;
-        const code = data.current?.weather_code;
-        const label = code === 0 ? 'Clear' : code === 1 || code === 2 ? 'Partly Cloudy' : code === 3 ? 'Cloudy' : '';
-        setWeatherSummary(typeof temp === 'number' ? `${Math.round(temp)}°C${label ? ` · ${label}` : ''}` : '');
-      } catch { setWeatherSummary(''); }
-    };
-    fetchWeather();
-    const rid = setInterval(fetchWeather, 10 * 60_000);
-    return () => { controller.abort(); clearInterval(rid); };
-  }, [user?.city]);
 
   const dateLabel = useMemo(() =>
     now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }), [now]);
@@ -443,26 +457,66 @@ export function WebSidebar() {
       {/* Navigation Sections - rest unchanged */}
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, paddingTop: 6 }}>
         {/* ... your NavSection calls ... */}
-        <NavSection label="Discover" mutedColor={mutedColor} colors={colors}>
+        <NavSection label="Discover" mutedColor={mutedColor}>
           {navWithBadge.map((item) => (
             <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
           ))}
         </NavSection>
 
-        <NavSection label="Library" mutedColor={mutedColor} colors={colors}>
+        <NavSection label="Library" mutedColor={mutedColor}>
           {LIBRARY_NAV.map((item) => (
             <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
           ))}
         </NavSection>
 
-        {isOrganizer && <NavSection label="Organiser Tools" mutedColor={mutedColor} colors={colors}>{ORGANIZER_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isVenue && <NavSection label="Venue" mutedColor={mutedColor} colors={colors}>{VENUE_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isSponsor && <NavSection label="Sponsor" mutedColor={mutedColor} colors={colors}>{SPONSOR_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isAdmin && <NavSection label="Admin" mutedColor={mutedColor} colors={colors}>{ADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
-        {isSuperAdmin && <NavSection label="SuperAdmin" mutedColor={mutedColor} colors={colors}>{SUPERADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isOrganizer && <NavSection label="Organiser Tools" mutedColor={mutedColor}>{ORGANIZER_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isVenue && <NavSection label="Venue" mutedColor={mutedColor}>{VENUE_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isSponsor && <NavSection label="Sponsor" mutedColor={mutedColor}>{SPONSOR_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isAdmin && <NavSection label="Admin" mutedColor={mutedColor}>{ADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+        {isSuperAdmin && <NavSection label="SuperAdmin" mutedColor={mutedColor}>{SUPERADMIN_NAV.map(item => <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />)}</NavSection>}
+
+        <NavSection label="More" mutedColor={mutedColor}>
+          {BOTTOM_NAV.map((item) => (
+            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
+          ))}
+        </NavSection>
+
+        {!isAuthenticated && (
+          <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8, gap: 8 }}>
+            <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]} accessibilityRole="button" accessibilityLabel="Create submission">
+              <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
+                <Text style={s.profileCreateText}>＋ Create</Text>
+              </LinearGradient>
+            </Pressable>
+            <Pressable style={[s.signInBtn, { borderColor: colors.borderLight }]} onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}>
+              <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
+              <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
+            </Pressable>
+          </View>
+        )}
+
+        <Text style={[s.footerMarketLine, { color: colors.textSecondary }]} numberOfLines={2}>
+          {brandMetaLine}
+        </Text>
+        <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
       </ScrollView>
 
-      {/* Council + Bottom Section (unchanged) */}
+      {!isAuthenticated && (
+        <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 }}>
+          <Button
+            variant="gradient"
+            size="md"
+            leftIcon="person-add"
+            onPress={() => navigate('/(onboarding)/signup')}
+            fullWidth
+            style={{ height: 40, borderRadius: 12 } as any}
+            textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
+          >
+            Join CulturePass
+          </Button>
+        </View>
+      )}
+
       {myCouncil && (
         <Pressable
           style={[s.councilCard, { backgroundColor: isDark ? 'rgba(44,42,114,0.14)' : 'rgba(44,42,114,0.06)', borderColor: colors.primary + '30' }]}
@@ -474,63 +528,22 @@ export function WebSidebar() {
             <Ionicons name="shield-checkmark" size={15} color={colors.primary} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[s.councilEyebrow, { color: colors.primary }]} numberOfLines={1}>
-              My Council
-            </Text>
-            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>
-              {myCouncil.name}
-            </Text>
+            <Text style={[s.councilEyebrow, { color: colors.primary }]} numberOfLines={1}>My Council</Text>
+            <Text style={[s.councilName, { color: colors.text }]} numberOfLines={1}>{myCouncil.name}</Text>
             <Text style={[s.councilSub, { color: colors.textSecondary }]} numberOfLines={1}>
-              {myCouncil.suburb ?? 'Local'}
-              {myCouncil.state ? `, ${myCouncil.state}` : ''}
+              {myCouncil.suburb ?? 'Local'}{myCouncil.state ? `, ${myCouncil.state}` : ''}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={13} color={colors.primary + 'AA'} />
         </Pressable>
       )}
 
-      <View style={[s.thinDivider, { backgroundColor: border }]} />
-      <View style={s.bottomNavSection}>
-        <View style={s.navGroup}>
-          {BOTTOM_NAV.map((item) => (
-            <SidebarItem key={item.route} item={item} active={isActive(item)} isDark={isDark} onPress={() => navigate(item.route)} colors={colors} />
-          ))}
-        </View>
-
-        <View style={[s.thinDivider, { backgroundColor: border, marginVertical: 6 }]} />
-
-        {isAuthenticated && user ? (
+      {isAuthenticated && user && (
+        <>
+          <View style={[s.thinDivider, { backgroundColor: border }]} />
           <SidebarProfileBlock user={user} colors={colors} isDark={isDark} border={border} mutedColor={mutedColor} onNavigate={navigate} onLogout={logout} />
-        ) : (
-          <View style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10, gap: 8 }}>
-            <Pressable onPress={() => navigate('/submit')} style={({ pressed }) => [s.profileCreateBtn, pressed && { opacity: 0.88 }]} accessibilityRole="button" accessibilityLabel="Create submission">
-              <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
-                <Text style={s.profileCreateText}>＋ Create</Text>
-              </LinearGradient>
-            </Pressable>
-            <Pressable style={[s.signInBtn, { borderColor: colors.borderLight }]} onPress={() => navigate(routeWithRedirect('/(onboarding)/login', pathname) as string)}>
-              <Ionicons name="log-in-outline" size={16} color={colors.textSecondary} />
-              <Text style={[s.signInBtnText, { color: colors.textSecondary }]}>Sign In</Text>
-            </Pressable>
-            <Button
-              variant="gradient"
-              size="md"
-              leftIcon="person-add"
-              onPress={() => navigate('/(onboarding)/signup')}
-              fullWidth
-              style={{ height: 40, borderRadius: 12 } as any}
-              textStyle={[TextStyles.callout, { fontWeight: '700', letterSpacing: 0.1, color: '#0B0B14' }]}
-            >
-              Join CulturePass
-            </Button>
-          </View>
-        )}
-
-        <Text style={[s.footerMarketLine, { color: colors.textSecondary }]} numberOfLines={2}>
-          {brandMetaLine}
-        </Text>
-        <Text style={[s.versionText, { color: colors.textTertiary }]}>{appVersionLabel}</Text>
-      </View>
+        </>
+      )}
     </View>
   );
 }
@@ -538,8 +551,7 @@ export function WebSidebar() {
 // Sub-components (NavSection, SidebarItem, SidebarProfileBlock) remain as in your original
 // ... (you can keep your original implementations for these)
 
-function NavSection({ label, mutedColor, children, colors }: any) {
-  const { s } = getSidebarStyles(colors);
+function NavSection({ label, mutedColor, children }: { label: string; mutedColor: string; children: React.ReactNode }) {
   return (
     <>
       <View style={s.sectionHeader}>
@@ -550,8 +562,13 @@ function NavSection({ label, mutedColor, children, colors }: any) {
   );
 }
 
-function SidebarItem({ item, active, isDark, onPress, colors }: any) {
-  const { ni } = getSidebarStyles(colors);
+function SidebarItem({ item, active, isDark, onPress, colors }: {
+  item: NavItem;
+  active: boolean;
+  isDark: boolean;
+  onPress: () => void;
+  colors: ReturnType<typeof useColors>;
+}) {
   const [hovered, setHovered] = useState(false);
   const showHover = hovered && !active;
 
@@ -601,7 +618,6 @@ function SidebarProfileBlock({
   onNavigate: (route: string) => void;
   onLogout: () => void;
 }) {
-  const { s } = getSidebarStyles(colors);
   const [expanded, setExpanded] = useState(false);
   const displayName = user.displayName ?? user.username ?? user.id?.slice(0, 8) ?? 'You';
   const initials = displayName
@@ -611,27 +627,8 @@ function SidebarProfileBlock({
     .join('');
   const roleBadge = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : null;
 
-  const PROFILE_ACTIONS = [
-    { key: 'profile', label: 'View Profile', icon: 'person-outline' as const, route: '/profile/edit' },
-    { key: 'qr', label: 'Digital ID', icon: 'qr-code-outline' as const, route: '/profile/qr' },
-    { key: 'wallet', label: 'Wallet', icon: 'wallet-outline' as const, route: '/payment/wallet' },
-    { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' as const, route: '/notifications' },
-    { key: 'settings', label: 'Settings', icon: 'settings-outline' as const, route: '/settings' },
-  ];
-
   return (
     <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
-      <Pressable
-        onPress={() => onNavigate('/submit')}
-        style={({ pressed }) => [s.profileCreateBtn, { marginBottom: 8 }, pressed && { opacity: 0.88 }]}
-        accessibilityRole="button"
-        accessibilityLabel="Create submission"
-      >
-        <LinearGradient colors={[CultureTokens.indigo, CultureTokens.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.profileCreateGradient}>
-          <Text style={s.profileCreateText}>＋ Create</Text>
-        </LinearGradient>
-      </Pressable>
-
       {/* Expanded quick links */}
       {expanded && (
         <View
@@ -748,9 +745,17 @@ function SidebarProfileBlock({
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const getSidebarStyles = (colors: ColorTheme) => {
-  const s = StyleSheet.create({
-    sidebar: { width: 240, alignSelf: 'stretch', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
+const s = StyleSheet.create({
+    sidebar: {
+      width: 240,
+      alignSelf: 'stretch',
+      borderRightWidth: StyleSheet.hairlineWidth,
+      flexShrink: 0,
+      ...Platform.select({
+        web: { minHeight: '100%', height: '100%' } as object,
+        default: {},
+      }),
+    },
 
     brandHeader: {
       paddingHorizontal: 14,
@@ -897,9 +902,9 @@ const getSidebarStyles = (colors: ColorTheme) => {
     profileBlock: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, marginHorizontal: 8 },
     profileBlockName: { ...TextStyles.labelSemibold },
     profileBlockSub: { ...TextStyles.caption },
-  });
+});
 
-  const r = StyleSheet.create({
+const r = StyleSheet.create({
     rail: { width: 54, height: '100%', borderRightWidth: StyleSheet.hairlineWidth, flexShrink: 0, alignItems: 'center', paddingTop: 14, paddingBottom: 4 },
     railTop: { marginBottom: 10 },
     divider: { height: StyleSheet.hairlineWidth, width: 32, marginBottom: 6 },
@@ -907,9 +912,9 @@ const getSidebarStyles = (colors: ColorTheme) => {
     railItem: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     railActionBtn: { backgroundColor: 'transparent' },
     railActiveBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
-  });
+});
 
-  const ni = StyleSheet.create({
+const ni = StyleSheet.create({
     item: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, minHeight: 46, paddingVertical: 4, paddingHorizontal: 14, position: 'relative', overflow: 'hidden' },
     itemActive: { borderRadius: 12 },
     activeBar: { position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2, overflow: 'hidden' },
@@ -917,7 +922,4 @@ const getSidebarStyles = (colors: ColorTheme) => {
     labelActive: { fontFamily: 'Poppins_700Bold' },
     badge: { backgroundColor: Colors.error, borderRadius: 9, minWidth: 17, height: 17, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
     badgeText: { ...TextStyles.captionSemibold, color: '#fff', fontSize: 9 },
-  });
-
-  return { s, r, ni };
-};
+});

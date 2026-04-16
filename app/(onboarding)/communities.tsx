@@ -13,18 +13,16 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
 import { Button } from '@/components/ui/Button';
-import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients, CardTokens, glass, shadows, TextStyles } from '@/constants/theme';
+import { CultureTokens, CardTokens, shadows, TextStyles } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
+import { light as lightColors, type ColorTheme } from '@/constants/colors';
 import { routeWithRedirect, sanitizeInternalRedirect } from '@/lib/routes';
 
 export default function CommunitiesScreen() {
-  const colors = useColors();
+  const colors = lightColors;
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -54,29 +52,15 @@ export default function CommunitiesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={gradients.culturepassBrand}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBg}
-      />
-
-      {Platform.OS === 'web' ? (
-        <>
-          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.gold, opacity: 0.3, filter: 'blur(50px)' } as any]} />
-        </>
-      ) : null}
-
       {isDesktop && (
         <View style={styles.desktopBackRow}>
           <Pressable
             onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))}
             hitSlop={8}
-            style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+            style={[styles.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
           >
-            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
-            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
+            <Ionicons name="chevron-back" size={18} color={colors.text} />
+            <Text style={[styles.desktopBackText, { color: colors.text }]}>Back</Text>
           </Pressable>
         </View>
       )}
@@ -87,7 +71,7 @@ export default function CommunitiesScreen() {
             onPress={() => router.canGoBack() ? router.back() : router.replace(routeWithRedirect('/(onboarding)/location', redirectTo))}
             hitSlop={12}
           >
-            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
           </Pressable>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>2 of 4</Text>
         </View>
@@ -104,15 +88,17 @@ export default function CommunitiesScreen() {
           ]}
         >
           <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
-            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView
-                intensity={isDesktop ? 60 : 40}
-                tint="dark"
-                style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]}
-              />
-            ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: glass.dark.backgroundColor, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
-            )}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.formBlur,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: CardTokens.radiusLarge,
+                  borderColor: colors.borderLight,
+                },
+              ]}
+            />
 
             <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               {/* Header */}
@@ -120,7 +106,7 @@ export default function CommunitiesScreen() {
                 <View style={[styles.iconWrapper, { backgroundColor: `${CultureTokens.indigo}20`, borderColor: `${CultureTokens.indigo}60` }]}>
                   <Text style={styles.headerEmoji}>🌏</Text>
                 </View>
-                <Text style={[styles.title, { color: colors.textInverse }]}>Your Communities</Text>
+                <Text style={[styles.title, { color: colors.text }]}>Your Communities</Text>
                 <Text style={styles.subtitle}>
                   Pick the diaspora and cultural groups you&apos;d like to connect with.
                 </Text>
@@ -133,7 +119,7 @@ export default function CommunitiesScreen() {
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionEmoji}>{group.emoji}</Text>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{group.label}</Text>
-                    <View style={[styles.sectionLine, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
+                    <View style={[styles.sectionLine, { backgroundColor: colors.borderLight }]} />
                   </View>
 
                   {/* Chips */}
@@ -151,12 +137,12 @@ export default function CommunitiesScreen() {
                                 ? group.color
                                 : pressed
                                 ? `${group.color}22`
-                                : 'rgba(255,255,255,0.06)',
+                                : `${colors.text}0A`,
                               borderColor: isSelected
                                 ? group.color
                                 : pressed
                                 ? `${group.color}60`
-                                : 'rgba(255,255,255,0.13)',
+                                : `${colors.text}21`,
                             },
                           ]}
                           onPress={() => toggle(community)}
@@ -168,7 +154,7 @@ export default function CommunitiesScreen() {
                           <Text
                             style={[
                               styles.chipText,
-                              { color: isSelected ? '#fff' : colors.textInverse, opacity: isSelected ? 1 : 0.85 },
+                              { color: isSelected ? '#fff' : colors.text, opacity: isSelected ? 1 : 0.9 },
                             ]}
                             numberOfLines={1}
                           >
@@ -187,13 +173,13 @@ export default function CommunitiesScreen() {
               <View style={styles.spacer} />
 
               {/* Selected count + Continue */}
-              <View style={[styles.selectedPill, { backgroundColor: selected.length > 0 ? `${CultureTokens.indigo}30` : 'rgba(255,255,255,0.06)', borderColor: selected.length > 0 ? `${CultureTokens.indigo}60` : 'rgba(255,255,255,0.1)' }]}>
+              <View style={[styles.selectedPill, { backgroundColor: selected.length > 0 ? `${CultureTokens.indigo}30` : `${colors.text}0A`, borderColor: selected.length > 0 ? `${CultureTokens.indigo}60` : `${colors.text}21` }]}>
                 <Ionicons
                   name={selected.length > 0 ? 'checkmark-circle' : 'ellipse-outline'}
                   size={16}
                   color={selected.length > 0 ? CultureTokens.indigo : colors.textSecondary}
                 />
-                <Text style={[styles.selectedCount, { color: selected.length > 0 ? colors.textInverse : colors.textSecondary }]}>
+                <Text style={[styles.selectedCount, { color: selected.length > 0 ? colors.text : colors.textSecondary }]}>
                   {selected.length === 0
                     ? 'No communities selected'
                     : `${selected.length} ${selected.length === 1 ? 'community' : 'communities'} selected`}
@@ -219,10 +205,8 @@ export default function CommunitiesScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const getStyles = (colors: ColorTheme) => StyleSheet.create({
   container: { flex: 1 },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
-  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
   stepText: { ...TextStyles.captionSemibold, letterSpacing: 1, textTransform: 'uppercase' },

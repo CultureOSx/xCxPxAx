@@ -58,12 +58,14 @@ export function getCityDestinationStyles(
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.24)',
     },
     heroIconHit: {
       width: '100%',
       height: '100%',
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: 999,
     },
     heroGlassChipShell: { maxWidth: '58%' },
     heroGlassChipInner: {
@@ -72,6 +74,8 @@ export function getCityDestinationStyles(
       gap: 6,
       paddingHorizontal: 14,
       paddingVertical: 7,
+      backgroundColor: 'rgba(0,0,0,0.26)',
+      borderRadius: 14,
     },
     chipText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
@@ -96,9 +100,9 @@ export function getCityDestinationStyles(
     stateRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4, marginBottom: 6 },
     stateText: {
       color: colors.textOnBrandGradient,
-      opacity: 0.78,
+      opacity: 0.92,
       fontSize: 13,
-      fontFamily: 'Poppins_500Medium',
+      fontFamily: 'Poppins_600SemiBold',
     },
     heroSubtitle: {
       ...TextStyles.callout,

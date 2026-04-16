@@ -134,6 +134,10 @@ export default function PerkDetailScreen() {
     }
 
     if (perk.priceTier && perk.priceTier !== 'free') {
+      if (!functions) {
+        Alert.alert('Unavailable', 'Checkout requires Firebase to be configured for this build.');
+        return;
+      }
       try {
         const createCheckoutSessionFn = httpsCallable(functions, 'createCheckoutSessionV2');
         const result = await createCheckoutSessionFn({ perkId: perk.id });

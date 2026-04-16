@@ -27,15 +27,23 @@ export function AnimatedFilterChip({
   const scale = useSharedValue(1);
   const bg = useSharedValue(0);
 
-  const animStyle = useAnimatedStyle(() => ({
+  const scaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+
+  // Reanimated interpolateColor on web often does not paint chip fills reliably over
+  // backdrop-filter panels → illegible (near-white on white). Native keeps full tint.
+  const bgStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [accentColor, accentColor + 'CC']
-        : [colors.surface, colors.surfaceElevated],
+      bg.value,
+      [0, 1],
+      active ? [accentColor, accentColor + 'CC'] : [colors.surface, colors.surfaceElevated],
     ),
   }));
+
+  const webChipBg = Platform.OS === 'web' ? { backgroundColor: active ? accentColor : colors.surface } : null;
+  const labelColor = active ? '#fff' : colors.text;
+  const iconColor = active ? '#fff' : colors.textSecondary;
 
   return (
     <Pressable
@@ -49,15 +57,22 @@ export function AnimatedFilterChip({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <Animated.View style={[s.chip, { borderColor: active ? accentColor : colors.borderLight }, animStyle]}>
+      <Animated.View
+        style={[
+          s.chip,
+          { borderColor: active ? accentColor : colors.borderLight },
+          scaleStyle,
+          Platform.OS === 'web' ? webChipBg : bgStyle,
+        ]}
+      >
         {icon ? (
           <Ionicons
             name={icon as keyof typeof Ionicons.glyphMap}
             size={13}
-            color={active ? '#fff' : colors.textTertiary}
+            color={iconColor}
           />
         ) : null}
-        <Text style={[s.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
+        <Text style={[s.text, { color: labelColor }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );

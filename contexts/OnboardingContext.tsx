@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingState {
@@ -39,6 +39,10 @@ interface OnboardingContextValue {
   resetOnboarding: () => Promise<void>;
   restartOnboarding: () => Promise<void>;
   updateLocation: (country: string, city: string) => Promise<void>;
+  /** Resolves after the initial AsyncStorage read used to hydrate onboarding (avoids post-login routing on stale defaults). */
+  waitForHydration: () => Promise<void>;
+  /** Latest onboarding snapshot (synced with persist + initial load); safe to read right after `waitForHydration()`. */
+  getSnapshot: () => OnboardingState;
 }
 
 const STORAGE_KEY = '@culturepass_onboarding';
@@ -63,27 +67,62 @@ export const OnboardingContext = createContext<OnboardingContextValue | undefine
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(defaultState);
   const [isLoading, setIsLoading] = useState(true);
+  /** Mirrors the latest persisted onboarding (incl. immediately after AsyncStorage read, before React re-renders). */
+  const stateSnapshotRef = useRef<OnboardingState>(defaultState);
+  const hydrationDoneRef = useRef(false);
+  const hydrationWaitersRef = useRef<Array<() => void>>([]);
+
+  const flushHydrationWaiters = useCallback(() => {
+    if (hydrationDoneRef.current) return;
+    hydrationDoneRef.current = true;
+    const waiters = hydrationWaitersRef.current.splice(0);
+    waiters.forEach((fn) => {
+      try {
+        fn();
+      } catch {
+        /* ignore */
+      }
+    });
+  }, []);
+
+  const waitForHydration = useCallback((): Promise<void> => {
+    if (hydrationDoneRef.current) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      hydrationWaitersRef.current.push(resolve);
+    });
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       try {
         const data = await AsyncStorage.getItem(STORAGE_KEY);
+        if (cancelled) return;
         if (data) {
           const parsed = JSON.parse(data) as Partial<OnboardingState>;
-          setState({ ...defaultState, ...parsed });
+          const merged = { ...defaultState, ...parsed };
+          stateSnapshotRef.current = merged;
+          setState(merged);
         }
       } catch {
         // AsyncStorage unavailable (e.g. private browsing on web) — use defaults
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+          flushHydrationWaiters();
+        }
       }
     };
-    loadData();
-  }, []);
+    void loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [flushHydrationWaiters]);
 
-  const persistUpdate = async (patch: Partial<OnboardingState>) => {
+  const persistUpdate = (patch: Partial<OnboardingState>) => {
     setState((prev) => {
       const newState = { ...prev, ...patch };
+      stateSnapshotRef.current = newState;
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState)).catch((err) => {
         if (__DEV__) {
           console.warn('[OnboardingContext] AsyncStorage.setItem failed — onboarding state will not persist across sessions.', err);
@@ -92,6 +131,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       return newState;
     });
   };
+
+  const getSnapshot = useCallback(() => stateSnapshotRef.current, []);
 
   const value = useMemo(() => ({
     state,
@@ -107,14 +148,23 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setLanguages:        (languages: string[]) => persistUpdate({ languages }),
     setInterests:        (interests: string[]) => persistUpdate({ interests }),
     setSubscriptionTier: (subscriptionTier: OnboardingState['subscriptionTier']) => persistUpdate({ subscriptionTier }),
-    completeOnboarding:  () => persistUpdate({ isComplete: true }),
-    restartOnboarding:   () => persistUpdate({ isComplete: false }),
+    completeOnboarding: async () => {
+      persistUpdate({ isComplete: true });
+    },
+    restartOnboarding: async () => {
+      persistUpdate({ isComplete: false });
+    },
     resetOnboarding: async () => {
+      stateSnapshotRef.current = defaultState;
       setState(defaultState);
       await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
     },
-    updateLocation: (country: string, city: string) => persistUpdate({ country, city }),
-  }), [state, isLoading]);
+    updateLocation: async (country: string, city: string) => {
+      persistUpdate({ country, city });
+    },
+    waitForHydration,
+    getSnapshot,
+  }), [state, isLoading, waitForHydration, getSnapshot]);
 
   return (
     <OnboardingContext.Provider value={value}>

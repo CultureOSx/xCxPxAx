@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffectiveMainTabTopInset } from '@/hooks/useEffectiveMainTabTopInset';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -38,7 +39,7 @@ const IS_WEB = Platform.OS === 'web';
 
 export default function CultureFeedScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = IS_WEB ? 0 : insets.top;
+  const topInset = useEffectiveMainTabTopInset();
   const colors = useColors();
   const { isDesktop, hPad, tabBarHeight } = useLayout();
   const gate = useAuthGate();
@@ -122,7 +123,7 @@ export default function CultureFeedScreen() {
     [hPad, listBottomPad, isDesktop],
   );
 
-  const androidRefreshOffset = insets.top + FEED_ANDROID_REFRESH_EXTRA;
+  const androidRefreshOffset = topInset + FEED_ANDROID_REFRESH_EXTRA;
 
   const emptyList = useMemo(
     () => <FeedEmptyState activeFilter={activeFilter} hPad={hPad} />,

@@ -4,13 +4,9 @@ import {
   ActivityIndicator, FlatList, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import Animated, {
-  FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring,
-  interpolateColor, withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -24,6 +20,7 @@ import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
 import { CultureTokens, TextStyles } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
+import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
 import { EVENT_CATEGORIES } from '@/constants/eventCategories';
 
 const isWeb = Platform.OS === 'web';
@@ -112,47 +109,6 @@ function getDateRange(filter: DateFilter): { dateFrom?: string; dateTo?: string 
   // 'all' / upcoming — from today onwards, no upper bound
   return { dateFrom: today };
 }
-
-// ─── Filter Chip ──────────────────────────────────────────────────────────────
-
-function FilterChip({
-  label, active, onPress, icon,
-}: {
-  label: string; active: boolean; onPress: () => void; icon?: string;
-}) {
-  const colors = useColors();
-  const scale = useSharedValue(1);
-  const bg = useSharedValue(0);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    backgroundColor: interpolateColor(
-      bg.value, [0, 1],
-      active
-        ? [CultureTokens.indigo, CultureTokens.indigo + 'dd']
-        : [colors.surface, colors.surfaceElevated],
-    ),
-  }));
-  return (
-    <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); bg.value = withTiming(1, { duration: 100 }); }}
-      onPressOut={() => { scale.value = withSpring(1);   bg.value = withTiming(0, { duration: 100 }); }}
-      onPress={() => { if (Platform.OS !== 'web') Haptics.selectionAsync(); onPress(); }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-    >
-      <Animated.View style={[fc.chip, { borderColor: active ? CultureTokens.indigo : colors.borderLight }, animStyle]}>
-        {icon ? <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : colors.textTertiary} /> : null}
-        <Text style={[fc.text, { color: active ? '#fff' : colors.textSecondary }]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const fc = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  text: { ...TextStyles.captionSemibold, lineHeight: 17 },
-});
 
 function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
   return <View style={{ width: 1, height: 18, backgroundColor: colors.borderLight, marginHorizontal: 4, alignSelf: 'center' }} />;
@@ -311,7 +267,7 @@ export default function AllEventsScreen() {
               accessibilityLabel="Category filters"
             >
               {/* "All" chip */}
-              <FilterChip
+              <AnimatedFilterChip
                 label="All"
                 active={selectedCategory === 'All' && priceFilter === 'all'}
                 onPress={() => { setSelectedCategory('All'); setPriceFilter('all'); }}
@@ -319,7 +275,7 @@ export default function AllEventsScreen() {
               />
 
               {/* Free Events — special chip that sets isFree filter */}
-              <FilterChip
+              <AnimatedFilterChip
                 label="Free Events"
                 active={priceFilter === 'free'}
                 onPress={() => setPriceFilter(priceFilter === 'free' ? 'all' : 'free')}
@@ -330,7 +286,7 @@ export default function AllEventsScreen() {
 
               {/* Category chips — static canonical list */}
               {EVENT_CATEGORIES.map(cat => (
-                <FilterChip
+                <AnimatedFilterChip
                   key={cat.id}
                   label={cat.id}
                   active={selectedCategory === cat.id}
@@ -364,7 +320,7 @@ export default function AllEventsScreen() {
               accessibilityLabel="Date filters"
             >
               {DATE_OPTIONS.map(opt => (
-                <FilterChip
+                <AnimatedFilterChip
                   key={opt.id}
                   label={opt.label}
                   active={dateFilter === opt.id}

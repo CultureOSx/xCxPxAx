@@ -93,6 +93,7 @@ const ADMIN_TOOLS: AdminTool[] = [
   { id: 'finance',    label: 'Finance',            icon: 'card-outline',              route: '/admin/finance',         color: CultureTokens.teal },
   { id: 'compliance', label: 'Data Compliance',    icon: 'shield-checkmark-outline',  route: '/admin/data-compliance', color: '#10B981' },
   { id: 'discover',   label: 'Discover Curation',  icon: 'sparkles-outline',          route: '/admin/discover',        color: '#8B5CF6' },
+  { id: 'cultureToday', label: 'Culture Today calendar', icon: 'earth-outline', route: '/admin/culture-today', color: CultureTokens.teal },
   { id: 'handles',    label: 'Handles',            icon: 'at-outline',                route: '/admin/handles' },
   { id: 'platform',   label: 'Platform Settings',  icon: 'settings-outline',          route: '/admin/platform' },
   { id: 'updates',    label: 'Updates',            icon: 'newspaper-outline',         route: '/admin/updates' },

@@ -8,6 +8,9 @@ import { storage } from './firebase';
  * @returns The download URL of the uploaded file.
  */
 export async function uploadFile(uri: string, path: string): Promise<string> {
+  if (!storage) {
+    throw new Error('Firebase Storage is not configured for this build.');
+  }
   const response = await fetch(uri);
   const blob = await response.blob();
   const storageRef = ref(storage, path);

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { api, type FeaturedCityData } from '@/lib/api';
 
 export type { FeaturedCityData };
@@ -30,5 +31,21 @@ export function useFeaturedCities() {
     gcTime: 30 * 60 * 1000,
   });
 
-  return { cities, isLoading, isError, refetch };
+  const dedupedCities = useMemo(() => {
+    const byIdentity = new Map<string, FeaturedCityData>();
+    for (const city of cities) {
+      const key = `${city.countryCode.toUpperCase()}::${(city.slug || city.name).toLowerCase()}`;
+      const current = byIdentity.get(key);
+      if (!current) {
+        byIdentity.set(key, city);
+        continue;
+      }
+      if ((city.order ?? 999) < (current.order ?? 999)) {
+        byIdentity.set(key, city);
+      }
+    }
+    return [...byIdentity.values()].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  }, [cities]);
+
+  return { cities: dedupedCities, isLoading, isError, refetch };
 }
