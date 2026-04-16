@@ -36,6 +36,7 @@ jest.mock('../../lib/api', () => ({
   api: {
     council: {
       my: jest.fn(),
+      resolve: jest.fn(),
     },
   },
 }));
@@ -82,10 +83,28 @@ describe('useCouncil hook', () => {
     );
   });
 
-  it('should pass enabled: false when not authenticated', () => {
+  it('should pass enabled: true for guests in Australia with a city (resolve path)', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: false,
       userId: null,
+    });
+
+    renderHook(() => useCouncil());
+
+    expect(useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: true,
+      }),
+    );
+  });
+
+  it('should pass enabled: false for guests without a city', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      isAuthenticated: false,
+      userId: null,
+    });
+    (useOnboarding as jest.Mock).mockReturnValue({
+      state: { city: '', country: 'Australia' },
     });
 
     renderHook(() => useCouncil());
@@ -120,12 +139,12 @@ describe('useCouncil hook', () => {
     expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('should include the correct query key with city, postcode, and state', () => {
+  it('should use council context query key', () => {
     renderHook(() => useCouncil());
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['/api/council/my', 'Sydney', 2000, 'NSW'],
+        queryKey: ['/api/council/context', 'my', 'Sydney', 2000, 'NSW'],
       }),
     );
   });

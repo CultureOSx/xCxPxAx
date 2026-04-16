@@ -568,9 +568,8 @@ export default function EventDetailScreen() {
               ) : null}
             </Pressable>
 
-            <Pressable
-              onPress={() => setExpandedSnapshotCard((current) => (current === 'where' ? null : 'where'))}
-              style={({ pressed }) => ({
+            <View
+              style={{
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
@@ -578,19 +577,23 @@ export default function EventDetailScreen() {
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-                opacity: pressed ? 0.92 : 1,
-              })}
-              accessibilityRole="button"
-              accessibilityLabel="Event venue and map"
-              accessibilityHint="Tap to expand location details"
+              }}
             >
-              <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Where</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'where' ? 2 : 1}>
-                {venuePrimary}
-              </Text>
-              <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={expandedSnapshotCard === 'where' ? 3 : 1}>
-                {venueSecondary}
-              </Text>
+              <Pressable
+                onPress={() => setExpandedSnapshotCard((current) => (current === 'where' ? null : 'where'))}
+                style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
+                accessibilityRole="button"
+                accessibilityLabel="Event venue and map"
+                accessibilityHint="Tap to expand location details"
+              >
+                <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Where</Text>
+                <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'where' ? 2 : 1}>
+                  {venuePrimary}
+                </Text>
+                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={expandedSnapshotCard === 'where' ? 3 : 1}>
+                  {venueSecondary}
+                </Text>
+              </Pressable>
               {expandedSnapshotCard === 'where' ? (
                 <Pressable
                   onPress={openMap}
@@ -608,7 +611,7 @@ export default function EventDetailScreen() {
                   <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>Open map</Text>
                 </Pressable>
               ) : null}
-            </Pressable>
+            </View>
 
             <Pressable
               onPress={() => setExpandedSnapshotCard((current) => (current === 'entry' ? null : 'entry'))}
