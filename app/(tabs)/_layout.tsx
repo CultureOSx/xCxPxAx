@@ -77,9 +77,8 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
-
       {/* In-tab profile (opened from Account menu, deep links, avatar). Hidden from tab bar. */}
-      <Tabs.Screen name="profile" options={{ href: null }} />
+      {/* Removed duplicate profile screen to ensure unique screen names */}
 
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />
