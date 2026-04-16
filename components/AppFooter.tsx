@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Link } from 'expo-router';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
+import { useAppAppearance } from '@/hooks/useAppAppearance';
 import { APP_NAME, APP_DOMAIN } from '@/lib/app-meta';
 import { TextStyles } from '@/constants/typography';
+import { glass } from '@/constants/colors';
 
 const FOOTER_LINKS = [
   { href: '/legal/terms', label: 'Terms' },
@@ -19,100 +15,82 @@ const FOOTER_LINKS = [
   { href: '/help', label: 'Help' },
 ] as const;
 
+const WEB_LINK_HIT = Platform.OS === 'web' ? ({ cursor: 'pointer' as const }) : null;
+
 /**
  * Global site footer — web only (main chrome uses WebShell + sidebar).
- * Legal and help routes are in-app; no raw hex — tokens via useColors.
+ * Thin glass strip: legal links, copyright, and domain in one compact row.
  */
 export function AppFooter() {
   const colors = useColors();
   const { hPad, isMobile } = useLayout();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const panelAnim = useSharedValue(0);
-  const panelStyle = useAnimatedStyle(() => ({
-    opacity: panelAnim.value,
-    transform: [{ translateY: (1 - panelAnim.value) * 8 }],
-    maxHeight: panelAnim.value * 240,
-    overflow: 'hidden',
-  }));
+  const { resolvedScheme } = useAppAppearance();
+  const glassSkin = resolvedScheme === 'light' ? glass.light : glass.dark;
 
   if (Platform.OS !== 'web') {
     return null;
   }
 
   const year = new Date().getFullYear();
-  const setExpanded = (next: boolean) => {
-    setIsExpanded(next);
-    panelAnim.value = withTiming(next ? 1 : 0, {
-      duration: next ? 220 : 180,
-      easing: Easing.out(Easing.cubic),
-    });
-  };
 
   return (
-    <View style={[styles.shell, { backgroundColor: colors.background, paddingHorizontal: hPad }]}>
-      <Pressable
-        onHoverIn={() => setExpanded(true)}
-        onHoverOut={() => setExpanded(false)}
-        onFocus={() => setExpanded(true)}
-        onBlur={() => setExpanded(false)}
-        onPress={() => setExpanded(!isExpanded)}
-        style={styles.dockTrigger}
-        accessibilityRole="button"
-        accessibilityLabel={isExpanded ? 'Collapse footer' : 'Expand footer'}
-      >
-        <View style={[styles.dockHandle, { backgroundColor: colors.borderLight }]} />
-      </Pressable>
-
-      <Animated.View style={panelStyle} pointerEvents={isExpanded ? 'auto' : 'none'}>
-        <View
-          style={[
-            styles.wrap,
-            {
-              borderTopColor: colors.borderLight,
-              backgroundColor: colors.background,
-            },
-          ]}
-          accessibilityLabel="Site footer, legal links and copyright"
-        >
-          <View style={[styles.topRow, isMobile && styles.topRowStacked]}>
-            <View style={styles.linksRow}>
-              {FOOTER_LINKS.map((item, index) => (
-                <React.Fragment key={item.href}>
-                  {index > 0 ? (
-                    <Text
-                      style={[styles.sep, { color: colors.textSecondary }]}
-                      accessible={false}
-                      importantForAccessibility="no"
-                    >
-                      ·
-                    </Text>
-                  ) : null}
-                  <Link href={item.href} asChild>
-                    <Pressable
-                      accessibilityRole="link"
-                      accessibilityLabel={item.label}
-                      style={({ pressed }) => [styles.linkHit, pressed && styles.pressed]}
-                    >
-                      <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>
-                        {item.label}
-                      </Text>
-                    </Pressable>
-                  </Link>
-                </React.Fragment>
-              ))}
-            </View>
-            <Text
-              style={[TextStyles.caption, styles.copy, { color: colors.textSecondary }]}
-              selectable
-            >
-              © {year} {APP_NAME}
-            </Text>
-          </View>
-          <Text style={[TextStyles.caption, styles.tagline, { color: colors.textSecondary }]}>
-            Cultural events & communities for diaspora cities · {APP_DOMAIN}
-          </Text>
+    <View
+      style={[
+        styles.shell,
+        {
+          paddingHorizontal: hPad,
+          backgroundColor: glassSkin.backgroundColor,
+          borderTopColor: glassSkin.borderColor,
+        },
+      ]}
+      accessible
+      accessibilityLabel={`Site footer. ${APP_NAME}. Legal links and help.`}
+    >
+      <View style={[styles.row, isMobile && styles.rowStacked]}>
+        <View style={styles.linksRow} accessibilityRole="toolbar">
+          {FOOTER_LINKS.map((item, index) => (
+            <React.Fragment key={item.href}>
+              {index > 0 ? (
+                <Text
+                  style={[styles.sep, { color: colors.textTertiary }]}
+                  accessible={false}
+                  importantForAccessibility="no"
+                >
+                  ·
+                </Text>
+              ) : null}
+              <Link href={item.href} asChild>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={item.label}
+                  style={({ pressed }) => [
+                    styles.linkHit,
+                    WEB_LINK_HIT,
+                    pressed && { opacity: 0.75 },
+                  ]}
+                >
+                  <Text style={[TextStyles.captionSemibold, { color: colors.primary }]}>{item.label}</Text>
+                </Pressable>
+              </Link>
+            </React.Fragment>
+          ))}
         </View>
-      </Animated.View>
+
+        <Text
+          style={[
+            TextStyles.caption,
+            styles.meta,
+            { color: colors.textSecondary },
+            isMobile && styles.metaStacked,
+          ]}
+          selectable
+          numberOfLines={1}
+        >
+          © {year} {APP_NAME}
+          <Text style={{ color: colors.textTertiary }}> · </Text>
+          {APP_DOMAIN}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -123,33 +101,20 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     flexShrink: 0,
     alignSelf: 'stretch',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 6,
     paddingBottom: 8,
   },
-  dockTrigger: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 6,
-    paddingBottom: 6,
-  },
-  dockHandle: {
-    width: 48,
-    height: 4,
-    borderRadius: 999,
-    opacity: 0.9,
-  },
-  wrap: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
-    paddingBottom: 12,
-  },
-  topRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
+    minHeight: 28,
+    rowGap: 4,
   },
-  topRowStacked: {
+  rowStacked: {
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
@@ -157,24 +122,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   sep: {
     ...TextStyles.caption,
     marginHorizontal: 2,
-  },
+    userSelect: 'none',
+  } as const,
   linkHit: {
-    paddingVertical: 4,
-    paddingHorizontal: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 6,
   },
-  pressed: {
-    opacity: 0.72,
+  meta: {
+    flexShrink: 1,
+    textAlign: 'right',
+    minWidth: 0,
   },
-  copy: {
-    flexShrink: 0,
-  },
-  tagline: {
-    marginTop: 6,
-    opacity: 0.92,
+  metaStacked: {
+    alignSelf: 'stretch',
+    textAlign: 'left',
   },
 });

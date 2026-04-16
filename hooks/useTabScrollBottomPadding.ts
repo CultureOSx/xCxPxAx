@@ -14,9 +14,9 @@ export function useTabScrollBottomPadding(extra = 16): number {
   const insets = useSafeAreaInsets();
   const { isDesktop, tabBarHeight } = useLayout();
 
-  // Desktop web: no floating tab bar; add a little tail room above the global AppFooter
+  // Desktop web: no floating tab bar; tail room above the thin glass AppFooter (~36px + gap)
   if (Platform.OS === 'web' && isDesktop) {
-    return extra + 32 + 20;
+    return extra + 36;
   }
 
   const bottomSafe = Platform.OS === 'web' ? 12 : insets.bottom;
