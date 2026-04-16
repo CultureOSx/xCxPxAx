@@ -7,4 +7,6 @@ module.exports = {
     '^@shared/(.*)$': '<rootDir>/shared/$1',
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  /** Local agent worktrees live under .gitignored `.claude/`; skip so Jest does not scan duplicate package trees. */
+  testPathIgnorePatterns: ['/node_modules/', '\\.claude\\/'],
 };
