@@ -287,7 +287,7 @@ function OrganizerDashboardContent() {
               </Text>
             </View>
             <Pressable
-              onPress={() => router.push('/create')}
+              onPress={() => router.push('/workspace')}
               style={[
                 dashboardStyles.createBtn,
                 { backgroundColor: colors.primarySoft, borderColor: colors.borderLight, borderWidth: StyleSheet.hairlineWidth * 2 },
@@ -568,7 +568,7 @@ function OrganizerDashboardContent() {
       {/* Floating Action Button */}
       <Pressable 
         style={dashboardStyles.fab}
-        onPress={() => router.push('/create')}
+        onPress={() => router.push('/workspace')}
       >
         <LinearGradient
           colors={[CultureTokens.indigo, CultureTokens.coral]}

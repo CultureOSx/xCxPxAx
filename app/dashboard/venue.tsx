@@ -286,7 +286,7 @@ function VenueDashboardContent() {
             <Text style={[vc.sectionHeader, { color: colors.textTertiary }]}>QUICK ACTIONS</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {[
-                { icon: 'add-circle-outline', label: 'New Event', color: CultureTokens.indigo,  route: '/create' },
+                { icon: 'add-circle-outline', label: 'New Event', color: CultureTokens.indigo,  route: '/workspace' },
                 { icon: 'qr-code-outline',    label: 'Scanner',   color: CultureTokens.teal,    route: '/scanner' },
                 { icon: 'analytics-outline',  label: 'Organizer', color: CultureTokens.gold, route: '/dashboard/organizer' },
               ].map(a => (
@@ -340,7 +340,7 @@ function VenueDashboardContent() {
               </Text>
               <Pressable
                 style={[vc.ctaBtn, { backgroundColor: CultureTokens.indigo }]}
-                onPress={() => router.push('/create')}
+                onPress={() => router.push('/workspace')}
                 accessibilityRole="button"
               >
                 <Ionicons name="add" size={18} color="#fff" />

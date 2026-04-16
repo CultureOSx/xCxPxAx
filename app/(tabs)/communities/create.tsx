@@ -1,5 +1,5 @@
-import CommunityHubRedirect from '@/components/community/CommunityHubRedirect';
+import { CommunityHubRedirect } from '@/components/community/CommunityHubRedirect';
 
 export default function CommunitiesCreateRedirect() {
-  return <CommunityHubRedirect href="/community/create" label="Opening community creation..." />;
+  return <CommunityHubRedirect href="/workspace?type=organisation" label="Opening community workspace..." />;
 }

@@ -11,7 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { TextStyles } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -25,7 +25,6 @@ import { useLayout } from '@/hooks/useLayout';
 import { getPostcodeData, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import {
   ACTIVITY_CATEGORIES,
-  ARTIST_GENRES,
   BIZ_CATEGORIES,
   CUISINE_OPTIONS,
   EVENT_CATEGORIES,
@@ -37,6 +36,7 @@ import {
   ORG_LISTING_TABS,
   PERK_CATEGORIES,
   PERK_TYPES,
+  PROFESSIONAL_CATEGORIES,
   PRICE_RANGE_OPTS,
   PROFILE_TABS,
   SHOP_CATEGORIES,
@@ -50,6 +50,7 @@ import {
   type FormState,
   type SubmitType,
 } from '@/features/submit/config';
+import type { EventData, Profile } from '@/shared/schema';
 import {
   creatorListingBlockedHint,
   listingTypesForUser,
@@ -117,6 +118,78 @@ function SubmitStudioLayout({
   );
 }
 
+const COMMUNITY_PLATFORM_PILLARS = [
+  'Flexibility for different association models',
+  'Scalability as membership and programs grow',
+  'Tools to build, manage, and engage your community',
+] as const;
+
+const ASSOCIATION_PROBLEM_AREAS = [
+  {
+    title: 'Fragmented member experience',
+    icon: 'people-outline' as const,
+    points: [
+      'Members struggle with multiple accounts and logins across various systems.',
+      'Complex onboarding processes deter engagement and participation.',
+      'Scattered tools reduce activity and split attention across every platform.',
+    ],
+  },
+  {
+    title: 'Administrative inefficiencies',
+    icon: 'construct-outline' as const,
+    points: [
+      'SIG leaders and volunteers lose time navigating and managing too many tools.',
+      'Compiling data and analytics across disconnected systems makes success hard to measure.',
+      'Managing multiple contracts and vendors adds unnecessary cost and complexity.',
+    ],
+  },
+  {
+    title: 'Organizational implications',
+    icon: 'analytics-outline' as const,
+    points: [
+      'Costs and operational overhead increase as systems and vendor relationships multiply.',
+      'Programs and services become harder to scale efficiently.',
+      'Innovation slows compared with associations using integrated systems.',
+      'Leaders have less usable data for long-term planning and decision-making.',
+    ],
+  },
+] as const;
+
+const ASSOCIATION_SOLUTION_AREAS = [
+  {
+    title: 'One member journey',
+    icon: 'person-circle-outline' as const,
+    points: [
+      'Bring identity, onboarding, communication, events, and participation into one connected experience.',
+      'Reduce login friction and make it easier for members to discover where they belong.',
+    ],
+  },
+  {
+    title: 'One operational system',
+    icon: 'grid-outline' as const,
+    points: [
+      'Give association teams and volunteer leaders a shared platform instead of a patchwork of tools.',
+      'Simplify administration, reporting, and day-to-day community management.',
+    ],
+  },
+  {
+    title: 'One scalable foundation',
+    icon: 'rocket-outline' as const,
+    points: [
+      'Use unified data to measure engagement, guide decisions, and support long-term planning.',
+      'Launch new programs faster and scale services without multiplying operational complexity.',
+    ],
+  },
+] as const;
+
+const WORKSPACE_STATUS_FILTERS = ['all', 'draft', 'published', 'archived'] as const;
+
+type WorkspaceStatusFilter = (typeof WORKSPACE_STATUS_FILTERS)[number];
+
+type ManagedWorkspaceItem =
+  | { kind: 'event'; id: string; title: string; subtitle?: string; status: 'draft' | 'published' | 'archived'; raw: EventData }
+  | { kind: 'profile'; id: string; title: string; subtitle?: string; status: 'draft' | 'published' | 'archived'; raw: Profile };
+
 const emptyToUndefined = (value: string): string | undefined => {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
@@ -162,6 +235,8 @@ export default function SubmitScreen() {
   const [imageUploadWarning, setImageUploadWarning] = useState<string | null>(null);
   const [submitted, setSubmitted]   = useState(false);
   const [submittedType, setSubmittedType] = useState<SubmitType>('event');
+  const [editingItem, setEditingItem] = useState<ManagedWorkspaceItem | null>(null);
+  const [workspaceStatusFilter, setWorkspaceStatusFilter] = useState<WorkspaceStatusFilter>('all');
 
   const accent = TYPE_CONFIG[activeTab].color;
   const accessFlags = useMemo(() => ({ isAdmin, isOrganizer }), [isAdmin, isOrganizer]);
@@ -173,10 +248,92 @@ export default function SubmitScreen() {
   }, [params.type, params.variant]);
   const [accessGateHint, setAccessGateHint] = useState<string | null>(null);
 
+  const myProfilesQuery = useQuery({
+    queryKey: ['workspace', 'profiles', userId],
+    queryFn: () => api.profiles.my(),
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
+
+  const myEventsQuery = useQuery({
+    queryKey: ['workspace', 'events', userId],
+    queryFn: () => api.events.list({ organizerId: userId ?? undefined, pageSize: 100, page: 1 }),
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
+
+  const approvedWorkspaceProfiles = useMemo(() => {
+    const profiles = myProfilesQuery.data ?? [];
+    return profiles.filter((profile) => {
+      const entityType = String(profile.entityType ?? '').toLowerCase();
+      const category = String(profile.category ?? '').toLowerCase();
+      const isEligibleEntity =
+        entityType === 'business' ||
+        entityType === 'organisation' ||
+        (entityType === 'artist');
+      const isProfessional = entityType === 'organisation' && category === 'professional';
+      return (isEligibleEntity || isProfessional) && profile.handleStatus === 'approved';
+    });
+  }, [myProfilesQuery.data]);
+
+  const canManageWorkspace = approvedWorkspaceProfiles.length > 0;
+  const supportsWorkspaceManagement = isEventLike(activeTab) || ORG_LISTING_TABS.includes(activeTab);
+
   const set = useCallback((field: keyof FormState, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
     setFieldErrors(p => ({ ...p, [field]: undefined }));
   }, []);
+
+  const resetEditor = useCallback(() => {
+    setEditingItem(null);
+    setForm({ ...initialForm });
+    setImageUri(null);
+    setEventCultureTags([]);
+    setOrgDiscoveryTags([]);
+    setFieldErrors({});
+    setNetworkError(null);
+    setImageUploadWarning(null);
+    setIsFree(false);
+  }, []);
+
+  const workspaceItems = useMemo(() => {
+    const eventItems: ManagedWorkspaceItem[] = isEventLike(activeTab)
+      ? (myEventsQuery.data?.events ?? []).map((event) => ({
+          kind: 'event',
+          id: event.id,
+          title: event.title,
+          subtitle: [event.date, event.city].filter(Boolean).join(' · '),
+          status: event.status === 'cancelled' ? 'archived' : (event.status ?? 'draft'),
+          raw: event,
+        }))
+      : [];
+
+    const profileItems: ManagedWorkspaceItem[] = ORG_LISTING_TABS.includes(activeTab)
+      ? (myProfilesQuery.data ?? [])
+          .filter((profile) => {
+            const entityType = String(profile.entityType ?? '').toLowerCase();
+            const category = String(profile.category ?? '').toLowerCase();
+            if (activeTab === 'organisation') return entityType === 'organisation' && category !== 'professional';
+            if (activeTab === 'business') return entityType === 'business';
+            if (activeTab === 'professional') {
+              return entityType === 'artist' || (entityType === 'organisation' && category === 'professional');
+            }
+            return false;
+          })
+          .map((profile) => ({
+            kind: 'profile',
+            id: profile.id,
+            title: profile.name,
+            subtitle: [profile.category, profile.city].filter(Boolean).join(' · '),
+            status: profile.status === 'suspended' ? 'archived' : (profile.status ?? 'draft'),
+            raw: profile,
+          }))
+      : [];
+
+    const merged = [...eventItems, ...profileItems];
+    if (workspaceStatusFilter === 'all') return merged;
+    return merged.filter((item) => item.status === workspaceStatusFilter);
+  }, [activeTab, myEventsQuery.data, myProfilesQuery.data, workspaceStatusFilter]);
 
   // Auto-fill city/state from postcode
   useEffect(() => {
@@ -317,14 +474,74 @@ export default function SubmitScreen() {
     onError: handleMutationError,
   });
 
+  const updateEventMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<EventData> }) => api.events.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'events', userId] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
+      resetEditor();
+    },
+    onError: handleMutationError,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.profiles.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'profiles', userId] });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setNetworkError(null);
+      setImageUploadWarning(null);
+      resetEditor();
+    },
+    onError: handleMutationError,
+  });
+
+  const deleteWorkspaceMutation = useMutation({
+    mutationFn: async (item: ManagedWorkspaceItem) => {
+      if (item.kind === 'event') return api.events.remove(item.id);
+      return api.profiles.remove(item.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'events', userId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'profiles', userId] });
+      resetEditor();
+    },
+    onError: handleMutationError,
+  });
+
+  const archiveWorkspaceMutation = useMutation({
+    mutationFn: async (item: ManagedWorkspaceItem) => {
+      if (item.kind === 'event') return api.events.update(item.id, { status: 'cancelled' });
+      return api.profiles.update(item.id, { status: 'suspended' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'events', userId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace', 'profiles', userId] });
+      resetEditor();
+    },
+    onError: handleMutationError,
+  });
+
   const isPending =
     submitEventMutation.isPending ||
+    updateEventMutation.isPending ||
     submitProfileMutation.isPending ||
+    updateProfileMutation.isPending ||
     submitPerkMutation.isPending ||
     submitActivityMutation.isPending ||
     submitRestaurantMutation.isPending ||
     submitShopMutation.isPending ||
-    submitMovieMutation.isPending;
+    submitMovieMutation.isPending ||
+    deleteWorkspaceMutation.isPending ||
+    archiveWorkspaceMutation.isPending;
 
   // ── Image upload ───────────────────────────────────────────────────────────
 
@@ -464,6 +681,104 @@ export default function SubmitScreen() {
     return { city: resolved.place_name, state: resolved.state_code, country, postcode: resolved.postcode, latitude: resolved.latitude, longitude: resolved.longitude };
   };
 
+  const handleEditWorkspaceItem = (item: ManagedWorkspaceItem) => {
+    setEditingItem(item);
+    setFieldErrors({});
+    setNetworkError(null);
+    setImageUploadWarning(null);
+    setWorkspaceStatusFilter('all');
+
+    if (item.kind === 'event') {
+      const event = item.raw as EventData & { postcode?: number; contactEmail?: string };
+      setForm({
+        ...initialForm,
+        name: event.title ?? '',
+        description: event.description ?? '',
+        city: event.city ?? '',
+        state: event.state ?? '',
+        postcode: event.postcode ? String(event.postcode) : '',
+        country: event.country ?? 'Australia',
+        contactEmail: event.contactEmail ?? '',
+        category: event.category ?? '',
+        date: event.date ? (() => {
+          const iso = event.date.trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+            const [year, month, day] = iso.split('-');
+            return `${day}/${month}/${year}`;
+          }
+          return event.date;
+        })() : '',
+        time: event.time ?? '',
+        venue: event.venue ?? '',
+        address: event.address ?? '',
+        price: event.priceCents != null ? String(event.priceCents / 100) : '',
+        capacity: event.capacity != null ? String(event.capacity) : '',
+        externalTicketUrl: event.externalTicketUrl ?? '',
+        communityId: event.communityId ?? '',
+        hostName: event.hostName ?? '',
+        hostEmail: event.hostEmail ?? '',
+        hostPhone: event.hostPhone ?? '',
+        sponsors: event.sponsors ?? '',
+      });
+      setImageUri(event.heroImageUrl ?? event.imageUrl ?? null);
+      setEventCultureTags(event.cultureTag ?? []);
+      setIsFree(Boolean(event.isFree || (event.priceCents ?? 0) <= 0));
+      return;
+    }
+
+    const profile = item.raw as Profile & { twitter?: string; linkedin?: string };
+    setForm({
+      ...initialForm,
+      name: profile.name ?? '',
+      description: profile.description ?? '',
+      city: profile.city ?? '',
+      country: profile.country ?? 'Australia',
+      category: profile.category ?? '',
+      contactEmail: profile.contactEmail ?? profile.email ?? '',
+      phone: profile.phone ?? '',
+      website: profile.website ?? '',
+      profileTags: (profile.tags ?? []).join(', '),
+      instagram: profile.instagram ?? '',
+      facebook: profile.facebook ?? '',
+      youtube: profile.youtube ?? '',
+      twitterX: profile.twitter ?? '',
+      linkedin: profile.linkedin ?? '',
+      address: profile.address ?? '',
+    });
+    setImageUri(profile.imageUrl ?? null);
+    setOrgDiscoveryTags([]);
+    setIsFree(false);
+  };
+
+  const confirmDeleteWorkspaceItem = (item: ManagedWorkspaceItem) => {
+    Alert.alert(
+      'Delete listing',
+      `Delete "${item.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteWorkspaceMutation.mutate(item),
+        },
+      ],
+    );
+  };
+
+  const confirmArchiveWorkspaceItem = (item: ManagedWorkspaceItem) => {
+    Alert.alert(
+      'Archive listing',
+      `Archive "${item.title}"? You can keep it out of the published view without deleting it.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive',
+          onPress: () => archiveWorkspaceMutation.mutate(item),
+        },
+      ],
+    );
+  };
+
   const handleSubmit = async () => {
     if (!visibleTypes.includes(activeTab)) {
       setNetworkError('This listing type is not available for your account.');
@@ -507,7 +822,7 @@ export default function SubmitScreen() {
           heroImageUrl = LISTING_PLACEHOLDER_IMG;
         }
       }
-      submitEventMutation.mutate({
+      const eventPayload = {
         title:       form.name.trim(),
         description: emptyToUndefined(form.description),
         date:        normalizedDate,
@@ -534,7 +849,12 @@ export default function SubmitScreen() {
         cultureTag:  eventCultureTags.length > 0 ? eventCultureTags : undefined,
         imageUrl,
         heroImageUrl,
-      });
+      };
+      if (editingItem?.kind === 'event') {
+        updateEventMutation.mutate({ id: editingItem.id, data: eventPayload });
+      } else {
+        submitEventMutation.mutate(eventPayload);
+      }
     } else if (activeTab === 'perk') {
       if (!form.perkType) { setFieldErrors(p => ({ ...p, perkType: 'Please select a perk type' })); return; }
       const discountVal = parseInt(form.discountValue || '0', 10);
@@ -670,7 +990,7 @@ export default function SubmitScreen() {
       const twitterHandle = emptyToUndefined(form.twitterX)?.replace(/^@/, '');
       const linkedinHandle = emptyToUndefined(form.linkedin)?.replace(/^@/, '');
       const airpalHandle = emptyToUndefined(form.airpal)?.replace(/^@/, '');
-      submitProfileMutation.mutate({
+      const profilePayload = {
         entityType: activeTab === 'professional' ? 'organisation' : activeTab,
         name:         form.name.trim(),
         description:  emptyToUndefined(form.description),
@@ -692,16 +1012,23 @@ export default function SubmitScreen() {
         twitterX:     twitterHandle ? `https://x.com/${twitterHandle}` : undefined,
         linkedin:     linkedinHandle ? `https://linkedin.com/in/${linkedinHandle}` : undefined,
         airpal:       airpalHandle ? `https://airpal.me/@${airpalHandle}` : undefined,
-      });
+      };
+      if (editingItem?.kind === 'profile') {
+        updateProfileMutation.mutate({
+          id: editingItem.id,
+          data: profilePayload,
+        });
+      } else {
+        submitProfileMutation.mutate(profilePayload);
+      }
     }
   };
 
   const getCategoryOptions = (): string[] => {
     if (isEventLike(activeTab)) return EVENT_CATEGORIES;
     if (activeTab === 'organisation') return ORG_CATEGORIES;
-    if (activeTab === 'professional') return [];
+    if (activeTab === 'professional') return [...PROFESSIONAL_CATEGORIES];
     if (activeTab === 'business') return BIZ_CATEGORIES;
-    if (activeTab === 'artist') return ARTIST_GENRES;
     if (activeTab === 'activity') return ACTIVITY_CATEGORIES;
     if (activeTab === 'restaurant') return CUISINE_OPTIONS;
     if (activeTab === 'shop') return SHOP_CATEGORIES;
@@ -710,7 +1037,7 @@ export default function SubmitScreen() {
   };
 
   const getCategorySectionLabel = (): string => {
-    if (activeTab === 'artist') return 'Genre';
+    if (activeTab === 'professional') return 'Professional category';
     if (activeTab === 'restaurant') return 'Cuisine';
     if (activeTab === 'movie') return 'Genre';
     return 'Category';
@@ -719,11 +1046,13 @@ export default function SubmitScreen() {
   const handleSelectType = useCallback((type: SubmitType) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
     setActiveTab(type);
+    setEditingItem(null);
+    setWorkspaceStatusFilter('all');
     const next = { ...initialForm };
     if (type === 'festival') next.category = 'Festival';
     else if (type === 'concert') next.category = 'Music';
     else if (type === 'workshop') next.category = 'Workshop';
-    else if (type === 'professional') next.category = 'Professional';
+    else if (type === 'professional') next.category = 'Artist';
     setForm(next);
     setImageUri(null);
     setEventCultureTags([]);
@@ -828,7 +1157,7 @@ export default function SubmitScreen() {
   // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
-    <AuthGuard icon="add-circle-outline" title="Create Content" message="Sign in to create events, organisations, and more.">
+    <AuthGuard icon="add-circle-outline" title="Workspace" message="Sign in to access your Workspace for events, organisations, and more.">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -853,7 +1182,7 @@ export default function SubmitScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle}>Create on CulturePass</Text>
+            <Text style={s.headerTitle}>Workspace</Text>
               <Text style={[s.headerSub, { color: accent }]}>{TYPE_CONFIG[activeTab].description}</Text>
             </View>
             <View style={[s.headerTypeBadge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
@@ -889,7 +1218,7 @@ export default function SubmitScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                <Text style={[s.asideOverline, { color: colors.textSecondary }]}>Creator studio</Text>
+                <Text style={[s.asideOverline, { color: colors.textSecondary }]}>Workspace</Text>
                 <Text style={[s.asideTitle, { color: colors.text }]}>Listing type</Text>
                 <Text style={[s.asideSubtitle, { color: colors.textSecondary }]}>
                   Choose a category to load the correct fields for your listing.
@@ -1056,6 +1385,313 @@ export default function SubmitScreen() {
               </View>
             ) : null}
 
+            {activeTab === 'organisation' ? (
+              <>
+                <View
+                  style={[
+                    s.associationHero,
+                    {
+                      marginHorizontal: hPad,
+                      backgroundColor: colors.surface,
+                      borderColor: accent + '36',
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[accent + '1f', accent + '08', 'transparent']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={[s.associationBadge, { backgroundColor: accent + '14', borderColor: accent + '30' }]}>
+                    <Ionicons name="people-circle-outline" size={13} color={accent} />
+                    <Text style={[s.associationBadgeText, { color: accent }]}>ASSOCIATION COMMUNITY PLATFORM</Text>
+                  </View>
+                  <Text style={[s.associationTitle, { color: colors.text }]}>
+                    Empower Your Association with CulturePass
+                  </Text>
+                  <Text style={[s.associationBody, { color: colors.textSecondary }]}>
+                    CulturePass offers a full-stack online community platform designed for flexibility and scalability,
+                    empowering associations to build, manage, and engage vibrant communities with ease.
+                  </Text>
+                  <View style={s.associationPillars}>
+                    {COMMUNITY_PLATFORM_PILLARS.map((pillar) => (
+                      <View
+                        key={pillar}
+                        style={[
+                          s.associationPillar,
+                          {
+                            backgroundColor: colors.surfaceSecondary,
+                            borderColor: colors.borderLight,
+                          },
+                        ]}
+                      >
+                        <Ionicons name="checkmark-circle" size={14} color={accent} />
+                        <Text style={[s.associationPillarText, { color: colors.textSecondary }]}>{pillar}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    s.problemCard,
+                    {
+                      marginHorizontal: hPad,
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderLight,
+                    },
+                  ]}
+                >
+                  <Text style={[s.problemEyebrow, { color: accent }]}>The Problem</Text>
+                  <Text style={[s.problemTitle, { color: colors.text }]}>
+                    Fragmented tech, fragmented community
+                  </Text>
+                  <Text style={[s.problemIntro, { color: colors.textSecondary }]}>
+                    The true cost of using multiple disparate technologies to run your association&apos;s community.
+                  </Text>
+
+                  <View style={s.problemGrid}>
+                    {ASSOCIATION_PROBLEM_AREAS.map((area) => (
+                      <View
+                        key={area.title}
+                        style={[
+                          s.problemPanel,
+                          {
+                            backgroundColor: colors.surfaceSecondary,
+                            borderColor: colors.borderLight,
+                          },
+                        ]}
+                      >
+                        <View style={[s.problemPanelIcon, { backgroundColor: accent + '14' }]}>
+                          <Ionicons name={area.icon} size={16} color={accent} />
+                        </View>
+                        <Text style={[s.problemPanelTitle, { color: colors.text }]}>{area.title}</Text>
+                        {area.points.map((point) => (
+                          <View key={point} style={s.problemPointRow}>
+                            <Ionicons name="remove" size={14} color={colors.textTertiary} />
+                            <Text style={[s.problemPointText, { color: colors.textSecondary }]}>{point}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    s.solutionCard,
+                    {
+                      marginHorizontal: hPad,
+                      backgroundColor: colors.surface,
+                      borderColor: accent + '30',
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[accent + '18', 'transparent']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Text style={[s.solutionEyebrow, { color: accent }]}>The Solution</Text>
+                  <Text style={[s.solutionTitle, { color: colors.text }]}>
+                    One integrated platform for association growth
+                  </Text>
+                  <Text style={[s.solutionIntro, { color: colors.textSecondary }]}>
+                    CulturePass brings community infrastructure into a single system so your association can
+                    build, manage, and grow member engagement without the drag of fragmented tools.
+                  </Text>
+
+                  <View style={s.solutionGrid}>
+                    {ASSOCIATION_SOLUTION_AREAS.map((area) => (
+                      <View
+                        key={area.title}
+                        style={[
+                          s.solutionPanel,
+                          {
+                            backgroundColor: colors.surfaceSecondary,
+                            borderColor: colors.borderLight,
+                          },
+                        ]}
+                      >
+                        <View style={[s.solutionPanelIcon, { backgroundColor: accent + '14' }]}>
+                          <Ionicons name={area.icon} size={16} color={accent} />
+                        </View>
+                        <Text style={[s.solutionPanelTitle, { color: colors.text }]}>{area.title}</Text>
+                        {area.points.map((point) => (
+                          <View key={point} style={s.solutionPointRow}>
+                            <Ionicons name="checkmark" size={14} color={accent} />
+                            <Text style={[s.solutionPointText, { color: colors.textSecondary }]}>{point}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </>
+            ) : null}
+
+            {supportsWorkspaceManagement ? (
+              canManageWorkspace ? (
+                <View
+                  style={[
+                    s.workspaceSection,
+                    {
+                      marginHorizontal: hPad,
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderLight,
+                    },
+                  ]}
+                >
+                  <View style={s.workspaceSectionHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.workspaceTitle, { color: colors.text }]}>My listings</Text>
+                      <Text style={[s.workspaceSubtitle, { color: colors.textSecondary }]}>
+                        Edit, update, archive, or delete your {TYPE_CONFIG[activeTab].label.toLowerCase()} listings on this page.
+                      </Text>
+                    </View>
+                    {editingItem ? (
+                      <Pressable
+                        onPress={resetEditor}
+                        style={[s.workspaceGhostBtn, { borderColor: colors.borderLight }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel editing"
+                      >
+                        <Text style={[s.workspaceGhostBtnText, { color: colors.textSecondary }]}>Cancel editing</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.workspaceFilterRow}>
+                    {WORKSPACE_STATUS_FILTERS.map((filter) => {
+                      const active = workspaceStatusFilter === filter;
+                      return (
+                        <Pressable
+                          key={filter}
+                          onPress={() => setWorkspaceStatusFilter(filter)}
+                          style={[
+                            s.workspaceFilterChip,
+                            {
+                              backgroundColor: active ? accent + '16' : colors.surfaceSecondary,
+                              borderColor: active ? accent : colors.borderLight,
+                            },
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Show ${filter} listings`}
+                          accessibilityState={{ selected: active }}
+                        >
+                          <Text style={[s.workspaceFilterChipText, { color: active ? accent : colors.textSecondary }]}>
+                            {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+
+                  <View style={s.workspaceList}>
+                    {workspaceItems.length > 0 ? (
+                      workspaceItems.map((item) => {
+                        const isEditing = editingItem?.id === item.id;
+                        return (
+                          <View
+                            key={item.id}
+                            style={[
+                              s.workspaceCard,
+                              {
+                                backgroundColor: colors.surfaceSecondary,
+                                borderColor: isEditing ? accent : colors.borderLight,
+                              },
+                            ]}
+                          >
+                            <View style={s.workspaceCardHeader}>
+                              <View style={{ flex: 1 }}>
+                                <Text style={[s.workspaceCardTitle, { color: colors.text }]} numberOfLines={1}>
+                                  {item.title}
+                                </Text>
+                                {item.subtitle ? (
+                                  <Text style={[s.workspaceCardMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+                                    {item.subtitle}
+                                  </Text>
+                                ) : null}
+                              </View>
+                              <View
+                                style={[
+                                  s.workspaceStatusPill,
+                                  {
+                                    backgroundColor: item.status === 'archived' ? colors.surface : accent + '12',
+                                    borderColor: item.status === 'archived' ? colors.borderLight : accent + '30',
+                                  },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    s.workspaceStatusPillText,
+                                    { color: item.status === 'archived' ? colors.textTertiary : accent },
+                                  ]}
+                                >
+                                  {item.status}
+                                </Text>
+                              </View>
+                            </View>
+                            <View style={s.workspaceActionRow}>
+                              <Pressable
+                                onPress={() => handleEditWorkspaceItem(item)}
+                                style={[s.workspaceActionBtn, { borderColor: colors.borderLight }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Edit ${item.title}`}
+                              >
+                                <Text style={[s.workspaceActionBtnText, { color: colors.text }]}>Edit</Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => confirmArchiveWorkspaceItem(item)}
+                                style={[s.workspaceActionBtn, { borderColor: colors.borderLight }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Archive ${item.title}`}
+                              >
+                                <Text style={[s.workspaceActionBtnText, { color: colors.textSecondary }]}>Archive</Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => confirmDeleteWorkspaceItem(item)}
+                                style={[s.workspaceActionBtn, { borderColor: colors.error + '33' }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Delete ${item.title}`}
+                              >
+                                <Text style={[s.workspaceActionBtnText, { color: colors.error }]}>Delete</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <View style={[s.workspaceEmpty, { borderColor: colors.borderLight, backgroundColor: colors.surfaceSecondary }]}>
+                        <Ionicons name="albums-outline" size={18} color={colors.textTertiary} />
+                        <Text style={[s.workspaceEmptyText, { color: colors.textSecondary }]}>
+                          No {TYPE_CONFIG[activeTab].label.toLowerCase()} listings in this filter yet.
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    s.workspaceNotice,
+                    {
+                      marginHorizontal: hPad,
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderLight,
+                    },
+                  ]}
+                >
+                  <Ionicons name="shield-checkmark-outline" size={18} color={colors.textTertiary} />
+                  <Text style={[s.workspaceNoticeText, { color: colors.textSecondary }]}>
+                    Workspace management is available for approved organisation, business, and professional owners.
+                  </Text>
+                </View>
+              )
+            ) : null}
+
             {/* ── Network error banner ── */}
             {networkError ? (
               <View style={[s.networkErrorBanner, { marginHorizontal: hPad, backgroundColor: colors.surface, borderColor: colors.error + '60' }]}>
@@ -1117,7 +1753,7 @@ export default function SubmitScreen() {
                 <Text style={[s.mediaEmptySub, { color: colors.textSecondary }]}>
                   {activeTab === 'movie'
                     ? 'Poster: 2:3 ratio · min 600×900 px · JPEG or PNG'
-                    : activeTab === 'artist'
+                    : activeTab === 'professional'
                       ? 'Profile photo: 1:1 square · min 800×800 px · JPEG or PNG'
                       : 'Banner: 16:9 · min 1200×675 px · JPEG or PNG · max 10 MB'}
                 </Text>
@@ -1156,9 +1792,8 @@ export default function SubmitScreen() {
                     activeTab === 'activity'     ? 'e.g. Barangaroo walking tour' :
                     isEventLike(activeTab)       ? 'e.g. Diwali Festival 2026'  :
                     activeTab === 'perk'         ? 'e.g. 20% off event tickets' :
-                    activeTab === 'artist'       ? 'Artist or stage name'       :
                     activeTab === 'business'     ? 'Business name'              :
-                    activeTab === 'professional' ? 'Practice or studio name'    :
+                    activeTab === 'professional' ? 'Practice, artist or studio name' :
                     'Organisation name'
                   }
                   placeholderTextColor={colors.textTertiary}
@@ -1686,7 +2321,7 @@ export default function SubmitScreen() {
               <Card colors={colors} hPad={hPad}>
                 <SectionLabel colors={colors} accent={accent} icon="briefcase-outline" label="Professional listing" />
                 <Text style={{ color: colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 20 }}>
-                  This creates an organisation profile with category <Text style={{ fontFamily: 'Poppins_700Bold', color: colors.text }}>Professional</Text> — ideal for accountants, lawyers, cultural consultants, and other practices.
+                  This creates a professional workspace profile for practices, artists, consultants, and studios. Choose the professional category that best fits your work.
                 </Text>
               </Card>
             )}
@@ -1866,7 +2501,7 @@ export default function SubmitScreen() {
                 onPress={() => void handleSubmit()}
                 disabled={isPending}
                 accessibilityRole="button"
-                accessibilityLabel={`Create ${TYPE_CONFIG[activeTab].label}`}
+                accessibilityLabel={`${editingItem ? 'Update' : 'Create'} ${TYPE_CONFIG[activeTab].label}`}
                 style={[isPending && { opacity: 0.7 }]}
               >
                 <LinearGradient
@@ -1880,7 +2515,7 @@ export default function SubmitScreen() {
                     : <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   }
                   <Text style={s.submitBtnText}>
-                    {isPending ? 'Creating…' : `Create ${TYPE_CONFIG[activeTab].label}`}
+                    {isPending ? (editingItem ? 'Updating…' : 'Creating…') : `${editingItem ? 'Update' : 'Create'} ${TYPE_CONFIG[activeTab].label}`}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -2070,6 +2705,296 @@ const s = StyleSheet.create({
   },
   noticeStrip: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
   noticeText:  { ...TextStyles.chip, flex: 1, lineHeight: 18 },
+  workspaceSection: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    gap: 12,
+  },
+  workspaceSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  workspaceTitle: {
+    ...TextStyles.title3,
+    letterSpacing: -0.35,
+  },
+  workspaceSubtitle: {
+    ...TextStyles.caption,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  workspaceGhostBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  workspaceGhostBtnText: {
+    ...TextStyles.captionSemibold,
+  },
+  workspaceFilterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  workspaceFilterChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  workspaceFilterChipText: {
+    ...TextStyles.captionSemibold,
+  },
+  workspaceList: {
+    gap: 10,
+  },
+  workspaceCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  workspaceCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  workspaceCardTitle: {
+    ...TextStyles.callout,
+  },
+  workspaceCardMeta: {
+    ...TextStyles.caption,
+    marginTop: 3,
+  },
+  workspaceStatusPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  workspaceStatusPillText: {
+    ...TextStyles.badge,
+    textTransform: 'capitalize',
+  },
+  workspaceActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  workspaceActionBtn: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  workspaceActionBtnText: {
+    ...TextStyles.captionSemibold,
+  },
+  workspaceEmpty: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  workspaceEmptyText: {
+    ...TextStyles.caption,
+    flex: 1,
+  },
+  workspaceNotice: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  workspaceNoticeText: {
+    ...TextStyles.caption,
+    flex: 1,
+    lineHeight: 18,
+  },
+  associationHero: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    gap: 10,
+    ...Platform.select({
+      web: { boxShadow: '0px 6px 24px rgba(0,0,0,0.08)' } as object,
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
+      },
+    }),
+  },
+  associationBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  associationBadgeText: {
+    ...TextStyles.tabLabel,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  associationTitle: {
+    ...TextStyles.title3,
+    lineHeight: 26,
+    letterSpacing: -0.35,
+  },
+  associationBody: {
+    ...TextStyles.cardBody,
+    lineHeight: 22,
+  },
+  associationPillars: {
+    gap: 8,
+  },
+  associationPillar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  associationPillarText: {
+    ...TextStyles.captionSemibold,
+    flex: 1,
+    lineHeight: 18,
+  },
+  problemCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    gap: 10,
+  },
+  problemEyebrow: {
+    ...TextStyles.tabLabel,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+  },
+  problemTitle: {
+    ...TextStyles.title3,
+    lineHeight: 26,
+    letterSpacing: -0.35,
+  },
+  problemIntro: {
+    ...TextStyles.cardBody,
+    lineHeight: 22,
+  },
+  problemGrid: {
+    gap: 10,
+  },
+  problemPanel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 8,
+  },
+  problemPanelIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  problemPanelTitle: {
+    ...TextStyles.callout,
+    lineHeight: 20,
+  },
+  problemPointRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  problemPointText: {
+    ...TextStyles.caption,
+    flex: 1,
+    lineHeight: 18,
+  },
+  solutionCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    gap: 10,
+    ...Platform.select({
+      web: { boxShadow: '0px 6px 24px rgba(0,0,0,0.08)' } as object,
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
+      },
+    }),
+  },
+  solutionEyebrow: {
+    ...TextStyles.tabLabel,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+  },
+  solutionTitle: {
+    ...TextStyles.title3,
+    lineHeight: 26,
+    letterSpacing: -0.35,
+  },
+  solutionIntro: {
+    ...TextStyles.cardBody,
+    lineHeight: 22,
+  },
+  solutionGrid: {
+    gap: 10,
+  },
+  solutionPanel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 8,
+  },
+  solutionPanelIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  solutionPanelTitle: {
+    ...TextStyles.callout,
+    lineHeight: 20,
+  },
+  solutionPointRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  solutionPointText: {
+    ...TextStyles.caption,
+    flex: 1,
+    lineHeight: 18,
+  },
 
   // Cover photo
   mediaPrevieFull: {

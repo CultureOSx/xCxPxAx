@@ -9,3 +9,9 @@ export async function markCommunityJoined(id: string): Promise<void> {
 export async function clearCommunityJoinedMark(id: string): Promise<void> {
   await AsyncStorage.removeItem(communityJoinKey(id));
 }
+
+export async function getMarkedJoinedCommunityIds(): Promise<string[]> {
+  const keys = await AsyncStorage.getAllKeys();
+  const joinedKeys = keys.filter((key) => key.startsWith('joined:'));
+  return joinedKeys.map((key) => key.replace(/^joined:/, ''));
+}

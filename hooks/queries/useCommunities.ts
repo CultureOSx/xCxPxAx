@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { Community } from '@/shared/schema';
-import type { EventData } from '@shared/schema';
-import { clearCommunityJoinedMark, markCommunityJoined } from '@/lib/community-storage';
+import type { Community, EventData } from '@/shared/schema';
+import {
+  clearCommunityJoinedMark,
+  getMarkedJoinedCommunityIds,
+  markCommunityJoined,
+} from '@/lib/community-storage';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 
@@ -44,11 +47,28 @@ export function useCommunity(id: string) {
 }
 
 export function useJoinedCommunities() {
-  return useQuery<{ communityIds: string[] }>({
+  const localJoinedQuery = useQuery<string[]>({
+    queryKey: [...communityKeys.joined(), 'local'],
+    queryFn: () => getMarkedJoinedCommunityIds(),
+    staleTime: Infinity,
+  });
+
+  const remoteJoinedQuery = useQuery<{ communityIds: string[] }>({
     queryKey: communityKeys.joined(),
     queryFn: () => api.communities.joined(),
     staleTime: 1000 * 60 * 2,
   });
+
+  const mergedIds = Array.from(
+    new Set([...(localJoinedQuery.data ?? []), ...(remoteJoinedQuery.data?.communityIds ?? [])]),
+  );
+
+  return {
+    ...remoteJoinedQuery,
+    data: { communityIds: mergedIds },
+    isLoading: remoteJoinedQuery.isLoading && localJoinedQuery.isLoading,
+    isFetching: remoteJoinedQuery.isFetching || localJoinedQuery.isFetching,
+  };
 }
 
 export function useCommunityMembers(id: string) {
@@ -75,6 +95,9 @@ export function useJoinCommunity() {
     mutationFn: (id: string) => api.communities.join(id),
     onSuccess: async (_result, id) => {
       await markCommunityJoined(id);
+      queryClient.setQueryData([...communityKeys.joined(), 'local'], (prev: string[] | undefined) =>
+        Array.from(new Set([...(prev ?? []), id])),
+      );
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
       queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },
@@ -87,6 +110,9 @@ export function useLeaveCommunity() {
     mutationFn: (id: string) => api.communities.leave(id),
     onSuccess: async (_result, id) => {
       await clearCommunityJoinedMark(id);
+      queryClient.setQueryData([...communityKeys.joined(), 'local'], (prev: string[] | undefined) =>
+        (prev ?? []).filter((communityId) => communityId !== id),
+      );
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
       queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },

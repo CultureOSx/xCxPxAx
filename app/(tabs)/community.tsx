@@ -44,6 +44,33 @@ const CATEGORIES = [
 ] as const;
 
 const FALLBACK_CULTURES = ['Indian', 'Chinese', 'Korean', 'Nigerian', 'Greek', 'Italian'];
+const COMMUNITY_VALUE_PILLARS = [
+  {
+    title: 'Brand',
+    body: 'Reinforce your cultural identity',
+    icon: 'ribbon-outline' as const,
+  },
+  {
+    title: 'Organize',
+    body: 'Structure your community',
+    icon: 'layers-outline' as const,
+  },
+  {
+    title: 'Engage',
+    body: 'Drive user engagement',
+    icon: 'sparkles-outline' as const,
+  },
+  {
+    title: 'Empower',
+    body: 'Enable independent networking',
+    icon: 'people-outline' as const,
+  },
+  {
+    title: 'Monetize',
+    body: 'Facilitate revenue generation',
+    icon: 'cash-outline' as const,
+  },
+] as const;
 
 function matchesCategory(item: Community, selected: string): boolean {
   if (selected === 'All') return true;
@@ -184,7 +211,7 @@ export default function CommunityScreen() {
                 stat={`${filteredCommunities.length} communities available`}
                 badge="Community Hub"
                 ctaLabel="Create a Hub"
-                ctaRoute="/community/create"
+                ctaRoute="/workspace?type=organisation"
                 icon="people"
               />
 
@@ -272,7 +299,7 @@ export default function CommunityScreen() {
                   </Text>
                 </View>
                 <Pressable
-                  onPress={() => router.push('/community/create')}
+                  onPress={() => router.push('/workspace?type=organisation')}
                   style={({ pressed }) => [
                     styles.summaryCta,
                     {
@@ -286,6 +313,40 @@ export default function CommunityScreen() {
                   <Ionicons name="add" size={14} color={colors.surface} />
                   <Text style={[styles.summaryCtaText, { color: colors.surface }]}>Create</Text>
                 </Pressable>
+              </View>
+
+              <View style={[styles.valueCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+                <View style={styles.valueHeader}>
+                  <View style={[styles.valueBadge, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '35' }]}>
+                    <Ionicons name="trophy-outline" size={13} color={CultureTokens.indigo} />
+                    <Text style={styles.valueBadgeText}>Badges</Text>
+                  </View>
+                  <Text style={[styles.valueTitle, { color: colors.text }]}>Build communities that grow with participation</Text>
+                  <Text style={[styles.valueSub, { color: colors.textSecondary }]}>
+                    Boost community activity with rewards that make participation more meaningful and fun.
+                  </Text>
+                </View>
+
+                <View style={styles.valueGrid}>
+                  {COMMUNITY_VALUE_PILLARS.map((pillar) => (
+                    <View
+                      key={pillar.title}
+                      style={[
+                        styles.valuePillar,
+                        {
+                          backgroundColor: colors.surfaceElevated,
+                          borderColor: colors.borderLight,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.valueIconWrap, { backgroundColor: CultureTokens.indigo + '12' }]}>
+                        <Ionicons name={pillar.icon} size={16} color={CultureTokens.indigo} />
+                      </View>
+                      <Text style={[styles.valuePillarTitle, { color: colors.text }]}>{pillar.title}</Text>
+                      <Text style={[styles.valuePillarBody, { color: colors.textSecondary }]}>{pillar.body}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
           }
@@ -334,7 +395,7 @@ export default function CommunityScreen() {
                   Try changing your filters or start a new community in your region.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/community/create')}
+                  onPress={() => router.push('/workspace?type=organisation')}
                   style={({ pressed }) => [
                     styles.emptyCta,
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
@@ -436,6 +497,72 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   summaryCtaText: { fontSize: 12, fontFamily: FontFamily.bold, letterSpacing: 0.2 },
+  valueCard: {
+    marginTop: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 12,
+  },
+  valueHeader: {
+    gap: 6,
+  },
+  valueBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  valueBadgeText: {
+    fontSize: 11,
+    fontFamily: FontFamily.semibold,
+    color: CultureTokens.indigo,
+  },
+  valueTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: FontFamily.bold,
+  },
+  valueSub: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: FontFamily.medium,
+  },
+  valueGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  valuePillar: {
+    minWidth: 150,
+    flexGrow: 1,
+    flexBasis: 160,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    gap: 8,
+  },
+  valueIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  valuePillarTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: FontFamily.bold,
+  },
+  valuePillarBody: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: FontFamily.medium,
+  },
 
   loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyState: { alignItems: 'center', paddingVertical: 70, paddingHorizontal: 30, gap: 12 },

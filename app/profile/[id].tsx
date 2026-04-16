@@ -1851,7 +1851,7 @@ function EntityPublicProfile({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-        contentContainerStyle={{ paddingBottom: bottomInset + (isOwner ? 40 : 100) }}
+        contentContainerStyle={{ paddingBottom: bottomInset + 40 }}
       >
         <View style={[e.hero, isDesktop && { height: 340 }]}>
           {heroImage ? (
@@ -1936,6 +1936,33 @@ function EntityPublicProfile({
                 <Text style={e.handleText}>@{profile.handle.replace(/^@/, '')}</Text>
               ) : null}
             </View>
+            {!isOwner ? (
+              <View style={e.heroActionCol}>
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setIsFollowing((f) => !f);
+                  }}
+                  style={({ pressed }) => [
+                    e.heroFollowBtn,
+                    isFollowing && {
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      borderColor: 'rgba(255,255,255,0.52)',
+                    },
+                    pressed && { opacity: 0.84 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={isFollowing ? 'Unfollow' : 'Follow'}
+                >
+                  <Ionicons
+                    name={isFollowing ? 'checkmark-circle' : 'person-add'}
+                    size={16}
+                    color="#fff"
+                  />
+                  <Text style={e.heroFollowBtnText}>{isFollowing ? 'Following' : 'Follow'}</Text>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -2175,17 +2202,6 @@ function EntityPublicProfile({
           </View>
         </View>
       </ScrollView>
-      {!isOwner ? (
-        <View style={[e.bottomBar, { paddingBottom: bottomInset + 8, backgroundColor: colors.surface, borderTopColor: colors.borderLight }]}>
-          <Pressable
-            style={[e.followBtn, isFollowing && { backgroundColor: 'transparent', borderWidth: 2, borderColor: accentColor }]}
-            onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setIsFollowing(f => !f); }}
-          >
-            <Ionicons name={isFollowing ? 'checkmark-circle' : 'person-add'} size={20} color={isFollowing ? accentColor : '#fff'} />
-            <Text style={[e.followBtnText, isFollowing && { color: accentColor }]}>{isFollowing ? 'Following' : 'Follow'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -2266,6 +2282,34 @@ const e = StyleSheet.create({
   verifyPillText: { fontSize: 10, fontFamily: FontFamily.semibold, color: CultureTokens.gold },
   locText: { fontSize: 13, fontFamily: FontFamily.medium, color: 'rgba(255,255,255,0.76)', marginTop: 6 },
   handleText: { fontSize: 12, fontFamily: FontFamily.semibold, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  heroActionCol: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    marginLeft: 12,
+    paddingBottom: 2,
+  },
+  heroFollowBtn: {
+    minWidth: 126,
+    height: 40,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    backgroundColor: CultureTokens.indigo,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    ...Platform.select({
+      web: { backdropFilter: 'blur(10px)' } as object,
+      default: {},
+    }),
+  },
+  heroFollowBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: FontFamily.bold,
+  },
   socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
   socialCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 20, paddingTop: 12 },
@@ -2342,9 +2386,6 @@ const e = StyleSheet.create({
     fontSize: 13,
     fontFamily: FontFamily.bold,
   },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
-  followBtn: { flex: 1, height: 52, backgroundColor: CultureTokens.indigo, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  followBtnText: { color: '#fff', fontSize: 16, fontFamily: FontFamily.bold },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
