@@ -2,8 +2,8 @@
 
 Project guide for AI agents. Read before touching code.
 
-> **Design Principles**: [`docs/DESIGN_PRINCIPLES.md`](docs/DESIGN_PRINCIPLES.md) — five core laws (Cultural Minimalism, Token Integrity, Platform Parity, Approachable Complexity, Technical Craftsmanship).
-> **Coding rules & UI patterns**: [`culturepass-rules.md`](culturepass-rules.md) — NEVER/ALWAYS, design tokens, events.tsx standard, API patterns.
+> **Design Principles**: `[docs/DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md)` — five core laws (Cultural Minimalism, Token Integrity, Platform Parity, Approachable Complexity, Technical Craftsmanship).
+> **Coding rules & UI patterns**: `[culturepass-rules.md](culturepass-rules.md)` — NEVER/ALWAYS, design tokens, events.tsx standard, API patterns.
 
 ---
 
@@ -149,11 +149,13 @@ dataconnect/  Firebase DataConnect GraphQL schema (exploratory)
 
 ## Web Layout Architecture
 
-| Breakpoint | Layout |
-|-----------|--------|
-| Desktop ≥1024px | 240px left sidebar (`WebSidebar.tsx`), no top bar, `topInset = 0` |
-| Tablet 768–1023px | Bottom tab bar, `topInset = 0` |
-| Mobile native | Bottom tab bar 84px (glassmorphism on iOS), `topInset = insets.top` |
+
+| Breakpoint        | Layout                                                              |
+| ----------------- | ------------------------------------------------------------------- |
+| Desktop ≥1024px   | 240px left sidebar (`WebSidebar.tsx`), no top bar, `topInset = 0`   |
+| Tablet 768–1023px | Bottom tab bar, `topInset = 0`                                      |
+| Mobile native     | Bottom tab bar 84px (glassmorphism on iOS), `topInset = insets.top` |
+
 
 ```typescript
 const { isDesktop, isTablet, isMobile, numColumns, hPad, sidebarWidth, columnWidth } = useLayout();
@@ -186,14 +188,16 @@ Council = **location attribute only**. No governance, no detail pages, no user c
 
 ## State Management
 
-| Concern | Solution |
-|---------|----------|
-| Server data | TanStack React Query (`useQuery`, `useMutation`) |
-| Auth state | `AuthProvider` + `useAuth()` |
-| Onboarding | `OnboardingContext` (city, country, interests, isComplete) |
-| Saved items | `SavedContext` (savedEvents, joinedCommunities) |
-| Contacts | `ContactsContext` |
-| UI state | `useState` / `useReducer` local to component |
+
+| Concern     | Solution                                                   |
+| ----------- | ---------------------------------------------------------- |
+| Server data | TanStack React Query (`useQuery`, `useMutation`)           |
+| Auth state  | `AuthProvider` + `useAuth()`                               |
+| Onboarding  | `OnboardingContext` (city, country, interests, isComplete) |
+| Saved items | `SavedContext` (savedEvents, joinedCommunities)            |
+| Contacts    | `ContactsContext`                                          |
+| UI state    | `useState` / `useReducer` local to component               |
+
 
 ---
 
@@ -267,8 +271,10 @@ STRIPE_CONNECT_PLATFORM_FEE_BPS=1000
 ```
 
 # Local development seeding only
-SEED_TEST_EMAIL=testuser@example.com   # for local development seeding only
+
+SEED_TEST_EMAIL=[testuser@example.com](mailto:testuser@example.com)   # for local development seeding only
 SEED_TEST_PASSWORD=supersecret        # for local development seeding only
+
 # Used by: npm run emulator:seed:cap
 
 Mirror all `EXPO_PUBLIC_*` vars in `eas.json` `build.*.env`.
@@ -311,23 +317,23 @@ cd functions && npm run build && cd .. && firebase deploy --only functions
 
 ---
 
-## Pending — Pre-Launch Blockers (April 15 target)
+## Pending — Pre-Launch Blockers (May 6 target)
 
-- [ ] GeoHash backfill: geocode events missing `latitude`/`longitude`/`geoHash`
-- [ ] Council LGA auto-select from GPS on onboarding (`/api/councils/nearest`)
+- GeoHash backfill: geocode events missing `latitude`/`longitude`/`geoHash`
+- Council LGA auto-select from GPS on onboarding (`/api/councils/nearest`)
 
 ## Pending — Post-Launch (April–June 2026)
 
-- [ ] Organiser event analytics dashboard (`dashboard/event-analytics/[eventId]`)
-- [ ] Promotional codes (`promoCodes/` collection, checkout validation)
-- [ ] Organiser attendee messaging (FCM multicast + email queue)
-- [ ] Community posts (`communities/{id}/posts/`, feature-flagged)
-- [ ] Rewards points redemption UI (Perks tab balance chip + checkout toggle)
-- [ ] Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
-- [ ] Push notification deep links + per-category opt-out
-- [ ] NZ + UAE city grouping on onboarding
-- [ ] Wallet top-up + Apple/Google Pay UI
-- [ ] Firebase DataConnect migration (exploratory)
+- Organiser event analytics dashboard (`dashboard/event-analytics/[eventId]`)
+- Promotional codes (`promoCodes/` collection, checkout validation)
+- Organiser attendee messaging (FCM multicast + email queue)
+- Community posts (`communities/{id}/posts/`, feature-flagged)
+- Rewards points redemption UI (Perks tab balance chip + checkout toggle)
+- Tiered perk gates (lock overlay + server-side 403 on `/api/perks/:id/redeem`)
+- Push notification deep links + per-category opt-out
+- NZ + UAE city grouping on onboarding
+- Wallet top-up + Apple/Google Pay UI
+- Firebase DataConnect migration (exploratory)
 
 # CLAUDE.md
 
@@ -340,6 +346,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
@@ -362,12 +369,14 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
@@ -378,11 +387,13 @@ The test: Every changed line should trace directly to the user's request.
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
 For multi-step tasks, state a brief plan:
+
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]

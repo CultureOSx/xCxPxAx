@@ -12,10 +12,9 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { GlassView } from 'expo-glass-effect';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CultureTokens, EntityTypeColors } from '@/constants/theme';
+import { CultureTokens, EntityTypeColors, CardTokens, FontFamily, FontSize, LineHeight } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import type { Profile, EventData } from '@/shared/schema';
@@ -107,11 +106,14 @@ export function FeaturedRail({
             <Pressable
               key={p.id}
               onPress={() => router.push({ pathname: '/profile/[id]', params: { id: p.id } })}
-              style={({ pressed }) => [fr.card, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+              style={({ pressed }) => [
+                fr.card,
+                { borderColor: colors.borderLight },
+                pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={`View ${p.name} profile`}
             >
-              <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
               {p.imageUrl ? (
                 <Image source={{ uri: p.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
               ) : (
@@ -132,11 +134,11 @@ export function FeaturedRail({
               <View style={fr.cardInfo}>
                 {p.isVerified && (
                   <View style={[fr.verifiedBadge, { backgroundColor: CultureTokens.indigo }]}>
-                    <Ionicons name="shield-checkmark" size={9} color="#fff" />
+                    <Ionicons name="shield-checkmark" size={9} color={colors.textInverse} />
                   </View>
                 )}
-                <Text style={fr.cardName} numberOfLines={2}>{p.name}</Text>
-                <Text style={fr.cardType} numberOfLines={1}>
+                <Text style={[fr.cardName, { color: colors.textInverse }]} numberOfLines={2}>{p.name}</Text>
+                <Text style={[fr.cardType, { color: colors.textInverse, opacity: 0.86 }]} numberOfLines={1}>
                   {p.category ?? p.entityType}
                 </Text>
               </View>
@@ -159,16 +161,15 @@ const fr = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   accentBar:  { width: 3, height: 20, borderRadius: 2 },
-  title:      { fontSize: 17, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.2 },
+  title:      { fontSize: FontSize.title3, fontFamily: FontFamily.bold, lineHeight: LineHeight.title3, letterSpacing: -0.2 },
   scroll:     { paddingHorizontal: 20, gap: 10, paddingRight: 32 },
   card: {
     width: 118,
     height: 156,
-    borderRadius: 14,
+    borderRadius: CardTokens.radius,
     overflow: 'hidden',
     backgroundColor: 'transparent',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.15)',
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
       android: { elevation: 5, shadowColor: '#000' },
@@ -182,10 +183,13 @@ const fr = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },
-  cardName: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff', lineHeight: 17 },
+  cardName: { fontSize: FontSize.caption, fontFamily: FontFamily.bold, lineHeight: LineHeight.caption },
   cardType: {
-    fontSize: 10, fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.8)', textTransform: 'capitalize', marginTop: 2,
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.micro,
+    textTransform: 'capitalize',
+    marginTop: 2,
   },
 });
 
@@ -236,9 +240,15 @@ export function DirectoryEventCard({
         accessibilityRole="link"
         accessibilityLabel={`View event: ${event.title}`}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          style={[StyleSheet.absoluteFill, { borderColor: colors.borderLight, borderWidth: StyleSheet.hairlineWidth, backgroundColor: colors.surface + '80' }]}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderColor: colors.borderLight,
+              borderWidth: StyleSheet.hairlineWidth,
+              backgroundColor: colors.surface,
+            },
+          ]}
         />
         <View style={s.eventCardInner}>
           {/* Left: image thumbnail with date overlay, or plain date block */}
@@ -252,8 +262,8 @@ export function DirectoryEventCard({
                 end={{ x: 0, y: 1 }}
               />
               <View style={s.eventDateOverlay}>
-                <Text style={s.eventDateDay}>{dayNum}</Text>
-                <Text style={s.eventDateMonth}>{monthStr.toUpperCase().slice(0, 3)}</Text>
+                <Text style={[s.eventDateDay, { color: colors.textInverse }]}>{dayNum}</Text>
+                <Text style={[s.eventDateMonth, { color: colors.textInverse }]}>{monthStr.toUpperCase().slice(0, 3)}</Text>
               </View>
             </View>
           ) : (
@@ -262,8 +272,8 @@ export function DirectoryEventCard({
               tint="dark"
               style={[s.eventDateBlock, { backgroundColor: categoryColor + 'AA' }]}
             >
-              <Text style={s.eventDateDay}>{dayNum}</Text>
-              <Text style={s.eventDateMonth}>{monthStr.toUpperCase().slice(0, 3)}</Text>
+              <Text style={[s.eventDateDay, { color: colors.textInverse }]}>{dayNum}</Text>
+              <Text style={[s.eventDateMonth, { color: colors.textInverse }]}>{monthStr.toUpperCase().slice(0, 3)}</Text>
             </BlurView>
           )}
 
@@ -306,13 +316,13 @@ export function DirectoryEventCard({
         hitSlop={15}
       >
         <Animated.View style={animatedHeart}>
-          <GlassView glassEffectStyle="regular" style={s.heartGlassBox}>
+          <View style={[s.heartBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
             <Ionicons
               name={isSaved ? 'heart' : 'heart-outline'}
               size={18}
               color={isSaved ? CultureTokens.coral : colors.text}
             />
-          </GlassView>
+          </View>
         </Animated.View>
       </Pressable>
     </View>
@@ -358,19 +368,18 @@ export function DirectoryCard({
       accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
       accessibilityLabel={`View ${profile.name} profile`}
     >
-      <GlassView
-        glassEffectStyle="regular"
+      <View
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: colors.surface + '60',
+            backgroundColor: colors.surface,
             borderWidth: (isCouncil || isProfessional) ? 1.5 : StyleSheet.hairlineWidth,
             borderColor: isProfessional
               ? CultureTokens.gold + '60'
               : isCouncil
               ? CultureTokens.indigo + '60'
               : colors.borderLight,
-          }
+          },
         ]}
       />
       {(isCouncil || isProfessional) && (
@@ -545,15 +554,15 @@ export const s = StyleSheet.create({
     borderWidth: 1, overflow: 'hidden',
   },
   title: {
-    fontSize: 22,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 28,
+    fontSize: FontSize.title,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.title,
     letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 17,
+    fontSize: FontSize.caption,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.caption,
   },
 
   // ── Search ──
@@ -569,8 +578,9 @@ export const s = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    fontFamily: 'Poppins_400Regular',
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.chip,
     height: 38,
     padding: 0,
     minWidth: 0,
@@ -580,7 +590,7 @@ export const s = StyleSheet.create({
   filterBlock:  { borderBottomWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 4 },
   filterRow:    { flexDirection: 'row', alignItems: 'center', gap: 7 },
   clearBtn:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
-  clearBtnText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', lineHeight: 17 },
+  clearBtnText: { fontSize: FontSize.caption, fontFamily: FontFamily.semibold, lineHeight: LineHeight.caption },
 
   // ── Divider ──
   divider: { height: StyleSheet.hairlineWidth },
@@ -594,8 +604,8 @@ export const s = StyleSheet.create({
 
   // ── Directory card (shared base) ──
   directoryCard: {
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: CardTokens.radius,
+    borderWidth: 0,
     marginBottom: 12,
     overflow: 'hidden',
   },
@@ -629,15 +639,14 @@ export const s = StyleSheet.create({
     gap: 2,
   },
   eventDateDay: {
-    fontSize: 20,
-    fontFamily: 'Poppins_700Bold',
-    color: '#fff',
-    lineHeight: 24,
+    fontSize: FontSize.title2,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.title2,
   },
   eventDateMonth: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
-    color: 'rgba(255,255,255,0.85)',
+    fontSize: FontSize.tab,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.tab,
     letterSpacing: 0.5,
   },
   eventCardContent: {
@@ -655,15 +664,16 @@ export const s = StyleSheet.create({
     marginBottom: 2,
   },
   eventCatText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.tab,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.tab,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   eventCardTitle: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
-    lineHeight: 20,
+    fontSize: FontSize.callout,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.callout,
   },
   eventLocationRow: {
     flexDirection: 'row',
@@ -671,8 +681,9 @@ export const s = StyleSheet.create({
     gap: 4,
   },
   eventLocationText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.micro,
   },
   eventCardFooter: {
     flexDirection: 'row',
@@ -686,8 +697,9 @@ export const s = StyleSheet.create({
     borderRadius: 999,
   },
   eventPriceText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.micro,
   },
   saveBtn: {
     position: 'absolute',
@@ -695,14 +707,13 @@ export const s = StyleSheet.create({
     right: 10,
     zIndex: 10,
   },
-  heartGlassBox: {
+  heartBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
 
   // ── Profile card ──
@@ -715,12 +726,12 @@ export const s = StyleSheet.create({
   profileAvatar: {
     width: 76,
     height: 76,
-    borderRadius: 14,
+    borderRadius: CardTokens.radius,
   },
   profileIconBox: {
     width: 76,
     height: 76,
-    borderRadius: 14,
+    borderRadius: CardTokens.radius,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -734,10 +745,10 @@ export const s = StyleSheet.create({
     gap: 5,
   },
   profileName: {
-    fontSize: 15,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.callout,
+    fontFamily: FontFamily.bold,
     flexShrink: 1,
-    lineHeight: 20,
+    lineHeight: LineHeight.callout,
   },
   profileBadgeRow: {
     flexDirection: 'row',
@@ -752,8 +763,9 @@ export const s = StyleSheet.create({
     borderRadius: 999,
   },
   categoryBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.semibold,
+    lineHeight: LineHeight.micro,
     textTransform: 'capitalize',
   },
   profileLocationRow: {
@@ -763,14 +775,15 @@ export const s = StyleSheet.create({
     flexShrink: 1,
   },
   profileLocationText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.micro,
     flexShrink: 1,
   },
   profileDesc: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 17,
+    fontSize: FontSize.caption,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.caption,
   },
   profileMetaRow: {
     flexDirection: 'row',
@@ -784,13 +797,15 @@ export const s = StyleSheet.create({
     gap: 2,
   },
   reviewCountText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: FontSize.tab,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.tab,
     marginLeft: 3,
   },
   followersText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.micro,
   },
   tagsRow: {
     flexDirection: 'row',
@@ -805,16 +820,19 @@ export const s = StyleSheet.create({
     borderRadius: 999,
   },
   tagText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_500Medium',
+    fontSize: FontSize.tab,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.tab,
   },
   moreTagsText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.tab,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.tab,
   },
   viewLink: {
-    fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
+    fontSize: FontSize.caption,
+    fontFamily: FontFamily.bold,
+    lineHeight: LineHeight.caption,
     marginLeft: 'auto',
   },
 
@@ -824,10 +842,13 @@ export const s = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  emptyTitle:   { fontSize: 18, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
+  emptyTitle:   { fontSize: FontSize.title3, fontFamily: FontFamily.semibold, lineHeight: LineHeight.title3, textAlign: 'center' },
   emptySubtext: {
-    fontSize: 13, fontFamily: 'Poppins_400Regular',
-    textAlign: 'center', paddingHorizontal: 40, lineHeight: 20,
+    fontSize: FontSize.chip,
+    fontFamily: FontFamily.regular,
+    lineHeight: LineHeight.chip,
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 
   // ── Acknowledgement footer ──
@@ -838,14 +859,13 @@ export const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderColor: 'rgba(150,150,150,0.15)',
     gap: 12,
   },
   acknowledgementText: {
-    fontFamily: 'Poppins_500Medium',
-    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.chip,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: LineHeight.chip,
     maxWidth: 400,
   },
 });

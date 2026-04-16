@@ -361,7 +361,7 @@ export default function LocationScreen() {
           </View>
           <View style={s.gpsSuggestTextWrap}>
             <Text style={s.gpsSuggestEyebrow}>Suggested for you</Text>
-            <Text style={s.gpsSuggestCountry}>
+            <Text style={[s.gpsSuggestCountry, { color: colors.text }]}>
               {getCountryFlag(gpsCountry)}{'  '}{gpsCountry}
             </Text>
             <Text style={s.gpsSuggestSub}>Based on your GPS · tap to select</Text>
@@ -499,14 +499,31 @@ export default function LocationScreen() {
                         <View
                           style={[
                             s.desktopStepDot,
-                            isDone && { backgroundColor: CultureTokens.teal, borderColor: CultureTokens.teal },
-                            isActive && { borderColor: CultureTokens.gold, borderWidth: 2.5 },
+                            isDone
+                              ? { backgroundColor: CultureTokens.teal, borderColor: CultureTokens.teal }
+                              : isActive
+                                ? {
+                                    borderColor: CultureTokens.gold,
+                                    borderWidth: 2.5,
+                                    backgroundColor: colors.surfaceSecondary,
+                                  }
+                                : {
+                                    borderColor: colors.borderLight,
+                                    backgroundColor: colors.surfaceSecondary,
+                                  },
                           ]}
                         >
                           {isDone ? (
                             <Ionicons name="checkmark" size={10} color={colors.surface} />
                           ) : (
-                            <View style={[s.desktopDotInner, isActive && { backgroundColor: CultureTokens.gold }]} />
+                            <View
+                              style={[
+                                s.desktopDotInner,
+                                isActive
+                                  ? { backgroundColor: CultureTokens.gold }
+                                  : { backgroundColor: colors.textTertiary },
+                              ]}
+                            />
                           )}
                         </View>
                         <Text style={[s.desktopStepLabel, { color: isActive ? colors.text : colors.textTertiary }]}>
@@ -514,7 +531,12 @@ export default function LocationScreen() {
                         </Text>
                       </View>
                       {i < STEPS.length - 1 && (
-                        <View style={[s.desktopStepLine, isDone && { backgroundColor: CultureTokens.teal }]} />
+                        <View
+                          style={[
+                            s.desktopStepLine,
+                            { backgroundColor: isDone ? CultureTokens.teal : colors.borderLight },
+                          ]}
+                        />
                       )}
                     </React.Fragment>
                   );
@@ -602,9 +624,9 @@ export default function LocationScreen() {
 
                   {pendingCountry === 'Australia' && !locationsLoading && (
                     <View style={s.orDivider}>
-                      <View style={s.orDividerLine} />
-                      <Text style={s.orDividerText}>or choose a state</Text>
-                      <View style={s.orDividerLine} />
+                      <View style={[s.orDividerLine, { backgroundColor: colors.divider }]} />
+                      <Text style={[s.orDividerText, { color: colors.textTertiary }]}>or choose a state</Text>
+                      <View style={[s.orDividerLine, { backgroundColor: colors.divider }]} />
                     </View>
                   )}
 
@@ -621,12 +643,12 @@ export default function LocationScreen() {
                                 ? `${CultureTokens.teal}20`
                                 : pressed
                                   ? `${CultureTokens.teal}12`
-                                  : 'rgba(255,255,255,0.05)',
+                                  : colors.surfaceSecondary,
                               borderColor: isSelected
                                 ? `${CultureTokens.teal}80`
                                 : pressed
                                   ? `${CultureTokens.teal}40`
-                                  : 'rgba(255,255,255,0.12)',
+                                  : colors.borderLight,
                               borderWidth: isSelected ? 1.5 : 1,
                             },
                           ]}
@@ -636,10 +658,10 @@ export default function LocationScreen() {
                           accessibilityLabel={`${st.name}, ${st.cities.length} cities`}
                         >
                           <Text style={s.stateEmoji}>{st.emoji}</Text>
-                          <Text style={[s.stateName, { color: isSelected ? CultureTokens.teal : '#FFFFFF' }]}>
+                          <Text style={[s.stateName, { color: isSelected ? CultureTokens.teal : colors.text }]}>
                             {st.name}
                           </Text>
-                          <Text style={[s.cityCount, { color: 'rgba(255,255,255,0.50)' }]}>
+                          <Text style={[s.cityCount, { color: colors.textTertiary }]}>
                             {st.cities.length} cities
                           </Text>
                           {isSelected && (
@@ -660,14 +682,14 @@ export default function LocationScreen() {
                   <View
                     style={[
                       s.searchRow,
-                      { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)' },
+                      { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
                     ]}
                   >
-                    <Ionicons name="search" size={IconSize.sm + 2} color="rgba(255,255,255,0.45)" />
+                    <Ionicons name="search" size={IconSize.sm + 2} color={colors.textTertiary} />
                     <TextInput
-                      style={[s.searchInput, { color: '#FFFFFF' }]}
+                      style={[s.searchInput, { color: colors.text }]}
                       placeholder={`Search ${allCitiesForState.length} cities…`}
-                      placeholderTextColor="rgba(255,255,255,0.38)"
+                      placeholderTextColor={colors.textTertiary}
                       value={citySearch}
                       onChangeText={setCitySearch}
                       autoCorrect={false}
@@ -679,15 +701,15 @@ export default function LocationScreen() {
                     />
                     {citySearch.length > 0 && Platform.OS !== 'ios' && (
                       <Pressable onPress={() => setCitySearch('')} hitSlop={8} accessibilityLabel="Clear search">
-                        <Ionicons name="close-circle" size={IconSize.sm + 2} color="rgba(255,255,255,0.45)" />
+                        <Ionicons name="close-circle" size={IconSize.sm + 2} color={colors.textTertiary} />
                       </Pressable>
                     )}
                   </View>
 
                   {citiesToShow.length === 0 ? (
                     <View style={s.noResults}>
-                      <Ionicons name="search-outline" size={36} color="rgba(255,255,255,0.35)" />
-                      <Text style={[s.noResultsText, { color: 'rgba(255,255,255,0.55)' }]}>
+                      <Ionicons name="search-outline" size={36} color={colors.textTertiary} />
+                      <Text style={[s.noResultsText, { color: colors.textSecondary }]}>
                         {`No cities match "${citySearch}"`}
                       </Text>
                       <Pressable onPress={() => setCitySearch('')} hitSlop={8}>
@@ -708,12 +730,12 @@ export default function LocationScreen() {
                                   ? CultureTokens.indigo
                                   : pressed
                                     ? `${CultureTokens.indigo}22`
-                                    : 'rgba(255,255,255,0.05)',
+                                    : colors.surfaceSecondary,
                                 borderColor: isActive
                                   ? CultureTokens.indigo
                                   : pressed
                                     ? `${CultureTokens.indigo}55`
-                                    : 'rgba(255,255,255,0.12)',
+                                    : colors.borderLight,
                                 borderWidth: isActive ? 1.5 : 1,
                               },
                             ]}
@@ -725,13 +747,13 @@ export default function LocationScreen() {
                             {isActive ? (
                               <Ionicons name="checkmark-circle" size={IconSize.md - 2} color="#fff" />
                             ) : (
-                              <Ionicons name="location-outline" size={IconSize.md - 2} color="rgba(255,255,255,0.40)" />
+                              <Ionicons name="location-outline" size={IconSize.md - 2} color={colors.textTertiary} />
                             )}
                             <Text
                               style={[
                                 s.cityName,
                                 {
-                                  color: isActive ? '#fff' : 'rgba(255,255,255,0.90)',
+                                  color: isActive ? '#fff' : colors.text,
                                   fontFamily: isActive ? FontFamily.semibold : FontFamily.medium,
                                 },
                               ]}
@@ -789,7 +811,7 @@ export default function LocationScreen() {
             </Button>
 
             {(!state.country || !state.city) && (
-              <Text style={s.continueHint}>
+              <Text style={[s.continueHint, { color: colors.textTertiary }]}>
                 {step === 'country'
                   ? 'Select a country to continue'
                   : step === 'region'
@@ -864,7 +886,6 @@ const s = StyleSheet.create({
     width: 80,
     height: 3,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     overflow: 'hidden',
   },
   progressFill: { height: '100%', borderRadius: 2, backgroundColor: CultureTokens.gold },
@@ -883,22 +904,18 @@ const s = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   desktopDotInner: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  desktopStepLabel: { fontFamily: FontFamily.medium, fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.3 },
+  desktopStepLabel: { fontFamily: FontFamily.medium, fontSize: 11, letterSpacing: 0.3 },
   desktopStepLine: {
     width: 40,
     height: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     marginBottom: 18,
     marginHorizontal: 6,
   },
@@ -928,9 +945,9 @@ const s = StyleSheet.create({
     marginBottom: Spacing.md,
     flexWrap: 'nowrap',
   },
-  breadcrumbSegment: { fontFamily: FontFamily.medium, fontSize: 12, color: 'rgba(255,255,255,0.35)', flexShrink: 1 },
+  breadcrumbSegment: { fontFamily: FontFamily.medium, fontSize: 12, flexShrink: 1 },
   breadcrumbDone: { color: CultureTokens.teal },
-  breadcrumbActive: { color: 'rgba(255,255,255,0.85)', fontFamily: FontFamily.semibold },
+  breadcrumbActive: { fontFamily: FontFamily.semibold },
 
   // Header
   headerBlock: { alignItems: 'center', marginBottom: 24 },
@@ -949,7 +966,6 @@ const s = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.65)',
     maxWidth: 320,
   },
 
@@ -979,7 +995,7 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
     color: `${CultureTokens.teal}BB`,
   },
-  gpsSuggestCountry: { fontFamily: FontFamily.bold, fontSize: FontSize.body, color: '#FFFFFF', letterSpacing: -0.2 },
+  gpsSuggestCountry: { fontFamily: FontFamily.bold, fontSize: FontSize.body, letterSpacing: -0.2 },
   gpsSuggestSub: { fontFamily: FontFamily.regular, fontSize: 12, color: `${CultureTokens.teal}CC` },
 
   // GPS detect button (before detection)
@@ -1000,11 +1016,10 @@ const s = StyleSheet.create({
 
   // Or divider
   orDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  orDividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  orDividerLine: { flex: 1, height: 1 },
   orDividerText: {
     fontFamily: FontFamily.medium,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
@@ -1092,7 +1107,6 @@ const s = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FontFamily.regular,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
     marginTop: 10,
   },
 });

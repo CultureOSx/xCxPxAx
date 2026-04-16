@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LayoutRules, Spacing, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 import { APP_NAME, APP_NAME_AU, PLATFORM_TAGLINE, PRIMARY_REGION, TAGLINE_PRIMARY, getAppVersion } from '@/lib/app-meta';
@@ -47,21 +46,21 @@ export default function AboutScreen() {
         style={aboutAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={styles.headerInner}
       >
-        <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/settings')}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>About</Text>
-        <View style={{ width: 40 }} />
-      </LiquidGlassPanel>
+        <View style={styles.headerInner}>
+          <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/settings')}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>About</Text>
+          <View style={{ width: 40 }} />
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.xxl + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Logo hero */}

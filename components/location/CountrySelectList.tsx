@@ -48,8 +48,6 @@ export function CountrySelectList({
     return countries.filter((c) => c.name.toLowerCase().includes(q));
   }, [countries, query]);
 
-  const isOnboarding = variant === 'onboarding';
-
   const onPick = (name: string) => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelect(name);
@@ -62,24 +60,10 @@ export function CountrySelectList({
       {(introTitle || introSubtitle) && (
         <View style={styles.introBlock}>
           {introTitle ? (
-            <Text
-              style={[
-                styles.introTitle,
-                { color: isOnboarding ? 'rgba(255,255,255,0.95)' : colors.text },
-              ]}
-            >
-              {introTitle}
-            </Text>
+            <Text style={[styles.introTitle, { color: colors.text }]}>{introTitle}</Text>
           ) : null}
           {introSubtitle ? (
-            <Text
-              style={[
-                styles.introSub,
-                { color: isOnboarding ? 'rgba(255,255,255,0.65)' : colors.textSecondary },
-              ]}
-            >
-              {introSubtitle}
-            </Text>
+            <Text style={[styles.introSub, { color: colors.textSecondary }]}>{introSubtitle}</Text>
           ) : null}
         </View>
       )}
@@ -89,22 +73,19 @@ export function CountrySelectList({
           style={[
             styles.searchShell,
             {
-              backgroundColor: isOnboarding ? 'rgba(255,255,255,0.08)' : colors.surfaceElevated,
-              borderColor: isOnboarding ? 'rgba(255,255,255,0.14)' : colors.borderLight,
+              backgroundColor: colors.surfaceElevated,
+              borderColor: colors.borderLight,
             },
             Platform.OS === 'android' ? { minHeight: 48 } : null,
           ]}
         >
-          <Ionicons name="search" size={20} color={isOnboarding ? 'rgba(255,255,255,0.5)' : colors.textTertiary} />
+          <Ionicons name="search" size={20} color={colors.textTertiary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search countries"
-            placeholderTextColor={isOnboarding ? 'rgba(255,255,255,0.4)' : colors.textTertiary}
-            style={[
-              styles.searchInput,
-              { color: isOnboarding ? '#FFFFFF' : colors.text },
-            ]}
+            placeholderTextColor={colors.textTertiary}
+            style={[styles.searchInput, { color: colors.text }]}
             autoCorrect={false}
             autoCapitalize="none"
             returnKeyType="search"
@@ -123,33 +104,22 @@ export function CountrySelectList({
                 ? { android_ripple: { color: `${CultureTokens.indigo}22`, borderless: true } }
                 : {})}
             >
-              <Ionicons name="close-circle" size={22} color={isOnboarding ? 'rgba(255,255,255,0.45)' : colors.textSecondary} />
+              <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
             </Pressable>
           ) : null}
         </View>
       ) : null}
 
       {filtered.length === 0 ? (
-        <Text
-          style={[
-            styles.empty,
-            { color: isOnboarding ? 'rgba(255,255,255,0.55)' : colors.textSecondary },
-          ]}
-        >
+        <Text style={[styles.empty, { color: colors.textSecondary }]}>
           No country matches &quot;{query.trim()}&quot;. Try another spelling.
         </Text>
       ) : (
         <View style={styles.list} accessibilityRole="list">
           {filtered.map((c) => {
             const active = selectedName === c.name;
-            const borderActive = active ? CultureTokens.indigo : isOnboarding ? 'rgba(255,255,255,0.12)' : colors.borderLight;
-            const bg = active
-              ? isOnboarding
-                ? 'rgba(0,102,204,0.28)'
-                : colors.primarySoft
-              : isOnboarding
-                ? 'rgba(255,255,255,0.05)'
-                : colors.surface;
+            const borderActive = active ? CultureTokens.indigo : colors.borderLight;
+            const bg = active ? colors.primarySoft : colors.surface;
 
             return (
               <Pressable
@@ -168,7 +138,7 @@ export function CountrySelectList({
                 {...(Platform.OS === 'android'
                   ? {
                       android_ripple: {
-                        color: isOnboarding ? 'rgba(255,255,255,0.12)' : `${CultureTokens.indigo}18`,
+                        color: `${CultureTokens.indigo}18`,
                         borderless: false,
                       },
                     }
@@ -180,9 +150,7 @@ export function CountrySelectList({
                 <View
                   style={[
                     styles.flagCircle,
-                    {
-                      backgroundColor: isOnboarding ? 'rgba(255,255,255,0.1)' : colors.backgroundSecondary,
-                    },
+                    { backgroundColor: colors.backgroundSecondary },
                   ]}
                   accessible={false}
                   {...(Platform.OS !== 'web'
@@ -193,29 +161,13 @@ export function CountrySelectList({
                 </View>
                 <View style={styles.rowText}>
                   <Text
-                    style={[
-                      styles.rowTitle,
-                      {
-                        color: active
-                          ? isOnboarding
-                            ? '#FFFFFF'
-                            : CultureTokens.indigo
-                          : isOnboarding
-                            ? '#FFFFFF'
-                            : colors.text,
-                      },
-                    ]}
+                    style={[styles.rowTitle, { color: active ? CultureTokens.indigo : colors.text }]}
                     numberOfLines={2}
                   >
                     {c.name}
                   </Text>
                   <Text
-                    style={[
-                      styles.rowHint,
-                      {
-                        color: isOnboarding ? 'rgba(255,255,255,0.55)' : colors.textSecondary,
-                      },
-                    ]}
+                    style={[styles.rowHint, { color: colors.textSecondary }]}
                     numberOfLines={2}
                   >
                     {c.hint}
@@ -226,7 +178,7 @@ export function CountrySelectList({
                     <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                   </View>
                 ) : (
-                  <Ionicons name="chevron-forward" size={20} color={isOnboarding ? 'rgba(255,255,255,0.35)' : colors.textTertiary} />
+                  <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
                 )}
               </Pressable>
             );

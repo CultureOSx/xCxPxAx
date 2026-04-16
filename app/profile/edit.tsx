@@ -22,7 +22,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { api, ApiError } from '@/lib/api';
-import { queryClient } from '@/lib/query-client';
+import { queryClient, setAccessToken } from '@/lib/query-client';
+import { auth as firebaseAuth } from '@/lib/firebase';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { useImageUpload } from '@/hooks/useImageUpload';
@@ -393,7 +394,7 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const { isDesktop, hPad } = useLayout();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const { userId, user: authUser, isRestoring } = useAuth();
+  const { userId, user: authUser, isRestoring, accessToken, refreshSession } = useAuth();
   const [copyToast, setCopyToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -410,8 +411,14 @@ export default function EditProfileScreen() {
     refetch,
   } = useQuery<UserData>({
     queryKey: ['/api/auth/me', 'profile-edit', userId],
-    enabled: Boolean(userId) && !isRestoring,
-    queryFn: () => api.auth.me() as Promise<UserData>,
+    enabled: Boolean(userId) && Boolean(accessToken) && !isRestoring,
+    queryFn: async () => {
+      if (firebaseAuth?.currentUser) {
+        const t = await firebaseAuth.currentUser.getIdToken();
+        setAccessToken(t);
+      }
+      return api.auth.me() as Promise<UserData>;
+    },
   });
 
   const [activeTab, setActiveTab] = useState<EditTab>('personal');
@@ -728,9 +735,48 @@ export default function EditProfileScreen() {
               <Text style={[TextStyles.callout, { color: colors.text }]}>
                 {error instanceof ApiError ? error.message : 'Could not load your profile from the server.'}
               </Text>
-              <Button variant="outline" size="sm" onPress={() => void refetch()} accessibilityLabel="Retry loading profile">
-                Retry
-              </Button>
+              {error instanceof ApiError && error.isUnauthorized ? (
+                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 6 }]}>
+                  If you are signed in, your session token may not have reached the API (common after a web refresh). Try
+                  refreshing your session, or sign in again. If you pointed the app at a local Functions URL, either run the
+                  full Firebase emulator suite with matching Auth, or use production Auth + EXPO_PUBLIC_API_URL to hosted
+                  Functions.
+                </Text>
+              ) : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                <Button variant="outline" size="sm" onPress={() => void refetch()} accessibilityLabel="Retry loading profile">
+                  Retry
+                </Button>
+                {error instanceof ApiError && error.isUnauthorized ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => {
+                        void refreshSession()
+                          .then(() => void refetch())
+                          .catch(() => {});
+                      }}
+                      accessibilityLabel="Refresh session token"
+                    >
+                      Refresh session
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(onboarding)/login',
+                          params: { redirectTo: '/profile/edit' },
+                        })
+                      }
+                      accessibilityLabel="Sign in"
+                    >
+                      Sign in
+                    </Button>
+                  </>
+                ) : null}
+              </View>
             </View>
           ) : null}
 

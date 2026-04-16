@@ -61,10 +61,58 @@ function localFunctionsEmulatorApiBase(host: string): string {
   return normalizeBaseUrl(`http://${host}:5001/${projectId}/us-central1/api`);
 }
 
+/**
+ * True when EXPO_PUBLIC_API_URL points at the local Firebase Functions emulator HTTP
+ * entry (port 5001, …/us-central1/api). The emulator process sets FIREBASE_AUTH_EMULATOR_HOST;
+ * Firebase Admin then verifies ID tokens against the Auth emulator. Tokens from
+ * production Firebase Auth (client with EXPO_PUBLIC_USE_FIREBASE_EMULATORS !== 'true')
+ * will always fail → 401 "Authentication required." on /api/auth/me.
+ */
+function isFunctionsEmulatorHttpApiBase(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+    const loopbackHost =
+      u.hostname === 'localhost' ||
+      u.hostname === '127.0.0.1' ||
+      u.hostname === '[::1]' ||
+      u.hostname === '10.0.2.2';
+    if (!loopbackHost || u.port !== '5001') return false;
+    return u.pathname.includes('/us-central1/api');
+  } catch {
+    return false;
+  }
+}
+
+function hostedCloudFunctionsApiBase(): string | null {
+  const projectId = getFirebaseWebConfig().projectId;
+  if (!projectId) return null;
+  return normalizeBaseUrl(`https://us-central1-${projectId}.cloudfunctions.net/api`);
+}
+
 let _cachedApiUrl: string | null = null;
 
 function resolveApiUrl(): string {
   const explicit = getExplicitApiUrl();
+
+  // Production Auth + Functions emulator URL → token verification always fails on the server.
+  if (explicit && !shouldUseFirebaseEmulators()) {
+    const normalizedExplicit = normalizeBaseUrl(explicit);
+    if (isFunctionsEmulatorHttpApiBase(normalizedExplicit)) {
+      const hosted = hostedCloudFunctionsApiBase();
+      if (hosted) {
+        if (__DEV__) {
+          console.warn(
+            '[api] EXPO_PUBLIC_API_URL targets the Functions emulator (:5001) but EXPO_PUBLIC_USE_FIREBASE_EMULATORS is not true.',
+            'The app uses production Firebase Auth; use hosted Cloud Functions for API calls:',
+            hosted,
+            'To hit :5001 instead, set EXPO_PUBLIC_USE_FIREBASE_EMULATORS=true and run the full emulator suite (including Auth).',
+          );
+        }
+        return hosted;
+      }
+    }
+  }
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);

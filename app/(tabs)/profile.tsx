@@ -13,15 +13,15 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
+import { MAIN_TAB_UI, MAIN_TAB_CARD_SHADOW } from '@/components/tabs/mainTabTokens';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 import { TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { usePerks } from '@/hooks/queries/usePerks';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { NATIONALITIES } from '@/constants/cultures';
 import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
-import { CultureTokens, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, TextStyles, FontFamily, FontSize, LineHeight } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -240,28 +240,30 @@ export default function ProfileScreen() {
           ) : null}
 
           {Platform.OS === 'web' ? (
-            <LiquidGlassPanel
-              borderRadius={0}
-              bordered={false}
+            <View
               style={{
+                backgroundColor: colors.surface,
                 borderBottomWidth: MAIN_TAB_UI.headerBorderWidth,
                 borderBottomColor: colors.borderLight,
               }}
-              contentStyle={{
-                paddingTop: topInset + 6,
-                paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
-                paddingHorizontal: hPad,
-              }}
             >
-              <TabPageChromeRow title="Profile" showHairline={false} />
-            </LiquidGlassPanel>
+              <View
+                style={{
+                  paddingTop: topInset + 6,
+                  paddingBottom: MAIN_TAB_UI.headerVerticalPadding,
+                  paddingHorizontal: hPad,
+                }}
+              >
+                <TabPageChromeRow title="Profile" showHairline={false} />
+              </View>
+            </View>
           ) : (
             <TabHeaderNativeShell hPad={hPad}>
               <TabPageChromeRow title="Profile" showHairline={false} />
             </TabHeaderNativeShell>
           )}
 
-          <LiquidGlassPanel
+          <CardSurface colors={colors}
             borderRadius={MAIN_TAB_UI.cardRadius}
             style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapSmall }}
             contentStyle={{ alignItems: 'center', paddingVertical: 20, paddingHorizontal: 16 }}
@@ -303,12 +305,7 @@ export default function ProfileScreen() {
                 { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
               ]}
             >
-              <LinearGradient
-                colors={['transparent', CultureTokens.teal + 'AA', CultureTokens.indigo + 'AA', CultureTokens.teal + 'AA', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={profileGlass.statsAccentLine}
-              />
+              <View style={[profileGlass.statsAccentLine, { backgroundColor: CultureTokens.teal + '55' }]} />
               {[
                 { label: 'Followers', value: displayUser?.followersCount ?? 0 },
                 { label: 'Following', value: displayUser?.followingCount ?? 0 },
@@ -331,13 +328,13 @@ export default function ProfileScreen() {
                 </React.Fragment>
               ))}
             </View>
-          </LiquidGlassPanel>
+          </CardSurface>
 
           {/* ── CONTENT (max-width centred on desktop) ────────────────── */}
           <View style={isDesktop ? { maxWidth: 720, width: '100%', alignSelf: 'center' } : undefined}>
 
-          {/* ── ACTION BUTTONS (glass rail) ───────────────────────────── */}
-          <LiquidGlassPanel
+          {/* ── ACTION BUTTONS ───────────────────────────── */}
+          <CardSurface colors={colors}
             borderRadius={MAIN_TAB_UI.cardRadius}
             style={{ marginHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }}
             contentStyle={[act.row, { padding: 12, gap: 10 }]}
@@ -394,11 +391,11 @@ export default function ProfileScreen() {
               <Ionicons name="share-outline" size={MAIN_TAB_UI.iconSize.sm} color={colors.textSecondary} />
               <Text style={[act.label, { color: colors.textSecondary }]}>Share</Text>
             </Pressable>
-          </LiquidGlassPanel>
+          </CardSurface>
 
           {/* ── MEMBERSHIP TIER ───────────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
-            <LiquidGlassPanel
+            <CardSurface colors={colors}
               borderRadius={MAIN_TAB_UI.cardRadius}
               contentStyle={{ padding: 0, overflow: 'hidden' }}
             >
@@ -425,21 +422,21 @@ export default function ProfileScreen() {
                     accessibilityLabel="Upgrade membership"
                     accessibilityHint="Opens CulturePass Plus upgrade options"
                   >
-                    <Text style={tier.upgradeTxt}>Upgrade</Text>
+                    <Text style={[tier.upgradeTxt, { color: colors.textOnBrandGradient }]}>Upgrade</Text>
                     <Ionicons name="arrow-forward" size={13} color={colors.textOnBrandGradient} />
                   </Pressable>
                 ) : null}
               </LinearGradient>
-            </LiquidGlassPanel>
+            </CardSurface>
           </View>
 
           {/* ── BIO ───────────────────────────────────────────────────── */}
           {displayUser?.bio ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="About" colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 16 }}>
+              <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 16 }}>
                 <Text style={[sec.bioText, { color: colors.textSecondary }]}>{displayUser.bio}</Text>
-              </LiquidGlassPanel>
+              </CardSurface>
             </View>
           ) : null}
 
@@ -447,19 +444,19 @@ export default function ProfileScreen() {
           {(displayUser?.ethnicityText || languages.length > 0 || communities.length > 0 || hasCultures) ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Roots & Culture" action="View Map" onAction={() => setShowCultureMap(true)} colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 0, overflow: 'hidden' }}>
+              <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 0, overflow: 'hidden' }}>
                 <View style={{ backgroundColor: `${CultureTokens.teal}15`, padding: 18, paddingBottom: 24 }}>
                   {displayUser?.ethnicityText ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <Text style={{ fontSize: 32 }}>{communityFlags[displayUser.ethnicityText as string] ?? '🌏'}</Text>
-                      <Text style={{ fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.3 }}>
+                      <Text style={{ fontSize: FontSize.title3, fontFamily: FontFamily.bold, lineHeight: LineHeight.title3, color: colors.text, letterSpacing: -0.3 }}>
                         {displayUser.ethnicityText as string}
                       </Text>
                     </View>
                   ) : hasCultures ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                        <Text style={{ fontSize: 32 }}>{matchedCultures[0].emoji}</Text>
-                       <Text style={{ fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.3 }}>
+                       <Text style={{ fontSize: FontSize.title3, fontFamily: FontFamily.bold, lineHeight: LineHeight.title3, color: colors.text, letterSpacing: -0.3 }}>
                          {matchedCultures[0].name}
                        </Text>
                     </View>
@@ -470,7 +467,7 @@ export default function ProfileScreen() {
                   <View style={{ padding: 18 }}>
                     {languages.length > 0 && (
                       <View style={{ marginBottom: communities.length > 0 ? 16 : 0 }}>
-                        <Text style={{ fontSize: 13, color: colors.textTertiary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', marginBottom: 8 }}>Languages I Speak</Text>
+                        <Text style={{ fontSize: FontSize.chip, lineHeight: LineHeight.chip, color: colors.textTertiary, fontFamily: FontFamily.semibold, textTransform: 'uppercase', marginBottom: 8 }}>Languages I Speak</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           {languages.map(lang => (
                             <View key={lang} style={{ backgroundColor: `${colors.text}08`, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 16 }}>
@@ -483,7 +480,7 @@ export default function ProfileScreen() {
 
                     {communities.length > 0 && (
                       <View>
-                        <Text style={{ fontSize: 13, color: colors.textTertiary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', marginBottom: 8 }}>My Communities</Text>
+                        <Text style={{ fontSize: FontSize.chip, lineHeight: LineHeight.chip, color: colors.textTertiary, fontFamily: FontFamily.semibold, textTransform: 'uppercase', marginBottom: 8 }}>My Communities</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           {communities.slice(0, 10).map(c => {
                             const color = COMMUNITY_COLOR[c] ?? CultureTokens.indigo;
@@ -491,7 +488,7 @@ export default function ProfileScreen() {
                             return (
                               <View key={c} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: `${color}15`, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 14 }}>
                                 <Text style={{ fontSize: 16 }}>{flag}</Text>
-                                <Text style={{ color, fontSize: 13, fontFamily: 'Poppins_500Medium' }}>{c}</Text>
+                                <Text style={{ color, fontSize: FontSize.chip, lineHeight: LineHeight.chip, fontFamily: FontFamily.medium }}>{c}</Text>
                               </View>
                             );
                           })}
@@ -500,7 +497,7 @@ export default function ProfileScreen() {
                     )}
                   </View>
                 )}
-              </LiquidGlassPanel>
+              </CardSurface>
             </View>
           ) : null}
 
@@ -508,15 +505,33 @@ export default function ProfileScreen() {
           {interests.length > 0 ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="I'm Interested In" colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} style={{ borderColor: `${CultureTokens.gold}30` }} contentStyle={{ backgroundColor: `rgba(255,200,87,0.06)`, padding: 16 }}>
+              <CardSurface
+                colors={colors}
+                borderRadius={MAIN_TAB_UI.cardRadius}
+                style={{ borderColor: CultureTokens.coral + '28' }}
+                contentStyle={{ backgroundColor: colors.primarySoft, padding: 16 }}
+              >
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {interests.map((tag, i) => (
-                    <View key={tag + i} style={{ backgroundColor: colors.surface, borderColor: `${CultureTokens.gold}40`, borderWidth: 1, borderRadius: 100, paddingVertical: 8, paddingHorizontal: 14, ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, web: { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } as any }) }}>
-                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Poppins_500Medium' }}>{tag}</Text>
+                    <View
+                      key={tag + i}
+                      style={[
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.borderLight,
+                          borderWidth: StyleSheet.hairlineWidth * 2,
+                          borderRadius: 100,
+                          paddingVertical: 8,
+                          paddingHorizontal: 14,
+                        },
+                        MAIN_TAB_CARD_SHADOW,
+                      ]}
+                    >
+                      <Text style={{ color: colors.text, fontSize: FontSize.chip, lineHeight: LineHeight.chip, fontFamily: FontFamily.medium }}>{tag}</Text>
                     </View>
                   ))}
                 </View>
-              </LiquidGlassPanel>
+              </CardSurface>
             </View>
           ) : null}
 
@@ -529,14 +544,14 @@ export default function ProfileScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[prk.scroll, { paddingHorizontal: hPad }]}>
                 {perksLoading
                   ? [0, 1, 2].map((i) => (
-                      <LiquidGlassPanel
+                      <CardSurface colors={colors}
                         key={`perk-sk-${i}`}
                         borderRadius={MAIN_TAB_UI.cardRadius}
                         style={{ width: 160, minHeight: 130 }}
                         contentStyle={{ alignItems: 'center', justifyContent: 'center', padding: 14 }}
                       >
                         <ActivityIndicator color={CultureTokens.indigo} />
-                      </LiquidGlassPanel>
+                      </CardSurface>
                     ))
                   : perks.slice(0, 6).map(perk => (
                       <Pressable
@@ -547,8 +562,7 @@ export default function ProfileScreen() {
                         accessibilityHint="Opens perk details"
                         style={({ pressed }) => [{ width: 160, opacity: pressed ? 0.9 : 1 }]}
                       >
-                        <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, overflow: 'hidden', minHeight: 128 }}>
-                          <LinearGradient colors={[CultureTokens.gold + '28', CultureTokens.indigo + '18']} style={prk.cardGrad} />
+                        <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, overflow: 'hidden', minHeight: 128 }}>
                           <View style={[prk.icon, { backgroundColor: CultureTokens.gold + '20' }]}>
                             <Ionicons name="gift-outline" size={18} color={CultureTokens.gold} />
                           </View>
@@ -558,7 +572,7 @@ export default function ProfileScreen() {
                               <Text style={[prk.badgeText, { color: CultureTokens.coral }]}>{(perk as unknown as { discount: string }).discount}</Text>
                             </View>
                           ) : null}
-                        </LiquidGlassPanel>
+                        </CardSurface>
                       </Pressable>
                     ))}
               </ScrollView>
@@ -568,7 +582,7 @@ export default function ProfileScreen() {
           {/* ── CONTRIBUTION HISTORY + PERSONALIZED STATS ────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Contribution History" colors={colors} />
-            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, gap: 10 }}>
+            <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 14, gap: 10 }}>
               {contributionHistory.length > 0 ? (
                 contributionHistory.map((entry) => (
                   <View key={entry} style={profileStats.row}>
@@ -581,20 +595,20 @@ export default function ProfileScreen() {
                   Activity appears here as you attend events and engage with the community.
                 </Text>
               )}
-            </LiquidGlassPanel>
+            </CardSurface>
           </View>
 
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }]}>
             <SectionHeader title="Personalized Stats" colors={colors} />
             <View style={profileStats.grid}>
               {contributionStats.map((item) => (
-                <LiquidGlassPanel key={item.id} borderRadius={MAIN_TAB_UI.cardRadius} style={profileStats.cell} contentStyle={{ padding: 12 }}>
+                <CardSurface colors={colors} key={item.id} borderRadius={MAIN_TAB_UI.cardRadius} style={profileStats.cell} contentStyle={{ padding: 12 }}>
                   <View style={[profileStats.iconWrap, { backgroundColor: item.color + '18' }]}>
                     <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={item.color} />
                   </View>
                   <Text style={[profileStats.value, { color: colors.text }]}>{fmt(item.value)}</Text>
                   <Text style={[profileStats.label, { color: colors.textSecondary }]}>{item.label}</Text>
-                </LiquidGlassPanel>
+                </CardSurface>
               ))}
             </View>
           </View>
@@ -602,7 +616,6 @@ export default function ProfileScreen() {
           {/* ── DIGITAL IDENTITY CARD ─────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Digital Identity" colors={colors} />
-            <LiquidGlassPanel borderRadius={24} bordered={false} contentStyle={{ padding: 0, overflow: 'hidden' }}>
             <View style={[cpid.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               <View style={cpid.topRow}>
                 <View style={cpid.brandRow}>
@@ -626,7 +639,7 @@ export default function ProfileScreen() {
                   <Text style={[cpid.idValue, { color: colors.text }]} numberOfLines={1}>{cpidStr}</Text>
                   <Text style={[cpid.memberText, { color: colors.textSecondary }]}>Member since {since || 'N/A'}</Text>
                 </View>
-                <View style={[cpid.qrWrap, { borderColor: colors.borderLight }]}>
+                <View style={[cpid.qrWrap, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
                   <QRCode
                     value={`culturepass://profile/${displayUser?.id || userId}`}
                     size={58}
@@ -651,18 +664,17 @@ export default function ProfileScreen() {
                 accessibilityLabel="Open digital identity"
                 accessibilityHint="Opens your full digital identity pass"
               >
-                <Text style={cpid.openBtnText}>Open Full Digital ID</Text>
+                <Text style={[cpid.openBtnText, { color: colors.textOnBrandGradient }]}>Open Full Digital ID</Text>
                 <Ionicons name="arrow-forward" size={14} color={colors.textOnBrandGradient} />
               </Pressable>
             </View>
-            </LiquidGlassPanel>
           </View>
 
           {/* ── SOCIAL LINKS ─────────────────────────────────────────── */}
           {activeSocials.length > 0 && (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Social" colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 12 }}>
+              <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 12 }}>
               <View style={{ gap: 12 }}>
                 {activeSocials.map(s => (
                   <Pressable
@@ -680,14 +692,14 @@ export default function ProfileScreen() {
                     accessibilityHint="Opens external social profile"
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: s.color + '20' }}>
-                      <Ionicons name={s.icon as any} size={18} color={s.color} />
+                      <Ionicons name={s.icon} size={18} color={s.color} />
                     </View>
-                    <Text style={{ flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', color: colors.text }}>{s.label}</Text>
+                    <Text style={{ flex: 1, fontSize: FontSize.callout, lineHeight: LineHeight.callout, fontFamily: FontFamily.semibold, textAlign: 'center', color: colors.text }}>{s.label}</Text>
                     <Ionicons name="arrow-forward-circle-outline" size={18} color={s.color} />
                   </Pressable>
                 ))}
               </View>
-              </LiquidGlassPanel>
+              </CardSurface>
             </View>
           )}
 
@@ -695,7 +707,7 @@ export default function ProfileScreen() {
           {(locationText || displayUser?.website || displayUser?.phone) ? (
             <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
               <SectionHeader title="Details" colors={colors} />
-              <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
+              <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
               <View style={[det.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
                 {locationText ? (
                   <View style={det.row}>
@@ -744,14 +756,14 @@ export default function ProfileScreen() {
                   </>
                 ) : null}
               </View>
-              </LiquidGlassPanel>
+              </CardSurface>
             </View>
           ) : null}
 
           {/* ── SETTINGS SHORTCUTS ───────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGapLarge }]}>
             <SectionHeader title="Settings" colors={colors} />
-            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
+            <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} contentStyle={{ padding: 4 }}>
             <View style={[set.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
               {[
                 { icon: 'person-outline' as const,        label: 'Edit Profile',   path: '/profile/edit',           accent: CultureTokens.indigo },
@@ -777,12 +789,12 @@ export default function ProfileScreen() {
                 </React.Fragment>
               ))}
             </View>
-            </LiquidGlassPanel>
+            </CardSurface>
           </View>
 
           {/* ── SIGN OUT ─────────────────────────────────────────────── */}
           <View style={[sec.wrap, { paddingHorizontal: hPad, marginTop: MAIN_TAB_UI.sectionGap }]}>
-            <LiquidGlassPanel borderRadius={MAIN_TAB_UI.cardRadius} bordered={false} contentStyle={{ padding: 0 }}>
+            <CardSurface colors={colors} borderRadius={MAIN_TAB_UI.cardRadius} bordered={false} contentStyle={{ padding: 0 }}>
             <Pressable
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [sout.btn, { borderColor: hovered ? CultureTokens.coral + '60' : CultureTokens.coral + '40', backgroundColor: pressed ? CultureTokens.coral + '16' : hovered ? CultureTokens.coral + '12' : CultureTokens.coral + '09', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               onPress={async () => {
@@ -805,7 +817,7 @@ export default function ProfileScreen() {
               <Ionicons name="log-out-outline" size={18} color={CultureTokens.coral} />
               <Text style={[sout.label, { color: CultureTokens.coral }]}>Sign Out</Text>
             </Pressable>
-            </LiquidGlassPanel>
+            </CardSurface>
           </View>
           </View>{/* end desktop centering wrapper */}
         </ScrollView>
@@ -858,9 +870,9 @@ const profileGlass = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   culturePillText: {
-    fontSize: 11,
-    fontFamily: 'Poppins_500Medium',
-    lineHeight: 15,
+    fontSize: FontSize.micro,
+    fontFamily: FontFamily.medium,
+    lineHeight: LineHeight.micro,
   },
   statsBar: {
     flexDirection: 'row',
@@ -880,7 +892,8 @@ const profileGlass = StyleSheet.create({
     left: 16,
     right: 16,
     height: 2,
-    opacity: 0.45,
+    borderRadius: 1,
+    opacity: 0.9,
   },
 });
 

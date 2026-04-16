@@ -4,8 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, gradients, TextStyles, CardTokens, FontFamily } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppAppearance, type AppearancePreference } from '@/hooks/useAppAppearance';
 
@@ -41,26 +41,26 @@ export default function AppearanceSettingsScreen() {
         style={subAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={s.headerInner}
       >
-        <Pressable
-          style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => goBackOrReplace('/settings')}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={s.headerTitle}>Appearance</Text>
-        <View style={{ width: 34 }} />
-      </LiquidGlassPanel>
+        <View style={s.headerInner}>
+          <Pressable
+            style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
+            onPress={() => goBackOrReplace('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={s.headerTitle}>Appearance</Text>
+          <View style={{ width: 34 }} />
+        </View>
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -71,7 +71,7 @@ export default function AppearanceSettingsScreen() {
       >
         <View style={s.section}>
           <Text style={s.sectionTitle}>Preview</Text>
-          <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 14 }}>
+          <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={{ padding: 14 }}>
             <View style={s.previewHeader}>
               <View style={[s.previewModeBadge, { backgroundColor: CultureTokens.indigo + '18', borderColor: CultureTokens.indigo + '55' }]}>
                 <Ionicons
@@ -93,12 +93,12 @@ export default function AppearanceSettingsScreen() {
                 <Text style={[s.previewChipText, { color: colors.text }]}>Primary Surface</Text>
               </View>
             </View>
-          </LiquidGlassPanel>
+          </CardSurface>
         </View>
 
         <View style={s.section}>
           <Text style={s.sectionTitle}>Theme</Text>
-          <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 0 }}>
+          <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={{ padding: 0 }}>
             {OPTIONS.map((opt, i) => {
               const selected = preference === opt.key;
               return (
@@ -133,7 +133,7 @@ export default function AppearanceSettingsScreen() {
                 </View>
               );
             })}
-          </LiquidGlassPanel>
+          </CardSurface>
         </View>
 
         <View style={s.note}>
@@ -181,7 +181,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
     },
     previewModeText: { ...TextStyles.badge, color: CultureTokens.indigo },
     previewCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 6 },
-    previewTitle: { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
+    previewTitle: { ...TextStyles.headline, fontFamily: FontFamily.bold },
     previewSub: { ...TextStyles.caption, lineHeight: 18 },
     previewChip: {
       alignSelf: 'flex-start',

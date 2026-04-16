@@ -67,7 +67,13 @@ export default function CommunityScreen() {
   const [selectedCulture, setSelectedCulture] = useState<string | null>(null);
   const [selectedPreview, setSelectedPreview] = useState<Community | null>(null);
 
-  const { data: communitiesRaw = [], isLoading, isRefetching, refetch } = useCommunities({
+  const {
+    data: communitiesRaw = [],
+    isLoading,
+    isRefetching,
+    isError,
+    refetch,
+  } = useCommunities({
     city: onboarding?.city,
     country: onboarding?.country,
     nationalityId: onboarding?.nationalityId,
@@ -273,6 +279,28 @@ export default function CommunityScreen() {
               <View style={styles.loadingWrap}>
                 <ActivityIndicator color={CultureTokens.indigo} />
               </View>
+            ) : isError ? (
+              <View style={styles.emptyState}>
+                <View style={[styles.emptyIcon, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}>
+                  <Ionicons name="alert-circle-outline" size={28} color={colors.textTertiary} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Couldn&apos;t load communities</Text>
+                <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                  Check your connection and try again.
+                </Text>
+                <Pressable
+                  onPress={() => void refetch()}
+                  style={({ pressed }) => [
+                    styles.emptyCta,
+                    { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading communities"
+                >
+                  <Ionicons name="refresh" size={15} color={colors.surface} />
+                  <Text style={[styles.emptyCtaText, { color: colors.surface }]}>Retry</Text>
+                </Pressable>
+              </View>
             ) : (
               <View style={styles.emptyState}>
                 <View style={[styles.emptyIcon, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}>
@@ -291,8 +319,8 @@ export default function CommunityScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Create a community"
                 >
-                  <Ionicons name="add" size={15} color="#fff" />
-                  <Text style={styles.emptyCtaText}>Create Community</Text>
+                  <Ionicons name="add" size={15} color={colors.surface} />
+                  <Text style={[styles.emptyCtaText, { color: colors.surface }]}>Create Community</Text>
                 </Pressable>
               </View>
             )
@@ -307,7 +335,7 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  ambient: { ...StyleSheet.absoluteFillObject, opacity: 0.5 },
+  ambient: { ...StyleSheet.absoluteFillObject, opacity: 0.18 },
 
   row: { gap: 7, alignItems: 'center' },
   clearBtn: {
@@ -352,6 +380,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
-  emptyCtaText: { color: '#fff', fontSize: 13, fontFamily: FontFamily.bold },
+  emptyCtaText: { fontSize: 13, fontFamily: FontFamily.bold },
 });
 

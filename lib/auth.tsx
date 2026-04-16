@@ -259,11 +259,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return;
 
     try {
+      const t = await currentUser.getIdToken();
+      setAccessToken(t);
       const profile = await api.auth.me();
       setSession((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
+          accessToken: t,
           user: {
             ...prev.user,
             ...profile,
@@ -294,6 +297,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 30000);
     return () => clearTimeout(timer);
   }, [profileRetryCount, profileSyncStatus, retryProfileSync, session]);
+
+  // Keep lib/query-client Bearer token aligned with React session (web Fast Refresh, etc.).
+  useEffect(() => {
+    if (session?.accessToken) {
+      setAccessToken(session.accessToken);
+    } else if (!session) {
+      setAccessToken(null);
+    }
+  }, [session?.accessToken, session]);
 
   // ------------------------------------------------------------------
   // Force-refresh ID token every 50 min to keep query-client in sync

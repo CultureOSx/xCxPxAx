@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { LayoutRules, Spacing, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { LayoutRules, Spacing, gradients, TextStyles, CardTokens } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { LocationPicker } from '@/components/LocationPicker';
 
 export default function SettingsLocationScreen() {
@@ -26,23 +26,28 @@ export default function SettingsLocationScreen() {
         style={locAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={styles.headerInner}
       >
-        <Pressable style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Location & City</Text>
-        <View style={{ width: LayoutRules.buttonHeight }} />
-      </LiquidGlassPanel>
+        <View style={styles.headerInner}>
+          <Pressable style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Location & City</Text>
+          <View style={{ width: LayoutRules.buttonHeight }} />
+        </View>
+      </View>
 
-      <LiquidGlassPanel style={{ marginHorizontal: LayoutRules.screenHorizontalPadding, marginTop: Spacing.sm }} contentStyle={styles.cardInner}>
+      <CardSurface
+        colors={colors}
+        borderRadius={CardTokens.radius}
+        style={{ marginHorizontal: LayoutRules.screenHorizontalPadding, marginTop: Spacing.sm }}
+        contentStyle={styles.cardInner}
+      >
         <Text style={[styles.label, { color: colors.text }]}>Current location</Text>
         <Text style={[styles.current, { color: colors.textSecondary }]}>
           {state.city ? `${state.city}, ${state.country || 'Australia'}` : 'No location selected'}
@@ -59,7 +64,7 @@ export default function SettingsLocationScreen() {
           Pick your country first, then state or region and city. This scopes search, discover, and nearby perks. GPS auto-detect
           is available for Australia.
         </Text>
-      </LiquidGlassPanel>
+      </CardSurface>
     </View>
   );
 }
