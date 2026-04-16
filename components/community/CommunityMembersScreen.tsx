@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { CardSurface } from '@/components/ui/CardSurface';
+// ...existing code...
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useCommunity, useCommunityMembers } from '@/hooks/queries/useCommunities';
 import { useColors } from '@/hooks/useColors';

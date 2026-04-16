@@ -292,7 +292,7 @@ function ProfileFeedEventCard({
       bg: i === 0 ? '#2563EB' : i === 1 ? '#0EA5E9' : '#14B8A6',
     }));
   }, [event.id, event.title, attendeesPreview]);
-  const rsvpOptions: Array<{ key: 'going' | 'maybe' | 'not_going'; label: string }> = [
+  const rsvpOptions: { key: 'going' | 'maybe' | 'not_going'; label: string }[] = [
     { key: 'going', label: 'Going' },
     { key: 'maybe', label: 'Maybe' },
     { key: 'not_going', label: 'Not going' },
@@ -652,7 +652,7 @@ function UserPublicProfile({
   const communities = profile.communities ?? [];
   const interests   = profile.interests   ?? [];
   const languages   = profile.languages   ?? [];
-  const tabItems: Array<{ key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  const tabItems: { key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
     { key: 'events', label: 'Events', icon: 'calendar-outline' },
     { key: 'community', label: 'Community', icon: 'people-outline' },
@@ -1832,7 +1832,7 @@ function EntityPublicProfile({
     { label: 'Members', value: profile.membersCount ?? 0 },
     { label: 'Likes', value: profile.likes ?? 0 },
   ];
-  const tabItems: Array<{ key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  const tabItems: { key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
     { key: 'events', label: 'Events', icon: 'calendar-outline' },
     { key: 'community', label: 'Community', icon: 'people-outline' },

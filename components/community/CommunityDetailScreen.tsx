@@ -61,7 +61,7 @@ export default function CommunityDetailScreen() {
   const locationLabel = community ? getCommunityLocationLabel(community) : null;
   const posts = useMemo(() => community?.longFormPosts?.slice(0, 4) ?? [], [community]);
   const members = membersQuery.data?.members ?? [];
-  const memberPreview = members.slice(0, 4);
+  // ...existing code...
   const recommendedEvents = eventsQuery.data ?? [];
   const heroImage = community?.coverImageUrl || community?.imageUrl;
   const memberCountValue = Math.max(0, getCommunityMemberCount(community ?? {}) + optimisticMemberDelta);
