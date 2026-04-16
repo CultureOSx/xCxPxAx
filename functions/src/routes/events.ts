@@ -222,6 +222,8 @@ export function createEventsRouter() {
       const publisherProfileId = qstr(req.query.publisherProfileId).trim() || undefined;
       const venueProfileId = qstr(req.query.venueProfileId).trim() || undefined;
       const tag = qstr(req.query.tag).trim() || undefined;
+      const lgaCode = qstr(req.query.lgaCode).trim() || undefined;
+      const councilId = qstr(req.query.councilId).trim() || undefined;
 
       const centerLatStr  = qstr(req.query.centerLat).trim();
       const centerLngStr  = qstr(req.query.centerLng).trim();
@@ -253,6 +255,8 @@ export function createEventsRouter() {
           publisherProfileId,
           venueProfileId,
           tag,
+          lgaCode,
+          councilId,
         },
         { page, pageSize },
       );

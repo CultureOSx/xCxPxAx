@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, Pressable, Platform, Alert,
   ActivityIndicator, FlatList, ScrollView,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,7 +22,7 @@ import { CultureTokens, TextStyles } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { BackButton } from '@/components/ui/BackButton';
 import { AnimatedFilterChip } from '@/components/ui/AnimatedFilterChip';
-import { EVENT_CATEGORIES } from '@/constants/eventCategories';
+import { EVENT_CATEGORIES, type EventCategory } from '@/constants/eventCategories';
 
 const isWeb = Platform.OS === 'web';
 
@@ -117,6 +117,15 @@ function FilterDivider({ colors }: { colors: ReturnType<typeof useColors> }) {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
+const EVENT_CATEGORY_IDS = new Set<EventCategory>(EVENT_CATEGORIES.map((c) => c.id));
+
+function paramStr(v: string | string[] | undefined): string | undefined {
+  if (v == null) return undefined;
+  const s = Array.isArray(v) ? v[0] : v;
+  const t = String(s).trim();
+  return t.length ? t : undefined;
+}
+
 export default function AllEventsScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -124,21 +133,45 @@ export default function AllEventsScreen() {
   const colors  = useColors();
   const { state } = useOnboarding();
   const { isDesktop, hPad } = useLayout();
+  const routeParams = useLocalSearchParams<{ lgaCode?: string; councilId?: string; category?: string }>();
+
+  const lgaCodeParam = paramStr(routeParams.lgaCode);
+  const councilIdParam = paramStr(routeParams.councilId);
+  const councilFilterActive = Boolean(lgaCodeParam || councilIdParam);
+  const categoryParam = paramStr(routeParams.category);
+  const initialCategory =
+    categoryParam && EVENT_CATEGORY_IDS.has(categoryParam as EventCategory) ? categoryParam : 'All';
 
   const numCols = isDesktop ? 3 : 2;
   const colGap  = isDesktop ? 20 : 12;
 
   // Filter state
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [dateFilter, setDateFilter]             = useState<DateFilter>('all');
   const [priceFilter, setPriceFilter]           = useState<PriceFilter>('all');
 
+  useEffect(() => {
+    if (categoryParam && EVENT_CATEGORY_IDS.has(categoryParam as EventCategory)) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam]);
+
   const today = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
 
-  const queryKey = useMemo(() => [
-    '/api/events/paginated', state.country, state.city,
-    selectedCategory, dateFilter, priceFilter, today,
-  ], [state.country, state.city, selectedCategory, dateFilter, priceFilter, today]);
+  const queryKey = useMemo(
+    () => [
+      '/api/events/paginated',
+      state.country,
+      state.city,
+      selectedCategory,
+      dateFilter,
+      priceFilter,
+      today,
+      lgaCodeParam,
+      councilIdParam,
+    ],
+    [state.country, state.city, selectedCategory, dateFilter, priceFilter, today, lgaCodeParam, councilIdParam],
+  );
 
   const {
     data, isLoading, isFetchingNextPage,
@@ -156,6 +189,8 @@ export default function AllEventsScreen() {
         pageSize: PAGE_SIZE,
         dateFrom,
         dateTo,
+        lgaCode: lgaCodeParam,
+        councilId: councilIdParam,
       });
     },
     initialPageParam: 1,
@@ -168,7 +203,11 @@ export default function AllEventsScreen() {
     [data],
   );
 
-  const filtersActive = selectedCategory !== 'All' || dateFilter !== 'all' || priceFilter !== 'all';
+  const filtersActive =
+    selectedCategory !== 'All' ||
+    dateFilter !== 'all' ||
+    priceFilter !== 'all' ||
+    councilFilterActive;
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
@@ -233,9 +272,11 @@ export default function AllEventsScreen() {
     );
   }, [user, hasRole, handleEditEvent, handleDeleteEvent]);
 
-  const locationLabel = state.city
-    ? `${state.city}${state.country ? `, ${state.country}` : ''}`
-    : state.country || 'your region';
+  const locationLabel = councilFilterActive
+    ? 'Your council area'
+    : state.city
+      ? `${state.city}${state.country ? `, ${state.country}` : ''}`
+      : state.country || 'your region';
 
   const clearFilters = useCallback(() => {
     setSelectedCategory('All');

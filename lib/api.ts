@@ -157,6 +157,9 @@ export interface EventListParams {
   venueProfileId?: string;
   /** Exact match on event `tags` (e.g. CultureToday) */
   tag?: string;
+  /** Filter to listings in this ABS LGA (and/or council record id) — server applies in-memory */
+  lgaCode?: string;
+  councilId?: string;
 }
 
 const events = {
@@ -178,6 +181,8 @@ const events = {
     if (params.publisherProfileId) qs.set('publisherProfileId', params.publisherProfileId);
     if (params.venueProfileId) qs.set('venueProfileId', params.venueProfileId);
     if (params.tag) qs.set('tag', params.tag);
+    if (params.lgaCode) qs.set('lgaCode', params.lgaCode);
+    if (params.councilId) qs.set('councilId', params.councilId);
 
     const query = qs.toString();
     return request<PaginatedEventsResponse>('GET', `api/events${query ? `?${query}` : ''}`);

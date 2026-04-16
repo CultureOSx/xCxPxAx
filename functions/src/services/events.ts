@@ -338,6 +338,13 @@ export const eventsService = {
           (Array.isArray(e.tags) ? e.tags : []).some((x) => String(x).toLowerCase() === t),
         );
       }
+      if (filters.lgaCode || filters.councilId) {
+        const lga = filters.lgaCode ? String(filters.lgaCode) : '';
+        const cid = filters.councilId ? String(filters.councilId) : '';
+        memItems = memItems.filter(
+          (e) => (lga && e.lgaCode === lga) || (cid && e.councilId === cid),
+        );
+      }
 
       total = memItems.length;
       items = memItems.slice(offset, offset + pageSize);
