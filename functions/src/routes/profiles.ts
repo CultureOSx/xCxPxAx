@@ -30,15 +30,29 @@ const optionalStringField = (maxLength?: number) =>
     .optional()
     .transform((v): string | undefined => (v == null || v === '' ? undefined : v));
 
+/** JSON clients often send "" for omitted numbers; z.coerce would otherwise turn "" into 0. */
+const emptyToUndefined = (v: unknown): unknown =>
+  v === '' || v === null || v === undefined ? undefined : v;
+
+const optionalPostcodeField = z.preprocess(
+  emptyToUndefined,
+  z.coerce.number().int().min(200).max(9999).optional(),
+);
+
+const optionalLatLngField = z.preprocess(
+  emptyToUndefined,
+  z.coerce.number().optional(),
+);
+
 const createProfileSchema = z.object({
   name: z.string().min(1),
   entityType: z.enum(['community', 'business', 'venue', 'artist', 'organisation', 'council', 'government', 'charity']),
   city: optionalStringField(),
   state: optionalStringField(20),
-  postcode: z.coerce.number().int().min(200).max(9999).optional(),
+  postcode: optionalPostcodeField,
   country: optionalStringField(),
-  latitude: z.coerce.number().optional(),
-  longitude: z.coerce.number().optional(),
+  latitude: optionalLatLngField,
+  longitude: optionalLatLngField,
   category: optionalStringField(),
   description: optionalStringField(),
   tags: z.array(z.string()).optional(),
