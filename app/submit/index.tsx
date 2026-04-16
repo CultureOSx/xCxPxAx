@@ -143,7 +143,7 @@ export default function SubmitScreen() {
   // Pre-select from URL, e.g. /create?type=event&variant=festival (synced in effect after role gates load)
   const [activeTab, setActiveTab]   = useState<SubmitType>(() => {
     const raw = typeof params.type === 'string' ? params.type.trim() : '';
-    if (!raw) return 'organisation';
+    if (!raw) return normalizeSubmitType(undefined, undefined);
     return normalizeSubmitType(raw, typeof params.variant === 'string' ? params.variant : undefined);
   });
   const [form, setForm]             = useState<FormState>({ ...initialForm });
@@ -728,11 +728,9 @@ export default function SubmitScreen() {
     setIsFree(false);
   }, []);
 
+  // Deep-linked type from URL (do not depend on activeTab — user may switch type while keeping the same URL)
   useEffect(() => {
-    if (urlSubmitType == null) {
-      setAccessGateHint(null);
-      return;
-    }
+    if (urlSubmitType == null) return;
     const blocked = creatorListingBlockedHint(urlSubmitType, accessFlags);
     setAccessGateHint(blocked);
     if (blocked) {
@@ -741,6 +739,19 @@ export default function SubmitScreen() {
     }
     handleSelectType(urlSubmitType);
   }, [urlSubmitType, accessFlags, visibleTypes, handleSelectType]);
+
+  // No type in URL: clear gate; if role gates hide the current tab (e.g. default event for a plain user), snap to a valid type
+  useEffect(() => {
+    if (urlSubmitType != null) return;
+    setAccessGateHint(null);
+    if (!visibleTypes.includes(activeTab)) {
+      const preferred =
+        visibleTypes.find((t) => t === 'event') ??
+        visibleTypes[0] ??
+        'organisation';
+      handleSelectType(preferred);
+    }
+  }, [urlSubmitType, visibleTypes, handleSelectType, activeTab]);
 
   const headerGradientStops = useMemo(() => {
     if (Platform.OS === 'web' && isDesktop) {
