@@ -44,7 +44,8 @@ const optionalLatLngField = z.preprocess(
   z.coerce.number().optional(),
 );
 
-const createProfileSchema = z.object({
+/** Exported for unit tests (`scripts/tests/unit-profiles-create-schema.ts`). */
+export const createProfileSchema = z.object({
   name: z.string().min(1),
   entityType: z.enum(['community', 'business', 'venue', 'artist', 'organisation', 'council', 'government', 'charity']),
   city: optionalStringField(),
