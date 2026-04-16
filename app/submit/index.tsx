@@ -88,6 +88,9 @@ function SubmitStudioLayout({
           contentContainerStyle={[s.scroll, { paddingBottom }, s.splitMainContent]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         >
           {children}
         </ScrollView>
@@ -104,6 +107,9 @@ function SubmitStudioLayout({
       ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
     >
       {rail}
       {children}
@@ -825,8 +831,8 @@ export default function SubmitScreen() {
     <AuthGuard icon="add-circle-outline" title="Create Content" message="Sign in to create events, organisations, and more.">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 8 : 0}
       >
         <View style={[s.root, { flex: 1, backgroundColor: colors.background, paddingTop: insets.top }]}>
 
