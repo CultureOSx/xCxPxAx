@@ -77,26 +77,35 @@ export const CultureTokens = {
   info: "#2EC4B6",          // Info = Teal
 } as const;
 
+/** Olympics 5-ring colors for filter chips, buttons, and accents (mostly black/white base per request). */
+export const OlympicsColors = {
+  blue: '#0066CC',
+  yellow: '#FFC857',
+  black: '#000000',
+  green: '#22C55E',
+  red: '#FF5E5B',
+} as const;
+
 /**
  * Browse category colors — used for category chips, icons, and tints
  * across Discover, search, and filter screens.
  */
 export const CategoryColors = {
-  music:       "#FF6B6B",   // Warm Red
-  dance:       "#4ECDC4",   // Teal-Cyan
-  food:        "#FF9500",   // Apple Orange (matches sharedBase.accent)
-  art:         "#A855F7",   // Vivid Purple
-  wellness:    "#FF3B30",   // Apple Red
-  movies:      "#5AC8FA",   // Apple Teal-Blue
-  workshop:    "#FF9500",   // Apple Orange
-  heritage:    "#8B6914",   // Heritage Bronze
-  activities:  "#EC4899",   // Hot Pink
-  nightlife:   "#6366F1",   // Indigo-Violet
-  comedy:      "#F59E0B",   // Amber
-  sports:      "#EF4444",   // Bright Red
-  monuments:   "#94A3B8",   // Slate Gray
-  artists:     "#FBBF24",   // Golden Yellow
-  shopping:    "#AF52DE",   // Apple Purple
+  music:       OlympicsColors.red,
+  dance:       OlympicsColors.blue,
+  food:        OlympicsColors.yellow,
+  art:         OlympicsColors.blue,
+  wellness:    OlympicsColors.green,
+  movies:      OlympicsColors.red,
+  workshop:    OlympicsColors.black,
+  heritage:    OlympicsColors.yellow,
+  activities:  OlympicsColors.green,
+  nightlife:   OlympicsColors.red,
+  comedy:      OlympicsColors.yellow,
+  sports:      OlympicsColors.blue,
+  monuments:   OlympicsColors.black,
+  artists:     OlympicsColors.yellow,
+  shopping:    OlympicsColors.red,
 } as const;
 
 /**
@@ -112,15 +121,6 @@ export const EntityTypeColors = {
   artist:       "#FF2D55",  // Apple Pink
   business:     "#5AC8FA",  // Apple Teal-Blue
   charity:      "#FF6B6B",  // Charity Red
-} as const;
-
-/** Olympics 5-ring colors for filter chips, buttons, and accents (mostly black/white base per request). */
-export const OlympicsColors = {
-  blue: '#0066CC',
-  yellow: '#FFC857',
-  black: '#000000',
-  green: '#22C55E',
-  red: '#FF5E5B',
 } as const;
 
 export type ColorTheme = {
@@ -237,7 +237,7 @@ export const light: ColorTheme = {
   textSecondary: "#3F3F46",
   textTertiary: "#71717A",
   textInverse: "#FAFAFA",
-  textOnBrandGradient: "#18181B",
+  textOnBrandGradient: "#FAFAFA",
 
   card: "#FFFFFF",
   cardBorder: "#D7E1EE",
@@ -245,16 +245,16 @@ export const light: ColorTheme = {
   tabBar: "rgba(255,255,255,0.96)",
   tabBarBorder: "rgba(199,213,231,0.9)",
   tabIconDefault: "#64748B",
-  tabIconSelected: CultureTokens.violet,
+  tabIconSelected: "#18181B",
 
-  tint: CultureTokens.violet,
+  tint: "#18181B",
 
-  // Cultural brand tokens (updated to violet primary per manual)
-  cultureBrand: CultureTokens.violet,
-  culturePrimary: CultureTokens.violet,
-  cultureSecondary: CultureTokens.coral,
-  cultureAccent: CultureTokens.gold,
-  cultureHighlight: CultureTokens.teal,
+  // Cultural brand tokens (black/white main with Olympics accents per request)
+  cultureBrand: "#18181B",
+  culturePrimary: "#18181B",
+  cultureSecondary: OlympicsColors.black,
+  cultureAccent: OlympicsColors.yellow,
+  cultureHighlight: OlympicsColors.green,
 };
 
 /**
@@ -293,7 +293,7 @@ export const dark: ColorTheme = {
   textSecondary: "#A1A1AA",
   textTertiary: "#71717A",
   textInverse: "#18181B",
-  textOnBrandGradient: "#18181B",
+  textOnBrandGradient: "#FAFAFA",
 
   card: "#151C2E",
   cardBorder: "#243045",
@@ -301,16 +301,16 @@ export const dark: ColorTheme = {
   tabBar: "rgba(0, 0, 0, 0.94)",
   tabBarBorder: "rgba(36, 48, 69, 0.55)",
   tabIconDefault: "#8D8D8D",
-  tabIconSelected: CultureTokens.violet,
+  tabIconSelected: "#FAFAFA",
 
-  tint: CultureTokens.violet,
+  tint: "#FAFAFA",
 
-  // Cultural brand tokens (updated to violet primary per manual)
-  cultureBrand: CultureTokens.violet,
-  culturePrimary: CultureTokens.violet,
-  cultureSecondary: CultureTokens.coral,
-  cultureAccent: CultureTokens.gold,
-  cultureHighlight: CultureTokens.teal,
+  // Cultural brand tokens (black/white main with Olympics accents per request)
+  cultureBrand: "#FAFAFA",
+  culturePrimary: "#FAFAFA",
+  cultureSecondary: OlympicsColors.black,
+  cultureAccent: OlympicsColors.yellow,
+  cultureHighlight: OlympicsColors.green,
 };
 
 export const shadows = {

@@ -62,7 +62,7 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'Discover',
     items: [
-      { id: 'my-city',     label: 'My City',      icon: 'location-outline',    route: '/(tabs)/city' },
+      { id: 'my-city',     label: 'My City',      icon: 'location-outline',    route: '/(tabs)/index' },
       { id: 'my-council',  label: 'My Council',   icon: 'map-outline',         route: '/my-council' },
       { id: 'events',      label: 'Events',       icon: 'calendar-outline',    route: '/events' },
       { id: 'movies',      label: 'Movies',       icon: 'film-outline',        route: '/movies' },

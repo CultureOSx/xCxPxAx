@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueries, useMutation } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
-import { CultureTokens, gradients, FontFamily, shadows } from '@/constants/theme';
+import { CultureTokens, gradients, FontFamily, shadows, OlympicsColors, glass } from '@/constants/theme';
 import { TextStyles } from '@/constants/typography';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,13 +45,13 @@ type AttendeePreview = {
 // ─── Social platform config ────────────────────────────────────────────────────
 
 const SOCIAL_PLATFORMS = [
-  { key: 'website',   label: 'Website',    icon: 'globe-outline'   as const, color: CultureTokens.indigo },
-  { key: 'instagram', label: 'Instagram',  icon: 'logo-instagram'  as const, color: '#E4405F' },
-  { key: 'twitter',   label: 'X / Twitter',icon: 'logo-twitter'    as const, color: '#1DA1F2' },
-  { key: 'tiktok',    label: 'TikTok',     icon: 'logo-tiktok'     as const, color: '#69C9D0' },
-  { key: 'youtube',   label: 'YouTube',    icon: 'logo-youtube'    as const, color: '#FF0000' },
-  { key: 'linkedin',  label: 'LinkedIn',   icon: 'logo-linkedin'   as const, color: '#0A66C2' },
-  { key: 'facebook',  label: 'Facebook',   icon: 'logo-facebook'   as const, color: '#1877F2' },
+  { key: 'website',   label: 'Website',    icon: 'globe-outline'   as const, color: OlympicsColors.blue },
+  { key: 'instagram', label: 'Instagram',  icon: 'logo-instagram'  as const, color: OlympicsColors.red },
+  { key: 'twitter',   label: 'X / Twitter',icon: 'logo-twitter'    as const, color: OlympicsColors.blue },
+  { key: 'tiktok',    label: 'TikTok',     icon: 'logo-tiktok'     as const, color: OlympicsColors.black },
+  { key: 'youtube',   label: 'YouTube',    icon: 'logo-youtube'    as const, color: OlympicsColors.red },
+  { key: 'linkedin',  label: 'LinkedIn',   icon: 'logo-linkedin'   as const, color: OlympicsColors.blue },
+  { key: 'facebook',  label: 'Facebook',   icon: 'logo-facebook'   as const, color: OlympicsColors.blue },
 ];
 
 // ─── Community color lookup ────────────────────────────────────────────────────
@@ -1412,11 +1412,11 @@ const u = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: glass.dark.backgroundColor,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: glass.dark.borderColor,
     ...Platform.select({ web: { backdropFilter: 'blur(10px)' } as any }),
   },
   heroBody: {
@@ -2105,7 +2105,7 @@ function EntityPublicProfile({
                           icon="business-outline"
                           title={`Explore ${profile.city}`}
                           subtitle="Open city page with local events and partners"
-                          onPress={() => router.push({ pathname: '/city/[name]', params: { name: profile.city!, country: profile.country ?? 'Australia' } })}
+                          onPress={() => router.push({ pathname: '/(tabs)/index/city/[name]', params: { name: profile.city!, country: profile.country ?? 'Australia' } })}
                           colors={colors}
                         />
                       ) : null}

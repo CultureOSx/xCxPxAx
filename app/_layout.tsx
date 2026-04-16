@@ -327,7 +327,7 @@ function RootLayoutNav() {
       <Stack.Screen name="saved/index" />
       <Stack.Screen name="workspace" />
       <Stack.Screen name="submit/index" />
-      <Stack.Screen name="city/[name]" />
+      <Stack.Screen name="(tabs)/index/city/[name]" />
       <Stack.Screen name="events" />
       <Stack.Screen name="my-council" />
       <Stack.Screen name="map" />

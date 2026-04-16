@@ -34,7 +34,7 @@ import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { CultureTokens, gradients, TextStyles, LiquidGlassTokens, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles, LiquidGlassTokens, OlympicsColors, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -42,7 +42,6 @@ import { communityGroups, communityFlags } from '@/constants/onboardingCommuniti
 import { interestCategories } from '@/constants/onboardingInterests';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const PRIMARY = CultureTokens.violet; // updated per DESIGN_MANUAL.md 2026 palette
 const GEM_RING = CultureTokens.gold;
 const AVATAR = 104;
 
@@ -113,13 +112,13 @@ const SOCIAL_FIELDS: {
   label: string;
   placeholder: string;
 }[] = [
-  { icon: 'logo-instagram', color: '#E4405F', field: 'instagram', label: 'Instagram', placeholder: '@username or URL' },
-  { icon: 'logo-twitter', color: '#1DA1F2', field: 'twitter', label: 'X / Twitter', placeholder: '@username or URL' },
-  { icon: 'logo-tiktok', color: '#010101', field: 'tiktok', label: 'TikTok', placeholder: '@username or URL' },
-  { icon: 'logo-youtube', color: '#FF0000', field: 'youtube', label: 'YouTube', placeholder: 'Channel URL' },
-  { icon: 'logo-linkedin', color: '#0A66C2', field: 'linkedin', label: 'LinkedIn', placeholder: 'Profile URL' },
-  { icon: 'logo-facebook', color: '#1877F2', field: 'facebook', label: 'Facebook', placeholder: 'Profile URL' },
-  { icon: 'globe-outline', color: PRIMARY, field: 'website', label: 'Website', placeholder: 'https://…' },
+  { icon: 'logo-instagram', color: OlympicsColors.red, field: 'instagram', label: 'Instagram', placeholder: '@username or URL' },
+  { icon: 'logo-twitter', color: OlympicsColors.blue, field: 'twitter', label: 'X / Twitter', placeholder: '@username or URL' },
+  { icon: 'logo-tiktok', color: OlympicsColors.black, field: 'tiktok', label: 'TikTok', placeholder: '@username or URL' },
+  { icon: 'logo-youtube', color: OlympicsColors.red, field: 'youtube', label: 'YouTube', placeholder: 'Channel URL' },
+  { icon: 'logo-linkedin', color: OlympicsColors.blue, field: 'linkedin', label: 'LinkedIn', placeholder: 'Profile URL' },
+  { icon: 'logo-facebook', color: OlympicsColors.blue, field: 'facebook', label: 'Facebook', placeholder: 'Profile URL' },
+  { icon: 'globe-outline', color: OlympicsColors.blue, field: 'website', label: 'Website', placeholder: 'https://…' },
 ];
 
 function SectionHeader({
@@ -132,7 +131,7 @@ function SectionHeader({
   colors: ColorTheme;
 }) {
   return (
-    <View style={[sc.cardHeader, { borderBottomColor: colors.divider, backgroundColor: colors.primarySoft }]}>
+    <LiquidGlassPanel style={sc.cardHeader} bordered>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
         <View style={[sc.gemAccent, { backgroundColor: CultureTokens.gold }]} />
         <View style={{ flex: 1, paddingTop: 1 }}>
@@ -142,7 +141,7 @@ function SectionHeader({
           ) : null}
         </View>
       </View>
-    </View>
+    </LiquidGlassPanel>
   );
 }
 
@@ -608,7 +607,7 @@ export default function EditProfileScreen() {
   const inputStyle = [
     s.input,
     {
-      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : colors.primarySoft,
+      backgroundColor: isDark ? colors.surfaceElevated : colors.primarySoft,
       borderColor: colors.borderLight,
       color: colors.text,
     },
@@ -616,7 +615,7 @@ export default function EditProfileScreen() {
 
   const inputExtras = useMemo(
     () => ({
-      selectionColor: PRIMARY,
+      selectionColor: colors.primary,
       underlineColorAndroid: 'transparent' as const,
       ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {}),
     }),
@@ -625,7 +624,7 @@ export default function EditProfileScreen() {
 
   const bioInputExtras = useMemo(
     () => ({
-      selectionColor: PRIMARY,
+      selectionColor: colors.primary,
       underlineColorAndroid: 'transparent' as const,
       textAlignVertical: 'top' as const,
     }),
@@ -667,10 +666,10 @@ export default function EditProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Preview profile"
               {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}22`, borderless: true } }
+                ? { android_ripple: { color: `${colors.primary}22`, borderless: true } }
                 : {})}
             >
-              <Ionicons name="eye-outline" size={18} color={PRIMARY} />
+              <Ionicons name="eye-outline" size={18} color={colors.primary} />
             </Pressable>
 
             <Button variant="primary" size="sm" onPress={handleSave} loading={isBusy} style={{ minWidth: 72 }}>
@@ -771,7 +770,7 @@ export default function EditProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Change profile photo"
               {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
+                ? { android_ripple: { color: `${colors.primary}30`, borderless: false } }
                 : {})}
               {...(Platform.OS === 'web'
                 ? {
@@ -781,7 +780,7 @@ export default function EditProfileScreen() {
                 : {})}
             >
               <LinearGradient
-                colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
+                colors={[`${GEM_RING}55`, `${colors.primary}33`]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={s.avatarRingOuter}
@@ -803,15 +802,15 @@ export default function EditProfileScreen() {
                 </View>
               </LinearGradient>
 
-              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
-                {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
+              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: colors.primary }]}>
+                {uploading ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="camera" size={14} color={colors.primary} />}
               </View>
             </Pressable>
 
             <Text style={[TextStyles.title2, { color: colors.textOnBrandGradient, textAlign: 'center' }]}>
               {form.displayName || user?.username || 'Your name'}
             </Text>
-            <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.65)', textAlign: 'center', marginTop: 4 }]}>
+            <Text style={[TextStyles.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
               {Platform.OS === 'web' ? 'Tap or drop a photo to update' : 'Tap to update your photo'}
             </Text>
 
@@ -833,20 +832,20 @@ export default function EditProfileScreen() {
                       s.tabBtn,
                       s.tabBtnDesktop,
                       {
-                        borderColor: active ? PRIMARY : colors.borderLight,
+                        borderColor: active ? colors.primary : colors.borderLight,
                         backgroundColor: active ? colors.primarySoft : colors.backgroundSecondary,
                       },
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     {...(Platform.OS === 'android'
-                      ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
+                      ? { android_ripple: { color: `${colors.primary}18`, borderless: false } }
                       : {})}
                   >
                     <Text
                       style={[
                         s.tabLabel,
-                        { color: active ? PRIMARY : colors.textSecondary },
+                        { color: active ? colors.primary : colors.textSecondary },
                       ]}
                       numberOfLines={1}
                     >
@@ -876,20 +875,20 @@ export default function EditProfileScreen() {
                     style={[
                       s.tabBtn,
                       {
-                        borderColor: active ? PRIMARY : colors.borderLight,
+                        borderColor: active ? colors.primary : colors.borderLight,
                         backgroundColor: active ? colors.primarySoft : colors.backgroundSecondary,
                       },
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     {...(Platform.OS === 'android'
-                      ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
+                      ? { android_ripple: { color: `${colors.primary}18`, borderless: false } }
                       : {})}
                   >
                     <Text
                       style={[
                         s.tabLabel,
-                        { color: active ? PRIMARY : colors.textSecondary },
+                        { color: active ? colors.primary : colors.textSecondary },
                       ]}
                       numberOfLines={1}
                     >
@@ -1088,7 +1087,7 @@ export default function EditProfileScreen() {
                   ) : (
                     <View style={chip.row} accessibilityRole="list">
                       {selectedCommunities.map((community) => {
-                        const bg = COMMUNITY_CHIP_COLOR[community] ?? PRIMARY;
+                        const bg = COMMUNITY_CHIP_COLOR[community] ?? colors.primary;
                         const flag = communityFlags[community] ?? '🌐';
                         return (
                           <View
@@ -1183,7 +1182,7 @@ export default function EditProfileScreen() {
                           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setForm((p) => ({ ...p, [key]: v }));
                         }}
-                        trackColor={{ true: PRIMARY, false: colors.borderLight }}
+                        trackColor={{ true: colors.primary, false: colors.borderLight }}
                         thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
                       />
                     </View>
@@ -1235,7 +1234,7 @@ export default function EditProfileScreen() {
                           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setForm((p) => ({ ...p, [key]: v }));
                         }}
-                        trackColor={{ true: PRIMARY, false: colors.borderLight }}
+                        trackColor={{ true: colors.primary, false: colors.borderLight }}
                         thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
                       />
                     </View>
@@ -1473,7 +1472,7 @@ const s = StyleSheet.create({
     ...Platform.select({
       web: { boxShadow: '0px 8px 32px rgba(124, 58, 237, 0.25)' }, // violet per updated palette
       ios: {
-        shadowColor: PRIMARY,
+        shadowColor: CultureTokens.violet,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
         shadowRadius: 16,

@@ -107,22 +107,22 @@ export default function WelcomeScreen() {
 
   const goToSignup = useCallback(() => {
     triggerImpact(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } });
+    router.push({ pathname: '/(auth)/signup', params: { redirectTo: pathname } });
   }, [pathname]);
 
   const goToLogin = useCallback(() => {
     triggerImpact(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } });
+    router.push({ pathname: '/(auth)/login', params: { redirectTo: pathname } });
   }, [pathname]);
 
   const goToLocationViaGoogle = useCallback(() => {
     triggerImpact(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(onboarding)/location');
+    router.push('/(onboarding)/permissions');
   }, []);
 
   const goToLocationViaApple = useCallback(() => {
     triggerImpact(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(onboarding)/location');
+    router.push('/(onboarding)/permissions');
   }, []);
 
   const cardPad = CardTokens.paddingLarge * 2;

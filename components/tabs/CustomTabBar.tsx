@@ -39,39 +39,33 @@ import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 const TABS = [
   {
     name: 'index',
-    label: 'Discover',
+    label: 'Home',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
   },
   {
-    name: 'calendar',
-    label: 'Events',
-    icon: 'calendar-outline' as const,
-    iconActive: 'calendar' as const,
+    name: 'search',
+    label: 'Search',
+    icon: 'search-outline' as const,
+    iconActive: 'search' as const,
   },
   {
-    name: 'community',
-    label: 'Community',
+    name: 'communities',
+    label: 'Communities',
     icon: 'people-outline' as const,
     iconActive: 'people' as const,
   },
   {
-    name: 'city',
-    label: 'My City',
-    icon: 'location-outline' as const,
-    iconActive: 'location' as const,
+    name: 'wallet',
+    label: 'Wallet',
+    icon: 'wallet-outline' as const,
+    iconActive: 'wallet' as const,
   },
   {
-    name: 'perks',
-    label: 'Perks',
-    icon: 'gift-outline' as const,
-    iconActive: 'gift' as const,
-  },
-  {
-    name: 'menu',
-    label: 'Menu',
-    icon: 'menu-outline' as const,
-    iconActive: 'menu' as const,
+    name: 'profile',
+    label: 'Profile',
+    icon: 'person-outline' as const,
+    iconActive: 'person' as const,
   },
 ] as const;
 
@@ -109,11 +103,10 @@ const badge = StyleSheet.create({
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   index: 'Discover curated events and culture near you',
-  calendar: 'Browse events and your personal calendar',
-  community: 'Find communities and cultural circles',
-  city: 'See everything happening in your city',
-  perks: 'Open perks, offers, and rewards',
-  menu: 'Open app menu and settings',
+  search: 'Global search for events, venues, and communities',
+  communities: 'Find and join communities and cultural circles',
+  wallet: 'Your tickets, passes, rewards, and cashback',
+  profile: 'Your profile, membership, settings, and digital ID',
 };
 
 interface TabItemProps {
@@ -349,7 +342,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isFeedTab = tab.name === 'city';
+          const isFeedTab = tab.name === 'profile';
           return (
             <TabItem
               key={route.key}

@@ -89,7 +89,7 @@ export default function MyCouncilScreen() {
           label: 'Culture & language',
           sub: `Heritage hub · ${citySlug}`,
           icon: 'globe-outline',
-          onPress: () => router.push(`/city/${encodeURIComponent(citySlug)}` as never),
+          onPress: () => router.push(`/(tabs)/index/city/${encodeURIComponent(citySlug)}` as never),
         },
         {
           id: 'artists',
