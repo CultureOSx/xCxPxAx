@@ -55,6 +55,7 @@ function CommunityGridCardComponent({ item, width, onPress }: CommunityGridCardP
             backgroundColor: colors.surface,
             borderColor: colors.borderLight,
             opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed ? 0.992 : 1 }],
           },
         ]}
         onPress={() => onPress(item)}
@@ -79,7 +80,7 @@ function CommunityGridCardComponent({ item, width, onPress }: CommunityGridCardP
             />
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.72)']}
+            colors={['transparent', 'rgba(0,0,0,0.82)']}
             style={[StyleSheet.absoluteFill, styles.coverGradientBottom]}
           />
           {!item.imageUrl && (
@@ -145,6 +146,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     ...shadows.medium,
+    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
   },
   cover: {
     height: 160,
@@ -221,13 +223,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
   },
   cardInfo: {
-    padding: 14,
-    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 13,
+    gap: 9,
   },
   cardDescription: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    lineHeight: 18,
+    lineHeight: 17,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -235,9 +239,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
   activityLabel: {
     fontSize: 9,

@@ -15,12 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { TextStyles } from '@/constants/typography';
@@ -191,8 +186,6 @@ export default function CityScreen() {
   const [activeExploreCategory, setActiveExploreCategory] = useState<ExploreCategoryKey>('events');
   const [refreshing, setRefreshing] = useState(false);
 
-  const colAnim = useSharedValue(2);
-
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   const { data: eventsData, isLoading, refetch } = useQuery<PaginatedEventsResponse>({
@@ -213,15 +206,38 @@ export default function CityScreen() {
     staleTime: 300_000,
   });
 
+  const { data: profilesData } = useQuery<Profile[] | { profiles?: Profile[] }>({
+    queryKey: ['/api/profiles', 'city-fallback', cityName, cityCountry],
+    queryFn: () => api.profiles.list(),
+    staleTime: 300_000,
+  });
+
   const allEvents = useMemo<EventData[]>(
     () => eventsData?.events ?? [],
     [eventsData],
   );
 
-  const venues = useMemo<Profile[]>(
-    () => (venuesData ?? []).slice(0, 6),
-    [venuesData],
-  );
+  const venues = useMemo<Profile[]>(() => {
+    const primary = venuesData ?? [];
+    if (primary.length > 0) return primary.slice(0, 6);
+
+    const allProfiles = Array.isArray(profilesData)
+      ? profilesData
+      : (profilesData?.profiles ?? []);
+    const cityNorm = cityName.trim().toLowerCase();
+    const countryNorm = cityCountry.trim().toLowerCase();
+    const placeEntityTypes = new Set(['business', 'venue', 'restaurant', 'organisation', 'organization']);
+
+    return allProfiles
+      .filter((profile) => {
+        const profileCity = String(profile.city ?? '').trim().toLowerCase();
+        const profileCountry = String(profile.country ?? '').trim().toLowerCase();
+        const entityType = String(profile.entityType ?? '').trim().toLowerCase();
+        const countryMatches = !profileCountry || profileCountry === countryNorm;
+        return profileCity === cityNorm && countryMatches && placeEntityTypes.has(entityType);
+      })
+      .slice(0, 6);
+  }, [venuesData, profilesData, cityName, cityCountry]);
 
   // ── Derive unique culture tags + language tags from event data ─────────────
 
@@ -312,14 +328,18 @@ export default function CityScreen() {
 
   const totalActiveFilters = selectedCategories.length + selectedCultures.length + selectedLanguages.length;
 
-  const gridGap   = 16;
+  const gridGap = 16;
   const gridWidth = isDesktop ? contentWidth : width - 40;
   const cardWidth = Math.floor((gridWidth - gridGap) / 2) - 1;
-
-  const animatedCardStyle = useAnimatedStyle(() => ({
-    width: interpolate(colAnim.value, [2, 3], [cardWidth, cardWidth], Extrapolation.CLAMP),
-    opacity: 1,
-  }));
+  // Desktop layout uses a 2.8 / 1 split (events / sidebar) with extra gap + shell padding.
+  // Derive event-column width from that split so two cards actually fit side-by-side.
+  const desktopShellWidth = Math.max(0, contentWidth - 40); // matches MAIN CONTENT horizontal padding
+  const desktopContentGap = gridGap * 2; // matches MAIN CONTENT inter-column gap
+  const desktopEventsColumnWidth = Math.max(
+    0,
+    ((desktopShellWidth - desktopContentGap) * 2.8) / (2.8 + 1),
+  );
+  const desktopCardWidth = Math.floor((desktopEventsColumnWidth - gridGap) / 2);
 
   const goToMap = useCallback(() => {
     haptic();
@@ -721,7 +741,13 @@ export default function CityScreen() {
                 {isLoading ? (
                   <View style={styles.skeletonGrid}>
                     {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <View key={i} style={[styles.skeletonCard, { width: cardWidth, height: 240 }]} />
+                      <View
+                        key={i}
+                        style={[
+                          styles.skeletonCard,
+                          { width: isDesktop ? cardWidth : '48.5%', height: 240 },
+                        ]}
+                      />
                     ))}
                   </View>
                 ) : eventResults.length === 0 ? (
@@ -738,13 +764,14 @@ export default function CityScreen() {
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
                     {eventResults.map((event) => {
-                      const w = isDesktop
-                        ? (gridWidth * 0.72 - gridGap) / 2
-                        : cardWidth;
+                      const w = isDesktop ? desktopCardWidth : undefined;
                       return (
                         <Animated.View
                           key={event.id}
-                          style={[isDesktop ? { width: w } : animatedCardStyle, { marginBottom: gridGap }]}
+                          style={[
+                            isDesktop ? { width: w } : { width: '48.5%' },
+                            { marginBottom: gridGap },
+                          ]}
                         >
                           <EventCard
                             event={event}

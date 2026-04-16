@@ -19,7 +19,7 @@ import { router, useLocalSearchParams, Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, gradients, FontFamily, shadows } from '@/constants/theme';
@@ -35,6 +35,12 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import { communityGroups, communityFlags } from '@/constants/onboardingCommunities';
 import { interestCategories } from '@/constants/onboardingInterests';
+
+type AttendeePreview = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+};
 
 // ─── Social platform config ────────────────────────────────────────────────────
 
@@ -249,6 +255,133 @@ function EventRailCard({ event, colors }: { event: EventData; colors: ReturnType
   );
 }
 
+function ProfileFeedEventCard({
+  event,
+  colors,
+  isSaved,
+  rsvpStatus,
+  attendeesPreview,
+  onToggleSave,
+  onRsvp,
+}: {
+  event: EventData;
+  colors: ReturnType<typeof useColors>;
+  isSaved: boolean;
+  rsvpStatus: 'going' | 'maybe' | 'not_going' | null;
+  attendeesPreview: AttendeePreview[];
+  onToggleSave: () => void;
+  onRsvp: (status: 'going' | 'maybe' | 'not_going') => void;
+}) {
+  const uri = event.heroImageUrl ?? event.imageUrl;
+  const attendees = Math.max(0, event.attending ?? 0);
+  const attendeePreview = useMemo(() => {
+    if (attendeesPreview.length > 0) {
+      return attendeesPreview.slice(0, 3).map((a, i) => ({
+        key: a.id,
+        initials: (a.name || 'CP').split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase(),
+        avatarUrl: a.avatarUrl ?? null,
+        bg: i === 0 ? '#2563EB' : i === 1 ? '#0EA5E9' : '#14B8A6',
+      }));
+    }
+    const words = (event.title ?? 'Culture Pass').split(/\s+/).filter(Boolean);
+    const base = words.length > 0 ? words : ['Culture', 'Pass'];
+    return [0, 1, 2].map((i) => ({
+      key: `${event.id}-${i}`,
+      initials: (base[i % base.length] ?? 'CP').slice(0, 2).toUpperCase(),
+      avatarUrl: null,
+      bg: i === 0 ? '#2563EB' : i === 1 ? '#0EA5E9' : '#14B8A6',
+    }));
+  }, [event.id, event.title, attendeesPreview]);
+  const rsvpOptions: Array<{ key: 'going' | 'maybe' | 'not_going'; label: string }> = [
+    { key: 'going', label: 'Going' },
+    { key: 'maybe', label: 'Maybe' },
+    { key: 'not_going', label: 'Not going' },
+  ];
+  return (
+    <View style={[pf.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+      <Pressable
+        onPress={() => router.push(`/event/${event.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open event ${event.title}`}
+      >
+        {uri ? (
+          <Image source={{ uri }} style={pf.image} contentFit="cover" />
+        ) : (
+          <View style={[pf.image, { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name="calendar-outline" size={22} color={CultureTokens.indigo} />
+          </View>
+        )}
+      </Pressable>
+      <View style={pf.body}>
+        <Text style={[pf.title, { color: colors.text }]} numberOfLines={2}>{event.title}</Text>
+        <Text style={[pf.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+          {[event.date, event.time, event.city].filter(Boolean).join(' · ')}
+        </Text>
+        <View style={pf.row}>
+          <View style={[pf.pill, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name="people-outline" size={12} color={colors.textTertiary} />
+            <Text style={[pf.pillText, { color: colors.textSecondary }]}>{attendees} going</Text>
+          </View>
+          {rsvpStatus ? (
+            <View style={[pf.pill, { borderColor: CultureTokens.indigo + '55', backgroundColor: CultureTokens.indigo + '10' }]}>
+              <Text style={[pf.pillText, { color: CultureTokens.indigo }]}>RSVP: {rsvpStatus.replace('_', ' ')}</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={pf.attendeeRow}>
+          <View style={pf.avatarStack}>
+            {attendeePreview.map((a, i) => (
+              <View
+                key={a.key}
+                style={[
+                  pf.avatarMini,
+                  { backgroundColor: a.bg, borderColor: colors.surface, marginLeft: i === 0 ? 0 : -10 },
+                ]}
+              >
+                {a.avatarUrl ? (
+                  <Image source={{ uri: a.avatarUrl }} style={pf.avatarMiniImage} contentFit="cover" />
+                ) : (
+                  <Text style={pf.avatarMiniText}>{a.initials}</Text>
+                )}
+              </View>
+            ))}
+          </View>
+          <Text style={[pf.attendeeCaption, { color: colors.textTertiary }]}>Attendee preview</Text>
+        </View>
+        <View style={pf.actions}>
+          <View style={[pf.rsvpGroup, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}>
+            {rsvpOptions.map((opt) => {
+              const active = rsvpStatus === opt.key;
+              return (
+                <Pressable
+                  key={opt.key}
+                  onPress={() => onRsvp(opt.key)}
+                  style={[pf.rsvpOption, active && { backgroundColor: CultureTokens.indigo }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${opt.label} for ${event.title}`}
+                >
+                  <Text style={[pf.rsvpOptionText, { color: active ? '#fff' : colors.text }]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            onPress={onToggleSave}
+            style={[pf.actionBtnGhost, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}
+            accessibilityRole="button"
+            accessibilityLabel={`${isSaved ? 'Remove saved' : 'Save'} ${event.title}`}
+          >
+            <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={14} color={colors.text} />
+            <Text style={[pf.actionGhostText, { color: colors.text }]}>{isSaved ? 'Saved' : 'Save'}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function TicketRailCard({ ticket, colors }: { ticket: Ticket; colors: ReturnType<typeof useColors> }) {
   const uri = ticket.eventImageUrl;
   const title = ticket.eventTitle ?? ticket.eventName ?? ticket.eventSnapshot?.title ?? 'Event';
@@ -347,6 +480,121 @@ const pu = StyleSheet.create({
   commRailName: { fontSize: 12, fontFamily: FontFamily.semibold, marginTop: 8, paddingHorizontal: 8, textAlign: 'center', lineHeight: 16 },
 });
 
+const pf = StyleSheet.create({
+  list: { gap: 10 },
+  card: {
+    borderWidth: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: 138,
+    backgroundColor: '#ececf2',
+  },
+  body: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 7,
+  },
+  title: {
+    fontSize: 14,
+    fontFamily: FontFamily.semibold,
+    lineHeight: 19,
+  },
+  meta: {
+    fontSize: 12,
+    fontFamily: FontFamily.medium,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexWrap: 'wrap',
+  },
+  pill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  pillText: {
+    fontSize: 11,
+    fontFamily: FontFamily.medium,
+  },
+  actions: {
+    marginTop: 3,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  attendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatarStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarMini: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarMiniImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarMiniText: {
+    color: '#fff',
+    fontSize: 9,
+    fontFamily: FontFamily.bold,
+  },
+  attendeeCaption: {
+    fontSize: 11,
+    fontFamily: FontFamily.medium,
+  },
+  rsvpGroup: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  rsvpOption: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+  },
+  rsvpOptionText: {
+    fontSize: 11,
+    fontFamily: FontFamily.semibold,
+  },
+  actionBtnGhost: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionGhostText: {
+    fontSize: 12,
+    fontFamily: FontFamily.semibold,
+  },
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // USER PUBLIC PROFILE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -364,6 +612,7 @@ function UserPublicProfile({
 }) {
   const { isDesktop, hPad } = useLayout();
   const [following, setFollowing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'feed' | 'events' | 'community' | 'media' | 'about'>('feed');
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const privacy = profile.privacySettings ?? {};
@@ -403,6 +652,13 @@ function UserPublicProfile({
   const communities = profile.communities ?? [];
   const interests   = profile.interests   ?? [];
   const languages   = profile.languages   ?? [];
+  const tabItems: Array<{ key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+    { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
+    { key: 'events', label: 'Events', icon: 'calendar-outline' },
+    { key: 'community', label: 'Community', icon: 'people-outline' },
+    { key: 'media', label: 'Media', icon: 'images-outline' },
+    { key: 'about', label: 'About', icon: 'information-circle-outline' },
+  ];
 
   const cardSurface = useMemo(
     () => ({
@@ -414,7 +670,9 @@ function UserPublicProfile({
   );
 
   const { isAuthenticated } = useAuth();
-  const { savedEvents } = useSaved();
+  const { savedEvents, toggleSaveEvent, isEventSaved } = useSaved();
+  const [optimisticRsvpMap, setOptimisticRsvpMap] = useState<Record<string, 'going' | 'maybe' | 'not_going' | null>>({});
+  const [optimisticSavedMap, setOptimisticSavedMap] = useState<Record<string, boolean>>({});
 
   const { data: hostedResp } = useQuery({
     queryKey: ['profile', 'hosted-events', profile.id],
@@ -426,6 +684,74 @@ function UserPublicProfile({
     () => pickHostedEvents(hostedResp?.events ?? []),
     [hostedResp],
   );
+
+  const { data: feedPayload } = useQuery({
+    queryKey: ['/api/feed', profile.city, profile.country],
+    queryFn: () =>
+      api.feed.list({
+        city: profile.city,
+        country: profile.country,
+        pageSize: 24,
+        page: 1,
+      }),
+    staleTime: 45_000,
+  });
+
+  const feedEvents = useMemo(
+    () => (feedPayload?.items ?? []).filter((i) => i.kind === 'event' && i.event).map((i) => i.event as EventData),
+    [feedPayload],
+  );
+  const communityActivities = useMemo(
+    () => (feedPayload?.items ?? []).filter((i) => i.kind !== 'event').slice(0, 8),
+    [feedPayload],
+  );
+  const prioritizedFeedEvents = useMemo(() => {
+    if (feedEvents.length > 0) return pickHostedEvents(feedEvents);
+    return hostedEventsList;
+  }, [feedEvents, hostedEventsList]);
+
+  const rsvpEventIds = useMemo(
+    () => prioritizedFeedEvents.map((e) => e.id).slice(0, 8),
+    [prioritizedFeedEvents],
+  );
+  const rsvpQueries = useQueries({
+    queries: rsvpEventIds.map((id) => ({
+      queryKey: ['events', 'rsvp', 'profile-feed', id] as const,
+      queryFn: () => api.events.myRsvp(id),
+      enabled: isAuthenticated,
+      staleTime: 30_000,
+    })),
+  });
+  const rsvpStatusMap = useMemo(() => {
+    const map = new Map<string, 'going' | 'maybe' | 'not_going' | null>();
+    rsvpEventIds.forEach((id, idx) => {
+      const optimistic = optimisticRsvpMap[id];
+      map.set(id, optimistic !== undefined ? optimistic : (rsvpQueries[idx]?.data?.status ?? null));
+    });
+    return map;
+  }, [rsvpEventIds, rsvpQueries, optimisticRsvpMap]);
+  const rsvpMutation = useMutation({
+    mutationFn: ({ eventId, status }: { eventId: string; status: 'going' | 'maybe' | 'not_going' }) =>
+      api.events.rsvp(eventId, status),
+  });
+  const attendeeEventIds = useMemo(
+    () => prioritizedFeedEvents.slice(0, 5).map((e) => e.id),
+    [prioritizedFeedEvents],
+  );
+  const attendeeQueries = useQueries({
+    queries: attendeeEventIds.map((id) => ({
+      queryKey: ['events', 'attendees-preview', id] as const,
+      queryFn: () => api.events.attendees(id, 5),
+      staleTime: 30_000,
+    })),
+  });
+  const attendeesPreviewByEvent = useMemo(() => {
+    const map = new Map<string, AttendeePreview[]>();
+    attendeeEventIds.forEach((id, idx) => {
+      map.set(id, attendeeQueries[idx]?.data?.attendees ?? []);
+    });
+    return map;
+  }, [attendeeEventIds, attendeeQueries]);
 
   const { data: ticketsList } = useQuery({
     queryKey: ['profile', 'tickets', profile.id],
@@ -511,6 +837,25 @@ function UserPublicProfile({
     const set = new Set(joinedIds);
     return allCommunities.filter((c) => set.has(c.id));
   }, [allCommunities, joinedIds]);
+  const sidebarUpcoming = useMemo(() => hostedEventsList.slice(0, 3), [hostedEventsList]);
+  const mediaGallery = useMemo(
+    () =>
+      [
+        profile.avatarUrl,
+        ...hostedEventsList.map((e) => e.heroImageUrl ?? e.imageUrl),
+        ...savedEventCards.map((e) => e.heroImageUrl ?? e.imageUrl),
+      ]
+        .filter((v): v is string => Boolean(v))
+        .slice(0, 12),
+    [profile.avatarUrl, hostedEventsList, savedEventCards],
+  );
+  const liveNowCount = Math.max(
+    6,
+    Math.round((profile.followersCount ?? 0) / 55) +
+      prioritizedFeedEvents.length +
+      joinedCommunityCards.length +
+      communityActivities.length,
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -689,305 +1034,348 @@ function UserPublicProfile({
           ))}
         </View>
 
-        {/* ── Profile Views (owner) ── */}
-        {isOwner ? (
-          <Pressable
-            style={[u.viewsCard, cardSurface, { borderColor: `${CultureTokens.gold}35` }]}
-            onPress={() =>
-              Alert.alert(
-                'Profile insights',
-                'See who viewed your profile and more with CulturePass Plus.',
-                [
-                  { text: 'Not now', style: 'cancel' },
-                  { text: 'View Plus', onPress: () => router.push('/membership/upgrade') },
-                ],
-              )
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Profile insights and Plus membership"
-          >
-            <LinearGradient
-              colors={[`${CultureTokens.gold}0D`, `${CultureTokens.indigo}08`] as [string, string]}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <View style={u.viewsLeft}>
-              <View style={[u.viewsIconWrap, { backgroundColor: `${CultureTokens.gold}22` }]}>
-                <Ionicons name="sparkles-outline" size={18} color={CultureTokens.gold} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[u.viewsTitle, { color: colors.text }]}>Profile insights</Text>
-                <Text style={[u.viewsHint, { color: colors.textSecondary }]}>
-                  {privacy.privateViewingMode
-                    ? 'Private viewing is on for your account.'
-                    : 'Audience insights with CulturePass Plus — tap to learn more.'}
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </Pressable>
-        ) : null}
+        <View style={[u.tabsWrap, cardSurface]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={u.tabsScroll}>
+            {tabItems.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  style={[
+                    u.tabChip,
+                    {
+                      backgroundColor: active ? CultureTokens.indigo + '16' : colors.backgroundSecondary,
+                      borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${tab.label}`}
+                >
+                  <Ionicons name={tab.icon} size={14} color={active ? CultureTokens.indigo : colors.textTertiary} />
+                  <Text style={[u.tabChipText, { color: active ? CultureTokens.indigo : colors.textSecondary }]}>
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-        {/* ── About / Bio ── */}
-        {profile.bio ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader title="About" subtitle="In their own words." colors={colors} />
-            <Text style={[u.bioText, { color: colors.text }]}>{profile.bio}</Text>
-          </View>
-        ) : null}
-
-        {/* ── Linktree-style links ── */}
-        {showSocialLinks && activeSocials.length > 0 ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader title="Links" subtitle="Websites and social profiles." colors={colors} />
-            <View style={u.linkIconRow}>
-              {activeSocials.map((p) => {
-                const link =
-                  ({ ...profile.socialLinks, website: profile.website } as Record<string, string | undefined>)[p.key] ?? '';
-                return (
-                  <Pressable
-                    key={p.key}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      openLink(link);
-                    }}
-                    style={({ pressed }) => [
-                      u.linkIconBtn,
-                      { backgroundColor: p.color, transform: [{ scale: pressed ? 0.94 : 1 }] },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${p.label}`}
-                  >
-                    <Ionicons name={p.icon} size={22} color="#FFFFFF" />
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
-
-        {showCulturalId && (profile.ethnicityText || languages.length > 0 || (showCommunities && communities.length > 0)) ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader
-              title="Cultural roots"
-              subtitle="Heritage, languages, and communities they share publicly."
-              colors={colors}
-            />
-            {profile.ethnicityText ? (
-              <Text style={[u.ethnicityText, { color: colors.text }]}>{profile.ethnicityText}</Text>
-            ) : null}
-
-            {languages.length > 0 ? (
-              <View style={u.chipGroup}>
-                <Text style={[u.chipGroupLabel, { color: colors.textTertiary }]}>Languages</Text>
-                <View style={[u.chipRow, { marginTop: 6 }]}>
-                  {languages.map((lang) => (
-                    <View
-                      key={lang}
-                      style={[u.langChip, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}
-                    >
-                      <Text style={[u.langChipText, { color: colors.text }]}>{lang}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : null}
-
-            {showCommunities && communities.length > 0 ? (
-              <View style={[u.chipGroup, { marginTop: languages.length > 0 ? 16 : 0 }]}>
-                <Text style={[u.chipGroupLabel, { color: colors.textTertiary }]}>Communities</Text>
-                <View style={[u.chipRow, { marginTop: 6 }]}>
-                  {communities.map((c) => {
-                    const color = COMMUNITY_COLOR[c] ?? CultureTokens.indigo;
-                    const flag = communityFlags[c] ?? '🌐';
-                    return (
-                      <View key={c} style={[u.commChip, { backgroundColor: color, borderColor: color }]}>
-                        <Text style={u.commChipFlag}>{flag}</Text>
-                        <Text style={[u.commChipText, { color: '#fff' }]}>{c}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        {showInterests && interests.length > 0 ? (
-          <View style={[u.card, cardSurface, { borderColor: `${CultureTokens.gold}40` }]}>
-            <SectionHeader title="Interests" subtitle="Events and scenes they care about." colors={colors} />
-            <View style={[u.chipRow, { marginTop: 2 }]}>
-              {interests.map((tag, i) => {
-                const accent = accentForInterest(tag);
-                return (
-                  <View
-                    key={tag + i}
-                    style={[u.interestChip, { backgroundColor: accent, borderColor: accent }]}
-                  >
-                    <Text style={[u.interestChipText, { color: '#fff' }]}>{tag}</Text>
+        <View style={[u.contentLayout, isDesktop && { flexDirection: 'row', alignItems: 'flex-start' }]}>
+          {isDesktop ? (
+            <View style={[u.sidebarCol, { gap: 14 }]}>
+              <View style={[u.card, cardSurface]}>
+                <SectionHeader title="About" subtitle="Quick context" colors={colors} />
+                {profile.bio ? <Text style={[u.sidebarText, { color: colors.text }]} numberOfLines={4}>{profile.bio}</Text> : null}
+                {showLocation && (profile.city || profile.country) ? (
+                  <View style={u.sidebarMetaRow}>
+                    <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+                    <Text style={[u.sidebarMetaText, { color: colors.textSecondary }]}>
+                      {[profile.city, profile.country].filter(Boolean).join(', ')}
+                    </Text>
                   </View>
-                );
-              })}
+                ) : null}
+              </View>
+
+              <View style={[u.card, cardSurface]}>
+                <SectionHeader title="Stats" subtitle="Community signals" colors={colors} />
+                <View style={u.sidebarStats}>
+                  <Text style={[u.sidebarStatLine, { color: colors.text }]}>{fmt(profile.followersCount ?? 0)} followers</Text>
+                  <Text style={[u.sidebarStatLine, { color: colors.text }]}>{fmt(hostedEventsList.length)} hosted events</Text>
+                  <Text style={[u.sidebarStatLine, { color: colors.text }]}>{fmt(joinedCommunityCards.length)} communities joined</Text>
+                </View>
+              </View>
+
+              {sidebarUpcoming.length > 0 ? (
+                <View style={[u.card, cardSurface]}>
+                  <SectionHeader title="Upcoming events" subtitle="Next highlights" colors={colors} />
+                  <View style={{ gap: 8 }}>
+                    {sidebarUpcoming.map((e) => (
+                      <Pressable
+                        key={e.id}
+                        onPress={() => router.push(`/event/${e.id}`)}
+                        style={[u.sidebarEventRow, { borderColor: colors.borderLight }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${e.title}`}
+                      >
+                        <Text style={[u.sidebarEventTitle, { color: colors.text }]} numberOfLines={1}>{e.title}</Text>
+                        <Text style={[u.sidebarEventMeta, { color: colors.textTertiary }]} numberOfLines={1}>
+                          {[e.date, e.time].filter(Boolean).join(' · ')}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
             </View>
-          </View>
-        ) : null}
+          ) : null}
 
-        {hostedEventsList.length > 0 ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader
-              title={isOwner ? 'Your hosted events' : 'Events they host'}
-              subtitle="Published on CulturePass (upcoming first)."
-              colors={colors}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={pu.railScroll}
-              contentContainerStyle={pu.railScrollContent}
-            >
-              {hostedEventsList.map((e) => (
-                <EventRailCard key={e.id} event={e} colors={colors} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
+          <View style={u.mainCol}>
+            {activeTab === 'feed' ? (
+              <>
+                <View style={[u.liveNowBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <View style={u.liveDot} />
+                  <Text style={[u.liveNowText, { color: colors.text }]}>
+                    Live now in {profile.city ?? 'your city'} · {liveNowCount} people active
+                  </Text>
+                </View>
+                {prioritizedFeedEvents.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader
+                      title={isOwner ? 'Your event feed' : 'Event feed'}
+                      subtitle="Live API events first, then community activity."
+                      colors={colors}
+                    />
+                    <View style={pf.list}>
+                      {prioritizedFeedEvents.slice(0, 5).map((e) => (
+                        <ProfileFeedEventCard
+                          key={e.id}
+                          event={e}
+                          colors={colors}
+                          isSaved={optimisticSavedMap[e.id] ?? isEventSaved(e.id)}
+                          rsvpStatus={rsvpStatusMap.get(e.id) ?? null}
+                          attendeesPreview={attendeesPreviewByEvent.get(e.id) ?? []}
+                          onToggleSave={() => {
+                            const next = !(optimisticSavedMap[e.id] ?? isEventSaved(e.id));
+                            setOptimisticSavedMap((prev) => ({ ...prev, [e.id]: next }));
+                            toggleSaveEvent(e.id);
+                          }}
+                          onRsvp={(status) => {
+                            if (!isAuthenticated) {
+                              router.push('/(onboarding)/login');
+                              return;
+                            }
+                            const previous = rsvpStatusMap.get(e.id) ?? null;
+                            setOptimisticRsvpMap((prev) => ({ ...prev, [e.id]: status }));
+                            rsvpMutation.mutate(
+                              { eventId: e.id, status },
+                              {
+                                onError: () => {
+                                  setOptimisticRsvpMap((prev) => ({ ...prev, [e.id]: previous }));
+                                },
+                              },
+                            );
+                          }}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                <View style={[u.card, cardSurface]}>
+                  <SectionHeader title="Community activity" subtitle="Announcements, welcomes, milestones." colors={colors} />
+                  {communityActivities.length > 0 ? (
+                    <View style={u.activityList}>
+                      {communityActivities.map((item) => (
+                        <View key={item.id} style={[u.activityRow, { borderColor: colors.borderLight }]}>
+                          <View style={[u.activityIcon, { backgroundColor: colors.primarySoft }]}>
+                            <Ionicons
+                              name={
+                                item.kind === 'announcement'
+                                  ? 'megaphone-outline'
+                                  : item.kind === 'milestone'
+                                    ? 'trophy-outline'
+                                    : 'sparkles-outline'
+                              }
+                              size={14}
+                              color={CultureTokens.indigo}
+                            />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[u.activityTitle, { color: colors.text }]} numberOfLines={2}>
+                              {item.communityName ?? 'Community update'}
+                            </Text>
+                            <Text style={[u.activityBody, { color: colors.textSecondary }]} numberOfLines={2}>
+                              {item.body ?? (item.matchReasons.join(' · ') || 'New community activity')}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={[u.feedPlaceholder, { color: colors.textSecondary }]}>
+                      No activity updates yet for this city profile context.
+                    </Text>
+                  )}
+                </View>
+              </>
+            ) : null}
 
-        {isOwner && upcomingTickets.length > 0 ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader
-              title="Tickets & RSVPs"
-              subtitle="Upcoming events you are going to."
-              colors={colors}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={pu.railScroll}
-              contentContainerStyle={pu.railScrollContent}
-            >
-              {upcomingTickets.map((t) => (
-                <TicketRailCard key={t.id} ticket={t} colors={colors} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
+            {activeTab === 'events' ? (
+              <>
+                {hostedEventsList.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Upcoming & recent events" subtitle="Published on CulturePass." colors={colors} />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={pu.railScroll} contentContainerStyle={pu.railScrollContent}>
+                      {hostedEventsList.map((e) => (
+                        <EventRailCard key={e.id} event={e} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+                {isOwner && upcomingTickets.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Tickets & RSVPs" subtitle="Upcoming events you are going to." colors={colors} />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={pu.railScroll} contentContainerStyle={pu.railScrollContent}>
+                      {upcomingTickets.map((t) => (
+                        <TicketRailCard key={t.id} ticket={t} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+                {isOwner && savedEventCards.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Saved events" subtitle="From your bookmarks." colors={colors} />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={pu.railScroll} contentContainerStyle={pu.railScrollContent}>
+                      {savedEventCards.map((e) => (
+                        <EventRailCard key={e.id} event={e} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+              </>
+            ) : null}
 
-        {isOwner && savedEventCards.length > 0 ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader title="Saved events" subtitle="From your bookmarks." colors={colors} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={pu.railScroll}
-              contentContainerStyle={pu.railScrollContent}
-            >
-              {savedEventCards.map((e) => (
-                <EventRailCard key={e.id} event={e} colors={colors} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
+            {activeTab === 'community' ? (
+              <>
+                {isOwner && joinedCommunityCards.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Communities joined" subtitle="Platform groups you are a member of." colors={colors} />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={pu.railScroll} contentContainerStyle={pu.railScrollContent}>
+                      {joinedCommunityCards.map((c) => (
+                        <CommunityRailCard key={c.id} community={c} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+                {showCommunities && communities.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Identity communities" subtitle="Publicly shared communities." colors={colors} />
+                    <View style={[u.chipRow, { marginTop: 6 }]}>
+                      {communities.map((c) => {
+                        const color = COMMUNITY_COLOR[c] ?? CultureTokens.indigo;
+                        const flag = communityFlags[c] ?? '🌐';
+                        return (
+                          <View key={c} style={[u.commChip, { backgroundColor: color, borderColor: color }]}>
+                            <Text style={u.commChipFlag}>{flag}</Text>
+                            <Text style={[u.commChipText, { color: '#fff' }]}>{c}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+                {communityActivities.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Recent community activity" subtitle="From the live feed API." colors={colors} />
+                    <View style={u.activityList}>
+                      {communityActivities.slice(0, 4).map((item) => (
+                        <View key={item.id} style={[u.activityRow, { borderColor: colors.borderLight }]}>
+                          <View style={[u.activityIcon, { backgroundColor: colors.primarySoft }]}>
+                            <Ionicons name="pulse-outline" size={14} color={CultureTokens.indigo} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[u.activityTitle, { color: colors.text }]} numberOfLines={1}>
+                              {item.communityName ?? 'Activity'}
+                            </Text>
+                            <Text style={[u.activityBody, { color: colors.textSecondary }]} numberOfLines={2}>
+                              {item.body ?? (item.matchReasons.join(' · ') || 'Community update')}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+              </>
+            ) : null}
 
-        {isOwner && joinedCommunityCards.length > 0 ? (
-          <View style={[u.card, cardSurface]}>
-            <SectionHeader
-              title="Communities joined"
-              subtitle="Platform groups you are a member of."
-              colors={colors}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={pu.railScroll}
-              contentContainerStyle={pu.railScrollContent}
-            >
-              {joinedCommunityCards.map((c) => (
-                <CommunityRailCard key={c.id} community={c} colors={colors} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
+            {activeTab === 'media' ? (
+              <View style={[u.card, cardSurface]}>
+                <SectionHeader title="Media" subtitle="Highlights from profile activity." colors={colors} />
+                {mediaGallery.length > 0 ? (
+                  <View style={u.mediaGrid}>
+                    {mediaGallery.map((uri, idx) => (
+                      <Image key={`${uri}-${idx}`} source={{ uri }} style={u.mediaTile} contentFit="cover" />
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[u.feedPlaceholder, { color: colors.textSecondary }]}>No media available yet.</Text>
+                )}
+              </View>
+            ) : null}
 
-        <View style={[u.card, cardSurface]}>
-          <SectionHeader
-            title="Explore CulturePass"
-            subtitle={
-              isOwner
-                ? 'Shortcuts: saved items, events, directory, and groups.'
-                : profile.city
-                  ? `More to do in ${profile.city} — and across the app.`
-                  : 'Keep exploring events, groups, and places.'
-            }
-            colors={colors}
-          />
-          {(isOwner
-            ? [
-                {
-                  icon: 'bookmark-outline' as const,
-                  title: 'Saved',
-                  subtitle: 'Events, communities & cultural hubs you bookmarked',
-                  onPress: () => router.push('/saved'),
-                },
-                {
-                  icon: 'calendar-outline' as const,
-                  title: 'Events',
-                  subtitle: 'Browse what is on near you',
-                  onPress: () => router.push('/events'),
-                },
-                {
-                  icon: 'business-outline' as const,
-                  title: 'Directory',
-                  subtitle: 'Venues, businesses & organisers',
-                  onPress: () => router.push('/directory'),
-                },
-                {
-                  icon: 'people-outline' as const,
-                  title: 'Communities',
-                  subtitle: 'Join diaspora & cultural groups',
-                  onPress: () => router.push('/communities'),
-                },
-                {
-                  icon: 'gift-outline' as const,
-                  title: 'Perks',
-                  subtitle: 'Member deals & rewards',
-                  onPress: () => router.push('/(tabs)/perks'),
-                },
-              ]
-            : [
-                {
-                  icon: 'calendar-outline' as const,
-                  title: 'Events',
-                  subtitle: profile.city ? `Discover in ${profile.city}` : 'Browse upcoming events',
-                  onPress: () => router.push('/events'),
-                },
-                {
-                  icon: 'people-outline' as const,
-                  title: 'Communities',
-                  subtitle: 'Find groups that match you',
-                  onPress: () => router.push('/communities'),
-                },
-                {
-                  icon: 'compass-outline' as const,
-                  title: 'Discover',
-                  subtitle: 'Personalised culture feed',
-                  onPress: () => router.push('/(tabs)/index'),
-                },
-              ]
-          ).map((row, i) => (
-            <View
-              key={row.title}
-              style={i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight } : undefined}
-            >
-              <RecoRow
-                icon={row.icon}
-                title={row.title}
-                subtitle={row.subtitle}
-                onPress={row.onPress}
-                colors={colors}
-              />
-            </View>
-          ))}
+            {activeTab === 'about' ? (
+              <>
+                {profile.bio ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="About" subtitle="In their own words." colors={colors} />
+                    <Text style={[u.bioText, { color: colors.text }]}>{profile.bio}</Text>
+                  </View>
+                ) : null}
+                {showSocialLinks && activeSocials.length > 0 ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Links" subtitle="Websites and social profiles." colors={colors} />
+                    <View style={u.linkIconRow}>
+                      {activeSocials.map((p) => {
+                        const link =
+                          ({ ...profile.socialLinks, website: profile.website } as Record<string, string | undefined>)[p.key] ?? '';
+                        return (
+                          <Pressable
+                            key={p.key}
+                            onPress={() => openLink(link)}
+                            style={({ pressed }) => [
+                              u.linkIconBtn,
+                              { backgroundColor: p.color, transform: [{ scale: pressed ? 0.94 : 1 }] },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Open ${p.label}`}
+                          >
+                            <Ionicons name={p.icon} size={22} color="#FFFFFF" />
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+                {showCulturalId && (profile.ethnicityText || languages.length > 0) ? (
+                  <View style={[u.card, cardSurface]}>
+                    <SectionHeader title="Cultural roots" subtitle="Heritage and language identity." colors={colors} />
+                    {profile.ethnicityText ? (
+                      <Text style={[u.ethnicityText, { color: colors.text }]}>{profile.ethnicityText}</Text>
+                    ) : null}
+                    {languages.length > 0 ? (
+                      <View style={u.chipGroup}>
+                        <Text style={[u.chipGroupLabel, { color: colors.textTertiary }]}>Languages</Text>
+                        <View style={[u.chipRow, { marginTop: 6 }]}>
+                          {languages.map((lang) => (
+                            <View key={lang} style={[u.langChip, { backgroundColor: colors.primarySoft, borderColor: colors.borderLight }]}>
+                              <Text style={[u.langChipText, { color: colors.text }]}>{lang}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+                {showInterests && interests.length > 0 ? (
+                  <View style={[u.card, cardSurface, { borderColor: `${CultureTokens.gold}40` }]}>
+                    <SectionHeader title="Interests" subtitle="Events and scenes they care about." colors={colors} />
+                    <View style={[u.chipRow, { marginTop: 2 }]}>
+                      {interests.map((tag, i) => {
+                        const accent = accentForInterest(tag);
+                        return (
+                          <View key={tag + i} style={[u.interestChip, { backgroundColor: accent, borderColor: accent }]}>
+                            <Text style={[u.interestChipText, { color: '#fff' }]}>{tag}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+              </>
+            ) : null}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -1087,6 +1475,144 @@ const u = StyleSheet.create({
   locationText: { fontSize: 12, fontFamily: FontFamily.regular, color: 'rgba(255,255,255,0.7)' },
 
   scrollContent: { paddingTop: 20, gap: 16 },
+  contentLayout: {
+    gap: 14,
+  },
+  sidebarCol: {
+    flex: 1,
+    minWidth: 280,
+  },
+  mainCol: {
+    flex: 2,
+    minWidth: 0,
+    gap: 14,
+  },
+  tabsWrap: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  tabsScroll: {
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tabChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  tabChipText: {
+    fontSize: 12,
+    fontFamily: FontFamily.semibold,
+  },
+  liveNowBar: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  liveNowText: {
+    fontSize: 13,
+    fontFamily: FontFamily.semibold,
+  },
+  feedPlaceholder: {
+    fontSize: 13,
+    fontFamily: FontFamily.regular,
+    lineHeight: 18,
+  },
+  sidebarText: {
+    fontSize: 13,
+    fontFamily: FontFamily.regular,
+    lineHeight: 19,
+  },
+  sidebarMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  sidebarMetaText: {
+    fontSize: 12,
+    fontFamily: FontFamily.medium,
+  },
+  sidebarStats: {
+    gap: 6,
+  },
+  sidebarStatLine: {
+    fontSize: 13,
+    fontFamily: FontFamily.semibold,
+  },
+  sidebarEventRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  sidebarEventTitle: {
+    fontSize: 12,
+    fontFamily: FontFamily.semibold,
+  },
+  sidebarEventMeta: {
+    marginTop: 3,
+    fontSize: 11,
+    fontFamily: FontFamily.medium,
+  },
+  mediaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mediaTile: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 10,
+    backgroundColor: '#ececf3',
+  },
+  activityList: {
+    gap: 9,
+  },
+  activityRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  activityIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  activityTitle: {
+    fontSize: 12,
+    fontFamily: FontFamily.semibold,
+    lineHeight: 16,
+  },
+  activityBody: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: FontFamily.regular,
+    lineHeight: 16,
+  },
 
   connectBar: { flexDirection: 'row', gap: 10, marginBottom: 2 },
   followBtn: {
@@ -1262,7 +1788,10 @@ function EntityPublicProfile({
   insets: ReturnType<typeof useSafeAreaInsets>;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { isDesktop, contentWidth, hPad } = useLayout();
+  const { isAuthenticated } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'feed' | 'events' | 'community' | 'media' | 'about'>('feed');
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const showHostedEvents = ENTITY_HOSTED_TYPES.has(String(profile.entityType ?? '').toLowerCase());
 
@@ -1297,6 +1826,24 @@ function EntityPublicProfile({
   const locationText = showLocation ? [profile.city, profile.country].filter(Boolean).join(', ') : '';
   const heroImage = profile.coverImageUrl ?? profile.avatarUrl;
   const accentColor = CultureTokens.indigo;
+  const shellWidth = isDesktop ? Math.min(contentWidth, 1120) : undefined;
+  const statsRows = [
+    { label: 'Followers', value: profile.followersCount ?? 0 },
+    { label: 'Members', value: profile.membersCount ?? 0 },
+    { label: 'Likes', value: profile.likes ?? 0 },
+  ];
+  const tabItems: Array<{ key: 'feed' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+    { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
+    { key: 'events', label: 'Events', icon: 'calendar-outline' },
+    { key: 'community', label: 'Community', icon: 'people-outline' },
+    { key: 'media', label: 'Media', icon: 'images-outline' },
+    { key: 'about', label: 'About', icon: 'information-circle-outline' },
+  ];
+  const mediaImages = [
+    heroImage,
+    profile.avatarUrl,
+    ...entityHostedList.map((ev) => ev.heroImageUrl ?? ev.imageUrl).filter(Boolean),
+  ].filter((v): v is string => Boolean(v)).slice(0, 9);
 
   return (
     <View style={e.container}>
@@ -1304,128 +1851,392 @@ function EntityPublicProfile({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-        contentContainerStyle={{ paddingBottom: bottomInset + 100 }}
+        contentContainerStyle={{ paddingBottom: bottomInset + (isOwner ? 40 : 100) }}
       >
-        <View style={e.hero}>
-          <LinearGradient colors={gradients.primary as [string, string]} style={e.heroGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-          {heroImage && <Image source={{ uri: heroImage }} style={e.avatarLarge} contentFit="cover" />}
-          <View style={[e.heroTop, { top: Platform.OS === 'web' ? 20 : insets.top + 10 }]}>
+        <View style={[e.hero, isDesktop && { height: 340 }]}>
+          {heroImage ? (
+            <Image source={{ uri: heroImage }} style={e.heroImage} contentFit="cover" />
+          ) : (
+            <LinearGradient
+              colors={gradients.primary as [string, string]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          )}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.12)', 'rgba(0,0,0,0.9)']}
+            locations={[0, 0.42, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+
+          <View style={[e.heroTop, { top: Platform.OS === 'web' ? 16 : insets.top + 10 }]}>
             <Pressable
               onPress={() => goBackOrReplace('/(tabs)')}
               style={e.glassBtn}
               accessibilityRole="button"
               accessibilityLabel="Go back"
-              {...(Platform.OS === 'android'
-                ? { android_ripple: { color: 'rgba(255,255,255,0.22)', borderless: true } }
-                : {})}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
-          </View>
-          <View style={e.heroInfo}>
-            <Text style={e.name}>{profile.name}</Text>
-            <View style={e.metaRow}>
-              <View style={e.roleBadge}>
-                <Text style={e.roleText}>{profile.entityType.toUpperCase()}</Text>
-              </View>
-              {locationText ? <Text style={e.locText}> · {locationText}</Text> : null}
-            </View>
-          </View>
-          {activeSocials.length > 0 && (
-            <View style={e.socialRow}>
-              {activeSocials.map(s => (
-                <Pressable key={s.key} style={e.socialCircle} onPress={() => Linking.openURL(socialLinks[s.key]!)}>
-                  <Ionicons name={s.icon} size={18} color="#fff" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {isOwner ? (
+                <Pressable
+                  onPress={() => router.push('/profile/edit')}
+                  style={e.glassBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit profile"
+                >
+                  <Ionicons name="create-outline" size={18} color="#fff" />
                 </Pressable>
-              ))}
+              ) : null}
+              <Pressable
+                onPress={() => {
+                  const shareUrl = `https://culturepass.app/profile/${profile.id}`;
+                  if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
+                    navigator.share({ title: profile.name, url: shareUrl }).catch(() => {});
+                  } else {
+                    Share.share({ title: profile.name, message: shareUrl }).catch(() => {});
+                  }
+                }}
+                style={e.glassBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Share profile"
+              >
+                <Ionicons name="share-social-outline" size={18} color="#fff" />
+              </Pressable>
             </View>
-          )}
+          </View>
+
+          <View style={[e.heroInfo, { paddingHorizontal: hPad }]}>
+            <View style={[e.avatarWrap, { borderColor: 'rgba(255,255,255,0.32)' }]}>
+              {profile.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={e.avatarLarge} contentFit="cover" />
+              ) : (
+                <View style={e.avatarFallback}>
+                  <Text style={e.avatarFallbackText}>{(profile.name ?? 'O').charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={e.name} numberOfLines={1}>{profile.name}</Text>
+              <View style={e.metaRow}>
+                <View style={e.roleBadge}>
+                  <Text style={e.roleText}>{profile.entityType.toUpperCase()}</Text>
+                </View>
+                {profile.isVerified ? (
+                  <View style={e.verifyPill}>
+                    <Ionicons name="shield-checkmark" size={11} color={CultureTokens.gold} />
+                    <Text style={e.verifyPillText}>Verified</Text>
+                  </View>
+                ) : null}
+              </View>
+              {locationText ? <Text style={e.locText}>{locationText}</Text> : null}
+              {profile.handle ? (
+                <Text style={e.handleText}>@{profile.handle.replace(/^@/, '')}</Text>
+              ) : null}
+            </View>
+          </View>
         </View>
-        <View style={e.body}>
+
+        <View style={[e.shell, isDesktop && { width: shellWidth, alignSelf: 'center' }]}>
+          <View style={[e.tabsWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={e.tabsScroll}>
+              {tabItems.map((tab) => {
+                const active = activeTab === tab.key;
+                return (
+                  <Pressable
+                    key={tab.key}
+                    onPress={() => setActiveTab(tab.key)}
+                    style={[
+                      e.tabChip,
+                      {
+                        backgroundColor: active ? CultureTokens.indigo + '18' : colors.backgroundSecondary,
+                        borderColor: active ? CultureTokens.indigo : colors.borderLight,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${tab.label} tab`}
+                  >
+                    <Ionicons
+                      name={tab.icon}
+                      size={14}
+                      color={active ? CultureTokens.indigo : colors.textTertiary}
+                    />
+                    <Text style={[e.tabChipText, { color: active ? CultureTokens.indigo : colors.textSecondary }]}>
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
           <View style={[e.statsRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            {[
-              { label: 'Followers', value: profile.followersCount ?? 0 },
-              profile.membersCount ? { label: 'Members', value: profile.membersCount } : null,
-              profile.likes ? { label: 'Likes', value: profile.likes } : null,
-            ].filter(Boolean).map((stat, i, arr) => (
-              <View key={stat!.label} style={[e.statCell, i < arr.length - 1 && { borderRightWidth: 1, borderRightColor: colors.borderLight }]}>
-                <Text style={[e.statValue, { color: colors.text }]}>{fmt(stat!.value)}</Text>
-                <Text style={[e.statLabel, { color: colors.textTertiary }]}>{stat!.label}</Text>
+            {statsRows.map((stat, i) => (
+              <View key={stat.label} style={[e.statCell, i < statsRows.length - 1 && { borderRightWidth: 1, borderRightColor: colors.borderLight }]}>
+                <Text style={[e.statValue, { color: colors.text }]}>{fmt(stat.value)}</Text>
+                <Text style={[e.statLabel, { color: colors.textTertiary }]}>{stat.label}</Text>
               </View>
             ))}
           </View>
-          {(profile.bio || profile.description) && (
-            <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight, borderLeftColor: accentColor }]}>
-              <Text style={[{ color: colors.text, fontSize: 15, fontFamily: FontFamily.regular, lineHeight: 24 }]}>
-                {profile.bio ?? profile.description}
-              </Text>
-            </View>
-          )}
-          {tags.length > 0 && (
-            <View style={e.section}>
-              <Text style={[e.sectionTitle, { color: colors.text }]}>Tags</Text>
-              <View style={e.tagCloud}>
-                {tags.map((tag, i) => (
-                  <View key={i} style={[e.tag, { backgroundColor: accentColor + '10', borderColor: accentColor + '20' }]}>
-                    <Text style={[e.tagText, { color: accentColor }]}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
 
-          {showHostedEvents ? (
-            <View style={e.section}>
-              {entityHostedList.length > 0 ? (
+          <View style={[e.body, isDesktop && { flexDirection: 'row', gap: 20 }]}>
+            <View style={{ flex: 2 }}>
+              {activeTab === 'feed' && (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Feed</Text>
+                  <Text style={[e.feedSub, { color: colors.textSecondary }]}>
+                    Events-first community timeline and latest organisation activity.
+                  </Text>
+                  {entityHostedList.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={pu.railScroll}
+                      contentContainerStyle={pu.railScrollContent}
+                    >
+                      {entityHostedList.slice(0, 6).map((ev) => (
+                        <EventRailCard key={ev.id} event={ev} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <Text style={[e.feedHint, { color: colors.textTertiary }]}>
+                      No live posts yet. This section will surface announcements and event updates.
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {activeTab === 'events' && (
                 <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                   <Text style={[e.sectionTitle, { color: colors.text }]}>Events</Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={pu.railScroll}
-                    contentContainerStyle={pu.railScrollContent}
-                  >
-                    {entityHostedList.map((ev) => (
-                      <EventRailCard key={ev.id} event={ev} colors={colors} />
+                  {entityHostedList.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={pu.railScroll}
+                      contentContainerStyle={pu.railScrollContent}
+                    >
+                      {entityHostedList.map((ev) => (
+                        <EventRailCard key={ev.id} event={ev} colors={colors} />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <Text style={[e.feedHint, { color: colors.textTertiary }]}>No events published yet.</Text>
+                  )}
+                </View>
+              )}
+
+              {activeTab === 'community' && (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Community</Text>
+                  <Text style={[e.feedSub, { color: colors.textSecondary }]}>
+                    Members, discussions, and cultural participation signals.
+                  </Text>
+                  <View style={[e.communityStats, { borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}>
+                    <Text style={[e.communityStatsText, { color: colors.text }]}>
+                      {fmt(profile.membersCount ?? 0)} members · {fmt(profile.followersCount ?? 0)} followers
+                    </Text>
+                    <Text style={[e.communityStatsHint, { color: colors.textTertiary }]}>
+                      Join to participate in threads and updates.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {activeTab === 'media' && (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Media</Text>
+                  {mediaImages.length > 0 ? (
+                    <View style={e.mediaGrid}>
+                      {mediaImages.map((uri, idx) => (
+                        <Image key={`${uri}-${idx}`} source={{ uri }} style={e.mediaTile} contentFit="cover" />
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={[e.feedHint, { color: colors.textTertiary }]}>No media uploaded yet.</Text>
+                  )}
+                </View>
+              )}
+
+              {activeTab === 'about' && (
+                <>
+                  {(profile.bio || profile.description) && (
+                    <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <Text style={[e.sectionTitle, { color: colors.text }]}>About this organisation</Text>
+                      <Text style={[{ color: colors.text, fontSize: 15, fontFamily: FontFamily.regular, lineHeight: 24 }]}>
+                        {profile.bio ?? profile.description}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                    <Text style={[e.sectionTitle, { color: colors.text }]}>Explore locally</Text>
+                    <View style={{ marginTop: 6 }}>
+                      {profile.city ? (
+                        <RecoRow
+                          icon="business-outline"
+                          title={`Explore ${profile.city}`}
+                          subtitle="Open city page with local events and partners"
+                          onPress={() => router.push({ pathname: '/city/[name]', params: { name: profile.city!, country: profile.country ?? 'Australia' } })}
+                          colors={colors}
+                        />
+                      ) : null}
+                      <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight }}>
+                        <RecoRow
+                          icon="calendar-outline"
+                          title="Browse all events"
+                          subtitle="Find nearby cultural events and experiences"
+                          onPress={() => router.push('/events')}
+                          colors={colors}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                </>
+              )}
+            </View>
+
+            <View style={{ flex: 1 }}>
+              {activeSocials.length > 0 ? (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Connect</Text>
+                  <View style={e.socialRow}>
+                    {activeSocials.map((s) => (
+                      <Pressable key={s.key} style={e.socialCircle} onPress={() => Linking.openURL(socialLinks[s.key]!)}>
+                        <Ionicons name={s.icon} size={18} color="#fff" />
+                      </Pressable>
                     ))}
-                  </ScrollView>
+                  </View>
                 </View>
               ) : null}
-              <RecoRow
-                icon="search-outline"
-                title="Search events from this profile"
-                subtitle="Open search with this page as organiser filter"
-                onPress={() =>
-                  router.push({
-                    pathname: '/search',
-                    params: { publisherProfileId: profile.id },
-                  })
-                }
-                colors={colors}
-              />
+
+              {(locationText || profile.contactEmail || profile.phone || profile.website) ? (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Organisation details</Text>
+                  {locationText ? (
+                    <View style={e.detailRow}>
+                      <Ionicons name="location-outline" size={16} color={colors.textTertiary} />
+                      <Text style={[e.detailText, { color: colors.textSecondary }]}>{locationText}</Text>
+                    </View>
+                  ) : null}
+                  {profile.contactEmail ? (
+                    <View style={e.detailRow}>
+                      <Ionicons name="mail-outline" size={16} color={colors.textTertiary} />
+                      <Text style={[e.detailText, { color: colors.textSecondary }]}>{profile.contactEmail}</Text>
+                    </View>
+                  ) : null}
+                  {profile.phone ? (
+                    <View style={e.detailRow}>
+                      <Ionicons name="call-outline" size={16} color={colors.textTertiary} />
+                      <Text style={[e.detailText, { color: colors.textSecondary }]}>{profile.phone}</Text>
+                    </View>
+                  ) : null}
+                  {profile.website ? (
+                    <Pressable onPress={() => openLink(profile.website!)} style={e.detailRow}>
+                      <Ionicons name="globe-outline" size={16} color={CultureTokens.indigo} />
+                      <Text style={[e.detailText, { color: CultureTokens.indigo }]}>Open website</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {tags.length > 0 ? (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Tags</Text>
+                  <View style={e.tagCloud}>
+                    {tags.map((tag, i) => (
+                      <View key={tag + i} style={[e.tag, { backgroundColor: accentColor + '10', borderColor: accentColor + '20' }]}>
+                        <Text style={[e.tagText, { color: accentColor }]}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+
+              {!isAuthenticated && !isOwner ? (
+                <View style={[e.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[e.sectionTitle, { color: colors.text }]}>Unlock full community</Text>
+                  <Text style={[e.feedSub, { color: colors.textSecondary }]}>
+                    You can preview identity and upcoming events publicly. Sign in to view full feed and participate.
+                  </Text>
+                  <Pressable
+                    onPress={() => router.push('/(onboarding)/login')}
+                    style={[e.loginCta, { backgroundColor: CultureTokens.indigo }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign in to unlock profile details"
+                  >
+                    <Ionicons name="log-in-outline" size={16} color="#fff" />
+                    <Text style={e.loginCtaText}>Sign in</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
-          ) : null}
+          </View>
         </View>
       </ScrollView>
-      <View style={[e.bottomBar, { paddingBottom: bottomInset + 8, backgroundColor: colors.surface, borderTopColor: colors.borderLight }]}>
-        <Pressable
-          style={[e.followBtn, isFollowing && { backgroundColor: 'transparent', borderWidth: 2, borderColor: accentColor }]}
-          onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setIsFollowing(f => !f); }}
-        >
-          <Ionicons name={isFollowing ? 'checkmark-circle' : 'person-add'} size={20} color={isFollowing ? accentColor : '#fff'} />
-          <Text style={[e.followBtnText, isFollowing && { color: accentColor }]}>{isFollowing ? 'Following' : 'Follow'}</Text>
-        </Pressable>
-      </View>
+      {!isOwner ? (
+        <View style={[e.bottomBar, { paddingBottom: bottomInset + 8, backgroundColor: colors.surface, borderTopColor: colors.borderLight }]}>
+          <Pressable
+            style={[e.followBtn, isFollowing && { backgroundColor: 'transparent', borderWidth: 2, borderColor: accentColor }]}
+            onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setIsFollowing(f => !f); }}
+          >
+            <Ionicons name={isFollowing ? 'checkmark-circle' : 'person-add'} size={20} color={isFollowing ? accentColor : '#fff'} />
+            <Text style={[e.followBtnText, isFollowing && { color: accentColor }]}>{isFollowing ? 'Following' : 'Follow'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const e = StyleSheet.create({
   container: { flex: 1 },
-  hero: { height: 300, justifyContent: 'flex-end', padding: 24, overflow: 'hidden', borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  heroGrad: StyleSheet.absoluteFillObject,
+  hero: { height: 310, justifyContent: 'flex-end', overflow: 'hidden' },
+  heroImage: { ...StyleSheet.absoluteFillObject },
+  shell: { paddingTop: 14 },
+  tabsWrap: {
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 14,
+    overflow: 'hidden',
+  },
+  tabsScroll: {
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tabChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  tabChipText: {
+    fontSize: 12,
+    fontFamily: FontFamily.semibold,
+  },
+  avatarWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 2,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
   avatarLarge: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)', marginBottom: 12 },
-  heroTop: { position: 'absolute', left: 20, right: 20, flexDirection: 'row', zIndex: 10 },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(44,42,114,0.65)',
+  },
+  avatarFallbackText: { fontSize: 34, fontFamily: FontFamily.bold, color: '#fff' },
+  heroTop: { position: 'absolute', left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', zIndex: 10 },
   glassBtn: {
     width: 44,
     height: 44,
@@ -1433,26 +2244,104 @@ const e = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
-  heroInfo: { gap: 4 },
+  heroInfo: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingBottom: 18 },
   name: { fontSize: 26, fontFamily: FontFamily.bold, color: '#fff' },
-  metaRow: { flexDirection: 'row', alignItems: 'center' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
   roleBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   roleText: { fontSize: 10, fontFamily: FontFamily.bold, color: '#fff' },
-  locText: { fontSize: 13, fontFamily: FontFamily.medium, color: 'rgba(255,255,255,0.7)' },
-  socialRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  verifyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,200,87,0.2)',
+    borderColor: 'rgba(255,200,87,0.35)',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  verifyPillText: { fontSize: 10, fontFamily: FontFamily.semibold, color: CultureTokens.gold },
+  locText: { fontSize: 13, fontFamily: FontFamily.medium, color: 'rgba(255,255,255,0.76)', marginTop: 6 },
+  handleText: { fontSize: 12, fontFamily: FontFamily.semibold, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
   socialCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  body: { paddingHorizontal: 20, paddingTop: 24 },
+  body: { paddingHorizontal: 20, paddingTop: 12 },
   statsRow: { flexDirection: 'row', borderRadius: 18, borderWidth: 1, paddingVertical: 16, marginBottom: 20 },
   statCell: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 20, fontFamily: FontFamily.bold },
   statLabel: { fontSize: 11, fontFamily: FontFamily.medium, textTransform: 'uppercase', letterSpacing: 0.5 },
-  card: { borderRadius: 16, borderWidth: 1, borderLeftWidth: 4, padding: 18, marginBottom: 20 },
-  section: { marginBottom: 20 },
+  card: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontFamily: FontFamily.bold, marginBottom: 10 },
+  feedSub: {
+    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  feedHint: {
+    fontSize: 13,
+    fontFamily: FontFamily.regular,
+    lineHeight: 18,
+  },
+  communityStats: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  communityStatsText: {
+    fontSize: 13,
+    fontFamily: FontFamily.semibold,
+  },
+  communityStatsHint: {
+    marginTop: 4,
+    fontSize: 12,
+    fontFamily: FontFamily.regular,
+  },
+  mediaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mediaTile: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 10,
+    backgroundColor: '#ececf2',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  detailText: {
+    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    lineHeight: 18,
+  },
   tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
   tagText: { fontSize: 12, fontFamily: FontFamily.semibold },
+  loginCta: {
+    marginTop: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  loginCtaText: {
+    color: '#fff',
+    fontSize: 13,
+    fontFamily: FontFamily.bold,
+  },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   followBtn: { flex: 1, height: 52, backgroundColor: CultureTokens.indigo, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   followBtnText: { color: '#fff', fontSize: 16, fontFamily: FontFamily.bold },

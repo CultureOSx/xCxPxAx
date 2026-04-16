@@ -526,6 +526,13 @@ export default function EventDetailScreen() {
         uploading={uploading}
         isDesktop={isDesktop}
         topInset={topInset}
+        handleBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/events');
+          }
+        }}
         handleShare={handleShare}
         handleSave={handleSave}
         handlePickCover={handlePickCover}
@@ -640,9 +647,8 @@ export default function EventDetailScreen() {
               ) : null}
             </Pressable>
 
-            <Pressable
-              onPress={() => setExpandedSnapshotCard((current) => (current === 'attendance' ? null : 'attendance'))}
-              style={({ pressed }) => ({
+            <View
+              style={{
                 width: '48.5%',
                 borderRadius: 12,
                 borderWidth: 1,
@@ -650,21 +656,25 @@ export default function EventDetailScreen() {
                 backgroundColor: colors.backgroundSecondary,
                 paddingHorizontal: 10,
                 paddingVertical: 8,
-                opacity: pressed ? 0.92 : 1,
-              })}
-              accessibilityRole="button"
-              accessibilityLabel="Attendance details and your circle"
-              accessibilityHint="Tap to see who in your circle may be attending"
+              }}
             >
-              <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Attendance</Text>
-              <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'attendance' ? undefined : 1}>
-                {goingCount.toLocaleString()} going
-              </Text>
-              {spotsLeft !== null ? (
-                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={1}>
-                  {spotsLeft.toLocaleString()} spots left
+              <Pressable
+                onPress={() => setExpandedSnapshotCard((current) => (current === 'attendance' ? null : 'attendance'))}
+                style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
+                accessibilityRole="button"
+                accessibilityLabel="Attendance details and your circle"
+                accessibilityHint="Tap to see who in your circle may be attending"
+              >
+                <Text style={[TextStyles.badgeCaps, { color: colors.textTertiary }]}>Attendance</Text>
+                <Text style={[TextStyles.captionSemibold, { color: colors.text }]} numberOfLines={expandedSnapshotCard === 'attendance' ? undefined : 1}>
+                  {goingCount.toLocaleString()} going
                 </Text>
-              ) : null}
+                {spotsLeft !== null ? (
+                  <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 1 }]} numberOfLines={1}>
+                    {spotsLeft.toLocaleString()} spots left
+                  </Text>
+                ) : null}
+              </Pressable>
               {expandedSnapshotCard === 'attendance' ? (
                 <View style={{ marginTop: 6 }}>
                   {circleAttendees.length > 0 ? (
@@ -711,7 +721,7 @@ export default function EventDetailScreen() {
                   </Pressable>
                 </View>
               ) : null}
-            </Pressable>
+            </View>
           </View>
 
           <PrimaryActionSection

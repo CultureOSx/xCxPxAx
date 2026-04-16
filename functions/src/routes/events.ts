@@ -619,6 +619,51 @@ export function createEventsRouter() {
     }
   });
 
+  // ── GET /api/events/:id/attendees ──────────────────────────────────────────
+  // Public attendee preview for feed cards (limited sample of "going" users).
+  router.get('/events/:id/attendees', async (req: Request, res: Response) => {
+    const eventId = qparam(req.params.id);
+    const limitRaw = parseInt(qstr(req.query.limit) || '5', 10);
+    const limit = Math.min(12, Math.max(1, Number.isNaN(limitRaw) ? 5 : limitRaw));
+    try {
+      const snap = await db
+        .collection('rsvps')
+        .where('eventId', '==', eventId)
+        .where('status', '==', 'going')
+        .limit(limit)
+        .get();
+
+      const userIds = snap.docs
+        .map((d) => (d.data() as { userId?: string }).userId)
+        .filter((v): v is string => typeof v === 'string' && v.length > 0);
+
+      if (userIds.length === 0) return res.json({ attendees: [] });
+
+      const userDocs = await Promise.all(
+        userIds.map((uid) => db.collection('users').doc(uid).get()),
+      );
+      const attendees = userDocs
+        .filter((u) => u.exists)
+        .map((u) => {
+          const data = u.data() as {
+            displayName?: string;
+            username?: string;
+            avatarUrl?: string;
+          };
+          return {
+            id: u.id,
+            name: data.displayName || data.username || 'CulturePass User',
+            avatarUrl: data.avatarUrl || null,
+          };
+        });
+
+      return res.json({ attendees });
+    } catch (err) {
+      captureRouteError(err, 'GET /api/events/:id/attendees');
+      return res.status(500).json({ error: 'Failed to fetch attendees' });
+    }
+  });
+
   // ── POST /api/events/:id/rsvp ──────────────────────────────────────────────
   router.post('/events/:id/rsvp', requireAuth, async (req: Request, res: Response) => {
     const eventId = qparam(req.params.id);

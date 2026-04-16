@@ -19,8 +19,6 @@ import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
 import { useCallback } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 
 // ─── Tier config ─────────────────────────────────────────────────────────────
 
@@ -318,78 +316,72 @@ export default function ContactDetailScreen() {
     <View style={[styles.container, { paddingTop: topInset }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.backBtn}>
+        <Pressable
+          onPress={() => goBackOrReplace('/(tabs)')}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
+
         <Text style={styles.headerTitle}>Contact Details</Text>
-        <Pressable style={styles.headerShareBtn} onPress={handleShare}>
+
+        <Pressable
+          style={styles.headerShareBtn}
+          onPress={handleShare}
+          accessibilityRole="button"
+          accessibilityLabel="Share contact"
+        >
           <Ionicons name="share-outline" size={20} color={CultureTokens.indigo} />
         </Pressable>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 + bottomInset }}
+        contentContainerStyle={{ paddingBottom: 36 + bottomInset }}
       >
-        {/* Profile card */}
-        <View style={styles.profileCard}>
-          <View style={[styles.avatar, { borderColor: tier.color + '40', backgroundColor: tier.color + '10' }]}>
+        <View style={styles.identitySection}>
+          <View style={[styles.avatar, { borderColor: tier.color + '35', backgroundColor: tier.color + '12' }]}>
             <Text style={[styles.avatarText, { color: tier.color }]}>{initials}</Text>
           </View>
-
           <Text style={styles.name}>{contact.name || 'CulturePass User'}</Text>
-          {contact.username && (
-            <Text style={styles.username}>+{contact.username}</Text>
-          )}
-          {contact.org && (
-            <Text style={styles.orgName}>{contact.org}</Text>
-          )}
-
-          {/* CPID + tier chips */}
-          <View style={styles.chipRow}>
-            <View style={styles.cpidChip}>
-              <Ionicons name="finger-print" size={14} color={CultureTokens.indigo} />
-              <Text style={styles.cpidText}>{contact.cpid}</Text>
-            </View>
-            <View style={[styles.tierChip, { backgroundColor: tier.color + '15', borderColor: tier.color + '30' }]}>
-              <Ionicons name={tier.icon as keyof typeof Ionicons.glyphMap} size={12} color={tier.color} />
-              <Text style={[styles.tierText, { color: tier.color }]}>{tier.label}</Text>
-            </View>
-          </View>
-
-          {/* Quick-action icons */}
-          <View style={styles.quickActions}>
-            {contact.phone && (
-              <Pressable style={styles.quickActionBtn} onPress={handleCall}>
-                <Ionicons name="call" size={22} color={CultureTokens.success} />
-                <Text style={[styles.quickActionLabel, { color: CultureTokens.success }]}>Call</Text>
-              </Pressable>
-            )}
-            {contact.email && (
-              <Pressable style={styles.quickActionBtn} onPress={handleEmail}>
-                <Ionicons name="mail" size={22} color={CultureTokens.indigo} />
-                <Text style={[styles.quickActionLabel, { color: CultureTokens.indigo }]}>Email</Text>
-              </Pressable>
-            )}
-            <Pressable style={styles.quickActionBtn} onPress={handleSaveToPhone}>
-              <Ionicons name="person-add" size={22} color={CultureTokens.coral} />
-              <Text style={[styles.quickActionLabel, { color: CultureTokens.coral }]}>Save</Text>
-            </Pressable>
-            <Pressable style={styles.quickActionBtn} onPress={handleShare}>
-              <Ionicons name="share-social" size={22} color={CultureTokens.gold} />
-              <Text style={[styles.quickActionLabel, { color: CultureTokens.gold }]}>Share</Text>
-            </Pressable>
-          </View>
+          {contact.org ? <Text style={styles.orgName}>{contact.org}</Text> : null}
+          {contact.username ? <Text style={styles.username}>+{contact.username}</Text> : null}
         </View>
 
-        {/* Bio */}
-        {contact.bio && (
-          <View style={styles.bioCard}>
-            <Text style={styles.bioText}>{contact.bio}</Text>
-          </View>
-        )}
+        <View style={styles.quickActions}>
+          {contact.phone ? (
+            <Pressable style={styles.quickActionBtn} onPress={handleCall} accessibilityRole="button" accessibilityLabel="Call contact">
+              <View style={[styles.quickActionIconWrap, { backgroundColor: CultureTokens.success + '18' }]}>
+                <Ionicons name="call" size={20} color={CultureTokens.success} />
+              </View>
+              <Text style={styles.quickActionLabel}>call</Text>
+            </Pressable>
+          ) : null}
+          {contact.email ? (
+            <Pressable style={styles.quickActionBtn} onPress={handleEmail} accessibilityRole="button" accessibilityLabel="Email contact">
+              <View style={[styles.quickActionIconWrap, { backgroundColor: CultureTokens.indigo + '18' }]}>
+                <Ionicons name="mail" size={20} color={CultureTokens.indigo} />
+              </View>
+              <Text style={styles.quickActionLabel}>email</Text>
+            </Pressable>
+          ) : null}
+          <Pressable style={styles.quickActionBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share contact">
+            <View style={[styles.quickActionIconWrap, { backgroundColor: CultureTokens.gold + '20' }]}>
+              <Ionicons name="share-social" size={20} color={CultureTokens.gold} />
+            </View>
+            <Text style={styles.quickActionLabel}>share</Text>
+          </Pressable>
+          <Pressable style={styles.quickActionBtn} onPress={handleSaveToPhone} accessibilityRole="button" accessibilityLabel="Save to phone contacts">
+            <View style={[styles.quickActionIconWrap, { backgroundColor: CultureTokens.coral + '18' }]}>
+              <Ionicons name="person-add" size={20} color={CultureTokens.coral} />
+            </View>
+            <Text style={styles.quickActionLabel}>save</Text>
+          </Pressable>
+        </View>
 
-        {/* Contact info */}
+        <Text style={styles.sectionLabel}>Contact info</Text>
         <View style={styles.infoCard}>
           {contact.phone && (
             <InfoRow
@@ -444,7 +436,7 @@ export default function ContactDetailScreen() {
           />
         </View>
 
-        {/* CulturePass section */}
+        <Text style={styles.sectionLabel}>CulturePass</Text>
         <View style={styles.infoCard}>
           {contact.username && (
             <>
@@ -468,128 +460,42 @@ export default function ContactDetailScreen() {
           />
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionsSection}>
-          {contact.userId && (
-            <Pressable style={styles.actionBtn} onPress={handleViewProfile}>
-              <View style={[styles.actionIcon, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                <Ionicons name="person-outline" size={20} color={CultureTokens.indigo} />
+        {contact.bio ? (
+          <>
+            <Text style={styles.sectionLabel}>Notes</Text>
+            <View style={styles.infoCard}>
+              <View style={styles.noteRow}>
+                <Text style={styles.bioText}>{contact.bio}</Text>
               </View>
-              <Text style={styles.actionBtnText}>View Full Profile</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-            </Pressable>
+            </View>
+          </>
+        ) : null}
+
+        <Text style={styles.sectionLabel}>Actions</Text>
+        <View style={[styles.infoCard, styles.actionsCard]}>
+          {contact.userId && (
+            <>
+              <Pressable style={styles.actionBtn} onPress={handleViewProfile}>
+                <Text style={[styles.actionBtnText, { color: CultureTokens.indigo }]}>View Full Profile</Text>
+              </Pressable>
+              <View style={styles.dividerFull} />
+            </>
           )}
 
           <Pressable style={styles.actionBtn} onPress={handleSaveToPhone}>
-            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.coral + '15' }]}>
-              <Ionicons name="person-add-outline" size={20} color={CultureTokens.coral} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.actionBtnText}>Save to Phone Contacts</Text>
-              <Text style={styles.actionBtnSub}>Exports as vCard (.vcf)</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+            <Text style={[styles.actionBtnText, { color: CultureTokens.coral }]}>Save to Phone Contacts</Text>
           </Pressable>
+          <View style={styles.dividerFull} />
 
           <Pressable style={styles.actionBtn} onPress={handleShare}>
-            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.gold + '15' }]}>
-              <Ionicons name="share-outline" size={20} color={CultureTokens.gold} />
-            </View>
-            <Text style={styles.actionBtnText}>Share Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+            <Text style={[styles.actionBtnText, { color: CultureTokens.gold }]}>Share Contact</Text>
           </Pressable>
+          <View style={styles.dividerFull} />
 
-          <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleRemove}>
-            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.error + '15' }]}>
-              <Ionicons name="trash-outline" size={20} color={CultureTokens.error} />
-            </View>
+          <Pressable style={styles.actionBtn} onPress={handleRemove}>
             <Text style={[styles.actionBtnText, { color: CultureTokens.error }]}>Remove Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </Pressable>
         </View>
-
-        {/* ── Invite banner ── */}
-        <Animated.View entering={FadeInDown.delay(80).springify()} style={{ marginHorizontal: 20, marginTop: 24 }}>
-          <Pressable onPress={handleShare}>
-            <LinearGradient
-              colors={gradients.culturepassBrand}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.inviteBanner}
-            >
-              <View style={styles.inviteBannerInner}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.inviteBannerTitle}>
-                    Invite {contact.name?.split(' ')[0] ?? 'this contact'}
-                  </Text>
-                  <Text style={styles.inviteBannerSub}>
-                    Share their CulturePass profile or send them an invite link
-                  </Text>
-                </View>
-                <View style={styles.inviteBannerIconWrap}>
-                  <Ionicons name="share-social" size={22} color="#fff" />
-                </View>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
-
-        {/* ── Similar communities / events ── */}
-        <Animated.View entering={FadeInDown.delay(140).springify()} style={{ marginHorizontal: 20, marginTop: 24 }}>
-          <Text style={[styles.recSectionTitle, { color: colors.text }]}>You Might Also Like</Text>
-          <Text style={[styles.recSectionSub, { color: colors.textSecondary }]}>
-            {contact.city ? `Communities and events in ${contact.city}` : 'Communities your contacts enjoy'}
-          </Text>
-        </Animated.View>
-
-        {[
-          {
-            delay: 160,
-            icon: 'people-circle-outline',
-            color: CultureTokens.indigo,
-            title: contact.city ? `${contact.city} Cultural Network` : 'Cultural Network',
-            sub: 'Community • Join with your contact',
-            tag: 'Community',
-            route: '/(tabs)/community',
-          },
-          {
-            delay: 200,
-            icon: 'calendar-outline',
-            color: CultureTokens.teal,
-            title: 'Upcoming Cultural Events',
-            sub: contact.city ? `Events near ${contact.city}` : 'Events near you',
-            tag: 'Events',
-            route: '/(tabs)',
-          },
-          {
-            delay: 240,
-            icon: 'compass-outline',
-            color: CultureTokens.coral,
-            title: 'Discover More Together',
-            sub: 'Explore the cultural directory',
-            tag: 'Explore',
-            route: '/(tabs)/explore',
-          },
-        ].map((item, idx) => (
-          <Animated.View key={item.route + idx} entering={FadeInDown.delay(item.delay).springify()}>
-            <Pressable
-              style={[styles.recCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(item.route as any); }}
-            >
-              <View style={[styles.recIcon, { backgroundColor: item.color + '15' }]}>
-                <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={22} color={item.color} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.recTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
-                <Text style={[styles.recSub, { color: colors.textSecondary }]} numberOfLines={1}>{item.sub}</Text>
-              </View>
-              <View style={[styles.recTag, { backgroundColor: item.color + '12' }]}>
-                <Text style={[styles.recTagText, { color: item.color }]}>{item.tag}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-            </Pressable>
-          </Animated.View>
-        ))}
       </ScrollView>
     </View>
   );
@@ -626,140 +532,91 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     justifyContent: 'center',
   },
 
-  profileCard: {
-    marginHorizontal: 20,
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    paddingHorizontal: 28,
-    paddingVertical: 32,
+  identitySection: {
+    marginTop: 8,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    marginBottom: 20,
+    borderWidth: 2,
+    marginBottom: 14,
   },
-  avatarText: { fontSize: 32, fontFamily: 'Poppins_700Bold' },
-  name: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: colors.text, textAlign: 'center' },
+  avatarText: { fontSize: 34, fontFamily: 'Poppins_700Bold' },
+  name: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: colors.text, textAlign: 'center' },
   username: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     color: colors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
   },
   orgName: {
     fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: 'Poppins_400Regular',
     color: colors.textTertiary,
-    marginTop: 4,
+    marginTop: 3,
   },
-
-  chipRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  cpidChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: CultureTokens.indigo + '15',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  cpidText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
-  tierChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  tierText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 
   quickActions: {
     flexDirection: 'row',
-    gap: 20,
     marginTop: 28,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    width: '100%',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  quickActionBtn: { alignItems: 'center', gap: 7, minWidth: 72 },
+  quickActionIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  quickActionBtn: { alignItems: 'center', gap: 8, minWidth: 60 },
   quickActionLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-
-  bioCard: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  bioText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    fontSize: 12.5,
+    fontFamily: 'Poppins_500Medium',
     color: colors.textSecondary,
-    lineHeight: 24,
+    textTransform: 'capitalize',
   },
 
+  sectionLabel: {
+    marginHorizontal: 20,
+    marginTop: 26,
+    marginBottom: 8,
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   infoCard: {
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 0,
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
-  divider: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 78 },
-
-  actionsSection: {
-    marginHorizontal: 20,
-    marginTop: 32,
-    gap: 12,
-    paddingBottom: 10,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  actionBtnDanger: {
-    borderWidth: 1,
-    borderColor: CultureTokens.error + '30',
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnText: { flex: 1, fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  actionBtnSub: {
-    fontSize: 12,
+  noteRow: { paddingHorizontal: 20, paddingVertical: 16 },
+  bioText: {
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: colors.textTertiary,
-    marginTop: 2,
+    color: colors.textSecondary,
+    lineHeight: 22,
   },
+  divider: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 78 },
+  dividerFull: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 16 },
+
+  actionsCard: { marginBottom: 8 },
+  actionBtn: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  actionBtnText: { fontSize: 17, fontFamily: 'Poppins_500Medium', color: colors.text },
 
   notFoundText: {
     fontSize: 16,
@@ -775,36 +632,4 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     backgroundColor: CultureTokens.indigo,
   },
   backLinkText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
-
-  // Invite banner
-  inviteBanner: { borderRadius: 20, overflow: 'hidden' },
-  inviteBannerInner: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 },
-  inviteBannerTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#fff' },
-  inviteBannerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.8)', marginTop: 4, lineHeight: 18 },
-  inviteBannerIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Recommendations
-  recSectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 4 },
-  recSectionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 12 },
-  recCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  recIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  recTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  recSub: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  recTag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  recTagText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold' },
 });

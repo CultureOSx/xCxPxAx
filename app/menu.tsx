@@ -132,9 +132,20 @@ function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof 
       accessibilityLabel={item.label}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.row,
-        { backgroundColor: colors.surface },
-        (pressed || hovered) && { backgroundColor: colors.primarySoft },
-        pressed && styles.rowPressed,
+        {
+          backgroundColor: colors.surface,
+          borderLeftColor: 'transparent',
+        },
+        hovered && {
+          backgroundColor: colors.primarySoft,
+          borderLeftColor: accent + '66',
+          transform: [{ translateX: 2 }],
+        },
+        pressed && {
+          backgroundColor: colors.primarySoft,
+          borderLeftColor: accent,
+          transform: [{ translateX: 4 }],
+        },
       ]}
     >
       <View style={[styles.rowIcon, { backgroundColor: accent + '18' }]}>
@@ -236,6 +247,10 @@ export default function MenuScreen() {
       .filter((section) => section.items.length > 0),
     [isAuthenticated, isAdmin, isSuperAdmin, isOrganizer],
   );
+  const desktopPanelWidth = useMemo(
+    () => (isDesktop ? Math.min(contentWidth, 980) : undefined),
+    [isDesktop, contentWidth],
+  );
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -278,7 +293,7 @@ export default function MenuScreen() {
           contentContainerStyle={[
             styles.scroll,
             { paddingHorizontal: hPad, paddingBottom: insets.bottom + 48 },
-            isDesktop && { width: contentWidth, alignSelf: 'center' as const },
+            isDesktop && { width: desktopPanelWidth, alignSelf: 'center' as const },
           ]}
         >
           {/* ── Profile card ── */}
@@ -482,8 +497,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     gap: 12,
+    borderLeftWidth: 2.5,
+    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
   },
-  rowPressed: { opacity: 0.65 },
   rowIcon: {
     width: 36,
     height: 36,

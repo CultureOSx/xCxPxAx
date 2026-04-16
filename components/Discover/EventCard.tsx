@@ -274,7 +274,7 @@ function EventCard({
 
   if (layout === 'stacked') {
     return (
-      <View>
+      <View style={{ width: cardWidth }}>
         <AnimatedPressable
           style={[
             styles.stackedCard,
@@ -304,6 +304,7 @@ function EventCard({
               source={event.imageUrl ? { uri: event.imageUrl } : undefined}
               style={[styles.stackedImage, { height: RAIL_IMAGE_HEIGHT, backgroundColor: colors.backgroundSecondary }]}
               contentFit="cover"
+              contentPosition="top"
               transition={300}
             />
             {/* Minimal UI: Remove rank and featured badge for clarity */}
@@ -356,6 +357,7 @@ function EventCard({
           source={event.imageUrl ? { uri: event.imageUrl } : undefined}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
+          contentPosition="top"
           transition={300}
         />
 

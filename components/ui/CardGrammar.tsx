@@ -38,10 +38,7 @@ export function CardGrammar({
   const [isPressed, setIsPressed] = React.useState(false);
 
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
+    <View
       style={[
         styles.card,
         {
@@ -49,52 +46,60 @@ export function CardGrammar({
           borderColor: colors.borderLight,
           transform: [{ scale: isPressed ? MotionTokens.pressScale : 1 }],
         },
-        Platform.OS === 'web' && ({ cursor: 'pointer' } as object),
       ]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
     >
-      <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={styles.imageFallback}>
-            <Ionicons name={iconName} size={20} color={CultureTokens.indigo} />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.trustRow}>
-          {trustChips.slice(0, 2).map((chip) => (
-            <View
-              key={chip}
-              style={[
-                styles.trustChip,
-                { backgroundColor: `${CultureTokens.indigo}16`, borderColor: `${CultureTokens.indigo}33` },
-              ]}
-            >
-              <Text style={styles.trustChipText} numberOfLines={1}>
-                {chip}
-              </Text>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        style={styles.tapArea}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
+        <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
+          ) : (
+            <View style={styles.imageFallback}>
+              <Ionicons name={iconName} size={20} color={CultureTokens.indigo} />
             </View>
-          ))}
+          )}
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {subtitle}
-          </Text>
-        ) : null}
-        {meta ? (
-          <Text style={[styles.meta, { color: colors.textTertiary }]} numberOfLines={1}>
-            {meta}
-          </Text>
-        ) : null}
+        <View style={styles.content}>
+          <View style={styles.trustRow}>
+            {trustChips.slice(0, 2).map((chip) => (
+              <View
+                key={chip}
+                style={[
+                  styles.trustChip,
+                  { backgroundColor: `${CultureTokens.indigo}16`, borderColor: `${CultureTokens.indigo}33` },
+                ]}
+              >
+                <Text style={styles.trustChipText} numberOfLines={1}>
+                  {chip}
+                </Text>
+              </View>
+            ))}
+          </View>
 
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+          {meta ? (
+            <Text style={[styles.meta, { color: colors.textTertiary }]} numberOfLines={1}>
+              {meta}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+
+      <View style={styles.ctaWrap}>
         <Button
           variant="primary"
           size="sm"
@@ -106,7 +111,7 @@ export function CardGrammar({
           {ctaLabel}
         </Button>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -116,6 +121,12 @@ const styles = StyleSheet.create({
     borderRadius: CardGrammarTokens.radius,
     borderWidth: CardGrammarTokens.borderWidth,
     overflow: 'hidden',
+  },
+  tapArea: {
+    ...Platform.select({
+      web: { cursor: 'pointer' as const },
+      default: {},
+    }),
   },
   imageWrap: {
     width: '100%',
@@ -133,6 +144,10 @@ const styles = StyleSheet.create({
   content: {
     padding: CardGrammarTokens.contentPadding,
     gap: CardGrammarTokens.contentGap,
+  },
+  ctaWrap: {
+    paddingHorizontal: CardGrammarTokens.contentPadding,
+    paddingBottom: CardGrammarTokens.contentPadding,
   },
   trustRow: {
     minHeight: 20,

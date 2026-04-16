@@ -215,6 +215,13 @@ const events = {
   myRsvp: (eventId: string) =>
     request<{ status: 'going' | 'maybe' | 'not_going' | null }>('GET', `api/events/${eventId}/rsvp/me`),
 
+  /** Public attendee preview (limited "going" users) */
+  attendees: (eventId: string, limit = 5) =>
+    request<{ attendees: { id: string; name: string; avatarUrl?: string | null }[] }>(
+      'GET',
+      `api/events/${eventId}/attendees?limit=${Math.min(12, Math.max(1, limit))}`,
+    ),
+
   /** Track a click on an external ticket link (no auth required) */
   trackTicketClick: (eventId: string) =>
     request<{ ok: boolean }>('POST', `api/events/${eventId}/ticket-click`),

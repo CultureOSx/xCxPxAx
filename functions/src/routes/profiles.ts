@@ -135,7 +135,22 @@ profilesRouter.get('/communities', async (req, res) => {
   try {
     const nationalityId = req.query.nationalityId ? String(req.query.nationalityId) : undefined;
     const cultureId     = req.query.cultureId     ? String(req.query.cultureId)     : undefined;
-    let communities = await profilesService.list({ entityType: 'community' });
+    const [communityProfiles, organisationProfiles] = await Promise.all([
+      profilesService.list({ entityType: 'community' }),
+      profilesService.list({ entityType: 'organisation' as any }),
+    ]);
+
+    let communities = [
+      ...communityProfiles,
+      ...organisationProfiles.filter((profile: any) =>
+        profile.handleStatus === 'approved' &&
+        profile.status === 'published'
+      ).map((profile: any) => ({
+        ...profile,
+        communityType: profile.communityType || 'organisation',
+        category: profile.category || 'organisation',
+      })),
+    ];
     if (nationalityId) {
       communities = communities.filter((c: any) =>
         c.nationalityId === nationalityId ||

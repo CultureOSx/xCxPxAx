@@ -37,15 +37,41 @@ interface ConnectFeature {
   interestMessage: string;
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const safe = hex.replace('#', '').trim();
+  const value = safe.length === 3
+    ? safe.split('').map((c) => c + c).join('')
+    : safe;
+  const int = Number.parseInt(value, 16);
+  return {
+    r: (int >> 16) & 255,
+    g: (int >> 8) & 255,
+    b: int & 255,
+  };
+}
+
+function relativeLuminance(hex: string): number {
+  const { r, g, b } = hexToRgb(hex);
+  const srgb = [r, g, b].map((v) => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * srgb[0]! + 0.7152 * srgb[1]! + 0.0722 * srgb[2]!;
+}
+
+function alpha(hex: string, alphaHex: string): string {
+  return `${hex}${alphaHex}`;
+}
+
 const FEATURES: ConnectFeature[] = [
   {
     id: 'meetups',
     emoji: '🤝',
     title: 'CulturePass Meetups',
     description: 'Attend casual cultural gatherings and activities near you.',
-    fillLight: '#E3ECFA',
-    fillDark: '#152A45',
-    accentColor: CultureTokens.indigo,
+    fillLight: '#0078FF',
+    fillDark: '#0078FF',
+    accentColor: '#0078FF',
     icon: 'people-circle-outline',
     interestMessage: 'You\'re on the early list for CulturePass Meetups — we\'ll notify you when it launches in your city.',
   },
@@ -54,9 +80,9 @@ const FEATURES: ConnectFeature[] = [
     emoji: '👥',
     title: 'Cultural Groups',
     description: 'Join hobby circles, diaspora chapters and interest clubs.',
-    fillLight: '#E4F6F3',
-    fillDark: '#143B38',
-    accentColor: CultureTokens.teal,
+    fillLight: '#BD00FF',
+    fillDark: '#BD00FF',
+    accentColor: '#BD00FF',
     icon: 'grid-outline',
     interestMessage: 'Noted! We\'ll let you know when Cultural Groups launches so you can find your people.',
   },
@@ -65,9 +91,9 @@ const FEATURES: ConnectFeature[] = [
     emoji: '💫',
     title: 'Culture Match',
     description: 'Meet people who share your roots, language and values.',
-    fillLight: '#FFECEB',
-    fillDark: '#3D2428',
-    accentColor: CultureTokens.coral,
+    fillLight: '#FF9A00',
+    fillDark: '#FF9A00',
+    accentColor: '#FF9A00',
     icon: 'heart-circle-outline',
     interestMessage: 'You\'re on the waitlist for Culture Match — culturally intelligent connections, coming soon.',
   },
@@ -76,9 +102,9 @@ const FEATURES: ConnectFeature[] = [
     emoji: '💍',
     title: 'Matrimony',
     description: 'Find a life partner within your culture and community.',
-    fillLight: '#FFF6E0',
-    fillDark: '#3D3520',
-    accentColor: CultureTokens.gold,
+    fillLight: '#01FF1F',
+    fillDark: '#01FF1F',
+    accentColor: '#01FF1F',
     icon: 'diamond-outline',
     interestMessage: 'Added to the early access list for CulturePass Matrimony. We\'ll reach out when it\'s ready.',
   },
@@ -87,9 +113,9 @@ const FEATURES: ConnectFeature[] = [
     emoji: '🗣️',
     title: 'Language Circles',
     description: 'Practice languages with native speakers in your city.',
-    fillLight: '#E3F0FA',
-    fillDark: '#1A3044',
-    accentColor: '#2980B9',
+    fillLight: '#E3FF00',
+    fillDark: '#E3FF00',
+    accentColor: '#E3FF00',
     icon: 'chatbubbles-outline',
     interestMessage: 'Great — you\'re on the list for Language Circles. We\'ll notify you when it launches near you.',
   },
@@ -102,9 +128,18 @@ interface FeatureCardProps {
 }
 
 function FeatureCard({ feature }: FeatureCardProps) {
-  const colors = useColors();
   const isDark = useIsDark();
   const cardFill = isDark ? feature.fillDark : feature.fillLight;
+  const luminance = relativeLuminance(cardFill);
+  const useDarkInk = luminance > 0.46;
+  const primaryTextColor = useDarkInk ? '#0F172A' : '#FFFFFF';
+  const secondaryTextColor = useDarkInk ? '#1E293B' : '#E2E8F0';
+  const tertiaryTextColor = useDarkInk ? '#334155' : '#CBD5E1';
+  const badgeBg = useDarkInk ? alpha('#FFFFFF', '33') : alpha('#000000', '33');
+  const badgeBorder = useDarkInk ? alpha('#FFFFFF', '66') : alpha('#000000', '66');
+  const footerBorder = useDarkInk ? alpha('#FFFFFF', '55') : alpha('#000000', '44');
+  const footerChevron = useDarkInk ? '#475569' : '#E2E8F0';
+  const notifyIconColor = useDarkInk ? '#0F172A' : '#FFFFFF';
 
   const handlePress = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -128,27 +163,27 @@ function FeatureCard({ feature }: FeatureCardProps) {
       <View style={[card.border, { borderColor: `${feature.accentColor}30` }]} />
 
       {/* Coming Soon badge */}
-      <View style={[card.badge, { backgroundColor: `${feature.accentColor}22`, borderColor: `${feature.accentColor}44` }]}>
-        <View style={[card.badgeDot, { backgroundColor: feature.accentColor }]} />
-        <Text style={[card.badgeText, { color: feature.accentColor }]}>Coming Soon</Text>
+      <View style={[card.badge, { backgroundColor: badgeBg, borderColor: badgeBorder }]}>
+        <View style={[card.badgeDot, { backgroundColor: useDarkInk ? '#0F172A' : '#FFFFFF' }]} />
+        <Text style={[card.badgeText, { color: tertiaryTextColor }]}>Coming Soon</Text>
       </View>
 
       {/* Body */}
       <View style={card.body}>
         <Text style={card.emoji}>{feature.emoji}</Text>
-        <Text style={[card.title, { color: colors.text }]} numberOfLines={2}>
+        <Text style={[card.title, { color: primaryTextColor }]} numberOfLines={2}>
           {feature.title}
         </Text>
-        <Text style={[card.desc, { color: colors.textSecondary }]} numberOfLines={3}>
+        <Text style={[card.desc, { color: secondaryTextColor }]} numberOfLines={3}>
           {feature.description}
         </Text>
       </View>
 
       {/* Notify me footer */}
-      <View style={[card.footer, { borderTopColor: `${feature.accentColor}20` }]}>
-        <Ionicons name="notifications-outline" size={12} color={feature.accentColor} />
-        <Text style={[card.notifyText, { color: feature.accentColor }]}>Notify me</Text>
-        <Ionicons name="chevron-forward" size={11} color={`${feature.accentColor}88`} style={{ marginLeft: 'auto' }} />
+      <View style={[card.footer, { borderTopColor: footerBorder }]}>
+        <Ionicons name="notifications-outline" size={12} color={notifyIconColor} />
+        <Text style={[card.notifyText, { color: primaryTextColor }]}>Notify me</Text>
+        <Ionicons name="chevron-forward" size={11} color={footerChevron} style={{ marginLeft: 'auto' }} />
       </View>
     </Pressable>
   );

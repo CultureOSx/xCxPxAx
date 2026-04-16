@@ -6,7 +6,6 @@ import {
   Modal,
   Platform,
   Alert,
-  TouchableOpacity,
   Pressable,
 } from 'react-native';
 import Animated, { SlideInDown } from 'react-native-reanimated';
@@ -48,6 +47,7 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
   const activity = profile ? getCommunityActivityMeta(profile) : { label: '', color: '' };
   const signals = profile ? getCommunitySignals(profile) : [];
   const headline = profile ? getCommunityHeadline(profile) : '';
+  const isOrganisation = (profile?.entityType as string | undefined) === 'organisation';
 
   if (!profile) return null;
 
@@ -71,7 +71,9 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
 
   function handleViewProfile() {
     onClose();
-    router.push({ pathname: '/community/[id]', params: { id: profile!.id } });
+    router.push(isOrganisation
+      ? { pathname: '/profile/[id]', params: { id: profile!.id } }
+      : { pathname: '/community/[id]', params: { id: profile!.id } });
   }
 
   return (
@@ -98,13 +100,17 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
                   <View style={[styles.cover, { backgroundColor: '#2C2A72' }]} />
                 )}
                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={StyleSheet.absoluteFill} />
-                <TouchableOpacity
-                  style={[styles.closeBtn, { backgroundColor: colors.overlay }]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.closeBtn,
+                    { backgroundColor: colors.overlay, opacity: pressed ? 0.85 : 1 },
+                  ]}
                   onPress={onClose}
+                  accessibilityRole="button"
                   accessibilityLabel="Close preview"
                 >
                   <Ionicons name="close" size={24} color={colors.textOnBrandGradient} />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <View style={styles.content}>
@@ -158,15 +164,24 @@ export function CommunityPreviewDrawer({ profile, onClose }: CommunityPreviewDra
                 </Text>
 
                 <View style={styles.actions}>
-                  <Button style={[styles.joinBtn, { backgroundColor: accentColor }]} onPress={handleJoin}>
-                    <Text style={[styles.btnText, { color: colors.textOnBrandGradient }]}>Join Community</Text>
-                  </Button>
-                  <TouchableOpacity
-                    style={[styles.profileBtn, { borderColor: colors.borderLight }]}
+                  {!isOrganisation ? (
+                    <Button style={[styles.joinBtn, { backgroundColor: accentColor }]} onPress={handleJoin}>
+                      <Text style={[styles.btnText, { color: colors.textOnBrandGradient }]}>Join Community</Text>
+                    </Button>
+                  ) : null}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.profileBtn,
+                      { borderColor: colors.borderLight, opacity: pressed ? 0.88 : 1 },
+                    ]}
                     onPress={handleViewProfile}
+                    accessibilityRole="button"
+                    accessibilityLabel={isOrganisation ? 'View full organisation profile' : 'View full community profile'}
                   >
-                    <Text style={[styles.profileBtnText, { color: colors.text }]}>View Full Profile</Text>
-                  </TouchableOpacity>
+                    <Text style={[styles.profileBtnText, { color: colors.text }]}>
+                      {isOrganisation ? 'View Organisation' : 'View Full Profile'}
+                    </Text>
+                  </Pressable>
                 </View>
               </View>
             </View>
@@ -209,6 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
   },
   content: { padding: 24 },
   header: { marginBottom: 20 },
@@ -242,6 +258,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
   },
   profileBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 16 },
 });

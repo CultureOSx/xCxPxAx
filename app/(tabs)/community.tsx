@@ -183,8 +183,8 @@ export default function CommunityScreen() {
                 subtitle="Join trusted groups, discover local meetups, and create a stronger sense of belonging."
                 stat={`${filteredCommunities.length} communities available`}
                 badge="Community Hub"
-                ctaLabel="Create a Community"
-                ctaRoute="/create?type=organisation"
+                ctaLabel="Create a Hub"
+                ctaRoute="/create?type=community"
                 icon="people"
               />
 
@@ -192,19 +192,27 @@ export default function CommunityScreen() {
 
               <View
                 style={[
+                  styles.filtersCard,
                   {
-                    marginTop: 8,
-                    marginBottom: 10,
-                    borderRadius: MAIN_TAB_UI.cardRadius,
-                    borderWidth: 1,
                     borderColor: colors.borderLight,
                     backgroundColor: colors.surface,
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    gap: 8,
-                  },
+                  }
                 ]}
               >
+                <View style={styles.filtersHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.filtersTitle, { color: colors.text }]}>Filter communities</Text>
+                    <Text style={[styles.filtersSubtitle, { color: colors.textSecondary }]}>
+                      Refine by category and culture
+                    </Text>
+                  </View>
+                  <View style={[styles.resultsBadge, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Text style={[styles.resultsBadgeText, { color: colors.textSecondary }]}>
+                      {filteredCommunities.length} shown
+                    </Text>
+                  </View>
+                </View>
+
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
                   {CATEGORIES.map((cat) => (
                     <AnimatedFilterChip
@@ -256,12 +264,27 @@ export default function CommunityScreen() {
                 </ScrollView>
               </View>
 
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
-                  {filteredCommunities.length} communities in {locationLabel}
-                </Text>
-                <Pressable onPress={() => router.push('/create?type=organisation')} accessibilityRole="button" accessibilityLabel="Create community">
-                  <Text style={[styles.summaryLink, { color: CultureTokens.indigo }]}>Create</Text>
+              <View style={[styles.summaryRow, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.summaryTitle, { color: colors.text }]}>Communities near you</Text>
+                  <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+                    {filteredCommunities.length} communities in {locationLabel}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => router.push('/create?type=community')}
+                  style={({ pressed }) => [
+                    styles.summaryCta,
+                    {
+                      backgroundColor: CultureTokens.indigo,
+                      opacity: pressed ? 0.92 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create community"
+                >
+                  <Ionicons name="add" size={14} color={colors.surface} />
+                  <Text style={[styles.summaryCtaText, { color: colors.surface }]}>Create</Text>
                 </Pressable>
               </View>
             </View>
@@ -311,7 +334,7 @@ export default function CommunityScreen() {
                   Try changing your filters or start a new community in your region.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/create?type=organisation')}
+                  onPress={() => router.push('/create?type=community')}
                   style={({ pressed }) => [
                     styles.emptyCta,
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
@@ -338,6 +361,39 @@ const styles = StyleSheet.create({
   ambient: { ...StyleSheet.absoluteFillObject, opacity: 0.18 },
 
   row: { gap: 7, alignItems: 'center' },
+  filtersCard: {
+    marginTop: 8,
+    marginBottom: 10,
+    borderRadius: MAIN_TAB_UI.cardRadius,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    gap: 10,
+  },
+  filtersHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: FontFamily.bold,
+  },
+  filtersSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: FontFamily.medium,
+  },
+  resultsBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  resultsBadgeText: { fontSize: 11, fontFamily: FontFamily.semibold },
   clearBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -358,13 +414,28 @@ const styles = StyleSheet.create({
   cultureChipText: { fontSize: 12, fontFamily: FontFamily.semibold },
 
   summaryRow: {
-    marginTop: 2,
+    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
   },
+  summaryTitle: { fontSize: 13, lineHeight: 17, fontFamily: FontFamily.bold },
   summaryText: { fontSize: 12, fontFamily: FontFamily.medium },
-  summaryLink: { fontSize: 12, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryCta: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    minWidth: 76,
+    justifyContent: 'center',
+  },
+  summaryCtaText: { fontSize: 12, fontFamily: FontFamily.bold, letterSpacing: 0.2 },
 
   loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyState: { alignItems: 'center', paddingVertical: 70, paddingHorizontal: 30, gap: 12 },
