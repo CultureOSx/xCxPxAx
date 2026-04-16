@@ -133,9 +133,9 @@ export function Button({
   };
 
   const variantColors = {
-    primary:   { bg: CultureTokens.indigo,     border: 'transparent', label: colors.textInverse },
-    secondary: { bg: 'rgba(0, 102, 204, 0.12)', border: CultureTokens.indigo, label: CultureTokens.indigo },
-    ghost:     { bg: 'transparent',      border: 'transparent', label: CultureTokens.indigo },
+    primary:   { bg: CultureTokens.emerald, border: 'transparent', label: '#FFFFFF' }, // Emerald CTA per DESIGN_MANUAL.md
+    secondary: { bg: 'rgba(124, 58, 237, 0.12)', border: CultureTokens.violet, label: CultureTokens.violet }, // Glass outline with violet
+    ghost:     { bg: 'transparent',      border: 'transparent', label: CultureTokens.violet },
     danger:    { bg: CultureTokens.coral,       border: 'transparent', label: colors.textInverse },
     gold:      { bg: CultureTokens.gold,        border: 'transparent', label: '#1B0F2E' }, // Dark text against gold
     outline:   { bg: 'transparent',      border: colors.border,  label: colors.text },

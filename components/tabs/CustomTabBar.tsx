@@ -150,8 +150,9 @@ function TabItem({
     onPress();
   };
 
-  const iconColor = isActive ? CultureTokens.indigo : colors.textTertiary;
-  const labelColor = isActive ? CultureTokens.indigo : colors.textTertiary;
+  const activeColor = colors.primary; // violet per updated design tokens
+  const iconColor = isActive ? activeColor : colors.textTertiary;
+  const labelColor = isActive ? activeColor : colors.textTertiary;
 
   const hint = TAB_HINTS[tab.name];
 
@@ -164,7 +165,7 @@ function TabItem({
       accessibilityLabel={tab.label}
       accessibilityHint={hint ? `${hint}. Double tap to open.` : 'Double tap to open tab'}
       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-      android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: false } : undefined}
+      android_ripple={Platform.OS === 'android' ? { color: colors.primary + '22', borderless: false } : undefined}
     >
       <Animated.View
         style={[
@@ -235,7 +236,7 @@ const tabItem = StyleSheet.create({
     width: 14,
     height: 2.5,
     borderRadius: 99,
-    backgroundColor: CultureTokens.indigo,
+    backgroundColor: CultureTokens.violet,
     marginTop: 1.5,
   },
   linePlaceholder: {
@@ -334,9 +335,9 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
         ]}
         contentStyle={bar.pillInner}
       >
-        {/* Brand gradient top edge */}
+        {/* Brand gradient top edge — updated to violet/emerald per DESIGN_MANUAL.md */}
         <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.teal, 'rgba(46,196,182,0)']}
+          colors={[CultureTokens.violet, CultureTokens.emerald, 'rgba(34, 197, 94, 0)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={bar.topLine}

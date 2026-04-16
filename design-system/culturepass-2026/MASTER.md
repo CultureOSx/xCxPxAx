@@ -6,9 +6,9 @@
 
 ---
 
-**Project:** CulturePass
-**Generated:** 2026-04-17 01:38:39
-**Category:** Financial Dashboard
+**Project:** CulturePass 2026
+**Generated:** 2026-04-16 23:48:28
+**Category:** E-commerce Luxury
 
 ---
 
@@ -18,24 +18,24 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#18181B` | `--color-primary` |
-| Secondary | `#27272A` | `--color-secondary` |
-| CTA/Accent | `#F8FAFC` | `--color-cta` |
-| Background | `#000000` | `--color-background` |
-| Text | `#FAFAFA` | `--color-text` |
+| Primary | `#7C3AED` | `--color-primary` |
+| Secondary | `#A78BFA` | `--color-secondary` |
+| CTA/Accent | `#22C55E` | `--color-cta` |
+| Background | `#FAF5FF` | `--color-background` |
+| Text | `#4C1D95` | `--color-text` |
 
-**Color Notes:** Pure black + white contrast
+**Color Notes:** Community purple + join green
 
 ### Typography
 
-- **Heading Font:** Inter
-- **Body Font:** Inter
-- **Mood:** spatial, legible, glass, system, clean, neutral
-- **Google Fonts:** [Inter + Inter](https://fonts.google.com/share?selection.family=Inter:wght@300;400;500;600)
+- **Heading Font:** Noto Serif TC
+- **Body Font:** Noto Sans TC
+- **Mood:** chinese, traditional, elegant, cultural, multilingual, readable
+- **Google Fonts:** [Noto Serif TC + Noto Sans TC](https://fonts.google.com/share?selection.family=Noto+Sans+TC:wght@300;400;500;700|Noto+Serif+TC:wght@400;500;600;700)
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
 ```
 
 ### Spacing Variables
@@ -68,7 +68,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #F8FAFC;
+  background: #22C55E;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -85,8 +85,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #18181B;
-  border: 2px solid #18181B;
+  color: #7C3AED;
+  border: 2px solid #7C3AED;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -99,7 +99,7 @@
 
 ```css
 .card {
-  background: #000000;
+  background: #FAF5FF;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -125,9 +125,9 @@
 }
 
 .input:focus {
-  border-color: #18181B;
+  border-color: #7C3AED;
   outline: none;
-  box-shadow: 0 0 0 3px #18181B20;
+  box-shadow: 0 0 0 3px #7C3AED20;
 }
 ```
 
@@ -153,31 +153,28 @@
 
 ## Style Guidelines
 
-**Style:** Dark Mode (OLED)
+**Style:** Liquid Glass
 
-**Keywords:** Dark theme, low light, high contrast, deep black, midnight blue, eye-friendly, OLED, night mode, power efficient
+**Keywords:** Flowing glass, morphing, smooth transitions, fluid effects, translucent, animated blur, iridescent, chromatic aberration
 
-**Best For:** Night-mode apps, coding platforms, entertainment, eye-strain prevention, OLED devices, low-light
+**Best For:** Premium SaaS, high-end e-commerce, creative platforms, branding experiences, luxury portfolios
 
-**Key Effects:** Minimal glow (text-shadow: 0 0 10px), dark-to-light transitions, low white emission, high readability, visible focus
+**Key Effects:** Morphing elements (SVG/CSS), fluid animations (400-600ms curves), dynamic blur (backdrop-filter), color transitions
 
 ### Page Pattern
 
-**Pattern Name:** Horizontal Scroll Journey
+**Pattern Name:** Community/Forum Landing
 
-- **Conversion Strategy:** Immersive product discovery. High engagement. Keep navigation visible.
-28,Bento Grid Showcase,bento,  grid,  features,  modular,  apple-style,  showcase", 1. Hero, 2. Bento Grid (Key Features), 3. Detail Cards, 4. Tech Specs, 5. CTA, Floating Action Button or Bottom of Grid, Card backgrounds: #F5F5F7 or Glass. Icons: Vibrant brand colors. Text: Dark., Hover card scale (1.02), video inside cards, tilt effect, staggered reveal, Scannable value props. High information density without clutter. Mobile stack.
-29,Interactive 3D Configurator,3d,  configurator,  customizer,  interactive,  product", 1. Hero (Configurator), 2. Feature Highlight (synced), 3. Price/Specs, 4. Purchase, Inside Configurator UI + Sticky Bottom Bar, Neutral studio background. Product: Realistic materials. UI: Minimal overlay., Real-time rendering, material swap animation, camera rotate/zoom, light reflection, Increases ownership feeling. 360 view reduces return rates. Direct add-to-cart.
-30,AI-Driven Dynamic Landing,ai,  dynamic,  personalized,  adaptive,  generative", 1. Prompt/Input Hero, 2. Generated Result Preview, 3. How it Works, 4. Value Prop, Input Field (Hero) + 'Try it' Buttons, Adaptive to user input. Dark mode for compute feel. Neon accents., Typing text effects, shimmering generation loaders, morphing layouts, Immediate value demonstration. 'Show, don't tell'. Low friction start.
-- **CTA Placement:** Floating Sticky CTA or End of Horizontal Track
-- **Section Order:** 1. Intro (Vertical), 2. The Journey (Horizontal Track), 3. Detail Reveal, 4. Vertical Footer
+- **Conversion Strategy:** Show active community (member count, posts today). Highlight benefits. Preview content. Easy onboarding.
+- **CTA Placement:** Join button prominent + After member showcase
+- **Section Order:** 1. Hero (community value prop), 2. Popular topics/categories, 3. Active members showcase, 4. Join CTA
 
 ---
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Light mode default
-- ❌ Slow rendering
+- ❌ Vibrant & Block-based
+- ❌ Playful colors
 
 ### Additional Forbidden Patterns
 

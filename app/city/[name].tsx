@@ -164,7 +164,7 @@ const EXPLORE_CATEGORY_LINKS: readonly {
 export default function CityScreen() {
   const { name, country } = useLocalSearchParams<{ name: string; country?: string }>();
   const colors = useColors();
-  const { isDesktop, contentWidth, width } = useLayout();
+  const { isDesktop, contentWidth, width, numColumns = 2, isAndroid } = useLayout();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const { state: onboarding } = useOnboarding();
@@ -599,14 +599,14 @@ export default function CityScreen() {
                   <Pressable
                     key={mode}
                     onPress={() => { haptic(); setFilterMode(mode); }}
-                    style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
+                    style={[styles.modeTab, active && styles.modeTabActive]}
                   >
                     <Ionicons
                       name={icons[mode]}
                       size={15}
-                      color={active ? CultureTokens.indigo : colors.textTertiary}
+                      color={active ? colors.textInverse : colors.textTertiary}
                     />
-                    <Text style={[styles.modeTabText, { color: active ? CultureTokens.indigo : colors.textTertiary }]}>
+                    <Text style={[styles.modeTabText, { color: active ? colors.textInverse : colors.textTertiary }]}>
                       {labels[mode]}
                     </Text>
                     {badge > 0 && (
@@ -627,16 +627,16 @@ export default function CityScreen() {
                       haptic();
                       setActiveExploreCategory(item.key);
                     }}
-                    style={[styles.modeTab, active && { borderBottomColor: CultureTokens.indigo, borderBottomWidth: 2 }]}
+                    style={[styles.modeTab, active && styles.modeTabActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`Filter by ${item.label}`}
                   >
                     <Ionicons
                       name={item.icon}
                       size={15}
-                      color={active ? CultureTokens.indigo : colors.textTertiary}
+                      color={active ? colors.textInverse : colors.textTertiary}
                     />
-                    <Text style={[styles.modeTabText, { color: active ? CultureTokens.indigo : colors.textTertiary }]}>
+                    <Text style={[styles.modeTabText, { color: active ? colors.textInverse : colors.textTertiary }]}>
                       {item.label}
                     </Text>
                   </Pressable>
@@ -740,15 +740,21 @@ export default function CityScreen() {
 
                 {isLoading ? (
                   <View style={styles.skeletonGrid}>
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <View
-                        key={i}
-                        style={[
-                          styles.skeletonCard,
-                          { width: isDesktop ? cardWidth : '48.5%', height: 240 },
-                        ]}
-                      />
-                    ))}
+                    {[1, 2, 3, 4, 5, 6].map((i) => {
+                      const effectiveColumns = isAndroid ? 1 : numColumns;
+                      return (
+                        <View
+                          key={i}
+                          style={[
+                            styles.skeletonCard,
+                            {
+                              width: isDesktop || effectiveColumns === 1 ? (isDesktop ? cardWidth : '100%') : '48.5%',
+                              height: isAndroid ? 380 : 220, // smaller to match 2-col cards on iOS/mobile
+                            },
+                          ]}
+                        />
+                      );
+                    })}
                   </View>
                 ) : eventResults.length === 0 ? (
                   <View style={styles.emptyState}>
@@ -764,20 +770,24 @@ export default function CityScreen() {
                 ) : (
                   <Animated.View style={[styles.grid, { gap: gridGap }]}>
                     {eventResults.map((event) => {
-                      const w = isDesktop ? desktopCardWidth : undefined;
+                      const effectiveColumns = isAndroid ? 1 : numColumns;
+                      const w = isDesktop ? desktopCardWidth : effectiveColumns === 1 ? undefined : undefined;
+                      const isLongCard = isAndroid;
                       return (
                         <Animated.View
                           key={event.id}
                           style={[
-                            isDesktop ? { width: w } : { width: '48.5%' },
+                            isDesktop || isLongCard
+                              ? { width: isDesktop ? w : '100%' }
+                              : { width: `${(100 / effectiveColumns) - 4}%` }, // tighter for 2-col fit on mobile (smaller cards)
                             { marginBottom: gridGap },
                           ]}
                         >
                           <EventCard
                             event={event}
                             containerWidth={w}
-                            containerHeight={Platform.OS === 'web' ? 320 : 260}
-                            layout={Platform.OS === 'web' ? 'stacked' : 'overlay'}
+                            containerHeight={isLongCard ? 380 : Platform.OS === 'web' ? 320 : 220} // smaller for 2-col on iOS/mobile
+                            layout={isLongCard || Platform.OS === 'web' ? 'stacked' : 'overlay'}
                             schedulingMode={Platform.OS === 'web' ? 'live_and_countdown' : 'default'}
                           />
                         </Animated.View>
@@ -799,11 +809,13 @@ export default function CityScreen() {
                     {venueResults.map((v) => (
                       <Pressable
                         key={v.id}
-                        onPress={() => router.push(`/business/${v.id}`)}
+                        onPress={() => router.push({ pathname: '/profile/[id]', params: { id: v.id } })}
                         style={[styles.venueCard, isDesktop && { width: '100%' }]}
+                        accessibilityLabel={`View ${v.name} profile`}
+                        accessibilityRole="link"
                       >
                         <View style={styles.venueIcon}>
-                          <Ionicons name="business" size={22} color={CultureTokens.indigo} />
+                          <Ionicons name="business" size={22} color={colors.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.venueName} numberOfLines={1}>{v.name}</Text>
@@ -819,7 +831,7 @@ export default function CityScreen() {
                       style={[styles.mapCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
                       onPress={goToMap}
                     >
-                      <Ionicons name="map-outline" size={22} color={CultureTokens.indigo} />
+                      <Ionicons name="map-outline" size={22} color={colors.primary} />
                       <Text style={[styles.mapCardText, { color: colors.text }]}>View All on Map</Text>
                     </Pressable>
                   )}

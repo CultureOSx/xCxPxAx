@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Switch,
-  type ViewStyle,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
@@ -30,13 +29,12 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
-import { BlurView } from 'expo-blur';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { CultureTokens, gradients, shadows, TextStyles, LiquidGlassTokens, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles, LiquidGlassTokens, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -44,7 +42,7 @@ import { communityGroups, communityFlags } from '@/constants/onboardingCommuniti
 import { interestCategories } from '@/constants/onboardingInterests';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const PRIMARY = CultureTokens.indigo;
+const PRIMARY = CultureTokens.violet; // updated per DESIGN_MANUAL.md 2026 palette
 const GEM_RING = CultureTokens.gold;
 const AVATAR = 104;
 
@@ -55,22 +53,6 @@ const TABS: { id: EditTab; label: string }[] = [
   { id: 'culture', label: 'Culture' },
   { id: 'social', label: 'Social & privacy' },
 ];
-
-function sectionCardShadow(isDark: boolean): ViewStyle {
-  if (Platform.OS === 'web') return {};
-  return (
-    Platform.select<ViewStyle>({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: isDark ? 4 : 2 },
-        shadowOpacity: isDark ? 0.22 : 0.06,
-        shadowRadius: isDark ? 14 : 10,
-      },
-      android: { elevation: isDark ? 3 : 1 },
-      default: { elevation: isDark ? 3 : 1 },
-    }) ?? {}
-  );
-}
 
 interface UserData {
   id: string;
@@ -191,7 +173,6 @@ function SectionCard({
       <LiquidGlassPanel
         borderRadius={LiquidGlassTokens.corner.mainCard}
         bordered
-        style={sc.glassCard}
         contentStyle={sc.cardBody}
       >
         {inner}
@@ -692,7 +673,7 @@ export default function EditProfileScreen() {
               <Ionicons name="eye-outline" size={18} color={PRIMARY} />
             </Pressable>
 
-            <Button variant="primary" size="sm" onPress={handleSave} loading={isBusy} style={{ backgroundColor: PRIMARY, minWidth: 72 }}>
+            <Button variant="primary" size="sm" onPress={handleSave} loading={isBusy} style={{ minWidth: 72 }}>
               Save
             </Button>
           </View>
@@ -1394,7 +1375,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    backgroundColor: CultureTokens.indigo,
+    backgroundColor: CultureTokens.violet,
   },
   tabRail: {
     flexDirection: 'row',
@@ -1490,7 +1471,7 @@ const s = StyleSheet.create({
     marginTop: 8,
     marginBottom: 32,
     ...Platform.select({
-      web: { boxShadow: '0px 8px 32px rgba(0,102,204,0.25)' },
+      web: { boxShadow: '0px 8px 32px rgba(124, 58, 237, 0.25)' }, // violet per updated palette
       ios: {
         shadowColor: PRIMARY,
         shadowOffset: { width: 0, height: 6 },

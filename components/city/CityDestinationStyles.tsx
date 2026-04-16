@@ -22,7 +22,7 @@ export function StatPill({
 }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingVertical: 12 }}>
-      <Ionicons name={icon} size={18} color={CultureTokens.indigo} style={{ marginBottom: 3 }} />
+      <Ionicons name={icon} size={18} color={colors.primary} style={{ marginBottom: 3 }} />
       <Text style={{ fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 20 }}>
         {value}
       </Text>
@@ -137,12 +137,20 @@ export function getCityDestinationStyles(
       paddingHorizontal: 16,
       paddingVertical: 10,
       marginRight: 4,
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
+      borderRadius: 20, // reworked for glass segmented pill per DESIGN_MANUAL.md
+      borderBottomWidth: 0,
+    },
+    modeTabActive: {
+      backgroundColor: colors.primary, // emerald/violet active fill with glass
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
     modeTabText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
     modeBadge: {
-      backgroundColor: CultureTokens.indigo,
+      backgroundColor: colors.primary, // violet/emerald badge per reworked buttons
       borderRadius: 10,
       minWidth: 18,
       height: 18,
@@ -150,7 +158,7 @@ export function getCityDestinationStyles(
       justifyContent: 'center',
       paddingHorizontal: 4,
     },
-    modeBadgeText: { color: colors.textOnBrandGradient, fontSize: 10, fontFamily: 'Poppins_700Bold' },
+    modeBadgeText: { color: colors.textInverse, fontSize: 10, fontFamily: 'Poppins_700Bold' },
     clearAllTab: {
       flexDirection: 'row',
       alignItems: 'center',

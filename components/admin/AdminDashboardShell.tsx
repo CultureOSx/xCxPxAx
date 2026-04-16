@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,8 +26,7 @@ export function AdminDashboardShell({
   showBack = true,
 }: AdminDashboardShellProps) {
   const colors = useColors();
-  const { isDesktop, hPad, contentWidth } = useLayout();
-  const insets = useSafeAreaInsets();
+  const { hPad, contentWidth, isDesktop } = useLayout();
   const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useRole();
   const { user } = useAuth();
 
@@ -63,7 +61,7 @@ export function AdminDashboardShell({
         {/* Glass Header */}
         <LiquidGlassPanel style={styles.header} borderRadius={LiquidGlassTokens.corner.mainCard}>
           <LinearGradient
-            colors={[CultureTokens.indigo + '18', 'transparent']}
+            colors={[CultureTokens.violet + '18', 'transparent']}
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
