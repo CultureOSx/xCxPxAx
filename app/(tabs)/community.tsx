@@ -184,7 +184,7 @@ export default function CommunityScreen() {
                 stat={`${filteredCommunities.length} communities available`}
                 badge="Community Hub"
                 ctaLabel="Create a Hub"
-                ctaRoute="/create?type=community"
+                ctaRoute="/community/create"
                 icon="people"
               />
 
@@ -272,7 +272,7 @@ export default function CommunityScreen() {
                   </Text>
                 </View>
                 <Pressable
-                  onPress={() => router.push('/create?type=community')}
+                  onPress={() => router.push('/community/create')}
                   style={({ pressed }) => [
                     styles.summaryCta,
                     {
@@ -334,7 +334,7 @@ export default function CommunityScreen() {
                   Try changing your filters or start a new community in your region.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/create?type=community')}
+                  onPress={() => router.push('/community/create')}
                   style={({ pressed }) => [
                     styles.emptyCta,
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },

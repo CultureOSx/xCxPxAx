@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, type ColorTheme } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
 import { useCallback } from 'react';

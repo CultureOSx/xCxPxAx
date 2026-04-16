@@ -289,6 +289,53 @@ profilesRouter.get('/communities/:id/recommended-events', async (req, res) => {
   }
 });
 
+/** GET /api/communities/:id/members — basic member list for a community */
+profilesRouter.get('/communities/:id/members', async (req, res) => {
+  const communityId = String(req.params.id ?? '');
+  if (!isFirestoreConfigured) return res.json({ members: [] });
+  try {
+    const snap = await db.collection('communityMembers')
+      .where('communityId', '==', communityId)
+      .limit(50)
+      .get();
+
+    const userIds = snap.docs
+      .map((doc) => doc.data().userId)
+      .filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+    if (userIds.length === 0) {
+      return res.json({ members: [] });
+    }
+
+    const userDocs = await Promise.all(userIds.map((userId) => db.collection('users').doc(userId).get()));
+    const members = userDocs
+      .filter((doc) => doc.exists)
+      .map((doc) => {
+        const data = doc.data() as {
+          displayName?: string;
+          username?: string;
+          avatarUrl?: string;
+          city?: string;
+          country?: string;
+        };
+
+        return {
+          id: doc.id,
+          name: data.displayName || data.username || 'CulturePass Member',
+          username: data.username || null,
+          avatarUrl: data.avatarUrl || null,
+          city: data.city || null,
+          country: data.country || null,
+        };
+      });
+
+    return res.json({ members });
+  } catch (err) {
+    captureRouteError(err, 'GET /api/communities/:id/members');
+    return res.status(500).json({ error: 'Failed to fetch community members' });
+  }
+});
+
 /** GET /api/profiles — list all profiles */
 profilesRouter.get('/profiles', async (req, res) => {
   if (!isFirestoreConfigured) return res.json({ profiles: [] });

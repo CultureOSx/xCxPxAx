@@ -987,6 +987,21 @@ const communities = {
 
   get: (id: string) => request<Community>('GET', `api/communities/${id}`),
 
+  recommendedEvents: (id: string) =>
+    request<EventData[]>('GET', `api/communities/${id}/recommended-events`),
+
+  members: (id: string) =>
+    request<{
+      members: {
+        id: string;
+        name: string;
+        username?: string | null;
+        avatarUrl?: string | null;
+        city?: string | null;
+        country?: string | null;
+      }[];
+    }>('GET', `api/communities/${id}/members`),
+
   join: (id: string) =>
     request<{ success: boolean; communityId: string }>('POST', `api/communities/${id}/join`),
 

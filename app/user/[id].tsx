@@ -7,8 +7,8 @@ import {
   ScrollView,
   Platform,
   Share,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,7 +49,7 @@ export default function UserProfileScreen() {
   const memberSince  = useMemo(() => formatMemberDate(user?.createdAt), [user?.createdAt]);
   const isDesktopWeb = Platform.OS === 'web';
   const socialCount = activeSocials.length;
-  const tabs: Array<{ key: 'overview' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  const tabs: { key: 'overview' | 'events' | 'community' | 'media' | 'about'; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'overview', label: 'Overview', icon: 'sparkles-outline' },
     { key: 'events', label: 'Events', icon: 'calendar-outline' },
     { key: 'community', label: 'Community', icon: 'people-outline' },

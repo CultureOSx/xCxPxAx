@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Community } from '@/shared/schema';
+import type { EventData } from '@shared/schema';
+import { clearCommunityJoinedMark, markCommunityJoined } from '@/lib/community-storage';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 
@@ -9,6 +11,8 @@ export const communityKeys = {
   list: (params?: CommunitiesListParams) => ['/api/communities', 'list', params] as const,
   detail: (id: string) => ['/api/communities', id] as const,
   joined: () => ['/api/communities', 'joined'] as const,
+  members: (id: string) => ['/api/communities', id, 'members'] as const,
+  events: (id: string) => ['/api/communities', id, 'events'] as const,
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -47,12 +51,32 @@ export function useJoinedCommunities() {
   });
 }
 
+export function useCommunityMembers(id: string) {
+  return useQuery({
+    queryKey: communityKeys.members(id),
+    queryFn: () => api.communities.members(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+export function useCommunityRecommendedEvents(id: string) {
+  return useQuery<EventData[]>({
+    queryKey: communityKeys.events(id),
+    queryFn: () => api.communities.recommendedEvents(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useJoinCommunity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.communities.join(id),
-    onSuccess: () => {
+    onSuccess: async (_result, id) => {
+      await markCommunityJoined(id);
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },
   });
 }
@@ -61,8 +85,10 @@ export function useLeaveCommunity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.communities.leave(id),
-    onSuccess: () => {
+    onSuccess: async (_result, id) => {
+      await clearCommunityJoinedMark(id);
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },
   });
 }
