@@ -1,7 +1,8 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 
 export default function CreateTypeRedirect() {
-  const { type, ...rest } = useLocalSearchParams<Record<string, string | string[] | undefined>>();
+  const paramsObj = useLocalSearchParams();
+  const { type, ...rest } = paramsObj as { type?: string; [key: string]: string | string[] | undefined };
   const params = new URLSearchParams();
 
   if (typeof type === 'string' && type.length > 0) {
