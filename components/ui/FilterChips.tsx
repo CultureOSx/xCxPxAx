@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens } from '@/constants/theme';
+import { OlympicsColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 interface FilterChipProps {
@@ -42,7 +42,7 @@ export default function FilterChips({
             key={filter}
             style={[
               styles.chip,
-              { backgroundColor: isActive ? CultureTokens.indigo : colors.backgroundSecondary, borderColor: isActive ? CultureTokens.indigo : colors.borderLight },
+              { backgroundColor: isActive ? OlympicsColors.blue : colors.backgroundSecondary, borderColor: isActive ? OlympicsColors.blue : colors.borderLight },
             ]}
             onPress={() => onToggle(filter)}
           >

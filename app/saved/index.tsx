@@ -358,7 +358,7 @@ export default function SavedScreen() {
                         { backgroundColor: isActive ? CultureTokens.indigo : colors.primarySoft },
                       ]}
                     >
-                      <Text style={[s.countText, { color: isActive ? '#FFFFFF' : colors.text }]}>{tab.count}</Text>
+                      <Text style={[s.countText, { color: isActive ? colors.surface : colors.text }]}>{tab.count}</Text>
                     </View>
                   ) : null}
                 </Pressable>

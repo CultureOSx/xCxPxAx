@@ -5,8 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, gradients, LayoutRules, LiquidGlassTokens, FontFamily } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -118,10 +117,10 @@ function WebCityList({
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Pressable onPress={() => onOpenSystemMap(selectedCity)} style={webStyles.mapButton}>
                 <Ionicons name="navigate" size={18} color={CultureTokens.indigo} />
-                <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo }}>Open in Maps</Text>
+                <Text style={{ fontSize: 13, fontFamily: FontFamily.semibold, color: CultureTokens.indigo }}>Open in Maps</Text>
               </Pressable>
               <Pressable onPress={() => onSelectCity(null)} style={[webStyles.mapButton, { backgroundColor: colors.surfaceElevated }]}>
-                <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary }}>Clear City</Text>
+                <Text style={{ fontSize: 13, fontFamily: FontFamily.semibold, color: colors.textSecondary }}>Clear City</Text>
               </Pressable>
             </View>
           </View>
@@ -280,14 +279,15 @@ export default function MapScreen() {
         style={mapAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
+          paddingHorizontal: LayoutRules.screenHorizontalPadding,
+          paddingTop: 16,
+          paddingBottom: 16,
         }}
-        contentStyle={styles.headerGlassOuter}
       >
         <View style={shellStyle ?? undefined}>
         <View style={styles.headerMainRow}>
@@ -381,7 +381,7 @@ export default function MapScreen() {
           </ScrollView>
         </View>
         </View>
-      </LiquidGlassPanel>
+      </View>
 
       {isLoading ? (
         <View style={styles.centeredLoading}>
@@ -455,11 +455,6 @@ const mapAmbient = StyleSheet.create({
 const getStyles = (colors: ReturnType<typeof useColors>) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    headerGlassOuter: {
-      paddingHorizontal: LayoutRules.screenHorizontalPadding,
-      paddingTop: 16,
-      paddingBottom: 16,
-    },
     headerMainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     backButton: {
       width: 44,
@@ -470,7 +465,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       justifyContent: 'center',
       marginRight: 12,
     },
-    screenTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.4 },
+    screenTitle: { fontSize: 28, fontFamily: FontFamily.bold, color: colors.text, letterSpacing: -0.4 },
     screenSubtitle: { fontSize: 15, color: colors.textSecondary, marginTop: 2 },
     resetButton: {
       width: 44,
@@ -492,7 +487,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       backgroundColor: 'transparent',
     },
     filterChipActive: { backgroundColor: colors.primarySoft, borderColor: CultureTokens.indigo + '40' },
-    chipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+    chipText: { fontSize: 13, fontFamily: FontFamily.semibold, color: colors.textSecondary },
     chipTextActive: { color: CultureTokens.indigo },
     discoveryRailContainer: { marginTop: 4 },
     discoveryRail: { marginBottom: 12 },
@@ -508,7 +503,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
       borderWidth: 1,
       borderColor: colors.borderLight,
     },
-    compactStatLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+    compactStatLabel: { fontSize: 13, fontFamily: FontFamily.semibold, color: colors.textSecondary },
     dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.textTertiary },
     statDivider: { width: 1, height: 20, backgroundColor: colors.borderLight, marginHorizontal: 4 },
     centeredLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
@@ -519,10 +514,10 @@ const getStyles = (colors: ReturnType<typeof useColors>) =>
     },
     eventImage: { width: '100%', height: 130 },
     eventInfo: { padding: 12 },
-    eventDate: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo, marginBottom: 4 },
-    eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 20, marginBottom: 6 },
+    eventDate: { fontSize: 11, fontFamily: FontFamily.semibold, color: CultureTokens.indigo, marginBottom: 4 },
+    eventTitle: { fontSize: 15, fontFamily: FontFamily.semibold, color: colors.text, lineHeight: 20, marginBottom: 6 },
     eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    eventVenue: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, flex: 1 },
+    eventVenue: { fontSize: 12, fontFamily: FontFamily.regular, color: colors.textSecondary, flex: 1 },
   });
 
 const getWebStyles = (colors: ReturnType<typeof useColors>) =>
@@ -544,7 +539,7 @@ const getWebStyles = (colors: ReturnType<typeof useColors>) =>
     filterMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     metaText: { fontSize: 13, color: colors.textSecondary },
     clearButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, backgroundColor: CultureTokens.indigo + '12' },
-    clearText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
+    clearText: { fontSize: 13, fontFamily: FontFamily.semibold, color: CultureTokens.indigo },
     cityChipRow: { gap: 8, paddingBottom: 2 },
     cityChip: {
       flexDirection: 'row',
@@ -558,8 +553,8 @@ const getWebStyles = (colors: ReturnType<typeof useColors>) =>
       backgroundColor: 'transparent',
     },
     cityChipActive: { borderColor: CultureTokens.indigo + '55', backgroundColor: colors.primarySoft },
-    cityChipText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-    cityChipCount: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
+    cityChipText: { fontSize: 12, fontFamily: FontFamily.semibold, color: colors.text },
+    cityChipCount: { fontSize: 12, fontFamily: FontFamily.bold, color: colors.textSecondary },
     cityChipTextActive: { color: CultureTokens.indigo },
     statsPill: {
       flexDirection: 'row',
@@ -572,7 +567,7 @@ const getWebStyles = (colors: ReturnType<typeof useColors>) =>
       borderWidth: 1,
       borderColor: CultureTokens.indigo + '15',
     },
-    statsPillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+    statsPillText: { fontSize: 13, fontFamily: FontFamily.semibold, color: colors.textSecondary },
     statDividerVertical: { width: 1, height: 24, backgroundColor: colors.borderLight, marginHorizontal: 8 },
     selectedCityHeader: {
       flexDirection: 'row',
@@ -585,13 +580,13 @@ const getWebStyles = (colors: ReturnType<typeof useColors>) =>
       borderTopWidth: 1,
       borderTopColor: colors.borderLight,
     },
-    selectedCityName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+    selectedCityName: { fontSize: 18, fontFamily: FontFamily.bold, color: colors.text },
     selectedCityCount: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
     mapButton: { padding: 10, borderRadius: 12, backgroundColor: CultureTokens.indigo + '12' },
-    sectionTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 16 },
+    sectionTitle: { fontSize: 22, fontFamily: FontFamily.bold, color: colors.text, marginBottom: 16 },
     eventGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
     eventCardEnhanced: { width: '47.5%', minWidth: 260, maxWidth: 360 },
     emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 16 },
-    emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+    emptyTitle: { fontSize: 20, fontFamily: FontFamily.bold, color: colors.text },
     emptySubtitle: { fontSize: 15, color: colors.textSecondary, textAlign: 'center' },
   });

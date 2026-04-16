@@ -38,7 +38,7 @@ function CityCard({
   const handlePress = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
-      pathname: '/city/[name]' as never,
+      pathname: '/(tabs)/index/city/[name]' as never,
       params: { name: city.name, country: city.countryName },
     });
   };

@@ -33,8 +33,8 @@ import {
   IconSize,
 } from '@/constants/theme';
 
-import { light as lightColors } from '@/constants/colors';
 import { useLayout } from '@/hooks/useLayout';
+import { useColors } from '@/hooks/useColors';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   cultural: '🎭',
@@ -51,16 +51,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
 // InterestChip
 // ---------------------------------------------------------------------------
 const InterestChip = React.memo(function InterestChip({
-  interest, icon, isSelected, accentColor, onPress,
+  interest, icon, isSelected, accentColor, onPress, colors,
 }: {
   interest: string;
   icon: string;
   isSelected: boolean;
   accentColor: string;
   onPress: () => void;
+  colors: ReturnType<typeof useColors>;
 }) {
-  const colors = lightColors;
-
   return (
     <Pressable
       onPress={onPress}
@@ -97,7 +96,7 @@ const InterestChip = React.memo(function InterestChip({
 // Main screen
 // ---------------------------------------------------------------------------
 export default function InterestsScreen() {
-  const colors = lightColors;
+  const colors = useColors();
   const { isDesktop } = useLayout();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -138,7 +137,7 @@ export default function InterestsScreen() {
       <View style={[s.header, { paddingTop: topInset + 14 }]}>
         <Pressable
           onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')}
-          style={s.backBtn}
+          style={[s.backBtn, { backgroundColor: colors.surfaceSecondary }]}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Go back"
@@ -146,7 +145,7 @@ export default function InterestsScreen() {
           <Ionicons name="chevron-back" size={IconSize.lg} color={colors.textSecondary} />
         </Pressable>
         <Text style={[s.stepLabel, { color: colors.textSecondary }]}>STEP 4 OF 4</Text>
-        <View style={s.backBtn} />
+        <View style={[s.backBtn, { backgroundColor: colors.surfaceSecondary }]} />
       </View>
 
       <ScrollView
@@ -158,7 +157,13 @@ export default function InterestsScreen() {
           { paddingBottom: bottomInset + 130 },
         ]}
       >
-        <Animated.View entering={FadeInUp.springify().damping(16).delay(100)} style={isDesktop ? s.desktopCard : undefined}>
+        <Animated.View
+          entering={FadeInUp.springify().damping(16).delay(100)}
+          style={[
+            isDesktop && s.desktopCard,
+            isDesktop && { backgroundColor: colors.surface, borderColor: colors.borderLight },
+          ]}
+        >
           {/* Title */}
           <View style={s.titleBlock}>
             <Text style={[s.title, { color: colors.text }]}>What interests{'\n'}you?</Text>
@@ -200,6 +205,7 @@ export default function InterestsScreen() {
                     icon={icon}
                     isSelected={selectedSet.has(interest)}
                     accentColor={accent}
+                    colors={colors}
                     onPress={() => toggle(interest)}
                   />
                 );
@@ -274,6 +280,7 @@ export default function InterestsScreen() {
                           icon={icon}
                           isSelected={selectedSet.has(interest)}
                           accentColor={accent}
+                          colors={colors}
                           onPress={() => toggle(interest)}
                         />
                       );
@@ -357,10 +364,10 @@ const s = StyleSheet.create({
   },
 
   desktopCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: '#E3EAF6',
+    borderColor: 'transparent',
     padding: Spacing.xl,
     marginTop: Spacing.sm,
   },

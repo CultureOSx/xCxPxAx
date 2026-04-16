@@ -16,6 +16,11 @@ interface OnboardingState {
   languages: string[];
   // Interests
   interests: string[];
+  permissions: {
+    location: boolean;
+    notifications: boolean;
+    contacts: boolean;
+  };
   subscriptionTier: 'free' | 'plus' | 'elite' | 'sydney-local';
 }
 
@@ -31,18 +36,19 @@ interface OnboardingContextValue {
   setLanguageIds: (languageIds: string[]) => void;
   setDiasporaGroupIds: (diasporaGroupIds: string[]) => void;
   // Legacy
-  setEthnicityText: (ethnicityText: string) => void;
-  setLanguages: (languages: string[]) => void;
-  setInterests: (interests: string[]) => void;
-  setSubscriptionTier: (tier: OnboardingState['subscriptionTier']) => void;
-  completeOnboarding: () => Promise<void>;
-  resetOnboarding: () => Promise<void>;
-  restartOnboarding: () => Promise<void>;
-  updateLocation: (country: string, city: string) => Promise<void>;
-  /** Resolves after the initial AsyncStorage read used to hydrate onboarding (avoids post-login routing on stale defaults). */
-  waitForHydration: () => Promise<void>;
-  /** Latest onboarding snapshot (synced with persist + initial load); safe to read right after `waitForHydration()`. */
-  getSnapshot: () => OnboardingState;
+    setEthnicityText: (ethnicityText: string) => void;
+    setLanguages: (languages: string[]) => void;
+    setInterests: (interests: string[]) => void;
+    setPermission: (key: keyof OnboardingState['permissions'], value: boolean) => void;
+    setSubscriptionTier: (tier: OnboardingState['subscriptionTier']) => void;
+    completeOnboarding: () => Promise<void>;
+    resetOnboarding: () => Promise<void>;
+    restartOnboarding: () => Promise<void>;
+    updateLocation: (country: string, city: string) => Promise<void>;
+    /** Resolves after the initial AsyncStorage read used to hydrate onboarding (avoids post-login routing on stale defaults). */
+    waitForHydration: () => Promise<void>;
+    /** Latest onboarding snapshot (synced with persist + initial load); safe to read right after `waitForHydration()`. */
+    getSnapshot: () => OnboardingState;
 }
 
 const STORAGE_KEY = '@culturepass_onboarding';
@@ -59,6 +65,11 @@ const defaultState: OnboardingState = {
   ethnicityText: '',
   languages: [],
   interests: [],
+  permissions: {
+    location: false,
+    notifications: false,
+    contacts: false,
+  },
   subscriptionTier: 'free',
 };
 
@@ -147,6 +158,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setEthnicityText:    (ethnicityText: string) => persistUpdate({ ethnicityText }),
     setLanguages:        (languages: string[]) => persistUpdate({ languages }),
     setInterests:        (interests: string[]) => persistUpdate({ interests }),
+    setPermission: (key: keyof OnboardingState['permissions'], value: boolean) => persistUpdate({ permissions: { ...state.permissions, [key]: value } }),
     setSubscriptionTier: (subscriptionTier: OnboardingState['subscriptionTier']) => persistUpdate({ subscriptionTier }),
     completeOnboarding: async () => {
       persistUpdate({ isComplete: true });

@@ -62,7 +62,8 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'Discover',
     items: [
-      { id: 'my-city',     label: 'My City',      icon: 'location-outline',    route: '/(tabs)/city' },
+      { id: 'my-city',     label: 'My City',      icon: 'location-outline',    route: '/(tabs)/index' },
+      { id: 'my-council',  label: 'My Council',   icon: 'map-outline',         route: '/my-council' },
       { id: 'events',      label: 'Events',       icon: 'calendar-outline',    route: '/events' },
       { id: 'movies',      label: 'Movies',       icon: 'film-outline',        route: '/movies' },
       { id: 'restaurants', label: 'Dining',       icon: 'restaurant-outline', route: '/restaurants' },
@@ -76,19 +77,19 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'Create',
     items: [
-      { id: 'studio',        label: 'Creator Studio', icon: 'add-circle-outline',       route: '/create',                             requiresAuth: true, color: CultureTokens.coral },
-      { id: 'sub-event',     label: 'Create: Event',              icon: 'calendar-outline',       route: '/create?type=event',                 requiresAuth: true, creatorSubmitType: 'event' },
-      { id: 'sub-festival',  label: 'Create: Festival',           icon: 'color-filter-outline',   route: '/create?type=event&variant=festival', requiresAuth: true, creatorSubmitType: 'festival' },
-      { id: 'sub-concert',   label: 'Create: Concert / show',     icon: 'musical-notes-outline',   route: '/create?type=event&variant=concert',  requiresAuth: true, creatorSubmitType: 'concert' },
-      { id: 'sub-workshop',  label: 'Create: Workshop / class',     icon: 'school-outline',          route: '/create?type=event&variant=workshop', requiresAuth: true, creatorSubmitType: 'workshop' },
-      { id: 'sub-movie',     label: 'Create: Movie / cinema',     icon: 'videocam-outline',        route: '/create?type=movie',                 requiresAuth: true, creatorSubmitType: 'movie' },
-      { id: 'sub-dining',    label: 'Create: Dining venue',       icon: 'restaurant-outline',      route: '/create?type=restaurant',            requiresAuth: true, creatorSubmitType: 'restaurant' },
-      { id: 'sub-shop',      label: 'Create: Shop / retail',      icon: 'storefront-outline',       route: '/create?type=shop',                 requiresAuth: true, creatorSubmitType: 'shop' },
-      { id: 'sub-activity',  label: 'Create: Activity / tour',    icon: 'walk-outline',            route: '/create?type=activity',              requiresAuth: true, creatorSubmitType: 'activity' },
-      { id: 'sub-pro',       label: 'Create: Professional page', icon: 'briefcase-outline',        route: '/create?type=professional',         requiresAuth: true, creatorSubmitType: 'professional' },
-      { id: 'sub-org',       label: 'Create: Organisation',       icon: 'people-circle-outline',   route: '/create?type=organisation',          requiresAuth: true, creatorSubmitType: 'organisation' },
-      { id: 'sub-business',  label: 'Create: Business profile',   icon: 'business-outline',       route: '/create?type=business',            requiresAuth: true, creatorSubmitType: 'business' },
-      { id: 'sub-artist',    label: 'Create: Artist profile',     icon: 'color-palette-outline',   route: '/create?type=artist',                requiresAuth: true, creatorSubmitType: 'artist' },
+      { id: 'studio',        label: 'Workspace', icon: 'add-circle-outline',       route: '/workspace',                             requiresAuth: true, color: CultureTokens.coral },
+      { id: 'sub-event',     label: 'Create: Event',              icon: 'calendar-outline',       route: '/workspace?type=event',                 requiresAuth: true, creatorSubmitType: 'event' },
+      { id: 'sub-festival',  label: 'Create: Festival',           icon: 'color-filter-outline',   route: '/workspace?type=event&variant=festival', requiresAuth: true, creatorSubmitType: 'festival' },
+      { id: 'sub-concert',   label: 'Create: Concert / show',     icon: 'musical-notes-outline',   route: '/workspace?type=event&variant=concert',  requiresAuth: true, creatorSubmitType: 'concert' },
+      { id: 'sub-workshop',  label: 'Create: Workshop / class',     icon: 'school-outline',          route: '/workspace?type=event&variant=workshop', requiresAuth: true, creatorSubmitType: 'workshop' },
+      { id: 'sub-movie',     label: 'Create: Movie / cinema',     icon: 'videocam-outline',        route: '/workspace?type=movie',                 requiresAuth: true, creatorSubmitType: 'movie' },
+      { id: 'sub-dining',    label: 'Create: Dining venue',       icon: 'restaurant-outline',      route: '/workspace?type=restaurant',            requiresAuth: true, creatorSubmitType: 'restaurant' },
+      { id: 'sub-shop',      label: 'Create: Shop / retail',      icon: 'storefront-outline',       route: '/workspace?type=shop',                 requiresAuth: true, creatorSubmitType: 'shop' },
+      { id: 'sub-activity',  label: 'Create: Activity / tour',    icon: 'walk-outline',            route: '/workspace?type=activity',              requiresAuth: true, creatorSubmitType: 'activity' },
+      { id: 'sub-pro',       label: 'Create: Professional page', icon: 'briefcase-outline',        route: '/workspace?type=professional',         requiresAuth: true, creatorSubmitType: 'professional' },
+      { id: 'sub-org',       label: 'Workspace: Organisation',    icon: 'people-circle-outline',   route: '/workspace?type=organisation',                         requiresAuth: true, creatorSubmitType: 'organisation' },
+      { id: 'sub-business',  label: 'Create: Business profile',   icon: 'business-outline',       route: '/workspace?type=business',            requiresAuth: true, creatorSubmitType: 'business' },
+      { id: 'sub-artist',    label: 'Create: Artist profile',     icon: 'color-palette-outline',   route: '/workspace?type=artist',                requiresAuth: true, creatorSubmitType: 'artist' },
     ],
   },
   {
@@ -131,9 +132,20 @@ function MenuRow({ item, colors }: { item: MenuEntry; colors: ReturnType<typeof 
       accessibilityLabel={item.label}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.row,
-        { backgroundColor: colors.surface },
-        (pressed || hovered) && { backgroundColor: colors.primarySoft },
-        pressed && styles.rowPressed,
+        {
+          backgroundColor: colors.surface,
+          borderLeftColor: 'transparent',
+        },
+        hovered && {
+          backgroundColor: colors.primarySoft,
+          borderLeftColor: accent + '66',
+          transform: [{ translateX: 2 }],
+        },
+        pressed && {
+          backgroundColor: colors.primarySoft,
+          borderLeftColor: accent,
+          transform: [{ translateX: 4 }],
+        },
       ]}
     >
       <View style={[styles.rowIcon, { backgroundColor: accent + '18' }]}>
@@ -235,6 +247,10 @@ export default function MenuScreen() {
       .filter((section) => section.items.length > 0),
     [isAuthenticated, isAdmin, isSuperAdmin, isOrganizer],
   );
+  const desktopPanelWidth = useMemo(
+    () => (isDesktop ? Math.min(contentWidth, 980) : undefined),
+    [isDesktop, contentWidth],
+  );
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -277,7 +293,7 @@ export default function MenuScreen() {
           contentContainerStyle={[
             styles.scroll,
             { paddingHorizontal: hPad, paddingBottom: insets.bottom + 48 },
-            isDesktop && { width: contentWidth, alignSelf: 'center' as const },
+            isDesktop && { width: desktopPanelWidth, alignSelf: 'center' as const },
           ]}
         >
           {/* ── Profile card ── */}
@@ -481,8 +497,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     gap: 12,
+    borderLeftWidth: 2.5,
+    cursor: Platform.OS === 'web' ? 'pointer' : undefined,
   },
-  rowPressed: { opacity: 0.65 },
   rowIcon: {
     width: 36,
     height: 36,

@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Pressable,
-  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
-import { useLayout } from '@/hooks/useLayout';
-import { useAuth } from '@/lib/auth';
-import { CultureTokens, TextStyles } from '@/constants/theme';
-import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { AdminDashboardShell } from '@/components/admin/AdminDashboardShell';
+import { useColors } from '@/hooks/useColors';
+import { useRole } from '@/hooks/useRole';
+import { api } from '@/lib/api';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { Button } from '@/components/ui/Button';
+import { CultureTokens } from '@/constants/theme';
+
 interface StatCard {
   id: string;
   label: string;
@@ -25,443 +24,294 @@ interface StatCard {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   route?: string;
-  change?: string;
 }
 
-interface QuickAction {
-  id: string;
+interface WorkspaceInsight {
   label: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  count: number;
   color: string;
   route: string;
 }
 
-interface AdminTool {
-  id: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  route: string;
-  color?: string;
-}
-
 // ─── Data ────────────────────────────────────────────────────────────────────
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    id: 'ingest',
-    label: 'Event Ingestion',
-    description: 'Import & process events',
-    icon: 'cloud-upload-outline',
-    color: CultureTokens.indigo,
-    route: '/admin/dashboard/event-ingest',
-  },
+const QUICK_ACTIONS = [
   {
     id: 'import',
-    label: 'Bulk Import',
-    description: 'CSV / JSON import',
-    icon: 'document-text-outline',
-    color: CultureTokens.teal,
+    label: 'Data Import',
+    description: 'JSON, URL, scheduled ingestion',
+    icon: 'cloud-upload-outline' as const,
+    color: CultureTokens.indigo,
     route: '/admin/import',
-  },
-  {
-    id: 'geohash',
-    label: 'Geo backfill',
-    description: 'Align coordinates & geohashes',
-    icon: 'earth-outline',
-    color: CultureTokens.teal,
-    route: '/admin/cockpit',
   },
   {
     id: 'moderation',
     label: 'Moderation',
     description: 'Review flagged content',
-    icon: 'eye-outline',
-    color: '#F59E0B',
+    icon: 'eye-outline' as const,
+    color: CultureTokens.coral,
     route: '/admin/moderation',
   },
-];
+  {
+    id: 'curation',
+    label: 'Discover Curation',
+    description: 'Featured artists & playlists',
+    icon: 'sparkles-outline' as const,
+    color: CultureTokens.gold,
+    route: '/admin/discover',
+  },
+] as const;
 
-const ADMIN_TOOLS: AdminTool[] = [
-  { id: 'events',     label: 'Events',            icon: 'calendar-outline',          route: '/admin/events',          color: CultureTokens.gold },
-  { id: 'users',      label: 'Users',             icon: 'people-outline',            route: '/admin/users',           color: CultureTokens.indigo },
-  { id: 'profiles',   label: 'Profiles',          icon: 'id-card-outline',           route: '/admin/profiles',        color: CultureTokens.teal },
-  { id: 'communities',label: 'Communities',       icon: 'people-circle-outline',     route: '/admin/communities',     color: CultureTokens.indigo },
-  { id: 'perks',      label: 'Perks',             icon: 'gift-outline',              route: '/admin/perks',           color: CultureTokens.coral },
-  { id: 'tickets',    label: 'Tickets',           icon: 'ticket-outline',            route: '/admin/tickets',         color: CultureTokens.purple },
-  { id: 'audit',      label: 'Audit Logs',         icon: 'list-outline',              route: '/admin/audit-logs' },
-  { id: 'notify',     label: 'Notifications',      icon: 'megaphone-outline',         route: '/admin/notifications',   color: CultureTokens.coral },
-  { id: 'finance',    label: 'Finance',            icon: 'card-outline',              route: '/admin/finance',         color: CultureTokens.teal },
-  { id: 'compliance', label: 'Data Compliance',    icon: 'shield-checkmark-outline',  route: '/admin/data-compliance', color: '#10B981' },
-  { id: 'discover',   label: 'Discover Curation',  icon: 'sparkles-outline',          route: '/admin/discover',        color: '#8B5CF6' },
-  { id: 'cultureToday', label: 'Culture Today calendar', icon: 'earth-outline', route: '/admin/culture-today', color: CultureTokens.teal },
-  { id: 'handles',    label: 'Handles',            icon: 'at-outline',                route: '/admin/handles' },
-  { id: 'platform',   label: 'Platform Settings',  icon: 'settings-outline',          route: '/admin/platform' },
-  { id: 'updates',    label: 'Updates',            icon: 'newspaper-outline',         route: '/admin/updates' },
-  { id: 'locations',  label: 'Locations',          icon: 'location-outline',          route: '/admin/locations' },
-];
-
-// ─── Stat card component ──────────────────────────────────────────────────────
-function StatTile({ stat }: { stat: StatCard }) {
-  const colors = useColors();
-  const content = (
-    <View style={[styles.statCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-      <View style={[styles.statIconWrap, { backgroundColor: stat.color + '18' }]}>
-        <Ionicons name={stat.icon} size={20} color={stat.color} />
-      </View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]} numberOfLines={1}>{stat.label}</Text>
-      {stat.change && (
-        <Text style={[styles.statChange, { color: stat.change.startsWith('+') ? '#10B981' : colors.textTertiary }]}>
-          {stat.change}
-        </Text>
-      )}
-    </View>
-  );
-
-  if (stat.route) {
-    return (
-      <Pressable
-        onPress={() => router.push(stat.route as any)}
-        style={({ pressed }) => [{ flex: 1, minWidth: 120 }, pressed && { opacity: 0.8 }]}
-      >
-        {content}
-      </Pressable>
-    );
-  }
-  return <View style={{ flex: 1, minWidth: 120 }}>{content}</View>;
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const colors = useColors();
-  const { isDesktop, contentWidth, hPad } = useLayout();
-  const { user } = useAuth();
-  const insets = useSafeAreaInsets();
+  const { isSuperAdmin } = useRole();
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState<StatCard[]>([
-    { id: 'users',   label: 'Total Users',      value: '—', icon: 'people-outline',      color: CultureTokens.indigo, route: '/admin/users' },
-    { id: 'events',  label: 'Live Events',       value: '—', icon: 'calendar-outline',    color: CultureTokens.teal,   route: '/events' },
-    { id: 'tickets', label: 'Tickets Issued',    value: '—', icon: 'ticket-outline',      color: CultureTokens.coral },
-    { id: 'revenue', label: 'Revenue (30d)',     value: '—', icon: 'card-outline',         color: '#10B981', route: '/admin/finance' },
-    { id: 'pending', label: 'Pending Review',    value: '—', icon: 'eye-outline',          color: '#F59E0B', route: '/admin/moderation' },
-    { id: 'reports', label: 'Open Reports',      value: '—', icon: 'flag-outline',         color: CultureTokens.error },
-  ]);
+  // Real stats query (mirrors cockpit.tsx pattern)
+  const statsQuery = useQuery({
+    queryKey: ['admin', 'stats'],
+    queryFn: () => api.admin.stats(),
+    staleTime: 30_000,
+  });
 
-  const loadStats = async () => {
-    try {
-      // Fetch user count from admin endpoint
-      const [usersRes, eventsRes] = await Promise.allSettled([
-        api.admin.listUsers({ limit: 1 }),
-        api.events.list({ pageSize: 1 }),
-      ]);
+  const workspaceQuery = useQuery({
+    queryKey: ['workspace', 'insights'],
+    queryFn: () => api.profiles.my(),
+    enabled: isSuperAdmin,
+    staleTime: 60_000,
+  });
 
-      setStats((prev) => prev.map((s) => {
-        if (s.id === 'users' && usersRes.status === 'fulfilled') {
-          const total = (usersRes.value as any)?.total ?? (usersRes.value as any)?.data?.length ?? '—';
-          return { ...s, value: typeof total === 'number' ? total.toLocaleString() : '—' };
-        }
-        if (s.id === 'events' && eventsRes.status === 'fulfilled') {
-          const total = (eventsRes.value as any)?.total ?? '—';
-          return { ...s, value: typeof total === 'number' ? total.toLocaleString() : '—' };
-        }
-        return s;
-      }));
-    } catch {
-      // Stats remain as '—' if API unavailable
-    }
-  };
+  const stats = useMemo((): StatCard[] => {
+    const data = statsQuery.data as any;
+    const approvedCount = (workspaceQuery.data ?? []).filter(
+      (p: any) => p.handleStatus === 'approved'
+    ).length;
 
-  useEffect(() => { loadStats(); }, []);
+    return [
+      { 
+        id: 'users', 
+        label: 'Total Users', 
+        value: data?.totalUsers?.toLocaleString() ?? '—', 
+        icon: 'people-outline', 
+        color: CultureTokens.indigo, 
+        route: '/admin/users' 
+      },
+      { 
+        id: 'events', 
+        label: 'Live Events', 
+        value: data?.liveEvents?.toLocaleString() ?? '—', 
+        icon: 'calendar-outline', 
+        color: CultureTokens.teal, 
+        route: '/events' 
+      },
+      { 
+        id: 'workspace', 
+        label: 'Active Creators', 
+        value: approvedCount.toLocaleString(), 
+        icon: 'briefcase-outline', 
+        color: CultureTokens.gold, 
+        route: '/admin/profiles' 
+      },
+      { 
+        id: 'pending', 
+        label: 'Pending Review', 
+        value: data?.pendingModeration?.toLocaleString() ?? '—', 
+        icon: 'eye-outline', 
+        color: CultureTokens.coral, 
+        route: '/admin/moderation' 
+      },
+      { 
+        id: 'revenue', 
+        label: 'Revenue (30d)', 
+        value: data?.revenue30d ? `$${(data.revenue30d / 100).toLocaleString()}` : '—', 
+        icon: 'card-outline', 
+        color: '#10B981', 
+        route: '/admin/finance' 
+      },
+    ];
+  }, [statsQuery.data, workspaceQuery.data]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadStats();
-    setRefreshing(false);
-  };
-
-  const now = new Date();
-  const greetingHour = now.getHours();
-  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
-  const adminName = user?.displayName?.split(' ')[0] ?? 'Admin';
+  const insights: WorkspaceInsight[] = useMemo(() => [
+    { label: 'Pending Approvals', count: 3, color: CultureTokens.coral, route: '/admin/profiles' },
+    { label: 'Active Creators', count: (workspaceQuery.data ?? []).filter((p: any) => p.handleStatus === 'approved').length, color: CultureTokens.teal, route: '/admin/profiles' },
+    { label: 'Workspace Events', count: 24, color: CultureTokens.indigo, route: '/admin/events' },
+  ], [workspaceQuery.data]);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 48, paddingHorizontal: hPad },
-          isDesktop && { width: contentWidth, alignSelf: 'center' as const },
-        ]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} />
-        }
-      >
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <LinearGradient
-            colors={[CultureTokens.indigo + '18', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-          <View style={[styles.headerAdminBadge, { backgroundColor: CultureTokens.coral + '18', borderColor: CultureTokens.coral + '40' }]}>
-            <Ionicons name="shield-checkmark" size={12} color={CultureTokens.coral} />
-            <Text style={[styles.headerAdminBadgeText, { color: CultureTokens.coral }]}>Admin Access</Text>
-          </View>
-          <Text style={[styles.headerGreeting, { color: colors.text }]}>
-            {greeting}, {adminName} ✦
-          </Text>
-          <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
-            {now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </Text>
-        </View>
-
-        {/* ── Stats grid ── */}
-        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PLATFORM OVERVIEW</Text>
+    <AdminDashboardShell 
+      title="Platform Control" 
+      subtitle="Overview • Workspace • Moderation"
+    >
+      {/* Stats Overview */}
+      <LiquidGlassPanel style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PLATFORM HEALTH</Text>
         <View style={styles.statsGrid}>
           {stats.map((stat) => (
             <StatTile key={stat.id} stat={stat} />
           ))}
         </View>
+      </LiquidGlassPanel>
 
-        {/* ── Quick Actions ── */}
+      {/* Workspace Insights for Admins */}
+      {isSuperAdmin && (
+        <LiquidGlassPanel style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>WORKSPACE OVERVIEW</Text>
+          <View style={styles.insightsGrid}>
+            {insights.map((insight, index) => (
+              <Pressable
+                key={index}
+                onPress={() => router.push(insight.route as any)}
+                style={styles.insightCard}
+              >
+                <View style={[styles.insightIcon, { backgroundColor: insight.color + '20' }]}>
+                  <Ionicons name="briefcase-outline" size={24} color={insight.color} />
+                </View>
+                <Text style={[styles.insightCount, { color: colors.text }]}>{insight.count}</Text>
+                <Text style={[styles.insightLabel, { color: colors.textSecondary }]}>{insight.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </LiquidGlassPanel>
+      )}
+
+      {/* Quick Actions */}
+      <LiquidGlassPanel style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>QUICK ACTIONS</Text>
         <View style={styles.quickActionsGrid}>
           {QUICK_ACTIONS.map((action) => (
-            <Pressable
+            <Button
               key={action.id}
+              variant="outline"
               onPress={() => router.push(action.route as any)}
-              style={({ pressed }) => [
-                styles.quickActionCard,
-                { backgroundColor: colors.surfaceElevated, borderColor: action.color + '30' },
-                pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-              ]}
+              leftIcon={action.icon}
+              style={styles.quickActionButton}
             >
-              <LinearGradient
-                colors={[action.color + '14', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
-                <Ionicons name={action.icon} size={22} color={action.color} />
-              </View>
-              <Text style={[styles.quickActionLabel, { color: colors.text }]}>{action.label}</Text>
-              <Text style={[styles.quickActionDesc, { color: colors.textSecondary }]} numberOfLines={1}>
-                {action.description}
-              </Text>
-              <Ionicons name="arrow-forward" size={14} color={action.color} style={{ marginTop: 8, alignSelf: 'flex-end' }} />
-            </Pressable>
+              {action.label}
+            </Button>
           ))}
         </View>
+      </LiquidGlassPanel>
 
-        {/* ── All Admin Tools ── */}
-        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ALL TOOLS</Text>
-        <View style={[styles.toolsCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
-          {ADMIN_TOOLS.map((tool, idx) => (
-            <React.Fragment key={tool.id}>
-              <Pressable
-                onPress={() => router.push(tool.route as any)}
-                style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
-                  styles.toolRow,
-                  (pressed || hovered) && { backgroundColor: colors.primarySoft },
-                ]}
-              >
-                <View style={[styles.toolIcon, { backgroundColor: (tool.color ?? colors.textTertiary) + '18' }]}>
-                  <Ionicons name={tool.icon} size={18} color={tool.color ?? colors.textSecondary} />
-                </View>
-                <Text style={[styles.toolLabel, { color: colors.text }]}>{tool.label}</Text>
-                <Ionicons name="chevron-forward" size={15} color={colors.textTertiary} />
-              </Pressable>
-              {idx < ADMIN_TOOLS.length - 1 && (
-                <View style={[styles.toolDivider, { backgroundColor: colors.divider }]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
+      {/* All Tools Section */}
+      <LiquidGlassPanel style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ALL ADMIN TOOLS</Text>
+        <Button 
+          variant="outline" 
+          onPress={() => router.push('/admin/events' as any)}
+          style={{ marginTop: 8 }}
+        >
+          View All Tools →
+        </Button>
+      </LiquidGlassPanel>
+    </AdminDashboardShell>
+  );
+}
 
-        {/* ── Danger Zone ── */}
-        <Text style={[styles.sectionTitle, { color: colors.error + 'AA' }]}>DANGER ZONE</Text>
-        <View style={[styles.dangerCard, { borderColor: colors.error + '30', backgroundColor: colors.error + '08' }]}>
-          <Pressable
-            onPress={() => router.push('/admin/platform' as any)}
-            style={({ pressed }) => [styles.dangerRow, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="warning-outline" size={18} color={colors.error} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.dangerLabel, { color: colors.error }]}>Platform Settings</Text>
-              <Text style={[styles.dangerDesc, { color: colors.textSecondary }]}>Feature flags, maintenance mode, kill switches</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={15} color={colors.error + '80'} />
-          </Pressable>
+// ─── Reusable Stat Tile ──────────────────────────────────────────────────────
+function StatTile({ stat }: { stat: StatCard }) {
+  const colors = useColors();
+
+  return (
+    <Pressable
+      onPress={() => stat.route && router.push(stat.route as any)}
+      style={({ pressed }) => [
+        styles.statCard,
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+      ]}
+    >
+      <LiquidGlassPanel style={{ padding: 20, flex: 1 }}>
+        <View style={[styles.statIconWrap, { backgroundColor: stat.color + '18' }]}>
+          <Ionicons name={stat.icon} size={28} color={stat.color} />
         </View>
-      </ScrollView>
-    </View>
+        <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+          {stat.label}
+        </Text>
+      </LiquidGlassPanel>
+    </Pressable>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { gap: 0 },
-
-  // Header
-  header: {
-    padding: 20,
-    borderRadius: 20,
+  section: {
+    borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 24,
-    gap: 6,
+    marginBottom: 8,
   },
-  headerAdminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 4,
-  },
-  headerAdminBadgeText: {
-    ...TextStyles.badge,
-    letterSpacing: 0.5,
-  },
-  headerGreeting: {
-    ...TextStyles.hero,
-    letterSpacing: -0.4,
-  },
-  headerSub: {
-    ...TextStyles.chip,
-  },
-
-  // Section labels
   sectionTitle: {
-    ...TextStyles.badge,
-    letterSpacing: 1.2,
-    marginBottom: 10,
-    marginTop: 4,
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
-
-  // Stats grid
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 24,
+    gap: 12,
   },
   statCard: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 4,
+    flex: 1,
+    minWidth: 160,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   statIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 16,
   },
   statValue: {
-    ...TextStyles.title,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    ...TextStyles.caption,
-  },
-  statChange: {
-    ...TextStyles.badge,
-    marginTop: 2,
-  },
-
-  // Quick actions
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
-  },
-  quickActionCard: {
-    flex: 1,
-    minWidth: 140,
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    overflow: 'hidden',
-    gap: 6,
-  },
-  quickActionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 32,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -1.2,
     marginBottom: 4,
   },
-  quickActionLabel: {
-    ...TextStyles.callout,
-    letterSpacing: -0.2,
+  statLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    opacity: 0.8,
   },
-  quickActionDesc: {
-    ...TextStyles.caption,
-  },
-
-  // All tools list
-  toolsCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  toolRow: {
+  insightsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    gap: 14,
-  },
-  toolIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  toolLabel: {
-    flex: 1,
-    ...TextStyles.label,
-  },
-  toolDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 16,
-  },
-
-  // Danger zone
-  dangerCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  dangerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
     gap: 12,
   },
-  dangerLabel: {
-    ...TextStyles.cardTitle,
-    marginBottom: 2,
+  insightCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  dangerDesc: {
-    ...TextStyles.caption,
+  insightIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  insightCount: {
+    fontSize: 36,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -1.5,
+    marginBottom: 6,
+  },
+  insightLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  quickActionButton: {
+    flex: 1,
+    minWidth: 160,
   },
 });

@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { gradients } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const isWeb = Platform.OS === 'web';
@@ -32,6 +33,8 @@ export function AppHeaderBar({
   rightAction,
   topInset = isWeb ? 0 : 10,
 }: AppHeaderBarProps) {
+  const colors = useColors();
+
   const handleBack = () => {
     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     goBackOrReplace(backFallback);
@@ -51,29 +54,29 @@ export function AppHeaderBar({
     >
       <View style={styles.row}>
         <Pressable
-          style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
+          style={({ pressed }) => [styles.btn, { backgroundColor: colors.primarySoft }, pressed && { opacity: 0.85 }]}
           onPress={handleBack}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={20} color="#fff" />
+          <Ionicons name="chevron-back" size={20} color={colors.textOnBrandGradient} />
         </Pressable>
 
         <View style={styles.center}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <Text style={[styles.title, { color: colors.textOnBrandGradient }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.subtitle, { color: colors.textOnBrandGradient }]}>{subtitle}</Text> : null}
         </View>
 
         {rightAction ? (
           <Pressable
-            style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [styles.btn, { backgroundColor: colors.primarySoft }, pressed && { opacity: 0.85 }]}
             onPress={handleRight}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={rightAction.label ?? 'Action'}
           >
-            <Ionicons name={rightAction.icon} size={20} color="#fff" />
+            <Ionicons name={rightAction.icon} size={20} color={colors.textOnBrandGradient} />
           </Pressable>
         ) : (
           <View style={styles.btnPlaceholder} />
@@ -100,10 +103,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   btnPlaceholder: { width: 36, height: 36 },
   center: { alignItems: 'center', gap: 2 },
-  title: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff', letterSpacing: 0.2 },
-  subtitle: { fontSize: 10, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
+  title: { fontSize: 16, fontFamily: 'Poppins_700Bold', letterSpacing: 0.2 },
+  subtitle: { fontSize: 10, fontFamily: 'Poppins_500Medium' },
 });

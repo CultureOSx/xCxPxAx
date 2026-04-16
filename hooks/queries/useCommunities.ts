@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { Community } from '@/shared/schema';
+import type { Community, EventData } from '@/shared/schema';
+import {
+  clearCommunityJoinedMark,
+  getMarkedJoinedCommunityIds,
+  markCommunityJoined,
+} from '@/lib/community-storage';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 
@@ -9,6 +14,8 @@ export const communityKeys = {
   list: (params?: CommunitiesListParams) => ['/api/communities', 'list', params] as const,
   detail: (id: string) => ['/api/communities', id] as const,
   joined: () => ['/api/communities', 'joined'] as const,
+  members: (id: string) => ['/api/communities', id, 'members'] as const,
+  events: (id: string) => ['/api/communities', id, 'events'] as const,
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,10 +47,45 @@ export function useCommunity(id: string) {
 }
 
 export function useJoinedCommunities() {
-  return useQuery<{ communityIds: string[] }>({
+  const localJoinedQuery = useQuery<string[]>({
+    queryKey: [...communityKeys.joined(), 'local'],
+    queryFn: () => getMarkedJoinedCommunityIds(),
+    staleTime: Infinity,
+  });
+
+  const remoteJoinedQuery = useQuery<{ communityIds: string[] }>({
     queryKey: communityKeys.joined(),
     queryFn: () => api.communities.joined(),
     staleTime: 1000 * 60 * 2,
+  });
+
+  const mergedIds = Array.from(
+    new Set([...(localJoinedQuery.data ?? []), ...(remoteJoinedQuery.data?.communityIds ?? [])]),
+  );
+
+  return {
+    ...remoteJoinedQuery,
+    data: { communityIds: mergedIds },
+    isLoading: remoteJoinedQuery.isLoading && localJoinedQuery.isLoading,
+    isFetching: remoteJoinedQuery.isFetching || localJoinedQuery.isFetching,
+  };
+}
+
+export function useCommunityMembers(id: string) {
+  return useQuery({
+    queryKey: communityKeys.members(id),
+    queryFn: () => api.communities.members(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+export function useCommunityRecommendedEvents(id: string) {
+  return useQuery<EventData[]>({
+    queryKey: communityKeys.events(id),
+    queryFn: () => api.communities.recommendedEvents(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -51,8 +93,13 @@ export function useJoinCommunity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.communities.join(id),
-    onSuccess: () => {
+    onSuccess: async (_result, id) => {
+      await markCommunityJoined(id);
+      queryClient.setQueryData([...communityKeys.joined(), 'local'], (prev: string[] | undefined) =>
+        Array.from(new Set([...(prev ?? []), id])),
+      );
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },
   });
 }
@@ -61,8 +108,13 @@ export function useLeaveCommunity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.communities.leave(id),
-    onSuccess: () => {
+    onSuccess: async (_result, id) => {
+      await clearCommunityJoinedMark(id);
+      queryClient.setQueryData([...communityKeys.joined(), 'local'], (prev: string[] | undefined) =>
+        (prev ?? []).filter((communityId) => communityId !== id),
+      );
       queryClient.invalidateQueries({ queryKey: communityKeys.all });
+      queryClient.invalidateQueries({ queryKey: communityKeys.joined() });
     },
   });
 }

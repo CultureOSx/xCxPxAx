@@ -7,8 +7,8 @@
 ---
 
 **Project:** CulturePass
-**Generated:** 2026-04-07 13:01:04
-**Category:** Senior Care/Elderly
+**Generated:** 2026-04-17 01:46:21
+**Category:** Luxury/Premium Brand
 
 ---
 
@@ -18,24 +18,24 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| Secondary | `#334155` | `--color-secondary` |
-| CTA/Accent | `#0369A1` | `--color-cta` |
-| Background | `#F8FAFC` | `--color-background` |
-| Text | `#020617` | `--color-text` |
+| Primary | `#FFFFFF` | `--color-primary` |
+| Secondary | `#E5E5E5` | `--color-secondary` |
+| CTA/Accent | `#007AFF` | `--color-cta` |
+| Background | `#888888` | `--color-background` |
+| Text | `#000000` | `--color-text` |
 
-**Color Notes:** High contrast navy + blue
+**Color Notes:** Glass white + system blue
 
 ### Typography
 
-- **Heading Font:** Noto Serif TC
-- **Body Font:** Noto Sans TC
-- **Mood:** chinese, traditional, elegant, cultural, multilingual, readable
-- **Google Fonts:** [Noto Serif TC + Noto Sans TC](https://fonts.google.com/share?selection.family=Noto+Sans+TC:wght@300;400;500;700|Noto+Serif+TC:wght@400;500;600;700)
+- **Heading Font:** Inter
+- **Body Font:** Inter
+- **Mood:** spatial, legible, glass, system, clean, neutral
+- **Google Fonts:** [Inter + Inter](https://fonts.google.com/share?selection.family=Inter:wght@300;400;500;600)
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 ```
 
 ### Spacing Variables
@@ -68,7 +68,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #0369A1;
+  background: #007AFF;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -85,8 +85,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -99,7 +99,7 @@
 
 ```css
 .card {
-  background: #F8FAFC;
+  background: #888888;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -125,9 +125,9 @@
 }
 
 .input:focus {
-  border-color: #0F172A;
+  border-color: #FFFFFF;
   outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
+  box-shadow: 0 0 0 3px #FFFFFF20;
 }
 ```
 
@@ -153,29 +153,31 @@
 
 ## Style Guidelines
 
-**Style:** Accessible & Ethical
+**Style:** Liquid Glass
 
-**Keywords:** High contrast, large text (16px+), keyboard navigation, screen reader friendly, WCAG compliant, focus state, semantic
+**Keywords:** Flowing glass, morphing, smooth transitions, fluid effects, translucent, animated blur, iridescent, chromatic aberration
 
-**Best For:** Government, healthcare, education, inclusive products, large audience, legal compliance, public
+**Best For:** Premium SaaS, high-end e-commerce, creative platforms, branding experiences, luxury portfolios
 
-**Key Effects:** Clear focus rings (3-4px), ARIA labels, skip links, responsive design, reduced motion, 44x44px touch targets
+**Key Effects:** Morphing elements (SVG/CSS), fluid animations (400-600ms curves), dynamic blur (backdrop-filter), color transitions
 
 ### Page Pattern
 
-**Pattern Name:** App Store Style Landing
+**Pattern Name:** Horizontal Scroll Journey
 
-- **Conversion Strategy:** Show real screenshots. Include ratings (4.5+ stars). QR code for mobile. Platform-specific CTAs.
-- **CTA Placement:** Download buttons prominent (App Store + Play Store) throughout
-- **Section Order:** 1. Hero with device mockup, 2. Screenshots carousel, 3. Features with icons, 4. Reviews/ratings, 5. Download CTAs
+- **Conversion Strategy:** Immersive product discovery. High engagement. Keep navigation visible.
+28,Bento Grid Showcase,bento,  grid,  features,  modular,  apple-style,  showcase", 1. Hero, 2. Bento Grid (Key Features), 3. Detail Cards, 4. Tech Specs, 5. CTA, Floating Action Button or Bottom of Grid, Card backgrounds: #F5F5F7 or Glass. Icons: Vibrant brand colors. Text: Dark., Hover card scale (1.02), video inside cards, tilt effect, staggered reveal, Scannable value props. High information density without clutter. Mobile stack.
+29,Interactive 3D Configurator,3d,  configurator,  customizer,  interactive,  product", 1. Hero (Configurator), 2. Feature Highlight (synced), 3. Price/Specs, 4. Purchase, Inside Configurator UI + Sticky Bottom Bar, Neutral studio background. Product: Realistic materials. UI: Minimal overlay., Real-time rendering, material swap animation, camera rotate/zoom, light reflection, Increases ownership feeling. 360 view reduces return rates. Direct add-to-cart.
+30,AI-Driven Dynamic Landing,ai,  dynamic,  personalized,  adaptive,  generative", 1. Prompt/Input Hero, 2. Generated Result Preview, 3. How it Works, 4. Value Prop, Input Field (Hero) + 'Try it' Buttons, Adaptive to user input. Dark mode for compute feel. Neon accents., Typing text effects, shimmering generation loaders, morphing layouts, Immediate value demonstration. 'Show, don't tell'. Low friction start.
+- **CTA Placement:** Floating Sticky CTA or End of Horizontal Track
+- **Section Order:** 1. Intro (Vertical), 2. The Journey (Horizontal Track), 3. Detail Reveal, 4. Vertical Footer
 
 ---
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Small text
-- ❌ Complex navigation
-- ❌ AI purple/pink gradients
+- ❌ Cheap visuals
+- ❌ Fast animations
 
 ### Additional Forbidden Patterns
 

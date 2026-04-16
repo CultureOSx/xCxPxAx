@@ -24,8 +24,8 @@ import { api } from '@/lib/api';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
-import { CultureTokens, TextStyles } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
+import { CultureTokens, TextStyles, CardTokens, FontFamily } from '@/constants/theme';
 import type { EventData, Ticket } from '@/shared/schema';
 
 const IS_WEB = Platform.OS === 'web';
@@ -157,7 +157,7 @@ export default function CalendarSyncScreen() {
           ]}
         >
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(220)}>
-            <LiquidGlassPanel borderRadius={20} contentStyle={styles.heroCard}>
+            <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={styles.heroCard}>
               <View style={[styles.heroIcon, { backgroundColor: CultureTokens.indigo + '18' }]}>
                 <Ionicons
                   name={prefs.deviceConnected ? 'checkmark-done-circle' : 'calendar-outline'}
@@ -173,11 +173,11 @@ export default function CalendarSyncScreen() {
                   Sync CulturePass tickets with Apple/Google calendar and avoid scheduling conflicts.
                 </Text>
               </View>
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
 
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(40).duration(220)}>
-            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+            <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={styles.card}>
               <Row
                 icon={IS_WEB ? 'download-outline' : 'phone-portrait-outline'}
                 iconColor={CultureTokens.indigo}
@@ -197,7 +197,7 @@ export default function CalendarSyncScreen() {
                       value={prefs.deviceConnected}
                       onValueChange={() => void handleDeviceToggle()}
                       trackColor={{ false: colors.borderLight, true: CultureTokens.indigo + '70' }}
-                      thumbColor={prefs.deviceConnected ? CultureTokens.indigo : '#fff'}
+                      thumbColor={prefs.deviceConnected ? CultureTokens.indigo : colors.surface}
                       accessibilityLabel="Toggle device calendar connection"
                     />
                   )
@@ -218,11 +218,11 @@ export default function CalendarSyncScreen() {
                   </Pressable>
                 </>
               ) : null}
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
 
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(80).duration(220)}>
-            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+            <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={styles.card}>
               <Row
                 icon="eye-outline"
                 iconColor={CultureTokens.teal}
@@ -233,7 +233,7 @@ export default function CalendarSyncScreen() {
                     value={prefs.showPersonalEvents}
                     onValueChange={(v) => void setShowPersonalEvents(v)}
                     trackColor={{ false: colors.borderLight, true: CultureTokens.teal + '70' }}
-                    thumbColor={prefs.showPersonalEvents ? CultureTokens.teal : '#fff'}
+                    thumbColor={prefs.showPersonalEvents ? CultureTokens.teal : colors.surface}
                     disabled={!prefs.deviceConnected}
                   />
                 }
@@ -249,16 +249,16 @@ export default function CalendarSyncScreen() {
                     value={prefs.autoAddTickets}
                     onValueChange={(v) => void setAutoAddTickets(v)}
                     trackColor={{ false: colors.borderLight, true: CultureTokens.coral + '70' }}
-                    thumbColor={prefs.autoAddTickets ? CultureTokens.coral : '#fff'}
+                    thumbColor={prefs.autoAddTickets ? CultureTokens.coral : colors.surface}
                     disabled={!prefs.deviceConnected && !IS_WEB}
                   />
                 }
               />
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
 
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(120).duration(220)}>
-            <LiquidGlassPanel borderRadius={18} contentStyle={styles.card}>
+            <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={styles.card}>
               <Row
                 icon="ticket-outline"
                 iconColor={CultureTokens.gold}
@@ -289,16 +289,16 @@ export default function CalendarSyncScreen() {
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
                   ]}
                 >
-                  <Ionicons name="download-outline" size={15} color="#fff" />
-                  <Text style={styles.primaryBtnText}>Sync Tickets</Text>
+                  <Ionicons name="download-outline" size={15} color={colors.textOnBrandGradient} />
+                  <Text style={[styles.primaryBtnText, { color: colors.textOnBrandGradient }]}>Sync Tickets</Text>
                 </Pressable>
               </View>
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
         </ScrollView>
 
         {isSyncing ? (
-          <View style={styles.syncOverlay}>
+          <View style={[styles.syncOverlay, { backgroundColor: colors.overlay }]}>
             <View style={[styles.syncPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
               <ActivityIndicator size="small" color={CultureTokens.indigo} />
               <Text style={[styles.syncText, { color: colors.text }]}>Syncing...</Text>
@@ -415,11 +415,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  primaryBtnText: { ...TextStyles.captionSemibold, color: '#fff', fontFamily: 'Poppins_700Bold' },
+  primaryBtnText: { ...TextStyles.captionSemibold, fontFamily: FontFamily.bold },
 
   syncOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -9,8 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { api } from '@/lib/api';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, gradients, TextStyles, CardTokens, FontFamily } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const PRIVACY_SETTINGS = [
@@ -94,32 +94,32 @@ export default function PrivacySettingsScreen() {
         style={privacyAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={s.headerInner}
       >
-        <Pressable
-          style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => goBackOrReplace('/settings')}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={s.headerTitle}>Privacy & Security</Text>
-        <View style={{ width: 34 }} />
-      </LiquidGlassPanel>
+        <View style={s.headerInner}>
+          <Pressable
+            style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
+            onPress={() => goBackOrReplace('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={s.headerTitle}>Privacy & Security</Text>
+          <View style={{ width: 34 }} />
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 16 }}>
         {/* Toggles */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Privacy</Text>
-          <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 0 }}>
+          <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={{ padding: 0 }}>
             {isLoading ? (
               <ActivityIndicator color={CultureTokens.indigo} style={{ marginVertical: 20 }} />
             ) : (
@@ -150,7 +150,7 @@ export default function PrivacySettingsScreen() {
                 </View>
               ))
             )}
-          </LiquidGlassPanel>
+          </CardSurface>
         </View>
 
         {/* Danger zone */}
@@ -187,8 +187,8 @@ export default function PrivacySettingsScreen() {
                   accessibilityRole="button"
                 >
                   {deleteMutation.isPending
-                    ? <ActivityIndicator color="#fff" size="small" />
-                    : <Text style={s.deleteConfirmBtnText}>Delete Forever</Text>
+                    ? <ActivityIndicator color={colors.textOnBrandGradient} size="small" />
+                    : <Text style={[s.deleteConfirmBtnText, { color: colors.textOnBrandGradient }]}>Delete Forever</Text>
                   }
                 </Pressable>
               </View>
@@ -235,7 +235,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   statusText:   { ...TextStyles.captionSemibold, color: colors.textSecondary },
 
   deleteBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: CultureTokens.coral + '30', backgroundColor: CultureTokens.coral + '08' },
-  deleteBtnText:{ ...TextStyles.headline, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+  deleteBtnText:{ ...TextStyles.headline, fontFamily: FontFamily.bold, color: CultureTokens.coral },
   dangerNote:   { ...TextStyles.caption, marginTop: 12, lineHeight: 18, color: colors.textTertiary, textAlign: 'center', paddingHorizontal: 10 },
 
   deleteConfirmCard:     {
@@ -251,7 +251,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   deleteError:           { ...TextStyles.captionSemibold, marginBottom: 10, color: CultureTokens.coral },
   deleteConfirmRow:      { flexDirection: 'row', gap: 12, marginTop: 4 },
   cancelBtn:             { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, borderWidth: 1 },
-  cancelBtnText:         { ...TextStyles.headline, fontFamily: 'Poppins_700Bold' },
+  cancelBtnText:         { ...TextStyles.headline, fontFamily: FontFamily.bold },
   deleteConfirmBtn:      { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, backgroundColor: CultureTokens.coral },
-  deleteConfirmBtnText:  { ...TextStyles.headline, fontFamily: 'Poppins_700Bold', color: '#fff' },
+  deleteConfirmBtnText:  { ...TextStyles.headline, fontFamily: FontFamily.bold },
 });

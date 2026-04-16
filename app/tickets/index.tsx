@@ -28,7 +28,7 @@ import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
 import { ticketKeys } from '@/hooks/queries/keys';
-import { CultureTokens, TextStyles } from '@/constants/theme';
+import { CultureTokens, TextStyles, FontFamily } from '@/constants/theme';
 import type { Ticket } from '@/shared/schema';
 
 const IS_WEB = Platform.OS === 'web';
@@ -327,13 +327,13 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   metaText: { ...TextStyles.caption, flex: 1 },
   divider: { height: 1, marginVertical: 10, opacity: 0.55 },
-  small: { fontFamily: 'Poppins_500Medium', fontSize: 12 },
+  small: { fontFamily: FontFamily.medium, fontSize: 12 },
   actionsInline: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconBtn: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   cancelText: { ...TextStyles.captionSemibold },
 
   stateWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 90, gap: 10 },
-  stateTitle: { fontFamily: 'Poppins_700Bold', fontSize: 19 },
+  stateTitle: { fontFamily: FontFamily.bold, fontSize: 19 },
   stateSub: { ...TextStyles.cardBody, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
 });
 

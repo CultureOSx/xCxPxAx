@@ -44,6 +44,33 @@ const CATEGORIES = [
 ] as const;
 
 const FALLBACK_CULTURES = ['Indian', 'Chinese', 'Korean', 'Nigerian', 'Greek', 'Italian'];
+const COMMUNITY_VALUE_PILLARS = [
+  {
+    title: 'Brand',
+    body: 'Reinforce your cultural identity',
+    icon: 'ribbon-outline' as const,
+  },
+  {
+    title: 'Organize',
+    body: 'Structure your community',
+    icon: 'layers-outline' as const,
+  },
+  {
+    title: 'Engage',
+    body: 'Drive user engagement',
+    icon: 'sparkles-outline' as const,
+  },
+  {
+    title: 'Empower',
+    body: 'Enable independent networking',
+    icon: 'people-outline' as const,
+  },
+  {
+    title: 'Monetize',
+    body: 'Facilitate revenue generation',
+    icon: 'cash-outline' as const,
+  },
+] as const;
 
 function matchesCategory(item: Community, selected: string): boolean {
   if (selected === 'All') return true;
@@ -67,7 +94,13 @@ export default function CommunityScreen() {
   const [selectedCulture, setSelectedCulture] = useState<string | null>(null);
   const [selectedPreview, setSelectedPreview] = useState<Community | null>(null);
 
-  const { data: communitiesRaw = [], isLoading, isRefetching, refetch } = useCommunities({
+  const {
+    data: communitiesRaw = [],
+    isLoading,
+    isRefetching,
+    isError,
+    refetch,
+  } = useCommunities({
     city: onboarding?.city,
     country: onboarding?.country,
     nationalityId: onboarding?.nationalityId,
@@ -177,8 +210,8 @@ export default function CommunityScreen() {
                 subtitle="Join trusted groups, discover local meetups, and create a stronger sense of belonging."
                 stat={`${filteredCommunities.length} communities available`}
                 badge="Community Hub"
-                ctaLabel="Create a Community"
-                ctaRoute="/create?type=organisation"
+                ctaLabel="Create a Hub"
+                ctaRoute="/workspace?type=organisation"
                 icon="people"
               />
 
@@ -186,19 +219,27 @@ export default function CommunityScreen() {
 
               <View
                 style={[
+                  styles.filtersCard,
                   {
-                    marginTop: 8,
-                    marginBottom: 10,
-                    borderRadius: MAIN_TAB_UI.cardRadius,
-                    borderWidth: 1,
                     borderColor: colors.borderLight,
                     backgroundColor: colors.surface,
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    gap: 8,
-                  },
+                  }
                 ]}
               >
+                <View style={styles.filtersHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.filtersTitle, { color: colors.text }]}>Filter communities</Text>
+                    <Text style={[styles.filtersSubtitle, { color: colors.textSecondary }]}>
+                      Refine by category and culture
+                    </Text>
+                  </View>
+                  <View style={[styles.resultsBadge, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Text style={[styles.resultsBadgeText, { color: colors.textSecondary }]}>
+                      {filteredCommunities.length} shown
+                    </Text>
+                  </View>
+                </View>
+
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
                   {CATEGORIES.map((cat) => (
                     <AnimatedFilterChip
@@ -250,13 +291,62 @@ export default function CommunityScreen() {
                 </ScrollView>
               </View>
 
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
-                  {filteredCommunities.length} communities in {locationLabel}
-                </Text>
-                <Pressable onPress={() => router.push('/create?type=organisation')} accessibilityRole="button" accessibilityLabel="Create community">
-                  <Text style={[styles.summaryLink, { color: CultureTokens.indigo }]}>Create</Text>
+              <View style={[styles.summaryRow, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.summaryTitle, { color: colors.text }]}>Communities near you</Text>
+                  <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+                    {filteredCommunities.length} communities in {locationLabel}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => router.push('/workspace?type=organisation')}
+                  style={({ pressed }) => [
+                    styles.summaryCta,
+                    {
+                      backgroundColor: CultureTokens.indigo,
+                      opacity: pressed ? 0.92 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create community"
+                >
+                  <Ionicons name="add" size={14} color={colors.surface} />
+                  <Text style={[styles.summaryCtaText, { color: colors.surface }]}>Create</Text>
                 </Pressable>
+              </View>
+
+              <View style={[styles.valueCard, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+                <View style={styles.valueHeader}>
+                  <View style={[styles.valueBadge, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '35' }]}>
+                    <Ionicons name="trophy-outline" size={13} color={CultureTokens.indigo} />
+                    <Text style={styles.valueBadgeText}>Badges</Text>
+                  </View>
+                  <Text style={[styles.valueTitle, { color: colors.text }]}>Build communities that grow with participation</Text>
+                  <Text style={[styles.valueSub, { color: colors.textSecondary }]}>
+                    Boost community activity with rewards that make participation more meaningful and fun.
+                  </Text>
+                </View>
+
+                <View style={styles.valueGrid}>
+                  {COMMUNITY_VALUE_PILLARS.map((pillar) => (
+                    <View
+                      key={pillar.title}
+                      style={[
+                        styles.valuePillar,
+                        {
+                          backgroundColor: colors.surfaceElevated,
+                          borderColor: colors.borderLight,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.valueIconWrap, { backgroundColor: CultureTokens.indigo + '12' }]}>
+                        <Ionicons name={pillar.icon} size={16} color={CultureTokens.indigo} />
+                      </View>
+                      <Text style={[styles.valuePillarTitle, { color: colors.text }]}>{pillar.title}</Text>
+                      <Text style={[styles.valuePillarBody, { color: colors.textSecondary }]}>{pillar.body}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
           }
@@ -273,6 +363,28 @@ export default function CommunityScreen() {
               <View style={styles.loadingWrap}>
                 <ActivityIndicator color={CultureTokens.indigo} />
               </View>
+            ) : isError ? (
+              <View style={styles.emptyState}>
+                <View style={[styles.emptyIcon, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}>
+                  <Ionicons name="alert-circle-outline" size={28} color={colors.textTertiary} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Couldn&apos;t load communities</Text>
+                <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                  Check your connection and try again.
+                </Text>
+                <Pressable
+                  onPress={() => void refetch()}
+                  style={({ pressed }) => [
+                    styles.emptyCta,
+                    { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading communities"
+                >
+                  <Ionicons name="refresh" size={15} color={colors.surface} />
+                  <Text style={[styles.emptyCtaText, { color: colors.surface }]}>Retry</Text>
+                </Pressable>
+              </View>
             ) : (
               <View style={styles.emptyState}>
                 <View style={[styles.emptyIcon, { borderColor: colors.borderLight, backgroundColor: colors.surfaceElevated }]}>
@@ -283,7 +395,7 @@ export default function CommunityScreen() {
                   Try changing your filters or start a new community in your region.
                 </Text>
                 <Pressable
-                  onPress={() => router.push('/create?type=organisation')}
+                  onPress={() => router.push('/workspace?type=organisation')}
                   style={({ pressed }) => [
                     styles.emptyCta,
                     { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.9 : 1 },
@@ -291,8 +403,8 @@ export default function CommunityScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Create a community"
                 >
-                  <Ionicons name="add" size={15} color="#fff" />
-                  <Text style={styles.emptyCtaText}>Create Community</Text>
+                  <Ionicons name="add" size={15} color={colors.surface} />
+                  <Text style={[styles.emptyCtaText, { color: colors.surface }]}>Create Community</Text>
                 </Pressable>
               </View>
             )
@@ -307,9 +419,42 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  ambient: { ...StyleSheet.absoluteFillObject, opacity: 0.5 },
+  ambient: { ...StyleSheet.absoluteFillObject, opacity: 0.18 },
 
   row: { gap: 7, alignItems: 'center' },
+  filtersCard: {
+    marginTop: 8,
+    marginBottom: 10,
+    borderRadius: MAIN_TAB_UI.cardRadius,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    gap: 10,
+  },
+  filtersHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: FontFamily.bold,
+  },
+  filtersSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: FontFamily.medium,
+  },
+  resultsBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  resultsBadgeText: { fontSize: 11, fontFamily: FontFamily.semibold },
   clearBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -330,13 +475,94 @@ const styles = StyleSheet.create({
   cultureChipText: { fontSize: 12, fontFamily: FontFamily.semibold },
 
   summaryRow: {
-    marginTop: 2,
+    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
   },
+  summaryTitle: { fontSize: 13, lineHeight: 17, fontFamily: FontFamily.bold },
   summaryText: { fontSize: 12, fontFamily: FontFamily.medium },
-  summaryLink: { fontSize: 12, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryCta: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    minWidth: 76,
+    justifyContent: 'center',
+  },
+  summaryCtaText: { fontSize: 12, fontFamily: FontFamily.bold, letterSpacing: 0.2 },
+  valueCard: {
+    marginTop: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 12,
+  },
+  valueHeader: {
+    gap: 6,
+  },
+  valueBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  valueBadgeText: {
+    fontSize: 11,
+    fontFamily: FontFamily.semibold,
+    color: CultureTokens.indigo,
+  },
+  valueTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: FontFamily.bold,
+  },
+  valueSub: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: FontFamily.medium,
+  },
+  valueGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  valuePillar: {
+    minWidth: 150,
+    flexGrow: 1,
+    flexBasis: 160,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    gap: 8,
+  },
+  valueIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  valuePillarTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: FontFamily.bold,
+  },
+  valuePillarBody: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: FontFamily.medium,
+  },
 
   loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyState: { alignItems: 'center', paddingVertical: 70, paddingHorizontal: 30, gap: 12 },
@@ -352,6 +578,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
-  emptyCtaText: { color: '#fff', fontSize: 13, fontFamily: FontFamily.bold },
+  emptyCtaText: { fontSize: 13, fontFamily: FontFamily.bold },
 });
 

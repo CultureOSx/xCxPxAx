@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { useColors } from '@/hooks/useColors';
-import { CultureTokens, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, gradients, TextStyles, CardTokens } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { goBackOrReplace } from '@/lib/navigation';
 
 const NOTIFICATION_SETTINGS = [
@@ -43,31 +43,31 @@ export default function NotificationSettingsScreen() {
         style={subAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={s.headerInner}
       >
-        <Pressable
-          style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => goBackOrReplace('/settings')}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={s.headerTitle}>Notifications</Text>
-        <View style={{ width: 34 }} />
-      </LiquidGlassPanel>
+        <View style={s.headerInner}>
+          <Pressable
+            style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]}
+            onPress={() => goBackOrReplace('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={s.headerTitle}>Notifications</Text>
+          <View style={{ width: 34 }} />
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 16 }}>
         <View style={s.section}>
           <Text style={s.sectionTitle}>Preferences</Text>
-          <LiquidGlassPanel borderRadius={20} contentStyle={{ padding: 0 }}>
+          <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={{ padding: 0 }}>
             {NOTIFICATION_SETTINGS.map((item, i) => (
               <View key={item.key}>
                 <View style={s.settingRow}>
@@ -88,7 +88,7 @@ export default function NotificationSettingsScreen() {
                 {i < NOTIFICATION_SETTINGS.length - 1 && <View style={s.divider} />}
               </View>
             ))}
-          </LiquidGlassPanel>
+          </CardSurface>
         </View>
 
         <View style={s.note}>

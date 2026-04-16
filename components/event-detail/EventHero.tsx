@@ -13,6 +13,7 @@ interface EventHeroProps {
   uploading: boolean;
   isDesktop: boolean;
   topInset: number;
+  handleBack: () => void;
   handleShare: () => void;
   handleSave: () => void;
   handlePickCover?: () => void;
@@ -24,6 +25,7 @@ export function EventHero({
   heroDisplayUri,
   isDesktop,
   topInset,
+  handleBack,
   handleShare,
   handleSave,
   saved,
@@ -35,6 +37,16 @@ export function EventHero({
       {heroDisplayUri ? (
         <Image source={{ uri: heroDisplayUri }} style={{ width: '100%', height }} contentFit="cover" />
       ) : null}
+      <View style={{ position: 'absolute', top: topInset + 12, left: 16 }}>
+        <Pressable
+          onPress={handleBack}
+          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color="#fff" />
+        </Pressable>
+      </View>
       <View style={{ position: 'absolute', top: topInset + 12, right: 16, flexDirection: 'row', gap: 10 }}>
         <Pressable
           onPress={handleShare}

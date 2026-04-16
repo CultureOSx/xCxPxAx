@@ -146,8 +146,8 @@ export EXPO_PUBLIC_API_URL=http://127.0.0.1:5001/<project>/us-central1/api/
 # Feature rollout phase (server / tooling)
 export ROLLOUT_PHASE=internal   # internal | pilot | half | full
 
-# Optional Firebase emulator wiring in Expo dev
-export EXPO_PUBLIC_USE_FIREBASE_EMULATORS=true
+# Optional Firebase emulator wiring in Expo dev (leave false unless you run emulators)
+export EXPO_PUBLIC_USE_FIREBASE_EMULATORS=false
 export EXPO_PUBLIC_FIREBASE_EMULATOR_HOST=127.0.0.1
 ```
 

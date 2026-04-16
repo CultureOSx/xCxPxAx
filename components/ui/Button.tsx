@@ -34,7 +34,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ButtonTokens, Duration, SpringConfig, CultureTokens, gradients } from '@/constants/theme';
+import { ButtonTokens, Duration, SpringConfig, gradients, OlympicsColors } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold' | 'outline' | 'gradient';
@@ -133,11 +133,11 @@ export function Button({
   };
 
   const variantColors = {
-    primary:   { bg: CultureTokens.indigo,     border: 'transparent', label: colors.textInverse },
-    secondary: { bg: 'rgba(0, 102, 204, 0.12)', border: CultureTokens.indigo, label: CultureTokens.indigo },
-    ghost:     { bg: 'transparent',      border: 'transparent', label: CultureTokens.indigo },
-    danger:    { bg: CultureTokens.coral,       border: 'transparent', label: colors.textInverse },
-    gold:      { bg: CultureTokens.gold,        border: 'transparent', label: '#1B0F2E' }, // Dark text against gold
+    primary:   { bg: colors.primary, border: 'transparent', label: colors.textInverse }, // Black/white per mode with high contrast
+    secondary: { bg: 'rgba(24, 24, 27, 0.1)', border: colors.primary, label: colors.primary }, // Glass outline black/white
+    ghost:     { bg: 'transparent',      border: 'transparent', label: colors.primary },
+    danger:    { bg: OlympicsColors.red, border: 'transparent', label: colors.textInverse },
+    gold:      { bg: OlympicsColors.yellow, border: 'transparent', label: '#18181B' }, // Dark text against yellow
     outline:   { bg: 'transparent',      border: colors.border,  label: colors.text },
     gradient:  { bg: 'transparent',      border: 'transparent', label: colors.textInverse },
   } as const;

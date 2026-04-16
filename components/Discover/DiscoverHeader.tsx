@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/auth';
 import { FontFamily, FontSize, LineHeight, LetterSpacing, Vitrine } from '@/constants/theme';
 import { useDiscoverVitrine } from '@/components/Discover/DiscoverVitrineContext';
 import { LocationPicker } from '@/components/LocationPicker';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { BRAND_TAGLINE_SHORT, TabPageChromeRow } from '@/components/tabs/TabHeaderChrome';
 import { TabHeaderNativeShell } from '@/components/tabs/TabHeaderNativeShell';
 
@@ -61,18 +60,16 @@ function DiscoverHeaderComponent({
   const renderTopBar = () => {
     if (Platform.OS === 'web') {
       return (
-        <LiquidGlassPanel
-          borderRadius={0}
-          bordered={false}
+        <View
           style={{
             zIndex: 100,
+            backgroundColor: colors.surface,
             borderBottomWidth: StyleSheet.hairlineWidth * 2,
             borderBottomColor: colors.borderLight,
           }}
-          contentStyle={{ paddingTop: 0 }}
         >
           {TopBarContent}
-        </LiquidGlassPanel>
+        </View>
       );
     }
     return (

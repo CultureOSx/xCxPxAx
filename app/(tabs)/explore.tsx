@@ -14,8 +14,7 @@ import { useLocations } from '@/hooks/useLocations';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useEventsList } from '@/hooks/queries/useEvents';
-import { CultureTokens, CategoryColors, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, CategoryColors, gradients, TextStyles, FontFamily } from '@/constants/theme';
 import { captureEvent } from '@/lib/analytics';
 import { isIndigenousEvent } from '@/lib/indigenous';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -307,19 +306,18 @@ export default function ExploreScreen() {
         />
 
         <View style={{ paddingTop: topInset }}>
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: StyleSheet.hairlineWidth * 2,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={{
-              paddingHorizontal: hPad,
-              paddingTop: 16,
-              paddingBottom: 16,
-              gap: 14,
-            }}
+          <View
+            style={[
+              {
+                backgroundColor: colors.surface,
+                borderBottomWidth: StyleSheet.hairlineWidth * 2,
+                borderBottomColor: colors.borderLight,
+                paddingHorizontal: hPad,
+                paddingTop: 16,
+                paddingBottom: 16,
+                gap: 14,
+              },
+            ]}
           >
             <View style={s.header}>
               <View style={s.headerTitles}>
@@ -330,7 +328,7 @@ export default function ExploreScreen() {
                   {activeId === 'indigenous'
                     ? 'First Nations culture and events in '
                     : 'Discover what\u2019s happening in '}
-                  <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text style={{ color: CultureTokens.indigo, fontFamily: FontFamily.semibold }}>
                     {locationLabel}
                   </Text>
                 </Text>
@@ -367,7 +365,7 @@ export default function ExploreScreen() {
                 </Pressable>
               ) : null}
             </View>
-          </LiquidGlassPanel>
+          </View>
         </View>
 
         {/* ── Event Grid & Content ── */}
@@ -378,7 +376,6 @@ export default function ExploreScreen() {
             extraData={gridCols}
             keyExtractor={(item: EventData) => item.id}
             numColumns={gridCols}
-            {...({ estimatedItemSize: 280 } as any)}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: hPad }}
             ListHeaderComponent={
@@ -653,7 +650,7 @@ export default function ExploreScreen() {
             )}
             ListFooterComponent={
               showAcknowledgement && !isLoading && filtered.length > 0 ? (
-                <View style={s.acknowledgementWrap}>
+                <View style={[s.acknowledgementWrap, { borderColor: colors.borderLight }]}>
                   <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
                   <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
                     {acknowledgement}
@@ -809,10 +806,7 @@ const s = StyleSheet.create({
     ...TextStyles.title2,
     letterSpacing: -0.3,
   },
-  seeAll: {
-    ...TextStyles.chip,
-    fontFamily: 'Poppins_600SemiBold',
-  },
+  seeAll: { ...TextStyles.chip, fontFamily: FontFamily.semibold },
   resultCount: {
     ...TextStyles.captionSemibold,
   },
@@ -866,12 +860,12 @@ const s = StyleSheet.create({
   },
   indigenousBannerTitle: {
     ...TextStyles.callout,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: FontFamily.bold,
     marginBottom: 3,
   },
   indigenousBannerSub: {
     ...TextStyles.chip,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: FontFamily.regular,
   },
   acknowledgementWrap: {
     padding: 24,
@@ -880,11 +874,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderColor: 'rgba(150,150,150,0.15)',
     gap: 12,
   },
   acknowledgementText: {
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: FontFamily.medium,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,

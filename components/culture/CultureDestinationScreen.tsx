@@ -915,11 +915,13 @@ export function CultureDestinationScreen({ definition: def, routeSearchParams }:
                     {venueResults.map((v) => (
                       <Pressable
                         key={v.id}
-                        onPress={() => router.push(`/business/${v.id}`)}
+                        onPress={() => router.push({ pathname: '/profile/[id]', params: { id: v.id } })}
                         style={[styles.venueCard, isDesktop && { width: '100%' }]}
+                        accessibilityLabel={`View ${v.name} profile`}
+                        accessibilityRole="link"
                       >
                         <View style={styles.venueIcon}>
-                          <Ionicons name="business" size={22} color={CultureTokens.indigo} />
+                          <Ionicons name="business" size={22} color={colors.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.venueName} numberOfLines={1}>

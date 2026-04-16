@@ -185,8 +185,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             profileData = await fetchProfileWithRetry();
           } catch (profileErr) {
-            // 404 means the user is authenticated in Firebase but no Firestore profile exists yet.
-            if (profileErr instanceof ApiError && profileErr.status === 404) {
+            // 404: Firebase auth exists but Firestore profile not materialized yet.
+            // 401: token/header propagation can briefly race during bootstrap in dev/emulator.
+            if (profileErr instanceof ApiError && (profileErr.status === 404 || profileErr.status === 401)) {
               profileData = {};
             } else {
               throw profileErr; // Re-throw to be caught by the outer handler
@@ -258,11 +259,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return;
 
     try {
+      const t = await currentUser.getIdToken();
+      setAccessToken(t);
       const profile = await api.auth.me();
       setSession((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
+          accessToken: t,
           user: {
             ...prev.user,
             ...profile,
@@ -293,6 +297,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 30000);
     return () => clearTimeout(timer);
   }, [profileRetryCount, profileSyncStatus, retryProfileSync, session]);
+
+  // Keep lib/query-client Bearer token aligned with React session (web Fast Refresh, etc.).
+  useEffect(() => {
+    if (session?.accessToken) {
+      setAccessToken(session.accessToken);
+    } else if (!session) {
+      setAccessToken(null);
+    }
+  }, [session?.accessToken, session]);
 
   // ------------------------------------------------------------------
   // Force-refresh ID token every 50 min to keep query-client in sync

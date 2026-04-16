@@ -39,39 +39,33 @@ import { MAIN_TAB_UI } from '@/components/tabs/mainTabTokens';
 const TABS = [
   {
     name: 'index',
-    label: 'Discover',
+    label: 'Home',
     icon: 'compass-outline' as const,
     iconActive: 'compass' as const,
   },
   {
-    name: 'calendar',
-    label: 'Events',
-    icon: 'calendar-outline' as const,
-    iconActive: 'calendar' as const,
+    name: 'search',
+    label: 'Search',
+    icon: 'search-outline' as const,
+    iconActive: 'search' as const,
   },
   {
-    name: 'community',
-    label: 'Community',
+    name: 'communities',
+    label: 'Communities',
     icon: 'people-outline' as const,
     iconActive: 'people' as const,
   },
   {
-    name: 'city',
-    label: 'My City',
-    icon: 'location-outline' as const,
-    iconActive: 'location' as const,
+    name: 'wallet',
+    label: 'Wallet',
+    icon: 'wallet-outline' as const,
+    iconActive: 'wallet' as const,
   },
   {
-    name: 'perks',
-    label: 'Perks',
-    icon: 'gift-outline' as const,
-    iconActive: 'gift' as const,
-  },
-  {
-    name: 'menu',
-    label: 'Menu',
-    icon: 'menu-outline' as const,
-    iconActive: 'menu' as const,
+    name: 'profile',
+    label: 'Profile',
+    icon: 'person-outline' as const,
+    iconActive: 'person' as const,
   },
 ] as const;
 
@@ -109,11 +103,10 @@ const badge = StyleSheet.create({
 
 const TAB_HINTS: Partial<Record<TabConfig['name'], string>> = {
   index: 'Discover curated events and culture near you',
-  calendar: 'Browse events and your personal calendar',
-  community: 'Find communities and cultural circles',
-  city: 'See everything happening in your city',
-  perks: 'Open perks, offers, and rewards',
-  menu: 'Open app menu and settings',
+  search: 'Global search for events, venues, and communities',
+  communities: 'Find and join communities and cultural circles',
+  wallet: 'Your tickets, passes, rewards, and cashback',
+  profile: 'Your profile, membership, settings, and digital ID',
 };
 
 interface TabItemProps {
@@ -150,8 +143,9 @@ function TabItem({
     onPress();
   };
 
-  const iconColor = isActive ? CultureTokens.indigo : colors.textTertiary;
-  const labelColor = isActive ? CultureTokens.indigo : colors.textTertiary;
+  const activeColor = colors.primary; // violet per updated design tokens
+  const iconColor = isActive ? activeColor : colors.textTertiary;
+  const labelColor = isActive ? activeColor : colors.textTertiary;
 
   const hint = TAB_HINTS[tab.name];
 
@@ -164,7 +158,7 @@ function TabItem({
       accessibilityLabel={tab.label}
       accessibilityHint={hint ? `${hint}. Double tap to open.` : 'Double tap to open tab'}
       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-      android_ripple={Platform.OS === 'android' ? { color: CultureTokens.indigo + '22', borderless: false } : undefined}
+      android_ripple={Platform.OS === 'android' ? { color: colors.primary + '22', borderless: false } : undefined}
     >
       <Animated.View
         style={[
@@ -235,7 +229,7 @@ const tabItem = StyleSheet.create({
     width: 14,
     height: 2.5,
     borderRadius: 99,
-    backgroundColor: CultureTokens.indigo,
+    backgroundColor: CultureTokens.violet,
     marginTop: 1.5,
   },
   linePlaceholder: {
@@ -334,9 +328,9 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
         ]}
         contentStyle={bar.pillInner}
       >
-        {/* Brand gradient top edge */}
+        {/* Brand gradient top edge — updated to violet/emerald per DESIGN_MANUAL.md */}
         <LinearGradient
-          colors={[CultureTokens.indigo, CultureTokens.teal, 'rgba(46,196,182,0)']}
+          colors={[CultureTokens.violet, CultureTokens.emerald, 'rgba(34, 197, 94, 0)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={bar.topLine}
@@ -348,7 +342,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           if (!tab) return null;
           const routeIndex = state.routes.findIndex((r) => r.key === route.key);
           const isActive = state.index === routeIndex;
-          const isFeedTab = tab.name === 'city';
+          const isFeedTab = tab.name === 'profile';
           return (
             <TabItem
               key={route.key}

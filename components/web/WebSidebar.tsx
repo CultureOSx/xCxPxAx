@@ -112,7 +112,7 @@ interface NavItem {
 
 const MAIN_NAV: NavItem[] = [
   { label: 'Discover', icon: 'compass-outline', iconActive: 'compass', route: '/(tabs)' },
-  { label: 'My City', icon: 'location-outline', iconActive: 'location', route: '/(tabs)/city' },
+  { label: 'My City', icon: 'location-outline', iconActive: 'location', route: '/(tabs)/index' },
   { label: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar', route: '/(tabs)/calendar' },
   { label: 'Community', icon: 'people-circle-outline', iconActive: 'people-circle', route: '/(tabs)/community' },
   { label: 'Perks', icon: 'gift-outline', iconActive: 'gift', route: '/(tabs)/perks' },
@@ -157,7 +157,6 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Moderation', icon: 'eye-outline', iconActive: 'eye', route: '/admin/moderation', matchPrefix: true },
   { label: 'Audit Logs', icon: 'list-outline', iconActive: 'list', route: '/admin/audit-logs', matchPrefix: true },
   { label: 'Notify', icon: 'megaphone-outline', iconActive: 'megaphone', route: '/admin/notifications', matchPrefix: true },
-  { label: 'Import', icon: 'cloud-upload-outline', iconActive: 'cloud-upload', route: '/admin/import', matchPrefix: true },
   { label: 'Finance', icon: 'card-outline', iconActive: 'card', route: '/admin/finance', matchPrefix: true },
   { label: 'Compliance', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/admin/data-compliance', matchPrefix: true },
   { label: 'Discover Curation', icon: 'sparkles-outline', iconActive: 'sparkles', route: '/admin/discover', matchPrefix: true },

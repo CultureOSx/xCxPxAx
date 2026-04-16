@@ -24,7 +24,7 @@ export const TYPE_CONFIG: Record<SubmitType, { label: string; description: strin
   restaurant: { label: 'Dining', description: 'Restaurant & café listings', icon: 'restaurant', color: CultureTokens.teal },
   shop: { label: 'Shopping', description: 'Retail & boutique listings', icon: 'bag-handle', color: CultureTokens.indigo },
   activity: { label: 'Activity', description: 'Tours, experiences & cultural sites', icon: 'compass', color: CultureTokens.venue },
-  professional: { label: 'Professional', description: 'Practice & professional profile page', icon: 'briefcase', color: CultureTokens.indigo },
+  professional: { label: 'Professional', description: 'Practice, artist & professional profile page', icon: 'briefcase', color: CultureTokens.indigo },
   organisation: { label: 'Organisation', description: 'Cultural groups & communities', icon: 'people', color: CultureTokens.teal },
   business: { label: 'Business', description: 'General business profile', icon: 'business', color: CultureTokens.indigo },
   artist: { label: 'Artist', description: 'Musicians, dancers & creatives', icon: 'color-palette', color: CultureTokens.coral },
@@ -32,13 +32,13 @@ export const TYPE_CONFIG: Record<SubmitType, { label: string; description: strin
 };
 
 export const EVENT_LIKE: SubmitType[] = ['event', 'festival', 'concert', 'workshop'];
-export const PROFILE_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
-export const ORG_LISTING_TABS: SubmitType[] = ['organisation', 'professional', 'business', 'artist'];
+export const PROFILE_TABS: SubmitType[] = ['organisation', 'professional', 'business'];
+export const ORG_LISTING_TABS: SubmitType[] = ['organisation', 'professional', 'business'];
 /** Default order in Creator Studio (role filtering applied in UI). */
 export const TYPE_ORDER: SubmitType[] = [
   'event', 'festival', 'concert', 'workshop',
   'activity',
-  'professional', 'organisation', 'business', 'artist',
+  'professional', 'organisation', 'business',
   'movie', 'restaurant', 'shop',
   'perk',
 ];
@@ -50,6 +50,7 @@ export function isEventLike(tab: SubmitType): boolean {
 export function normalizeSubmitType(type?: string, variant?: string): SubmitType {
   const t = (type || 'event').toLowerCase().trim();
   const v = (variant || '').toLowerCase().trim();
+  if (t === 'artist') return 'professional';
   if (t === 'event') {
     if (v === 'festival') return 'festival';
     if (v === 'concert' || v === 'music') return 'concert';
@@ -80,6 +81,18 @@ export const EVENT_CULTURE_TAGS = [
   'Indigenous', 'Multicultural', 'Faith', 'Youth', 'LGBTQIA+', 'Seniors', 'Family',
 ] as const;
 export const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
+export const PROFESSIONAL_CATEGORIES = [
+  'Artist',
+  'Accountant',
+  'Lawyer',
+  'Consultant',
+  'Educator',
+  'Creative Studio',
+  'Producer',
+  'Photographer',
+  'Designer',
+  'Wellness',
+] as const;
 
 /** Chip-selectable discovery tags for organisation/professional/business profiles */
 export const ORG_DISCOVERY_TAGS = [

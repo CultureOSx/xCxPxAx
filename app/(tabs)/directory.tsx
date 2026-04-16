@@ -17,12 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   CultureTokens,
   gradients,
-  LiquidGlassTokens,
+  CardTokens,
   FontFamily,
   FontSize,
   LineHeight,
 } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
@@ -53,6 +52,10 @@ import {
 } from '@/components/directory/DirectoryComponents';
 
 // ─── DirectoryScreen ──────────────────────────────────────────────────────────
+
+type DirectoryItem =
+  | { _type: 'profile'; data: Profile }
+  | { _type: 'event'; data: EventData };
 
 export default function DirectoryScreen() {
   const colors = useColors();
@@ -127,10 +130,6 @@ export default function DirectoryScreen() {
     })) as unknown as Profile[];
     return [...base, ...councils];
   }, [allProfiles, councilListData?.councils]);
-
-  type DirectoryItem =
-    | { _type: 'profile'; data: Profile }
-    | { _type: 'event'; data: EventData };
 
   const allItems = useMemo<DirectoryItem[]>(() => {
     const profileItems: DirectoryItem[] = nonCommunityProfiles.map((p) => ({ _type: 'profile', data: p }));
@@ -238,19 +237,23 @@ export default function DirectoryScreen() {
           pointerEvents="none"
         />
 
-        {/* ── Header (liquid glass) ── */}
+        {/* ── Header ── */}
         <Animated.View
           entering={reducedMotion ? undefined : FadeInUp.duration(320).springify()}
           style={{ zIndex: 10 }}
         >
-          <LiquidGlassPanel
-            borderRadius={0}
-            bordered={false}
-            style={{
-              borderBottomWidth: StyleSheet.hairlineWidth * 2,
-              borderBottomColor: colors.borderLight,
-            }}
-            contentStyle={[dirStyles.headerGlassInner, { paddingHorizontal: hPad, maxWidth: shellMaxWidth, alignSelf: 'center', width: '100%' }]}
+          <View
+            style={[
+              dirStyles.headerSurface,
+              {
+                backgroundColor: colors.surface,
+                borderBottomColor: colors.borderLight,
+                paddingHorizontal: hPad,
+                maxWidth: shellMaxWidth,
+                alignSelf: 'center',
+                width: '100%',
+              },
+            ]}
           >
             <View style={dirStyles.headerTitleBlock}>
               <Text style={[dirStyles.headerTitle, { color: colors.text }]} maxFontSizeMultiplier={1.5}>
@@ -307,14 +310,24 @@ export default function DirectoryScreen() {
                 ? <ActivityIndicator size="small" color={CultureTokens.indigo} />
                 : <Ionicons name="refresh" size={18} color={colors.text} />}
             </Pressable>
-          </LiquidGlassPanel>
+          </View>
         </Animated.View>
 
-        {/* ── Filter rail (glass) ── */}
-        <LiquidGlassPanel
-          borderRadius={LiquidGlassTokens.corner.mainCard}
-          style={{ marginHorizontal: hPad, marginTop: 10, marginBottom: 8, maxWidth: shellMaxWidth, alignSelf: 'center', width: '100%' }}
-          contentStyle={dirStyles.filterGlassInner}
+        {/* ── Filter rail ── */}
+        <View
+          style={[
+            dirStyles.filterSurface,
+            {
+              marginHorizontal: hPad,
+              marginTop: 10,
+              marginBottom: 8,
+              maxWidth: shellMaxWidth,
+              alignSelf: 'center',
+              width: '100%',
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
+            },
+          ]}
         >
           <ScrollView
             horizontal
@@ -348,7 +361,7 @@ export default function DirectoryScreen() {
               </>
             )}
           </ScrollView>
-        </LiquidGlassPanel>
+        </View>
 
         {/* ── Content ── */}
         {isLoading ? (
@@ -363,7 +376,7 @@ export default function DirectoryScreen() {
           </View>
         ) : (
           <View style={{ flex: 1, width: '100%', maxWidth: shellMaxWidth, alignSelf: 'center' }}>
-            <FlashList<any>
+            <FlashList<DirectoryItem>
               data={filtered}
               keyExtractor={(item) => (item._type === 'event' ? `event-${item.data.id}` : `profile-${item.data.id}`)}
               renderItem={({ item, index }) => (
@@ -398,7 +411,7 @@ export default function DirectoryScreen() {
               }
               ListFooterComponent={
                 showAcknowledgement && !isLoading && filtered.length > 0 ? (
-                  <View style={s.acknowledgementWrap}>
+                  <View style={[s.acknowledgementWrap, { borderTopColor: colors.borderLight }]}>
                     <Ionicons name="leaf-outline" size={20} color={CultureTokens.gold} />
                     <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>
                       {acknowledgement}
@@ -406,7 +419,6 @@ export default function DirectoryScreen() {
                   </View>
                 ) : null
               }
-              {...({ estimatedItemSize: 100 } as any)}
               numColumns={useWebTwoColumnResults ? 2 : 1}
               contentContainerStyle={[s.list, { paddingHorizontal: hPad, paddingBottom: isWeb ? 40 : 100 }]}
               showsVerticalScrollIndicator={false}
@@ -431,11 +443,12 @@ const dirStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     opacity: 0.06,
   },
-  headerGlassInner: {
+  headerSurface: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   headerTitleBlock: { flex: 1, minWidth: 0 },
   headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -456,7 +469,7 @@ const dirStyles = StyleSheet.create({
     alignItems: 'center',
     height: 36,
     paddingHorizontal: 10,
-    borderRadius: LiquidGlassTokens.corner.valueRibbon,
+    borderRadius: CardTokens.radius,
     borderWidth: StyleSheet.hairlineWidth * 2,
     gap: 6,
     minWidth: 0,
@@ -476,6 +489,11 @@ const dirStyles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  filterGlassInner: { paddingVertical: 10, paddingHorizontal: 8 },
+  filterSurface: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: CardTokens.radius,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
 });
 

@@ -332,13 +332,16 @@ export default function SignUpScreen() {
 
       <KeyboardAvoidingView
         style={s.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={keyboardVerticalOffset}
         enabled
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           contentContainerStyle={[
             s.scrollContent,
             isDesktop && s.scrollContentDesktop,

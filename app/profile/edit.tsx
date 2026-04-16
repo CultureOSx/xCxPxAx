@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Switch,
-  type ViewStyle,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
@@ -22,19 +21,20 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { api, ApiError } from '@/lib/api';
-import { queryClient } from '@/lib/query-client';
+import { queryClient, setAccessToken } from '@/lib/query-client';
+import { auth as firebaseAuth } from '@/lib/firebase';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useColors, useIsDark } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { Button } from '@/components/ui/Button';
-import { BlurView } from 'expo-blur';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
+import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import type { ISODateString } from '@/components/ui/DatePickerInput';
 import { goBackOrReplace } from '@/lib/navigation';
 import { Card } from '@/components/ui/Card';
-import { CultureTokens, gradients, shadows, TextStyles, type ColorTheme } from '@/constants/theme';
+import { CultureTokens, gradients, TextStyles, LiquidGlassTokens, OlympicsColors, type ColorTheme } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -42,7 +42,6 @@ import { communityGroups, communityFlags } from '@/constants/onboardingCommuniti
 import { interestCategories } from '@/constants/onboardingInterests';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const PRIMARY = CultureTokens.indigo;
 const GEM_RING = CultureTokens.gold;
 const AVATAR = 104;
 
@@ -53,22 +52,6 @@ const TABS: { id: EditTab; label: string }[] = [
   { id: 'culture', label: 'Culture' },
   { id: 'social', label: 'Social & privacy' },
 ];
-
-function sectionCardShadow(isDark: boolean): ViewStyle {
-  if (Platform.OS === 'web') return {};
-  return (
-    Platform.select<ViewStyle>({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: isDark ? 4 : 2 },
-        shadowOpacity: isDark ? 0.22 : 0.06,
-        shadowRadius: isDark ? 14 : 10,
-      },
-      android: { elevation: isDark ? 3 : 1 },
-      default: { elevation: isDark ? 3 : 1 },
-    }) ?? {}
-  );
-}
 
 interface UserData {
   id: string;
@@ -129,13 +112,13 @@ const SOCIAL_FIELDS: {
   label: string;
   placeholder: string;
 }[] = [
-  { icon: 'logo-instagram', color: '#E4405F', field: 'instagram', label: 'Instagram', placeholder: '@username or URL' },
-  { icon: 'logo-twitter', color: '#1DA1F2', field: 'twitter', label: 'X / Twitter', placeholder: '@username or URL' },
-  { icon: 'logo-tiktok', color: '#010101', field: 'tiktok', label: 'TikTok', placeholder: '@username or URL' },
-  { icon: 'logo-youtube', color: '#FF0000', field: 'youtube', label: 'YouTube', placeholder: 'Channel URL' },
-  { icon: 'logo-linkedin', color: '#0A66C2', field: 'linkedin', label: 'LinkedIn', placeholder: 'Profile URL' },
-  { icon: 'logo-facebook', color: '#1877F2', field: 'facebook', label: 'Facebook', placeholder: 'Profile URL' },
-  { icon: 'globe-outline', color: PRIMARY, field: 'website', label: 'Website', placeholder: 'https://…' },
+  { icon: 'logo-instagram', color: OlympicsColors.red, field: 'instagram', label: 'Instagram', placeholder: '@username or URL' },
+  { icon: 'logo-twitter', color: OlympicsColors.blue, field: 'twitter', label: 'X / Twitter', placeholder: '@username or URL' },
+  { icon: 'logo-tiktok', color: OlympicsColors.black, field: 'tiktok', label: 'TikTok', placeholder: '@username or URL' },
+  { icon: 'logo-youtube', color: OlympicsColors.red, field: 'youtube', label: 'YouTube', placeholder: 'Channel URL' },
+  { icon: 'logo-linkedin', color: OlympicsColors.blue, field: 'linkedin', label: 'LinkedIn', placeholder: 'Profile URL' },
+  { icon: 'logo-facebook', color: OlympicsColors.blue, field: 'facebook', label: 'Facebook', placeholder: 'Profile URL' },
+  { icon: 'globe-outline', color: OlympicsColors.blue, field: 'website', label: 'Website', placeholder: 'https://…' },
 ];
 
 function SectionHeader({
@@ -148,7 +131,7 @@ function SectionHeader({
   colors: ColorTheme;
 }) {
   return (
-    <View style={[sc.cardHeader, { borderBottomColor: colors.divider, backgroundColor: colors.primarySoft }]}>
+    <LiquidGlassPanel style={sc.cardHeader} bordered>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
         <View style={[sc.gemAccent, { backgroundColor: CultureTokens.gold }]} />
         <View style={{ flex: 1, paddingTop: 1 }}>
@@ -158,7 +141,7 @@ function SectionHeader({
           ) : null}
         </View>
       </View>
-    </View>
+    </LiquidGlassPanel>
   );
 }
 
@@ -177,42 +160,22 @@ function SectionCard({
   isDark: boolean;
   index?: number;
 }) {
-  const borderStyle = {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    overflow: 'hidden' as const,
-  };
-
   const inner = (
     <>
       <SectionHeader title={title} subtitle={subtitle} colors={colors} />
-      <View style={[sc.cardBody, { backgroundColor: isDark ? colors.card : colors.surface }]}>{children}</View>
+      <View style={sc.cardBody}>{children}</View>
     </>
   );
 
-  const iosBlur = isDark && Platform.OS === 'ios';
-
   return (
     <Animated.View entering={FadeInDown.delay(70 + index * 35).duration(380)} style={sc.cardRoot}>
-      {iosBlur ? (
-        <BlurView intensity={28} tint="dark" style={[borderStyle, { backgroundColor: 'rgba(18,24,38,0.55)' }]}>
-          {inner}
-        </BlurView>
-      ) : (
-        <View
-          style={[
-            borderStyle,
-            {
-              backgroundColor: isDark ? colors.card : colors.surface,
-              ...(Platform.OS === 'web' ? shadows.small : {}),
-              ...sectionCardShadow(isDark),
-            },
-          ]}
-        >
-          {inner}
-        </View>
-      )}
+      <LiquidGlassPanel
+        borderRadius={LiquidGlassTokens.corner.mainCard}
+        bordered
+        contentStyle={sc.cardBody}
+      >
+        {inner}
+      </LiquidGlassPanel>
     </Animated.View>
   );
 }
@@ -393,7 +356,7 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const { isDesktop, hPad } = useLayout();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const { userId, user: authUser, isRestoring } = useAuth();
+  const { userId, user: authUser, isRestoring, accessToken, refreshSession } = useAuth();
   const [copyToast, setCopyToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -410,8 +373,14 @@ export default function EditProfileScreen() {
     refetch,
   } = useQuery<UserData>({
     queryKey: ['/api/auth/me', 'profile-edit', userId],
-    enabled: Boolean(userId) && !isRestoring,
-    queryFn: () => api.auth.me() as Promise<UserData>,
+    enabled: Boolean(userId) && Boolean(accessToken) && !isRestoring,
+    queryFn: async () => {
+      if (firebaseAuth?.currentUser) {
+        const t = await firebaseAuth.currentUser.getIdToken();
+        setAccessToken(t);
+      }
+      return api.auth.me() as Promise<UserData>;
+    },
   });
 
   const [activeTab, setActiveTab] = useState<EditTab>('personal');
@@ -638,7 +607,7 @@ export default function EditProfileScreen() {
   const inputStyle = [
     s.input,
     {
-      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : colors.primarySoft,
+      backgroundColor: isDark ? colors.surfaceElevated : colors.primarySoft,
       borderColor: colors.borderLight,
       color: colors.text,
     },
@@ -646,7 +615,7 @@ export default function EditProfileScreen() {
 
   const inputExtras = useMemo(
     () => ({
-      selectionColor: PRIMARY,
+      selectionColor: colors.primary,
       underlineColorAndroid: 'transparent' as const,
       ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {}),
     }),
@@ -655,7 +624,7 @@ export default function EditProfileScreen() {
 
   const bioInputExtras = useMemo(
     () => ({
-      selectionColor: PRIMARY,
+      selectionColor: colors.primary,
       underlineColorAndroid: 'transparent' as const,
       textAlignVertical: 'top' as const,
     }),
@@ -697,13 +666,13 @@ export default function EditProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Preview profile"
               {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}22`, borderless: true } }
+                ? { android_ripple: { color: `${colors.primary}22`, borderless: true } }
                 : {})}
             >
-              <Ionicons name="eye-outline" size={18} color={PRIMARY} />
+              <Ionicons name="eye-outline" size={18} color={colors.primary} />
             </Pressable>
 
-            <Button variant="primary" size="sm" onPress={handleSave} loading={isBusy} style={{ backgroundColor: PRIMARY, minWidth: 72 }}>
+            <Button variant="primary" size="sm" onPress={handleSave} loading={isBusy} style={{ minWidth: 72 }}>
               Save
             </Button>
           </View>
@@ -728,9 +697,48 @@ export default function EditProfileScreen() {
               <Text style={[TextStyles.callout, { color: colors.text }]}>
                 {error instanceof ApiError ? error.message : 'Could not load your profile from the server.'}
               </Text>
-              <Button variant="outline" size="sm" onPress={() => void refetch()} accessibilityLabel="Retry loading profile">
-                Retry
-              </Button>
+              {error instanceof ApiError && error.isUnauthorized ? (
+                <Text style={[TextStyles.caption, { color: colors.textSecondary, marginTop: 6 }]}>
+                  If you are signed in, your session token may not have reached the API (common after a web refresh). Try
+                  refreshing your session, or sign in again. If you pointed the app at a local Functions URL, either run the
+                  full Firebase emulator suite with matching Auth, or use production Auth + EXPO_PUBLIC_API_URL to hosted
+                  Functions.
+                </Text>
+              ) : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                <Button variant="outline" size="sm" onPress={() => void refetch()} accessibilityLabel="Retry loading profile">
+                  Retry
+                </Button>
+                {error instanceof ApiError && error.isUnauthorized ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => {
+                        void refreshSession()
+                          .then(() => void refetch())
+                          .catch(() => {});
+                      }}
+                      accessibilityLabel="Refresh session token"
+                    >
+                      Refresh session
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(onboarding)/login',
+                          params: { redirectTo: '/profile/edit' },
+                        })
+                      }
+                      accessibilityLabel="Sign in"
+                    >
+                      Sign in
+                    </Button>
+                  </>
+                ) : null}
+              </View>
             </View>
           ) : null}
 
@@ -762,7 +770,7 @@ export default function EditProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Change profile photo"
               {...(Platform.OS === 'android'
-                ? { android_ripple: { color: `${PRIMARY}30`, borderless: false } }
+                ? { android_ripple: { color: `${colors.primary}30`, borderless: false } }
                 : {})}
               {...(Platform.OS === 'web'
                 ? {
@@ -772,7 +780,7 @@ export default function EditProfileScreen() {
                 : {})}
             >
               <LinearGradient
-                colors={[`${GEM_RING}55`, `${PRIMARY}33`]}
+                colors={[`${GEM_RING}55`, `${colors.primary}33`]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={s.avatarRingOuter}
@@ -794,15 +802,15 @@ export default function EditProfileScreen() {
                 </View>
               </LinearGradient>
 
-              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: PRIMARY }]}>
-                {uploading ? <ActivityIndicator size="small" color={PRIMARY} /> : <Ionicons name="camera" size={14} color={PRIMARY} />}
+              <View style={[s.cameraBadge, { backgroundColor: GEM_RING, borderColor: colors.primary }]}>
+                {uploading ? <ActivityIndicator size="small" color={colors.primary} /> : <Ionicons name="camera" size={14} color={colors.primary} />}
               </View>
             </Pressable>
 
             <Text style={[TextStyles.title2, { color: colors.textOnBrandGradient, textAlign: 'center' }]}>
               {form.displayName || user?.username || 'Your name'}
             </Text>
-            <Text style={[TextStyles.caption, { color: 'rgba(255,255,255,0.65)', textAlign: 'center', marginTop: 4 }]}>
+            <Text style={[TextStyles.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
               {Platform.OS === 'web' ? 'Tap or drop a photo to update' : 'Tap to update your photo'}
             </Text>
 
@@ -824,20 +832,20 @@ export default function EditProfileScreen() {
                       s.tabBtn,
                       s.tabBtnDesktop,
                       {
-                        borderColor: active ? PRIMARY : colors.borderLight,
+                        borderColor: active ? colors.primary : colors.borderLight,
                         backgroundColor: active ? colors.primarySoft : colors.backgroundSecondary,
                       },
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     {...(Platform.OS === 'android'
-                      ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
+                      ? { android_ripple: { color: `${colors.primary}18`, borderless: false } }
                       : {})}
                   >
                     <Text
                       style={[
                         s.tabLabel,
-                        { color: active ? PRIMARY : colors.textSecondary },
+                        { color: active ? colors.primary : colors.textSecondary },
                       ]}
                       numberOfLines={1}
                     >
@@ -867,20 +875,20 @@ export default function EditProfileScreen() {
                     style={[
                       s.tabBtn,
                       {
-                        borderColor: active ? PRIMARY : colors.borderLight,
+                        borderColor: active ? colors.primary : colors.borderLight,
                         backgroundColor: active ? colors.primarySoft : colors.backgroundSecondary,
                       },
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     {...(Platform.OS === 'android'
-                      ? { android_ripple: { color: `${PRIMARY}18`, borderless: false } }
+                      ? { android_ripple: { color: `${colors.primary}18`, borderless: false } }
                       : {})}
                   >
                     <Text
                       style={[
                         s.tabLabel,
-                        { color: active ? PRIMARY : colors.textSecondary },
+                        { color: active ? colors.primary : colors.textSecondary },
                       ]}
                       numberOfLines={1}
                     >
@@ -1079,7 +1087,7 @@ export default function EditProfileScreen() {
                   ) : (
                     <View style={chip.row} accessibilityRole="list">
                       {selectedCommunities.map((community) => {
-                        const bg = COMMUNITY_CHIP_COLOR[community] ?? PRIMARY;
+                        const bg = COMMUNITY_CHIP_COLOR[community] ?? colors.primary;
                         const flag = communityFlags[community] ?? '🌐';
                         return (
                           <View
@@ -1174,7 +1182,7 @@ export default function EditProfileScreen() {
                           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setForm((p) => ({ ...p, [key]: v }));
                         }}
-                        trackColor={{ true: PRIMARY, false: colors.borderLight }}
+                        trackColor={{ true: colors.primary, false: colors.borderLight }}
                         thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
                       />
                     </View>
@@ -1226,7 +1234,7 @@ export default function EditProfileScreen() {
                           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setForm((p) => ({ ...p, [key]: v }));
                         }}
-                        trackColor={{ true: PRIMARY, false: colors.borderLight }}
+                        trackColor={{ true: colors.primary, false: colors.borderLight }}
                         thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
                       />
                     </View>
@@ -1287,19 +1295,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   topBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     ...Platform.select({
-      ios: { minWidth: 44, minHeight: 44 },
+      ios: { minWidth: 52, minHeight: 52 },
       default: {},
     }),
   },
@@ -1307,90 +1315,93 @@ const s = StyleSheet.create({
   scroll: { flexGrow: 1 },
   scrollDesktop: { paddingHorizontal: 0 },
   loadError: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 14,
+    marginTop: 16,
+    padding: 20,
+    borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    gap: 10,
+    gap: 12,
   },
   toast: {
-    marginTop: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 999,
   },
   heroWrap: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 32,
     overflow: 'hidden',
   },
   heroOrb: {
     position: 'absolute',
-    top: -50,
-    right: -40,
+    top: -60,
+    right: -50,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+  },
+  heroOrbSecondary: {
+    position: 'absolute',
+    bottom: -40,
+    left: -60,
     width: 200,
     height: 200,
     borderRadius: 100,
   },
-  heroOrbSecondary: {
-    position: 'absolute',
-    bottom: -30,
-    left: -50,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-  },
-  avatarBtn: { position: 'relative', marginBottom: 12 },
+  avatarBtn: { position: 'relative', marginBottom: 16 },
   avatarRingOuter: {
-    padding: 3,
+    padding: 4,
     borderRadius: 999,
   },
   avatarRing: {
-    width: AVATAR + 8,
-    height: AVATAR + 8,
-    borderRadius: (AVATAR + 8) / 2,
-    borderWidth: 2,
+    width: AVATAR + 12,
+    height: AVATAR + 12,
+    borderRadius: (AVATAR + 12) / 2,
+    borderWidth: 3,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   cameraBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    bottom: 4,
+    right: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
+    backgroundColor: CultureTokens.violet,
   },
   tabRail: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
-    paddingBottom: 6,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     justifyContent: 'center',
   },
   tabRailScroll: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingBottom: 6,
+    paddingBottom: 8,
     flexGrow: 1,
   },
   tabRailDesktop: {
-    maxWidth: 700,
+    maxWidth: 720,
     alignSelf: 'center',
     width: '100%',
     justifyContent: 'space-between',
   },
   tabBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
     borderWidth: 1,
+    minWidth: 110,
   },
   tabBtnDesktop: {
     flex: 1,
@@ -1399,55 +1410,75 @@ const s = StyleSheet.create({
   tabLabel: {
     ...TextStyles.chip,
     textAlign: 'center',
+    fontSize: 15,
   },
-  body: { paddingTop: 8, gap: 0, paddingBottom: 8 },
-  bodyDesktop: { maxWidth: 700, width: '100%', alignSelf: 'center' },
+  body: { 
+    paddingTop: 8, 
+    gap: 32, 
+    paddingHorizontal: 20, 
+    paddingBottom: 40 
+  },
+  bodyDesktop: { maxWidth: 720, width: '100%', alignSelf: 'center', paddingHorizontal: 0 },
   input: {
-    height: 52,
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 20,
     ...TextStyles.callout,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  bioInput: { height: 108, paddingTop: 14, paddingBottom: 14 },
-  charCount: { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 4 },
-  twoCol: { flexDirection: 'row', gap: 12 },
-  socialRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  bioInput: { 
+    height: 120, 
+    paddingTop: 16, 
+    paddingBottom: 16,
+    textAlignVertical: 'top' as const,
+  },
+  charCount: { 
+    fontSize: 12, 
+    fontFamily: 'Poppins_400Regular', 
+    textAlign: 'right', 
+    marginTop: 6,
+    opacity: 0.6,
+  },
+  twoCol: { flexDirection: 'row', gap: 16 },
+  socialRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   socialIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginTop: 22,
+    marginTop: 28,
   },
   privacyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    gap: 12,
+    paddingVertical: 20,
+    gap: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    height: 54,
-    borderRadius: 16,
+    gap: 10,
+    height: 56,
+    borderRadius: 999,
     overflow: 'hidden',
-    marginTop: 16,
+    marginTop: 8,
+    marginBottom: 32,
     ...Platform.select({
-      web: { boxShadow: '0px 4px 20px rgba(0,102,204,0.28)' },
+      web: { boxShadow: '0px 8px 32px rgba(124, 58, 237, 0.25)' }, // violet per updated palette
       ios: {
-        shadowColor: PRIMARY,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
+        shadowColor: CultureTokens.violet,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
       },
-      android: { elevation: 6 },
-      default: { elevation: 6 },
+      android: { elevation: 8 },
+      default: { elevation: 8 },
     }),
   },
 });

@@ -104,6 +104,9 @@ export interface EventFilters {
   venueProfileId?: string;
   /** Exact match on `tags` array (case-insensitive), applied in memory */
   tag?: string;
+  /** ABS LGA code — applied in memory (matches `lgaCode` or linked `councilId`) */
+  lgaCode?: string;
+  councilId?: string;
 }
 
 const eventsCol = () => db.collection('events');
@@ -199,6 +202,13 @@ export const eventsService = {
           const tags = Array.isArray(data.tags) ? data.tags : [];
           if (!tags.some((x) => String(x).toLowerCase() === t)) matchesAdvanced = false;
         }
+        if (filters.lgaCode || filters.councilId) {
+          const lga = filters.lgaCode ? String(filters.lgaCode) : '';
+          const cid = filters.councilId ? String(filters.councilId) : '';
+          const inLga = lga && data.lgaCode === lga;
+          const inCouncil = cid && data.councilId === cid;
+          if (!inLga && !inCouncil) matchesAdvanced = false;
+        }
 
         if (matchesAdvanced && data.latitude != null && data.longitude != null) {
           const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
@@ -264,6 +274,13 @@ export const eventsService = {
             (Array.isArray(e.tags) ? e.tags : []).some((x) => String(x).toLowerCase() === t),
           );
         }
+        if (filters.lgaCode || filters.councilId) {
+          const lga = filters.lgaCode ? String(filters.lgaCode) : '';
+          const cid = filters.councilId ? String(filters.councilId) : '';
+          memItems = memItems.filter(
+            (e) => (lga && e.lgaCode === lga) || (cid && e.councilId === cid),
+          );
+        }
         memItems.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         return memItems;
       };
@@ -319,6 +336,13 @@ export const eventsService = {
         const t = filters.tag.toLowerCase();
         memItems = memItems.filter((e) =>
           (Array.isArray(e.tags) ? e.tags : []).some((x) => String(x).toLowerCase() === t),
+        );
+      }
+      if (filters.lgaCode || filters.councilId) {
+        const lga = filters.lgaCode ? String(filters.lgaCode) : '';
+        const cid = filters.councilId ? String(filters.councilId) : '';
+        memItems = memItems.filter(
+          (e) => (lga && e.lgaCode === lga) || (cid && e.councilId === cid),
         );
       }
 

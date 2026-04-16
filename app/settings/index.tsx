@@ -13,8 +13,8 @@ import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useRole } from '@/hooks/useRole';
 import { Button } from '@/components/ui/Button';
-import { CultureTokens, LayoutRules, Spacing, gradients, TextStyles, type ColorTheme } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
+import { CultureTokens, LayoutRules, Spacing, gradients, TextStyles, type ColorTheme, CardTokens, FontFamily } from '@/constants/theme';
+import { CardSurface } from '@/components/ui/CardSurface';
 import { BackButton } from '@/components/ui/BackButton';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -120,8 +120,9 @@ export default function AccountSettingsScreen() {
           },
         ],
       );
-    } catch (err: any) {
-      const msg = err?.code === 'auth/too-many-requests'
+    } catch (err: unknown) {
+      const code = typeof err === 'object' && err !== null && 'code' in err ? String((err as { code?: string }).code) : '';
+      const msg = code === 'auth/too-many-requests'
         ? 'Too many requests. Please wait a few minutes and try again.'
         : 'Failed to send verification email. Please try again.';
       Alert.alert('Error', msg);
@@ -199,7 +200,7 @@ export default function AccountSettingsScreen() {
       items: [
         { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',                color: CultureTokens.indigo, route: '/dashboard/organizer' },
         { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',                 color: CultureTokens.gold,   route: '/scanner' },
-        { icon: 'add-circle-outline', label: 'Create',     sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/create' },
+        { icon: 'add-circle-outline', label: 'Workspace',  sub: 'Events, movies, dining, shops, activities, profiles', color: CultureTokens.coral, route: '/workspace' },
         ...(canTargetCampaigns ? [{ icon: 'megaphone-outline',      label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: CultureTokens.gold,    route: '/admin/notifications' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'document-text-outline',  label: 'Campaign Audit Logs', sub: 'Review admin send history',    color: CultureTokens.warning, route: '/admin/audit-logs' }] : []),
       ] as SettingItem[],
@@ -307,21 +308,21 @@ export default function AccountSettingsScreen() {
       />
 
       <View style={{ paddingTop: insets.top }}>
-        <LiquidGlassPanel
-          borderRadius={0}
-          bordered={false}
+        <View
           style={{
+            backgroundColor: colors.surface,
             borderBottomWidth: StyleSheet.hairlineWidth * 2,
             borderBottomColor: colors.borderLight,
           }}
-          contentStyle={s.headerGlassInner}
         >
-          <BackButton fallback="/(tabs)" style={s.backBtnGlass} />
-          <Text style={[TextStyles.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
-            Settings
-          </Text>
-          <View style={{ width: 38 }} />
-        </LiquidGlassPanel>
+          <View style={s.headerGlassInner}>
+            <BackButton fallback="/(tabs)" style={s.backBtnGlass} />
+            <Text style={[TextStyles.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
+              Settings
+            </Text>
+            <View style={{ width: 38 }} />
+          </View>
+        </View>
       </View>
 
       <ScrollView
@@ -384,10 +385,10 @@ export default function AccountSettingsScreen() {
                 </Pressable>
 
                 <View style={s.editBtnGlass} pointerEvents="none">
-                  <LiquidGlassPanel borderRadius={14} bordered={false} contentStyle={s.editBtnInner}>
+                  <View style={[s.editBtnInner, { backgroundColor: CultureTokens.indigo, borderRadius: 14 }]}>
                     <Ionicons name="create-outline" size={15} color={colors.textOnBrandGradient} />
                     <Text style={[s.editBtnText, { color: colors.textOnBrandGradient }]}>Edit</Text>
-                  </LiquidGlassPanel>
+                  </View>
                 </View>
               </View>
 
@@ -410,7 +411,7 @@ export default function AccountSettingsScreen() {
                   <Ionicons name="alert-circle" size={13} color={CultureTokens.warning} />
                   <Text style={s.verifyBannerText}>
                     Email not verified —{' '}
-                    <Text style={{ fontFamily: 'Poppins_700Bold' }}>
+                    <Text style={{ fontFamily: FontFamily.bold }}>
                       {verifySending ? 'Sending…' : 'Send verification link'}
                     </Text>
                   </Text>
@@ -421,7 +422,8 @@ export default function AccountSettingsScreen() {
           </Animated.View>
         ) : (
           <Animated.View entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}>
-            <LiquidGlassPanel
+            <CardSurface
+              colors={colors}
               borderRadius={28}
               style={[s.guestCardOuter, isDesktopWeb && s.webSection]}
               contentStyle={s.guestCardInner}
@@ -451,12 +453,12 @@ export default function AccountSettingsScreen() {
               >
                 <Text style={s.guestSignUpText}>
                   Don&apos;t have an account?{' '}
-                  <Text style={{ color: CultureTokens.indigo, fontFamily: 'Poppins_700Bold' }}>
+                  <Text style={{ color: CultureTokens.indigo, fontFamily: FontFamily.bold }}>
                     Create one free
                   </Text>
                 </Text>
               </Pressable>
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
         )}
 
@@ -473,7 +475,7 @@ export default function AccountSettingsScreen() {
               <Text style={s.sectionTitle}>{section.title}</Text>
             </View>
 
-            <LiquidGlassPanel borderRadius={22} contentStyle={{ padding: 0 }}>
+            <CardSurface colors={colors} borderRadius={CardTokens.radius} contentStyle={{ padding: 0 }}>
               {section.items.map((item, ii) => (
                 <View key={item.label}>
                   <Pressable
@@ -513,7 +515,7 @@ export default function AccountSettingsScreen() {
                   {ii < section.items.length - 1 && <View style={s.divider} />}
                 </View>
               ))}
-            </LiquidGlassPanel>
+            </CardSurface>
           </Animated.View>
         ))}
 
@@ -742,7 +744,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       width: 42, height: 42, borderRadius: 13,
       alignItems: 'center', justifyContent: 'center',
     },
-    settingLabel:     { ...TextStyles.callout, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 20 },
+    settingLabel:     { ...TextStyles.callout, fontFamily: FontFamily.semibold, color: colors.text, lineHeight: 20 },
     settingSub:       { ...TextStyles.caption, color: colors.textSecondary, lineHeight: 17 },
     settingRightText: { ...TextStyles.chip, color: colors.textTertiary },
 
@@ -759,7 +761,7 @@ const getStyles = (colors: ColorTheme, isDark: boolean) =>
       backgroundColor: isDark ? 'rgba(255,94,91,0.09)' : 'rgba(255,94,91,0.07)',
       borderWidth: 1, borderColor: CultureTokens.coral + '28',
     },
-    signOutText: { ...TextStyles.callout, fontFamily: 'Poppins_700Bold', color: CultureTokens.coral },
+    signOutText: { ...TextStyles.callout, fontFamily: FontFamily.bold, color: CultureTokens.coral },
     showMoreBtn: {
       flexDirection: 'row',
       alignItems: 'center',

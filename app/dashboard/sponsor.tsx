@@ -362,7 +362,7 @@ function SponsorDashboardContent() {
             <Text style={[sd.sectionHeader, { color: colors.textTertiary }]}>QUICK ACTIONS</Text>
             <View style={[sd.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               {[
-                { icon: 'add-circle-outline',   label: 'Create / Sponsor an Event', sub: 'Create a new event or add sponsorship',     route: '/create' },
+                { icon: 'add-circle-outline',   label: 'Create / Sponsor an Event', sub: 'Create a new event or add sponsorship',     route: '/workspace' },
                 { icon: 'grid-outline',          label: 'Organizer Dashboard',       sub: 'Manage your events end-to-end',           route: '/dashboard/organizer' },
                 { icon: 'storefront-outline',    label: 'Venue Dashboard',           sub: 'See events at your venue',                route: '/dashboard/venue' },
                 { icon: 'person-circle-outline', label: 'Edit Profile',             sub: 'Update your brand / business details',    route: '/profile/edit' },
@@ -397,7 +397,7 @@ function SponsorDashboardContent() {
               </Text>
               <Pressable
                 style={[{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: CultureTokens.indigo }]}
-                onPress={() => router.push('/create')}
+                onPress={() => router.push('/workspace')}
                 accessibilityRole="button"
               >
                 <Ionicons name="add" size={18} color="#fff" />

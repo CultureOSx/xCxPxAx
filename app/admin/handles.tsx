@@ -16,6 +16,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 
 const isWeb = Platform.OS === 'web';
 
+function formatCreatedAt(value?: string): string {
+  if (!value) return 'Unknown date';
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return value;
+  return new Date(parsed).toLocaleString();
+}
+
 function HandleCard({ item, onApprove, onReject }: {
   item: PendingHandleItem;
   onApprove: () => void;
@@ -38,6 +45,21 @@ function HandleCard({ item, onApprove, onReject }: {
           <Text style={[styles.handleText, { color: colors.text }]}>+{item.handle}</Text>
           <Text style={[styles.nameSub, { color: colors.textSecondary }]} numberOfLines={1}>
             {item.name}{item.entityType ? `  ·  ${item.entityType}` : ''}
+          </Text>
+          <View style={styles.metaWrap}>
+            <View style={[styles.metaPill, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+              <Text style={[styles.metaText, { color: colors.textTertiary }]}>
+                {item.type === 'profile' ? 'Profile' : 'User'}
+              </Text>
+            </View>
+            <View style={[styles.metaPill, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
+              <Text style={[styles.metaText, { color: colors.textTertiary }]}>
+                Submitted {formatCreatedAt(item.createdAt)}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.recordId, { color: colors.textTertiary }]} numberOfLines={1}>
+            ID: {item.id}
           </Text>
         </View>
       </View>
@@ -123,24 +145,46 @@ function HandlesContent() {
 
   const handles = data?.handles ?? [];
 
+  const runApprove = (item: PendingHandleItem) => {
+    approveMutation.mutate({ type: item.type, id: item.id });
+  };
+
+  const runReject = (item: PendingHandleItem) => {
+    rejectMutation.mutate({ type: item.type, id: item.id });
+  };
+
   const handleApprove = (item: PendingHandleItem) => {
+    if (isWeb) {
+      const ok = typeof window !== 'undefined'
+        ? window.confirm(`Approve +${item.handle} for ${item.name}? They will become visible in public listings.`)
+        : true;
+      if (ok) runApprove(item);
+      return;
+    }
     Alert.alert(
       'Approve Handle',
       `Approve +${item.handle} for ${item.name}? They will become visible in public listings.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Approve', onPress: () => approveMutation.mutate({ type: item.type, id: item.id }) },
+        { text: 'Approve', onPress: () => runApprove(item) },
       ]
     );
   };
 
   const handleReject = (item: PendingHandleItem) => {
+    if (isWeb) {
+      const ok = typeof window !== 'undefined'
+        ? window.confirm(`Reject +${item.handle} for ${item.name}? This handle will not be publicly visible.`)
+        : true;
+      if (ok) runReject(item);
+      return;
+    }
     Alert.alert(
       'Reject Handle',
       `Reject +${item.handle} for ${item.name}? This handle will not be publicly visible.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Reject', style: 'destructive', onPress: () => rejectMutation.mutate({ type: item.type, id: item.id }) },
+        { text: 'Reject', style: 'destructive', onPress: () => runReject(item) },
       ]
     );
   };
@@ -250,4 +294,8 @@ const styles = StyleSheet.create({
   actions:      { flexDirection: 'row', gap: 10 },
   actionBtn:    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, borderWidth: 1, paddingVertical: 9 },
   actionText:   { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  metaWrap:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  metaPill:     { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  metaText:     { fontSize: 11, fontFamily: 'Poppins_500Medium' },
+  recordId:     { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 6 },
 });

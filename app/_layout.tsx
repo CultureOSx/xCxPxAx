@@ -325,9 +325,11 @@ function RootLayoutNav() {
 
       <Stack.Screen name="search/index" />
       <Stack.Screen name="saved/index" />
+      <Stack.Screen name="workspace" />
       <Stack.Screen name="submit/index" />
-      <Stack.Screen name="city/[name]" />
+      <Stack.Screen name="(tabs)/index/city/[name]" />
       <Stack.Screen name="events" />
+      <Stack.Screen name="my-council" />
       <Stack.Screen name="map" />
       <Stack.Screen name="membership/upgrade" />
 
@@ -353,7 +355,6 @@ function RootLayoutNav() {
       <Stack.Screen name="admin/audit-logs" />
       <Stack.Screen name="admin/handles" />
       <Stack.Screen name="admin/updates" />
-      <Stack.Screen name="admin/import" />
       <Stack.Screen name="admin/moderation" />
       <Stack.Screen name="admin/finance" />
       <Stack.Screen name="admin/platform" />

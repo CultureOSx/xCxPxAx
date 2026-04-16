@@ -49,30 +49,41 @@ const createShadow = (
  * Use these for primary interactions and cultural markers.
  */
 export const CultureTokens = {
-  // Core brand palette
+  // Core brand palette (2026 update from ui-ux-pro-max design system)
   indigo: "#0066CC",        // CulturePass Blue — primary brand
+  violet: "#7C3AED",        // New Cultural Violet (richer identity, from skill)
   coral: "#FF5E5B",         // Movement Coral — action energy
-  gold: "#0066CC",          // Remapped to blue for better text visibility
+  gold: "#FFC857",          // Temple Gold — premium/cultural marker
   teal: "#2EC4B6",          // Ocean Teal — global belonging
+  emerald: "#22C55E",       // New CTA Green (growth, join, success — from skill)
   purple: "#AF52DE",        // Community Purple
 
-  // Functional overrides
-  event: "#0066CC",         // Events now use Blue
-  eventSoft: "#FFF8E1",     // Event background tint
+  // Functional overrides (updated for new palette)
+  event: "#7C3AED",         // Events use Violet for cultural vibrancy
+  eventSoft: "#F3E8FF",     // Soft violet tint
   artist: "#FF5E5B",        // Artists use Coral
   artistSoft: "#FFF1F0",    // Artist background tint
   venue: "#2EC4B6",         // Venues use Teal
   venueSoft: "#F0FDFB",     // Venue background tint
   movie: "#AF52DE",         // Movies use Purple
   movieSoft: "#F5F3FF",     // Movie background tint
-  community: "#0066CC",     // Community use Brand Blue
-  communitySoft: "#EBF5FF", // Community background tint
+  community: "#7C3AED",     // Community use New Violet
+  communitySoft: "#F3E8FF", // Community background tint
 
-  // Status overrides
-  success: "#2EC4B6",       // Success = Teal
-  warning: "#0066CC",       // Warning = Blue
+  // Status overrides (enhanced with new emerald)
+  success: "#22C55E",       // Success = Emerald Green (from skill)
+  warning: "#FFC857",       // Warning = Gold
   error: "#FF5E5B",         // Error = Coral
-  info: "#0066CC",          // Info = Blue
+  info: "#2EC4B6",          // Info = Teal
+} as const;
+
+/** Olympics 5-ring colors for filter chips, buttons, and accents (mostly black/white base per request). */
+export const OlympicsColors = {
+  blue: '#0066CC',
+  yellow: '#FFC857',
+  black: '#000000',
+  green: '#22C55E',
+  red: '#FF5E5B',
 } as const;
 
 /**
@@ -80,21 +91,21 @@ export const CultureTokens = {
  * across Discover, search, and filter screens.
  */
 export const CategoryColors = {
-  music:       "#FF6B6B",   // Warm Red
-  dance:       "#4ECDC4",   // Teal-Cyan
-  food:        "#FF9500",   // Apple Orange (matches sharedBase.accent)
-  art:         "#A855F7",   // Vivid Purple
-  wellness:    "#FF3B30",   // Apple Red
-  movies:      "#5AC8FA",   // Apple Teal-Blue
-  workshop:    "#FF9500",   // Apple Orange
-  heritage:    "#8B6914",   // Heritage Bronze
-  activities:  "#EC4899",   // Hot Pink
-  nightlife:   "#6366F1",   // Indigo-Violet
-  comedy:      "#F59E0B",   // Amber
-  sports:      "#EF4444",   // Bright Red
-  monuments:   "#94A3B8",   // Slate Gray
-  artists:     "#FBBF24",   // Golden Yellow
-  shopping:    "#AF52DE",   // Apple Purple
+  music:       OlympicsColors.red,
+  dance:       OlympicsColors.blue,
+  food:        OlympicsColors.yellow,
+  art:         OlympicsColors.blue,
+  wellness:    OlympicsColors.green,
+  movies:      OlympicsColors.red,
+  workshop:    OlympicsColors.black,
+  heritage:    OlympicsColors.yellow,
+  activities:  OlympicsColors.green,
+  nightlife:   OlympicsColors.red,
+  comedy:      OlympicsColors.yellow,
+  sports:      OlympicsColors.blue,
+  monuments:   OlympicsColors.black,
+  artists:     OlympicsColors.yellow,
+  shopping:    OlympicsColors.red,
 } as const;
 
 /**
@@ -179,19 +190,19 @@ export type ColorTheme = {
 
 // Colors that stay exactly the same regardless of light/dark mode
 const sharedBase = {
-  secondary: "#5856D6", // Apple Indigo
-  secondaryLight: "#7A78E0",
-  secondaryDark: "#4A48B8",
+  secondary: "#18181B", // Black base
+  secondaryLight: "#27272A",
+  secondaryDark: "#0A0A0A",
 
-  accent: "#FF9500", // Apple Orange
-  accentLight: "#FFB340",
+  accent: OlympicsColors.black,
+  accentLight: "#3F3F46",
 
-  gold: "#0066CC", // Remapped to blue for better text visibility
+  gold: OlympicsColors.yellow,
 
-  success: "#34C759", // Apple Green
-  warning: "#FF9500", // Apple Orange
-  error: "#FF3B30", // Apple Red
-  info: "#5AC8FA", // Apple Teal
+  success: OlympicsColors.green,
+  warning: OlympicsColors.yellow,
+  error: OlympicsColors.red,
+  info: OlympicsColors.blue,
 
   overlay: "rgba(0,0,0,0.4)",
 } as const;
@@ -203,30 +214,30 @@ const sharedBase = {
 export const light: ColorTheme = {
   ...sharedBase,
 
-  // Primary - CulturePass Blue
-  primary: CultureTokens.indigo,
-  primaryLight: "#3385D6",
-  primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.12)",
-  primarySoft: "rgba(0, 102, 204, 0.06)",
+  // Primary - Black for light mode (high contrast black/white palette)
+  primary: "#18181B",
+  primaryLight: "#27272A",
+  primaryDark: "#0A0A0A",
+  primaryGlow: "rgba(24, 24, 27, 0.12)",
+  primarySoft: "rgba(24, 24, 27, 0.06)",
 
-  // Backgrounds - true light mode (clear visual difference from dark)
-  background: "#F7F9FC",
-  backgroundSecondary: "#EEF3FA",
+  // Backgrounds - White base for light mode with high contrast
+  background: "#FAFAFA",
+  backgroundSecondary: "#F4F4F5",
 
   surface: "#FFFFFF",
-  surfaceElevated: "#F3F7FF",
-  surfaceSecondary: "#E9F0FA",
+  surfaceElevated: "#FAFAFA",
+  surfaceSecondary: "#F4F4F5",
 
-  border: "#D7E1EE",
-  borderLight: "#C7D5E7",
-  divider: "#D7E1EE",
+  border: "#E4E4E7",
+  borderLight: "#D4D4D8",
+  divider: "#E4E4E7",
 
-  text: "#0F172A",
-  textSecondary: "#334155",
-  textTertiary: "#64748B",
-  textInverse: "#0B0B14",
-  textOnBrandGradient: "#FFFFFF",
+  text: "#18181B", // black text on white for contrast
+  textSecondary: "#3F3F46",
+  textTertiary: "#71717A",
+  textInverse: "#FAFAFA",
+  textOnBrandGradient: "#FAFAFA",
 
   card: "#FFFFFF",
   cardBorder: "#D7E1EE",
@@ -234,16 +245,16 @@ export const light: ColorTheme = {
   tabBar: "rgba(255,255,255,0.96)",
   tabBarBorder: "rgba(199,213,231,0.9)",
   tabIconDefault: "#64748B",
-  tabIconSelected: CultureTokens.indigo,
+  tabIconSelected: "#18181B",
 
-  tint: CultureTokens.indigo,
+  tint: "#18181B",
 
-  // Cultural brand tokens
-  cultureBrand: CultureTokens.indigo,
-  culturePrimary: CultureTokens.indigo,
-  cultureSecondary: CultureTokens.coral,
-  cultureAccent: CultureTokens.gold,
-  cultureHighlight: CultureTokens.teal,
+  // Cultural brand tokens (black/white main with Olympics accents per request)
+  cultureBrand: "#18181B",
+  culturePrimary: "#18181B",
+  cultureSecondary: OlympicsColors.black,
+  cultureAccent: OlympicsColors.yellow,
+  cultureHighlight: OlympicsColors.green,
 };
 
 /**
@@ -259,30 +270,30 @@ export const light: ColorTheme = {
 export const dark: ColorTheme = {
   ...sharedBase,
 
-  // Primary - CulturePass Blue (Dark Mode Variant)
-  primary: CultureTokens.indigo,
-  primaryLight: "#3385D6",
-  primaryDark: "#004EA8",
-  primaryGlow: "rgba(0, 102, 204, 0.25)",
-  primarySoft: "rgba(0, 102, 204, 0.12)",
+  // Primary - White for dark mode (high contrast black/white palette)
+  primary: "#FAFAFA",
+  primaryLight: "#E4E4E7",
+  primaryDark: "#A1A1AA",
+  primaryGlow: "rgba(250, 250, 250, 0.25)",
+  primarySoft: "rgba(250, 250, 250, 0.12)",
 
-  // Backgrounds — OLED base + festival navy lift on surfaces
+  // Backgrounds — Pure black OLED with white text for high contrast (per design system)
   background: "#000000",
-  backgroundSecondary: "#0A0E14",
+  backgroundSecondary: "#18181B",
 
-  surface: "#121826",
-  surfaceElevated: CultureTokens.indigo, // CulturePass Blue — active surfaces
-  surfaceSecondary: "#0F2844",
+  surface: "#18181B",
+  surfaceElevated: "#27272A",
+  surfaceSecondary: "#3F3F46",
 
-  border: "#1A2436",
-  borderLight: "#243045",
-  divider: "#1A2436",
+  border: "#3F3F46",
+  borderLight: "#52525B",
+  divider: "#3F3F46",
 
-  text: "#F4F4F5",
-  textSecondary: "#C9C9D6",
-  textTertiary: "#8D8D8D",
-  textInverse: "#0B0B14",
-  textOnBrandGradient: "#FFFFFF",
+  text: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  textTertiary: "#71717A",
+  textInverse: "#18181B",
+  textOnBrandGradient: "#FAFAFA",
 
   card: "#151C2E",
   cardBorder: "#243045",
@@ -290,16 +301,16 @@ export const dark: ColorTheme = {
   tabBar: "rgba(0, 0, 0, 0.94)",
   tabBarBorder: "rgba(36, 48, 69, 0.55)",
   tabIconDefault: "#8D8D8D",
-  tabIconSelected: CultureTokens.indigo,
+  tabIconSelected: "#FAFAFA",
 
-  tint: CultureTokens.indigo,
+  tint: "#FAFAFA",
 
-  // Cultural brand tokens
-  cultureBrand: CultureTokens.indigo,
-  culturePrimary: CultureTokens.indigo,
-  cultureSecondary: CultureTokens.coral,
-  cultureAccent: CultureTokens.gold,
-  cultureHighlight: CultureTokens.teal,
+  // Cultural brand tokens (black/white main with Olympics accents per request)
+  cultureBrand: "#FAFAFA",
+  culturePrimary: "#FAFAFA",
+  cultureSecondary: OlympicsColors.black,
+  cultureAccent: OlympicsColors.yellow,
+  cultureHighlight: OlympicsColors.green,
 };
 
 export const shadows = {
@@ -344,19 +355,19 @@ export const glass = {
  */
 export const gradients = {
   /**
-   * CulturePass Signature Gradient
+   * CulturePass Signature Gradient (2026 update)
    * Use for: hero banners, onboarding, flagship CTAs
-   * Transitions from Culture Indigo → Festival Saffron → Movement Coral
+   * Transitions from Cultural Violet (#7C3AED) → Emerald Green (#22C55E) per DESIGN_MANUAL.md
    */
   culturepassBrand: [
-    CultureTokens.indigo,
-    CultureTokens.coral,
+    CultureTokens.violet,
+    CultureTokens.emerald,
   ] as [string, string],
 
-  /** CulturePass Signature Gradient (reversed: Coral → Indigo) */
+  /** CulturePass Signature Gradient (reversed: Emerald → Violet) */
   culturepassBrandReversed: [
-    CultureTokens.coral,
-    CultureTokens.indigo,
+    CultureTokens.emerald,
+    CultureTokens.violet,
   ] as [string, string],
 
   /** Primary brand gradient — CulturePass Blue to Deep Blue */

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { User } from '@shared/schema';
 import { CP, formatNumber } from './profileUtils';
+import { useColors } from '@/hooks/useColors';
 
 type Props = {
   user: User;
@@ -24,6 +25,7 @@ export default function UserProfileHero({
   displayName,
   locationText,
 }: Props) {
+  const colors = useColors();
   return (
     <LinearGradient
       colors={[CP.dark, '#1a0533', '#0a2a2a']}
@@ -42,7 +44,7 @@ export default function UserProfileHero({
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={22} color="#FFF" />
+          <Ionicons name="chevron-back" size={22} color={colors.textOnBrandGradient} />
         </Pressable>
         <Pressable
           style={styles.navBtn}
@@ -51,7 +53,7 @@ export default function UserProfileHero({
           accessibilityRole="button"
           accessibilityLabel="Share profile"
         >
-          <Ionicons name="share-outline" size={20} color="#FFF" />
+          <Ionicons name="share-outline" size={20} color={colors.textOnBrandGradient} />
         </Pressable>
       </View>
 
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
 
   heroName: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 26, color: '#FFF',
+    fontSize: 26, color: '#FAFAFA',
     textAlign: 'center', letterSpacing: -0.4,
   },
   heroHandle: {
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
     height: 1.5, opacity: 0.6,
   },
   statItem:    { flex: 1, alignItems: 'center' },
-  statNum:     { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#FFF', letterSpacing: -0.5 },
+  statNum:     { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#FAFAFA', letterSpacing: -0.5 },
   statLabel:   { fontFamily: 'Poppins_400Regular', fontSize: 11, color: CP.muted, marginTop: 3, letterSpacing: 0.4 },
   statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.1)' },
 });

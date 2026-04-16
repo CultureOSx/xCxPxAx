@@ -16,8 +16,14 @@ function buildCouncilParams(city?: string, country?: string) {
   };
 }
 
+function isAustralia(country?: string): boolean {
+  const c = String(country ?? '').trim().toLowerCase();
+  return c === 'australia' || c === 'au' || c === '';
+}
+
 /**
  * Signed-in user’s LGA (council) context for discover, calendar, and proximity rails.
+ * Guests in Australia: resolves council from onboarding city via public `/council/resolve`.
  * Council is a location dimension only — no follow/preferences/waste APIs.
  */
 export function useCouncil() {
@@ -30,12 +36,32 @@ export function useCouncil() {
     [state.city, state.country],
   );
 
-  const queryKey = ['/api/council/my', councilParams.city, councilParams.postcode, councilParams.state] as const;
+  const canResolveGuest = !isAuthenticated && isAustralia(state.country) && Boolean(state.city?.trim());
+
+  const queryKey = [
+    '/api/council/context',
+    isAuthenticated ? 'my' : 'resolve',
+    councilParams.city,
+    councilParams.postcode,
+    councilParams.state,
+  ] as const;
 
   const { data, isLoading, isError, refetch } = useQuery<CouncilLgaContext | null>({
     queryKey,
-    queryFn: () => api.council.my(councilParams),
-    enabled: isAuthenticated,
+    queryFn: async () => {
+      if (isAuthenticated) {
+        return api.council.my(councilParams);
+      }
+      if (canResolveGuest) {
+        return api.council.resolve({
+          city: councilParams.city,
+          state: councilParams.state,
+          country: councilParams.country,
+        });
+      }
+      return null;
+    },
+    enabled: isAuthenticated || canResolveGuest,
   });
 
   const council = data?.council ?? null;
@@ -43,6 +69,7 @@ export function useCouncil() {
   const lgaCode = council?.lgaCode;
 
   const reload = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['/api/council/context'] });
     await queryClient.invalidateQueries({ queryKey: ['/api/council/my'] });
   };
 

@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { LayoutRules, Radius, Spacing, gradients, TextStyles } from '@/constants/theme';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { useColors } from '@/hooks/useColors';
 import { goBackOrReplace } from '@/lib/navigation';
 import { APP_DOMAIN, APP_NAME, EMAIL_SUPPORT } from '@/lib/app-meta';
@@ -46,21 +45,21 @@ export default function SettingsHelpScreen() {
         style={helpAmbient.mesh}
         pointerEvents="none"
       />
-      <LiquidGlassPanel
-        borderRadius={0}
-        bordered={false}
+      <View
         style={{
+          backgroundColor: colors.surface,
           borderBottomWidth: StyleSheet.hairlineWidth * 2,
           borderBottomColor: colors.borderLight,
         }}
-        contentStyle={styles.headerInner}
       >
-        <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/settings')}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
-        <View style={{ width: 40 }} />
-      </LiquidGlassPanel>
+        <View style={styles.headerInner}>
+          <Pressable style={styles.backBtn} onPress={() => goBackOrReplace('/settings')}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
+          <View style={{ width: 40 }} />
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.xxl + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Hero */}

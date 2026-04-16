@@ -47,39 +47,38 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="community"
+        name="search"
         options={{
-          title: 'Community',
+          title: 'Search',
+          tabBarIcon: ({ color, size }) => <Ionicons name="search-outline" size={size} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="communities"
+        options={{
+          title: 'Communities',
           tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
         }}
       />
 
       <Tabs.Screen
-        name="city"
-        options={{
-          title: 'My City',
-          tabBarIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
-        }}
-      />
-
-      <Tabs.Screen
-        name="perks"
+        name="wallet"
         options={{
           title: 'Wallet',
-          tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
         }}
       />
 
       <Tabs.Screen
-        name="menu"
+        name="profile"
         options={{
-          title: 'Menu',
-          tabBarIcon: ({ color, size }) => <Ionicons name="menu-outline" size={size} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
-
       {/* In-tab profile (opened from Account menu, deep links, avatar). Hidden from tab bar. */}
-      <Tabs.Screen name="profile" options={{ href: null }} />
+      {/* Removed duplicate profile screen to ensure unique screen names */}
 
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="directory" options={{ href: null }} />

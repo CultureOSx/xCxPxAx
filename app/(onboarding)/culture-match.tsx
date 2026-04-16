@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Platform,
   TextInput, KeyboardAvoidingView,
+  type DimensionValue,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +14,6 @@ import {
   FontSize,
   TextStyles,
   Spacing,
-  IconSize,
 } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
@@ -21,6 +21,7 @@ import { type Step, useCultureMatch } from '@/hooks/useCultureMatch';
 import Animated, {
   FadeInDown, FadeInUp, FadeInRight, FadeOutLeft, FadeIn,
 } from 'react-native-reanimated';
+import { AuthDesktopBackPill, AuthMobileHeader } from '@/components/onboarding/AuthScreenPrimitives';
 
 // ---------------------------------------------------------------------------
 // Per-step design tokens
@@ -93,20 +94,17 @@ export default function CultureMatchScreen() {
     <View style={[s.container, { backgroundColor: colors.background }]}>
       {/* Mobile header */}
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + Spacing.sm }]}>
-          <Pressable
-            onPress={goBack}
-            hitSlop={12}
-            style={s.mobileBackBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-          </Pressable>
+        <View>
+          <AuthMobileHeader variant="back-only" onPress={goBack} />
           <View style={s.mobileStepIndicator}>
-            <Text style={s.mobileStepLabel}>Step 3 of 4</Text>
-            <View style={s.mobileProgressTrack}>
-              <View style={[s.mobileProgressFill, { width: `${((stepIndex + 1) / 3) * 100}%` as any, backgroundColor: accent }]} />
+            <Text style={[s.mobileStepLabel, { color: colors.textSecondary }]}>Step 3 of 4</Text>
+            <View style={[s.mobileProgressTrack, { backgroundColor: colors.borderLight }]}>
+              <View
+                style={[
+                  s.mobileProgressFill,
+                  { width: `${((stepIndex + 1) / 3) * 100}%` as DimensionValue, backgroundColor: accent },
+                ]}
+              />
             </View>
           </View>
         </View>
@@ -114,24 +112,20 @@ export default function CultureMatchScreen() {
 
       {/* Desktop back */}
       {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable
-            onPress={goBack}
-            hitSlop={Spacing.sm}
-            style={[s.desktopBackBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Ionicons name="chevron-back" size={IconSize.md - 2} color={colors.text} />
-            <Text style={[s.desktopBackText, { color: colors.text }]}>Back</Text>
-          </Pressable>
-        </View>
+        <AuthDesktopBackPill label="Back" onPress={goBack} />
       )}
 
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? topInset + 6 : 0}
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           contentContainerStyle={[
             s.scrollContent,
             isDesktop && s.scrollContentDesktop,
@@ -140,10 +134,14 @@ export default function CultureMatchScreen() {
         >
           <Animated.View
             entering={FadeInUp.springify().damping(18).duration(500)}
-            style={[s.card, isDesktop && s.cardDesktop]}
+            style={[
+              s.card,
+              isDesktop && s.cardDesktop,
+              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+            ]}
           >
             {/* Glass surface */}
-            <View style={[StyleSheet.absoluteFill, s.cardSurface]} />
+            <View style={[StyleSheet.absoluteFill, s.cardSurface, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} />
 
             {/* Accent top bar */}
             <View style={[s.accentBar, { backgroundColor: accent }]} />
@@ -159,33 +157,55 @@ export default function CultureMatchScreen() {
                   return (
                     <React.Fragment key={st}>
                       <View style={s.stepperItem}>
-                        <View style={[
-                          s.stepperCircle,
-                          isDone && { backgroundColor: stAccent, borderColor: stAccent },
-                          isActive && { borderColor: accent, borderWidth: 2.5 },
-                          !isDone && !isActive && s.stepperCircleInactive,
-                        ]}>
+                        <View
+                          style={[
+                            s.stepperCircle,
+                            isDone
+                              ? { backgroundColor: stAccent, borderColor: stAccent }
+                              : isActive
+                                ? {
+                                    borderColor: accent,
+                                    borderWidth: 2.5,
+                                    backgroundColor: colors.surfaceSecondary,
+                                  }
+                                : {
+                                    borderColor: colors.borderLight,
+                                    backgroundColor: colors.surfaceSecondary,
+                                  },
+                          ]}
+                        >
                           {isDone ? (
-                            <Ionicons name="checkmark" size={12} color="#fff" />
+                            <Ionicons name="checkmark" size={12} color={colors.surface} />
                           ) : (
-                            <Text style={[
-                              s.stepperNum,
-                              isActive && { color: accent },
-                            ]}>
+                            <Text
+                              style={[
+                                s.stepperNum,
+                                { color: isActive ? accent : colors.textTertiary },
+                              ]}
+                            >
                               {STEP_NUMBERS[st]}
                             </Text>
                           )}
                         </View>
-                        <Text style={[
-                          s.stepperName,
-                          isActive && { color: '#FFFFFF', fontFamily: FontFamily.semibold },
-                          isDone && { color: stAccent },
-                        ]}>
+                        <Text
+                          style={[
+                            s.stepperName,
+                            {
+                              color: isActive ? colors.text : isDone ? stAccent : colors.textTertiary,
+                              fontFamily: isActive ? FontFamily.semibold : FontFamily.medium,
+                            },
+                          ]}
+                        >
                           {st.charAt(0).toUpperCase() + st.slice(1)}
                         </Text>
                       </View>
                       {i < 2 && (
-                        <View style={[s.stepperLine, isDone && { backgroundColor: stAccent }]} />
+                        <View
+                          style={[
+                            s.stepperLine,
+                            { backgroundColor: isDone ? stAccent : colors.borderLight },
+                          ]}
+                        />
                       )}
                     </React.Fragment>
                   );
@@ -197,22 +217,22 @@ export default function CultureMatchScreen() {
                 <View style={[s.iconRing, { borderColor: `${accent}60`, backgroundColor: `${accent}18` }]}>
                   <Ionicons name={STEP_ICONS[step]} size={32} color={accent} />
                 </View>
-                <Text style={s.title}>{STEP_LABELS[step]}</Text>
-                <Text style={s.subtitle}>{STEP_SUBTITLES[step]}</Text>
+                <Text style={[s.title, { color: colors.text }]}>{STEP_LABELS[step]}</Text>
+                <Text style={[s.subtitle, { color: colors.textSecondary }]}>{STEP_SUBTITLES[step]}</Text>
               </Animated.View>
 
               {/* ── Nationality step ── */}
               {step === 'nationality' && (
                 <Animated.View entering={FadeInRight.duration(260).springify().damping(22)}>
                   {/* Search */}
-                  <View style={s.searchWrap}>
-                    <Ionicons name="search" size={18} color="rgba(255,255,255,0.45)" />
+                  <View style={[s.searchWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Ionicons name="search" size={18} color={colors.textTertiary} />
                     <TextInput
                       value={nationalityQuery}
                       onChangeText={setNationalityQuery}
                       placeholder="Search nationality…"
-                      placeholderTextColor="rgba(255,255,255,0.38)"
-                      style={s.searchInput}
+                      placeholderTextColor={colors.textTertiary}
+                      style={[s.searchInput, { color: colors.text }]}
                       autoCapitalize="words"
                       returnKeyType="search"
                       selectionColor={CultureTokens.gold}
@@ -221,7 +241,7 @@ export default function CultureMatchScreen() {
                     />
                     {nationalityQuery.length > 0 && (
                       <Pressable onPress={() => setNationalityQuery('')} hitSlop={8}>
-                        <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" />
+                        <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                       </Pressable>
                     )}
                   </View>
@@ -236,7 +256,10 @@ export default function CultureMatchScreen() {
                           style={({ pressed }) => [
                             s.natCard,
                             isSelected && { backgroundColor: `${CultureTokens.gold}28`, borderColor: CultureTokens.gold, borderWidth: 2 },
-                            !isSelected && { backgroundColor: pressed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)', borderColor: pressed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)' },
+                            !isSelected && {
+                              backgroundColor: pressed ? colors.surfaceElevated : colors.surfaceSecondary,
+                              borderColor: pressed ? colors.borderLight : colors.borderLight,
+                            },
                           ]}
                           onPress={() => pickNationality(nat)}
                           accessibilityRole="radio"
@@ -247,7 +270,7 @@ export default function CultureMatchScreen() {
                           <Text
                             style={[
                               s.natLabel,
-                              { color: isSelected ? CultureTokens.gold : '#FFFFFF' },
+                              { color: isSelected ? CultureTokens.gold : colors.text },
                             ]}
                             numberOfLines={2}
                           >
@@ -262,7 +285,7 @@ export default function CultureMatchScreen() {
                       );
                     })}
                     {filteredNationalities.length === 0 && (
-                      <Text style={s.emptyText}>{`No results for "${nationalityQuery}"`}</Text>
+                      <Text style={[s.emptyText, { color: colors.textSecondary }]}>{`No results for "${nationalityQuery}"`}</Text>
                     )}
                   </View>
                 </Animated.View>
@@ -279,7 +302,7 @@ export default function CultureMatchScreen() {
                     <Animated.View entering={FadeIn.duration(200)} style={[s.contextBadge, { borderColor: `${CultureTokens.gold}70`, backgroundColor: `${CultureTokens.gold}18` }]}>
                       <Text style={s.contextBadgeEmoji}>{selectedNationality.emoji}</Text>
                       <View style={s.contextBadgeText}>
-                        <Text style={s.contextBadgeEyebrow}>Your nationality</Text>
+                        <Text style={[s.contextBadgeEyebrow, { color: colors.textTertiary }]}>Your nationality</Text>
                         <Text style={[s.contextBadgeName, { color: CultureTokens.gold }]}>{selectedNationality.label}</Text>
                       </View>
                       <Pressable
@@ -296,14 +319,14 @@ export default function CultureMatchScreen() {
 
                   {/* Culture search */}
                   {availableCultures.length > 4 && (
-                    <View style={s.searchWrap}>
-                      <Ionicons name="search" size={18} color="rgba(255,255,255,0.45)" />
+                    <View style={[s.searchWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                      <Ionicons name="search" size={18} color={colors.textTertiary} />
                       <TextInput
                         value={cultureQuery}
                         onChangeText={setCultureQuery}
                         placeholder="Search cultures…"
-                        placeholderTextColor="rgba(255,255,255,0.38)"
-                        style={s.searchInput}
+                        placeholderTextColor={colors.textTertiary}
+                        style={[s.searchInput, { color: colors.text }]}
                         autoCapitalize="words"
                         returnKeyType="search"
                         selectionColor={CultureTokens.teal}
@@ -312,7 +335,7 @@ export default function CultureMatchScreen() {
                       />
                       {cultureQuery.length > 0 && (
                         <Pressable onPress={() => setCultureQuery('')} hitSlop={8}>
-                          <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" />
+                          <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                         </Pressable>
                       )}
                     </View>
@@ -343,8 +366,8 @@ export default function CultureMatchScreen() {
                               borderWidth: 1.5,
                             },
                             !isSelected && {
-                              backgroundColor: pressed ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-                              borderColor: pressed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                              backgroundColor: pressed ? colors.surfaceElevated : colors.surfaceSecondary,
+                              borderColor: colors.borderLight,
                               borderWidth: 1,
                             },
                           ]}
@@ -354,10 +377,7 @@ export default function CultureMatchScreen() {
                           accessibilityState={{ checked: isSelected }}
                         >
                           <Text style={s.cultureEmoji}>{culture.emoji}</Text>
-                          <Text style={[
-                            s.cultureLabel,
-                            { color: isSelected ? CultureTokens.teal : '#FFFFFF' },
-                          ]}>
+                          <Text style={[s.cultureLabel, { color: isSelected ? CultureTokens.teal : colors.text }]}>
                             {culture.label}
                           </Text>
                           {isSelected && (
@@ -368,12 +388,14 @@ export default function CultureMatchScreen() {
                     })}
                     {filteredCultures.length === 0 && availableCultures.length === 0 && (
                       <View style={s.emptyWrap}>
-                        <Ionicons name="sparkles-outline" size={28} color="rgba(255,255,255,0.3)" />
-                        <Text style={s.emptyText}>No specific sub-cultures listed — tap Continue.</Text>
+                        <Ionicons name="sparkles-outline" size={28} color={colors.textTertiary} />
+                        <Text style={[s.emptyText, { color: colors.textSecondary }]}>
+                          No specific sub-cultures listed — tap Continue.
+                        </Text>
                       </View>
                     )}
                     {filteredCultures.length === 0 && availableCultures.length > 0 && (
-                      <Text style={s.emptyText}>{`No cultures match "${cultureQuery}"`}</Text>
+                      <Text style={[s.emptyText, { color: colors.textSecondary }]}>{`No cultures match "${cultureQuery}"`}</Text>
                     )}
                   </View>
                 </Animated.View>
@@ -406,14 +428,14 @@ export default function CultureMatchScreen() {
                   )}
 
                   {/* Language search */}
-                  <View style={s.searchWrap}>
-                    <Ionicons name="search" size={18} color="rgba(255,255,255,0.45)" />
+                  <View style={[s.searchWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}>
+                    <Ionicons name="search" size={18} color={colors.textTertiary} />
                     <TextInput
                       value={languageQuery}
                       onChangeText={setLanguageQuery}
                       placeholder="Search languages…"
-                      placeholderTextColor="rgba(255,255,255,0.38)"
-                      style={s.searchInput}
+                      placeholderTextColor={colors.textTertiary}
+                      style={[s.searchInput, { color: colors.text }]}
                       autoCapitalize="words"
                       returnKeyType="search"
                       selectionColor={CultureTokens.purple}
@@ -422,13 +444,15 @@ export default function CultureMatchScreen() {
                     />
                     {languageQuery.length > 0 && (
                       <Pressable onPress={() => setLanguageQuery('')} hitSlop={8}>
-                        <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" />
+                        <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                       </Pressable>
                     )}
                   </View>
 
                   {languageQuery.trim().length < 2 && (
-                    <Text style={s.helperText}>Popular languages shown · type to search all</Text>
+                    <Text style={[s.helperText, { color: colors.textTertiary }]}>
+                      Popular languages shown · type to search all
+                    </Text>
                   )}
 
                   {/* Language grid */}
@@ -439,22 +463,22 @@ export default function CultureMatchScreen() {
                         style={({ pressed }) => [
                           s.langCard,
                           {
-                            backgroundColor: pressed ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-                            borderColor: pressed ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.12)',
+                            backgroundColor: pressed ? colors.surfaceElevated : colors.surfaceSecondary,
+                            borderColor: colors.borderLight,
                           },
                         ]}
                         onPress={() => toggleLanguage(lang)}
                         accessibilityRole="button"
                         accessibilityLabel={lang.name}
                       >
-                        <Text style={s.langName}>{lang.name}</Text>
+                        <Text style={[s.langName, { color: colors.text }]}>{lang.name}</Text>
                         {lang.nativeName && lang.nativeName !== lang.name && (
-                          <Text style={s.langNative}>{lang.nativeName}</Text>
+                          <Text style={[s.langNative, { color: colors.textSecondary }]}>{lang.nativeName}</Text>
                         )}
                       </Pressable>
                     ))}
                     {filteredLanguages.length === 0 && languageQuery.trim().length >= 2 && (
-                      <Text style={s.emptyText}>{`No languages match "${languageQuery}"`}</Text>
+                      <Text style={[s.emptyText, { color: colors.textSecondary }]}>{`No languages match "${languageQuery}"`}</Text>
                     )}
                   </View>
                 </Animated.View>
@@ -467,13 +491,16 @@ export default function CultureMatchScreen() {
                     onPress={goBack}
                     style={({ pressed }) => [
                       s.backBtn,
-                      { backgroundColor: pressed ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.07)', borderColor: pressed ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.18)' },
+                      {
+                        backgroundColor: pressed ? colors.surfaceElevated : colors.surfaceSecondary,
+                        borderColor: colors.borderLight,
+                      },
                     ]}
                     accessibilityRole="button"
                     accessibilityLabel="Back"
                   >
-                    <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
-                    <Text style={s.backBtnText}>Back</Text>
+                    <Ionicons name="arrow-back" size={18} color={colors.text} />
+                    <Text style={[s.backBtnText, { color: colors.text }]}>Back</Text>
                   </Pressable>
                 )}
 
@@ -503,8 +530,8 @@ export default function CultureMatchScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Skip this step"
                 >
-                  <Text style={s.skipLinkText}>Skip this step</Text>
-                  <Ionicons name="chevron-forward" size={13} color="rgba(255,255,255,0.35)" />
+                  <Text style={[s.skipLinkText, { color: colors.textTertiary }]}>Skip this step</Text>
+                  <Ionicons name="chevron-forward" size={13} color={colors.textTertiary} />
                 </Pressable>
               </Animated.View>
 
@@ -537,11 +564,10 @@ const s = StyleSheet.create({
   mobileStepLabel: {
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.chip,
-    color: 'rgba(255,255,255,0.6)',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  mobileProgressTrack: { width: 80, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
+  mobileProgressTrack: { width: 80, height: 3, borderRadius: 2, overflow: 'hidden' },
   mobileProgressFill:  { height: '100%', borderRadius: 2 },
 
   // ── Desktop back ──
@@ -555,7 +581,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
   },
-  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2, color: '#FFFFFF' },
+  desktopBackText: { fontFamily: FontFamily.medium, fontSize: FontSize.body2 },
 
   // ── Scroll ──
   scrollContent:        { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
@@ -571,10 +597,8 @@ const s = StyleSheet.create({
   },
   cardDesktop: { maxWidth: 620 },
   cardSurface: {
-    backgroundColor: 'rgba(14,14,26,0.93)',
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
   },
   accentBar: { height: 4, width: '100%' },
   cardContent: { padding: 28 },
@@ -596,25 +620,17 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperCircleInactive: {
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
   stepperNum: {
     fontFamily: FontFamily.bold,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
   },
   stepperName: {
-    fontFamily: FontFamily.medium,
     fontSize: 10,
-    color: 'rgba(255,255,255,0.35)',
     letterSpacing: 0.3,
   },
   stepperLine: {
     width: 44,
     height: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 18,
     marginHorizontal: 4,
   },
@@ -633,7 +649,6 @@ const s = StyleSheet.create({
   title: {
     ...TextStyles.display,
     fontSize: 26,
-    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -642,7 +657,6 @@ const s = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.65)',
     maxWidth: 340,
   },
 
@@ -651,8 +665,6 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.14)',
     borderWidth: 1,
     borderRadius: CardTokens.radius,
     paddingHorizontal: 14,
@@ -663,7 +675,6 @@ const s = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.regular,
     fontSize: FontSize.body2,
-    color: '#FFFFFF',
     padding: 0,
   },
 
@@ -707,7 +718,7 @@ const s = StyleSheet.create({
   },
   contextBadgeEmoji:       { fontSize: 22 },
   contextBadgeText:        { flex: 1 },
-  contextBadgeEyebrow:     { fontFamily: FontFamily.medium, fontSize: 10, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5, textTransform: 'uppercase' },
+  contextBadgeEyebrow:     { fontFamily: FontFamily.medium, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
   contextBadgeName:        { fontFamily: FontFamily.bold, fontSize: FontSize.body2 },
   contextBadgeChange:      { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   contextBadgeChangeText:  { fontFamily: FontFamily.semibold, fontSize: 11 },
@@ -764,7 +775,6 @@ const s = StyleSheet.create({
   helperText: {
     fontFamily: FontFamily.regular,
     fontSize: FontSize.caption,
-    color: 'rgba(255,255,255,0.40)',
     marginBottom: 12,
     marginTop: -4,
   },
@@ -779,15 +789,14 @@ const s = StyleSheet.create({
     minWidth: 100,
     gap: 2,
   },
-  langName:   { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, color: '#FFFFFF', lineHeight: 18 },
-  langNative: { fontFamily: FontFamily.regular, fontSize: FontSize.caption, color: 'rgba(255,255,255,0.48)', lineHeight: 16 },
+  langName:   { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, lineHeight: 18 },
+  langNative: { fontFamily: FontFamily.regular, fontSize: FontSize.caption, lineHeight: 16 },
 
   // ── Empty state ──
   emptyWrap: { width: '100%', alignItems: 'center', gap: 10, paddingVertical: 24 },
   emptyText: {
     fontFamily: FontFamily.regular,
     fontSize: FontSize.body2,
-    color: 'rgba(255,255,255,0.45)',
     textAlign: 'center',
     paddingVertical: 8,
     width: '100%',
@@ -806,7 +815,7 @@ const s = StyleSheet.create({
     height: 56,
     minWidth: 100,
   },
-  backBtnText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2, color: '#FFFFFF' },
+  backBtnText: { fontFamily: FontFamily.semibold, fontSize: FontSize.body2 },
   nextBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -831,6 +840,5 @@ const s = StyleSheet.create({
   skipLinkText: {
     fontFamily: FontFamily.medium,
     fontSize: FontSize.body2,
-    color: 'rgba(255,255,255,0.35)',
   },
 });

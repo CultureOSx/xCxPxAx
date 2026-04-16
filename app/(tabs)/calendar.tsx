@@ -27,7 +27,6 @@ import { ticketKeys } from '@/hooks/queries/keys';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabPrimaryHeader } from '@/components/tabs/TabPrimaryHeader';
-import { LiquidGlassPanel } from '@/components/onboarding/LiquidGlassPanel';
 import { EventRow } from '@/components/calendar/EventRow';
 import EventCard from '@/components/Discover/EventCard';
 import { CalendarEmptyState } from '@/components/calendar/CalendarEmptyState';
@@ -397,9 +396,9 @@ export default function CalendarScreen() {
                   <Ionicons
                     name={item.icon}
                     size={14}
-                    color={active ? '#fff' : colors.textSecondary}
+                    color={active ? colors.surface : colors.textSecondary}
                   />
-                  <Text style={[styles.compactChipText, { color: active ? '#fff' : colors.text }]}>
+                  <Text style={[styles.compactChipText, { color: active ? colors.surface : colors.text }]}>
                     {item.label}
                   </Text>
                 </Pressable>
@@ -409,10 +408,16 @@ export default function CalendarScreen() {
 
           <View style={isDesktopWeb ? [styles.desktopSplit, { paddingHorizontal: hPad }] : undefined}>
             <View style={isDesktopWeb ? styles.leftCol : undefined}>
-              <LiquidGlassPanel
-                borderRadius={MAIN_TAB_UI.cardRadius}
-                style={{ marginHorizontal: isDesktopWeb ? 0 : hPad, marginTop: 12 }}
-                contentStyle={{ padding: 14 }}
+              <View
+                style={{
+                  marginHorizontal: isDesktopWeb ? 0 : hPad,
+                  marginTop: 12,
+                  borderRadius: MAIN_TAB_UI.cardRadius,
+                  backgroundColor: colors.surface,
+                  borderWidth: StyleSheet.hairlineWidth * 2,
+                  borderColor: colors.borderLight,
+                  padding: 14,
+                }}
               >
                 <View style={styles.calendarTopBar}>
                   <Text style={[styles.monthYearHeading, { color: colors.text }]}>{monthTitle}</Text>
@@ -495,7 +500,7 @@ export default function CalendarScreen() {
                           style={[
                             styles.dayText,
                             isSelected
-                              ? { color: '#fff' }
+                              ? { color: colors.surface }
                               : isTodayCell
                                 ? { color: CultureTokens.indigo }
                                 : { color: colors.text },
@@ -505,16 +510,16 @@ export default function CalendarScreen() {
                         </Text>
                         {(hasEvents || hasTickets || hasPersonal) ? (
                           <View style={styles.dotRow}>
-                            {hasEvents ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : CultureTokens.coral }]} /> : null}
-                            {hasTickets ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : CultureTokens.teal }]} /> : null}
-                            {hasPersonal ? <View style={[styles.dot, { backgroundColor: isSelected ? '#fff' : colors.textTertiary }]} /> : null}
+                            {hasEvents ? <View style={[styles.dot, { backgroundColor: isSelected ? colors.surface : CultureTokens.coral }]} /> : null}
+                            {hasTickets ? <View style={[styles.dot, { backgroundColor: isSelected ? colors.surface : CultureTokens.teal }]} /> : null}
+                            {hasPersonal ? <View style={[styles.dot, { backgroundColor: isSelected ? colors.surface : colors.textTertiary }]} /> : null}
                           </View>
                         ) : null}
                       </Pressable>
                     );
                   })}
                 </View>
-              </LiquidGlassPanel>
+              </View>
 
               <View style={[styles.section, { paddingHorizontal: hPad }]}>
                 <View style={styles.sectionRow}>
